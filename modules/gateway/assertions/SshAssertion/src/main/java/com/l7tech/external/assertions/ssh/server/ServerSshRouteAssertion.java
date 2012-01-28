@@ -3,7 +3,11 @@ package com.l7tech.external.assertions.ssh.server;
 import com.jscape.inet.scp.Scp;
 import com.jscape.inet.scp.ScpException;
 import com.jscape.inet.sftp.Sftp;
+import com.jscape.inet.sftp.SftpConfiguration;
 import com.jscape.inet.sftp.SftpException;
+import com.jscape.inet.ssh.SshConfiguration;
+import com.jscape.inet.ssh.transport.AlgorithmFactory;
+import com.jscape.inet.ssh.types.SshNameList;
 import com.jscape.inet.ssh.util.HostKeyFingerprintVerifier;
 import com.jscape.inet.ssh.util.SshHostKeys;
 import com.jscape.inet.ssh.util.SshParameters;
@@ -34,10 +38,16 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.*;
+import static com.l7tech.util.CollectionUtils.list;
+import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.grep;
+import static com.l7tech.util.Functions.map;
 import com.l7tech.util.ThreadPool.ThreadPoolShutDownException;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
@@ -46,12 +56,14 @@ import java.io.PipedOutputStream;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.text.ParseException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.l7tech.message.Message.getMaxBytes;
 
@@ -61,6 +73,10 @@ import static com.l7tech.message.Message.getMaxBytes;
  * @see com.l7tech.external.assertions.ssh.SshRouteAssertion
  */
 public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAssertion> {
+
+    private static final boolean enableCipherNone = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.ssh.server.enableCipherNone", false );
+    private static final boolean enableMacNone = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.ssh.server.enableMacNone", false );
+    private static final boolean enableMacMd5 = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.ssh.server.enableMacMd5", false );
 
     @Inject
     private SecurePasswordManager securePasswordManager;
@@ -188,14 +204,15 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             }
 
             if (assertion.isScpProtocol()) {
-                sshClient = new ScpClient(new Scp(sshParams));
+                sshClient = new ScpClient(new Scp(sshParams,buildSshConfiguration()));
             } else {
-                sshClient = new SftpClient(new Sftp(sshParams));
+                sshClient = new SftpClient(new Sftp(sshParams, new SftpConfiguration(buildSshConfiguration())));
             }
             sshClient.connect();
 
             if(!sshClient.isConnected()) {
                 sshClient.disconnect();
+                sshClient = null;
                 logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, "Failed to authenticate with the remote server.");
                 return AssertionStatus.FAILED;
             }
@@ -255,10 +272,6 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                         new String[]{ExceptionUtils.getMessage(t)}, ExceptionUtils.getDebugException(t));
                 return AssertionStatus.FAILED;
-            } finally {
-                if (sshClient != null){
-                    sshClient.disconnect();
-                }
             }
 
             context.setRoutingStatus(RoutingStatus.ROUTED);
@@ -287,6 +300,117 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             if(sshClient != null) {
                 sshClient.disconnect();
             }
+        }
+    }
+
+    private SshConfiguration buildSshConfiguration() {
+        final AlgorithmFactory algorithmFactory = buildAlgorithmFactory();
+        final SshConfiguration sshConfiguration = new SshConfiguration();
+        sshConfiguration.getTransportConfiguration().setAlgorithmFactory( algorithmFactory );
+        return sshConfiguration;
+    }
+
+    private AlgorithmFactory buildAlgorithmFactory() {
+        final AlgorithmFactory algorithmFactory = new AlgorithmFactory(){
+            @Override
+            public SshNameList getAllCiphers() {
+                // overridden to return list in priority order
+                final List<String> cipherList = map( grep( list( SshCipher.values() ), SshCipher.available() ), SshCipher.sshName() );
+                return new SshNameList( cipherList.toArray( new String[cipherList.size()] ) );
+            }
+        };
+
+        // Remove "none" algorithms by default
+        if (!enableMacNone) algorithmFactory.removeMac( "none" );
+        if (!enableCipherNone) algorithmFactory.removeCipher( "none" );
+
+        // Remove MD5 hash by default, always prefer SHA-1
+        if ( !enableMacMd5 ) {
+            algorithmFactory.removeMac( "hmac-md5" );
+        }
+        algorithmFactory.setPrefferedMac( "hmac-sha1" );
+
+        // Register all available supported ciphers
+        for ( final SshCipher cipher : SshCipher.values() ) {
+            algorithmFactory.addCipher( cipher.getSshName(), cipher.getJavaCipherName(), cipher.getBlockSize() );
+        }
+
+        return algorithmFactory;
+    }
+
+    private enum SshCipher {
+//        AES128CTR("aes128-ctr", "AES", "AES/CTR/NoPadding", 16),
+//        AES128CBC("aes128-cbc", "AES", "AES/CBC/NoPadding", 16),
+        TripleDESCBC("3des-cbc", "DESede", "DESede/CBC/NoPadding", 24),
+        BlowfishCBC("blowfish-cbc", "Blowfish", "Blowfish/CBC/NoPadding", 16);//,
+//        AES192CTR("aes192-ctr", "AES", "AES/CTR/NoPadding", 24),
+//        AES192CBC("aes192-cbc", "AES", "AES/CBC/NoPadding", 24),
+//        AES256CTR("aes256-ctr", "AES", "AES/CTR/NoPadding", 32),
+//        AES256CBC("aes256-cbc", "AES", "AES/CBC/NoPadding", 32);
+
+        public boolean isAvailable() {
+            return available;
+        }
+
+        public int getBlockSize() {
+            return blockSize;
+        }
+
+        public String getJavaCipherName() {
+            return javaCipherName;
+        }
+
+        public String getSshName() {
+            return sshName;
+        }
+
+        public static Unary<String,SshCipher> sshName() {
+            return new Unary<String,SshCipher>() {
+                @Override
+                public String call( final SshCipher sshCipher ) {
+                    return sshCipher.getSshName();
+                }
+            };
+        }
+
+        public static Unary<Boolean,SshCipher> available() {
+            return new Unary<Boolean,SshCipher>() {
+                @Override
+                public Boolean call( final SshCipher sshCipher ) {
+                    return sshCipher.isAvailable();
+                }
+            };
+        }
+
+        private final Logger logger = Logger.getLogger(SshCipher.class.getName()); // static logger not initialized early enough
+        private final String sshName;
+        private final String javaAlgorithmName;
+        private final String javaCipherName;
+        private final int blockSize;
+        private final boolean available;
+
+        private SshCipher( final String sshName,
+                           final String javaAlgorithmName,
+                           final String javaCipherName,
+                           final int blockSize ) {
+            this.sshName = sshName;
+            this.javaAlgorithmName = javaAlgorithmName;
+            this.javaCipherName = javaCipherName;
+            this.blockSize = blockSize;
+            this.available = checkCipherAvailable();
+        }
+
+        private boolean checkCipherAvailable() {
+            boolean available = false;
+            try {
+                final Cipher cipher = Cipher.getInstance( javaCipherName );
+                final byte[] key = new byte[blockSize];
+                cipher.init( Cipher.ENCRYPT_MODE, new SecretKeySpec( key, javaAlgorithmName ));
+                available = true;
+            } catch (Exception e) {
+                logger.log( Level.FINE, "SSH cipher not available: " + sshName, ExceptionUtils.getDebugException( e ) );
+            }
+            return available;
         }
     }
 
