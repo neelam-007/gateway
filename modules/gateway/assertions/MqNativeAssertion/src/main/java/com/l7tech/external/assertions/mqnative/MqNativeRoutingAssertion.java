@@ -6,17 +6,19 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import static com.l7tech.policy.assertion.VariableUseSupport.expressions;
-import static com.l7tech.policy.assertion.VariableUseSupport.variables;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import static com.l7tech.policy.assertion.VariableUseSupport.expressions;
+import static com.l7tech.policy.assertion.VariableUseSupport.variables;
 
 /**
  * Route outbound MQ Native to WebSphere MQ.
@@ -40,13 +42,19 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     private boolean isPutToQueue = true; // Default: set the message direction to "Put to Queue"
     private MqNativeDynamicProperties dynamicMqRoutingProperties;
     @NotNull
-    private MqNativeMessagePropertyRuleSet requestMqMessagePropertyRuleSet = new MqNativeMessagePropertyRuleSet();
+    private MqNativeMessagePropertyRuleSet requestMqMessagePropertyRuleSet = defaultMqNativeMessagePropertyRuleSet();
     @NotNull
-    private MqNativeMessagePropertyRuleSet responseMqMessagePropertyRuleSet = new MqNativeMessagePropertyRuleSet();
+    private MqNativeMessagePropertyRuleSet responseMqMessagePropertyRuleSet = defaultMqNativeMessagePropertyRuleSet();
     @NotNull
     private MessageTargetableSupport requestTarget = defaultRequestTarget();
     @NotNull
     private MessageTargetableSupport responseTarget = defaultResponseTarget();
+
+    private MqNativeMessagePropertyRuleSet defaultMqNativeMessagePropertyRuleSet() {
+        MqNativeMessagePropertyRuleSet mqNativeMessagePropertyRuleSet = new MqNativeMessagePropertyRuleSet();
+        mqNativeMessagePropertyRuleSet.setPassThroughHeaders(true);
+        return mqNativeMessagePropertyRuleSet;
+    }
 
     private static MessageTargetableSupport defaultRequestTarget() {
         return new MessageTargetableSupport( TargetMessageType.REQUEST, false);
@@ -221,7 +229,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     }
 
     /**
-     * Get the outbound request message configuration.
+     * Set the outbound request message configuration.
      *
      * @return The configuration for the outbound request, null to reset to the default.
      */
@@ -240,7 +248,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     }
 
     /**
-     * Get the inbound response message configuration.
+     * Set the inbound response message configuration.
      *
      * @return The configuration for the inbound response, null to reset to the default.
      */
@@ -250,22 +258,38 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
 
     @Override
     public boolean initializesRequest() {
-        return TargetMessageType.REQUEST == responseTarget.getTarget();
+        /*
+           when responding, the route assertion initializes the Request target if:
+              - the route is Get from Queue and target is Request
+              - or the route is Put to Queue and reads reply queue to Request
+        */
+        return  (!isPutToQueue() && TargetMessageType.REQUEST == responseTarget.getTarget()) ||
+                (isPutToQueue() && dynamicMqRoutingProperties != null &&
+                        !StringUtils.isEmpty(dynamicMqRoutingProperties.getReplyToQueue()) && TargetMessageType.REQUEST == responseTarget.getTarget());
     }
 
     @Override
     public boolean needsInitializedRequest() {
-        return TargetMessageType.REQUEST == requestTarget.getTarget();
+        // when requesting, the route assertion needs an initialized Request target if the route is Put to Queue and target is Request
+        return isPutToQueue() && TargetMessageType.REQUEST == requestTarget.getTarget();
     }
 
     @Override
     public boolean initializesResponse() {
-        return TargetMessageType.RESPONSE == responseTarget.getTarget();
+        /*
+           when responding, the route assertion initializes the Response target if:
+              - the route is Get from Queue and target is Response
+              - or the route is Put to Queue and reads reply queue to Response
+         */
+        return (!isPutToQueue() && TargetMessageType.RESPONSE == responseTarget.getTarget()) ||
+               (isPutToQueue() && dynamicMqRoutingProperties != null &&
+                       !StringUtils.isEmpty(dynamicMqRoutingProperties.getReplyToQueue()) && TargetMessageType.RESPONSE == responseTarget.getTarget());
     }
 
     @Override
     public boolean needsInitializedResponse() {
-        return TargetMessageType.RESPONSE == requestTarget.getTarget();
+        // when requesting, the route assertion needs an initialized Response target if the route is Put to Queue and target is Response
+        return isPutToQueue() && TargetMessageType.RESPONSE == requestTarget.getTarget();
     }
 
     @Override

@@ -2,48 +2,45 @@ package com.l7tech.external.assertions.mqnative.console;
 
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
-import static com.l7tech.console.panels.RoutingDialogUtils.configSecurityHeaderHandling;
-import static com.l7tech.console.panels.RoutingDialogUtils.configSecurityHeaderRadioButtons;
-import static com.l7tech.console.panels.RoutingDialogUtils.tagSecurityHeaderHandlingButtons;
 import com.l7tech.console.panels.ByteLimitPanel;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeDynamicProperties;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
-import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.*;
+import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.booleanProperty;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.InputValidator;
-import static com.l7tech.gui.util.Utilities.comboBoxModel;
-import static com.l7tech.gui.util.Utilities.enableGrayOnDisabled;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
-import static com.l7tech.objectmodel.imp.PersistentEntityUtil.oid;
 import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.variable.Syntax.getReferencedNames;
-import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
-import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.equality;
-import static com.l7tech.util.Functions.grep;
-import static com.l7tech.util.Functions.grepFirst;
-import static com.l7tech.util.Functions.negate;
-import static com.l7tech.util.TextUtils.truncStringMiddleExact;
-import static com.l7tech.util.ValidationUtils.isValidInteger;
-import static java.util.Collections.emptyList;
+import com.l7tech.util.Functions.*;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.console.panels.RoutingDialogUtils.*;
+import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
+import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static com.l7tech.gui.util.Utilities.comboBoxModel;
+import static com.l7tech.gui.util.Utilities.enableGrayOnDisabled;
+import static com.l7tech.objectmodel.imp.PersistentEntityUtil.oid;
+import static com.l7tech.policy.variable.Syntax.getReferencedNames;
+import static com.l7tech.util.Functions.*;
+import static com.l7tech.util.TextUtils.truncStringMiddleExact;
+import static com.l7tech.util.ValidationUtils.isValidInteger;
+import static java.util.Collections.emptyList;
 
 /**
  * Assertion properties edit dialog for the MQ routing assertion.
@@ -104,8 +101,10 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
     private JRadioButton getFromQueueRadioButton;
     private JComboBox messageSourceComboBox;
     private JComboBox messageTargetComboBox;
-    private JPanel messageVariableHolderPanel;
-    private TargetVariablePanel messageVariablePanel;
+    private JPanel targetMessageVariableHolderPanel;
+    private JCheckBox sourcePassThroughHeadersCheckBox;
+    private JCheckBox targetPassThroughHeadersCheckBox;
+    private TargetVariablePanel targetMessageVariablePanel;
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
     private MqNativeRoutingAssertion assertion;
@@ -193,15 +192,13 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         messageTargetComboBox.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", "Message Variable"), null, true ) );
         messageTargetComboBox.addActionListener( enableDisableListener );
 
-        messageVariablePanel = new TargetVariablePanel();
-//        messageVariablePanel.addChangeListener(enableDisableListener);
-        messageVariableHolderPanel.setLayout(new BorderLayout());
-        messageVariableHolderPanel.add(messageVariablePanel, BorderLayout.CENTER);
-
+        targetMessageVariablePanel = new TargetVariablePanel();
+        targetMessageVariableHolderPanel.setLayout(new BorderLayout());
+        targetMessageVariableHolderPanel.add(targetMessageVariablePanel, BorderLayout.CENTER);
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                return messageVariablePanel.getErrorMessage();
+                return targetMessageVariablePanel.getErrorMessage();
             }
         });
 
@@ -235,14 +232,28 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
     private void enableOrDisableComponents() {
         final boolean isPutToQueue = putToQueueRadioButton.isSelected();
         messageSourceComboBox.setEnabled(isPutToQueue);
-        messageTargetComboBox.setEnabled(! isPutToQueue);
-        messageVariablePanel.setEnabled(
-            (messageSourceComboBox.isEnabled() &&  messageSourceComboBox.getSelectedItem() != null && ((MessageTargetable)messageSourceComboBox.getSelectedItem()).getTarget() == TargetMessageType.OTHER)  ||
+        sourcePassThroughHeadersCheckBox.setEnabled(isPutToQueue);
+
+        boolean isMessageTargetEnabled = true;
+        if ( isPutToQueue ) {
+                isMessageTargetEnabled = isConfiguredForReply((SsgActiveConnector) queueComboBox.getSelectedItem());
+        }
+        messageTargetComboBox.setEnabled(isMessageTargetEnabled);
+        targetPassThroughHeadersCheckBox.setEnabled(isMessageTargetEnabled);
+        targetMessageVariablePanel.setEnabled(
             (messageTargetComboBox.isEnabled() &&  messageTargetComboBox.getSelectedItem() != null && ((MessageTargetable)messageTargetComboBox.getSelectedItem()).getTarget() == TargetMessageType.OTHER)
         );
 
         final boolean valid = responseByteLimitPanel.validateFields() == null;
         getOkButton().setEnabled(valid);
+    }
+
+    private boolean isConfiguredForReply(SsgActiveConnector connector) {
+        if ( connector != null ) {
+            final MqNativeReplyType mqNativeReplyType = connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class );
+            return mqNativeReplyType == REPLY_AUTOMATIC || mqNativeReplyType == REPLY_SPECIFIED_QUEUE;
+        }
+        return false;
     }
 
     private void populateDynamicPropertyFields() {
@@ -274,7 +285,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
     private void setTextAndEnable( final String value, final JTextField textField, final boolean canEnable ) {
         boolean templateValueSpecified = !value.trim().isEmpty();
         setText( value, textField );
-        textField.setEnabled( canEnable && templateValueSpecified );
+        textField.setEnabled( canEnable && !templateValueSpecified );
     }
 
     private void setIfDynamic( final String value, final String defaultValue, final JTextField textField ) {
@@ -349,21 +360,21 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         }
 
         assertion.setPutToQueue(putToQueueRadioButton.isSelected());
-        assertion.setRequestTarget(new MessageTargetableSupport(TargetMessageType.REQUEST, false));
-        assertion.setResponseTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+        final MessageTargetableSupport sourceMessageTargetable = new MessageTargetableSupport((MessageTargetable) messageSourceComboBox.getSelectedItem());
+        assertion.setRequestTarget(sourceMessageTargetable);
+        assertion.getRequestMqNativeMessagePropertyRuleSet().setPassThroughHeaders(sourcePassThroughHeadersCheckBox.isSelected());
 
-        final MessageTargetableSupport messageTargetable = new MessageTargetableSupport(
-            assertion.isPutToQueue()? (MessageTargetable) messageSourceComboBox.getSelectedItem() : (MessageTargetable) messageTargetComboBox.getSelectedItem()
-        );
-        if (messageTargetable.getTarget() == TargetMessageType.OTHER) {
-            messageTargetable.setOtherTargetMessageVariable(messageVariablePanel.getVariable());
-            messageTargetable.setSourceUsedByGateway(assertion.isPutToQueue());
-            messageTargetable.setTargetModifiedByGateway(! assertion.isPutToQueue());
+        final MessageTargetableSupport targetMessageTargetable = new MessageTargetableSupport((MessageTargetable) messageTargetComboBox.getSelectedItem());
+        if (targetMessageTargetable.getTarget() == TargetMessageType.OTHER) {
+            targetMessageTargetable.setOtherTargetMessageVariable(targetMessageVariablePanel.getVariable());
+            targetMessageTargetable.setSourceUsedByGateway(false);
+
+            // target modified if 1) Get from Queue or 2) Put to Queue and reads a reply queue
+            targetMessageTargetable.setTargetModifiedByGateway( !assertion.isPutToQueue() ||
+                    (assertion.isPutToQueue() && isConfiguredForReply((SsgActiveConnector) queueComboBox.getSelectedItem())) );
         }
-        if (assertion.isPutToQueue())
-            assertion.setRequestTarget(messageTargetable);
-        else
-            assertion.setResponseTarget(messageTargetable);
+        assertion.setResponseTarget(targetMessageTargetable);
+        assertion.getResponseMqNativeMessagePropertyRuleSet().setPassThroughHeaders(targetPassThroughHeadersCheckBox.isSelected());
 
         String responseTimeoutOverride = mqResponseTimeout.getText();
         if (responseTimeoutOverride != null && ! responseTimeoutOverride.isEmpty()) {
@@ -392,19 +403,21 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         applyDynamicAssertionPropertyOverrides();
 
         // Message properties
-        messageSourceComboBox.setModel(buildMessageTargetComboBoxModel(false));
-        messageSourceComboBox.setSelectedItem(new MessageTargetableSupport(assertion.getRequestTarget()));
+        putToQueueRadioButton.setSelected(assertion.isPutToQueue());
+        getFromQueueRadioButton.setSelected(!assertion.isPutToQueue());
+        messageSourceComboBox.setModel(buildMessageSourceComboBoxModel(assertion));
+        final MessageTargetableSupport sourceTargetable = new MessageTargetableSupport(assertion.getRequestTarget());
+        messageSourceComboBox.setSelectedItem(sourceTargetable);
+        sourcePassThroughHeadersCheckBox.setSelected(assertion.getRequestMqNativeMessagePropertyRuleSet().isPassThroughHeaders());
 
         messageTargetComboBox.setModel(buildMessageTargetComboBoxModel(false));
-        messageTargetComboBox.setSelectedItem(new MessageTargetableSupport(assertion.getResponseTarget()));
-
-        final MessageTargetableSupport messageTargetable = new MessageTargetableSupport(
-            assertion.isPutToQueue()? assertion.getRequestTarget() : assertion.getResponseTarget()
+        final MessageTargetableSupport targetTargetable = new MessageTargetableSupport(assertion.getResponseTarget());
+        messageTargetComboBox.setSelectedItem(new MessageTargetableSupport( targetTargetable.getTarget()) );
+        targetPassThroughHeadersCheckBox.setSelected( assertion.getResponseMqNativeMessagePropertyRuleSet().isPassThroughHeaders() );
+        targetMessageVariablePanel.setVariable(
+            targetTargetable.getTarget() == TargetMessageType.OTHER ? targetTargetable.getOtherTargetMessageVariable() : ""
         );
-        messageVariablePanel.setVariable(
-            messageTargetable.getTarget() == TargetMessageType.OTHER? messageTargetable.getOtherTargetMessageVariable() : ""
-        );
-        messageVariablePanel.setAssertion(assertion, getPreviousAssertion());
+        targetMessageVariablePanel.setAssertion(assertion, getPreviousAssertion());
 
         mqResponseTimeout.setText(assertion.getResponseTimeout()==null ? "":assertion.getResponseTimeout());
 
