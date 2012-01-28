@@ -1,8 +1,8 @@
 package com.l7tech.server.security.keystore.luna;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.SyspropUtil;
 
 import java.text.ParseException;
 import java.util.concurrent.Callable;
@@ -23,10 +23,7 @@ public class GatewayLunaPinFinder implements Callable<char[]> {
 
     @Override
     public char[] call() throws Exception {
-        char[] pin = getLunaPin();
-        // Clear it after it is queried so custom assertions/etc can't read it
-        SyspropUtil.clearProperty("com.l7tech.encryptedLunaPin");
-        return pin;
+        return getLunaPin();
     }
 
     public static void setClusterPassphrase(final byte[] clusterPassphrase) {
@@ -41,7 +38,7 @@ public class GatewayLunaPinFinder implements Callable<char[]> {
     }
 
     public static char[] getLunaPin() {
-        String encrypted = SyspropUtil.getProperty( "com.l7tech.encryptedLunaPin" );
+        String encrypted = ConfigFactory.getProperty( "com.l7tech.encryptedLunaPin" );
         if (encrypted == null)
             throw new RuntimeException("No encrypted Luna PIN available");
         if (lunaPinEncryption == null)
