@@ -250,7 +250,6 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
 
         final SsgActiveConnector selected = (SsgActiveConnector) queueComboBox.getSelectedItem();
         if ( selected != null ) {
-            final String selectedChannelName = selected.getProperty( PROPERTIES_KEY_MQ_NATIVE_CHANNEL, "" );
             final String selectedQueueName = selected.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME, "" );
             final String selectedReplyQueueName = selected.getProperty( PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME, "" );
             if ( selected.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE ) ) {

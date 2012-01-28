@@ -250,7 +250,7 @@ public abstract class MqNativeListener {
     /**
      * Event class for use by MQ native listener.
      */
-    public class MqNativeEvent extends TransportEvent {
+    public static class MqNativeEvent extends TransportEvent {
         private static final String NAME = "Connect";
 
         public MqNativeEvent(

@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * Ssg settings that get loaded from and saved to ssgs.xml.  Does not contain any behaviour; for that,
  * see {@link SsgRuntime}.
  */
-public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
+public class Ssg implements Serializable, Comparable, SslPeer {
     private static final Logger log = Logger.getLogger(Ssg.class.getName());
     private static final String SSG_PROTOCOL = "http";
     private static final int SSG_SSL_PORT = 8443;

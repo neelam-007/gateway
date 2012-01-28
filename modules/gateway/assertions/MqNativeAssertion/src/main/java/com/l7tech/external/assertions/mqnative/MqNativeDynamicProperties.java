@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Dynamic properties for MQ routing.
  */
-public class MqNativeDynamicProperties implements Serializable, Cloneable {
+public class MqNativeDynamicProperties implements Serializable {
 
     //- PUBLIC
 

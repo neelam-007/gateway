@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.util.HexUtils;
@@ -13,7 +7,7 @@ import java.io.Serializable;
 /**
  * Represents a binding between a policy and the kinds of requests it applies to.
  */
-public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable {
+public class PolicyAttachmentKey implements Serializable, Comparable {
     private String uri;
     private String soapAction;
     private String proxyUri;

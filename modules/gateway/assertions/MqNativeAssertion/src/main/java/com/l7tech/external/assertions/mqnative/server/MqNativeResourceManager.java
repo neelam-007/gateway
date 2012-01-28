@@ -275,7 +275,7 @@ class MqNativeResourceManager implements ApplicationListener {
         return validatedValue;
     }
 
-    private class CachedConnection {
+    private static class CachedConnection {
         private final AtomicInteger referenceCount = new AtomicInteger(0);
         private final long createdTime = System.currentTimeMillis();
         private final AtomicLong lastAccessTime = new AtomicLong(createdTime);

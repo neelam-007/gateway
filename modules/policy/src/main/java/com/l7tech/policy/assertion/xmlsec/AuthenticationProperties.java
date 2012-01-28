@@ -8,12 +8,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * User: steve
- * Date: Sep 20, 2005
- * Time: 5:25:27 PM
- * $Id$
+ *
  */
-public class AuthenticationProperties implements Cloneable, Serializable {
+public class AuthenticationProperties implements Serializable {
 
     //- PUBLIC
 
@@ -131,7 +128,7 @@ public class AuthenticationProperties implements Cloneable, Serializable {
         this.additionalFields = new HashMap<String,String>(additionalFields);
     }
 
-    public static final class Method implements Cloneable, Serializable {
+    public static final class Method implements Serializable {
 
         //- PUBLIC
 

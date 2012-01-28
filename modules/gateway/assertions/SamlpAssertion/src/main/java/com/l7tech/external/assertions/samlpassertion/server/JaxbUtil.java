@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.samlpassertion.server;
 
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.util.CollectionUtils;
+import static com.l7tech.util.CollectionUtils.set;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -53,18 +54,18 @@ public class JaxbUtil {
         }
     };
 
-    public static Pair<String, String> SAML_1_1 = new Pair<String, String>(SamlConstants.NS_SAML, SamlConstants.NS_SAML_PREFIX);
-    public static Pair<String, String> SAML_2 = new Pair<String, String>(SamlConstants.NS_SAML2, SamlConstants.NS_SAML2_PREFIX);
-    public static Pair<String, String> SAMLP = new Pair<String, String>(SamlConstants.NS_SAMLP, SamlConstants.NS_SAMLP_PREFIX);
-    public static Pair<String, String> SAMLP2 = new Pair<String, String>(SamlConstants.NS_SAMLP2, SamlConstants.NS_SAMLP2_PREFIX);
-    public static Pair<String, String> DS = new Pair<String, String>("http://www.w3.org/2000/09/xmldsig#", "ds");
-    public static Pair<String, String> XENC = new Pair<String, String>("http://www.w3.org/2001/04/xmlenc#", "xenc");
-    public static Pair<String, String> SAML2_PASSWORD = new Pair<String, String>(SamlConstants.AUTHENTICATION_SAML2_PASSWORD, "saccpwd");
-    public static Pair<String, String> SAML2_DSIG = new Pair<String, String>(SamlConstants.AUTHENTICATION_SAML2_XMLDSIG, "saccxds");
-    public static Pair<String, String> SAML2_TLS_CERT = new Pair<String, String>(SamlConstants.AUTHENTICATION_SAML2_TLS_CERT, "sacctlsc");
-    public static Pair<String, String> SAML2_AC = new Pair<String, String>("urn:oasis:names:tc:SAML:2.0:ac", "ac");
+    public static final Pair<String, String> SAML_1_1 = new Pair<String, String>(SamlConstants.NS_SAML, SamlConstants.NS_SAML_PREFIX);
+    public static final Pair<String, String> SAML_2 = new Pair<String, String>(SamlConstants.NS_SAML2, SamlConstants.NS_SAML2_PREFIX);
+    public static final Pair<String, String> SAMLP = new Pair<String, String>(SamlConstants.NS_SAMLP, SamlConstants.NS_SAMLP_PREFIX);
+    public static final Pair<String, String> SAMLP2 = new Pair<String, String>(SamlConstants.NS_SAMLP2, SamlConstants.NS_SAMLP2_PREFIX);
+    public static final Pair<String, String> DS = new Pair<String, String>("http://www.w3.org/2000/09/xmldsig#", "ds");
+    public static final Pair<String, String> XENC = new Pair<String, String>("http://www.w3.org/2001/04/xmlenc#", "xenc");
+    public static final Pair<String, String> SAML2_PASSWORD = new Pair<String, String>(SamlConstants.AUTHENTICATION_SAML2_PASSWORD, "saccpwd");
+    public static final Pair<String, String> SAML2_DSIG = new Pair<String, String>(SamlConstants.AUTHENTICATION_SAML2_XMLDSIG, "saccxds");
+    public static final Pair<String, String> SAML2_TLS_CERT = new Pair<String, String>(SamlConstants.AUTHENTICATION_SAML2_TLS_CERT, "sacctlsc");
+    public static final Pair<String, String> SAML2_AC = new Pair<String, String>("urn:oasis:names:tc:SAML:2.0:ac", "ac");
 
-    public static final Set<Pair<String, String>> allSupportedNs = new HashSet<Pair<String, String>>(Arrays.asList(
+    public static final Set<Pair<String, String>> allSupportedNs = set(
         SAML_1_1,
         SAML_2,
         SAMLP,
@@ -75,20 +76,20 @@ public class JaxbUtil {
         SAML2_DSIG,
         SAML2_TLS_CERT,
         SAML2_AC
-    ));
+    );
 
-    private static final Map<String, String> NS_PREFIXES =  Collections.unmodifiableMap(new HashMap<String, String>() {{
-        put(SAML_1_1.left,  SAML_1_1.right);
-        put(SAML_2.left,  SAML_2.right);
-        put(SAMLP.left,  SAMLP.right);
-        put(SAMLP2.left,  SAMLP2.right);
-        put(DS.left, DS.right);
-        put(XENC.left, XENC.right);
-        put(SAML2_PASSWORD.left, SAML2_PASSWORD.right);
-        put(SAML2_DSIG.left, SAML2_DSIG.right);
-        put(SAML2_TLS_CERT.left, SAML2_TLS_CERT.right);
-        put(SAML2_AC.left, SAML2_AC.right);
-    }});
+    private static final Map<String, String> NS_PREFIXES = CollectionUtils.<String, String>mapBuilder()
+        .put(SAML_1_1.left,  SAML_1_1.right)
+        .put(SAML_2.left,  SAML_2.right)
+        .put(SAMLP.left,  SAMLP.right)
+        .put(SAMLP2.left,  SAMLP2.right)
+        .put(DS.left, DS.right)
+        .put(XENC.left, XENC.right)
+        .put(SAML2_PASSWORD.left, SAML2_PASSWORD.right)
+        .put(SAML2_DSIG.left, SAML2_DSIG.right)
+        .put(SAML2_TLS_CERT.left, SAML2_TLS_CERT.right)
+        .put(SAML2_AC.left, SAML2_AC.right)
+        .unmodifiableMap();
 
     /**
      * Get a Marshaller which will define all known namespaces on Marshaled root elements.

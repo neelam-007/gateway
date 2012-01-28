@@ -45,7 +45,7 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
             oh.setHeader(name, value);
         } else {
             HttpRequestKnob hrk = message.getKnob(HttpRequestKnob.class);
-            if (hrk != null && hrk != oh && !oh.containsHeader(name)) {
+            if (hrk != null && !oh.containsHeader(name)) {
                 // If the message has an HttpRequestKnob, the presence of a header in the OutboundHeadersKnob
                 // will block any existing values.  We'll need to copy them over to preserve them, the first time we shadow them,
                 // if we are configured to not overwrite any existing values. (Bug #11365)

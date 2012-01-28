@@ -30,19 +30,19 @@ public class IdentityProviderPasswordPolicy extends PersistentEntityImp {
     private Map<String, Object> properties = new TreeMap<String, Object>();
     private long internalIdentityProviderOid;
 
-    public static String FORCE_PWD_CHANGE = "forcePasswordChangeNewUser";
-    public static String NO_REPEAT_CHARS = "noRepeatingCharacters";
-    public static String MIN_PASSWORD_LENGTH = "minPasswordLength";
-    public static String MAX_PASSWORD_LENGTH = "maxPasswordLength";
-    public static String UPPER_MIN = "upperMinimum";
-    public static String LOWER_MIN = "lowerMinimum";
-    public static String NUMBER_MIN = "numberMinimum";
-    public static String SYMBOL_MIN = "symbolMinimum";
-    public static String NON_NUMERIC_MIN = "nonNumericMinimum";
-    public static String CHARACTER_DIFF_MIN = "charDiffMinimum";
-    public static String REPEAT_FREQUENCY = "repeatFrequency";
-    public static String PASSWORD_EXPIRY = "passwordExpiry";
-    public static String ALLOWABLE_CHANGES = "allowableChangesPerDay";
+    public static final String FORCE_PWD_CHANGE = "forcePasswordChangeNewUser";
+    public static final String NO_REPEAT_CHARS = "noRepeatingCharacters";
+    public static final String MIN_PASSWORD_LENGTH = "minPasswordLength";
+    public static final String MAX_PASSWORD_LENGTH = "maxPasswordLength";
+    public static final String UPPER_MIN = "upperMinimum";
+    public static final String LOWER_MIN = "lowerMinimum";
+    public static final String NUMBER_MIN = "numberMinimum";
+    public static final String SYMBOL_MIN = "symbolMinimum";
+    public static final String NON_NUMERIC_MIN = "nonNumericMinimum";
+    public static final String CHARACTER_DIFF_MIN = "charDiffMinimum";
+    public static final String REPEAT_FREQUENCY = "repeatFrequency";
+    public static final String PASSWORD_EXPIRY = "passwordExpiry";
+    public static final String ALLOWABLE_CHANGES = "allowableChangesPerDay";
 
     public IdentityProviderPasswordPolicy() {
     }

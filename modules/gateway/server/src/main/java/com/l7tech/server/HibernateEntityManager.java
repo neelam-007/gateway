@@ -842,19 +842,16 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     protected void cacheRemove(PersistentEntity thing) {
-        Lock write = cacheLock.writeLock();
+        final Lock write = cacheLock.writeLock();
+        write.lock();
         try {
-            write.lock();
             cacheInfoByOid.remove(thing.getOid());
             if (thing instanceof NamedEntity) {
                 cacheInfoByName.remove(((NamedEntity)thing).getName());
             }
             removedFromCache(thing);
-            write.unlock();
-            write = null;
-
         } finally {
-            if (write != null) write.unlock();
+            write.unlock();
         }
     }
 

@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * Information for a log file
  */
-public class LogFileInfo implements Cloneable, Serializable {
+public class LogFileInfo implements Serializable {
     private final String name;
     private final long lastModified;
 
