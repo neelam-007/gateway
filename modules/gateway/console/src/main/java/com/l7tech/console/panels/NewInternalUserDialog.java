@@ -4,6 +4,7 @@ import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.identity.IdentityProviderLimits;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.action.GenericUserPropertiesAction;
@@ -142,7 +143,7 @@ public class NewInternalUserDialog extends JDialog {
 
         idTextField.
                 setDocument(
-                        new FilterDocument(128,
+                        new FilterDocument(IdentityProviderLimits.MAX_ID_LENGTH.getValue(),
                                 new FilterDocument.Filter() {
                                     public boolean accept(String str) {
                                         if (str == null) return false;
@@ -157,16 +158,15 @@ public class NewInternalUserDialog extends JDialog {
         passwordField.setFont(echoCharFont);
         passwordField.setEchoChar('\u2022');
 
-        passwordField.
-                setDocument(
-                        new FilterDocument(32,
-                                new FilterDocument.Filter() {
-                                    public boolean accept(String str) {
-                                        if (str == null) return false;
-                                        // password shares the same char set rules as id
-                                        return true;
-                                    }
-                                }));
+        passwordField.setDocument(
+                new FilterDocument(IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),
+                        new FilterDocument.Filter() {
+                            public boolean accept(String str) {
+                                if (str == null) return false;
+                                // password shares the same char set rules as id
+                                return true;
+                            }
+                        }));
 
         passwordField.getDocument().putProperty("name", "password");
         passwordField.getDocument().addDocumentListener(documentListener);
@@ -175,16 +175,15 @@ public class NewInternalUserDialog extends JDialog {
         passwordConfirmField.setFont(echoCharFont);
         passwordConfirmField.setEchoChar('\u2022');
 
-        passwordConfirmField.
-                setDocument(
-                        new FilterDocument(32,
-                                new FilterDocument.Filter() {
-                                    public boolean accept(String str) {
-                                        if (str == null) return false;
-                                        // password shares the same char set rules as id
-                                        return true;
-                                    }
-                                }));
+        passwordConfirmField.setDocument(
+                new FilterDocument(IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),
+                        new FilterDocument.Filter() {
+                            public boolean accept(String str) {
+                                if (str == null) return false;
+                                // password shares the same char set rules as id
+                                return true;
+                            }
+                        }));
         passwordConfirmField.getDocument().putProperty("name", "passwordConfirm");
         passwordConfirmField.getDocument().addDocumentListener(documentListener);
 

@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.console.tree.AdminFolderNode;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.identity.IdentityProviderLimits;
 
 import javax.swing.*;
 import java.awt.*;
@@ -241,7 +242,7 @@ public class NewAdminDialog extends JDialog {
 
         idTextField.
           setDocument(
-            new FilterDocument(24,
+            new FilterDocument(IdentityProviderLimits.MAX_ID_LENGTH.getValue(),
               new FilterDocument.Filter() {
                   public boolean accept(String str) {
                       if (str == null) return false;
@@ -270,7 +271,7 @@ public class NewAdminDialog extends JDialog {
 
         passwordField.
           setDocument(
-            new FilterDocument(32,
+            new FilterDocument(IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),
               new FilterDocument.Filter() {
                   public boolean accept(String str) {
                       if (str == null) return false;
@@ -301,7 +302,7 @@ public class NewAdminDialog extends JDialog {
         passwordConfirmField.setEchoChar('\u2022');
         passwordConfirmField.
           setDocument(
-            new FilterDocument(32,
+            new FilterDocument(IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),
               new FilterDocument.Filter() {
                   public boolean accept(String str) {
                       if (str == null) return false;

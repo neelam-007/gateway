@@ -2,7 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.action.ChangePasswordAction;
 import com.l7tech.gateway.common.admin.AdminLogin;
-import com.l7tech.identity.CredentialExpiredPasswordDetailsException;
+import com.l7tech.identity.*;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -16,9 +16,6 @@ import com.l7tech.console.security.*;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.TrustCertificateDialog;
 import com.l7tech.console.util.*;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.BadCredentialsException;
-import com.l7tech.identity.LoginRequireClientCertificateException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 
 import javax.security.auth.login.LoginException;
@@ -206,7 +203,7 @@ public class LogonDialog extends JDialog {
         // user name label
         userNameLabel = new JLabel();
         userNameLabel.setToolTipText(resources.getString("userNameTextField.tooltip"));
-        userNameTextField.setDocument(new FilterDocument(200,
+        userNameTextField.setDocument(new FilterDocument(IdentityProviderLimits.MAX_ID_LENGTH.getValue(),
                 new FilterDocument.Filter() {
                     @Override
                     public boolean accept(String str) {

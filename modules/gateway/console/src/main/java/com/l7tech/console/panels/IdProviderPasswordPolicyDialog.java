@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.identity.IdentityProviderLimits;
 import com.l7tech.identity.IdentityProviderPasswordPolicy;
 
 import javax.swing.*;
@@ -78,17 +79,17 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
         getRootPane().setDefaultButton(okButton);
 
         final InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
-        initSpinner(minPasswordLengthSpinner,getResourceString("minlength.label"),3,128,inputValidator);
-        initSpinner(maxPasswordLengthSpinner,getResourceString("maxlength.label"),3,128,inputValidator);
-        maxPasswordLengthSpinner.setValue(3);
+        initSpinner(minPasswordLengthSpinner,getResourceString("minlength.label"), IdentityProviderLimits.MIN_PASSWORD_LENGTH.getValue(), IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),inputValidator);
+        initSpinner(maxPasswordLengthSpinner,getResourceString("maxlength.label"), IdentityProviderLimits.MIN_PASSWORD_LENGTH.getValue(), IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),inputValidator);
+        maxPasswordLengthSpinner.setValue(IdentityProviderLimits.MIN_PASSWORD_LENGTH.getValue());
         initSpinner(repeatFrequencySpinner,getResourceString("repeatfrequency.label"),1,50,inputValidator);
         initSpinner(passwordExpirySpinner,getResourceString("password.expire.label"),1,365,inputValidator);
-        initSpinner(upperCaseSpinner,getResourceString("upperchars.label"),1,128,inputValidator);
-        initSpinner(lowerCaseSpinner,getResourceString("lowerchars.label"),1,128,inputValidator);
-        initSpinner(numberSpinner,getResourceString("numbers.label"),1,128,inputValidator);
-        initSpinner(symbolSpinner,getResourceString("symbol.label"),1,128,inputValidator);
-        initSpinner(nonNumericSpinner,getResourceString("nonnumeric.label"),1,128,inputValidator);
-        initSpinner(charDifferenceSpinner,getResourceString("characterdiff.label"),1,128,inputValidator);
+        initSpinner(upperCaseSpinner,getResourceString("upperchars.label"),1,IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),inputValidator);
+        initSpinner(lowerCaseSpinner,getResourceString("lowerchars.label"),1,IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),inputValidator);
+        initSpinner(numberSpinner,getResourceString("numbers.label"),1,IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),inputValidator);
+        initSpinner(symbolSpinner,getResourceString("symbol.label"),1,IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),inputValidator);
+        initSpinner(nonNumericSpinner,getResourceString("nonnumeric.label"),1,IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),inputValidator);
+        initSpinner(charDifferenceSpinner,getResourceString("characterdiff.label"),1,IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),inputValidator);
 
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override

@@ -232,7 +232,7 @@ public class NewGroupDialog extends JDialog {
 
         groupIdTextField.
                 setDocument(
-                        new FilterDocument(128,
+                        new FilterDocument(IdentityProviderLimits.MAX_GROUP_ID_LENGTH.getValue(),
                                 new FilterDocument.Filter() {
                                     @Override
                                     public boolean accept(String str) {

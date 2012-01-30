@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.identity.IdentityProviderLimits;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -94,7 +95,7 @@ public class NewVirtualGroupDialog extends JDialog {
 
         Utilities.setEscKeyStrokeDisposes(this);
 
-        groupNameTextField.setDocument(new FilterDocument(128,
+        groupNameTextField.setDocument(new FilterDocument(IdentityProviderLimits.MAX_GROUP_ID_LENGTH.getValue(),
                         new FilterDocument.Filter() {
                             @Override
                             public boolean accept(String str) {

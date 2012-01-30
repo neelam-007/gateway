@@ -4,6 +4,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.FilterDocument;
+import com.l7tech.identity.IdentityProviderLimits;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.action.FederatedUserPropertiesAction;
 import com.l7tech.console.action.UserPropertiesAction;
@@ -118,7 +119,7 @@ public class NewFederatedUserDialog extends JDialog {
         });
 
         userNameTextField.setToolTipText(resources.getString("idTextField.tooltip"));
-        userNameTextField.setDocument(new FilterDocument(128,
+        userNameTextField.setDocument(new FilterDocument(IdentityProviderLimits.MAX_ID_LENGTH.getValue(),
                         new FilterDocument.Filter() {
                             public boolean accept(String str) {
                                 return str != null;
@@ -140,7 +141,7 @@ public class NewFederatedUserDialog extends JDialog {
         });
 
         x509SubjectDNTextField.setToolTipText(resources.getString("x509SubjectDNTextField.tooltip"));
-        x509SubjectDNTextField.setDocument(new FilterDocument(255,
+        x509SubjectDNTextField.setDocument(new FilterDocument(IdentityProviderLimits.MAX_X509_SUBJECT_DN_LENGTH.getValue(),
                         new FilterDocument.Filter() {
                             public boolean accept(String str) {
                                 return str != null;
@@ -150,7 +151,7 @@ public class NewFederatedUserDialog extends JDialog {
         x509SubjectDNTextField.getDocument().addDocumentListener(documentListener);
 
         emailTextField.setToolTipText(resources.getString("emailTextField.tooltip"));
-        emailTextField.setDocument(new FilterDocument(128,
+        emailTextField.setDocument(new FilterDocument(IdentityProviderLimits.MAX_EMAIL_LENGTH.getValue(),
                         new FilterDocument.Filter() {
                             public boolean accept(String str) {
                                 return str != null;
