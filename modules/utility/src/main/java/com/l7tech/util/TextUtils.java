@@ -1,12 +1,17 @@
 package com.l7tech.util;
 
+import static com.l7tech.util.CollectionUtils.list;
+import static com.l7tech.util.CollectionUtils.toList;
 import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.grep;
+import static com.l7tech.util.Functions.map;
 import static com.l7tech.util.Functions.negate;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.Collection;
 import java.util.regex.Matcher;
@@ -21,6 +26,15 @@ public class TextUtils {
      * valid in a URI, so can safely be used to split them.
      */
     public final static Pattern URI_STRING_SPLIT_PATTERN = Pattern.compile("\\s+");
+
+    /**
+     * String split pattern for comma separated values.
+     *
+     * <p>Splits on a comma with optional preceding and trailing whitespace [ \t\n\x0B\f\r]</p>
+     *
+     * <p>Note that this allows multiple lines.</p>
+     */
+    public final static Pattern CSV_STRING_SPLIT_PATTERN = Pattern.compile("\\s*,\\s*");
 
     /**
      * Pad the specified string to the specified width by appending spaces.
@@ -644,6 +658,21 @@ public class TextUtils {
      */
     public static String trim( final String text ) {
         return text==null ? "" : text.trim();
+    }
+
+    /**
+     * Split a string into Non-Empty values using the given pattern.
+     *
+     * <P>Individual values will be trimmed and empty elements will be
+     * removed from the resulting list.</P>
+     *
+     * @param splitPattern The pattern to use (Required)
+     * @param text The text to split (May be null, but callers should not knowingly pass null)
+     * @return The immutable list of non-empty values
+     */
+    public static List<String> splitNE( final Pattern splitPattern,
+                                        final String text ) {
+        return toList( grep( map( list( splitPattern.split( text ) ), trim() ), isNotEmpty() ) );
     }
 
     /**

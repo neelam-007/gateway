@@ -3,36 +3,43 @@ package com.l7tech.util;
 import javax.xml.soap.SOAPConstants;
 import java.util.*;
 
+import static com.l7tech.util.CollectionUtils.join;
 import static com.l7tech.util.CollectionUtils.list;
+import static com.l7tech.util.CollectionUtils.toList;
+import static com.l7tech.util.TextUtils.URI_STRING_SPLIT_PATTERN;
+import static com.l7tech.util.TextUtils.splitNE;
 
 /**
- * @author steve
+ *
  */
 public class SoapConstants {
-    public static final List<String> ENVELOPE_URIS = list(
-        SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE,
-        SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE,
-        "http://www.w3.org/2001/06/soap-envelope",
-        "http://www.w3.org/2001/09/soap-envelope",
-        "urn:schemas-xmlsoap-org:soap.v1"
-    );
+    private static final String DEFAULT_SOAP_11_EXTRAS =
+            "http://www.w3.org/2001/06/soap-envelope " +
+            "http://www.w3.org/2001/09/soap-envelope " +
+            "urn:schemas-xmlsoap-org:soap.v1";
+    private static final String DEFAULT_WSS_10_EXTRAS =
+            "http://schemas.xmlsoap.org/ws/2002/12/secext " +
+            "http://schemas.xmlsoap.org/ws/2002/07/secext " +
+            "http://schemas.xmlsoap.org/ws/2002/xx/secext " +
+            "http://schemas.xmlsoap.org/ws/2003/06/secext";
+    private static final String DEFAULT_WSU_10_EXTRAS =
+            "http://schemas.xmlsoap.org/ws/2002/07/utility " +
+            "http://schemas.xmlsoap.org/ws/2003/06/utility";
+
+    private static final List<String> SOAP_11_ExtraNS = splitNE( URI_STRING_SPLIT_PATTERN, ConfigFactory.getProperty( "com.l7tech.util.soap11ExtraNs", DEFAULT_SOAP_11_EXTRAS ) );
+    private static final List<String> WSS_10_ExtraNS = splitNE( URI_STRING_SPLIT_PATTERN, ConfigFactory.getProperty( "com.l7tech.util.wss10ExtraNs", DEFAULT_WSS_10_EXTRAS ) );
+    private static final List<String> WSU_10_ExtraNS = splitNE( URI_STRING_SPLIT_PATTERN, ConfigFactory.getProperty( "com.l7tech.util.wsu10ExtraNs", DEFAULT_WSU_10_EXTRAS ) );
+
+    public static final List<String> ENVELOPE_URIS = toList( join( list( list(
+            SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE,
+            SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE
+    ), SOAP_11_ExtraNS ) ) );
 
     public static final String XMLNS = "xmlns";
     public static final String SECURITY_NAMESPACE_PREFIX = "wsse";// Namespace constants
     public static final String SECURITY_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
-    public static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/12/secext";
-    public static final String SECURITY_NAMESPACE3 = "http://schemas.xmlsoap.org/ws/2002/07/secext";
-    public static final String SECURITY_NAMESPACE4 = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
-    public static final String SECURITY_NAMESPACE5 = "http://schemas.xmlsoap.org/ws/2003/06/secext";
-    public static final String SECURITY11_NAMESPACE = "http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd";//public static final String OLD_SECURITY11_NAMESPACE = "http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-wssecurity-secext-1.1.xsd";
-    public static final List<String> WS_SECURITY_NAMESPACE_LIST = list(
-        SECURITY_NAMESPACE,
-        SECURITY_NAMESPACE2,
-        SECURITY_NAMESPACE3,
-        SECURITY_NAMESPACE4,
-        SECURITY_NAMESPACE5,
-        SECURITY11_NAMESPACE
-    );
+    public static final String SECURITY11_NAMESPACE = "http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd";
+    //public static final String OLD_SECURITY11_NAMESPACE = "http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-wssecurity-secext-1.1.xsd";
 
     public static final String WSSE_SECURITY_TOKEN_REFERENCE = "SecurityTokenReference";
     public static final String WSSE_REFERENCE = "Reference";
@@ -47,8 +54,6 @@ public class SoapConstants {
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
     public static final String DIGSIG11_URI = "http://www.w3.org/2009/xmldsig11#";
     public static final String WSU_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
-    public static final String WSU_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/07/utility";
-    public static final String WSU_NAMESPACE3 = "http://schemas.xmlsoap.org/ws/2003/06/utility";
     public static final String WSSC_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/04/sc";
     public static final String WSSC_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2005/02/sc";
     public static final String WSSC_NAMESPACE3 = "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512";
@@ -240,20 +245,14 @@ public class SoapConstants {
     // This is a URI actor/role value, sent by default by version 4.6 SSBs and SSGs.  See Bug #5829
     public static final String L7_SOAP_ACTOR_URI  = "http://www.layer7tech.com/ws/policy";
     public static final String L7_SOAP_ACTORS = L7_SOAP_ACTOR + " " + L7_SOAP_ACTOR_URI;
-    public static final List<String> SECURITY_URIS = list(
-        SECURITY_NAMESPACE,
-        SECURITY_NAMESPACE2,
-        SECURITY_NAMESPACE3,
-        SECURITY_NAMESPACE4,
-        SECURITY_NAMESPACE5
-    );
+    public static final List<String> SECURITY_URIS = toList( join( list( list(
+        SECURITY_NAMESPACE
+    ), WSS_10_ExtraNS ) ) );
     public static final String[] SECURITY_URIS_ARRAY = (String[]) SECURITY_URIS.toArray(new String[SECURITY_URIS.size()]);
     public static final String WSU_PREFIX = "wsu";
-    public static final List<String> WSU_URIS = list(
-            WSU_NAMESPACE,
-            WSU_NAMESPACE2,
-            WSU_NAMESPACE3
-    );
+    public static final List<String> WSU_URIS = toList( join( list( list(
+            WSU_NAMESPACE
+    ), WSU_10_ExtraNS ) ) );
     public static final String[] WSU_URIS_ARRAY = (String[]) WSU_URIS.toArray(new String[WSU_URIS.size()]);// Attribute names
     public static final String ID_ATTRIBUTE_NAME = "Id";
     public static final String ACTOR_ATTR_NAME = "actor";  // SOAP 1.1

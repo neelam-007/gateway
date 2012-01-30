@@ -124,7 +124,7 @@ public class RstSoapMessageProcessor {
         Collection<String> allNamespaces = DomUtils.findAllNamespaces(doc.getDocumentElement()).values();
 
         // Get the namespace of WS Security
-        for (String namespace: SoapConstants.WS_SECURITY_NAMESPACE_LIST) {
+        for (String namespace: SoapConstants.SECURITY_URIS) {
             if (allNamespaces.contains(namespace)) {
                 parameters.put(WSSE_NS, namespace);
                 break;

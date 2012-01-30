@@ -260,7 +260,7 @@ public class WssDecoratorTest {
                 } catch ( InvalidDocumentFormatException e ) {
                     throw ExceptionUtils.wrap( e );
                 }
-                final int bstCount = XmlUtil.findChildElementsByName( securityHeader, SoapConstants.WS_SECURITY_NAMESPACE_LIST.toArray(new String[SoapConstants.WS_SECURITY_NAMESPACE_LIST.size()]), "BinarySecurityToken" ).size();
+                final int bstCount = XmlUtil.findChildElementsByName( securityHeader, SoapConstants.SECURITY_URIS.toArray(new String[SoapConstants.SECURITY_URIS.size()]), "BinarySecurityToken" ).size();
                 final int derivedKeyCount = XmlUtil.findChildElementsByName( securityHeader, SoapConstants.WSSC_NAMESPACE_ARRAY, "DerivedKeyToken" ).size();
                 final int signatureCount = XmlUtil.findChildElementsByName( securityHeader, SoapConstants.DIGSIG_URI, "Signature" ).size();
 

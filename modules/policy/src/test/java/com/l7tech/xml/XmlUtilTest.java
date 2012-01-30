@@ -48,6 +48,8 @@ import static org.junit.Assert.*;
 public class XmlUtilTest {
     private static final Logger logger = Logger.getLogger(XmlUtilTest.class.getName());
     private static final String PI_XML = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<?xml-stylesheet href=\"foo\" type=\"text/xsl\"?>\n<foo/>";
+    public static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/12/secext";
+    public static final String SECURITY_NAMESPACE4 = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
 
     private static Document getTestDocument() throws Exception {
         return TestDocuments.getTestDocument( TestDocuments.PLACEORDER_WITH_MAJESTY );
@@ -183,8 +185,8 @@ public class XmlUtilTest {
         Element sec1 = (Element)children.get(0);
         Element sec2 = (Element)children.get(1);
         Element sec3 = (Element)children.get(2);
-        assertTrue(SoapUtil.SECURITY_NAMESPACE4.equals(sec1.getNamespaceURI()));
-        assertTrue(SoapUtil.SECURITY_NAMESPACE2.equals(sec2.getNamespaceURI()));
+        assertTrue(SECURITY_NAMESPACE4.equals(sec1.getNamespaceURI()));
+        assertTrue(SECURITY_NAMESPACE2.equals(sec2.getNamespaceURI()));
         assertTrue(SoapUtil.SECURITY_NAMESPACE.equals(sec3.getNamespaceURI()));
     }
 
@@ -205,7 +207,7 @@ public class XmlUtilTest {
         Element header = DomUtils.findFirstChildElement(env);
         Element sec1 = DomUtils.findFirstChildElement(header);
 
-        String prefix = DomUtils.findActivePrefixForNamespace(sec1, SoapUtil.SECURITY_NAMESPACE4);
+        String prefix = DomUtils.findActivePrefixForNamespace(sec1, SECURITY_NAMESPACE4);
         assertEquals(prefix, "sec1");
 
         prefix = DomUtils.findActivePrefixForNamespace(sec1, "http://schemas.xmlsoap.org/soap/envelope/");
@@ -214,7 +216,7 @@ public class XmlUtilTest {
         prefix = DomUtils.findActivePrefixForNamespace(sec1, "http://blah.bletch");
         assertNull(prefix);
 
-        prefix = DomUtils.findActivePrefixForNamespace(header, SoapUtil.SECURITY_NAMESPACE4);
+        prefix = DomUtils.findActivePrefixForNamespace(header, SECURITY_NAMESPACE4);
         assertNull(prefix);
 
     }
