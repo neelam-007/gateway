@@ -60,6 +60,10 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
             "com.safenetinc.luna.LunaCryptokiException",
             "com.safenetinc.luna.LunaException",
             "com.safenetinc.luna.LunaPartitionFullException",
+
+            // nCipher exceptions
+            "com.ncipher.provider.nCRuntimeException",
+            "com.ncipher.nfast.NFException",
     };
 
     @SuppressWarnings( { "deprecation" } )
