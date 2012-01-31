@@ -1,13 +1,10 @@
 package com.l7tech.external.assertions.mqnative.server;
 
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfig.PropertyRegistrationInfo;
-import static com.l7tech.server.ServerConfig.PropertyRegistrationInfo.prInfo;
 import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
-import static com.l7tech.util.CollectionUtils.list;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
@@ -17,13 +14,17 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
+import static com.l7tech.server.ServerConfig.PropertyRegistrationInfo.prInfo;
+import static com.l7tech.util.CollectionUtils.list;
+
 /**
  * Load logic that ensures the MQ Native transport module gets initialized.
  */
 public class MqNativeModuleLoadListener {
     private static final Logger logger = Logger.getLogger(MqNativeModuleLoadListener.class.getName());
 
-    // Manages all inbound native MQ listener processes
+    // Manages all inbound MQ Native listener processes
     private static MqNativeModule mqNativeListenerModule;
 
     /**

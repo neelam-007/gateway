@@ -307,7 +307,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
         meta.put( GLOBAL_ACTION_CLASSNAMES, new String[] { "com.l7tech.external.assertions.mqnative.console.MqNativeCustomAction" } );
         meta.put( PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.mqnative.console.MqNativeRoutingAssertionDialog" );
         meta.put( MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.mqnative.server.MqNativeModuleLoadListener" );
-        meta.put( PROPERTIES_ACTION_NAME, "Native MQ Routing Properties" );
+        meta.put( PROPERTIES_ACTION_NAME, "MQ Native Routing Properties" );
         meta.put( FEATURE_SET_NAME, "(fromClass)" );
 
         meta.put( WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder( CollectionUtils.<TypeMapping>list(

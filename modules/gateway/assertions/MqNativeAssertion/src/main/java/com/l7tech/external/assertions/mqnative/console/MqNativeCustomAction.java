@@ -29,12 +29,12 @@ public class MqNativeCustomAction extends SecureAction {
 
     @Override
     public String getName() {
-        return "Manage MQ Native Connections";
+        return "Manage MQ Native Queues";
     }
 
     @Override
     public String getDescription() {
-        return "Create, edit and remove configurations for MQ Native connections.";
+        return "Create, edit and remove configurations for MQ Native queues.";
     }
 
     @Override
