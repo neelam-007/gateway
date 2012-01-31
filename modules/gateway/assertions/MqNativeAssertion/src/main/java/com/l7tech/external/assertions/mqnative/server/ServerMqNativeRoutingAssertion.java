@@ -16,6 +16,7 @@ import com.l7tech.message.MimeKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.StashManagerFactory;
@@ -108,14 +109,16 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
-        final com.l7tech.message.Message requestMessage;
+        final com.l7tech.message.Message targetMessage;
+        final TargetMessageType targetMessageType;
         try {
-            requestMessage = context.getTargetMessage(assertion.getRequestTarget());
+            targetMessage = context.getTargetMessage(assertion.getRequestTarget());
+            targetMessageType = assertion.getRequestTarget().getTarget();
         } catch (NoSuchVariableException e) {
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
 
         }
-        if ( !isValidRequest(requestMessage, assertion.isPutToQueue()) ) {
+        if ( !isValidRequest(targetMessage, targetMessageType, assertion.isPutToQueue()) ) {
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -124,7 +127,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
         try {
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
-            handleProcessedSecurityHeader(requestMessage);
+            handleProcessedSecurityHeader(targetMessage);
 
             if (markedForUpdate()) {
                 try {
@@ -586,7 +589,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         }
     }
 
-    private boolean isValidRequest( final com.l7tech.message.Message message, boolean isPutToQueue ) throws IOException {
+    private boolean isValidRequest( final com.l7tech.message.Message message, final TargetMessageType targetMessageType, boolean isPutToQueue ) throws IOException {
         boolean valid = true;
 
         if (isPutToQueue) {
@@ -595,12 +598,11 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
             if (mk == null) {
                 // Uninitialized request
-                logAndAudit( EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route" );
+                logAndAudit( EXCEPTION_WARNING_WITH_MORE_INFO, targetMessageType.toString() + " is not initialized; nothing to route" );
                 return false;
             }
 
             if ( maxSize > 0 && mk.getContentLength() > maxSize ) {
-                //logAndAudit(MqNativeMessages.MQ_ROUTING_REQUEST_TOO_LARGE);
                 valid = false;
             }
         }

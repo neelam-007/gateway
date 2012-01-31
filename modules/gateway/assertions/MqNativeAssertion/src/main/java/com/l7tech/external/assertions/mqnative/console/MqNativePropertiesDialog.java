@@ -915,6 +915,7 @@ public class MqNativePropertiesDialog extends JDialog {
                         } else {
                             outboundMessageIdRadioButton.setSelected(true);
                         }
+                        break;
                     default:
                         logger.log( Level.WARNING, "Bad state - unknown MQ native replyType = " + replyType );
                         break;
