@@ -66,7 +66,6 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
     @Override
     public void setData(ComparisonAssertion assertion) {
         this.assertion = assertion;
-        updateModel();
     }
 
     @Override
@@ -98,12 +97,17 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
     private void init() {
         DataTypePredicate dtp = null;
         for (Predicate predicate : assertion.getPredicates()) {
-            if (predicate instanceof DataTypePredicate) {
-                if (dtp != null) throw new RuntimeException("Multiple DataTypePredicates found");
-                dtp = (DataTypePredicate) predicate;
-                continue;
+            try {
+                if (predicate instanceof DataTypePredicate) {
+                    if (dtp != null) throw new RuntimeException("Multiple DataTypePredicates found");
+                    dtp = (DataTypePredicate) predicate.clone();
+                    continue;
+                }
+
+                predicates.add((Predicate)predicate.clone()); //clone each predicate to preserve the original predicates from the assertion
+            } catch (CloneNotSupportedException e) {
+                throw new RuntimeException("Unable to clone " + predicate.toString(), e);
             }
-            predicates.add(predicate);
         }
 
         expressionField.setText(assertion.getExpression1());
@@ -216,10 +220,6 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         if (sel < 0 || sel > predicates.size()-1) return;
         Predicate pred = predicates.get(sel);
         edit(pred, sel);
-    }
-
-    public boolean isOk() {
-        return ok;
     }
 
     private void updateModel() {
