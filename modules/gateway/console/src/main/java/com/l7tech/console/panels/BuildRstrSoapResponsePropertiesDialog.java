@@ -193,6 +193,7 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         
         attachedRefCheckBox.setEnabled(enabled);
         unattachedRefCheckBox.setEnabled(enabled);
+        keySizeCheckBox.setEnabled(enabled);
 
         lifetimeCheckBox.setEnabled(enabled);
         lifetimeTextField.setEnabled(lifetimeCheckBox.isSelected() && enabled);
