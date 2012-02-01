@@ -48,12 +48,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_MESSAGE_MAX_BYTES_PROPERTY;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_RESPONSE_TIMEOUT_PROPERTY;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.*;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_IS_INBOUND;
@@ -298,14 +296,13 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             MQQueue targetQueue = null;
             MQQueue replyQueue = null;
             try {
-                MQMessage mqResponse = null;
+                MQMessage mqResponse;
                 final int readTimeout = getTimeout();
 
                 // route via write to queue
                 if (assertion.isPutToQueue()) {
                     // create the outbound queue
-                    final int accessQueueOptions = MQC.MQOO_OUTPUT | MQC.MQOO_FAIL_IF_QUIESCING;
-                    targetQueue = queueManager.accessQueue( cfg.getQueueName(), accessQueueOptions );
+                    targetQueue = queueManager.accessQueue( cfg.getQueueName(), QUEUE_OPEN_OPTIONS_OUTBOUND_PUT );
 
                     // create replyTo or temporary queue
                     if (context.isReplyExpected()) {
@@ -337,7 +334,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                     gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_NO_SYNCPOINT;
                     gmo.waitInterval = readTimeout;
 
-                    targetQueue = queueManager.accessQueue(cfg.getQueueName(), MQC.MQOO_INPUT_AS_Q_DEF);
+                    targetQueue = queueManager.accessQueue(cfg.getQueueName(), QUEUE_OPEN_OPTIONS_OUTBOUND_GET);
                     mqResponse = readMessageFromQueue(targetQueue, gmo);
                     if ( mqResponse == null ) {
                         logAndAudit(MQ_ROUTING_NO_RESPONSE, String.valueOf(readTimeout));
@@ -686,6 +683,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
      * @param endpointConfig the outbound MQ queue definition
      * @return the MQQueue instance that is opened for reply, null if a reply is not required
      * @throws MQException error access queue
+     * @throws MqNativeConfigException configuration error
      */
     private MQQueue createReplyQueue( final MQQueueManager queueManager,
                                       final MqNativeEndpointConfig endpointConfig ) throws MQException, MqNativeConfigException {
@@ -696,7 +694,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         final String replyQName = endpointConfig.getReplyToQueueName();
         if (endpointConfig.getReplyType() == REPLY_AUTOMATIC && modelQName != null && modelQName.length() > 0) {
             // access the model queue
-            replyQueue = queueManager.accessQueue(modelQName, MQC.MQOO_INPUT_AS_Q_DEF | MQC.MQOO_INQUIRE, null, modelQName + ".*", null);
+            replyQueue = queueManager.accessQueue(modelQName, QUEUE_OPEN_OPTIONS_OUTBOUND_REPLY_MODEL_QUEUE, null, modelQName + ".*", null);
             logger.log( Level.FINE, "Temp queue opened Name({2}) MQQDT({0}) MQQT({1})", new Object[]{ replyQueue.getDefinitionType(), replyQueue.getQueueType(), replyQueue.name } );
             if ( MQC.MQQDT_PREDEFINED == replyQueue.getDefinitionType() ) {
                 closeQuietly( replyQueue );
@@ -704,7 +702,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             }
         } else if (endpointConfig.getReplyType() == REPLY_SPECIFIED_QUEUE && replyQName != null && replyQName.length() > 0) {
             // access the specified replyTo queue
-            replyQueue = queueManager.accessQueue(replyQName, MQC.MQOO_INPUT_AS_Q_DEF);
+            replyQueue = queueManager.accessQueue(replyQName, QUEUE_OPEN_OPTIONS_OUTBOUND_REPLY_SPECIFIED_QUEUE);
         }
 
         return replyQueue;
@@ -765,11 +763,13 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             return config;
         }
 
-
         final SsgActiveConnector ssgActiveConnector;
         try {
             ssgActiveConnector = ssgActiveConnectorManager.findByPrimaryKey( assertion.getSsgActiveConnectorId() );
         } catch ( FindException e ) {
+            throw new MqNativeConfigException(
+                    "Error accessing MQ endpoint #" + assertion.getSsgActiveConnectorId(), e );
+        } catch ( NullPointerException e ) {
             throw new MqNativeConfigException(
                     "Error accessing MQ endpoint #" + assertion.getSsgActiveConnectorId(), e );
         }

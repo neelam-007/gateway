@@ -1,8 +1,10 @@
 package com.l7tech.external.assertions.mqnative;
 
-import static com.l7tech.util.CollectionUtils.list;
+import com.ibm.mq.MQC;
 
 import java.util.List;
+
+import static com.l7tech.util.CollectionUtils.list;
 
 /**
  * MQ Native constants
@@ -79,4 +81,12 @@ public interface MqNativeConstants {
             "<mqNativeRequest xmlns=\"\">" +
             "<payload base64=\"{1}\">{0}</payload>" +
             "</mqNativeRequest>";
+
+    // queue open options
+    int QUEUE_OPEN_OPTIONS_INBOUND = MQC.MQOO_INPUT_AS_Q_DEF | MQC.MQOO_BROWSE | MQC.MQOO_INQUIRE;
+    int QUEUE_OPEN_OPTIONS_INBOUND_REPLY_SPECIFIED_QUEUE = MQC.MQOO_OUTPUT;
+    int QUEUE_OPEN_OPTIONS_OUTBOUND_PUT = MQC.MQOO_OUTPUT | MQC.MQOO_FAIL_IF_QUIESCING;
+    int QUEUE_OPEN_OPTIONS_OUTBOUND_GET = MQC.MQOO_INPUT_AS_Q_DEF;
+    int QUEUE_OPEN_OPTIONS_OUTBOUND_REPLY_SPECIFIED_QUEUE = QUEUE_OPEN_OPTIONS_OUTBOUND_GET;
+    int QUEUE_OPEN_OPTIONS_OUTBOUND_REPLY_MODEL_QUEUE = MQC.MQOO_INPUT_AS_Q_DEF | MQC.MQOO_INQUIRE;
 }

@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.ON_COMPLETION;
 import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.values;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
@@ -322,7 +323,6 @@ public class MqNativePropertiesDialog extends JDialog {
         setContentPane(contentPane);
         setModal(true);
 
-        testButton.setVisible(false);
         outboundMessagePanel.setVisible(false);
 
         hostNameTextBox.setDocument(new MaxLengthDocument(255));
@@ -795,16 +795,14 @@ public class MqNativePropertiesDialog extends JDialog {
 
             // inbound options
             if (isInbound) {
-                final MqNativeAcknowledgementType acknowledgementType =
-                    mqNativeActiveConnector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, null, MqNativeAcknowledgementType.class );
-                if (acknowledgementType != null) {
-                    acknowledgementModeComboBox.setSelectedItem(acknowledgementType);
-                    if ( acknowledgementType == ON_COMPLETION ) {
-                        String failQueueName = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME);
-                        if (!StringUtils.isEmpty(failQueueName)) {
-                            useQueueForFailedCheckBox.setSelected(true);
-                            failureQueueNameTextField.setText(failQueueName);
-                        }
+                final MqNativeAcknowledgementType acknowledgementType = mqNativeActiveConnector.getEnumProperty(
+                        PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, AUTOMATIC, MqNativeAcknowledgementType.class );
+                acknowledgementModeComboBox.setSelectedItem(acknowledgementType);
+                if ( acknowledgementType == ON_COMPLETION ) {
+                    String failQueueName = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME);
+                    if (!StringUtils.isEmpty(failQueueName)) {
+                        useQueueForFailedCheckBox.setSelected(true);
+                        failureQueueNameTextField.setText(failQueueName);
                     }
                 }
 
@@ -940,26 +938,30 @@ public class MqNativePropertiesDialog extends JDialog {
      * @return true if form has enough info to construct a MQ native connection
      */
     private boolean validateForm() {
+        boolean isValid = true;
         final boolean isTemplate = viewIsTemplate();
-        if (mqConnectionName.getText().trim().length() == 0)
-            return false;
-        if (queueManagerNameTextBox.getText().trim().length() == 0)
-            return false;
-        if (!isTemplate && queueNameTextBox.getText().trim().length() == 0)
-            return false;
-        if (portNumberTextField.getText().trim().length() == 0 || !(isValidNumber(portNumberTextField.getText().trim())))
-            return false;
-        if (hostNameTextBox.getText().trim().length() == 0)
-            return false;
-        if (channelTextBox.getText().trim().length() == 0)
-            return false;
-        if (credentialsAreRequiredToCheckBox.isSelected() && (authUserNameTextBox.getText().trim().length()==0))
-            return false;
-        if (outboundRadioButton.isSelected() && !isOutboundPaneValid(isTemplate))
-            return false;
-        if (inboundRadioButton.isSelected() && !isInboundPaneValid())
-            return false;
-        return true;
+
+        if (mqConnectionName.getText().trim().length() == 0) {
+            isValid = false;
+        } else if (queueManagerNameTextBox.getText().trim().length() == 0) {
+            isValid =  false;
+        } if (!isTemplate && queueNameTextBox.getText().trim().length() == 0) {
+            isValid =  false;
+        } else if (portNumberTextField.getText().trim().length() == 0 || !(isValidNumber(portNumberTextField.getText().trim()))) {
+            isValid =  false;
+        } else if (hostNameTextBox.getText().trim().length() == 0) {
+            isValid =  false;
+        } else if (channelTextBox.getText().trim().length() == 0) {
+            isValid =  false;
+        } else if (credentialsAreRequiredToCheckBox.isSelected() && (authUserNameTextBox.getText().trim().length()==0)) {
+            isValid =  false;
+        } else if (outboundRadioButton.isSelected() && !isOutboundPaneValid(isTemplate)) {
+            isValid =  false;
+        } else if (inboundRadioButton.isSelected() && !isInboundPaneValid()) {
+            isValid = false;
+        }
+
+        return isValid;
     }
 
     private boolean isValidNumber(String num){
@@ -1085,30 +1087,19 @@ public class MqNativePropertiesDialog extends JDialog {
     }
 
     private void onTest() {
-//        try {
-//            final JmsConnection newConnection = makeMQConnectionFromView();
-//            if (newConnection == null)
-//                return;
-//
-//            final JmsEndpoint newEndpoint = makeMQEndpointFromView();
-//            if (newEndpoint == null)
-//                return;
-
-//            Registry.getDefault().getJmsManager().testEndpoint(newConnection, newEndpoint);
-//            JOptionPane.showMessageDialog(MqNativeConnectorPropertiesDialog.this,
-//              "The Gateway has verified the existence of this WebSphere MQ Queue.",
-//              "WebSphere MQ Connection Successful",
-//              JOptionPane.INFORMATION_MESSAGE);
-//        } catch (Exception ex) {
-//            String errorMsg = (ExceptionUtils.causedBy(ex, JmsNotSupportTopicException.class))?
-//                    ex.getMessage() : "The Gateway was unable to find this WebSphere MQ Queue.\n";
-//            JOptionPane.showMessageDialog(MqNativeConnectorPropertiesDialog.this,
-//              errorMsg,
-//              "WebSphere MQ Connection Settings",
-//              JOptionPane.ERROR_MESSAGE);
-//        }
+        try {
+            viewToModel(mqNativeActiveConnector);
+            getMqNativeAdmin().testSettings(mqNativeActiveConnector);
+            JOptionPane.showMessageDialog(MqNativePropertiesDialog.this,
+                    "The Gateway has successfully verified this MQ Native setting.",
+                    "MQ Native Test Successful",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }  catch (Exception e) {
+            JOptionPane.showMessageDialog(MqNativePropertiesDialog.this,
+                    "Unable to verify this MQ Native setting: " + ExceptionUtils.getMessage(e),
+                    "MQ Native Test Failed", JOptionPane.ERROR_MESSAGE);
+        }
     }
-
 
     private void viewToModel(final SsgActiveConnector connector) throws IOException {
         connector.setEnabled(enabledCheckBox.isSelected());

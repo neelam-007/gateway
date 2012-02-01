@@ -18,6 +18,8 @@ import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.QUEUE_OPEN_OPTIONS_INBOUND;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.QUEUE_OPEN_OPTIONS_INBOUND_REPLY_SPECIFIED_QUEUE;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static java.text.MessageFormat.format;
 
@@ -163,9 +165,9 @@ public abstract class MqNativeListener {
     }
 
     /**
-     *
-     * @throws MqNativeConfigException
-     * @return
+     * Build a client to make calls to the MQ server.
+     * @throws MqNativeConfigException if configuration settings don't work
+     * @return MqNativeClient
      */
     protected MqNativeClient buildMqNativeClient() throws MqNativeConfigException {
         MQQueueManager queueManager;
@@ -175,13 +177,12 @@ public abstract class MqNativeListener {
         try {
             queueManager = new MQQueueManager(getConnectorProperty( PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME ), buildQueueManagerConnectProperties());
 
-            final int openOps = MQC.MQOO_INPUT_AS_Q_DEF | MQC.MQOO_BROWSE | MQC.MQOO_INQUIRE; // TODO make these configurable
-            targetQueue = queueManager.accessQueue(getConnectorProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME), openOps);
+            targetQueue = queueManager.accessQueue(getConnectorProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME), QUEUE_OPEN_OPTIONS_INBOUND);
 
             MqNativeReplyType replyType = MqNativeReplyType.valueOf( getConnectorProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE) );
             String specifiedReplyQueueName = getConnectorProperty( PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME );
             if (MqNativeReplyType.REPLY_SPECIFIED_QUEUE == replyType && !StringUtils.isEmpty(specifiedReplyQueueName) ) {
-                 specifiedReplyQueue = queueManager.accessQueue(specifiedReplyQueueName, MQC.MQOO_OUTPUT);
+                 specifiedReplyQueue = queueManager.accessQueue(specifiedReplyQueueName, QUEUE_OPEN_OPTIONS_INBOUND_REPLY_SPECIFIED_QUEUE);
             }
         } catch (Exception e) {
             throw new MqNativeConfigException("Error while attempting to access QueueManager and Queue.", e);
