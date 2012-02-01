@@ -80,34 +80,42 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
      */
     @Override
     public LdapGroup findByPrimaryKey( final String dn ) throws FindException {
-        final LdapGroup[] groupHolder = new LdapGroup[1];
-
-        groupHolder[0] = getCachedGroupByDn(dn);
-        if ( groupHolder[0]==null ) {
-            final LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
-            try {
-                ldapTemplate.attributes( dn, new LdapUtils.LdapListener(){
-                    @Override
-                    void attributes( final String dn, final Attributes attributes ) throws NamingException {
-                        groupHolder[0] = buildGroup( dn, attributes );
-                        cacheGroup( groupHolder[0] );
+        final GroupCacheKey groupCacheKeyByDN = GroupCacheKey.buildDnKey(dn);
+        LdapGroup ldapGroup = getCachedGroup(groupCacheKeyByDN);
+        if ( ldapGroup==null ) {
+            synchronized ( groupCacheKeyByDN.getSync() ) {
+                // Recheck in case someone else looked up the info
+                ldapGroup = getCachedGroup(groupCacheKeyByDN);
+                if ( ldapGroup==null ) {
+                    final LdapGroup[] groupHolder = new LdapGroup[1];
+                    final LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
+                    try {
+                        ldapTemplate.attributes( dn, new LdapUtils.LdapListener(){
+                            @Override
+                            void attributes( final String dn, final Attributes attributes ) throws NamingException {
+                                groupHolder[0] = buildGroup( dn, attributes );
+                                cacheGroup( groupHolder[0] );
+                            }
+                        });
+                    } catch (NameNotFoundException nnfe) {
+                        if ( logger.isLoggable(Level.FINEST )) {
+                            logger.finest("Group " + dn + " does not exist in" + ldapIdentityProviderConfig.getName() + " (" + ExceptionUtils.getMessage(nnfe) + ")");
+                        }
+                    } catch (AuthenticationException ae) {
+                        logger.log(Level.WARNING, "LDAP authentication error, while building group: " + ae.getMessage(),
+                                ExceptionUtils.getDebugException(ae));
+                        throw new FindException("naming exception", ae);
+                    } catch (NamingException e) {
+                        logger.log(Level.WARNING, "LDAP error, while building group", e);
+                        throw new FindException("naming exception", e);
                     }
-                });
-            } catch (NameNotFoundException nnfe) {
-                if ( logger.isLoggable(Level.FINEST )) {
-                    logger.finest("Group " + dn + " does not exist in" + ldapIdentityProviderConfig.getName() + " (" + ExceptionUtils.getMessage(nnfe) + ")");
+
+                    ldapGroup = groupHolder[0];
                 }
-            } catch (AuthenticationException ae) {
-                logger.log(Level.WARNING, "LDAP authentication error, while building group: " + ae.getMessage(),
-                        ExceptionUtils.getDebugException(ae));
-                throw new FindException("naming exception", ae);
-            } catch (NamingException e) {
-                logger.log(Level.WARNING, "LDAP error, while building group", e);
-                throw new FindException("naming exception", e);
             }
         }
 
-        return groupHolder[0];
+        return ldapGroup;
     }
 
     @Override
@@ -122,42 +130,48 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
      */
     @Override
     public LdapGroup findByName( final String name ) throws FindException {
-        LdapGroup ldapGroup = getCachedGroupByCn(name);
+        final GroupCacheKey groupCacheKeyByCn = GroupCacheKey.buildCnKey(name);
+        LdapGroup ldapGroup = getCachedGroup(groupCacheKeyByCn);
+        if ( ldapGroup == null ) {
+            synchronized ( groupCacheKeyByCn.getSync() ) {
+                // Recheck in case someone else looked up the info
+                ldapGroup = getCachedGroup(groupCacheKeyByCn);
+                if ( ldapGroup == null ) {
+                    final LdapIdentityProvider identityProvider = getIdentityProvider();
+                    final String filter = identityProvider.groupSearchFilterWithParam( name );
+                    final LdapGroup[] groupHolder = new LdapGroup[1];
+                    try {
+                        ldapTemplate.search( filter, 2L, null, new LdapUtils.LdapListener(){
+                            @Override
+                            void searchResults( final NamingEnumeration<SearchResult> results ) throws NamingException {
+                                try {
+                                    if ( results.hasMore() ) {
+                                        SearchResult result = results.next();
+                                        groupHolder[0] = buildGroup( result.getNameInNamespace(), result.getAttributes() );
+                                        cacheGroup( groupHolder[0] );
+                                    }
 
-       if ( ldapGroup == null ) {
-            final LdapIdentityProvider identityProvider = getIdentityProvider();
-            final String filter = identityProvider.groupSearchFilterWithParam( name );
-            final LdapGroup[] groupHolder = new LdapGroup[1];
-            try {
-                ldapTemplate.search( filter, 2L, null, new LdapUtils.LdapListener(){
-                    @Override
-                    void searchResults( final NamingEnumeration<SearchResult> results ) throws NamingException {
-                        try {
-                            if ( results.hasMore() ) {
-                                SearchResult result = results.next();
-                                groupHolder[0] = buildGroup( result.getNameInNamespace(), result.getAttributes() );
-                                cacheGroup( groupHolder[0] );
+                                    if ( results.hasMore() ) {
+                                        logger.warning("search on group name returned more than one " +
+                                                "result. returning 1st one");
+                                    }
+                                } catch (PartialResultException e) {
+                                    LdapUtils.handlePartialResultException(e);
+                                }
                             }
-
-                            if ( results.hasMore() ) {
-                                logger.warning("search on group name returned more than one " +
-                                        "result. returning 1st one");
-                            }
-                        } catch (PartialResultException e) {
-                            LdapUtils.handlePartialResultException(e);
-                        }
+                        } );
+                    } catch (AuthenticationException ae) {
+                        logger.log(Level.WARNING, "LDAP authentication error, while building group: " + ae.getMessage(),
+                                ExceptionUtils.getDebugException(ae));
+                        throw new FindException("naming exception", ae);
+                    } catch (NamingException e) {
+                        logger.log(Level.WARNING, "LDAP error, while building group", e);
+                        throw new FindException("naming exception", e);
                     }
-                } );
-            } catch (AuthenticationException ae) {
-                logger.log(Level.WARNING, "LDAP authentication error, while building group: " + ae.getMessage(),
-                        ExceptionUtils.getDebugException(ae));
-                throw new FindException("naming exception", ae);
-            } catch (NamingException e) {
-                logger.log(Level.WARNING, "LDAP error, while building group", e);
-                throw new FindException("naming exception", e);
-            }
 
-            ldapGroup = groupHolder[0];
+                    ldapGroup = groupHolder[0];
+                }
+            }
         }
 
         return ldapGroup;
@@ -273,20 +287,25 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                     if ( groupNestingProcessNextDepth(depth) ) {
                         final List<LdapGroup> subgroups = new ArrayList<LdapGroup>();
                         if ( !getCachedSubgroups( group, subgroups ) ) {
-                            final String filter = identityProvider.groupSearchFilterWithParam("*");
-                            // use dn of group as base
-                            ldapTemplate.search( group.getDn(), filter, 0L, null, new LdapUtils.LdapListener(){
-                                @Override
-                                void attributes( final String dn, final Attributes attributes ) throws NamingException {
-                                    if ( !group.getDn().equals(dn) ) { // avoid recursion on this group
-                                        LdapGroup group = buildGroup(dn, attributes);
-                                        if ( group != null ) {
-                                            subgroups.add( group );
+                            synchronized( getSubGroupLookupSync( group ) ) {
+                                // Recheck in case someone else looked up the info
+                                if ( !getCachedSubgroups( group, subgroups ) ) {
+                                    final String filter = identityProvider.groupSearchFilterWithParam("*");
+                                    // use dn of group as base
+                                    ldapTemplate.search( group.getDn(), filter, 0L, null, new LdapUtils.LdapListener(){
+                                        @Override
+                                        void attributes( final String dn, final Attributes attributes ) throws NamingException {
+                                            if ( !group.getDn().equals(dn) ) { // avoid recursion on this group
+                                                LdapGroup group = buildGroup(dn, attributes);
+                                                if ( group != null ) {
+                                                    subgroups.add( group );
+                                                }
+                                            }
                                         }
-                                    }
+                                    });
+                                    cacheSubgroups( group, subgroups );
                                 }
-                            });
-                            cacheSubgroups( group, subgroups );
+                            }
                         }
 
                         // Process subgroups but skip any nested OU groups since if the user is a member
@@ -1130,14 +1149,6 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         return config;
     }
 
-    private LdapGroup getCachedGroupByDn( final String dn ) {
-        return getCachedGroup( GroupCacheKey.buildDnKey(dn) );
-    }
-
-    private LdapGroup getCachedGroupByCn( final String cn ) {
-        return getCachedGroup( GroupCacheKey.buildCnKey(cn) );
-    }
-
     private LdapGroup getCachedGroup( final GroupCacheKey key ) {
         LdapGroup ldapGroup = null;
 
@@ -1183,6 +1194,10 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                 entry.addNonGroups( nonGroupMembers );
             }
         }
+    }
+
+    private Object getSubGroupLookupSync( final LdapGroup group ) {
+        return (getClass().getName() + "-subgroups-for-" + group.getDn()).intern();
     }
 
     private boolean getCachedSubgroups( final LdapGroup group, final Collection<LdapGroup> subgroups ) {
@@ -1267,6 +1282,10 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
 
         private static GroupCacheKey buildCnKey( final String cn ) {
             return new GroupCacheKey( "cn", cn );    
+        }
+
+        private Object getSync() {
+            return (getClass().getName() + "-group-for-(" + left + "," + right + ")").intern();
         }
     }
 
