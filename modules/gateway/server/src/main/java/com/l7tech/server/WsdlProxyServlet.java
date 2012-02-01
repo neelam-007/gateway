@@ -89,6 +89,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private static final String PARAM_ANONYMOUS = "anon";
     private static final String NOOP_WSDL = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\"/>";
     private static final String PROPERTY_WSSP_ATTACH = "com.l7tech.server.wssp";
+    private static final String PROPERTY_CLEARTEXT = "wsdlProxy.allowInsecureHttpBasic";
     private static final String PROPERTY_WSDL_IMPORT_PROXY = "wsdlImportProxyEnabled";
 
     private FilterManager wsspFilterManager;
@@ -124,6 +125,11 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     @Override
+    protected boolean isCleartextAllowed() {
+        return config.getBooleanProperty( PROPERTY_CLEARTEXT, false );
+    }
+
+    @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         PublishedService ps;
         try {
@@ -140,8 +146,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
 
         // let's see if we can get credentials...
-        AuthenticationResult[] results;
-        try {
+        AuthenticationResult[] results = null;
+        if ( credentialsPermittedForTransport( req ) ) try { // Don't check for credentials over HTTP if we'll ignore them, see bug 11701
             if (ps != null) {
                 results = authenticateRequestBasic(req, ps);
             } else {
@@ -179,18 +185,22 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             return;
         }
 
-        // NOTE: sending credentials over insecure channel is treated as an anonymous request
+        // NOTE: By default sending credentials over insecure channel is treated as an anonymous request
         // (i dont care if you send me credentials in non secure manner, that is your problem
         // however, i will not send sensitive information unless the channel is secure)
-        if ( results != null && results.length > 0 && req.isSecure() ) {
+        if ( results != null && results.length > 0 && credentialsPermittedForTransport( req ) ) {
             doAuthenticated(req, res, ps, results);
         } else {
-            if ( req.isSecure() && req.getParameter(PARAM_ANONYMOUS)!=null && !Boolean.valueOf(req.getParameter(PARAM_ANONYMOUS)) ) {
+            if ( credentialsPermittedForTransport( req ) && req.getParameter(PARAM_ANONYMOUS)!=null && !Boolean.valueOf(req.getParameter(PARAM_ANONYMOUS)) ) {
                 doHttpBasicChallenge( res );
             } else {
                 doAnonymous(req, res, ps);
             }
         }
+    }
+
+    private boolean credentialsPermittedForTransport( final HttpServletRequest req ) {
+        return req.isSecure() || isCleartextAllowed();
     }
 
     class AmbiguousServiceException extends Exception {
@@ -339,7 +349,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             // Is there anything to show?
             Collection<PublishedService> services = listres.allowed();
             if (services.size() < 1) {
-                if ((results == null || results.length < 1) && listres.anyServices() && req.isSecure()) {
+                if ((results == null || results.length < 1) && listres.anyServices() && credentialsPermittedForTransport( req )) {
                     sendAuthChallenge(res);
                 } else {
                     //res.sendError(HttpServletResponse.SC_NOT_FOUND, "no services or not authorized");
@@ -565,7 +575,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     private void addSecurityPolicy(Document wsdl, PublishedService svc) {
-        if (!ConfigFactory.getBooleanProperty( PROPERTY_WSSP_ATTACH, true )) {
+        if (!config.getBooleanProperty( PROPERTY_WSSP_ATTACH, true )) {
             logger.fine("WS-SecurityPolicy decoration not enabled.");
             return;
         }
