@@ -216,6 +216,15 @@ public class XmlUtil extends DomUtils {
         return SAFE_URI_RESOLVER;
     }
 
+    /**
+     * Get a stateless, thread-safe ErrorHandler that throws a SAXException for errors.
+     *
+     * @return The ErrorHandler instance.
+     */
+    public static ErrorHandler getStrictErrorHandler() {
+        return STRICT_ERROR_HANDLER;
+    }
+
     private static DocumentBuilder getDocumentBuilder() {
         return documentBuilder.get();
     }

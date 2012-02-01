@@ -83,7 +83,7 @@ public class XMLValidationInterceptor extends AbstractPhaseInterceptor<Message> 
             reader.setFeature( "http://xml.org/sax/features/namespaces", true );
             reader.setFeature( XmlUtil.XERCES_DISALLOW_DOCTYPE, true );
             reader.setEntityResolver( XmlUtil.getSafeEntityResolver() );
-            reader.setErrorHandler( new SaxErrorHandler() );
+            reader.setErrorHandler( XmlUtil.getStrictErrorHandler() );
             reader.setContentHandler( new DefaultHandler2(){
                 @Override
                 public void startElement( final String uri, final String localName, final String qName, final Attributes attributes ) throws SAXException {
@@ -96,19 +96,4 @@ public class XMLValidationInterceptor extends AbstractPhaseInterceptor<Message> 
             in.reset();
         }
     }
-
-    private static final class SaxErrorHandler implements ErrorHandler {
-        @Override
-        public void warning( final SAXParseException exception ) throws SAXException {
-        }
-
-        @Override
-        public void error( final SAXParseException exception ) throws SAXException {
-            throw exception;
-        }
-
-        @Override
-        public void fatalError( final SAXParseException exception ) throws SAXException {
-            throw exception;
-        }
-    }}
+}

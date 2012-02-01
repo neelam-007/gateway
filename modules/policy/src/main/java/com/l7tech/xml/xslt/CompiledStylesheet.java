@@ -2,11 +2,17 @@ package com.l7tech.xml.xslt;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.XmlKnob;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.tarari.TarariCompiledStylesheet;
 import com.l7tech.xml.tarari.TarariMessageContext;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.LocatorImpl;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
@@ -21,6 +27,8 @@ import java.util.logging.Logger;
  */
 public class CompiledStylesheet {
     protected static final Logger logger = Logger.getLogger(CompiledStylesheet.class.getName());
+
+    private static final String SYSTEM_ID_MESSAGE = "http://layer7tech.com/message"; // Dummy system identifier used to identify errors parsing a message.
 
     private final TarariCompiledStylesheet tarariStylesheet;
     private final Templates softwareStylesheet;
@@ -100,11 +108,18 @@ public class CompiledStylesheet {
     }
 
     private void transformSax(TransformInput t, TransformOutput output, ErrorListener errorListener) throws SAXException, IOException, TransformerException {
-        final Source source = new SAXSource(t.getXmlKnob().getInputSource(true));
-        transformUsingSoftwareStylesheet(source, t, output, errorListener);
+        final InputSource input = t.getXmlKnob().getInputSource(true);
+        input.setSystemId( SYSTEM_ID_MESSAGE ); // used to identify parse errors in message
+        final XMLReader xmlReader = XMLReaderFactory.createXMLReader();
+        xmlReader.setFeature( "http://xml.org/sax/features/namespaces", true );
+        xmlReader.setFeature( XmlUtil.XERCES_DISALLOW_DOCTYPE, true );
+        xmlReader.setEntityResolver( XmlUtil.getSafeEntityResolver() );
+        xmlReader.setErrorHandler( XmlUtil.getStrictErrorHandler() );
+        final Source source = new SAXSource( xmlReader, input );
+        transformUsingSoftwareStylesheet( source, t, output, errorListener );
     }
 
-    private void transformUsingSoftwareStylesheet(Source source, TransformInput t, TransformOutput output, ErrorListener errorListener) throws TransformerException, IOException {
+    private void transformUsingSoftwareStylesheet(Source source, TransformInput t, TransformOutput output, ErrorListener errorListener) throws SAXException, TransformerException, IOException {
         final PoolByteArrayOutputStream os = new PoolByteArrayOutputStream(4096);
         final StreamResult sr = new StreamResult(os);
 
@@ -119,6 +134,18 @@ public class CompiledStylesheet {
             transformer.transform(source, sr);
             output.setBytes(os.toByteArray());
             logger.finest("software xsl transformation completed");
+        } catch ( TransformerException e ) {
+            final SourceLocator locator = e.getLocator();
+            if ( e.getCause() == null && locator != null && SYSTEM_ID_MESSAGE.equals( locator.getSystemId() ) ) {
+                // translate to a parse error for consistency
+                final LocatorImpl saxLocator = new LocatorImpl();
+                saxLocator.setColumnNumber( locator.getColumnNumber() );
+                saxLocator.setLineNumber( locator.getLineNumber() );
+                saxLocator.setPublicId( locator.getPublicId() );
+                saxLocator.setSystemId( locator.getSystemId() );
+                throw new SAXParseException( ExceptionUtils.getMessage(e), saxLocator, e );
+            }
+            throw e;
         } finally {
             os.close();
         }
