@@ -8,6 +8,7 @@ import com.l7tech.external.assertions.mqnative.MqNativeDynamicProperties;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
 import com.l7tech.external.assertions.mqnative.server.MqNativeResourceManager.MqTaskCallback;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.Message;
@@ -116,7 +117,8 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
 
         }
-        if ( !isValidRequest(targetMessage, targetMessageType, assertion.isPutToQueue()) ) {
+        if ( assertion.isPutToQueue() && !isValidRequest(targetMessage, targetMessageType) ) {
+            logAndAudit(AssertionMessages.MQ_ROUTING_REQUEST_TOO_LARGE);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -586,22 +588,19 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         }
     }
 
-    private boolean isValidRequest( final com.l7tech.message.Message message, final TargetMessageType targetMessageType, boolean isPutToQueue ) throws IOException {
+    private boolean isValidRequest( final com.l7tech.message.Message message, final TargetMessageType targetMessageType ) throws IOException {
         boolean valid = true;
+        long maxSize = config.getLongProperty( MQ_MESSAGE_MAX_BYTES_PROPERTY, getMaxBytes() );
+        final MimeKnob mk = message.getKnob(MimeKnob.class);
 
-        if (isPutToQueue) {
-            long maxSize = config.getLongProperty( MQ_MESSAGE_MAX_BYTES_PROPERTY, getMaxBytes() );
-            final MimeKnob mk = message.getKnob(MimeKnob.class);
+        if (mk == null) {
+            // Uninitialized request
+            logAndAudit( EXCEPTION_WARNING_WITH_MORE_INFO, targetMessageType.toString() + " is not initialized; nothing to route" );
+            return false;
+        }
 
-            if (mk == null) {
-                // Uninitialized request
-                logAndAudit( EXCEPTION_WARNING_WITH_MORE_INFO, targetMessageType.toString() + " is not initialized; nothing to route" );
-                return false;
-            }
-
-            if ( maxSize > 0 && mk.getContentLength() > maxSize ) {
-                valid = false;
-            }
+        if ( maxSize > 0 && mk.getContentLength() > maxSize ) {
+            valid = false;
         }
 
         return valid;
