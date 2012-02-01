@@ -8,6 +8,7 @@ import com.l7tech.security.token.SecurityToken;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.ConfigFactory;
 import com.whirlycott.cache.Cache;
+import org.jetbrains.annotations.Nullable;
 
 import java.security.cert.X509Certificate;
 import java.util.Collections;
@@ -158,14 +159,12 @@ public final class AuthenticationResult {
     }
 
     public void setCachedGroupMembership(Group group, boolean isMember) {
-        if (groupCache == null) return; // fail fast if caching disabled
         groupCache.put(
                 new CacheKey( user.getProviderId(), user.getId(), group.getProviderId(), group.getId() ),
                 System.currentTimeMillis() * (isMember ? 1L : -1L) );
     }
 
     public Boolean getCachedGroupMembership(Group group) {
-        if (groupCache == null) return null; // fail fast if caching disabled
         Long when = groupCache.get(
                 new CacheKey(user.getProviderId(), user.getId(),
                              group.getProviderId(), group.getId()));
@@ -282,6 +281,7 @@ public final class AuthenticationResult {
         private static final GroupCache CACHE = new GroupCache() {
             private final int cacheSize =
                     ConfigFactory.getIntProperty( ServerConfigParams.PARAM_AUTH_CACHE_GROUP_MEMB_CACHE_SIZE, 1000 );
+            @Nullable
             private final Cache membershipCache = cacheSize < 1
                                                ? null
                                                : WhirlycacheFactory.createCache("groupMemberships",
@@ -291,14 +291,18 @@ public final class AuthenticationResult {
 
             @Override
             public void put( final CacheKey key, final Long value ) {
-                if ( key.isValid() ) {
+                if ( membershipCache != null && key.isValid() ) {
                     membershipCache.store( key, value );
                 }
             }
 
             @Override
             public Long get( final CacheKey key ) {
-                return (Long) membershipCache.retrieve( key );
+                Long expiryAndFlag = null;
+                if ( membershipCache != null ) {
+                    expiryAndFlag = (Long) membershipCache.retrieve( key );
+                }
+                return expiryAndFlag;
             }
         };
     }
@@ -319,13 +323,13 @@ public final class AuthenticationResult {
         public void put( final CacheKey key, final Long value ) {
             // Ok to store invalid keys since this cache is scoped to a single AuthenticationResult
             consistentCache.put( key, value );
-            if ( cache != null ) cache.put( key, value );
+            cache.put( key, value );
         }
 
         @Override
         public Long get( final CacheKey key ) {
             Long value = consistentCache.get( key );
-            if ( value == null && cache != null ) {
+            if ( value == null ) {
                 value = cache.get( key );
                 if ( value != null ) {
                     consistentCache.put( key, value );
