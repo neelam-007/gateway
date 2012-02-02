@@ -106,6 +106,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
     private void initTargetMessage() {
         this.setTarget(TargetMessageType.OTHER);
         this.setOtherTargetMessageVariable("samlpRequest.message");
+        this.setSourceUsedByGateway(false);
     }
 
     @Override
@@ -333,7 +334,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        final VariablesUsed variablesUsed = super.doGetVariablesUsed(false).withExpressions(
+        final VariablesUsed variablesUsed = super.doGetVariablesUsed().withExpressions(
                 nameIdentifierFormat,
                 nameIdentifierValue,
                 subjectConfirmationMethodUri,

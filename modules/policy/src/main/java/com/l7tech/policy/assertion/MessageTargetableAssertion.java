@@ -97,19 +97,8 @@ public abstract class MessageTargetableAssertion extends Assertion implements Me
         targetSupport.setSourceUsedByGateway( sourceUsedByGateway );
     }
 
-    protected VariablesUsed doGetVariablesUsed(boolean includeOtherVariable) {
-        final VariablesUsed variablesUsed;
-        if (includeOtherVariable) {
-            variablesUsed = new VariablesUsed(targetSupport.getMessageTargetVariablesUsed().asArray());
-        } else {
-            variablesUsed = new VariablesUsed();
-        }
-
-        return variablesUsed;
-    }
-
     protected VariablesUsed doGetVariablesUsed() {
-        return doGetVariablesUsed(true);
+        return new VariablesUsed( targetSupport.getMessageTargetVariablesUsed().asArray() );
     }
 
     protected VariablesSet doGetVariablesSet() {
@@ -117,9 +106,6 @@ public abstract class MessageTargetableAssertion extends Assertion implements Me
     }
 
     protected static final class VariablesUsed extends VariablesUsedSupport<VariablesUsed> {
-        private VariablesUsed(){
-        }
-
         private VariablesUsed( final String[] initialVariables ) {
             super( initialVariables );
         }
