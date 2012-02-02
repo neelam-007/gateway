@@ -6,6 +6,7 @@ package com.l7tech.external.assertions.samlpassertion.console;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
 import com.l7tech.external.assertions.samlpassertion.SamlpAuthorizationStatement;
+import com.l7tech.external.assertions.samlpassertion.SamlpRequestBuilderAssertion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
@@ -134,6 +135,9 @@ public class SelectSamlpQueryWizardStepPanel extends SamlpWizardStepPanel {
             }
         } else {
             assertion.setAuthorizationStatement(null);
+            if (assertion instanceof SamlpRequestBuilderAssertion) {
+                SamlpRequestBuilderAssertion.class.cast(assertion).removeAuthorizationOnlyProperties();
+            }
         }
         if (attributeStatementRadioButton.isSelected()) {
             SamlAttributeStatement atts = assertion.getAttributeStatement();

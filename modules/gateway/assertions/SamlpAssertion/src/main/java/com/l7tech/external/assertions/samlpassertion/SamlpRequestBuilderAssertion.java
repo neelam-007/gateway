@@ -214,6 +214,14 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
         this.evidenceVariable = evidenceVariable;
     }
 
+    /**
+     * Clear properties only related to an authorization decision request.
+     */
+    public void removeAuthorizationOnlyProperties() {
+        evidence = null;
+        evidenceVariable = null;
+    }
+
     @Override
     public NameIdentifierInclusionType getNameIdentifierType() {
         return nameIdentifierType;
