@@ -581,8 +581,9 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         final String customFormat = assertion.getCustomNameIdentifierFormat();
         if (customFormat != null) {
             final String customFormatResolved = ExpandVariables.process(customFormat, bContext.ctxVariables, getAudit());
-            if (!ValidationUtils.isValidUri(customFormatResolved)) {
-                logAndAudit(AssertionMessages.SAMLP_REQUEST_BUILDER_INVALID_URI, "custom name identifier format", customFormatResolved);
+            final String errorString = ValidationUtils.isValidUriString(customFormatResolved);
+            if (errorString != null) {
+                logAndAudit(AssertionMessages.SAMLP_REQUEST_BUILDER_INVALID_URI, "custom name identifier format", customFormatResolved, errorString);
                 throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
             } else {
                 customFormatValue = customFormatResolved;

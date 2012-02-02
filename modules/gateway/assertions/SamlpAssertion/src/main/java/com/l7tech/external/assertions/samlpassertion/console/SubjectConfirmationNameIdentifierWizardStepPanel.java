@@ -322,11 +322,23 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
             public void textEntryPaused(JTextComponent component, long msecs) {
                 if (component instanceof SquigglyTextField) {
                     final SquigglyTextField sqigglyField = (SquigglyTextField) component;
-                    SquigglyFieldUtils.validateSquigglyFieldForUris(sqigglyField);
+                    SquigglyFieldUtils.validateSquigglyFieldForUris(sqigglyField, false);
+                    validateCustomFormatTextFieldNotEmpty();
                     notifyListeners();
                 }
             }
         }, 300);
+    }
+
+    private boolean validateCustomFormatTextFieldNotEmpty() {
+        boolean isValid = true;
+        final String customText = customFormatTextField.getText();
+        if (customText.isEmpty()) {
+            customFormatTextField.setSquiggly();
+            customFormatTextField.setModelessFeedback("A URI must be supplied");
+            isValid =false;
+        }
+        return isValid;
     }
 
     private void enableDisable() {
@@ -380,8 +392,13 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
         if (!includeNameCheckBox.isSelected()) return true;
 
         if (customIdentifierButton.isSelected()) {
-            final String errorString = SquigglyFieldUtils.validateSquigglyFieldForUris(customFormatTextField);
+            final String errorString = SquigglyFieldUtils.validateSquigglyFieldForUris(customFormatTextField, false);
             if (errorString != null) {
+                return false;
+            }
+
+            final boolean isValid = validateCustomFormatTextFieldNotEmpty();
+            if (!isValid) {
                 return false;
             }
         }

@@ -248,7 +248,7 @@ public class ServerSamlpRequestBuilderAssertionTest {
             System.out.println(s);
         }
 
-        Assert.assertTrue("Required audit not found", testAudit.isAuditPresentContaining("Invalid URI value found for custom name identifier format: 'customformat%'."));
+        Assert.assertTrue("Required audit not found", testAudit.isAuditPresentContaining("Invalid URI value found for custom name identifier format. Resolved value: 'customformat%'. Reason: '"));
     }
 
     /**

@@ -1076,7 +1076,7 @@ public class AssertionMessages extends Messages {
     public static final Messages.M CERT_LOOKUP_MULTIPLE = m(9552, Level.WARNING, "Multiple certificates found for name ''{0}''." );
     public static final Messages.M CERT_LOOKUP_ERROR = m(9553, Level.WARNING, "Error looking up certificate ''{0}''." );
 
-    public static final M SAMLP_REQUEST_BUILDER_INVALID_URI = m(9580, Level.WARNING, "Invalid URI value found for {0}: ''{1}''." );
+    public static final M SAMLP_REQUEST_BUILDER_INVALID_URI = m(9580, Level.WARNING, "Invalid URI value found for {0}. Resolved value: ''{1}''. Reason: ''{2}''." );
     public static final M SAMLP_REQUEST_BUILDER_FAILED_TO_BUILD = m(9581, Level.WARNING, "Failed to build SAML Protocol Request: {0}" );
 
     public static final Messages.M MQ_ROUTING_REQUEST_ROUTED                = m(9610, Level.FINER, "Routing request to protected service");
