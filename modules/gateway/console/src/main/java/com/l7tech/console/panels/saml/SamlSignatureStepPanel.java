@@ -1,7 +1,7 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.SamlIssuerConfiguration;
+import com.l7tech.policy.assertion.SamlElementGenericConfig;
 
 import javax.swing.*;
 import java.awt.*;
@@ -54,20 +54,20 @@ public class SamlSignatureStepPanel extends WizardStepPanel {
      */
     @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
-        SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
+        SamlElementGenericConfig issuerConfiguration = (SamlElementGenericConfig) settings;
         signAssertionCheckBox.setSelected(issuerConfiguration.isSignAssertion());
 
-        EnumSet<SamlIssuerConfiguration.DecorationType> dts = issuerConfiguration.getDecorationTypes();
+        EnumSet<SamlElementGenericConfig.DecorationType> dts = issuerConfiguration.getDecorationTypes();
         if (dts == null || dts.isEmpty()) return;
 
-        decorateAddAssertionCheckBox.setSelected(dts.contains(SamlIssuerConfiguration.DecorationType.ADD_ASSERTION));
-        if (dts.contains(SamlIssuerConfiguration.DecorationType.RESPONSE)) {
+        decorateAddAssertionCheckBox.setSelected(dts.contains(SamlElementGenericConfig.DecorationType.ADD_ASSERTION));
+        if (dts.contains(SamlElementGenericConfig.DecorationType.RESPONSE)) {
             decorateRequestOrResponseCombo.setSelectedItem("Response");
         } else {
             decorateRequestOrResponseCombo.setSelectedItem("Request");
         }
-        decorateSignatureIncludeAssertionCheckBox.setSelected(dts.contains(SamlIssuerConfiguration.DecorationType.SIGN_ASSERTION));
-        decorateSignatureIncludeBodyCheckBox.setSelected(dts.contains(SamlIssuerConfiguration.DecorationType.SIGN_BODY));
+        decorateSignatureIncludeAssertionCheckBox.setSelected(dts.contains(SamlElementGenericConfig.DecorationType.SIGN_ASSERTION));
+        decorateSignatureIncludeBodyCheckBox.setSelected(dts.contains(SamlElementGenericConfig.DecorationType.SIGN_BODY));
         enableDisable();
     }
 
@@ -86,21 +86,21 @@ public class SamlSignatureStepPanel extends WizardStepPanel {
      */
     @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
+        SamlElementGenericConfig issuerConfiguration = (SamlElementGenericConfig) settings;
         issuerConfiguration.setSignAssertion(signAssertionCheckBox.isSelected());
         if (decorateAddAssertionCheckBox.isSelected()) {
-            Set<SamlIssuerConfiguration.DecorationType> tempDts = new HashSet<SamlIssuerConfiguration.DecorationType>();
-            tempDts.add(SamlIssuerConfiguration.DecorationType.ADD_ASSERTION);
+            Set<SamlElementGenericConfig.DecorationType> tempDts = new HashSet<SamlElementGenericConfig.DecorationType>();
+            tempDts.add(SamlElementGenericConfig.DecorationType.ADD_ASSERTION);
             if (decorateRequestOrResponseCombo.getSelectedItem() == "Response") {
-                tempDts.add(SamlIssuerConfiguration.DecorationType.RESPONSE);
+                tempDts.add(SamlElementGenericConfig.DecorationType.RESPONSE);
             } else {
-                tempDts.add(SamlIssuerConfiguration.DecorationType.REQUEST);
+                tempDts.add(SamlElementGenericConfig.DecorationType.REQUEST);
             }
-            if (decorateSignatureIncludeBodyCheckBox.isSelected()) tempDts.add(SamlIssuerConfiguration.DecorationType.SIGN_BODY);
-            if (decorateSignatureIncludeAssertionCheckBox.isSelected()) tempDts.add(SamlIssuerConfiguration.DecorationType.SIGN_ASSERTION);
+            if (decorateSignatureIncludeBodyCheckBox.isSelected()) tempDts.add(SamlElementGenericConfig.DecorationType.SIGN_BODY);
+            if (decorateSignatureIncludeAssertionCheckBox.isSelected()) tempDts.add(SamlElementGenericConfig.DecorationType.SIGN_ASSERTION);
             issuerConfiguration.setDecorationTypes(EnumSet.copyOf(tempDts));
         } else {
-            issuerConfiguration.setDecorationTypes(EnumSet.noneOf(SamlIssuerConfiguration.DecorationType.class));
+            issuerConfiguration.setDecorationTypes(EnumSet.noneOf(SamlElementGenericConfig.DecorationType.class));
         }
     }
 

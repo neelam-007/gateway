@@ -65,6 +65,7 @@ import java.util.List;
  *
  * @author darmstrong
  */
+@SuppressWarnings({"JavaDoc"})
 public class ServerSamlpResponseBuilderAssertionTest {
 
     private Unmarshaller v1Unmarshaller;
@@ -91,7 +92,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
         assertion.setStatusMessage("Status Message is ok");
 
         final PolicyEnforcementContext context = getContext();
@@ -218,7 +219,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
         final PolicyEnforcementContext context = getContext();
         SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
-        assertion.setSamlVersion(SamlVersion.SAML1_1);
+        assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
         assertion.setValidateWebSsoRules(validateWebSsoRules);
 
         assertion.setResponseAssertions("${samlToken}");
@@ -263,7 +264,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
         assertion.setValidateWebSsoRules(validateWebSsoRules);
 
         //If Success an Assertion must be supplied
@@ -271,14 +272,14 @@ public class ServerSamlpResponseBuilderAssertionTest {
         Assert.assertTrue("Status is success so a SAML token is required.", correctExceptionThrown);
 
         //If not success, then no assertions are allowed
-        assertion.setSamlStatus(SamlStatus.SAML2_AUTHN_FAILED);
+        assertion.setSamlStatusText(SamlStatus.SAML2_AUTHN_FAILED.getValue());
         assertion.setResponseAssertions("${samlToken}");
         context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_2_0)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("Status is not success so no SAML token can be configured.", correctExceptionThrown);
 
         //Issuer required if response is signed
-        assertion.setSamlStatus(SamlStatus.SAML2_SUCCESS);
+        assertion.setSamlStatusText(SamlStatus.SAML2_SUCCESS.getValue());
         assertion.setSignResponse(true);
 
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
@@ -367,11 +368,11 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
         assertion.setSignResponse(true);
-        assertion.setAddIssuer(true);
+        assertion.includeIssuer(true);
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
         assertion.setResponseAssertions("${samlToken}");
 
@@ -431,11 +432,11 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
         assertion.setSignResponse(true);
-        assertion.setAddIssuer(true);
+        assertion.includeIssuer(true);
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
         assertion.setResponseAssertions("${samlToken[1]} ${attributeToken}");
 
@@ -479,10 +480,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
-        assertion.setAddIssuer(true);
-        assertion.setSamlStatus(SamlStatus.SAML2_SUCCESS);
+        assertion.includeIssuer(true);
+        assertion.setSamlStatusText(SamlStatus.SAML2_SUCCESS.getValue());
         final String statusMessage = "Status Message";
         assertion.setStatusMessage(statusMessage);
         final String statusDetail = "statusDetail";
@@ -607,10 +608,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
-        assertion.setAddIssuer(false);
-        assertion.setSamlStatus(SamlStatus.SAML2_SUCCESS);
+        assertion.includeIssuer(false);
+        assertion.setSamlStatusText(SamlStatus.SAML2_SUCCESS.getValue());
         final String encryptedToken = "encryptedAssertion";
         assertion.setEncryptedAssertions("${"+encryptedToken+"}");
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
@@ -639,10 +640,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
-        assertion.setAddIssuer(true);
-        assertion.setSamlStatus(SamlStatus.SAML2_SUCCESS);
+        assertion.includeIssuer(true);
+        assertion.setSamlStatusText(SamlStatus.SAML2_SUCCESS.getValue());
         final String encryptedToken = "encryptedAssertion";
         assertion.setEncryptedAssertions("${"+encryptedToken+"}");
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
@@ -692,8 +693,8 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
-        assertion.setSamlStatus(SamlStatus.SAML2_AUTHN_FAILED);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
+        assertion.setSamlStatusText(SamlStatus.SAML2_AUTHN_FAILED.getValue());
 
         String extensions = "extensions";
         assertion.setResponseExtensions("${" + extensions + "}");
@@ -736,10 +737,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
-        assertion.setAddIssuer(false);
-        assertion.setSamlStatus(SamlStatus.SAML2_AUTHN_FAILED);
+        assertion.includeIssuer(false);
+        assertion.setSamlStatusText(SamlStatus.SAML2_AUTHN_FAILED.getValue());
         final String statusMessage = "Status Message";
         assertion.setStatusMessage(statusMessage);
         final String statusDetail = "statusDetail";
@@ -830,10 +831,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
-        assertion.setAddIssuer(true);
-        assertion.setSamlStatus(SamlStatus.SAML2_AUTHN_FAILED);
+        assertion.includeIssuer(true);
+        assertion.setSamlStatusText(SamlStatus.SAML2_AUTHN_FAILED.getValue());
 
         final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
         assertion.setResponseId(responseId);
@@ -884,13 +885,13 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "${outputVar}";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
-        assertion.setAddIssuer(true);
+        assertion.includeIssuer(true);
         final String issuerVar = "issuerVar";
-        assertion.setCustomIssuer("${" + issuerVar + "}");
+        assertion.setCustomIssuerValue("${" + issuerVar + "}");
 
-        assertion.setSamlStatus(SamlStatus.SAML2_AUTHN_FAILED);
+        assertion.setSamlStatusText(SamlStatus.SAML2_AUTHN_FAILED.getValue());
 
         final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
         assertion.setResponseId(responseId);
@@ -922,6 +923,65 @@ public class ServerSamlpResponseBuilderAssertionTest {
     }
 
     /**
+     * Validate the Format attribute is supported. Also validates the Qualifier.
+     */
+    @Test
+    @BugNumber(11079)
+    public void testSaml2_0_IssuerFormatAttribute() throws Exception {
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSignResponse(true);
+        assertion.setTarget(TargetMessageType.OTHER);
+        final String outputVar = "${outputVar}";
+        assertion.setOtherTargetMessageVariable(outputVar);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
+        assertion.setValidateWebSsoRules(false);
+
+        assertion.includeIssuer(true);
+        final String issuerVar = "issuerVar";
+        assertion.setCustomIssuerValue("${" + issuerVar + "}");
+        final String customIssuerFormat = "http://custom.uri";
+        assertion.setCustomIssuerFormat(customIssuerFormat);
+        final String qualifier = "qualifier";
+        assertion.setCustomIssuerNameQualifier("${" + qualifier + "}");
+
+        assertion.setSamlStatusText(SamlStatus.SAML2_SUCCESS.getValue());
+
+        final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
+        assertion.setResponseId(responseId);
+        final String issueInstant = "2010-08-11T17:13:02Z";
+        //yyyy-MM-ddTHH:mm:ssZ
+        assertion.setIssueInstant(issueInstant);
+
+        final String requestId = "RequestId-dahkcbfkifieemhlmpmhiocldceihfeoeajkdook";
+        assertion.setInResponseTo(requestId);
+
+        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext();
+        final String customIssuerValue = "Custom Issuer";
+        final String qualifierValue = "Qualifier Value";
+        context.setVariable(issuerVar, customIssuerValue);
+        context.setVariable(qualifier, qualifierValue);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Message output = (Message) context.getVariable(outputVar);
+
+        final Document documentReadOnly = output.getXmlKnob().getDocumentReadOnly();
+        System.out.println(XmlUtil.nodeToFormattedString(documentReadOnly));
+        final JAXBElement<saml.v2.protocol.ResponseType> typeJAXBElement = v2Unmarshaller.unmarshal(documentReadOnly, saml.v2.protocol.ResponseType.class);
+        final saml.v2.protocol.ResponseType responseType = typeJAXBElement.getValue();
+
+        final NameIDType nameIDType = responseType.getIssuer();
+        Assert.assertEquals("Invalid custom Issuer value found", customIssuerValue, nameIDType.getValue());
+        Assert.assertEquals("Invalid custom Issuer Format value found", customIssuerFormat, nameIDType.getFormat());
+        Assert.assertEquals("Invalid custom Issuer Qualifier value found", qualifierValue, nameIDType.getNameQualifier());
+    }
+
+    /**
      * Tests that the Signature is the first element.
      * @throws Exception
      */
@@ -936,14 +996,14 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
-        assertion.setAddIssuer(false);
+        assertion.includeIssuer(false);
 
         final String token = "samlToken";
         assertion.setResponseAssertions("${" + token + "}");
 
-        assertion.setSamlStatus(SamlStatus.SAML2_SUCCESS);
+        assertion.setSamlStatusText(SamlStatus.SAML2_SUCCESS.getValue());
 
         final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
         assertion.setResponseId(responseId);
@@ -1009,10 +1069,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML1_1);
+        assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
 
-        assertion.setAddIssuer(true);
-        assertion.setSamlStatus(SamlStatus.SAML_REQUEST_DENIED);
+        assertion.includeIssuer(true);
+        assertion.setSamlStatusText(SamlStatus.SAML_REQUEST_DENIED.getValue());
 
         final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
         assertion.setResponseId(responseId);
@@ -1063,13 +1123,13 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML1_1);
+        assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
         assertion.setRecipient("http//recipient.com");
 
         final String token = "samlToken";
         assertion.setResponseAssertions("${" + token + "}");
 
-        assertion.setSamlStatus(SamlStatus.SAML_SUCCESS);
+        assertion.setSamlStatusText(SamlStatus.SAML_SUCCESS.getValue());
 
         final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
         assertion.setResponseId(responseId);
@@ -1118,10 +1178,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML1_1);
+        assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
         assertion.setRecipient("http://recipient.com");
 
-        assertion.setSamlStatus(SamlStatus.SAML_REQUEST_DENIED);
+        assertion.setSamlStatusText(SamlStatus.SAML_REQUEST_DENIED.getValue());
         final String statusMessage = "Status Message";
         assertion.setStatusMessage(statusMessage);
         final String statusDetail = "statusDetail";
@@ -1193,9 +1253,9 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
-        assertion.setAddIssuer(false);
+        assertion.includeIssuer(false);
         final String responseId = "0" + HexUtils.generateRandomHexId(16) + ":";
         assertion.setResponseId(responseId);
         final String issueInstant = "2010-08-11T17:13:02Z";
@@ -1229,10 +1289,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML1_1);
+        assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
 
-        assertion.setAddIssuer(false);
-        assertion.setSamlStatus(SamlStatus.SAML_SUCCESS);
+        assertion.includeIssuer(false);
+        assertion.setSamlStatusText(SamlStatus.SAML_SUCCESS.getValue());
         final String statusMessage = "Status Message";
         assertion.setStatusMessage(statusMessage);
         final String statusDetail = "statusDetail";
@@ -1323,7 +1383,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
-        assertion.setSamlVersion(SamlVersion.SAML1_1);
+        assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
         assertion.setStatusMessage("Status Message is ok");
         assertion.setRecipient("http://recipient.com");
 
@@ -1380,7 +1440,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
-        assertion.setSamlVersion(SamlVersion.SAML1_1);
+        assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
         assertion.setStatusMessage("Status Message is ok");
         assertion.setRecipient("http://recipient.com");
 
@@ -1439,7 +1499,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
         assertion.setStatusMessage("Status Message is ok");
 
         final PolicyEnforcementContext context = getContext();
@@ -1468,7 +1528,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
-        assertion.setSamlVersion(SamlVersion.SAML1_1);
+        assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
         assertion.setStatusMessage("Status Message is ok");
 
         final PolicyEnforcementContext context = getContext();
@@ -1492,9 +1552,9 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
-        assertion.setAddIssuer(false);
+        assertion.includeIssuer(false);
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
         final PolicyEnforcementContext context = getContext();
@@ -1511,7 +1571,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
         final String token = "samlToken";
         assertion.setResponseAssertions("${" + token + "}");
@@ -1534,7 +1594,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String outputVar = "outputVar";
         assertion.setOtherTargetMessageVariable(outputVar);
 
-        assertion.setSamlVersion(SamlVersion.SAML1_1);
+        assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
 
         final String token = "samlToken";
         assertion.setResponseAssertions("${" + token + "}");
@@ -1558,7 +1618,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             assertion.setTarget(TargetMessageType.OTHER);
             final String outputVar = "outputVar";
             assertion.setOtherTargetMessageVariable(outputVar);
-            assertion.setSamlVersion(SamlVersion.SAML1_1);
+            assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
             assertion.setValidateWebSsoRules(false);
 
             assertion.setSamlStatusText("${var}");
@@ -1587,7 +1647,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             assertion.setTarget(TargetMessageType.OTHER);
             final String outputVar = "outputVar";
             assertion.setOtherTargetMessageVariable(outputVar);
-            assertion.setSamlVersion(SamlVersion.SAML2);
+            assertion.setVersion(SamlVersion.SAML2.getVersionInt());
             assertion.setValidateWebSsoRules(false);
 
             assertion.setSamlStatusText("${var}");
@@ -1619,7 +1679,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             assertion.setTarget(TargetMessageType.OTHER);
             final String outputVar = "outputVar";
             assertion.setOtherTargetMessageVariable(outputVar);
-            assertion.setSamlVersion(SamlVersion.SAML1_1);
+            assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
             assertion.setValidateWebSsoRules(false);
 
             assertion.setSamlStatusText("${var}%");
@@ -1653,7 +1713,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             assertion.setTarget(TargetMessageType.OTHER);
             final String outputVar = "outputVar";
             assertion.setOtherTargetMessageVariable(outputVar);
-            assertion.setSamlVersion(SamlVersion.SAML2);
+            assertion.setVersion(SamlVersion.SAML2.getVersionInt());
             assertion.setValidateWebSsoRules(false);
 
             assertion.setSamlStatusText("${var}%");
@@ -1691,7 +1751,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             assertion.setTarget(TargetMessageType.OTHER);
             final String outputVar = "outputVar";
             assertion.setOtherTargetMessageVariable(outputVar);
-            assertion.setSamlVersion(SamlVersion.SAML1_1);
+            assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
             assertion.setValidateWebSsoRules(false);
 
             assertion.setSamlStatusText("");
@@ -1725,7 +1785,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             assertion.setTarget(TargetMessageType.OTHER);
             final String outputVar = "outputVar";
             assertion.setOtherTargetMessageVariable(outputVar);
-            assertion.setSamlVersion(SamlVersion.SAML2);
+            assertion.setVersion(SamlVersion.SAML2.getVersionInt());
             assertion.setValidateWebSsoRules(false);
 
             assertion.setSamlStatusText("");

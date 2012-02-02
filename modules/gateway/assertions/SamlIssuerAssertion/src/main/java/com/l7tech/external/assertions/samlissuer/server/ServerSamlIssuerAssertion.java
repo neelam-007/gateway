@@ -55,7 +55,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 
-import static com.l7tech.policy.assertion.SamlIssuerConfiguration.DecorationType.*;
+import static com.l7tech.policy.assertion.SamlElementGenericConfig.DecorationType.*;
 import static com.l7tech.util.Functions.FUNC_IS_NOT_NULL;
 import static com.l7tech.util.Functions.grep;
 

@@ -45,7 +45,7 @@ public class SamlIssuerAssertionPropertiesEditor implements AssertionPropertiesE
                         new SubjectConfirmationNameIdentifierWizardStepPanel(
                             new SubjectConfirmationWizardStepPanel(
                                 new ConditionsWizardStepPanel(
-                                    new SamlSignatureStepPanel(null, true), true, true), true, true), true), true), true), true)), true), true);
+                                    new SamlSignatureStepPanel(null, true), true, true), true, true), true), true), true), true), false), true), true);
 
         SamlPolicyAssertionWizard wiz = new SamlPolicyAssertionWizard(assertion, TopComponents.getInstance().getTopParent(), p, readOnly);
         wiz.addWizardListener(new WizardAdapter() {

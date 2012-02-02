@@ -11,7 +11,7 @@ import com.l7tech.gui.util.PauseListenerAdapter;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.widgets.SquigglyTextField;
-import com.l7tech.policy.assertion.SamlIssuerConfiguration;
+import com.l7tech.policy.assertion.SamlElementGenericConfig;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.gui.util.InputValidator;
@@ -93,7 +93,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
         SamlPolicyAssertion samlAssertion = (SamlPolicyAssertion) settings;
         samlAssertion.setAudienceRestriction(nullIfEmpty(textFieldAudienceRestriction.getText()));
         if (issueMode) {
-            SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) samlAssertion;
+            SamlElementGenericConfig issuerConfiguration = (SamlElementGenericConfig) samlAssertion;
             issuerConfiguration.setConditionsNotBeforeSecondsInPast( specifyValidityRadioButton.isSelected() ? (Integer)notBeforeSpinner.getValue() : -1);
             issuerConfiguration.setConditionsNotOnOrAfterExpirySeconds( specifyValidityRadioButton.isSelected() ? (Integer)notOnOrAfterSpinner.getValue() : -1);
         } else {
@@ -117,7 +117,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
         textFieldAudienceRestriction.setText(samlAssertion.getAudienceRestriction());
 
         if (issueMode) {
-            SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) samlAssertion;
+            SamlElementGenericConfig issuerConfiguration = (SamlElementGenericConfig) samlAssertion;
             final int secondsInPast = issuerConfiguration.getConditionsNotBeforeSecondsInPast();
             final int onOrAfterExpirySeconds = issuerConfiguration.getConditionsNotOnOrAfterExpirySeconds();
             if (secondsInPast != -1 || onOrAfterExpirySeconds != -1) {

@@ -4,7 +4,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.policy.assertion.SamlIssuerConfiguration;
+import com.l7tech.policy.assertion.SamlElementGenericConfig;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.saml.SubjectStatement;
@@ -114,7 +114,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         if ( issueMode ) {
-            SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
+            SamlElementGenericConfig issuerConfiguration = (SamlElementGenericConfig) settings;
             final SubjectStatement.Confirmation confirmation = SubjectStatement.Confirmation.forUri(issuerConfiguration.getSubjectConfirmationMethodUri());
 
             subjectConfirmationMethodComboBox.setSelectedItem( confirmation );
@@ -226,7 +226,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         if (issueMode) {
-            SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
+            SamlElementGenericConfig issuerConfiguration = (SamlElementGenericConfig) settings;
             SubjectStatement.Confirmation confirmation = (SubjectStatement.Confirmation)subjectConfirmationMethodComboBox.getSelectedItem();
             if ( confirmation != null ) {
                 issuerConfiguration.setSubjectConfirmationMethodUri(confirmation.getUri());

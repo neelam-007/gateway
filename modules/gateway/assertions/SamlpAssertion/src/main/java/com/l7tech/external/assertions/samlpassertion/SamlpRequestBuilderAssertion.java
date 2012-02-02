@@ -31,7 +31,7 @@ import java.util.*;
  * @author vchan
  */
 public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
-        implements UsesVariables, PrivateKeyable, SamlIssuerConfiguration {
+        implements UsesVariables, PrivateKeyable, SamlElementGenericConfig {
     private static final String META_INITIALIZED = SamlpRequestBuilderAssertion.class.getName() + ".metadataInitialized";
 
     private int conditionsNotBeforeSecondsInPast = -1;
@@ -66,6 +66,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
     private String customIssuerValue;
     private String customIssuerFormat;
     private String customIssuerNameQualifier;
+    private boolean addIssuer = true;
 
     public static final Set<String> HOK_URIS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
         SamlConstants.CONFIRMATION_HOLDER_OF_KEY,
@@ -108,8 +109,30 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
     }
 
     @Override
-    public boolean addIssuerElement() {
-        return getVersion() == 2;
+    public boolean samlProtocolUsage() {
+        return true;
+    }
+
+    /**
+     * Independent property separate from the interface defining includeIssuer()
+     * @return if user configured the Issuer to be added. Will never apply to SAML 1.1
+     */
+    public boolean isAddIssuer() {
+        return addIssuer;
+    }
+
+    public void setAddIssuer(boolean addIssuer) {
+        this.addIssuer = addIssuer;
+    }
+
+    @Override
+    public boolean includeIssuer() {
+        return getVersion() == 2 && addIssuer;
+    }
+
+    @Override
+    public void includeIssuer(boolean includeIssuer) {
+        addIssuer = includeIssuer;
     }
 
     @Override
@@ -231,13 +254,13 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
 
     @Deprecated
     @Override
-    public EnumSet<SamlIssuerConfiguration.DecorationType> getDecorationTypes() {
+    public EnumSet<SamlElementGenericConfig.DecorationType> getDecorationTypes() {
         return null;
     }
 
     @Deprecated
     @Override
-    public void setDecorationTypes(EnumSet<SamlIssuerConfiguration.DecorationType> decorationTypes) {
+    public void setDecorationTypes(EnumSet<SamlElementGenericConfig.DecorationType> decorationTypes) {
         throw new UnsupportedOperationException("Not supported yet in SAML Protocol");
     }
 
@@ -509,7 +532,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
             new Java5EnumTypeMapping(NameIdentifierInclusionType.class, "nameIdentifierType"),
             new Java5EnumTypeMapping(KeyInfoInclusionType.class, "subjectConfirmationKeyInfoType"),
                 /*Note this property should never be serialized*/
-            new Java5EnumSetTypeMapping(EnumSet.class, SamlIssuerConfiguration.DecorationType.class, "decorationTypes"),
+            new Java5EnumSetTypeMapping(EnumSet.class, SamlElementGenericConfig.DecorationType.class, "decorationTypes"),
             new BeanTypeMapping(SamlpAuthorizationStatement.class, "samlpAuthorizationInfo"),
             new ArrayTypeMapping(new String[0], "actions")
         )));

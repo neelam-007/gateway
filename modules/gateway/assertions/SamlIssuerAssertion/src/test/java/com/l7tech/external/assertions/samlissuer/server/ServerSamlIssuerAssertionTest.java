@@ -9,7 +9,7 @@ import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.SamlIssuerConfiguration;
+import com.l7tech.policy.assertion.SamlElementGenericConfig;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
@@ -2689,7 +2689,7 @@ public class ServerSamlIssuerAssertionTest {
         assertion.setVersion(2);
         assertion.setSignAssertion(false);//don't need
         //required for test case
-        assertion.setDecorationTypes(EnumSet.of(SamlIssuerConfiguration.DecorationType.RESPONSE));
+        assertion.setDecorationTypes(EnumSet.of(SamlElementGenericConfig.DecorationType.RESPONSE));
 
         ServerSamlIssuerAssertion serverAssertion = new ServerSamlIssuerAssertion(assertion,
                 ApplicationContexts.getTestApplicationContext());

@@ -65,12 +65,12 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         this.variablesUsed = assertion.getVariablesUsed();
 
-        switch (assertion.getSamlVersion()) {
-            case SAML2:
+        switch (assertion.getVersion()) {
+            case 2:
                 v2SamlpFactory = new saml.v2.protocol.ObjectFactory();
                 v1SamlpFactory = null;
                 break;
-            case SAML1_1:
+            case 1:
                 v1SamlpFactory = new saml.v1.protocol.ObjectFactory();
                 v2SamlpFactory = null;
                 break;
@@ -112,11 +112,11 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final Document responseDoc = XmlUtil.createEmptyDocument();
         try {
-            switch (assertion.getSamlVersion()) {
-                case SAML2:
+            switch (assertion.getVersion()) {
+                case 2:
                     marshaller = (assertion.isAddIssuer()) ? JaxbUtil.getMarshallerV2(Arrays.asList(JaxbUtil.SAML_2)) : JaxbUtil.getMarshallerV2(true);
                     break;
-                case SAML1_1:
+                case 1:
                     marshaller = JaxbUtil.getMarshallerV1(true);
                     break;
                 default:
@@ -185,12 +185,12 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final String xsdIdAttribute;
         boolean lookForIssuer = false;
-        switch (assertion.getSamlVersion()) {
-            case SAML2:
+        switch (assertion.getVersion()) {
+            case 2:
                 xsdIdAttribute = "ID";
                 lookForIssuer = assertion.isAddIssuer();
                 break;
-            case SAML1_1:
+            case 1:
                 xsdIdAttribute = "ResponseID";
                 break;
             default:
@@ -244,9 +244,23 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         responseContext.statusCode = samlStatus;
 
-        final String customIssuer = assertion.getCustomIssuer();
+        final String customIssuer = assertion.getCustomIssuerValue();
         if (customIssuer != null && !customIssuer.trim().isEmpty()) {
             responseContext.customIssuer = getStringVariable(vars, customIssuer, true);
+        }
+
+        final String customIssuerFormat = assertion.getCustomIssuerFormat();
+        if (customIssuerFormat != null && !customIssuerFormat.trim().isEmpty()) {
+            if (!ValidationUtils.isValidUri(customIssuerFormat)) {
+                throw new InvalidRuntimeValueException("Issuer Format attribute must be a URI");
+            }
+            //variable support not needed here yet
+            responseContext.customIssuerFormat = customIssuerFormat;
+        }
+
+        final String customIssuerNameQualifier = assertion.getCustomIssuerNameQualifier();
+        if (customIssuerNameQualifier != null && !customIssuerNameQualifier.trim().isEmpty()) {
+            responseContext.customIssuerNameQualifier = getStringVariable(vars, customIssuerNameQualifier, true);
         }
 
         final String statusMessage = assertion.getStatusMessage();
@@ -282,6 +296,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                 responseContext.issueInstant = DatatypeFactory.newInstance().newXMLGregorianCalendar(getStringVariable(vars, issueInstant, true));
             }
         } catch (DatatypeConfigurationException e) {
+            //noinspection ThrowableResultOfMethodCallIgnored
             throw new InvalidRuntimeValueException("Cannot create IssueInstant: " + ExceptionUtils.getMessage(e),
                     ExceptionUtils.getDebugException(e));
         }
@@ -303,8 +318,8 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             responseContext.samlTokens = getMessageOrElementVariables(vars, respAssertions, "Assertion");
         }
 
-        switch (assertion.getSamlVersion()){
-            case SAML2:
+        switch (assertion.getVersion()){
+            case 2:
                 final String destination = assertion.getDestination();
                 if(destination != null && !destination.trim().isEmpty()){
                     final String destValidated = getStringVariable(vars, destination, false);
@@ -332,7 +347,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                 }
                 
                 break;
-            case SAML1_1:
+            case 1:
 
                 final String recipient = assertion.getRecipient();
                 if(recipient != null && !recipient.trim().isEmpty()){
@@ -352,29 +367,30 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
      *
      * @param vars Available context variables
      * @param maybeAVariable String. Must not be null and must not be the empty string
-     * @param strict boolean true if the resolved value cannot be the empty string
-     * @return
-     * @throws InvalidRuntimeValueException
+     * @param throwIfEmpty boolean if true throw if maybeAVariable resolves to the empty string.
+     * @return resolved String value
+     * @throws InvalidRuntimeValueException if invalid variable reference or if throwIfEmpty and an empty value found.
      */
-    private String getStringVariable(final Map<String, Object> vars, String maybeAVariable, boolean strict)
+    private String getStringVariable(@NotNull final Map<String, Object> vars, @NotNull String maybeAVariable, boolean throwIfEmpty)
             throws InvalidRuntimeValueException{
         //explicitly checking as exception throw below should only happen for the case when a string resolves to nothing.
-        if(maybeAVariable == null || maybeAVariable.trim().isEmpty()) throw new IllegalArgumentException("maybeAVariable must be non null and not empty");
+        if(maybeAVariable.trim().isEmpty()) throw new IllegalArgumentException("maybeAVariable must not be empty");
 
         final String value;
         try {
             value =  ExpandVariables.process(maybeAVariable, vars, getAudit());
         } catch (Exception e) {
             //we want to catch any exception which the above call can generate. Any exception means the assertion fails.
+            //noinspection ThrowableResultOfMethodCallIgnored
             throw new InvalidRuntimeValueException("Error getting value: " + ExceptionUtils.getMessage(e),
                     ExceptionUtils.getDebugException(e));
         }
 
         final boolean isEmpty = value.trim().isEmpty();
-        if(isEmpty && strict) {
-            throw new InvalidRuntimeValueException("Value for field '" + maybeAVariable + "' resolved to nothing.");
+        if(isEmpty && throwIfEmpty) {
+            throw new InvalidRuntimeValueException("Field value '" + maybeAVariable + "' resolved to nothing.");
         } else if (isEmpty) {
-            logger.log(Level.INFO, "Value for field '" + maybeAVariable + "' resolved to nothing.");
+            logger.log(Level.INFO, "Field value '" + maybeAVariable + "' resolved to nothing.");
         }
         return value;
     }
@@ -457,6 +473,8 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         private final String requestId;//from SSG
         private String customIssuer; // V2 only
+        private String customIssuerFormat;
+        private String customIssuerNameQualifier;
         @NotNull
         private String statusCode; // already processed for variables
         private String statusMessage;
@@ -478,15 +496,15 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
     private void createResponse(final ResponseContext responseContext, final Marshaller marshaller, final Document responseDoc)
             throws JAXBException, InvalidRuntimeValueException {
 
-        switch (assertion.getSamlVersion()) {
-            case SAML2:
+        switch (assertion.getVersion()) {
+            case 2:
                 final String caDn = signer.getCertificateChain()[0].getSubjectDN().getName();
                 final Map caMap = CertUtils.dnToAttributeMap(caDn);
                 final String caCn = (String)((List)caMap.get("CN")).get(0);
 
                 createV2Response(responseContext, JaxbUtil.getUnmarshallerV2(), caCn, marshaller, responseDoc);
                 return;
-            case SAML1_1:
+            case 1:
                 createV1Response(responseContext, JaxbUtil.getUnmarshallerV1(), marshaller, responseDoc);
                 return;
             default:
@@ -611,6 +629,12 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             final JAXBElement<NameIDType> nameIdElement = v2SamlpAssnFactory.createIssuer(idType);
             final NameIDType value = nameIdElement.getValue();
             value.setValue(responseContext.customIssuer == null ? issuer : responseContext.customIssuer);
+            if (responseContext.customIssuerFormat != null) {
+                value.setFormat(responseContext.customIssuerFormat);
+            }
+            if (responseContext.customIssuerNameQualifier != null) {
+                value.setNameQualifier(responseContext.customIssuerNameQualifier);
+            }
             response.setIssuer(value);
         }
 

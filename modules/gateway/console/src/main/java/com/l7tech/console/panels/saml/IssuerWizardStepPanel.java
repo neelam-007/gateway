@@ -1,49 +1,29 @@
 package com.l7tech.console.panels.saml;
 
+import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.console.util.SquigglyFieldUtils;
-import com.l7tech.gui.util.PauseListenerAdapter;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.gui.widgets.SquigglyTextField;
-import com.l7tech.policy.assertion.SamlIssuerConfiguration;
-import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
-import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.policy.assertion.SamlIssuerConfig;
+import com.l7tech.policy.assertion.SamlElementGenericConfig;
+import com.l7tech.util.Functions;
 
-import javax.swing.*;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 /**
  * Step to customize the Issuer value.
  */
 public class IssuerWizardStepPanel extends WizardStepPanel {
 
-    public IssuerWizardStepPanel(WizardStepPanel next) {
+    public IssuerWizardStepPanel(WizardStepPanel next, boolean showIssuerCheckBox) {
         super(next);
-        initialize();
+        initialize(showIssuerCheckBox);
     }
 
     @Override
     public boolean canAdvance() {
-
-        if (version == 2) {
-            if (SquigglyFieldUtils.validateSquigglyFieldForVariableReference(nameQualifierSquigglyTextField) != null) {
-                return false;
-            }
-        }
-
-        if (issuerFromTemplateRadioButton.isSelected()) {
-            final boolean hasIssuerValue = !issuerValueSquigglyTextField.getText().trim().isEmpty();
-            if (!hasIssuerValue) {
-                return false;
-            }
-
-            if (SquigglyFieldUtils.validateSquigglyFieldForVariableReference(issuerValueSquigglyTextField) != null) {
-                return false;
-            }
+        try {
+            samlIssuerPanel.validateData();
+        } catch (AssertionPropertiesOkCancelSupport.ValidationException e) {
+            return false;
         }
 
         return true;
@@ -73,175 +53,36 @@ public class IssuerWizardStepPanel extends WizardStepPanel {
 
     @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
-        final SamlIssuerConfiguration issuerConfig = (SamlIssuerConfiguration) settings;
-        version = issuerConfig.getVersion() == null ? 1 : issuerConfig.getVersion();
+        final SamlIssuerConfig issuerElmConfig = (SamlIssuerConfig) settings;
+        samlIssuerPanel.setData(issuerElmConfig);
+
+        version = issuerElmConfig.getVersion() == null ? 1 : issuerElmConfig.getVersion();
         // Version 1.1 does not have an Issuer.
-        this.setSkipped(!issuerConfig.addIssuerElement());
-
-        final String customIssuerValue = issuerConfig.getCustomIssuerValue();
-        if (customIssuerValue != null) {
-            issuerFromTemplateRadioButton.setSelected(true);
-            issuerValueSquigglyTextField.setText(customIssuerValue);
-        } else {
-            issuerDefaultRadioButton.setSelected(true);
-        }
-
-        if (version == 2) {
-            final String customIssuerFormat = issuerConfig.getCustomIssuerFormat();
-            if (customIssuerFormat != null) {
-                includeFormatAttributeCheckBox.setSelected(true);
-
-                if (SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(customIssuerFormat)) {
-                    unspecifiedRadioButton.setSelected(true);
-                } else if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(customIssuerFormat)) {
-                    emailAddressRadioButton.setSelected(true);
-                } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(customIssuerFormat)) {
-                    x509SubjectRadioButton.setSelected(true);
-                } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(customIssuerFormat)) {
-                    windowsDomainRadioButton.setSelected(true);
-                } else if (SamlConstants.NAMEIDENTIFIER_KERBEROS.equals(customIssuerFormat)) {
-                    kerberosRadioButton.setSelected(true);
-                } else {
-                    entityFormatRadioButton.setSelected(true);
-                }
-            } else {
-                //set selected so if Format check box is enabled there will be a default selection.
-                entityFormatRadioButton.setSelected(true);
-            }
-
-            final String customNameQualifier = issuerConfig.getCustomIssuerNameQualifier();
-            if (customNameQualifier != null) {
-                nameQualifierSquigglyTextField.setText(customNameQualifier);
-            }
-        }
-
-        enableDisable();
+        this.setSkipped(issuerElmConfig.samlProtocolUsage() && version != 2);
     }
 
     @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        SamlIssuerConfiguration issuerConfig = (SamlIssuerConfiguration) settings;
-
-        if (!issuerDefaultRadioButton.isSelected()) {
-            issuerConfig.setCustomIssuerValue(issuerValueSquigglyTextField.getText().trim());
-        } else {
-            issuerConfig.setCustomIssuerValue(null);
-        }
-
-        if (version == 2) {
-            final String nameFormatUri;
-            if (includeFormatAttributeCheckBox.isSelected()) {
-                if (unspecifiedRadioButton.isSelected()) {
-                    nameFormatUri = SamlConstants.NAMEIDENTIFIER_UNSPECIFIED;
-                } else if (emailAddressRadioButton.isSelected()) {
-                    nameFormatUri = SamlConstants.NAMEIDENTIFIER_EMAIL;
-                } else if (x509SubjectRadioButton.isSelected()) {
-                    nameFormatUri = SamlConstants.NAMEIDENTIFIER_X509_SUBJECT;
-                } else if (windowsDomainRadioButton.isSelected()) {
-                    nameFormatUri = SamlConstants.NAMEIDENTIFIER_WINDOWS;
-                } else if (kerberosRadioButton.isSelected()) {
-                    nameFormatUri = SamlConstants.NAMEIDENTIFIER_KERBEROS;
-                } else {
-                    //default is entity as per SAML Core 2.0
-                    nameFormatUri = SamlConstants.NAMEIDENTIFIER_ENTITY;
-                }
-            } else {
-                nameFormatUri = null;
-            }
-            issuerConfig.setCustomIssuerFormat(nameFormatUri);
-
-            final String customNameQualifier = nameQualifierSquigglyTextField.getText().trim();
-            if (!customNameQualifier.isEmpty()) {
-                issuerConfig.setCustomIssuerNameQualifier(customNameQualifier);
-            } else {
-                issuerConfig.setCustomIssuerNameQualifier(null);
-            }
-        } else {
-            issuerConfig.setCustomIssuerFormat(null);
-            issuerConfig.setCustomIssuerNameQualifier(null);
-        }
+        SamlElementGenericConfig issuerElmConfig = (SamlElementGenericConfig) settings;
+        samlIssuerPanel.getData(issuerElmConfig);
     }
 
     // - PRIVATE
 
-    private JCheckBox includeFormatAttributeCheckBox;
-    private JPanel formatsButtonPanel;
-    private JRadioButton entityFormatRadioButton;
-    private JRadioButton unspecifiedRadioButton;
-    private JRadioButton emailAddressRadioButton;
-    private JRadioButton x509SubjectRadioButton;
-    private JRadioButton windowsDomainRadioButton;
-    private JRadioButton kerberosRadioButton;
-    private SquigglyTextField issuerValueSquigglyTextField;
-    private SquigglyTextField nameQualifierSquigglyTextField;
-    private JPanel mainPanel;
-    private JPanel formatPanel;
-    private JLabel nameQualifierLabel;
-    private JLabel titleLabel;
-    private JRadioButton issuerDefaultRadioButton;
-    private JRadioButton issuerFromTemplateRadioButton;
-    private JPanel nameQualifierPanel;
-    private JPanel issuerPanel;
-    private JLabel issuerValueLabel;
+    private SamlIssuerPanel samlIssuerPanel;
     private int version;
 
-    private void initialize() {
+    private void initialize(final boolean showIssuerCheckBox) {
+        samlIssuerPanel = new SamlIssuerPanel(true, showIssuerCheckBox);
+        samlIssuerPanel.setConfigListener(new Functions.Nullary<Void>() {
+            @Override
+            public Void call() {
+                notifyListeners();
+                return null;
+            }
+        });
+
         setLayout(new BorderLayout());
-        add(mainPanel, BorderLayout.CENTER);
-
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
-
-        includeFormatAttributeCheckBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableDisable();
-            }
-        });
-
-        TextComponentPauseListenerManager.registerPauseListenerWhenFocused(issuerValueSquigglyTextField, new PauseListenerAdapter() {
-            @Override
-            public void textEntryPaused(JTextComponent component, long msecs) {
-                notifyListeners();
-            }
-        }, 300);
-
-        TextComponentPauseListenerManager.registerPauseListenerWhenFocused(nameQualifierSquigglyTextField, new PauseListenerAdapter() {
-            @Override
-            public void textEntryPaused(JTextComponent component, long msecs) {
-                notifyListeners();
-            }
-        }, 300);
-
-        final RunOnChangeListener onChangeListener = new RunOnChangeListener(new Runnable() {
-            @Override
-            public void run() {
-                enableDisable();
-                notifyListeners();
-            }
-        });
-
-        issuerDefaultRadioButton.addActionListener(onChangeListener);
-        issuerFromTemplateRadioButton.addActionListener(onChangeListener);
-    }
-
-    private void enableDisable() {
-        //can't do this in initialize as at that point we don't know what version were configuring for
-        final boolean isVersion2 = version == 2;
-        formatPanel.setVisible(isVersion2);
-        nameQualifierPanel.setVisible(isVersion2);
-
-        if (version == 2) {
-            final boolean includeNameFormat = includeFormatAttributeCheckBox.isSelected();
-
-            formatsButtonPanel.setEnabled(includeNameFormat);
-            entityFormatRadioButton.setEnabled(includeNameFormat);
-            unspecifiedRadioButton.setEnabled(includeNameFormat);
-            emailAddressRadioButton.setEnabled(includeNameFormat);
-            x509SubjectRadioButton.setEnabled(includeNameFormat);
-            windowsDomainRadioButton.setEnabled(includeNameFormat);
-            kerberosRadioButton.setEnabled(includeNameFormat);
-        }
-
-        issuerValueSquigglyTextField.setEnabled(issuerFromTemplateRadioButton.isSelected());
+        add(samlIssuerPanel, BorderLayout.CENTER);
     }
 }

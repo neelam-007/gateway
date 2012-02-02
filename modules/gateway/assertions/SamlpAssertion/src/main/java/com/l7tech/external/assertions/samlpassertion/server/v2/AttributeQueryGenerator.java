@@ -9,6 +9,7 @@ import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.message.Message;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 import saml.v2.assertion.AttributeType;
 import saml.v2.protocol.AttributeQueryType;
@@ -29,7 +30,7 @@ public final class AttributeQueryGenerator extends AbstractSamlp2MessageGenerato
 
     public AttributeQueryGenerator(@NotNull final Map<String, Object> variablesMap,
                                    @NotNull final Audit auditor,
-                                   @NotNull final NameIdentifierResolver issuerNameResolver)
+                                   @Nullable final NameIdentifierResolver issuerNameResolver)
         throws SamlpAssertionException
     {
         super(variablesMap, auditor, issuerNameResolver);

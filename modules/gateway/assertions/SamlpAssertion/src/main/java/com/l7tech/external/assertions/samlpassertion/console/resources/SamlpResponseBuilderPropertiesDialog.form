@@ -3,56 +3,33 @@
   <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="8" bottom="0" right="8"/>
     <constraints>
-      <xy x="48" y="54" width="572" height="614"/>
+      <xy x="48" y="54" width="572" height="969"/>
     </constraints>
     <properties>
       <requestFocusEnabled value="true"/>
     </properties>
     <border type="none"/>
     <children>
-      <grid id="e3588" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-        <margin top="0" left="0" bottom="0" right="0"/>
+      <tabbedpane id="e1257" binding="issuerTabbedPane">
         <constraints>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <preferred-size width="200" height="200"/>
+          </grid>
         </constraints>
-        <properties/>
+        <properties>
+          <name value=""/>
+        </properties>
         <border type="none"/>
         <children>
-          <grid id="59dab" binding="samlVersionPanel" layout-manager="GridLayoutManager" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="f4af5" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <tabbedpane title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="generalTab"/>
             </constraints>
             <properties/>
-            <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="samlVersionPanel.title"/>
+            <border type="none"/>
             <children>
-              <component id="4c05f" class="javax.swing.JCheckBox" binding="validateWebSSORulesCheckBox" default-binding="true">
-                <constraints>
-                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <horizontalAlignment value="11"/>
-                  <horizontalTextPosition value="4"/>
-                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="validateWebSsoRules"/>
-                </properties>
-              </component>
-              <component id="9b65c" class="javax.swing.JCheckBox" binding="signResponseCheckBox" default-binding="true">
-                <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <horizontalAlignment value="0"/>
-                  <horizontalTextPosition value="4"/>
-                  <selected value="false"/>
-                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="samlVersionPanel.signResponse"/>
-                </properties>
-              </component>
-              <hspacer id="da980">
-                <constraints>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                </constraints>
-              </hspacer>
-              <grid id="13240" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <grid id="e3588" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -60,354 +37,108 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="b8258" class="javax.swing.JLabel">
-                    <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                        <preferred-size width="111" height="-1"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="samlVersionPanel.version"/>
-                    </properties>
-                  </component>
-                  <component id="e5f4" class="javax.swing.JComboBox" binding="samlVersionComboBox">
-                    <constraints>
-                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties/>
-                  </component>
-                </children>
-              </grid>
-              <grid id="38eed" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="0" left="0" bottom="0" right="0"/>
-                <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="790ee" class="javax.swing.JCheckBox" binding="addIssuerCheckBox" default-binding="true">
-                    <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <horizontalTextPosition value="4"/>
-                      <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="addIssuer"/>
-                    </properties>
-                  </component>
-                  <component id="80e73" class="javax.swing.JTextField" binding="customIssuerTextField">
-                    <constraints>
-                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                        <preferred-size width="150" height="-1"/>
-                      </grid>
-                    </constraints>
-                    <properties/>
-                  </component>
-                </children>
-              </grid>
-            </children>
-          </grid>
-          <grid id="7468e" binding="responseStatusPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
-            <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
-            </constraints>
-            <properties/>
-            <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="responseStatus.title"/>
-            <children>
-              <component id="406e7" class="javax.swing.JLabel">
-                <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                    <preferred-size width="111" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseStatus.code"/>
-                </properties>
-              </component>
-              <component id="a9e67" class="javax.swing.JComboBox" binding="statusCodeComboBox">
-                <constraints>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <minimum-size width="320" height="-1"/>
-                    <preferred-size width="320" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties>
-                  <editable value="true"/>
-                </properties>
-              </component>
-              <component id="108cf" class="javax.swing.JLabel">
-                <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                    <preferred-size width="111" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseStatus.message"/>
-                </properties>
-              </component>
-              <component id="d986" class="javax.swing.JTextField" binding="statusMessageTextField">
-                <constraints>
-                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <minimum-size width="320" height="-1"/>
-                    <preferred-size width="320" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties/>
-              </component>
-              <component id="2e5e7" class="javax.swing.JLabel">
-                <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                    <preferred-size width="111" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseStatus.detail"/>
-                </properties>
-              </component>
-              <component id="cfca5" class="javax.swing.JTextField" binding="statusDetailTextField">
-                <constraints>
-                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <minimum-size width="320" height="-1"/>
-                    <preferred-size width="320" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties/>
-              </component>
-            </children>
-          </grid>
-          <grid id="b816e" binding="responseElementsPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
-            <constraints>
-              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
-            </constraints>
-            <properties/>
-            <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="responseElements.title"/>
-            <children>
-              <component id="c9051" class="javax.swing.JLabel">
-                <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                    <preferred-size width="111" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseElements.assertions"/>
-                </properties>
-              </component>
-              <component id="2f68f" class="javax.swing.JTextField" binding="assertionsTextField">
-                <constraints>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <minimum-size width="320" height="-1"/>
-                    <preferred-size width="320" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties/>
-              </component>
-              <component id="35976" class="javax.swing.JLabel" binding="extensionsLabel">
-                <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                    <preferred-size width="111" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseElements.extensions.2_0_only"/>
-                </properties>
-              </component>
-              <component id="1b844" class="javax.swing.JTextField" binding="extensionsTextField">
-                <constraints>
-                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <minimum-size width="320" height="-1"/>
-                    <preferred-size width="320" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties/>
-              </component>
-              <component id="febc4" class="javax.swing.JLabel" binding="encryptedAssertionsLabel">
-                <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                    <preferred-size width="111" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseElements.encryptedAssertions.2_0_only"/>
-                </properties>
-              </component>
-              <component id="75552" class="javax.swing.JTextField" binding="encryptedAssertionsTextField">
-                <constraints>
-                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <minimum-size width="320" height="-1"/>
-                    <preferred-size width="320" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties/>
-              </component>
-            </children>
-          </grid>
-          <grid id="7d2fa" binding="tabHolder" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
-            <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
-            </constraints>
-            <properties/>
-            <border type="none"/>
-            <children>
-              <tabbedpane id="65458" binding="responseAttributesTabbedPane">
-                <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
-                    <preferred-size width="200" height="200"/>
-                  </grid>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <grid id="197c5" binding="saml2_0Panel" layout-manager="GridLayoutManager" row-count="6" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="59dab" binding="samlVersionPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
-                      <tabbedpane title="2.0 Title Not Used"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties/>
-                    <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="responseAttributes.title"/>
+                    <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="samlVersionPanel.title"/>
                     <children>
-                      <component id="236c2" class="javax.swing.JLabel">
+                      <component id="4c05f" class="javax.swing.JCheckBox" binding="validateWebSSORulesCheckBox" default-binding="true">
                         <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="111" height="-1"/>
-                          </grid>
+                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="resposneAttributes.Id"/>
+                          <horizontalAlignment value="11"/>
+                          <horizontalTextPosition value="4"/>
+                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="validateWebSsoRules"/>
                         </properties>
                       </component>
-                      <component id="219ec" class="javax.swing.JTextField" binding="idTextField">
+                      <component id="9b65c" class="javax.swing.JCheckBox" binding="signResponseCheckBox" default-binding="true">
                         <constraints>
-                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <minimum-size width="320" height="-1"/>
-                            <preferred-size width="320" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties/>
-                      </component>
-                      <component id="fb5dc" class="javax.swing.JLabel">
-                        <constraints>
-                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="111" height="-1"/>
-                          </grid>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.issueInstant"/>
+                          <horizontalAlignment value="0"/>
+                          <horizontalTextPosition value="4"/>
+                          <selected value="false"/>
+                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="samlVersionPanel.signResponse"/>
                         </properties>
                       </component>
-                      <component id="7d9cb" class="javax.swing.JTextField" binding="issueInstantTextField">
+                      <hspacer id="da980">
                         <constraints>
-                          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <minimum-size width="320" height="-1"/>
-                            <preferred-size width="320" height="-1"/>
-                          </grid>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                      </hspacer>
+                      <grid id="13240" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="0" left="0" bottom="0" right="0"/>
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties/>
-                      </component>
-                      <component id="ba62b" class="javax.swing.JLabel">
-                        <constraints>
-                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="111" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties>
-                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.inResponseTo"/>
-                        </properties>
-                      </component>
-                      <component id="89ce5" class="javax.swing.JTextField" binding="inResponseToTextField">
-                        <constraints>
-                          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <minimum-size width="320" height="-1"/>
-                            <preferred-size width="320" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties/>
-                      </component>
-                      <component id="5805f" class="javax.swing.JLabel">
-                        <constraints>
-                          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="111" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties>
-                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.destination"/>
-                        </properties>
-                      </component>
-                      <component id="11f04" class="javax.swing.JTextField" binding="destinationTextField">
-                        <constraints>
-                          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <minimum-size width="320" height="-1"/>
-                            <preferred-size width="320" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties/>
-                      </component>
-                      <component id="51990" class="javax.swing.JLabel">
-                        <constraints>
-                          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="111" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties>
-                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.consent"/>
-                        </properties>
-                      </component>
-                      <component id="8413e" class="javax.swing.JTextField" binding="consentTextField">
-                        <constraints>
-                          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <minimum-size width="320" height="-1"/>
-                            <preferred-size width="320" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties/>
-                      </component>
-                      <vspacer id="9e480">
-                        <constraints>
-                          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                      </vspacer>
+                        <border type="none"/>
+                        <children>
+                          <component id="b8258" class="javax.swing.JLabel">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                <preferred-size width="111" height="-1"/>
+                              </grid>
+                            </constraints>
+                            <properties>
+                              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="samlVersionPanel.version"/>
+                            </properties>
+                          </component>
+                          <component id="e5f4" class="javax.swing.JComboBox" binding="samlVersionComboBox">
+                            <constraints>
+                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties/>
+                          </component>
+                        </children>
+                      </grid>
                     </children>
                   </grid>
-                  <grid id="2fcc3" binding="saml1_1Panel" layout-manager="GridLayoutManager" row-count="5" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="7468e" binding="responseStatusPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
-                      <tabbedpane title="1.1 Title Not Used"/>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
                     </constraints>
                     <properties/>
-                    <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="responseAttributes.title"/>
+                    <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="responseStatus.title"/>
                     <children>
-                      <component id="c7b7" class="javax.swing.JLabel">
+                      <component id="406e7" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
                             <preferred-size width="111" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
-                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.responseId"/>
+                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseStatus.code"/>
                         </properties>
                       </component>
-                      <component id="6c9dd" class="javax.swing.JTextField" binding="responseIdTextField">
+                      <component id="a9e67" class="javax.swing.JComboBox" binding="statusCodeComboBox">
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <minimum-size width="320" height="-1"/>
                             <preferred-size width="320" height="-1"/>
                           </grid>
                         </constraints>
-                        <properties/>
+                        <properties>
+                          <editable value="true"/>
+                        </properties>
                       </component>
-                      <component id="c2314" class="javax.swing.JLabel">
+                      <component id="108cf" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
                             <preferred-size width="111" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
-                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.issueInstant"/>
+                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseStatus.message"/>
                         </properties>
                       </component>
-                      <component id="7f7ed" class="javax.swing.JTextField" binding="issueInstant1_1TextField">
+                      <component id="d986" class="javax.swing.JTextField" binding="statusMessageTextField">
                         <constraints>
                           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <minimum-size width="320" height="-1"/>
@@ -416,17 +147,17 @@
                         </constraints>
                         <properties/>
                       </component>
-                      <component id="4db1b" class="javax.swing.JLabel">
+                      <component id="2e5e7" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
                             <preferred-size width="111" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
-                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.inResponseTo"/>
+                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseStatus.detail"/>
                         </properties>
                       </component>
-                      <component id="dc668" class="javax.swing.JTextField" binding="inResponseTo1_1TextField">
+                      <component id="cfca5" class="javax.swing.JTextField" binding="statusDetailTextField">
                         <constraints>
                           <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <minimum-size width="320" height="-1"/>
@@ -435,43 +166,332 @@
                         </constraints>
                         <properties/>
                       </component>
-                      <component id="bac60" class="javax.swing.JLabel">
+                    </children>
+                  </grid>
+                  <grid id="b816e" binding="responseElementsPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="responseElements.title"/>
+                    <children>
+                      <component id="c9051" class="javax.swing.JLabel">
                         <constraints>
-                          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
                             <preferred-size width="111" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
-                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.recipient"/>
+                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseElements.assertions"/>
                         </properties>
                       </component>
-                      <component id="72978" class="javax.swing.JTextField" binding="recipientTextField">
+                      <component id="2f68f" class="javax.swing.JTextField" binding="assertionsTextField">
                         <constraints>
-                          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <minimum-size width="320" height="-1"/>
                             <preferred-size width="320" height="-1"/>
                           </grid>
                         </constraints>
                         <properties/>
                       </component>
-                      <vspacer id="27137">
+                      <component id="35976" class="javax.swing.JLabel" binding="extensionsLabel">
                         <constraints>
-                          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                            <preferred-size width="111" height="-1"/>
+                          </grid>
                         </constraints>
-                      </vspacer>
+                        <properties>
+                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseElements.extensions.2_0_only"/>
+                        </properties>
+                      </component>
+                      <component id="1b844" class="javax.swing.JTextField" binding="extensionsTextField">
+                        <constraints>
+                          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <minimum-size width="320" height="-1"/>
+                            <preferred-size width="320" height="-1"/>
+                          </grid>
+                        </constraints>
+                        <properties/>
+                      </component>
+                      <component id="febc4" class="javax.swing.JLabel" binding="encryptedAssertionsLabel">
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                            <preferred-size width="111" height="-1"/>
+                          </grid>
+                        </constraints>
+                        <properties>
+                          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseElements.encryptedAssertions.2_0_only"/>
+                        </properties>
+                      </component>
+                      <component id="75552" class="javax.swing.JTextField" binding="encryptedAssertionsTextField">
+                        <constraints>
+                          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <minimum-size width="320" height="-1"/>
+                            <preferred-size width="320" height="-1"/>
+                          </grid>
+                        </constraints>
+                        <properties/>
+                      </component>
                     </children>
                   </grid>
+                  <grid id="7d2fa" binding="tabHolder" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <tabbedpane id="65458" binding="responseAttributesTabbedPane">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                            <preferred-size width="200" height="200"/>
+                          </grid>
+                        </constraints>
+                        <properties/>
+                        <border type="none"/>
+                        <children>
+                          <grid id="197c5" binding="saml2_0Panel" layout-manager="GridLayoutManager" row-count="6" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                            <margin top="0" left="0" bottom="0" right="0"/>
+                            <constraints>
+                              <tabbedpane title="2.0 Title Not Used"/>
+                            </constraints>
+                            <properties/>
+                            <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="responseAttributes.title"/>
+                            <children>
+                              <component id="236c2" class="javax.swing.JLabel">
+                                <constraints>
+                                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                    <preferred-size width="111" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="resposneAttributes.Id"/>
+                                </properties>
+                              </component>
+                              <component id="219ec" class="javax.swing.JTextField" binding="idTextField">
+                                <constraints>
+                                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <minimum-size width="320" height="-1"/>
+                                    <preferred-size width="320" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                              <component id="fb5dc" class="javax.swing.JLabel">
+                                <constraints>
+                                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                    <preferred-size width="111" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.issueInstant"/>
+                                </properties>
+                              </component>
+                              <component id="7d9cb" class="javax.swing.JTextField" binding="issueInstantTextField">
+                                <constraints>
+                                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <minimum-size width="320" height="-1"/>
+                                    <preferred-size width="320" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                              <component id="ba62b" class="javax.swing.JLabel">
+                                <constraints>
+                                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                    <preferred-size width="111" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.inResponseTo"/>
+                                </properties>
+                              </component>
+                              <component id="89ce5" class="javax.swing.JTextField" binding="inResponseToTextField">
+                                <constraints>
+                                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <minimum-size width="320" height="-1"/>
+                                    <preferred-size width="320" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                              <component id="5805f" class="javax.swing.JLabel">
+                                <constraints>
+                                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                    <preferred-size width="111" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.destination"/>
+                                </properties>
+                              </component>
+                              <component id="11f04" class="javax.swing.JTextField" binding="destinationTextField">
+                                <constraints>
+                                  <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <minimum-size width="320" height="-1"/>
+                                    <preferred-size width="320" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                              <component id="51990" class="javax.swing.JLabel">
+                                <constraints>
+                                  <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                    <preferred-size width="111" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.consent"/>
+                                </properties>
+                              </component>
+                              <component id="8413e" class="javax.swing.JTextField" binding="consentTextField">
+                                <constraints>
+                                  <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <minimum-size width="320" height="-1"/>
+                                    <preferred-size width="320" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                              <vspacer id="9e480">
+                                <constraints>
+                                  <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                              </vspacer>
+                            </children>
+                          </grid>
+                          <grid id="2fcc3" binding="saml1_1Panel" layout-manager="GridLayoutManager" row-count="5" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                            <margin top="0" left="0" bottom="0" right="0"/>
+                            <constraints>
+                              <tabbedpane title="1.1 Title Not Used"/>
+                            </constraints>
+                            <properties/>
+                            <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="responseAttributes.title"/>
+                            <children>
+                              <component id="c7b7" class="javax.swing.JLabel">
+                                <constraints>
+                                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                    <preferred-size width="111" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.responseId"/>
+                                </properties>
+                              </component>
+                              <component id="6c9dd" class="javax.swing.JTextField" binding="responseIdTextField">
+                                <constraints>
+                                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <minimum-size width="320" height="-1"/>
+                                    <preferred-size width="320" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                              <component id="c2314" class="javax.swing.JLabel">
+                                <constraints>
+                                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                    <preferred-size width="111" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.issueInstant"/>
+                                </properties>
+                              </component>
+                              <component id="7f7ed" class="javax.swing.JTextField" binding="issueInstant1_1TextField">
+                                <constraints>
+                                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <minimum-size width="320" height="-1"/>
+                                    <preferred-size width="320" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                              <component id="4db1b" class="javax.swing.JLabel">
+                                <constraints>
+                                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                    <preferred-size width="111" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.inResponseTo"/>
+                                </properties>
+                              </component>
+                              <component id="dc668" class="javax.swing.JTextField" binding="inResponseTo1_1TextField">
+                                <constraints>
+                                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <minimum-size width="320" height="-1"/>
+                                    <preferred-size width="320" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                              <component id="bac60" class="javax.swing.JLabel">
+                                <constraints>
+                                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                    <preferred-size width="111" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseAttributes.recipient"/>
+                                </properties>
+                              </component>
+                              <component id="72978" class="javax.swing.JTextField" binding="recipientTextField">
+                                <constraints>
+                                  <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <minimum-size width="320" height="-1"/>
+                                    <preferred-size width="320" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                              <vspacer id="27137">
+                                <constraints>
+                                  <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                              </vspacer>
+                            </children>
+                          </grid>
+                        </children>
+                      </tabbedpane>
+                    </children>
+                  </grid>
+                  <vspacer id="7adfb">
+                    <constraints>
+                      <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                  </vspacer>
                 </children>
-              </tabbedpane>
+              </grid>
             </children>
           </grid>
-          <vspacer id="7adfb">
+          <grid id="39528" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+              <tabbedpane title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="issuerPanel"/>
             </constraints>
-          </vspacer>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <grid id="9e5d" binding="samlIssuerHolderPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children/>
+              </grid>
+              <vspacer id="ec654">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+            </children>
+          </grid>
         </children>
-      </grid>
+      </tabbedpane>
     </children>
   </grid>
 </form>

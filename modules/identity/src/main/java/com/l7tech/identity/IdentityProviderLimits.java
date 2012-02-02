@@ -1,10 +1,6 @@
 package com.l7tech.identity;
 
 /**
- * Created by IntelliJ IDEA.
- * User: ymoiseyenko
- * Date: 1/27/12
- * Time: 1:55 PM
  * Contains a list of constants used across different user/password policy management dialogs
  */
 public enum IdentityProviderLimits {

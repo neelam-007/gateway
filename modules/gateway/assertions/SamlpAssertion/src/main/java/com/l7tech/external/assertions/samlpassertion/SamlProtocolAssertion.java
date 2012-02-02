@@ -31,7 +31,7 @@ public class SamlProtocolAssertion extends MessageTargetableAssertion {
     /**
      * Get SAML Version
      *
-     * @see com.l7tech.policy.assertion.SamlIssuerConfiguration#getVersion()
+     * @see com.l7tech.policy.assertion.SamlElementGenericConfig#getVersion()
      * @return Version of SAML
      */
     public Integer getVersion() {
@@ -41,7 +41,7 @@ public class SamlProtocolAssertion extends MessageTargetableAssertion {
     /**
      * Set SAML version
      *
-     * @see com.l7tech.policy.assertion.SamlIssuerConfiguration#setVersion(Integer)
+     * @see com.l7tech.policy.assertion.SamlElementGenericConfig#setVersion(Integer)
      * @param version SAML version
      */
     public void setVersion(Integer version) {

@@ -24,7 +24,7 @@ import java.util.*;
 /**
  * @author alex
  */
-public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateKeyable, SetsVariables, UsesVariables, SamlIssuerConfiguration {
+public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateKeyable, SetsVariables, UsesVariables, SamlElementGenericConfig {
     private int conditionsNotBeforeSecondsInPast = -1;
     private int conditionsNotOnOrAfterExpirySeconds = -1;
     /**
@@ -69,9 +69,18 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     }
 
     @Override
-    public boolean addIssuerElement() {
-        // Always add the Issuer element
+    public boolean samlProtocolUsage() {
+        return false;
+    }
+
+    @Override
+    public boolean includeIssuer() {
         return true;
+    }
+
+    @Override
+    public void includeIssuer(boolean includeIssuer) {
+        // nothing to do, always required.
     }
 
     @Override

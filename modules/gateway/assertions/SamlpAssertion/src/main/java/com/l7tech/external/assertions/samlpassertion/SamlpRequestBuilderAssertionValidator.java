@@ -31,6 +31,11 @@ public class SamlpRequestBuilderAssertionValidator implements AssertionValidator
     public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
 
         if (assertion != null) {
+
+            if (assertion.isSignAssertion() && assertion.getVersion() == 2 && !assertion.isAddIssuer()) {
+                result.addError(new PolicyValidatorResult.Error(assertion, "SAML 2.0 cannot be signed unless an Issuer element is configured.", null));
+            }
+
             int firstCreds = -1;
             int firstCertCred = -1;
             int firstRoute = -1;

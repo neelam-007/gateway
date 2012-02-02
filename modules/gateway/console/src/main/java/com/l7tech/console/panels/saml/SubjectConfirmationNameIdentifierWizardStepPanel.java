@@ -6,7 +6,7 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.SamlIssuerConfiguration;
+import com.l7tech.policy.assertion.SamlElementGenericConfig;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
@@ -113,7 +113,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
         nameQualifierTextField.setText(assertion.getNameQualifier());
 
         if (issueMode) {
-            SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
+            SamlElementGenericConfig issuerConfiguration = (SamlElementGenericConfig) settings;
             NameIdentifierInclusionType type = issuerConfiguration.getNameIdentifierType();
             if (type == null) {
                 if (issuerConfiguration.getNameIdentifierValue() != null) {
@@ -189,7 +189,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
         ((SamlPolicyAssertion) settings).setNameQualifier(nameQualifierTextField.getText());
 
         if (issueMode) {
-            SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
+            SamlElementGenericConfig issuerConfiguration = (SamlElementGenericConfig) settings;
             if (includeNameCheckBox.isSelected()) {
                 for (Map.Entry<String, JToggleButton> entry : nameFormatsMap.entrySet()) {
                     JToggleButton jc = entry.getValue();

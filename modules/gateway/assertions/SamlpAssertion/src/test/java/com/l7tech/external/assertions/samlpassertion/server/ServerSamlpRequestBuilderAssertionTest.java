@@ -425,7 +425,6 @@ public class ServerSamlpRequestBuilderAssertionTest {
         XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xPath, prefixToNamespace).compile());
         XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
 
-        //first element should be the auth token
         final Element issuerElement = xpathResultSetIterator.nextElementAsCursor().asDomElement();
         Assert.assertEquals("Wrong element found", "Issuer", issuerElement.getLocalName());
 
@@ -436,6 +435,70 @@ public class ServerSamlpRequestBuilderAssertionTest {
 
         final String nameQualifier = issuerElement.getAttribute("NameQualifier");
         Assert.assertEquals("Name qualifier should not be found", "", nameQualifier);
+    }
+
+    @BugNumber(11808)
+    @Test
+    public void testIssuerIsConfigurable() throws Exception {
+        final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
+        assertion.setVersion(2);
+        assertion.setSoapVersion(1);
+        assertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
+        assertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+        assertion.setAttributeStatement(new SamlAttributeStatement());
+
+        //No issuer
+        assertion.setAddIssuer(false);
+        //turn off signing
+        assertion.setSignAssertion(false);
+
+        final PolicyEnforcementContext context = getContext();
+
+        ServerSamlpRequestBuilderAssertion serverAssertion =
+                new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Unexpected status", AssertionStatus.NONE, assertionStatus);
+
+        final Message samlpRequest = (Message) context.getVariable(assertion.getOtherTargetMessageVariable());
+        final Element documentElement = samlpRequest.getXmlKnob().getDocumentReadOnly().getDocumentElement();
+
+        System.out.println(XmlUtil.nodeToFormattedString(documentElement));
+
+        String xPath = "/soapenv:Envelope/soapenv:Body/samlp2:AttributeQuery/saml2:Issuer";
+
+        final Map<String, String> prefixToNamespace = new HashMap<String, String>();
+        prefixToNamespace.put(SamlConstants.NS_SAML2_PREFIX, SamlConstants.NS_SAML2);
+        prefixToNamespace.put(SamlConstants.NS_SAMLP2_PREFIX, SamlConstants.NS_SAMLP2);
+        prefixToNamespace.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+
+        final ElementCursor cursor = new DomElementCursor(documentElement);
+
+        XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xPath, prefixToNamespace).compile());
+        XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+
+        Assert.assertFalse("No Issuer should have been added", xpathResultSetIterator.hasNext());
+    }
+
+    @Test(expected = ServerPolicyException.class)
+    public void testIssuerRequiredWhenSigning() throws Exception {
+        final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
+        assertion.setVersion(2);
+        assertion.setSoapVersion(1);
+        assertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
+        assertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+        assertion.setAttributeStatement(new SamlAttributeStatement());
+
+        // No issuer
+        assertion.setAddIssuer(false);
+        // signer is on by default
+
+        final PolicyEnforcementContext context = getContext();
+
+        ServerSamlpRequestBuilderAssertion serverAssertion =
+                new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+
+        serverAssertion.checkRequest(context);
     }
 
     private PolicyEnforcementContext getContext() throws IOException {

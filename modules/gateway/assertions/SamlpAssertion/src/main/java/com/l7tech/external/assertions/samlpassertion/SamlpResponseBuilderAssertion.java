@@ -16,7 +16,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  * @author darmstrong
  */
-public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPrivateKeyable {
+public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPrivateKeyable implements SamlIssuerConfig {
 
     public SamlpResponseBuilderAssertion(){
         setTargetModifiedByGateway(true);
@@ -37,12 +37,32 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
         return responseBuilderAssertion;
     }
 
-    public SamlVersion getSamlVersion() {
-        return samlVersion;
+    /**
+     * Left in for backwards compatibility
+     * @param samlVersion samlVersion from old policy xml
+     */
+    @Deprecated
+    public void setSamlVersion(SamlVersion samlVersion) {
+        switch (samlVersion) {
+            case SAML2:
+                version = 2;
+                break;
+            case SAML1_1:
+                version = 1;
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported SAML version: " + samlVersion);
+        }
     }
 
-    public void setSamlVersion(SamlVersion samlVersion) {
-        this.samlVersion = samlVersion;
+    @Override
+    public Integer getVersion() {
+        return version;
+    }
+
+    @Override
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
     public boolean isSignResponse() {
@@ -51,6 +71,36 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
 
     public void setSignResponse(boolean signResponse) {
         this.signResponse = signResponse;
+    }
+
+    @Override
+    public String getCustomIssuerValue() {
+        return issuerValue;
+    }
+
+    @Override
+    public void setCustomIssuerValue(@Nullable String customIssuerValue) {
+        this.issuerValue = customIssuerValue;
+    }
+
+    @Override
+    public String getCustomIssuerFormat() {
+        return issuerFormat;
+    }
+
+    @Override
+    public void setCustomIssuerFormat(@Nullable String customIssuerFormat) {
+        this.issuerFormat = customIssuerFormat;
+    }
+
+    @Override
+    public String getCustomIssuerNameQualifier() {
+        return issuerNameQualifier;
+    }
+
+    @Override
+    public void setCustomIssuerNameQualifier(@Nullable String customIssuerNameQualifier) {
+        this.issuerNameQualifier = customIssuerNameQualifier;
     }
 
     public String getSamlStatusText() {
@@ -158,6 +208,20 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
         this.responseExtensions = responseExtensions;
     }
 
+    @Override
+    public boolean samlProtocolUsage() {
+        return true;
+    }
+
+    @Override
+    public boolean includeIssuer() {
+        return addIssuer;
+    }
+
+    /**
+     * Independent property separate from the interface defining includeIssuer()
+     * @return if user configured the Issuer to be added. Will never apply to SAML 1.1
+     */
     public boolean isAddIssuer() {
         return addIssuer;
     }
@@ -166,20 +230,17 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
         this.addIssuer = addIssuer;
     }
 
+    @Override
+    public void includeIssuer(boolean includeIssuer) {
+        this.addIssuer = includeIssuer;
+    }
+
     public boolean isValidateWebSsoRules() {
         return validateWebSsoRules;
     }
 
     public void setValidateWebSsoRules(boolean validateWebSsoRules) {
         this.validateWebSsoRules = validateWebSsoRules;
-    }
-
-    public String getCustomIssuer() {
-        return customIssuer;
-    }
-
-    public void setCustomIssuer(@Nullable String customIssuer) {
-        this.customIssuer = customIssuer;
     }
 
     @Override
@@ -237,16 +298,18 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
                 getResponseAssertions()
         );
 
-        switch (getSamlVersion()){
-            case SAML2:
+        switch (getVersion()){
+            case 2:
                 variablesUsed.addExpressions(
                         getDestination(),
                         getConsent(),
                         getResponseExtensions(),
                         getEncryptedAssertions(),
-                        getCustomIssuer());
+                        getCustomIssuerValue(),
+                        getCustomIssuerFormat(),
+                        getCustomIssuerNameQualifier());
                 break;
-            case SAML1_1:
+            case 1:
                 variablesUsed.addExpressions( getRecipient() );
         }
 
@@ -254,7 +317,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
     }
 
     // - PRIVATE
-    private SamlVersion samlVersion = SamlVersion.SAML2;
+    private Integer version = 2;
     private boolean signResponse;
     private boolean addIssuer;
     private String samlStatusText = SamlStatus.SAML2_SUCCESS.getValue();
@@ -282,7 +345,10 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
     /**
      * Allow a custom Issuer value via the assertion.
      */
-    private String customIssuer;
+    private String issuerValue;
+    private String issuerFormat;
+    private String issuerNameQualifier;
+
 
     private static final String META_INITIALIZED = SamlpResponseBuilderAssertion.class.getName() + ".metadataInitialized";
 }

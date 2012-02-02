@@ -11,6 +11,7 @@ import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import saml.support.ds.KeyInfoType;
 import saml.support.ds.X509DataType;
 import saml.support.ds.X509IssuerSerialType;
@@ -39,6 +40,7 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
 {
     private static final Logger logger = Logger.getLogger(AbstractSamlp2MessageGenerator.class.getName());
 
+    @Nullable
     private final NameIdentifierResolver issuerNameResolver;
 
     protected final Map<String, Object> variablesMap;
@@ -60,7 +62,7 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
 
     public AbstractSamlp2MessageGenerator(@NotNull final Map<String, Object> variablesMap,
                                           @NotNull final Audit auditor,
-                                          @NotNull final NameIdentifierResolver issuerNameResolver)
+                                          @Nullable final NameIdentifierResolver issuerNameResolver)
         throws SamlpAssertionException
     {
         this.variablesMap = variablesMap;
