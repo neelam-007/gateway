@@ -5,6 +5,8 @@ import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.io.failover.AbstractFailoverStrategy;
+import static com.l7tech.common.io.failover.AbstractFailoverStrategy.makeSynchronized;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
@@ -693,7 +695,7 @@ public class SsgRuntime {
                         strategy = new StickyFailoverStrategy<String>(addrs);
                     }
                     int max = addrs.length;
-                    client = new FailoverHttpClient(client, strategy, max, log);
+                    client = new FailoverHttpClient(client, makeSynchronized( strategy ), max, log);
                 }
 
                 // (SimpleHttpClient passes-through requests, so it won't wrap FailoverHttpRequest instances.)

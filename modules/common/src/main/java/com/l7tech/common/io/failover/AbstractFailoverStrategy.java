@@ -1,11 +1,7 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.common.io.failover;
 
+
+import com.l7tech.util.ConfigFactory;
 
 /**
  * Superclass for implementations of {@link FailoverStrategy}.
@@ -23,6 +19,20 @@ public abstract class AbstractFailoverStrategy<ST> implements FailoverStrategy<S
         if (servers == null) throw new NullPointerException();
         if (servers.length < 1) throw new IllegalArgumentException("Must be at least one server");
         this.servers = servers;
+    }
+
+    /**
+     * Get the configured interval between probes for failing servers.
+     *
+     * @param defaultProbeMillis The default value to use.
+     * @return The probe interval in milliseconds.
+     */
+    protected long getProbeInterval( final long defaultProbeMillis ) {
+        // The system property used to be specific to the round-robin strategy
+        // but is now used by other strategies, the name is preserved for
+        // backwards compatibility.
+        final long interval = ConfigFactory.getLongProperty( "com.l7tech.common.io.failover.robin.retryMillis", defaultProbeMillis );
+        return interval == 0 ? defaultProbeMillis : interval;
     }
 
     @Override

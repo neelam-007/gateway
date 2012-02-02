@@ -1,7 +1,5 @@
 package com.l7tech.common.io.failover;
 
-import com.l7tech.util.ConfigFactory;
-
 import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -19,11 +17,8 @@ public class RoundRobinFailoverStrategy<ST> extends AbstractFailoverStrategy<ST>
     private static final Logger logger = Logger.getLogger(RoundRobinFailoverStrategy.class.getName());
     private static final long DEFAULT_PROBE_MILLIS = 5 * 60 * 1000; // Retry failed server every 5 min by default
 
-    private long probeTime = ConfigFactory.getLongProperty( "com.l7tech.common.io.failover.robin.retryMillis", DEFAULT_PROBE_MILLIS );
-
-    int next = 0;
-    LinkedHashMap<ST, Long> up = new LinkedHashMap<ST, Long>();
-    LinkedHashMap<ST, Long> down = new LinkedHashMap<ST, Long>();
+    private final LinkedHashMap<ST, Long> up = new LinkedHashMap<ST, Long>();
+    private final LinkedHashMap<ST, Long> down = new LinkedHashMap<ST, Long>();
 
     /**
      * Create a new instance based on the specified server array, which must be non-null and non-empty.
@@ -48,11 +43,11 @@ public class RoundRobinFailoverStrategy<ST> extends AbstractFailoverStrategy<ST>
                 Map.Entry<ST, Long> entry = entryIterator.next();
                 ST server = entry.getKey();
                 Long probeWhen = entry.getValue();
-                if (probeWhen != null && probeWhen <= now) {
+                if (probeWhen != null && probeWhen <= (now - getProbeInterval())) {
                     // Probe this server; update time, move to end of list, and return it
                     if (logger.isLoggable(Level.FINE)) logger.finer("Probing server: " + server);
                     entryIterator.remove();
-                    down.put(server, now + probeTime);
+                    down.put(server, now);
                     return server;
                 }
             }
@@ -75,11 +70,15 @@ public class RoundRobinFailoverStrategy<ST> extends AbstractFailoverStrategy<ST>
         return server;
     }
 
+    private long getProbeInterval() {
+        return super.getProbeInterval( DEFAULT_PROBE_MILLIS );
+    }
+
     @Override
     public void reportFailure(ST service) {
         if (up.isEmpty() || !up.containsKey(service)) return;
         up.remove(service);
-        down.put(service, System.currentTimeMillis() + probeTime);
+        down.put(service, System.currentTimeMillis());
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.l7tech.common.http.prov.apache.StaleCheckingHttpConnectionManager;
 import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.CertUtils;
+import static com.l7tech.common.io.failover.AbstractFailoverStrategy.makeSynchronized;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
@@ -584,7 +585,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 strategy = new StickyFailoverStrategy<String>(addrs);
             }
             int attempts = addrs.length;
-            client = new FailoverHttpClient(client, strategy, attempts, logger);
+            client = new FailoverHttpClient(client, makeSynchronized( strategy ), attempts, logger);
         }
 
         return new SimpleHttpClient(client);

@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.common.io.failover;
 
 import java.util.HashMap;
@@ -15,11 +10,10 @@ import java.util.Map;
 public class OrderedStickyFailoverStrategy<ST> extends AbstractFailoverStrategy<ST> {
     public static final long DEFAULT_PROBE_TIME = 15 * 60 * 1000; // probe every 15 min by default
 
-    private long probeTime = DEFAULT_PROBE_TIME;
-
     private int current = 0;
     private long lastProbeTime = -1;
 
+    private long probeTime = -1;
     private int probeDelay;
     private int probing = -1;
     private int nextdown = -1;
@@ -40,12 +34,17 @@ public class OrderedStickyFailoverStrategy<ST> extends AbstractFailoverStrategy<
         }
     }
 
+    /**
+     * Get the probe time or -1 if not set.
+     *
+     * @return The probe time.
+     */
     public long getProbeTime() {
         return probeTime;
     }
 
     public void setProbeTime(long probeTime) {
-        if (probeTime < 1) throw new IllegalArgumentException("probeTime must be positive");
+        if (probeTime < 1 && probeTime != -1) throw new IllegalArgumentException("probeTime must be positive");
         this.probeTime = probeTime;
     }
 
@@ -64,7 +63,7 @@ public class OrderedStickyFailoverStrategy<ST> extends AbstractFailoverStrategy<
             } else {
                 // See if it is time to start probing to see if any higher-preference server has come back up.
                 final long now = System.currentTimeMillis();
-                if (now - lastProbeTime > probeTime) {
+                if (now - lastProbeTime > getProbeInterval()) {
                     lastProbeTime = now;
                     probing = 0;
                     probeDelay = servers.length;
@@ -118,4 +117,11 @@ public class OrderedStickyFailoverStrategy<ST> extends AbstractFailoverStrategy<
     public String getDescription() {
         return "Ordered Sticky with Failover";
     }
+
+    private long getProbeInterval() {
+        return probeTime > 0 ?
+                probeTime :
+                super.getProbeInterval( DEFAULT_PROBE_TIME );
+    }
+
 }
