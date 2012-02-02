@@ -769,6 +769,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             throw new MqNativeConfigException(
                     "Error accessing MQ endpoint #" + assertion.getSsgActiveConnectorId(), e );
         } catch ( NullPointerException e ) {
+            // Unboxing of 'assertion.getSsgActiveConnectorId()' may produce 'java.lang.NullPointerException'.
             throw new MqNativeConfigException(
                     "Error accessing MQ endpoint #" + assertion.getSsgActiveConnectorId(), e );
         }

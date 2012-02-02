@@ -1088,8 +1088,9 @@ public class MqNativePropertiesDialog extends JDialog {
 
     private void onTest() {
         try {
-            viewToModel(mqNativeActiveConnector);
-            getMqNativeAdmin().testSettings(mqNativeActiveConnector);
+            SsgActiveConnector settings = new SsgActiveConnector();
+            viewToModel(settings);
+            getMqNativeAdmin().testSettings(settings);
             JOptionPane.showMessageDialog(MqNativePropertiesDialog.this,
                     "The Gateway has successfully verified this MQ Native setting.",
                     "MQ Native Test Successful",
