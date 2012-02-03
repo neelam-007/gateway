@@ -63,6 +63,11 @@ public class LogResource extends SecureResource {
     //- PROTECTED
 
     @Override
+    protected int getCacheDuration() {
+        return 10;
+    }
+
+    @Override
     protected IResourceStream getSecureResourceStream() {
         IResourceStream resource = null;
         ValueMap parameters = getParameters();

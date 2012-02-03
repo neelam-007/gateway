@@ -36,6 +36,11 @@ public class AuditResource extends SecureResource {
     //- PROTECTED
 
     @Override
+    protected int getCacheDuration() {
+        return 60;
+    }
+
+    @Override
     protected IResourceStream getSecureResourceStream() {
         IResourceStream resource = null;
         ValueMap parameters = getParameters();
