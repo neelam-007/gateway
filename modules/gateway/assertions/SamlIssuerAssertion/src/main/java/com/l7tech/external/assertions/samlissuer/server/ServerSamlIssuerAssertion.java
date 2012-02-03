@@ -491,7 +491,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     // is contained within the values.
                     final String resolvedString = getStringForResolvedObject(configAttribute.getValueComparison(), resolvedObject);
                     if (!requestAttributeValues.contains(resolvedString)) {
-                        logger.log(Level.FINE, "Resolved value for Attribute '" + configAttribute.getName() + "' was filtered as it's value '" + resolvedString + "' was not included in the filter attribute variables.");
+                        logger.log(Level.FINE, "Resolved value for Attribute '" + configAttribute.getName() + "' was filtered as its value '" + resolvedString + "' was not included in the filter attribute variables.");
                         filteredAttributesBasedOnValue.add(getAttributeDisplayString(configAttribute, version));
                         continue;
                     }
