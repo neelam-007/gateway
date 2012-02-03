@@ -23,19 +23,13 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.MutablePair;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
@@ -55,6 +49,10 @@ import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
  * Dialog for configuring a MQ Native queue.
  */
 public class MqNativePropertiesDialog extends JDialog {
+
+    private static final int TAB_INBOUND = 1;
+    private static final int TAB_OUTBOUND = 2;
+
     private JPanel contentPane;
     private JRadioButton outboundRadioButton;
     private JRadioButton inboundRadioButton;
@@ -108,11 +106,6 @@ public class MqNativePropertiesDialog extends JDialog {
     private JCheckBox enableSSLCheckBox;
     private JTextField authUserNameTextBox;
 
-    private JTable advancedPropertiesTable;
-    private AdvancedPropertyTableModel advancedTableModel;
-    private JButton addButton;
-    private JButton editButton;
-    private JButton removeButton;
     private JCheckBox clientAuthCheckbox;
     private PrivateKeysComboBox keystoreComboBox;
     private JLabel keystoreLabel;
@@ -134,8 +127,6 @@ public class MqNativePropertiesDialog extends JDialog {
     private FormAuthorizationPreparer securityFormAuthorizationPreparer;
     private Logger logger = Logger.getLogger(MqNativePropertiesDialog.class.getName());
     private ContentTypeComboBoxModel contentTypeModel;
-
-    private Map<String, String> advancedPropertiesMap;
 
     //these permissions will have to be added for adding and editing MQ native connections.
 //    private PermissionFlags flags;
@@ -188,66 +179,6 @@ public class MqNativePropertiesDialog extends JDialog {
                     super.addElement(new ContentTypeComboBoxItem(cth)) ;
                 } catch (IOException e) {
                     logger.warning("Error parsing the content type " + s);
-                }
-            }
-        }
-    }
-
-    private class AdvancedPropertyTableModel extends AbstractTableModel {
-        private static final int MAX_TABLE_COLUMN_NUM = 2;
-
-        AdvancedPropertyTableModel(){
-            initAdvancedProperties();
-        }
-
-        @Override
-        public int getColumnCount() {
-            return MAX_TABLE_COLUMN_NUM;
-        }
-
-        @Override
-        public int getRowCount() {
-            return advancedPropertiesMap.size();
-        }
-
-        @Override
-        public String getColumnName(int col) {
-            switch (col) {
-                case 0:
-                    return "Property Name";
-                case 1:
-                    return "Value";
-                default:
-                    throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
-            }
-        }
-
-        @Override
-        public Object getValueAt(int row, int col) {
-            String name = (String) advancedPropertiesMap.keySet().toArray()[row];
-
-            switch (col) {
-                case 0:
-                    return name;
-                case 1:
-                    return advancedPropertiesMap.get(name);
-                default:
-                    throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
-            }
-        }
-
-        private void initAdvancedProperties() {
-            advancedPropertiesMap = new TreeMap<String, String>();
-
-            if(mqNativeActiveConnector != null) {
-                for (String property : mqNativeActiveConnector.getPropertyNames()) {
-                    if (property.startsWith( PROPERTIES_KEY_MQ_NATIVE_ADVANCED_PROPERTY_PREFIX) &&
-                        property.length() > PROPERTIES_KEY_MQ_NATIVE_ADVANCED_PROPERTY_PREFIX.length() + 1) {
-                        advancedPropertiesMap.put(
-                            property.substring(PROPERTIES_KEY_MQ_NATIVE_ADVANCED_PROPERTY_PREFIX.length()),
-                            mqNativeActiveConnector.getProperty(property)
-                        );
-                    }
                 }
             }
         }
@@ -519,51 +450,6 @@ public class MqNativePropertiesDialog extends JDialog {
             }
         });
 
-        advancedPropertiesTable.setModel(getAdvancedPropertyTableModel());
-
-        advancedPropertiesTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                if(advancedPropertiesTable.getSelectedRow()<0){
-                    editButton.setEnabled(false);
-                    removeButton.setEnabled(false);
-                }
-                else{
-                    editButton.setEnabled(true);
-                    removeButton.setEnabled(true);
-                }
-            }
-        });
-
-        advancedPropertiesTable.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2 && e.getButton() == 1)
-                    editAdvProp();
-            }
-        });
-
-        addButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                addAdvProp();
-            }
-        });
-
-        editButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                editAdvProp();
-            }
-        });
-        editButton.setEnabled(false);
-
-        removeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                removeAdvProp();
-            }
-        });
-        removeButton.setEnabled(false);
-
         clientAuthCheckbox.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -606,82 +492,6 @@ public class MqNativePropertiesDialog extends JDialog {
         enableOrDisableComponents();
         applyFormSecurity();
         Utilities.setEscKeyStrokeDisposes(this);
-    }
-
-    private void addAdvProp() {
-        final MqNativeAdvancedPropertiesDialog dialog = new MqNativeAdvancedPropertiesDialog(null, advancedPropertiesMap);
-        dialog.setTitle("Advanced Property");
-        dialog.pack();
-        Utilities.centerOnScreen(dialog);
-        DialogDisplayer.display(dialog, new Runnable() {
-            @Override
-            public void run() {
-                if (!dialog.isCanceled()) {
-                    updatePropertiesList(dialog.getTheProperty(), false);
-                    dialog.dispose();
-                }
-            }
-        });
-    }
-
-    private void editAdvProp() {
-        int viewRow = advancedPropertiesTable.getSelectedRow();
-        if (viewRow < 0) return;
-
-        String name = (String) advancedTableModel.getValueAt(viewRow, 0);
-        String value = advancedPropertiesMap.get(name);
-
-        final MqNativeAdvancedPropertiesDialog dialog = new MqNativeAdvancedPropertiesDialog(new MutablePair<String, String>(name, value), advancedPropertiesMap);
-        dialog.setTitle("Advanced Property");
-        dialog.pack();
-        Utilities.centerOnScreen(dialog);
-        DialogDisplayer.display(dialog, new Runnable() {
-            @Override
-            public void run() {
-                if (!dialog.isCanceled()) {
-                    updatePropertiesList(dialog.getTheProperty(), false);
-                    dialog.dispose();
-                }
-            }
-        });
-    }
-
-    private void removeAdvProp() {
-        int viewRow = advancedPropertiesTable.getSelectedRow();
-        if (viewRow < 0) return;
-
-        String name = (String) advancedTableModel.getValueAt(viewRow, 0);
-        String value = advancedPropertiesMap.get(name);
-        updatePropertiesList(new MutablePair<String, String>(name, value), true);
-    }
-
-    private AdvancedPropertyTableModel getAdvancedPropertyTableModel() {
-        if (advancedTableModel == null) {
-            advancedTableModel = new AdvancedPropertyTableModel();
-        }
-        return advancedTableModel;
-    }
-
-    private void updatePropertiesList(final MutablePair<String, String> selectedProperty, boolean deleted) {
-        ArrayList<String> keyset = new ArrayList<String>();
-        int currentRow;
-
-        if (deleted) {
-            keyset.addAll(advancedPropertiesMap.keySet());
-            currentRow = keyset.indexOf(selectedProperty.left);
-            advancedPropertiesMap.remove(selectedProperty.left);
-        } else {
-            advancedPropertiesMap.put(selectedProperty.left, selectedProperty.right);
-            keyset.addAll(advancedPropertiesMap.keySet());
-            currentRow = keyset.indexOf(selectedProperty.left);
-        }
-
-        // Refresh the table
-        advancedTableModel.fireTableDataChanged();
-
-        // Refresh the selection highlight
-        if (currentRow == advancedPropertiesMap.size()) currentRow--; // If the previous deleted row was the last row
-        if (currentRow >= 0) advancedPropertiesTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
     }
 
     private void loadContentTypesModel() {
@@ -1016,8 +826,8 @@ public class MqNativePropertiesDialog extends JDialog {
             jmsMsgPropWithSoapActionTextField.setEnabled(useJmsMsgPropAsSoapActionRadioButton.isSelected());
             serviceNameLabel.setEnabled(associateQueueWithPublishedService.isSelected());
             serviceNameCombo.setEnabled(associateQueueWithPublishedService.isSelected());
-            tabbedPane.setEnabledAt(2, true);
-            tabbedPane.setEnabledAt(3, false);
+            tabbedPane.setEnabledAt(TAB_INBOUND, true);
+            tabbedPane.setEnabledAt(TAB_OUTBOUND, false);
             enableOrDisableAcknowledgementControls();
             final boolean specified = inboundReplySpecifiedQueueRadioButton.isSelected();
             final boolean auto = inboundReplyAutomaticRadioButton.isSelected();
@@ -1026,8 +836,8 @@ public class MqNativePropertiesDialog extends JDialog {
             inboundCorrelationIdRadioButton.setEnabled(specified || auto);
         } else {
             isTemplateQueue.setEnabled(true);
-            tabbedPane.setEnabledAt(2, false);
-            tabbedPane.setEnabledAt(3, true);
+            tabbedPane.setEnabledAt(TAB_INBOUND, false);
+            tabbedPane.setEnabledAt(TAB_OUTBOUND, true);
             outboundReplySpecifiedQueueField.setEnabled(outboundReplySpecifiedQueueRadioButton.isSelected());
             outboundMessageIdRadioButton.setEnabled(outboundReplySpecifiedQueueRadioButton.isSelected());
             outboundCorrelationIdRadioButton.setEnabled(outboundReplySpecifiedQueueRadioButton.isSelected());
@@ -1218,11 +1028,6 @@ public class MqNativePropertiesDialog extends JDialog {
             } else if (outboundReplyNoneRadioButton.isSelected()) {
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE.toString());
             }
-        }
-
-        // Save advanced properties
-        for (String name: advancedPropertiesMap.keySet()) {
-            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_ADVANCED_PROPERTY_PREFIX + name, advancedPropertiesMap.get(name));
         }
     }
 

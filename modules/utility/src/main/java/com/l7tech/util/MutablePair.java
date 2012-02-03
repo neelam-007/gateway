@@ -1,5 +1,7 @@
 package com.l7tech.util;
 
+import static com.l7tech.util.Pair.pair;
+
 import java.io.Serializable;
 import java.util.Map;
 
@@ -38,5 +40,9 @@ public class MutablePair<L, R> implements Map.Entry<L, R>, Serializable {
     public R setValue(R value) {
         right = value;
         return right;
+    }
+
+    public Pair<L,R> asPair() {
+        return pair( left, right );
     }
 }

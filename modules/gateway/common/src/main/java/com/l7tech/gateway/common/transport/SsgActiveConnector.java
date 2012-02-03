@@ -86,8 +86,6 @@ public class SsgActiveConnector extends NamedEntityImp {
     public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE_FROM_PROPERTY = "MqNativeInboundContentTypeFromProperty";
     public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME = "MqNativeInboundFailedQueueName";
     public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_MQ_MESSAGE_MAX_BYTES = "MqNativeInboundMqMessageMaxBytes";
-    // MQ Native - advanced properties
-    public static final String PROPERTIES_KEY_MQ_NATIVE_ADVANCED_PROPERTY_PREFIX = "MqNativeAdvancedProperty.";
     // MQ Native - outbound properties
     public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE = "MqNativeOutboundIsTemplateQueue";
     public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN = "MqNativeOutboundTemporaryQueueNamePattern";

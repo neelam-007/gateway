@@ -12,14 +12,11 @@ import static com.l7tech.util.Either.left;
 import static com.l7tech.util.Either.right;
 import static com.l7tech.util.Eithers.extract;
 import com.l7tech.util.Functions.Nullary;
-import static com.l7tech.util.Functions.grep;
 import static com.l7tech.util.Functions.memoize;
 import com.l7tech.util.Option;
-import static com.l7tech.util.TextUtils.startsWith;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Hashtable;
-import java.util.Properties;
 
 /**
  * Immutable endpoint configuration for runtime use.
@@ -36,7 +33,6 @@ class MqNativeEndpointConfig {
     private final MqNativeReplyType replyType;
     private final String replyToModelQueueName;
     private final Nullary<Either<MqNativeConfigException,Hashtable>> queueManagerProperties;
-    private final Nullary<Properties> messageProperties;
 
     MqNativeEndpointConfig( final SsgActiveConnector originalConnector,
                             final Option<String> password,
@@ -54,7 +50,6 @@ class MqNativeEndpointConfig {
         this.replyType = connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE, MqNativeReplyType.class );
         this.replyToModelQueueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN );
         this.queueManagerProperties = memoize(buildQueueManagerProperties(connector,password));
-        this.messageProperties = memoize( buildProperties( connector, PROPERTIES_KEY_MQ_NATIVE_ADVANCED_PROPERTY_PREFIX ) );
     }
 
     boolean isDynamic() {
@@ -95,10 +90,6 @@ class MqNativeEndpointConfig {
 
     String getName() {
         return name;
-    }
-
-    Properties getMessageProperties() {
-        return (Properties)messageProperties.call().clone();
     }
 
     /**
@@ -211,25 +202,6 @@ class MqNativeEndpointConfig {
                 } catch ( MqNativeConfigException e ) {
                     return left( e );
                 }
-            }
-        };
-    }
-
-    private Nullary<Properties> buildProperties( final SsgActiveConnector connector,
-                                                 final String prefix ) {
-        return new Nullary<Properties>(){
-            @Override
-            public Properties call() {
-                final Properties properties = new Properties();
-
-                for ( final String property : grep( connector.getPropertyNames(), startsWith( prefix ) ) ) {
-                    properties.setProperty(
-                        property.substring(prefix.length()),
-                        connector.getProperty(property)
-                    );
-                }
-
-                return properties;
             }
         };
     }

@@ -20,6 +20,8 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import static com.l7tech.policy.assertion.VariableUseSupport.expressions;
 import static com.l7tech.policy.assertion.VariableUseSupport.variables;
 
+import java.util.Map;
+
 /**
  * Route outbound MQ Native to WebSphere MQ.
  */
@@ -41,6 +43,8 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     private String responseSize;
     private boolean isPutToQueue = true; // Default: set the message direction to "Put to Queue"
     private MqNativeDynamicProperties dynamicMqRoutingProperties;
+    @Nullable
+    private Map<String,String> requestMessageAdvancedProperties;
     @NotNull
     private MqNativeMessagePropertyRuleSet requestMqMessagePropertyRuleSet = defaultMqNativeMessagePropertyRuleSet();
     @NotNull
@@ -178,6 +182,25 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      */
     public void setDynamicMqRoutingProperties( @Nullable final MqNativeDynamicProperties dynamicMqRoutingProperties ) {
         this.dynamicMqRoutingProperties = dynamicMqRoutingProperties;
+    }
+
+    /**
+     * Get the advanced properties for the outbound request message.
+     *
+     * @return The message properties or null.
+     */
+    @Nullable
+    public Map<String, String> getRequestMessageAdvancedProperties() {
+        return requestMessageAdvancedProperties;
+    }
+
+    /**
+     * Set the advanced properties for the outbound request message.
+     *
+     * @param requestMessageAdvancedProperties The properties to use.
+     */
+    public void setRequestMessageAdvancedProperties( @Nullable final Map<String, String> requestMessageAdvancedProperties ) {
+        this.requestMessageAdvancedProperties = requestMessageAdvancedProperties;
     }
 
     /**

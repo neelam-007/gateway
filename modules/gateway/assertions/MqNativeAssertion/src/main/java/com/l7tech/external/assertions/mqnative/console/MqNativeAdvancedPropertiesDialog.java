@@ -2,10 +2,13 @@ package com.l7tech.external.assertions.mqnative.console;
 
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import static com.l7tech.gui.util.Utilities.comboBoxModel;
 import com.l7tech.util.MutablePair;
+import com.l7tech.util.Pair;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.*;
 import java.util.Map;
 
@@ -18,7 +21,10 @@ public class MqNativeAdvancedPropertiesDialog extends JDialog {
     private boolean canceled;
     private MutablePair<String, String> targetProp;
 
-    public MqNativeAdvancedPropertiesDialog(final MutablePair<String, String> targetProp, final Map<String, String> properties) {
+    public MqNativeAdvancedPropertiesDialog(final Window parent,
+                                            final MutablePair<String, String> targetProp,
+                                            final Map<String, String> properties) {
+        super( parent, DEFAULT_MODALITY_TYPE );
         this.targetProp = targetProp;
         setContentPane(contentPane);
         setModal(true);
@@ -86,6 +92,7 @@ public class MqNativeAdvancedPropertiesDialog extends JDialog {
         }
 
         checkFieldsForText();
+        Utilities.setMinimumSize( this );
     }
 
     private void checkFieldsForText(){
@@ -117,7 +124,7 @@ public class MqNativeAdvancedPropertiesDialog extends JDialog {
         return canceled;
     }
 
-    public MutablePair<String, String> getTheProperty(){
-        return targetProp;
+    public Pair<String, String> getTheProperty(){
+        return targetProp.asPair();
     }
 }

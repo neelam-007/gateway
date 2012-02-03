@@ -640,7 +640,11 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         }
 
         // instantiate the request MQMessage
-        MQMessage newRequest = MqNativeUtils.applyPropertiesToMessage(new MQMessage(), endpointCfg.getMessageProperties());
+        final MQMessage newRequest = new MQMessage();
+        final Map<String,String> properties = assertion.getRequestMessageAdvancedProperties();
+        if ( properties != null ) {
+            MqNativeUtils.applyPropertiesToMessage( newRequest, properties );
+        }
 
         // determine whether to copy over any header from the request
         writeRequestHeader(newRequest, requestMessage);

@@ -32,7 +32,8 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Hashtable;
-import java.util.Properties;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -312,10 +313,11 @@ class MqNativeUtils {
         return mqMessage;
     }
 
-    static MQMessage applyPropertiesToMessage( @NotNull final MQMessage mqMessage,
-                                               @NotNull final Properties properties ) throws MqNativeConfigException {
-        for( final String name : properties.stringPropertyNames() ) {
-            final String value = properties.getProperty(name);
+    static void applyPropertiesToMessage( @NotNull final MQMessage mqMessage,
+                                          @NotNull final Map<String,String> properties ) throws MqNativeConfigException {
+        for( final Entry<String,String> propertyEntry : properties.entrySet() ) {
+            final String name = propertyEntry.getKey();
+            final String value = propertyEntry.getValue();
 
             if( MQ_PROPERTY_APPDATA.equals( name ) ) {
                 mqMessage.applicationIdData = value;
@@ -355,7 +357,6 @@ class MqNativeUtils {
                 mqMessage.userId = value;
             } // else not a message property
         }
-        return mqMessage;
     }
 
     static boolean isTransactional(SsgActiveConnector connector) {
