@@ -2045,22 +2045,39 @@ public class MainWindow extends JFrame implements SheetHolder {
     private void updateCustomGlobalActionsMenu() {
         JMenu menu = getCustomGlobalActionsMenu();
         menu.removeAll();
-
+        
+        List<Action> menuActions = new ArrayList<Action>();
         boolean added = false;
         Set<Assertion> assertions = TopComponents.getInstance().getAssertionRegistry().getAssertions();
         for (Assertion assertion : assertions) {
             if (Registry.getDefault().getLicenseManager().isAssertionEnabled(assertion)) {
                 Action[] actions = assertion.meta().get(AssertionMetadata.GLOBAL_ACTIONS);
-                if (actions != null) for (Action action : actions) {
-                    menu.add(action);
-                    added = true;
+                if (actions != null) {
+                    menuActions.addAll(Arrays.asList(actions));
                 }
             }
+        }
+        // sort actions before sticking them into Additional Actions menu
+        // so they'll appear in the same order
+        Collections.sort(menuActions, new ActionComparator());
+        //now add actions to the menu
+        for (Action action : menuActions) {
+            menu.add(action);
+            added = true;
         }
 
         menu.setEnabled(added);
     }
 
+    /**
+     * Compares actions based on the classname. Used in sort function.
+     */
+    private static class ActionComparator implements Comparator<Action> {
+        @Override
+        public int compare(Action a1, Action a2) {
+            return a1.getClass().getName().compareTo(a2.getClass().getName());
+        }
+    }
     /**
      * Return the MainJMenuBar property value.
      *
