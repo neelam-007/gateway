@@ -869,6 +869,10 @@ public class MqNativePropertiesDialog extends JDialog {
                             ExceptionUtils.getMessage(e1));
                     }
                 }
+                
+                if (StringUtils.isEmpty(contentTypeFromProperty) && StringUtils.isEmpty(contentType)) {
+                    specifyContentTypeCheckBox.setSelected(false);
+                }
             // outbound options
             } else {
                 String msgFormatProp = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_MESSAGE_FORMAT);
@@ -1171,28 +1175,33 @@ public class MqNativePropertiesDialog extends JDialog {
                 }
             }
 
-            if (specifyContentTypeCheckBox.isSelected() && specifyContentTypeFromHeader.isSelected()) {
-                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE_FROM_PROPERTY, getContentTypeFromProperty.getText());
-            } else if (specifyContentTypeCheckBox.isSelected() && specifyContentTypeFreeForm.isSelected()) {
-                //if none of the list is selected and there is a value in the content type,
-                //then we'll use the one that was entered by the user
-                ContentTypeHeader selectedContentType;
-                if (contentTypeValues.getSelectedIndex() == -1 && contentTypeValues.getEditor().getItem() != null) {
-                    String ctHeaderString = ((JTextField) contentTypeValues.getEditor().getEditorComponent()).getText();
-                    selectedContentType = ContentTypeHeader.parseValue(ctHeaderString);
+            if (specifyContentTypeCheckBox.isSelected()) {
+                if (specifyContentTypeFromHeader.isSelected()) {
+                    connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE_FROM_PROPERTY, getContentTypeFromProperty.getText());
+                } else if (specifyContentTypeFreeForm.isSelected()) {
+                    //if none of the list is selected and there is a value in the content type,
+                    //then we'll use the one that was entered by the user
+                    ContentTypeHeader selectedContentType;
+                    if (contentTypeValues.getSelectedIndex() == -1 && contentTypeValues.getEditor().getItem() != null) {
+                        String ctHeaderString = ((JTextField) contentTypeValues.getEditor().getEditorComponent()).getText();
+                        selectedContentType = ContentTypeHeader.parseValue(ctHeaderString);
 
-                    //check if the typed in content type matches to any one of the ones in our list
-                    int foundIndex = findContentTypeInList(selectedContentType);
-                    if (foundIndex != -1) {
-                        selectedContentType = ((ContentTypeComboBoxItem) contentTypeModel.getElementAt(foundIndex)).getContentType();
+                        //check if the typed in content type matches to any one of the ones in our list
+                        int foundIndex = findContentTypeInList(selectedContentType);
+                        if (foundIndex != -1) {
+                            selectedContentType = ((ContentTypeComboBoxItem) contentTypeModel.getElementAt(foundIndex)).getContentType();
+                        }
+                    } else {
+                        selectedContentType = ((ContentTypeComboBoxItem) contentTypeValues.getSelectedItem()).getContentType();
                     }
-                } else {
-                    selectedContentType = ((ContentTypeComboBoxItem) contentTypeValues.getSelectedItem()).getContentType();
-                }
 
-                if (selectedContentType != null) {
-                    connector.setProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, selectedContentType.getFullValue());
+                    if (selectedContentType != null) {
+                        connector.setProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, selectedContentType.getFullValue());
+                    }
                 }
+            } else {
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE_FROM_PROPERTY, "");
+                connector.setProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, "");
             }
 
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_MQ_MESSAGE_MAX_BYTES, byteLimitPanel.getValue());
