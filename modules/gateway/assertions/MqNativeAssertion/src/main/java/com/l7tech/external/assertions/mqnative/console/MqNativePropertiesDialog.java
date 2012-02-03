@@ -692,16 +692,6 @@ public class MqNativePropertiesDialog extends JDialog {
             items.add(new ContentTypeComboBoxItem(ContentTypeHeader.TEXT_DEFAULT));
             items.add(new ContentTypeComboBoxItem(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED));
             items.add(new ContentTypeComboBoxItem(ContentTypeHeader.OCTET_STREAM_DEFAULT));
-            try {
-                items.add(new ContentTypeComboBoxItem(ContentTypeHeader.parseValue("application/fastinfoset")));
-            } catch (IOException e) {
-                logger.warning("Error trying to initialize content-type application/fastinfoset");
-            }
-            try {
-                items.add(new ContentTypeComboBoxItem(ContentTypeHeader.parseValue("application/soap+fastinfoset")));
-            } catch (IOException e) {
-                logger.warning("Error trying to initialize content-type application/soap+fastinfoset");
-            }
 
             contentTypeModel = new ContentTypeComboBoxModel(items.toArray(new ContentTypeComboBoxItem[items.size()]));
             contentTypeValues.setModel(contentTypeModel);
