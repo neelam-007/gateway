@@ -102,6 +102,10 @@ public enum SamlStatus {
         return convertToStringArray(getSaml2xStatuses());
     }
 
+    public static String [] getSamlStatusesStrings() {
+        return convertToStringArray(getSaml1xStatuses(), getSaml2xStatuses());
+    }
+
     public int getSamlVersion() {
         return samlVersion;
     }
@@ -120,8 +124,12 @@ public enum SamlStatus {
         this.value = value;
     }
 
-    private static String[] convertToStringArray(EnumSet<SamlStatus> samlStatuses) {
-        final ArrayList<SamlStatus> samlStatusesList = new ArrayList<SamlStatus>(Arrays.asList(samlStatuses.toArray(new SamlStatus[samlStatuses.size()])));
+    private static String[] convertToStringArray(EnumSet<SamlStatus> ... allStatuses) {
+        final ArrayList<SamlStatus> samlStatusesList = new ArrayList<SamlStatus>();
+        for (EnumSet<SamlStatus> samlStatusSet : allStatuses) {
+            samlStatusesList.addAll(Arrays.asList(samlStatusSet.toArray(new SamlStatus[samlStatusSet.size()])));
+        }
+
         final List<String> stringRep = Functions.map(samlStatusesList, new Functions.UnaryThrows<String, SamlStatus, RuntimeException>() {
             @Override
             public String call(SamlStatus samlStatus) throws RuntimeException {

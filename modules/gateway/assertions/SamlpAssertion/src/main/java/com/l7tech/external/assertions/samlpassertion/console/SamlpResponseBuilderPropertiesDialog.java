@@ -20,6 +20,7 @@ import java.awt.event.FocusEvent;
 import java.util.*;
 
 import static com.l7tech.external.assertions.samlpassertion.SamlVersion.*;
+import static com.l7tech.util.CollectionUtils.set;
 
 public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkCancelSupport<SamlpResponseBuilderAssertion> {
 
@@ -51,7 +52,15 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         final RunOnChangeListener versionListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
+                final String currentVersionStatus = statusCodeComboBox.getEditor().getItem().toString().trim();
                 updateComponentsForVersion();
+
+                // is the previous status an actual status?
+                final boolean isValidStatus = allStatuses.contains(currentVersionStatus);
+
+                if (!isValidStatus && !currentVersionStatus.isEmpty()) {
+                    statusCodeComboBox.setSelectedItem(currentVersionStatus);
+                }
             }
         });
 
@@ -103,8 +112,6 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         responseIdTextField.addFocusListener(focusAdapter);
         issueInstantTextField.addFocusListener(focusAdapter);
         issueInstant1_1TextField.addFocusListener(focusAdapter);
-
-        updateComponentsForVersion();
     }
 
     @Override
@@ -363,6 +370,8 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     private JPanel samlIssuerHolderPanel;
     private JTabbedPane issuerTabbedPane;
     private SamlIssuerPanel samlIssuerPanel;
+
+    private final Set<String> allStatuses = set(SamlStatus.getSamlStatusesStrings());
 
     private static final String autoString = "<auto>";
     private static final ResourceBundle resources = ResourceBundle.getBundle( SamlpResponseBuilderPropertiesDialog.class.getName() );
