@@ -1200,8 +1200,8 @@ public class MqNativePropertiesDialog extends JDialog {
                     }
                 }
             } else {
-                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE_FROM_PROPERTY, "");
-                connector.setProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, "");
+                connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE_FROM_PROPERTY);
+                connector.removeProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE);
             }
 
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_MQ_MESSAGE_MAX_BYTES, byteLimitPanel.getValue());
