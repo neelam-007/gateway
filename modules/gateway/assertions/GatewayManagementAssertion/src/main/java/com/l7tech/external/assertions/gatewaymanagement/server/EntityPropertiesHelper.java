@@ -356,6 +356,7 @@ class EntityPropertiesHelper {
             "version"
         ) )
         .put( JdbcConnection.class, list(
+            "additionalProperties",
             "driverClass",
             "enabled",
             "id",

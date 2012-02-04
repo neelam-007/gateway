@@ -159,14 +159,6 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
         return additionalPropsXml;
     }
 
-    /*For JAXB processing. Needed a way to get this identity provider to recreate it's internal
-    * additionalPropsXml after setting a property after it has been unmarshalled*/
-    public void recreateSerializedProps() throws java.io.IOException{
-        additionalPropsXml = null;
-        //noinspection deprecation
-        getSerializedProps();
-    }
-
     /**
      * for serialization by axis and hibernate only.
      * to set the properties, call setProperty
@@ -183,9 +175,24 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
         }
     }
 
+    /**
+     * Get a copy of the additional properties.
+     *
+     * @return A mutable copy of the properties.
+     */
     @Transient
     public Map<String, Object> getAdditionalProperties() {
-        return additionalProps;
+        return new TreeMap<String, Object>( this.additionalProps );
+    }
+
+    /**
+     * Set the additional properties.
+     *
+     * @param additionalProperties The properties to use.
+     */
+    public void setAdditionalProperties( final Map<String,Object> additionalProperties ) {
+        this.additionalPropsXml = null;
+        this.additionalProps = new TreeMap<String, Object>( additionalProperties );
     }
 
     @Override
@@ -209,6 +216,6 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
         this.setMinPoolSize(other.getMinPoolSize());
         this.setMaxPoolSize(other.getMaxPoolSize());
         this.setEnabled(other.isEnabled());
-        this.setSerializedProps(other.additionalPropsXml);
+        this.setAdditionalProperties(other.getAdditionalProperties());
     }
 }

@@ -59,7 +59,7 @@ public class JDBCConnectionResourceFactory extends EntityManagerResourceFactory<
         jdbcConnection.setJdbcUrl( connectionResource.getJdbcUrl() );
         jdbcConnection.setUserName( getProperty( connectionResource.getConnectionProperties(), CONN_PROP_USER ) );
         jdbcConnection.setPassword( getProperty( connectionResource.getConnectionProperties(), CONN_PROP_PASSWORD ) );
-        jdbcConnection.getAdditionalProperties().putAll( filterProperties(connectionResource.getConnectionProperties()) );
+        jdbcConnection.setAdditionalProperties( filterProperties(connectionResource.getConnectionProperties()) );
 
         setProperties( jdbcConnection, connectionResource.getProperties(), JdbcConnection.class );
 
@@ -78,8 +78,7 @@ public class JDBCConnectionResourceFactory extends EntityManagerResourceFactory<
         }
         oldEntity.setMinPoolSize( newEntity.getMinPoolSize() );
         oldEntity.setMaxPoolSize( newEntity.getMaxPoolSize() );
-        oldEntity.getAdditionalProperties().clear();
-        oldEntity.getAdditionalProperties().putAll( newEntity.getAdditionalProperties() );
+        oldEntity.setAdditionalProperties( newEntity.getAdditionalProperties() );
     }
 
     //- PRIVATE

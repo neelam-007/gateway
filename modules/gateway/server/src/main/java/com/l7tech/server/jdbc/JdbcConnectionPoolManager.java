@@ -11,7 +11,12 @@ import com.l7tech.server.LifecycleBean;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.policy.variable.ServerVariables;
+import static com.l7tech.util.BeanUtils.getProperties;
+import static com.l7tech.util.BeanUtils.omitProperties;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.equality;
+import static com.l7tech.util.Functions.grepFirst;
 import com.l7tech.util.Pair;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
@@ -20,7 +25,9 @@ import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import java.beans.PropertyDescriptor;
 import java.beans.PropertyVetoException;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -35,6 +42,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
     private static final Logger logger = Logger.getLogger(JdbcConnectionPoolManager.class.getName());
 
     private static final long MIN_CHECK_AGE = ConfigFactory.getLongProperty( "com.l7tech.server.jdbc.poolConnectionCheckMinAge", 30000L );
+    private static final String[] CPDS_IGNORE_PROPS = new String[]{ "connectionPoolDataSource", "driverClass", "initialPoolSize", "jdbcUrl", "logWriter", "maxPoolSize", "minPoolSize", "password", "properties", "propertyCycle", "user", "userOverridesAsString" };
 
     private JdbcConnectionManager jdbcConnectionManager;
     private Timer timer;
@@ -295,10 +303,6 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
             throw new InvalidPropertyException("Invalid property, driverClass");
         }
         cpds.setJdbcUrl(connection.getJdbcUrl());
-        if ( connection.getUserName()!=null && !connection.getUserName().isEmpty() ) {
-            cpds.setUser(connection.getUserName());
-            cpds.setPassword(ServerVariables.expandSinglePasswordOnlyVariable(new LoggingAudit(logger), connection.getPassword()));
-        }
 
         // Set C3P0 basic properties
         cpds.setInitialPoolSize(connection.getMinPoolSize());
@@ -310,24 +314,57 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         cpds.setAcquireIncrement(acquireIncrement);
 
         // Set additional properties
-        Properties props = new Properties();
-        Map<String, Object> additionalProps = connection.getAdditionalProperties();
-        for (String propName: additionalProps.keySet()) {
-            String propValue = (String) additionalProps.get(propName);
-            // Reset maxIdleTime and acquireIncrement if they are overridden in the additional properties.
-            try {
-                if ("c3p0.maxIdleTime".compareToIgnoreCase(propName) == 0) {
-                    cpds.setMaxIdleTime(Integer.parseInt(propValue));
-                } else if ("c3p0.acquireIncrement".compareToIgnoreCase(propName) == 0) {
-                    cpds.setAcquireIncrement(Integer.parseInt(propValue));
+        final Properties props = new Properties();
+        final Map<String, Object> additionalProps = connection.getAdditionalProperties();
+        final Set<PropertyDescriptor> dataSourceProperties = omitProperties( getProperties( ComboPooledDataSource.class ), CPDS_IGNORE_PROPS );
+        for ( final String propName: additionalProps.keySet() ) {
+            final String propValue = (String) additionalProps.get(propName);
+            if ( propName.toLowerCase().startsWith( "c3p0." ) ) {
+                final String c3p0PropertyName = propName.substring( 5 ).toLowerCase();
+                final PropertyDescriptor propertyDescriptor = grepFirst( dataSourceProperties, equality( propName(), c3p0PropertyName ) );
+                if ( propertyDescriptor != null ) {
+                    try {
+                        if ( propertyDescriptor.getPropertyType().isAssignableFrom( String.class ) ) {
+                            propertyDescriptor.getWriteMethod().invoke( cpds, propValue );
+                        } else if ( propertyDescriptor.getPropertyType().isAssignableFrom( Integer.class ) ||
+                                propertyDescriptor.getPropertyType().isAssignableFrom( Integer.TYPE ) ) {
+                            propertyDescriptor.getWriteMethod().invoke( cpds, Integer.valueOf( propValue ) );
+                        } else if ( propertyDescriptor.getPropertyType().isAssignableFrom( Boolean.class ) ||
+                                propertyDescriptor.getPropertyType().isAssignableFrom( Boolean.TYPE )) {
+                            propertyDescriptor.getWriteMethod().invoke( cpds, Boolean.valueOf( propValue ) );
+                        } else {
+                            logger.warning( "Ignoring C3P0 property '"+propName+"' for JDBC connection '"+connection.getName()+"' (unsupported type)" );
+                        }
+                    } catch (NumberFormatException e) {
+                        throw new InvalidPropertyException("Invalid integer property, " + propName);
+                    } catch ( InvocationTargetException e ) {
+                        throw new InvalidPropertyException("Invalid property, " + propName);
+                    } catch ( IllegalAccessException e ) {
+                        throw new InvalidPropertyException("Invalid property, " + propName);
+                    }
                 } else {
-                    props.put(propName, propValue);
+                    logger.warning( "Ignoring unknown C3P0 property '"+propName+"' for JDBC connection '"+connection.getName()+"'." );
                 }
-            } catch (NumberFormatException e) {
-                throw new InvalidPropertyException("Invalid property, " + propName);
+            } else {
+                props.put( propName, propValue );
             }
         }
-        if (! props.isEmpty()) cpds.setProperties(props);
+        cpds.setProperties(props);
+
+        // set username/password after setProperties, else they will be reset
+        if ( connection.getUserName()!=null && !connection.getUserName().isEmpty() ) {
+            cpds.setUser(connection.getUserName());
+            cpds.setPassword(ServerVariables.expandSinglePasswordOnlyVariable(new LoggingAudit(logger), connection.getPassword()));
+        }
+    }
+
+    private Unary<String, PropertyDescriptor> propName() {
+        return new Unary<String, PropertyDescriptor>() {
+            @Override
+            public String call( final PropertyDescriptor propertyDescriptor ) {
+                return propertyDescriptor.getName().toLowerCase();
+            }
+        };
     }
 
     /**

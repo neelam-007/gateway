@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
@@ -69,7 +70,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     private JButton cancelButton;
 
     private JdbcConnection connection;
-    private Map<String, Object> additionalPropMap;
+    private final Map<String, Object> additionalPropMap = new TreeMap<String,Object>();
     private AbstractTableModel additionalPropertyTableModel;
 
     private boolean confirmed;
@@ -123,8 +124,6 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(minPoolSizeSpinner, resources.getString("label.minPoolSize")));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxPoolSizeSpinner, resources.getString("label.maxPoolSize")));
 
-        initAdditionalPropertyTable();
-
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -152,6 +151,8 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
                 doTest();
             }
         });
+
+        initAdditionalPropertyTable();
 
         inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
@@ -183,13 +184,16 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         minPoolSizeSpinner.setValue(connection.getMinPoolSize());
         maxPoolSizeSpinner.setValue(connection.getMaxPoolSize());
         disableConnectionCheckBox.setSelected(!connection.isEnabled());
+        additionalPropMap.clear();
+        additionalPropMap.putAll( connection.getAdditionalProperties() );
+        additionalPropertyTableModel.fireTableDataChanged();
     }
 
     private void viewToModel() {
         viewToModel(connection);
     }
 
-    private void viewToModel(JdbcConnection connection) {
+    private void viewToModel( final JdbcConnection connection ) {
         connection.setName(connectionNameTextField.getText().trim());
         connection.setDriverClass(((String) driverClassComboBox.getSelectedItem()).trim());
         connection.setJdbcUrl(jdbcUrlTextField.getText().trim());
@@ -198,11 +202,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         connection.setMinPoolSize((Integer) minPoolSizeSpinner.getValue());
         connection.setMaxPoolSize((Integer) maxPoolSizeSpinner.getValue());
         connection.setEnabled(!disableConnectionCheckBox.isSelected());
-        try {
-            connection.recreateSerializedProps();
-        } catch (IOException e) {
-            logger.warning("Cannot recreate additional properties XML.");
-        }
+        connection.setAdditionalProperties( additionalPropMap );
     }
 
     private void populateDriverClassComboBox() {
@@ -274,11 +274,6 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     }
 
     private void initAdditionalPropertyTable() {
-        if (connection == null)
-            throw new IllegalStateException("A JDBC connection must be initialized first before additional properties are loaded.");
-        else
-            additionalPropMap = connection.getAdditionalProperties();
-        
         additionalPropertyTableModel = new AdditionalPropertyTableModel();
         additionalPropertiesTable.setModel(additionalPropertyTableModel);
         additionalPropertiesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -288,6 +283,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
                 enableOrDisableTableButtons();
             }
         });
+        additionalPropertiesTable.getTableHeader().setReorderingAllowed( false );
         Utilities.setDoubleClickAction(additionalPropertiesTable, editButton);
 
         enableOrDisableTableButtons();
