@@ -1,5 +1,9 @@
 package com.l7tech.console.panels;
 
+import static com.l7tech.console.panels.CancelableOperationDialog.doWithDelayedCancelDialog;
+import static com.l7tech.gui.util.DialogDisplayer.showMessageDialog;
+import static com.l7tech.gui.util.Utilities.setMinimumSize;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MutablePair;
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
@@ -22,11 +26,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 /**
@@ -165,6 +171,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
 
         modelToView();
         enableOrDisableButtons();
+        Utilities.setMinimumSize( this );
     }
 
     private void modelToView() {
@@ -240,12 +247,14 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
      * Check if OK and Test buttons should be enabled or disabled.
      */
     private void enableOrDisableButtons() {
+        final boolean hasUsername = isNonEmptyRequiredTextField(usernameTextField.getText());
+        final boolean hasPassword = isNonEmptyRequiredTextField(new String(passwordField.getPassword()));
+
         boolean enabled =
             isNonEmptyRequiredTextField(connectionNameTextField.getText()) &&
             isNonEmptyRequiredTextField((String) driverClassComboBox.getEditor().getItem()) &&
             isNonEmptyRequiredTextField(jdbcUrlTextField.getText()) &&
-            isNonEmptyRequiredTextField(usernameTextField.getText()) &&
-            isNonEmptyRequiredTextField(new String(passwordField.getPassword()));
+            ( !hasPassword || hasUsername ); // username required if password present
         
         okButton.setEnabled(enabled);
         testButton.setEnabled(enabled);
@@ -377,8 +386,8 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
                 if (dlg.isConfirmed()) {
                     String warningMessage = checkDuplicateProperty(property.left, originalPropName);
                     if (warningMessage != null) {
-                        DialogDisplayer.showMessageDialog(JdbcConnectionPropertiesDialog.this, warningMessage,
-                            resources.getString("dialog.title.duplicate.property"), JOptionPane.WARNING_MESSAGE, null);
+                        DialogDisplayer.showMessageDialog( JdbcConnectionPropertiesDialog.this, warningMessage,
+                                resources.getString( "dialog.title.duplicate.property" ), JOptionPane.WARNING_MESSAGE, null );
                         return;
                     }
                     
@@ -453,30 +462,59 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     }
 
     private void doTest() {
-        JdbcAdmin admin = getJdbcConnectionAdmin();
+        final JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin == null) return;
 
         // Assign data to a tested JDBC connection
-        JdbcConnection connForTest = new JdbcConnection();
+        final JdbcConnection connForTest = new JdbcConnection();
         viewToModel(connForTest);
 
-        String warningMessage = admin.testJdbcConnection(connForTest);
-        String message = warningMessage == null?
-            resources.getString("message.testing.jdbc.conn.passed") : MessageFormat.format(resources.getString("message.testing.jdbc.conn.failed"), warningMessage);
+        try {
+            final String warningMessage = doWithDelayedCancelDialog(
+                    new Callable<String>() {
+                        @Override
+                        public String call() {
+                            final String warningMessage = admin.testJdbcConnection( connForTest );
 
-        DialogDisplayer.showMessageDialog(this, message, resources.getString("dialog.title.jdbc.conn.test"),
-            warningMessage == null? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE, null);
+                            // ensure interrupted status is cleared
+                            Thread.interrupted();
+
+                            return warningMessage;
+                        }
+                    },
+                    this,
+                    resources.getString( "message.testing.cancel.title" ),
+                    resources.getString( "message.testing.cancel.message" ),
+                    5000L );
+
+            final String message = warningMessage == null ?
+                    resources.getString( "message.testing.jdbc.conn.passed" ) :
+                    MessageFormat.format( resources.getString( "message.testing.jdbc.conn.failed" ), warningMessage );
+
+            showMessageDialog(
+                    JdbcConnectionPropertiesDialog.this,
+                    message,
+                    resources.getString( "dialog.title.jdbc.conn.test" ),
+                    warningMessage == null ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
+                    null );
+
+
+        } catch (InterruptedException e) {
+            // cancelled
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtils.wrap( e.getTargetException() );
+        }
     }
 
     private void doOk() {
         String warningMessage = checkDuplicateJdbcConnection();
         if (warningMessage != null) {
-            DialogDisplayer.showMessageDialog(JdbcConnectionPropertiesDialog.this, warningMessage,
-                resources.getString("dialog.title.error.saving.conn"), JOptionPane.WARNING_MESSAGE, null);
+            DialogDisplayer.showMessageDialog( JdbcConnectionPropertiesDialog.this, warningMessage,
+                    resources.getString( "dialog.title.error.saving.conn" ), JOptionPane.WARNING_MESSAGE, null);
             return;
         } else if (isMinGreaterThanMax()) {
-            DialogDisplayer.showMessageDialog(JdbcConnectionPropertiesDialog.this, resources.getString("warning.minpoolsize.greaterthan.maxpoolsize"),
-                resources.getString("dialog.title.error.saving.conn"), JOptionPane.WARNING_MESSAGE, null);
+            DialogDisplayer.showMessageDialog( JdbcConnectionPropertiesDialog.this, resources.getString( "warning.minpoolsize.greaterthan.maxpoolsize" ),
+                    resources.getString( "dialog.title.error.saving.conn" ), JOptionPane.WARNING_MESSAGE, null);
             return;
         }
 

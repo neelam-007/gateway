@@ -295,8 +295,10 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
             throw new InvalidPropertyException("Invalid property, driverClass");
         }
         cpds.setJdbcUrl(connection.getJdbcUrl());
-        cpds.setUser(connection.getUserName());
-        cpds.setPassword(ServerVariables.expandSinglePasswordOnlyVariable(new LoggingAudit(logger), connection.getPassword()));
+        if ( connection.getUserName()!=null && !connection.getUserName().isEmpty() ) {
+            cpds.setUser(connection.getUserName());
+            cpds.setPassword(ServerVariables.expandSinglePasswordOnlyVariable(new LoggingAudit(logger), connection.getPassword()));
+        }
 
         // Set C3P0 basic properties
         cpds.setInitialPoolSize(connection.getMinPoolSize());
