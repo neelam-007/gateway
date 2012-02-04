@@ -20,7 +20,6 @@ import java.awt.event.FocusEvent;
 import java.util.*;
 
 import static com.l7tech.external.assertions.samlpassertion.SamlVersion.*;
-import static com.l7tech.util.CollectionUtils.set;
 
 public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkCancelSupport<SamlpResponseBuilderAssertion> {
 
@@ -175,7 +174,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         }
 
         updateComponentsForVersion();
-        statusCodeComboBox.setSelectedItem(assertion.getSamlStatusText());
+        statusCodeComboBox.setSelectedItem(assertion.getSamlStatusCode());
     }
     
     @Override
@@ -189,7 +188,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         samlIssuerPanel.getData(assertion);
 
         // Access editor directly go get current text
-        assertion.setSamlStatusText(((String) statusCodeComboBox.getEditor().getItem()).trim());
+        assertion.setSamlStatusCode(((String) statusCodeComboBox.getEditor().getItem()).trim());
         assertion.setStatusMessage(statusMessageTextField.getText());
         assertion.setStatusDetail(statusDetailTextField.getText());
 
@@ -252,9 +251,13 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         try {
             final String[] referencedNames = Syntax.getReferencedNames(samlStatus);
             if (referencedNames.length == 0) {
-                final String invalidUriError = ValidationUtils.isValidUriString(samlStatus);
-                if (invalidUriError != null) {
-                    throw new ValidationException(statusString.substring(0, statusString.length() - 1) + " is not a valid URI: " + invalidUriError);
+                final SamlVersion samlVersion = (SamlVersion) samlVersionComboBox.getSelectedItem();
+                if (samlVersion.getVersionInt() == 2) {
+                    if (!statusSaml2.contains(samlStatus)) {
+                        throw new ValidationException("Invalid SAML 2.0 status code");
+                    }
+                } else if (!statusSaml1.contains(samlStatus)) {
+                    throw new ValidationException("Invalid SAML 1.1 status code");
                 }
             }
         } catch (VariableNameSyntaxException e) {
@@ -371,7 +374,9 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     private JTabbedPane issuerTabbedPane;
     private SamlIssuerPanel samlIssuerPanel;
 
-    private final Set<String> allStatuses = set(SamlStatus.getSamlStatusesStrings());
+    private final Set<String> allStatuses = SamlStatus.getAllSamlStatusSet();
+    private final Set<String> statusSaml2 = SamlStatus.getSaml2xStatusSet();
+    private final Set<String> statusSaml1 = SamlStatus.getSaml1xStatusSet();
 
     private static final String autoString = "<auto>";
     private static final ResourceBundle resources = ResourceBundle.getBundle( SamlpResponseBuilderPropertiesDialog.class.getName() );

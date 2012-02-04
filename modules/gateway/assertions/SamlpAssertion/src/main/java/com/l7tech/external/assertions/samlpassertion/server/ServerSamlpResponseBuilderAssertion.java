@@ -92,7 +92,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final ResponseContext responseContext;
         try {
-            responseContext = validateAssertionInContext(context);
+            responseContext = validateAssertionInContext(context, assertion.getVersion());
         } catch (Exception e) {
             if (e instanceof VariableNameSyntaxException){
                 //catch any exception: VariableNameSyntaxException and InvalidRuntimeValueException
@@ -229,20 +229,23 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
      * @return ResponseContext, never null. All required values for the SAML version are set. Non null values should be added to SAMLP Response.
      * @throws InvalidRuntimeValueException if any bean property contains an invalid value or resolves to an invalid value.
      */
-    private ResponseContext validateAssertionInContext(final PolicyEnforcementContext context) throws InvalidRuntimeValueException{
+    private ResponseContext validateAssertionInContext(final PolicyEnforcementContext context, final int version) throws InvalidRuntimeValueException{
 
         final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
 
         final ResponseContext responseContext = new ResponseContext(context.getRequestId().toString());
 
-        final String samlStatus = ExpandVariables.process(assertion.getSamlStatusText().trim(), vars, getAudit());
+        final String samlStatusCode = ExpandVariables.process(assertion.getSamlStatusCode().trim(), vars, getAudit());
 
-        final String invalidUriError = ValidationUtils.isValidUriString(samlStatus);
-        if (invalidUriError != null) {
-            throw new InvalidRuntimeValueException("Invalid status code URI: " + invalidUriError);
+        if (version == 2) {
+            if (!saml2xStatusSet.contains(samlStatusCode)) {
+                throw new InvalidRuntimeValueException("Unknown SAML 2.0 status code value: '" + samlStatusCode + "'");
+            }
+        } else if (!saml1xStatusSet.contains(samlStatusCode)) {
+            throw new InvalidRuntimeValueException("Unknown SAML 1.1 status code value: '" + samlStatusCode + "'");
         }
 
-        responseContext.statusCode = samlStatus;
+        responseContext.statusCode = samlStatusCode;
 
         final String customIssuer = assertion.getCustomIssuerValue();
         if (customIssuer != null && !customIssuer.trim().isEmpty()) {
@@ -873,7 +876,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         final String respAssertions = assertion.getResponseAssertions();
         final String encryptedAssertions = assertion.getEncryptedAssertions();
 
-        final boolean isSuccessResponse = assertion.getSamlStatusText().equals(SamlStatus.SAML2_SUCCESS.getValue());
+        final boolean isSuccessResponse = assertion.getSamlStatusCode().equals(SamlStatus.SAML2_SUCCESS.getValue());
         final boolean assertionsNotSupplied = (respAssertions == null || respAssertions.trim().isEmpty()) &&
                 (encryptedAssertions == null || encryptedAssertions.trim().isEmpty());
 
@@ -1055,6 +1058,9 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
     private final saml.v1.protocol.ObjectFactory v1SamlpFactory;
     private final saml.v2.assertion.ObjectFactory v2SamlpAssnFactory;
     private final SignerInfo signer;
+
+    private final static Set<String> saml2xStatusSet = SamlStatus.getSaml2xStatusSet();
+    private final static Set<String> saml1xStatusSet = SamlStatus.getSaml1xStatusSet();
 
     //Not static to support test cases
     private final boolean validateSSOProfileDetails = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", true );

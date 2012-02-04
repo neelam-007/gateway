@@ -220,6 +220,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final PolicyEnforcementContext context = getContext();
         SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
         assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
+        assertion.setSamlStatusCode(SamlStatus.SAML_SUCCESS.getValue());
         assertion.setValidateWebSsoRules(validateWebSsoRules);
 
         assertion.setResponseAssertions("${samlToken}");
@@ -272,14 +273,14 @@ public class ServerSamlpResponseBuilderAssertionTest {
         Assert.assertTrue("Status is success so a SAML token is required.", correctExceptionThrown);
 
         //If not success, then no assertions are allowed
-        assertion.setSamlStatusText(SamlStatus.SAML2_AUTHN_FAILED.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML2_AUTHN_FAILED.getValue());
         assertion.setResponseAssertions("${samlToken}");
         context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_2_0)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("Status is not success so no SAML token can be configured.", correctExceptionThrown);
 
         //Issuer required if response is signed
-        assertion.setSamlStatusText(SamlStatus.SAML2_SUCCESS.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML2_SUCCESS.getValue());
         assertion.setSignResponse(true);
 
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
@@ -483,7 +484,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
         assertion.includeIssuer(true);
-        assertion.setSamlStatusText(SamlStatus.SAML2_SUCCESS.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML2_SUCCESS.getValue());
         final String statusMessage = "Status Message";
         assertion.setStatusMessage(statusMessage);
         final String statusDetail = "statusDetail";
@@ -611,7 +612,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
         assertion.includeIssuer(false);
-        assertion.setSamlStatusText(SamlStatus.SAML2_SUCCESS.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML2_SUCCESS.getValue());
         final String encryptedToken = "encryptedAssertion";
         assertion.setEncryptedAssertions("${"+encryptedToken+"}");
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
@@ -643,7 +644,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
         assertion.includeIssuer(true);
-        assertion.setSamlStatusText(SamlStatus.SAML2_SUCCESS.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML2_SUCCESS.getValue());
         final String encryptedToken = "encryptedAssertion";
         assertion.setEncryptedAssertions("${"+encryptedToken+"}");
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
@@ -694,7 +695,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setOtherTargetMessageVariable(outputVar);
 
         assertion.setVersion(SamlVersion.SAML2.getVersionInt());
-        assertion.setSamlStatusText(SamlStatus.SAML2_AUTHN_FAILED.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML2_AUTHN_FAILED.getValue());
 
         String extensions = "extensions";
         assertion.setResponseExtensions("${" + extensions + "}");
@@ -740,7 +741,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
         assertion.includeIssuer(false);
-        assertion.setSamlStatusText(SamlStatus.SAML2_AUTHN_FAILED.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML2_AUTHN_FAILED.getValue());
         final String statusMessage = "Status Message";
         assertion.setStatusMessage(statusMessage);
         final String statusDetail = "statusDetail";
@@ -834,7 +835,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setVersion(SamlVersion.SAML2.getVersionInt());
 
         assertion.includeIssuer(true);
-        assertion.setSamlStatusText(SamlStatus.SAML2_AUTHN_FAILED.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML2_AUTHN_FAILED.getValue());
 
         final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
         assertion.setResponseId(responseId);
@@ -891,7 +892,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String issuerVar = "issuerVar";
         assertion.setCustomIssuerValue("${" + issuerVar + "}");
 
-        assertion.setSamlStatusText(SamlStatus.SAML2_AUTHN_FAILED.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML2_AUTHN_FAILED.getValue());
 
         final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
         assertion.setResponseId(responseId);
@@ -946,7 +947,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String qualifier = "qualifier";
         assertion.setCustomIssuerNameQualifier("${" + qualifier + "}");
 
-        assertion.setSamlStatusText(SamlStatus.SAML2_SUCCESS.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML2_SUCCESS.getValue());
 
         final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
         assertion.setResponseId(responseId);
@@ -1003,7 +1004,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String token = "samlToken";
         assertion.setResponseAssertions("${" + token + "}");
 
-        assertion.setSamlStatusText(SamlStatus.SAML2_SUCCESS.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML2_SUCCESS.getValue());
 
         final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
         assertion.setResponseId(responseId);
@@ -1072,7 +1073,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
 
         assertion.includeIssuer(true);
-        assertion.setSamlStatusText(SamlStatus.SAML_REQUEST_DENIED.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML_REQUEST_DENIED.getValue());
 
         final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
         assertion.setResponseId(responseId);
@@ -1129,7 +1130,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String token = "samlToken";
         assertion.setResponseAssertions("${" + token + "}");
 
-        assertion.setSamlStatusText(SamlStatus.SAML_SUCCESS.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML_SUCCESS.getValue());
 
         final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
         assertion.setResponseId(responseId);
@@ -1181,7 +1182,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
         assertion.setRecipient("http://recipient.com");
 
-        assertion.setSamlStatusText(SamlStatus.SAML_REQUEST_DENIED.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML_REQUEST_DENIED.getValue());
         final String statusMessage = "Status Message";
         assertion.setStatusMessage(statusMessage);
         final String statusDetail = "statusDetail";
@@ -1292,7 +1293,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
 
         assertion.includeIssuer(false);
-        assertion.setSamlStatusText(SamlStatus.SAML_SUCCESS.getValue());
+        assertion.setSamlStatusCode(SamlStatus.SAML_SUCCESS.getValue());
         final String statusMessage = "Status Message";
         assertion.setStatusMessage(statusMessage);
         final String statusDetail = "statusDetail";
@@ -1384,6 +1385,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setOtherTargetMessageVariable("outputVar");
 
         assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
+        assertion.setSamlStatusCode(SamlStatus.SAML_SUCCESS.getValue());
         assertion.setStatusMessage("Status Message is ok");
         assertion.setRecipient("http://recipient.com");
 
@@ -1441,6 +1443,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setOtherTargetMessageVariable("outputVar");
 
         assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
+        assertion.setSamlStatusCode(SamlStatus.SAML_SUCCESS.getValue());
         assertion.setStatusMessage("Status Message is ok");
         assertion.setRecipient("http://recipient.com");
 
@@ -1621,7 +1624,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
             assertion.setValidateWebSsoRules(false);
 
-            assertion.setSamlStatusText("${var}");
+            assertion.setSamlStatusCode("${var}");
 
             ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
@@ -1650,7 +1653,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             assertion.setVersion(SamlVersion.SAML2.getVersionInt());
             assertion.setValidateWebSsoRules(false);
 
-            assertion.setSamlStatusText("${var}");
+            assertion.setSamlStatusCode("${var}");
 
             ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
@@ -1670,7 +1673,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
     }
 
     @Test
-    public void testStatusCodeSupportsVariables_InvalidURI() throws Exception{
+    public void testStatusCodeSupportsVariables_UnknownValue() throws Exception{
         {
             // SAML 1.1
             final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
@@ -1680,9 +1683,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
             final String outputVar = "outputVar";
             assertion.setOtherTargetMessageVariable(outputVar);
             assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
+            assertion.setSamlStatusCode(SamlStatus.SAML_SUCCESS.getValue());
             assertion.setValidateWebSsoRules(false);
 
-            assertion.setSamlStatusText("${var}%");
+            assertion.setSamlStatusCode("${var}%");
 
             ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
             final TestAudit testAudit = new TestAudit();
@@ -1702,7 +1706,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             }
 
             Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC));
-            Assert.assertTrue(testAudit.isAuditPresentContaining("Invalid status code URI"));
+            Assert.assertTrue(testAudit.isAuditPresentContaining("Unknown SAML 1.1 status code value:"));
         }
 
         {
@@ -1716,7 +1720,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             assertion.setVersion(SamlVersion.SAML2.getVersionInt());
             assertion.setValidateWebSsoRules(false);
 
-            assertion.setSamlStatusText("${var}%");
+            assertion.setSamlStatusCode("${var}%");
 
             ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
             final TestAudit testAudit = new TestAudit();
@@ -1736,13 +1740,13 @@ public class ServerSamlpResponseBuilderAssertionTest {
             }
 
             Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC));
-            Assert.assertTrue(testAudit.isAuditPresentContaining("Invalid status code URI"));
+            Assert.assertTrue(testAudit.isAuditPresentContaining("Unknown SAML 2.0 status code value:"));
         }
     }
 
     @BugNumber(11771)
     @Test
-    public void testStatusCodeSupportsVariables_InvalidURI_Empty() throws Exception{
+    public void testStatusCodeSupportsVariables_UnknownCode_Empty() throws Exception{
         {
             // SAML 1.1
             final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
@@ -1752,9 +1756,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
             final String outputVar = "outputVar";
             assertion.setOtherTargetMessageVariable(outputVar);
             assertion.setVersion(SamlVersion.SAML1_1.getVersionInt());
+            assertion.setSamlStatusCode(SamlStatus.SAML_SUCCESS.getValue());
             assertion.setValidateWebSsoRules(false);
 
-            assertion.setSamlStatusText("");
+            assertion.setSamlStatusCode("");
 
             ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
             final TestAudit testAudit = new TestAudit();
@@ -1774,7 +1779,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             }
 
             Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC));
-            Assert.assertTrue(testAudit.isAuditPresentContaining("Invalid status code URI"));
+            Assert.assertTrue(testAudit.isAuditPresentContaining("Unknown SAML 1.1 status code value:"));
         }
 
         {
@@ -1788,7 +1793,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             assertion.setVersion(SamlVersion.SAML2.getVersionInt());
             assertion.setValidateWebSsoRules(false);
 
-            assertion.setSamlStatusText("");
+            assertion.setSamlStatusCode("");
 
             ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
             final TestAudit testAudit = new TestAudit();
@@ -1808,7 +1813,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             }
 
             Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC));
-            Assert.assertTrue(testAudit.isAuditPresentContaining("Invalid status code URI"));
+            Assert.assertTrue(testAudit.isAuditPresentContaining("Unknown SAML 2.0 status code value:"));
         }
     }
 

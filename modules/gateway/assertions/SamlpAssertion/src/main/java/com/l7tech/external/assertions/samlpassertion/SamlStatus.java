@@ -2,10 +2,9 @@ package com.l7tech.external.assertions.samlpassertion;
 
 import com.l7tech.util.Functions;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
+import java.util.*;
+
+import static com.l7tech.util.CollectionUtils.set;
 
 /**
  * Status codes for SAML 1.x and 2.x Protocols.
@@ -98,12 +97,24 @@ public enum SamlStatus {
         return convertToStringArray(getSaml1xStatuses());
     }
 
+    public static Set<String> getSaml1xStatusSet(){
+        return set(SamlStatus.getSaml1xStatusesStrings());
+    }
+
     public static String [] getSaml2xStatusesStrings() {
         return convertToStringArray(getSaml2xStatuses());
     }
 
+    public static Set<String> getSaml2xStatusSet(){
+        return set(SamlStatus.getSaml2xStatusesStrings());
+    }
+
     public static String [] getSamlStatusesStrings() {
         return convertToStringArray(getSaml1xStatuses(), getSaml2xStatuses());
+    }
+
+    public static Set<String> getAllSamlStatusSet(){
+        return set(SamlStatus.getSamlStatusesStrings());
     }
 
     public int getSamlVersion() {

@@ -103,12 +103,12 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
         this.issuerNameQualifier = customIssuerNameQualifier;
     }
 
-    public String getSamlStatusText() {
-        return samlStatusText;
+    public String getSamlStatusCode() {
+        return samlStatusCode;
     }
 
-    public void setSamlStatusText(@NotNull String samlStatusText) {
-        this.samlStatusText = samlStatusText;
+    public void setSamlStatusCode(@NotNull String samlStatusCode) {
+        this.samlStatusCode = samlStatusCode;
     }
 
     /**
@@ -117,7 +117,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
      */
     @Deprecated
     public void setSamlStatus(@NotNull SamlStatus samlStatus) {
-        this.samlStatusText = samlStatus.getValue();
+        this.samlStatusCode = samlStatus.getValue();
     }
 
     public String getStatusMessage() {
@@ -289,7 +289,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
     @Override
     protected VariablesUsed doGetVariablesUsed() {
         final VariablesUsed variablesUsed = super.doGetVariablesUsed().withExpressions(
-                getSamlStatusText(),
+                getSamlStatusCode(),
                 getStatusMessage(),
                 getStatusDetail(),
                 getResponseId(),
@@ -320,7 +320,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
     private Integer version = 2;
     private boolean signResponse;
     private boolean addIssuer;
-    private String samlStatusText = SamlStatus.SAML2_SUCCESS.getValue();
+    private String samlStatusCode = SamlStatus.SAML2_SUCCESS.getValue();
     private String statusMessage;
     private String statusDetail;
 

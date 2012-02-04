@@ -37,13 +37,13 @@ public class SamlpResponseBuilderAssertionTest {
         AllAssertion allAss = (AllAssertion) ass;
         final List<Assertion> children = allAss.getChildren();
         final SamlpResponseBuilderAssertion respAss1 = (SamlpResponseBuilderAssertion) children.get(1);
-        assertEquals(SamlStatus.SAML2_SUCCESS.getValue(), respAss1.getSamlStatusText());
+        assertEquals(SamlStatus.SAML2_SUCCESS.getValue(), respAss1.getSamlStatusCode());
 
         final SamlpResponseBuilderAssertion respAss2 = (SamlpResponseBuilderAssertion) children.get(2);
-        assertEquals(SamlStatus.SAML2_REQUESTER.getValue(), respAss2.getSamlStatusText());
+        assertEquals(SamlStatus.SAML2_REQUESTER.getValue(), respAss2.getSamlStatusCode());
 
         final SamlpResponseBuilderAssertion respAss3 = (SamlpResponseBuilderAssertion) children.get(3);
-        assertEquals(SamlStatus.SAML2_RESPONDER.getValue(), respAss3.getSamlStatusText());
+        assertEquals(SamlStatus.SAML2_RESPONDER.getValue(), respAss3.getSamlStatusCode());
     }
 
 
@@ -86,13 +86,13 @@ public class SamlpResponseBuilderAssertionTest {
             "            <L7p:ValidateWebSsoRules booleanValue=\"false\"/>\n"+
             "        </L7p:SamlpResponseBuilder>\n"+
             "        <L7p:SamlpResponseBuilder>\n"+
-            "            <L7p:SamlStatusText stringValue=\"urn:oasis:names:tc:SAML:2.0:status:Requester\"/>\n"+
+            "            <L7p:SamlStatusCode stringValue=\"urn:oasis:names:tc:SAML:2.0:status:Requester\"/>\n"+
             "            <L7p:StatusDetail stringValue=\"\"/>\n"+
             "            <L7p:StatusMessage stringValue=\"\"/>\n"+
             "            <L7p:ValidateWebSsoRules booleanValue=\"false\"/>\n"+
             "        </L7p:SamlpResponseBuilder>\n"+
             "        <L7p:SamlpResponseBuilder>\n"+
-            "            <L7p:SamlStatusText stringValue=\"urn:oasis:names:tc:SAML:2.0:status:Responder\"/>\n"+
+            "            <L7p:SamlStatusCode stringValue=\"urn:oasis:names:tc:SAML:2.0:status:Responder\"/>\n"+
             "            <L7p:StatusDetail stringValue=\"\"/>\n"+
             "            <L7p:StatusMessage stringValue=\"\"/>\n"+
             "            <L7p:ValidateWebSsoRules booleanValue=\"false\"/>\n"+
