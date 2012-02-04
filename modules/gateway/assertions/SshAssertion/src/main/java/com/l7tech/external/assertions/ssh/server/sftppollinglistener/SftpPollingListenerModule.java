@@ -37,8 +37,7 @@ import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.external.assertions.ssh.SftpPollingListenerConstants.SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_PROPERTY;
-import static com.l7tech.external.assertions.ssh.SftpPollingListenerConstants.SFTP_POLLING_MESSAGE_MAX_BYTES_PROPERTY;
+import static com.l7tech.external.assertions.ssh.SftpPollingListenerConstants.*;
 import static com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpPollingListener.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.message.Message.getMaxBytes;
@@ -183,6 +182,7 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
                     }
                 }
             };
+            newListener.setErrorSleepTime(serverConfig.getProperty(SFTP_POLLING_CONNECT_ERROR_SLEEP_PROPERTY));
             newListener.start();
             activeListeners.put( ssgActiveConnector.getOid(), newListener );
         } catch (LifecycleException e) {

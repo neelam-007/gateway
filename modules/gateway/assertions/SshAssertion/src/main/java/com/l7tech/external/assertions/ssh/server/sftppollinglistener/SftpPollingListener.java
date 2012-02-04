@@ -56,6 +56,8 @@ abstract class SftpPollingListener {
     static final long SHUTDOWN_TIMEOUT = 7L * 1000L;
     static final int OOPS_RETRY = 5000; // Five seconds
     static final int DEFAULT_OOPS_SLEEP = 60 * 1000; // One minute
+    static final int MIN_OOPS_SLEEP = 10 * 1000; // 10 seconds
+    static final int MAX_OOPS_SLEEP = TimeUnit.DAYS.getMultiplier(); // 24 hours
     static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 mins;
 
     /** The properties for the SFTP resource that the listener is processing files on */
@@ -385,5 +387,26 @@ abstract class SftpPollingListener {
                     + ExceptionUtils.getMessage( npe ), ExceptionUtils.getDebugException( npe ) );
         }
         return decrypted;
+    }
+
+    protected void setErrorSleepTime(String stringValue) {
+        long newErrorSleepTime = DEFAULT_OOPS_SLEEP;
+
+        try {
+            newErrorSleepTime = TimeUnit.parse(stringValue, TimeUnit.SECONDS);
+        } catch (NumberFormatException nfe) {
+            logger.log(Level.WARNING, "Ignoring invalid SFTP Polling error sleep time ''{0}'' (using default).", stringValue);
+        }
+
+        if ( newErrorSleepTime < MIN_OOPS_SLEEP ) {
+            logger.log(Level.WARNING, "Ignoring invalid SFTP Polling error sleep time ''{0}'' (using minimum).", stringValue);
+            newErrorSleepTime = MIN_OOPS_SLEEP;
+        } else if ( newErrorSleepTime > MAX_OOPS_SLEEP ) {
+            logger.log(Level.WARNING, "Ignoring invalid SFTP Polling error sleep time ''{0}'' (using maximum).", stringValue);
+            newErrorSleepTime = MAX_OOPS_SLEEP;
+        }
+
+        logger.log(Level.CONFIG, "Updated SFTP Polling error sleep time to {0}ms.", newErrorSleepTime);
+        listenerThread.setOopsSleep((int)newErrorSleepTime);
     }
 }

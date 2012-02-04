@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.mqnative.server;
 
 import com.ibm.mq.*;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
@@ -33,7 +32,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -203,6 +204,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                     }
                 }
             };
+            newListener.setErrorSleepTime(serverConfig.getProperty(MQ_CONNECT_ERROR_SLEEP_PROPERTY));
             newListener.start();
             activeListeners.put( ssgActiveConnector.getOid(), newListener );
         } catch (LifecycleException e) {
@@ -534,3 +536,4 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         return posted;
     }
 }
+

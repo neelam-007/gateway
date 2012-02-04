@@ -30,6 +30,10 @@ class MqNativeListenerThread extends Thread {
         this.connectorInfo = mqNativeEndpointListener.getDisplayName();
     }
 
+    public void setOopsSleep(int oopsSleepInt) {
+        this.oopsSleep.set(oopsSleepInt);
+    }
+
     @Override
     public final void run() {
         mqNativeListener.log(Level.INFO, MqNativeMessages.INFO_LISTENER_POLLING_START, connectorInfo);

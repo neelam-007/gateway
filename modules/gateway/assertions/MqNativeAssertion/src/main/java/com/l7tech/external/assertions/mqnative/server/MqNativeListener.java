@@ -315,6 +315,6 @@ public abstract class MqNativeListener {
         }
 
         logger.log(Level.CONFIG, "Updated MQ error sleep time to {0}ms.", newErrorSleepTime);
-        // oopsSleep.set((int)newErrorSleepTime);
+        listenerThread.setOopsSleep((int)newErrorSleepTime);
     }
 }

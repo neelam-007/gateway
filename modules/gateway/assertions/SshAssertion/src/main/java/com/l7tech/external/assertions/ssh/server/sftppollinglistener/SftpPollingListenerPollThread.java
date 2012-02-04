@@ -2,10 +2,8 @@ package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 
 import com.jscape.inet.sftp.Sftp;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_POLLING_INTERVAL;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.UnaryThrows;
-import static java.text.MessageFormat.format;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -13,6 +11,9 @@ import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
+
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_POLLING_INTERVAL;
+import static java.text.MessageFormat.format;
 
 /*
  * Polling thread logic.
@@ -29,6 +30,10 @@ class SftpPollingListenerPollThread extends Thread {
         setDaemon( true );
         this.sftpPollingListener = sftpPollingListener;
         this.connectorInfo = sftpPollingListener.getDisplayName();
+    }
+
+    public void setOopsSleep(int oopsSleepInt) {
+        this.oopsSleep.set(oopsSleepInt);
     }
 
     /**
