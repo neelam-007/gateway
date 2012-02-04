@@ -236,9 +236,9 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                                 } else {
                                     // add more detailed diagnosis message
                                     if (!context.getResponse().isXml()) {
-                                          _logger.log(Level.WARNING, "Response message is non-XML, the ContentType is: {0}", context.getRequest().getMimeKnob().getOuterContentType());
+                                          _logger.log(Level.INFO, "Response message is non-XML, the ContentType is: {0}", context.getRequest().getMimeKnob().getOuterContentType());
                                     }
-                                    responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocumentReadOnly()).getBytes());
+                                    responseStream = context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream();
                                 }
                             } else {
                                 _logger.finer("No response received");

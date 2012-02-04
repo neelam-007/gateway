@@ -340,10 +340,9 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                         } else {
                             // add more detailed diagnosis message
                             if (!contextResponse.isXml()) {
-                                logger.log(Level.WARNING, "Response message is non-XML, the ContentType is: {0}", context.getRequest().getMimeKnob().getOuterContentType());
+                                logger.log(Level.INFO, "Response message is non-XML, the ContentType is: {0}", context.getRequest().getMimeKnob().getOuterContentType());
                             }
-                            responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(
-                                    contextResponse.getXmlKnob().getDocumentReadOnly()).getBytes());
+                            responseStream = contextResponse.getMimeKnob().getEntireMessageBodyAsInputStream();
                         }
                     } else {
                         logger.log(Level.FINER, "No response received");
