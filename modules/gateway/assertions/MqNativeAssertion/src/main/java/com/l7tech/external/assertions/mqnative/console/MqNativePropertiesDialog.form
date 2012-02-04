@@ -506,7 +506,7 @@
                     </constraints>
                     <properties>
                       <text value="Set Response CorrelationI&amp;D from Request's MessageID"/>
-                      <toolTipText value="&lt;html&gt;Choose this option to have the Gateway copy the MessageID from the inbound&lt;p&gt;request message to the JMSCorrelationID attribute on the outbound response.&lt;/html&gt;"/>
+                      <toolTipText value="&lt;html&gt;Choose this option to have the Gateway copy the message identifier of the inbound&lt;p&gt;request message into the correlation identifier field of the outbound response.&lt;/html&gt;"/>
                     </properties>
                   </component>
                   <component id="3c0fa" class="javax.swing.JRadioButton" binding="inboundCorrelationIdRadioButton" default-binding="true">
@@ -516,7 +516,7 @@
                     <properties>
                       <selected value="true"/>
                       <text value="Cop&amp;y CorrelationID from Request to Response"/>
-                      <toolTipText value="&lt;html&gt;Choose this option to have the Gateway copy the JMSCorrelationID&lt;p&gt;value from the inbound request message to the JMSCorrelationID attribute on&lt;p&gt;the outbound response.&lt;/html&gt;"/>
+                      <toolTipText value="&lt;html&gt;Choose this option to have the Gateway copy the correlation identifier of the inbound&lt;p&gt;request message into the correlation identifier field of the outbound response.&lt;/html&gt;"/>
                     </properties>
                   </component>
                 </children>
