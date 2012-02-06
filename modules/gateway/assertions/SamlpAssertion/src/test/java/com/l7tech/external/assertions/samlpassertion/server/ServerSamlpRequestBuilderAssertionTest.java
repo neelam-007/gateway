@@ -480,8 +480,12 @@ public class ServerSamlpRequestBuilderAssertionTest {
         Assert.assertFalse("No Issuer should have been added", xpathResultSetIterator.hasNext());
     }
 
-    @Test(expected = ServerPolicyException.class)
-    public void testIssuerRequiredWhenSigning() throws Exception {
+    /**
+     * Verify Issuer element is not required when singing. Applies to SAML 2.0 only.
+     */
+    @BugNumber(11809)
+    @Test
+    public void testIssuerNotRequiredWhenSigning_Saml2() throws Exception {
         final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
         assertion.setVersion(2);
         assertion.setSoapVersion(1);
@@ -498,7 +502,205 @@ public class ServerSamlpRequestBuilderAssertionTest {
         ServerSamlpRequestBuilderAssertion serverAssertion =
                 new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
 
-        serverAssertion.checkRequest(context);
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Unexpected status", AssertionStatus.NONE, assertionStatus);
+
+        final Message samlpRequest = (Message) context.getVariable(assertion.getOtherTargetMessageVariable());
+        final Element documentElement = samlpRequest.getXmlKnob().getDocumentReadOnly().getDocumentElement();
+
+        System.out.println(XmlUtil.nodeToFormattedString(documentElement));
+
+        String xPath = "/soapenv:Envelope/soapenv:Body/samlp2:AttributeQuery/ds:Signature";
+
+        final Map<String, String> prefixToNamespace = new HashMap<String, String>();
+        prefixToNamespace.put("ds", "http://www.w3.org/2000/09/xmldsig#");
+        prefixToNamespace.put(SamlConstants.NS_SAMLP2_PREFIX, SamlConstants.NS_SAMLP2);
+        prefixToNamespace.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+
+        final ElementCursor cursor = new DomElementCursor(documentElement);
+
+        XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xPath, prefixToNamespace).compile());
+        XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+
+        Assert.assertTrue("Signature should have been added", xpathResultSetIterator.hasNext());
+    }
+
+    /**
+     * Verify that the Issuer element precedes the Signature element so it follows the schema order.
+     * Applies to SAML 2.0 only.
+     */
+    @Test
+    public void testIssuerIsFirstWhenSigning_Saml2() throws Exception {
+        final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
+        assertion.setVersion(2);
+        assertion.setSoapVersion(1);
+        assertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
+        assertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+        assertion.setAttributeStatement(new SamlAttributeStatement());
+
+        // issuer is on by default
+        // signer is on by default
+
+        final PolicyEnforcementContext context = getContext();
+
+        ServerSamlpRequestBuilderAssertion serverAssertion =
+                new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Unexpected status", AssertionStatus.NONE, assertionStatus);
+
+        final Message samlpRequest = (Message) context.getVariable(assertion.getOtherTargetMessageVariable());
+        final Element documentElement = samlpRequest.getXmlKnob().getDocumentReadOnly().getDocumentElement();
+
+        System.out.println(XmlUtil.nodeToFormattedString(documentElement));
+
+        String xPath = "/soapenv:Envelope/soapenv:Body/samlp2:AttributeQuery/*";
+
+        final Map<String, String> prefixToNamespace = new HashMap<String, String>();
+        prefixToNamespace.put("ds", "http://www.w3.org/2000/09/xmldsig#");
+        prefixToNamespace.put(SamlConstants.NS_SAMLP2_PREFIX, SamlConstants.NS_SAMLP2);
+        prefixToNamespace.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+
+        final ElementCursor cursor = new DomElementCursor(documentElement);
+
+        XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xPath, prefixToNamespace).compile());
+        XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+
+        final ElementCursor issuerCursor = xpathResultSetIterator.nextElementAsCursor();
+        final Element issuerElement = issuerCursor.asDomElement();
+        Assert.assertEquals("Issuer element should have been found first", SamlConstants.ELEMENT_ISSUER, issuerElement.getLocalName());
+
+        final ElementCursor sigCursor = xpathResultSetIterator.nextElementAsCursor();
+        final Element sigElement = sigCursor.asDomElement();
+        Assert.assertEquals("Signature element should have been found second", "Signature", sigElement.getLocalName());
+    }
+
+    /**
+     * Verify Signature element can be added for SAML 1
+     */
+    @Test
+    public void testSigning_Saml1() throws Exception {
+        final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
+        assertion.setVersion(1);
+        assertion.setSoapVersion(1);
+        assertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
+        assertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+        assertion.setAttributeStatement(new SamlAttributeStatement());
+
+        // signer is on by default
+
+        final PolicyEnforcementContext context = getContext();
+
+        ServerSamlpRequestBuilderAssertion serverAssertion =
+                new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Unexpected status", AssertionStatus.NONE, assertionStatus);
+
+        final Message samlpRequest = (Message) context.getVariable(assertion.getOtherTargetMessageVariable());
+        final Element documentElement = samlpRequest.getXmlKnob().getDocumentReadOnly().getDocumentElement();
+
+        System.out.println(XmlUtil.nodeToFormattedString(documentElement));
+
+        String xPath = "/soapenv:Envelope/soapenv:Body/samlp:Request/ds:Signature";
+
+        final Map<String, String> prefixToNamespace = new HashMap<String, String>();
+        prefixToNamespace.put("ds", "http://www.w3.org/2000/09/xmldsig#");
+        prefixToNamespace.put(SamlConstants.NS_SAMLP_PREFIX, SamlConstants.NS_SAMLP);
+        prefixToNamespace.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+
+        final ElementCursor cursor = new DomElementCursor(documentElement);
+
+        XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xPath, prefixToNamespace).compile());
+        XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+
+        final ElementCursor sigCursor = xpathResultSetIterator.nextElementAsCursor();
+        final Element sigElement = sigCursor.asDomElement();
+        Assert.assertEquals("Signature element should have been found second", "Signature", sigElement.getLocalName());
+    }
+
+    /**
+     * Verify assertion can be configured not to sign the request.
+     */
+    @Test
+    public void testNoSigning_Saml1() throws Exception {
+        final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
+        assertion.setVersion(1);
+        assertion.setSoapVersion(1);
+        assertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
+        assertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+        assertion.setAttributeStatement(new SamlAttributeStatement());
+
+        assertion.setSignAssertion(false);
+
+        final PolicyEnforcementContext context = getContext();
+
+        ServerSamlpRequestBuilderAssertion serverAssertion =
+                new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Unexpected status", AssertionStatus.NONE, assertionStatus);
+
+        final Message samlpRequest = (Message) context.getVariable(assertion.getOtherTargetMessageVariable());
+        final Element documentElement = samlpRequest.getXmlKnob().getDocumentReadOnly().getDocumentElement();
+
+        System.out.println(XmlUtil.nodeToFormattedString(documentElement));
+
+        String xPath = "/soapenv:Envelope/soapenv:Body/samlp:Request/ds:Signature";
+
+        final Map<String, String> prefixToNamespace = new HashMap<String, String>();
+        prefixToNamespace.put("ds", "http://www.w3.org/2000/09/xmldsig#");
+        prefixToNamespace.put(SamlConstants.NS_SAMLP_PREFIX, SamlConstants.NS_SAMLP);
+        prefixToNamespace.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+
+        final ElementCursor cursor = new DomElementCursor(documentElement);
+
+        XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xPath, prefixToNamespace).compile());
+        XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+
+        Assert.assertFalse("Signature xpath should yield no results",xpathResultSetIterator.hasNext());
+    }
+
+    /**
+     * Verify assertion can be configured not to sign the request.
+     */
+    @Test
+    public void testNoSigning_Saml2() throws Exception {
+        final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
+        assertion.setVersion(2);
+        assertion.setSoapVersion(1);
+        assertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
+        assertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+        assertion.setAttributeStatement(new SamlAttributeStatement());
+
+        assertion.setSignAssertion(false);
+
+        final PolicyEnforcementContext context = getContext();
+
+        ServerSamlpRequestBuilderAssertion serverAssertion =
+                new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Unexpected status", AssertionStatus.NONE, assertionStatus);
+
+        final Message samlpRequest = (Message) context.getVariable(assertion.getOtherTargetMessageVariable());
+        final Element documentElement = samlpRequest.getXmlKnob().getDocumentReadOnly().getDocumentElement();
+
+        System.out.println(XmlUtil.nodeToFormattedString(documentElement));
+
+        String xPath = "/soapenv:Envelope/soapenv:Body/samlp2:AttributeQuery/ds:Signature";
+
+        final Map<String, String> prefixToNamespace = new HashMap<String, String>();
+        prefixToNamespace.put("ds", "http://www.w3.org/2000/09/xmldsig#");
+        prefixToNamespace.put(SamlConstants.NS_SAMLP2_PREFIX, SamlConstants.NS_SAMLP2);
+        prefixToNamespace.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+
+        final ElementCursor cursor = new DomElementCursor(documentElement);
+
+        XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xPath, prefixToNamespace).compile());
+        XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+
+        Assert.assertFalse("Signature xpath should yield no results",xpathResultSetIterator.hasNext());
     }
 
     private PolicyEnforcementContext getContext() throws IOException {

@@ -112,10 +112,6 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
                 }
             }
         }
-
-        if (assertion.isSignAssertion() && assertion.getVersion() == 2 && !assertion.isAddIssuer()) {
-            throw new ServerPolicyException(assertion, "Signing a SAML 2.0 protocol request requires configuration of an Issuer.");
-        }
     }
 
     /**
@@ -442,9 +438,6 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         }
 
         if (assertion.isSignAssertion()) {
-            if (assertion.getVersion() == 2 && !assertion.isAddIssuer()) {
-                throw new SamlpAssertionException("SAML 2.0 protocol request cannot be signed if no Issuer has been added.");
-            }
             signRequest(samlpDoc);
         }
 

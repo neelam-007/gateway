@@ -8,8 +8,8 @@ import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.*;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.NamespaceFactory;
-import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -61,6 +61,7 @@ public class RequestSigner {
         context.setAlgorithmFactory( new WssProcessorAlgorithmFactory() );
         context.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         context.setIDResolver(new IDResolver() {
+            @Override
             public Element resolveID(Document document, String s) {
                 if (id.equals(s))
                     return samlpRequest.getDocumentElement();
@@ -83,26 +84,22 @@ public class RequestSigner {
             if (Transform.C14N_EXCLUSIVE.equals(((Element)transforms.item(i)).getAttribute("Algorithm")))
                 DsigUtil.addInclusiveNamespacesToElement((Element)transforms.item(i));
 
-        if (samlVersion == 1) {
-            samlpRequest.getDocumentElement().insertBefore(
-                    signatureElement,
-                    XmlUtil.findFirstChildElement(samlpRequest.getDocumentElement()));
-
+        final Element docElement = samlpRequest.getDocumentElement();
+        @NotNull
+        final Element insertBeforeElement;
+        if (samlVersion == 2) {
+            // look for Issuer - add elements in schema order - Issuer is first
+            final Element issuerElement = XmlUtil.findFirstChildElementByName(docElement,
+                    SamlConstants.NS_SAML2,
+                    SamlConstants.ELEMENT_ISSUER);
+            insertBeforeElement = (issuerElement != null) ? XmlUtil.findNextElementSibling(issuerElement): XmlUtil.findFirstChildElement(docElement);
         } else {
-            try {
-                Element docElement = samlpRequest.getDocumentElement();
-                Element sigSibling = XmlUtil.findOnlyOneChildElementByName(docElement,
-                        SamlConstants.NS_SAML2,
-                        SamlConstants.ELEMENT_ISSUER);
-                if (sigSibling == null)
-                    throw new IllegalArgumentException("Invalid SAML Assertion (no Issuer)");
-
-                docElement.insertBefore(signatureElement, XmlUtil.findNextElementSibling(sigSibling));
-            }
-            catch(TooManyChildElementsException tmcee) {
-                throw new IllegalArgumentException("Invalid SAML Assertion (multiple Issuers)");
-            }
+            insertBeforeElement = XmlUtil.findFirstChildElement(docElement);
         }
+
+        docElement.insertBefore(
+                signatureElement,
+                insertBeforeElement);
 
         // create the signature key info
         signatureElement.appendChild(createKeyInfo(samlpRequest, signingCertChain, keyInfoType));
