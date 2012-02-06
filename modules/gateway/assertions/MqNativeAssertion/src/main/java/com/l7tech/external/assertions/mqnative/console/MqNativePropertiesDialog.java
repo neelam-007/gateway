@@ -569,6 +569,8 @@ public class MqNativePropertiesDialog extends JDialog {
                     final long sslKeyStoreId = mqNativeActiveConnector.getLongProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID, -1L);
                     if (!StringUtils.isEmpty(sslKeyStoreAlias) && sslKeyStoreId > -1L) {
                         keystoreComboBox.select(sslKeyStoreId, sslKeyStoreAlias);
+                    } else {
+                        keystoreComboBox.selectDefaultSsl();
                     }
                 } else {
                     keystoreLabel.setEnabled(false);
@@ -938,6 +940,8 @@ public class MqNativePropertiesDialog extends JDialog {
         final boolean sslEnabled = enableSSLCheckBox.isSelected();
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED, Boolean.toString(sslEnabled));
         if (sslEnabled) {
+            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_CIPHER_SUITE, (String) cipherSpecCombo.getSelectedItem());
+
             final boolean isSslKeyStoreUsed = clientAuthCheckbox.isSelected();
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED, Boolean.toString(isSslKeyStoreUsed));
             if (isSslKeyStoreUsed) {
@@ -946,6 +950,9 @@ public class MqNativePropertiesDialog extends JDialog {
                 if ( keyAlias != null && keyStoreId != -1 ) {
                     connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS, keyAlias);
                     connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID, Long.toString(keyStoreId));
+                } else {
+                    connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS);
+                    connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID);
                 }
             }
         }
