@@ -4,6 +4,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
@@ -23,6 +24,8 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import static java.lang.String.CASE_INSENSITIVE_ORDER;
+import static java.util.Arrays.sort;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -1104,10 +1107,8 @@ public class MqNativePropertiesDialog extends JDialog {
     }
 
     private String[] getCipherSuites(){
-        return new String[]{"SSL_RSA_WITH_NULL_MD5", "SSL_RSA_WITH_NULL_SHA", "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
-            "SSL_RSA_WITH_RC4_128_MD5", "SSL_RSA_WITH_RC4_128_SHA", "SSL_RSA_EXPORT_WITH_RC2_CBC_40_MD5", "SSL_RSA_WITH_DES_CBC_SHA",
-            "SSL_RSA_EXPORT1024_WITH_RC4_56_SHA", "SSL_RSA_EXPORT1024_WITH_DES_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA",
-            "SSL_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_AES_256_CBC_SHA", "SSL_RSA_WITH_DES_CBC_SHA",
-            "SSL_RSA_WITH_3DES_EDE_CBC_SHA", "SSL_RSA_FIPS_WITH_DES_CBC_SHA", "SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA"};
+        final String[] suites = CipherSuiteGuiUtil.getCipherSuiteNames();
+        sort( suites, CASE_INSENSITIVE_ORDER );
+        return suites;
     }
 }
