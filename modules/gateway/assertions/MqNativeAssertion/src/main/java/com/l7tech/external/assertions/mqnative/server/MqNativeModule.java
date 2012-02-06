@@ -31,7 +31,6 @@ import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -290,17 +289,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
             // convert the payload into an input stream
-            InputStream requestStream;
-            if (connector.getBooleanProperty(MQ_PROPERTY_B64ENCODE_MSG)) {
-                final String b64msg = HexUtils.encodeBase64(parsedRequest.right);
-                requestStream = new ByteArrayInputStream( MessageFormat.format(XML_WRAPPER_TEMPLATE, b64msg, "true").getBytes() );
-
-            } else if (connector.getBooleanProperty(MQ_PROPERTY_WRAP_MSG)) {
-                requestStream = new ByteArrayInputStream( MessageFormat.format(XML_WRAPPER_TEMPLATE, new String(parsedRequest.right), "false").getBytes() );
-
-            } else {
-                requestStream = new ByteArrayInputStream(parsedRequest.right);
-            }
+            final InputStream requestStream = new ByteArrayInputStream(parsedRequest.right);
 
             final long requestSizeLimit = connector.getLongProperty( PROPERTIES_KEY_REQUEST_SIZE_LIMIT, getMaxBytes() );
             Message request = new Message();

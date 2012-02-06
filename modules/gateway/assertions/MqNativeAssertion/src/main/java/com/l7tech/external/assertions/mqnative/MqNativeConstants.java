@@ -60,10 +60,6 @@ public interface MqNativeConstants {
     String MQ_PROPERTY_REPORT = "report";
     String MQ_PROPERTY_USERID = "userId";
 
-    // super secret properties
-    String MQ_PROPERTY_WRAP_MSG = "wrapMessage"; // true/false
-    String MQ_PROPERTY_B64ENCODE_MSG = "b64EncodeMessage"; // true/false
-
     /**
      * Properties to expose as options in the UI
      */
@@ -76,11 +72,6 @@ public interface MqNativeConstants {
             MQ_PROPERTY_MSG_FLAGS,
             MQ_PROPERTY_PERSISTENCE,
             MQ_PROPERTY_PRIORITY );
-
-    String XML_WRAPPER_TEMPLATE =
-            "<mqNativeRequest xmlns=\"\">" +
-            "<payload base64=\"{1}\">{0}</payload>" +
-            "</mqNativeRequest>";
 
     // queue open options
     int QUEUE_OPEN_OPTIONS_INBOUND = MQC.MQOO_INPUT_AS_Q_DEF | MQC.MQOO_BROWSE | MQC.MQOO_INQUIRE;
