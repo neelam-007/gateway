@@ -272,6 +272,14 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
 
     private void updateRecipientCertLabel() {
         recipientCertLabel.setText(getCertInfo(certb64));
+        // re pack parent window in case the user selection requires more space to be shown
+        final RootPaneContainer paneContainer = Utilities.getRootPaneContainerAncestor(this);
+        if (paneContainer != null) {
+            if (paneContainer instanceof Window) {
+                Window parentWindow = (Window) paneContainer;
+                parentWindow.pack();
+            }
+        }
     }
 
     private String getCertInfo(String certb64) {
