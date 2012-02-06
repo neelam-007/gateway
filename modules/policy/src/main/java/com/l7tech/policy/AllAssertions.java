@@ -115,6 +115,7 @@ public class AllAssertions {
         new AddHeaderAssertion(),
         new ResolveServiceAssertion(),
         new LookupTrustedCertificateAssertion(),
+        new MapValueAssertion(),
     };
 
 
@@ -213,5 +214,6 @@ public class AllAssertions {
         new AddHeaderAssertion(),
         new ResolveServiceAssertion(),
         new LookupTrustedCertificateAssertion(),
+        new MapValueAssertion(),
     };
 }

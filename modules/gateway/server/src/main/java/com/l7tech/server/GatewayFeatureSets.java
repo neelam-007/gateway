@@ -237,7 +237,8 @@ public class GatewayFeatureSets {
         GatewayFeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",
             "Enables features that are only present during development, and that will be moved or renamed before shipping.",
-            srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"));
+            srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"),
+            ass(MapValueAssertion.class));
 
         GatewayFeatureSet wssp =
         fsr("set:wssp", "WS-SecurityPolicy assertion",

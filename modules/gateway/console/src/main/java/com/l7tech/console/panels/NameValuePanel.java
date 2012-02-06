@@ -61,7 +61,7 @@ public class NameValuePanel extends ValidatedPanel<NameValuePair> {
         // must validate value set on TextField, not the NameValuePair
         // because NameValuePair is not updated until OK is clicked
         if(StringUtils.isBlank(nameField.getText())){
-            error = "Name must be specified.";
+            error = nameLabel.getText() + " must be specified.";
         }
         return error;
     }

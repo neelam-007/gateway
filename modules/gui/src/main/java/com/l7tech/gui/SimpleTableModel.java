@@ -138,6 +138,13 @@ public class SimpleTableModel<RT> extends AbstractTableModel {
         return  rows.indexOf( row );
     }
 
+    /**
+     * Remove a row from the table.
+     * <p/>
+     * This method is safe to call with out-of-range or negative row indices.
+     *
+     * @param modelRowIndex row number to delete.  If this is negative, or greater than or equal to the row count, this method does nothing.
+     */
     public void removeRowAt( final int modelRowIndex ) {
         if ( modelRowIndex > -1 && modelRowIndex < rows.size() ) {
             rows.remove( modelRowIndex );
@@ -147,5 +154,30 @@ public class SimpleTableModel<RT> extends AbstractTableModel {
 
     public void removeRow( final RT row ) {
         removeRowAt( rows.indexOf( row ) );
+    }
+
+    /**
+     * Swap the position of two rows in the table.
+     * <p/>
+     * This method is safe to call with out-of-range (or negative) row indices.
+     * @param r1 first row index to swap.  If this is negative, or greater than or equal to the row count, this method returns false.
+     * @param r2 second row index to swap.  If this is negative, greater than or equal to the row count, or the same as r1, this method returns false.
+     * @return true if rows were swapped successfully. Swapping a row with itself is NOT considered successful.
+     */
+    public boolean swapRows(int r1, int r2) {
+        if (r1 < 0 || r2 < 0 || r1 == r2)
+            return false;
+        
+        int rowCount = getRowCount();
+        if (r1 >= rowCount || r2 >= rowCount)
+            return false;
+
+        RT rv1 = rows.get(r1);
+        RT rv2 = rows.get(r2);
+        rows.set(r1, rv2);
+        rows.set(r2, rv1);
+        fireTableRowsUpdated(r1, r1);
+        fireTableRowsUpdated(r2, r2);
+        return true;
     }
 }
