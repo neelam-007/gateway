@@ -973,6 +973,8 @@ public class MqNativePropertiesDialog extends JDialog {
                 if(svc != null) {
                     connector.setHardwiredServiceOid(svc.getOid());
                 }
+            } else {
+                connector.setHardwiredServiceOid(null);
             }
 
             if (specifyContentTypeCheckBox.isSelected()) {
