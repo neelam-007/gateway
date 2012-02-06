@@ -997,6 +997,10 @@ public class MqNativePropertiesDialog extends JDialog {
                     ContentTypeHeader selectedContentType;
                     if (contentTypeValues.getSelectedIndex() == -1 && contentTypeValues.getEditor().getItem() != null) {
                         String ctHeaderString = ((JTextField) contentTypeValues.getEditor().getEditorComponent()).getText();
+                        if (StringUtils.isEmpty(ctHeaderString)) {
+                            // If the content type is not specified, it will be set as the default type, "text/xml".
+                            ctHeaderString = ContentTypeHeader.XML_DEFAULT.getMainValue();
+                        }
                         selectedContentType = ContentTypeHeader.parseValue(ctHeaderString);
 
                         //check if the typed in content type matches to any one of the ones in our list
