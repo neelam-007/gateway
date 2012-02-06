@@ -1,6 +1,5 @@
 package com.l7tech.server.transport.jms2;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.message.JmsKnob;
@@ -238,7 +237,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                                     if (!context.getResponse().isXml()) {
                                           _logger.log(Level.INFO, "Response message is non-XML, the ContentType is: {0}", context.getRequest().getMimeKnob().getOuterContentType());
                                     }
-                                    responseStream = context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream();
+                                    responseStream = context.getResponse().getMimeKnob().getFirstPart().getInputStream(false);
                                 }
                             } else {
                                 _logger.finer("No response received");

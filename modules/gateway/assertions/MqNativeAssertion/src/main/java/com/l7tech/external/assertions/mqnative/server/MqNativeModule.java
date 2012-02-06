@@ -344,7 +344,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                             if (!contextResponse.isXml()) {
                                 logger.log(Level.INFO, "Response message is non-XML, the ContentType is: {0}", context.getRequest().getMimeKnob().getOuterContentType());
                             }
-                            responseStream = contextResponse.getMimeKnob().getEntireMessageBodyAsInputStream();
+                            responseStream = contextResponse.getMimeKnob().getFirstPart().getInputStream(false);
                         }
                     } else {
                         logger.log(Level.FINER, "No response received");
