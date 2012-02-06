@@ -487,6 +487,7 @@ public class MqNativePropertiesDialog extends JDialog {
             }
         });
         clientAuthCheckbox.setEnabled(false);
+        keystoreComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
         keystoreComboBox.selectDefaultSsl();
         keystoreComboBox.setEnabled(false);
 
