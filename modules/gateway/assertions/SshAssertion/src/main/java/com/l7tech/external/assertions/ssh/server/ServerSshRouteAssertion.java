@@ -40,6 +40,7 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.*;
 import static com.l7tech.util.CollectionUtils.list;
+import static com.l7tech.util.CollectionUtils.toSet;
 import static com.l7tech.util.ExceptionUtils.causedBy;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.ExceptionUtils.getMessage;
@@ -67,6 +68,7 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -83,7 +85,6 @@ import static com.l7tech.message.Message.getMaxBytes;
  */
 public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAssertion> {
 
-    private static final boolean enableCipherNone = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.ssh.server.enableCipherNone", false );
     private static final boolean enableMacNone = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.ssh.server.enableMacNone", false );
     private static final boolean enableMacMd5 = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.ssh.server.enableMacMd5", false );
     private static final String defaultCipherOrder = "aes128-ctr, aes128-cbc, 3des-cbc, blowfish-cbc, aes192-ctr, aes192-cbc, aes256-ctr, aes256-cbc";
@@ -323,7 +324,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
     }
 
     private AlgorithmFactory buildAlgorithmFactory() {
-        final List<String> ciphers = grep( map( list( config.getProperty( "sshRoutingEnabledCiphers", defaultCipherOrder ).split( "\\s*,\\s*" ) ), trim() ), isNotEmpty() );
+        final Set<String> ciphers = toSet( grep( map( list( config.getProperty( "sshRoutingEnabledCiphers", defaultCipherOrder ).split( "\\s*,\\s*" ) ), trim() ), isNotEmpty() ) );
         final List<String> cipherList = map( grep( map( ciphers, SshCipher.bySshName() ), SshCipher.available() ), SshCipher.sshName() );
 
         final AlgorithmFactory algorithmFactory = new AlgorithmFactory(){
@@ -334,10 +335,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             }
         };
 
-        // Remove "none" algorithms by default
         if (!enableMacNone) algorithmFactory.removeMac( "none" );
-        if (!enableCipherNone) algorithmFactory.removeCipher( "none" );
-
         // Remove MD5 hash by default, always prefer SHA-1
         if ( !enableMacMd5 ) {
             algorithmFactory.removeMac( "hmac-md5" );
@@ -346,8 +344,10 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
 
         // Register all available supported ciphers
         for ( final SshCipher cipher : SshCipher.values() ) {
-            if ( cipherList.contains( cipher.getSshName() ) ) {
+            if ( !cipher.isRegisteredByDefault() && cipherList.contains( cipher.getSshName() ) ) {
                 algorithmFactory.addCipher( cipher.getSshName(), cipher.getJavaCipherName(), cipher.getBlockSize() );
+            } else if ( cipher.isRegisteredByDefault() ) {
+                algorithmFactory.removeCipher( cipher.getSshName() );
             }
         }
 
@@ -355,6 +355,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
     }
 
     private enum SshCipher {
+        None("none"),
         AES128CBC("aes128-cbc", "AES", "AES/CBC/NoPadding", 16),
         AES128CTR("aes128-ctr", "AES", "AES/CTR/NoPadding", 16),
         AES192CBC("aes192-cbc", "AES", "AES/CBC/NoPadding", 24),
@@ -366,6 +367,10 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
 
         public boolean isAvailable() {
             return available;
+        }
+
+        public boolean isRegisteredByDefault() {
+            return registeredByDefault;
         }
 
         public int getBlockSize() {
@@ -413,6 +418,16 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         private final String javaCipherName;
         private final int blockSize;
         private final boolean available;
+        private final boolean registeredByDefault;
+
+        private SshCipher( final String sshName ) {
+            this.sshName = sshName;
+            this.javaAlgorithmName = null;
+            this.javaCipherName = null;
+            this.blockSize = -1;
+            this.available = true;
+            this.registeredByDefault = true;
+        }
 
         private SshCipher( final String sshName,
                            final String javaAlgorithmName,
@@ -423,6 +438,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             this.javaCipherName = javaCipherName;
             this.blockSize = blockSize;
             this.available = checkCipherAvailable();
+            this.registeredByDefault = false;
         }
 
         private boolean checkCipherAvailable() {

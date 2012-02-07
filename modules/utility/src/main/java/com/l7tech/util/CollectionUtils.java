@@ -66,6 +66,19 @@ public final class CollectionUtils {
     }
 
     /**
+     * Create an unmodifiable ordered set with the given contents.
+     *
+     * <p>This will create a copy of the given collection.</p>
+     *
+     * @param items The items for the set (must not be null)
+     * @param <T> The type of the set
+     * @return The read-only set
+     */
+    public static <T> Set<T> toSet( final Collection<? extends T> items ) {
+        return Collections.unmodifiableSet( new LinkedHashSet<T>( items ) );
+    }
+
+    /**
      * Create an unmodifiable case insensitive set with the given contents.
      *
      * @param items The items for the set (must not be null)
