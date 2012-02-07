@@ -46,8 +46,18 @@ public class MqNativeModuleLoadListener {
         if (mqNativeListenerModule != null) {
             logger.log(Level.WARNING, "MQ Native active connector module is already initialized");
         } else {
+
+            // Probe for MQ native class files - not installed by default on the Gateway
+            try {
+                Class.forName("com.ibm.mq.MQException", false, MqNativeModuleLoadListener.class.getClassLoader());
+            } catch (ClassNotFoundException e) {
+                // Cannot proceed with initialization
+                logger.fine("MQ Native Jars are not installed. Cannot load MQ Native Module.");
+                return;
+            }
+
             // (1) Create (if does not exist) all context variables used by this module
-            initializeModuleClusterProperties( context.getBean( "serverConfig", ServerConfig.class ) );
+            initializeModuleClusterProperties(context.getBean("serverConfig", ServerConfig.class));
 
             // (2) Instantiate the MQ native boot process
             ThreadPoolBean pool = new ThreadPoolBean(
