@@ -71,7 +71,7 @@ public class LookupTrustedCertificateAssertion extends Assertion implements Sets
 
         meta.put(SHORT_NAME, "Look Up Trusted Certificate");
         meta.put(DESCRIPTION, "Look up trusted certificates for later use in policy");
-        meta.put(PROPERTIES_ACTION_NAME, "Trusted Certificate Look Up Properties");
+        meta.put(PROPERTIES_ACTION_NAME, "Trusted Certificate Lookup Properties");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.LookupTrustedCertificateAssertionPropertiesDialog");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
