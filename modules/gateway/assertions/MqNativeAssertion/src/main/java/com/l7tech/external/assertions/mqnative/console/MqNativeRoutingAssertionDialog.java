@@ -26,11 +26,8 @@ import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -122,7 +119,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
     private MqNativeRoutingAssertion assertion;
-    private Collection<SsgActiveConnector> queueItems;
+    private List<SsgActiveConnector> queueItems;
 
     private RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
         @Override
@@ -170,7 +167,9 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
                     @Override
                     public void run() {
                         if (! mqQueuePropertiesDialog.isCanceled()) {
-                            queueComboBox.setModel(comboBoxModel(loadQueueItems()));
+                            List<SsgActiveConnector> newQueues = loadQueueItems();
+                            sortQueueList(newQueues);
+                            queueComboBox.setModel(comboBoxModel(newQueues));
                             queueComboBox.getModel().setSelectedItem(mqQueuePropertiesDialog.getTheMqResource());
                         }
                     }
@@ -356,7 +355,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         }
     }
 
-    private Collection<SsgActiveConnector> loadQueueItems() {
+    private List<SsgActiveConnector> loadQueueItems() {
         try {
             final TransportAdmin transportAdmin = Registry.getDefault().getTransportAdmin();
             return grep( transportAdmin.findSsgActiveConnectorsByType( ACTIVE_CONNECTOR_TYPE_MQ_NATIVE ),
@@ -372,10 +371,22 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
 
     // This method will get a list of queue from the cache, so the queue list is probably stale.
     // To get a fresh list of queues, the method loadQueueItems should be used instead.
-    private Collection<SsgActiveConnector> getQueueItems() {
+    private List<SsgActiveConnector> getQueueItems() {
         if (queueItems == null)
             queueItems = loadQueueItems();
+
+        sortQueueList(queueItems);
+
         return queueItems;
+    }
+    
+    private void sortQueueList(final List<SsgActiveConnector> queues) {
+        Collections.sort(queues, new Comparator<SsgActiveConnector>() {
+            @Override
+            public int compare(SsgActiveConnector o1, SsgActiveConnector o2) {
+                return o1.getName().compareToIgnoreCase(o2.getName());
+            }
+        });
     }
 
     private String getIfDynamicPropertyAllowed( final SsgActiveConnector connector,
