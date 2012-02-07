@@ -201,33 +201,25 @@ public abstract class Syntax {
     /**
      * Validate that a string value contains only context variable references.
      * <p/>
-     * " \t\n\r\f" characters are ignored and allowed.
+     * " \t\n\r\f," characters are ignored and allowed. No spaces between variable references is also supported.
      *
      * @param toValidate String which should only reference variables. Cannot be null
      * @return true if only variables are referenced.
      */
     public static boolean validateStringOnlyReferencesVariables(final String toValidate) {
         final String[] refNames = Syntax.getReferencedNamesIndexedVarsNotOmitted(toValidate);
-        final StringTokenizer st = new StringTokenizer(toValidate);
 
-        final int numNames = refNames.length;
-        int index = 0;
-        for (; st.hasMoreTokens(); index++) {
-            if (index >= numNames) return false;
-
-            final String nextToken = st.nextToken();
-            final String[] vars = Syntax.getReferencedNamesIndexedVarsNotOmitted(nextToken);
-            if(vars.length == 0) return false;
-
-            // check for values like var${var} or ${var}var
-            if (!nextToken.equals(Syntax.getVariableExpression(vars[0]))) {
-                return false;
-            }
-
-            final String token = vars[0];
-            if (!token.equals(refNames[index])) return false;
+        final StringBuilder syntaxString = new StringBuilder();
+        for (String refName : refNames) {
+            syntaxString.append(Syntax.getVariableExpression(refName));
         }
-        return true;
+
+        final StringBuilder userString = new StringBuilder();
+        final StringTokenizer st = new StringTokenizer(toValidate, " \t\n\r\f,");
+        while (st.hasMoreTokens()) {
+            userString.append(st.nextToken());
+        }
+        return syntaxString.toString().equals(userString.toString());
     }
 
     /**

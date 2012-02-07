@@ -107,6 +107,12 @@ public class SyntaxTest {
         String var = "${var1} ${var[2]} ${request.mainpart}";
         Assert.assertTrue("Only variables are referenced", Syntax.validateStringOnlyReferencesVariables(var));
 
+        var = "${var1}${var}";
+        Assert.assertTrue("Only variables are referenced", Syntax.validateStringOnlyReferencesVariables(var));
+
+        var = "${var1}           ,  ${var} \n \f \r \t  ";
+        Assert.assertTrue("Only variables are referenced", Syntax.validateStringOnlyReferencesVariables(var));
+
         var = "${var1} ${var[2]} request.mainpart";
         Assert.assertFalse("Not only variables are referenced", Syntax.validateStringOnlyReferencesVariables(var));
 
@@ -117,6 +123,9 @@ public class SyntaxTest {
         Assert.assertFalse(Syntax.validateStringOnlyReferencesVariables(var));
 
         var = "test${issuedSamlAssertionsaml2}";
+        Assert.assertFalse(Syntax.validateStringOnlyReferencesVariables(var));
+
+        var = "test test";
         Assert.assertFalse(Syntax.validateStringOnlyReferencesVariables(var));
     }
     
