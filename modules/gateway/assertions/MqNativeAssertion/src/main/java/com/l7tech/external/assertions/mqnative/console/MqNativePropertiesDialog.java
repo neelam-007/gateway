@@ -997,11 +997,9 @@ public class MqNativePropertiesDialog extends JDialog {
                     ContentTypeHeader selectedContentType;
                     if (contentTypeValues.getSelectedIndex() == -1 && contentTypeValues.getEditor().getItem() != null) {
                         String ctHeaderString = ((JTextField) contentTypeValues.getEditor().getEditorComponent()).getText();
-                        if (StringUtils.isEmpty(ctHeaderString)) {
-                            // If the content type is not specified, it will be set as the default type, "text/xml".
-                            ctHeaderString = ContentTypeHeader.XML_DEFAULT.getMainValue();
-                        }
-                        selectedContentType = ContentTypeHeader.parseValue(ctHeaderString);
+                        // If the content type is not specified, it will be set as the default type, "text/xml".
+                        selectedContentType = StringUtils.isEmpty(ctHeaderString)?
+                            ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.parseValue(ctHeaderString);
 
                         //check if the typed in content type matches to any one of the ones in our list
                         int foundIndex = findContentTypeInList(selectedContentType);
@@ -1018,7 +1016,9 @@ public class MqNativePropertiesDialog extends JDialog {
                 }
             } else {
                 connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE_FROM_PROPERTY);
-                connector.removeProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE);
+
+                // If the content type is not specified, it will be set as the default type, "text/xml".
+                connector.setProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, ContentTypeHeader.XML_DEFAULT.getFullValue());
             }
 
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_MQ_MESSAGE_MAX_BYTES, byteLimitPanel.getValue());
