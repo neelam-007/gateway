@@ -743,7 +743,7 @@
                         <properties>
                           <selected value="true"/>
                           <text value="&amp;Generate New CorrelationID for Request "/>
-                          <toolTipText value="&lt;html&gt;Choose this to have the Gateway generate a unique ID, set it as the&lt;p&gt;&quot;JMSCorrelationID&quot; attribute on the outbound request, and then select only&lt;p&gt; messages with the matching JmSCorrelationID value from the response queue.&lt;/html&gt;"/>
+                          <toolTipText value="&lt;html&gt;Choose this to have the Gateway generate a unique ID, set it as the correlation identifier on the outbound request,&lt;p&gt;&#10;and then select only messages with the matching the correlation identifier field from the response queue.&lt;/html&gt;"/>
                         </properties>
                       </component>
                       <component id="fcba0" class="javax.swing.JRadioButton" binding="outboundMessageIdRadioButton" default-binding="true">
@@ -752,7 +752,7 @@
                         </constraints>
                         <properties>
                           <text value="&amp;Expect Receiver to copy Request MessageID to Response CorrelationID  "/>
-                          <toolTipText value="&lt;html&gt;Choose this to send the request message as-is, then select only messages with&lt;p&gt;the &quot;JMSCorrelationID&quot; attribute matching the outbound request's &quot;MessageID&quot;&lt;p&gt;attribute from the response queue.&lt;/html&gt;"/>
+                          <toolTipText value="&lt;html&gt;Choose this to send the request message as-is, then select only messages with the correlation&lt;p&gt;identifier matching the outbound request's message identifier from the response queue.&lt;/html&gt;"/>
                         </properties>
                       </component>
                     </children>
