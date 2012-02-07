@@ -428,6 +428,8 @@ public final class LoginCredentials implements Disposable {
                 securityTokenType = SecurityTokenType.HTTP_BASIC;
             } else if (format == CredentialFormat.KERBEROSTICKET) {
                 securityTokenType = SecurityTokenType.WSS_KERBEROS_BST;
+            } else if (format == CredentialFormat.SSHTOKEN) {
+                securityTokenType = SecurityTokenType.SSH_CREDENTIAL;
             } else {
                 securityTokenType = SecurityTokenType.UNKNOWN;
             }

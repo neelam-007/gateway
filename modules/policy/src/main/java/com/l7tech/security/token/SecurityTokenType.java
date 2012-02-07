@@ -30,8 +30,10 @@ public class SecurityTokenType implements Serializable {
     public static SecurityTokenType getByNum(int num) {
         SecurityTokenType securityTokenType = null;
 
-        if (num >=0 && num < VALUES.length)
+        if (num >=0 && num < VALUES.length) {
             securityTokenType = VALUES[num];
+            assert num == securityTokenType.getNum() : "Token " +num+ " in wrong position in VALUES array";
+        }
 
         return securityTokenType;
     }
@@ -132,11 +134,11 @@ public class SecurityTokenType implements Serializable {
     public static final SecurityTokenType FTP_CREDENTIAL =
             new SecurityTokenType(n++, "FTP Credentials", "Password", null, null, null, UsernameToken.class);
 
-    public static final SecurityTokenType SSH_CREDENTIAL =
-            new SecurityTokenType(n++, "SSH Credentials", "SSH", null, null, null, SshSecurityToken.class);
-
     public static final SecurityTokenType X509_ISSUER_SERIAL =
                 new SecurityTokenType(n++, "X509 Issuer Serial", "X.509", null, null, null, X509SigningSecurityToken.class);
+
+    public static final SecurityTokenType SSH_CREDENTIAL =
+            new SecurityTokenType(n++, "SSH Credentials", "SSH", null, null, null, SshSecurityToken.class);
 
     /**
      * NOTE: Order MUST equal declaration order above (see readResolve/getByNum)
@@ -158,7 +160,8 @@ public class SecurityTokenType implements Serializable {
         XPATH_CREDENTIALS,
         HTTP_KERBEROS,
         FTP_CREDENTIAL,
-        X509_ISSUER_SERIAL
+        X509_ISSUER_SERIAL,
+        SSH_CREDENTIAL
     };
 
     private SecurityTokenType(int num, String name, String category, String tokenTypeUri, String prototypeElementNs, String prototypeElementName, Class<? extends SecurityToken> interfaceClass) {
