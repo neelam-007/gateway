@@ -147,7 +147,7 @@ public class MqNativeAdminServerSupport {
                     // fall through for non MQException
                     //noinspection ThrowableResultOfMethodCallIgnored
                     logger.log(Level.INFO, "Caught Throwable while testing MQ Native destination '" + ExceptionUtils.getMessage(t) + "'.", ExceptionUtils.getDebugException(t));
-                    throw new MqNativeTestException(testName + t.toString());
+                    throw new MqNativeTestException(testName + ExceptionUtils.getMessage(t));
                 } finally {
                     closeQuietly(targetQueue);
                     closeQuietly(replyQueue);
