@@ -22,10 +22,7 @@ import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.tree.servicesAndPolicies.AlterFilterAction;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.*;
-import com.l7tech.gateway.common.Authorizer;
-import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.gateway.common.License;
-import com.l7tech.gateway.common.VersionException;
+import com.l7tech.gateway.common.*;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
@@ -50,6 +47,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.awt.Component;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -264,6 +262,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     public static final String L7_ESC = "l7esc";
     public static final String L7_F3 = "l7f3";
     public static final String L7_SHIFT_F3 = "l7shiftf3";
+    private final ActiveKeypairJob activeKeypairJob = new ActiveKeypairJob();
 
     /**
      * MainWindow constructor comment.
@@ -276,6 +275,10 @@ public class MainWindow extends JFrame implements SheetHolder {
         this.preferences = (SsmPreferences) app.getApplicationContext().getBean("preferences");
         if (preferences == null) throw new IllegalStateException("Internal error: no preferences bean");
         initialize();
+    }
+
+    public ActiveKeypairJob getActiveKeypairJob() {
+        return activeKeypairJob;
     }
 
     @Override
@@ -2045,7 +2048,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private void updateCustomGlobalActionsMenu() {
         JMenu menu = getCustomGlobalActionsMenu();
         menu.removeAll();
-        
+
         List<Action> menuActions = new ArrayList<Action>();
         boolean added = false;
         Set<Assertion> assertions = TopComponents.getInstance().getAssertionRegistry().getAssertions();

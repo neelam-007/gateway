@@ -4,6 +4,7 @@ import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.ActiveKeypairJob;
 import com.l7tech.console.util.DefaultAliasTracker;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -61,6 +62,8 @@ public class PrivateKeyManagerWindow extends JDialog {
     protected static final Logger logger = Logger.getLogger(PrivateKeyManagerWindow.class.getName());
 
     private static final int TICKS_PER_ICON_REPAINT = 3;
+    public static final int TASK_DELAY = 311;
+    public static final int EXECUTION_PERIOD = 311;
 
     private JPanel mainPanel;
     private JScrollPane keyTableScrollPane;
@@ -72,60 +75,26 @@ public class PrivateKeyManagerWindow extends JDialog {
     private JButton manageKeystoreButton;
     private DefaultAliasTracker defaultAliasTracker;
 
-    private static final Timer jobStatusTimer = new Timer("PrivateKeyManagerWindow job status timer");
     private static final AtomicInteger iconFlipCount = new AtomicInteger(0);
-    private static final Map<PrivateKeyManagerWindow, Object> timerClients = new WeakHashMap<PrivateKeyManagerWindow, Object>();
-    static {
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run() {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        iconFlipCount.incrementAndGet();
-
-                        // Deliver tick events on the swing thread, as long as we are connected to the SSG
-                        if (timerClients.isEmpty() || !Registry.getDefault().isAdminContextPresent())
-                            return;
-
-                        for (PrivateKeyManagerWindow client : timerClients.keySet())
-                            if (client != null)
-                                deliverTimerTick(client);
-                    }
-
-                    private void deliverTimerTick(PrivateKeyManagerWindow client) {
-                        try {
-                            client.onTimerTick();
-                        } catch (Exception e) {
-                            logger.log(Level.WARNING, "Unable to check status of background key management jobs: " + ExceptionUtils.getMessage(e), e);
-                        }
-                    }
-                });
-            }
-        };
-        jobStatusTimer.schedule(task, 311, 311);
-    }
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
-    private static AsyncAdminMethods.JobId<X509Certificate> activeKeypairJob = null;
-    private static String activeKeypairJobAlias = "";
-    private static long lastJobPollTime = 0;
-    private static long minJobPollInterval = 1011;
 
+    private final Timer jobStatusTimer = new Timer("PrivateKeyManagerWindow job status timer");
     private KeystoreFileEntityHeader mutableKeystore = null;
     private Component keypairJobViewportView;
     private PermissionFlags flags;
     private KeyTable keyTable = null;
     private Component showingInScrollPane = null;
     private boolean hasAtLeastOneMultiRoleKey = false;
+    private final ActiveKeypairJob activeKeypairJob;
 
     public PrivateKeyManagerWindow( Window owner ) {
         super(owner, resources.getString("keydialog.title"), DEFAULT_MODALITY_TYPE);
+        activeKeypairJob = TopComponents.getInstance().getActiveKeypairJob();// set active keypair job that is used in asynchronous generation of the private keys
         initialize();
     }
 
     private void initialize() {
-        timerClients.put(this, Boolean.TRUE);
         flags = PermissionFlags.get(EntityType.SSG_KEY_ENTRY);
 
         final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
@@ -200,6 +169,9 @@ public class PrivateKeyManagerWindow extends JDialog {
         Utilities.setDoubleClickAction(keyTable, propertiesButton);
 
         loadPrivateKeys();
+        if(activeKeypairJob.getKeypairJobId() != null) {
+            checkActiveJob();
+        }
     }
 
     private void disableManagementButtons() {
@@ -639,29 +611,51 @@ public class PrivateKeyManagerWindow extends JDialog {
                 if (dlg.isConfirmed()) {
                     setActiveKeypairJob(dlg.getKeypairJobId(), dlg.getNewAlias(), dlg.getSecondsToWaitForJobToFinish());
                     loadPrivateKeys();
+                    if(activeKeypairJob.getKeypairJobId() != null){
+                        checkActiveJob();
+                    }
                 }
             }
         });
     }
 
-    private static void setActiveKeypairJob(AsyncAdminMethods.JobId<X509Certificate> keypairJobId, String alias, int secondsToWaitForJobToFinish) {
-        activeKeypairJob = keypairJobId;
-        activeKeypairJobAlias = alias;
+    private void setActiveKeypairJob(AsyncAdminMethods.JobId<X509Certificate> keypairJobId, String alias, int secondsToWaitForJobToFinish) {
+        activeKeypairJob.setKeypairJobId(keypairJobId);
+        activeKeypairJob.setActiveKeypairJobAlias(alias);
 
         int minPoll = (secondsToWaitForJobToFinish * 1000) / 30;
-        if (minPoll < 1011) minPoll = 1011;
-        minJobPollInterval = minPoll;
+        if (minPoll < ActiveKeypairJob.DEFAULT_POLL_INTERVAL) minPoll = ActiveKeypairJob.DEFAULT_POLL_INTERVAL;
+        activeKeypairJob.setMinJobPollInterval(minPoll);
     }
 
     private void setSelectedKeyEntry(long keystoreId, String newAlias) {
         keyTable.setSelectedKeyEntry(keystoreId, newAlias);
     }
 
-    private void onTimerTick() {
-        if (activeKeypairJob != null || showingInScrollPane != keyTable)
-            loadPrivateKeys();
-        if (hasAtLeastOneMultiRoleKey && iconFlipCount.get() % TICKS_PER_ICON_REPAINT == 0)
-            keyTable.repaint();  // TODO repaint just the affected cells, not the whole table
+    private void checkActiveJob () {
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(activeKeypairJob.getKeypairJobId() == null) {
+                            cancel();
+                            return;
+                        }
+                        if (showingInScrollPane != keyTable) {
+                            loadPrivateKeys();
+                        }
+                        if (hasAtLeastOneMultiRoleKey && iconFlipCount.get() % TICKS_PER_ICON_REPAINT == 0) {
+                            keyTable.repaint();  // TODO repaint just the affected cells, not the whole table
+                        }
+
+                    }
+                });
+            }
+        };
+
+        jobStatusTimer.schedule(task, TASK_DELAY, EXECUTION_PERIOD);
     }
 
     /*
@@ -723,9 +717,9 @@ public class PrivateKeyManagerWindow extends JDialog {
             enableManagementButtons();
             enableOrDisableButtons();
 
-            if (activeKeypairJobAlias != null && mutableKeystore != null) {
-                keyTable.setSelectedKeyEntry(mutableKeystore.getOid(), activeKeypairJobAlias);
-                activeKeypairJobAlias = null;
+            if (activeKeypairJob.getActiveKeypairJobAlias() != null && mutableKeystore != null) {
+                keyTable.setSelectedKeyEntry(mutableKeystore.getOid(), activeKeypairJob.getActiveKeypairJobAlias());
+                activeKeypairJob.setActiveKeypairJobAlias(null);
             }
 
             return keyList;
@@ -755,7 +749,7 @@ public class PrivateKeyManagerWindow extends JDialog {
      */
     private void enableOrDisableButtons() {
         KeyTableRow row = getSelectedObject();
-        boolean certSelected = row != null && activeKeypairJob == null;
+        boolean certSelected = row != null && activeKeypairJob.getKeypairJobId() == null;
         propertiesButton.setEnabled(certSelected);
         signCsrButton.setEnabled(certSelected && flags.canDeleteSome());
         manageKeystoreButton.setEnabled(flags.canDeleteAll());
@@ -778,63 +772,66 @@ public class PrivateKeyManagerWindow extends JDialog {
      * @return true if there is currently a private key job being performed on this Gateway node.
      */
     public boolean isKeypairJobActive() {
-        if (activeKeypairJob == null)
-            return false;
+        boolean isActive = false;
+        if (activeKeypairJob.getKeypairJobId() != null) {
 
-        final long now = System.currentTimeMillis();
-        if (now - lastJobPollTime < minJobPollInterval)
-            return true;
-
-        try {
-            lastJobPollTime = now;
-            String status = getTrustedCertAdmin().getJobStatus(activeKeypairJob);
-            if (status == null) {
-                activeKeypairJob = null;
-                return false;
-            } else if (status.startsWith("inactive:")) {
-                AsyncAdminMethods.JobResult<X509Certificate> result = getTrustedCertAdmin().getJobResult(activeKeypairJob);
-                activeKeypairJob = null;
-                if (result.throwableClassname != null) {
-                    final String gotmess = result.throwableMessage;
-                    final String mess;
-                    int pos;
-                    if (gotmess != null && gotmess.indexOf("com.l7tech.common.io.DuplicateAliasException") >= 0) {
-                        // More friendly error message for one common, foreseeable problem (Bug #3923)
-                        mess = "Unable to generate key pair: the specified alias is already in use.";
-                    } else if (gotmess != null && (pos = gotmess.indexOf("java.security.InvalidKeyException: Curve is too small for a ")) >= 0) {
-                        // More friendly error message for another common, foreseeable problem (Bug #7648)
-                        mess = "Unable to generate key pair: " + gotmess.substring(pos + 35);
-                    } else if (gotmess != null && (pos = gotmess.indexOf("NoSuchAlgorithmException:")) >= 0) {
-                        // More friendly error message for another common, foreseeable problem (Bug #7648)
-                        mess = "Unable to generate key pair: " + gotmess.substring(pos + 25);
-                    } else if (gotmess != null && (pos = gotmess.indexOf("Strong RSA key pair generation")) >= 0) {
-                        // More friendly error message for another common, foreseeable problem (Bug #9198)
-                        mess = "Unable to generate key pair: " + gotmess.substring(pos);
-                    } else {
-                        mess = "Key generation failed: " + result.throwableClassname + ": " + gotmess;
-                    }
-
-                    logger.log(Level.WARNING, mess);
-                    JOptionPane.showMessageDialog(this,
-                                                  mess,
-                                                  "Key Generation Failed",
-                                                  JOptionPane.ERROR_MESSAGE);
-                } else if (result.result != null && mutableKeystore != null && activeKeypairJobAlias != null) {
-                    keyTable.setSelectedKeyEntry(mutableKeystore.getOid(), activeKeypairJobAlias);
-                    activeKeypairJobAlias = null;
-                }
-                return false;
-            } else {
+            final long now = System.currentTimeMillis();
+            if (now - activeKeypairJob.getLastJobPollTime() < activeKeypairJob.getMinJobPollInterval())
                 return true;
+
+            try {
+                activeKeypairJob.setLastJobPollTime(now);
+                String status = getTrustedCertAdmin().getJobStatus(activeKeypairJob.getKeypairJobId());
+                if (status == null) {
+                    activeKeypairJob.setKeypairJobId(null);
+                    return false;
+                } else if (status.startsWith("inactive:")) {
+                    AsyncAdminMethods.JobResult<X509Certificate> result = getTrustedCertAdmin().getJobResult(activeKeypairJob.getKeypairJobId());
+                    activeKeypairJob.setKeypairJobId(null);
+                    if (result.throwableClassname != null) {
+                        final String gotmess = result.throwableMessage;
+                        final String mess;
+                        int pos;
+                        if (gotmess != null && gotmess.indexOf("com.l7tech.common.io.DuplicateAliasException") >= 0) {
+                            // More friendly error message for one common, foreseeable problem (Bug #3923)
+                            mess = "Unable to generate key pair: the specified alias is already in use.";
+                        } else if (gotmess != null && (pos = gotmess.indexOf("java.security.InvalidKeyException: Curve is too small for a ")) >= 0) {
+                            // More friendly error message for another common, foreseeable problem (Bug #7648)
+                            mess = "Unable to generate key pair: " + gotmess.substring(pos + 35);
+                        } else if (gotmess != null && (pos = gotmess.indexOf("NoSuchAlgorithmException:")) >= 0) {
+                            // More friendly error message for another common, foreseeable problem (Bug #7648)
+                            mess = "Unable to generate key pair: " + gotmess.substring(pos + 25);
+                        } else if (gotmess != null && (pos = gotmess.indexOf("Strong RSA key pair generation")) >= 0) {
+                            // More friendly error message for another common, foreseeable problem (Bug #9198)
+                            mess = "Unable to generate key pair: " + gotmess.substring(pos);
+                        } else {
+                            mess = "Key generation failed: " + result.throwableClassname + ": " + gotmess;
+                        }
+
+                        logger.log(Level.WARNING, mess);
+                        JOptionPane.showMessageDialog(this,
+                                                      mess,
+                                                      "Key Generation Failed",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    } else if (result.result != null && mutableKeystore != null && activeKeypairJob.getActiveKeypairJobAlias() != null) {
+                        keyTable.setSelectedKeyEntry(mutableKeystore.getOid(), activeKeypairJob.getActiveKeypairJobAlias());
+                        activeKeypairJob.setActiveKeypairJobAlias(null);
+                    }
+                    isActive = false;
+                } else {
+                    isActive = true;
+                }
+            } catch (AsyncAdminMethods.UnknownJobException e) {
+                logger.log(Level.WARNING, "Unable to check remote job status: " + ExceptionUtils.getMessage(e), e);
+                activeKeypairJob.setKeypairJobId(null);
+                isActive = false;
+            } catch ( AsyncAdminMethods.JobStillActiveException e) {
+                logger.log(Level.WARNING, "Unable to check remote job status: " + ExceptionUtils.getMessage(e), e);
+                isActive = true;
             }
-        } catch (AsyncAdminMethods.UnknownJobException e) {
-            logger.log(Level.WARNING, "Unable to check remote job status: " + ExceptionUtils.getMessage(e), e);
-            activeKeypairJob = null;
-            return false;
-        } catch ( AsyncAdminMethods.JobStillActiveException e) {
-            logger.log(Level.WARNING, "Unable to check remote job status: " + ExceptionUtils.getMessage(e), e);
-            return true;
         }
+
+        return isActive;
     }
 
     /** Represents a row in the Manage Private Keys table. */
@@ -972,6 +969,16 @@ public class PrivateKeyManagerWindow extends JDialog {
         return labelByKeyType.get(type);
     }
 
+    /**
+     * Overrides window dispose method
+     * cancel job status timer before disposing window, this will insure that the timer tasks of checking
+     * the job status are not running when the window is closed
+     */
+    @Override
+    public void dispose() {
+        jobStatusTimer.cancel();
+        super.dispose();
+    }
 
     private static class KeyTable extends JTable {
         private final KeyTableModel model = new KeyTableModel();

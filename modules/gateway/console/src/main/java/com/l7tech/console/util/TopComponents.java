@@ -39,6 +39,10 @@ public class TopComponents {
     private String logonWarningBanner;
     private SsmPreferences preferences;
 
+    public ActiveKeypairJob getActiveKeypairJob() {
+        return getMainWindow().getActiveKeypairJob();
+    }
+
     public void showHelpTopics() {
         getMainWindow().showHelpTopicsRoot();
     }
