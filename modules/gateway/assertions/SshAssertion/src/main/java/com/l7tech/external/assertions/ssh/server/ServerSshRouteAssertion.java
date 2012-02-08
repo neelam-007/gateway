@@ -346,7 +346,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         for ( final SshCipher cipher : SshCipher.values() ) {
             if ( !cipher.isRegisteredByDefault() && cipherList.contains( cipher.getSshName() ) ) {
                 algorithmFactory.addCipher( cipher.getSshName(), cipher.getJavaCipherName(), cipher.getBlockSize() );
-            } else if ( cipher.isRegisteredByDefault() ) {
+            } else if ( cipher.isRegisteredByDefault() && !cipherList.contains( cipher.getSshName() )) {
                 algorithmFactory.removeCipher( cipher.getSshName() );
             }
         }
