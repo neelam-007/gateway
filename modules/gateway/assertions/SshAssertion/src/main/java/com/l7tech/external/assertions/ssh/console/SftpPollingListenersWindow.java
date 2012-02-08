@@ -140,6 +140,7 @@ public class SftpPollingListenersWindow extends JDialog {
 
         enableOrDisableButtons();
 
+        Utilities.setEscKeyStrokeDisposes(this);
         Utilities.setDoubleClickAction(listenersTable, modifyButton);
         Utilities.setRowSorter(listenersTable, tableModel, new int[]{0,1,2}, new boolean[]{true,true,true}, null);
         Utilities.setMinimumSize(this);
