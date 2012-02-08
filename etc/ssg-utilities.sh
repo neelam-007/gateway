@@ -15,7 +15,7 @@ ensure_JDK() {
     fi
 
     if [ ! -z "${1}" ] ; then
-        EJ_javaver=$("${JAVA_HOME}/bin/java" -version 2>&1 | awk -F\" '/version/ {print $2}' | awk -F\. '{print $1"."$2}');
+        EJ_javaver=$("${SSG_JAVA_HOME}/bin/java" -version 2>&1 | awk -F\" '/version/ {print $2}' | awk -F\. '{print $1"."$2}');
 
         EJ_want_major=$(echo "${1}" | awk -F'.' '{print $1}')
         EJ_want_minor=$(echo "${1}" | awk -F'.' '{print $2}')
