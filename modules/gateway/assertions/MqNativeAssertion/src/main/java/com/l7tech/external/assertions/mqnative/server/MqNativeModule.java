@@ -511,7 +511,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 logger.log( Level.INFO, "Message sent to failure queue");
                 posted = true;
             } catch (MQException mex) {
-                logger.log( Level.WARNING, "Error sending message to failure queue", mex);
+                logger.log( Level.WARNING, "Error sending message to failure queue"  + ExceptionUtils.getMessage(mex), ExceptionUtils.getDebugException(mex) );
             } finally {
                 if (failedQueue != null) {
                     try {
