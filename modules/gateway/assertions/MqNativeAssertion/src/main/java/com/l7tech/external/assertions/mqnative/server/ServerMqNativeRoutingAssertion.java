@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.Message;
 import com.l7tech.message.MessageRole;
 import com.l7tech.message.MimeKnob;
+import static com.l7tech.objectmodel.EntityUtil.name;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -782,8 +783,19 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 !ACTIVE_CONNECTOR_TYPE_MQ_NATIVE.equals(ssgActiveConnector.getType()) ||
                 !ssgActiveConnector.isEnabled() ||
                 ssgActiveConnector.getBooleanProperty( PROPERTIES_KEY_IS_INBOUND ) ) {
-            throw new MqNativeConfigException(
-                    "MQ endpoint #" + assertion.getSsgActiveConnectorId() + " could not be located! It may have been deleted" );
+            final String name = optional( ssgActiveConnector ).map( name() )
+                    .orElse( optional( assertion.getSsgActiveConnectorName() ) )
+                    .orSome( "<Unknown>" );
+            final StringBuilder message = new StringBuilder(128);
+            message.append( "MQ endpoint '" ).append(name).append( "' #" ).append( assertion.getSsgActiveConnectorId() );
+            if ( ssgActiveConnector!=null && ssgActiveConnector.getBooleanProperty( PROPERTIES_KEY_IS_INBOUND ) ) {
+                message.append( " is an inbound queue" );
+            } else if ( ssgActiveConnector!=null && !ssgActiveConnector.isEnabled() ) {
+                message.append( " is disabled" );
+            } else {
+                message.append( " could not be located! It may have been deleted" );
+            }
+            throw new MqNativeConfigException( message.toString() );
         }
 
         config = new MqNativeEndpointConfig(
