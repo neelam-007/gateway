@@ -24,8 +24,6 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import static java.lang.String.CASE_INSENSITIVE_ORDER;
-import static java.util.Arrays.sort;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,18 +33,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.AUTOMATIC;
-import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.ON_COMPLETION;
+import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.values;
-import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
-import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_NONE;
-import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
+import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static java.lang.String.CASE_INSENSITIVE_ORDER;
+import static java.util.Arrays.sort;
 
 /**
  * Dialog for configuring a MQ Native queue.
@@ -127,6 +124,7 @@ public class MqNativePropertiesDialog extends JDialog {
 
     private boolean isOk;
     private boolean outboundOnly = false;
+    private boolean isClone = false;
     private FormAuthorizationPreparer securityFormAuthorizationPreparer;
     private Logger logger = Logger.getLogger(MqNativePropertiesDialog.class.getName());
     private ContentTypeComboBoxModel contentTypeModel;
@@ -206,7 +204,7 @@ public class MqNativePropertiesDialog extends JDialog {
      * @param outboundOnly if true, the direction will be locked and defaulted to Outbound only.
      * @return the new instance
      */
-    public static MqNativePropertiesDialog createInstance(Window parent, @Nullable SsgActiveConnector mqConnection, boolean outboundOnly) {
+    public static MqNativePropertiesDialog createInstance(Window parent, @Nullable SsgActiveConnector mqConnection, boolean outboundOnly, boolean isClone) {
         final MqNativePropertiesDialog that = new MqNativePropertiesDialog(parent);
         final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
         if (provider == null) {
@@ -215,6 +213,7 @@ public class MqNativePropertiesDialog extends JDialog {
         that.securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new AttemptedCreate(EntityType.JMS_ENDPOINT));
         that.mqNativeActiveConnector = mqConnection;
         that.setOutboundOnly(outboundOnly);
+        that.isClone = isClone;
 
         final String title;
         if (that.mqNativeActiveConnector == null) {
@@ -265,7 +264,6 @@ public class MqNativePropertiesDialog extends JDialog {
         portNumberTextField.setDocument(new MaxLengthDocument(255));
         portNumberTextField.getDocument().addDocumentListener( enableDisableListener );
         channelTextBox.setDocument(new MaxLengthDocument(255));
-        channelTextBox.setText("SYSTEM.DEF.SVRCONN");
         channelTextBox.getDocument().addDocumentListener( enableDisableListener );
 
         queueManagerNameTextBox.setDocument(new MaxLengthDocument(255));
@@ -586,8 +584,10 @@ public class MqNativePropertiesDialog extends JDialog {
             }
 
             hostNameTextBox.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME));
-            if(mqNativeActiveConnector.getOid() > -1L) {
+            if(mqNativeActiveConnector.getOid() > -1L || isClone) {
                 channelTextBox.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_CHANNEL));
+            } else {
+                channelTextBox.setText("SYSTEM.DEF.SVRCONN");
             }
             isTemplateQueue.setSelected(mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE));
             portNumberTextField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_PORT));
@@ -1122,5 +1122,10 @@ public class MqNativePropertiesDialog extends JDialog {
         final String[] suites = CipherSuiteGuiUtil.getCipherSuiteNames();
         sort( suites, CASE_INSENSITIVE_ORDER );
         return suites;
+    }
+
+    public void selectNameField() {
+        mqConnectionName.requestFocus();
+        mqConnectionName.selectAll();
     }
 }

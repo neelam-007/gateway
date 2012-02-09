@@ -19,6 +19,10 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.util.Functions.*;
+import com.l7tech.util.MutablePair;
+import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -39,14 +43,10 @@ import static com.l7tech.gui.util.Utilities.comboBoxModel;
 import static com.l7tech.gui.util.Utilities.enableGrayOnDisabled;
 import static com.l7tech.objectmodel.imp.PersistentEntityUtil.oid;
 import static com.l7tech.policy.variable.Syntax.getReferencedNames;
-import static com.l7tech.util.Functions.*;
-import com.l7tech.util.MutablePair;
-import com.l7tech.util.Pair;
 import static com.l7tech.util.TextUtils.truncStringMiddleExact;
 import static com.l7tech.util.ValidationUtils.isValidInteger;
 import static java.util.Collections.emptyList;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import static com.l7tech.util.Functions.*;
 
 /**
  * Assertion properties edit dialog for the MQ routing assertion.
@@ -160,7 +160,8 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         newQueueButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final MqNativePropertiesDialog mqQueuePropertiesDialog = MqNativePropertiesDialog.createInstance(MqNativeRoutingAssertionDialog.this, null, false);
+                final MqNativePropertiesDialog mqQueuePropertiesDialog =
+                        MqNativePropertiesDialog.createInstance(MqNativeRoutingAssertionDialog.this, null, false, false);
                 mqQueuePropertiesDialog.pack();
                 Utilities.centerOnParentWindow( mqQueuePropertiesDialog );
                 DialogDisplayer.display(mqQueuePropertiesDialog, new Runnable() {

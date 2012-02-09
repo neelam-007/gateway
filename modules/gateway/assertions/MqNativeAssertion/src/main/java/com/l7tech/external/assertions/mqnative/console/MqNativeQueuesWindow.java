@@ -339,7 +339,8 @@ public class MqNativeQueuesWindow extends JDialog {
             addButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent event) {
-                    final MqNativePropertiesDialog mqQueuePropertiesDialog = MqNativePropertiesDialog.createInstance(MqNativeQueuesWindow.this, null, false);
+                    final MqNativePropertiesDialog mqQueuePropertiesDialog =
+                            MqNativePropertiesDialog.createInstance( MqNativeQueuesWindow.this, null, false, false );
                     mqQueuePropertiesDialog.pack();
                     Utilities.centerOnScreen(mqQueuePropertiesDialog);
                     DialogDisplayer.display(mqQueuePropertiesDialog, new Runnable() {
@@ -367,7 +368,8 @@ public class MqNativeQueuesWindow extends JDialog {
                         SsgActiveConnector clone = new SsgActiveConnector(currMqQueue);
                         EntityUtils.updateCopy(clone);
                         final MqNativePropertiesDialog pd = MqNativePropertiesDialog.createInstance(
-                                MqNativeQueuesWindow.this, clone, false);
+                                MqNativeQueuesWindow.this, clone, false, true);
+                        pd.selectNameField();
                         pd.pack();
                         Utilities.centerOnScreen(pd);
                         DialogDisplayer.display(pd, new Runnable() {
@@ -423,7 +425,7 @@ public class MqNativeQueuesWindow extends JDialog {
             });
         } else {
             final MqNativePropertiesDialog pd =
-                    MqNativePropertiesDialog.createInstance(MqNativeQueuesWindow.this, connector, false);
+                    MqNativePropertiesDialog.createInstance(MqNativeQueuesWindow.this, connector, false, false);
             pd.pack();
             Utilities.centerOnScreen(pd);
             DialogDisplayer.display(pd, new Runnable() {
