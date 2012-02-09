@@ -3,6 +3,9 @@ package com.l7tech.external.assertions.mqnative.server;
 import com.ibm.mq.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
+import com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.isTransactional;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
@@ -18,6 +21,7 @@ import com.l7tech.server.transport.ActiveTransportModule;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.*;
+import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
@@ -38,6 +42,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -180,7 +185,10 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                             @Override
                             public MqNativeException call() {
                                 try {
-                                    acknowledgeMessage( MqNativeUtils.isTransactional(ssgActiveConnector), mqNativeClient, queueMessage.messageId );
+                                    if ( !isTransactional( ssgActiveConnector ) ) {
+                                        // commit now - on-take / AUTOMATIC
+                                        commitWork( mqNativeClient );
+                                    }
                                     handleMessageForConnector( ssgActiveConnector, mqNativeClient, queueMessage );
                                 } catch ( MqNativeException e ) {
                                     return e;
@@ -200,6 +208,15 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                         logger.log( Level.WARNING, "Error handling message, thread pool is shutdown.", getDebugException( e ) );
                     } catch ( ExecutionException e ) {
                         logger.log( Level.WARNING, "Error handling message: " + getMessage( e ), getDebugException( e ) );
+                    } catch ( RejectedExecutionException e ) {
+                        try {
+                            rollbackWork( mqNativeClient );
+                        } catch ( MQException e1 ) {
+                            throw new MqNativeException( "Error rolling back work for rejected execution", e1);
+                        } catch ( MqNativeConfigException e1 ) {
+                            throw new MqNativeException( "Error rolling back work for rejected execution", e1);
+                        }
+                        throw e;
                     }
                 }
             };
@@ -231,18 +248,35 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     }
 
     /**
-     * Acknowledge current queue message based on given acknowledgement type.
-     * @param isTransactional The acknowledgement type configured for this listener
+     * Commit outstanding work for client.
+     *
      * @param mqNativeClient  The MQ native client to access the MQ server
-     * @param messageId The request message id currently being processed
      * @throws MQException if an error occurs
      */
-    public void acknowledgeMessage(boolean isTransactional,
-                                   @NotNull final MqNativeClient mqNativeClient,
-                                   @NotNull final byte[] messageId) throws MQException {
-        MQMessage pop = new MQMessage();
-        pop.messageId = messageId;
-        mqNativeClient.getTargetQueue().get(pop, mqNativeClient.getAcknowledgeOptions(isTransactional));
+    private void commitWork( @NotNull final MqNativeClient mqNativeClient ) throws MQException, MqNativeConfigException {
+        mqNativeClient.doWork( new UnaryThrows<Void,ClientBag,MQException>() {
+            @Override
+            public Void call( final ClientBag bag ) throws MQException {
+                bag.getQueueManager().commit();
+                return null;
+            }
+        }, false );
+    }
+
+    /**
+     * Commit outstanding work for client.
+     *
+     * @param mqNativeClient  The MQ native client to access the MQ server
+     * @throws MQException if an error occurs
+     */
+    private void rollbackWork( @NotNull final MqNativeClient mqNativeClient ) throws MQException, MqNativeConfigException {
+        mqNativeClient.doWork( new UnaryThrows<Void, ClientBag, MQException>() {
+            @Override
+            public Void call( final ClientBag bag ) throws MQException {
+                bag.getQueueManager().backout();
+                return null;
+            }
+        }, false );
     }
 
     /**
@@ -412,20 +446,20 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         } finally {
             ResourceUtils.closeQuietly(context);
 
-            if ( MqNativeUtils.isTransactional(connector) ) {
+            if ( isTransactional( connector ) ) {
                 boolean handledAnyFailure = status == AssertionStatus.NONE || postMessageToFailureQueue(requestMessage, connector, mqNativeClient);
 
                 if ( responseSuccess && handledAnyFailure ) {
                     try {
-                        logger.log( Level.INFO, "Committing MQ transaction." );
-                        mqNativeClient.getQueueManager().commit();
+                        logger.log( Level.FINE, "Committing MQ transaction." );
+                        commitWork( mqNativeClient );
                     } catch (Exception e) {
                         logger.log( Level.WARNING, "Error performing MQ commit.", e );
                     }
                 } else {
                     try {
                         logger.log( Level.INFO, "Back out MQ transaction." );
-                        mqNativeClient.getQueueManager().backout();
+                        rollbackWork( mqNativeClient );
                     } catch (Exception e) {
                         logger.log( Level.WARNING, "Error performing MQ back out.", e );
                     }
@@ -434,50 +468,74 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         }
     }
 
-    private boolean sendResponse(MQMessage requestMessage, MQMessage responseMessage, SsgActiveConnector connector, MqNativeClient mqNativeClient ) {
-        boolean sent = false;
+    private boolean sendResponse( final MQMessage requestMessage,
+                                  final MQMessage responseMessage,
+                                  final SsgActiveConnector connector,
+                                  final MqNativeClient mqNativeClient ) {
+        boolean success = false;
 
-        MqNativeReplyType replyType = connector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class);
-        MQPutMessageOptions replyOptions = mqNativeClient.getReplyOptions(replyType, MqNativeUtils.isTransactional(connector));
+        final boolean transactional = isTransactional(connector);
+        final boolean allowReconnect = !transactional; // allow reconnect for reply if not transactional
+        final MqNativeReplyType replyType = connector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class);
+        final MQPutMessageOptions replyOptions = new MQPutMessageOptions();
+        replyOptions.options = MQC.MQPMO_NEW_MSG_ID |
+                ( transactional ? MQC.MQPMO_SYNCPOINT : MQC.MQPMO_NO_SYNCPOINT );
         switch(replyType) {
             case REPLY_NONE:
-                logger.info("No response will be sent!");
+                logger.fine( "No response will be sent!" );
+                success = true;
                 break;
             case REPLY_AUTOMATIC:
-                String replyToQueueName = requestMessage.replyToQueueName;
+                final String replyToQueueName = requestMessage.replyToQueueName;
                 if (replyToQueueName == null || StringUtils.isEmpty(replyToQueueName.trim())) {
                     logger.log(Level.WARNING, "Inbound listener configured with \"REPLY_AUTOMATIC\", but MQ request message does not contain a replyToQueueName");
                 } else {
-                    MQQueue replyToQueue = null;
                     try {
-                        replyToQueue = mqNativeClient.getQueueManager().accessQueue(replyToQueueName, MQC.MQOO_OUTPUT);
-                        logger.log(Level.FINER, "Sending response to {0} for request seqNum: {1}", new Object[] { replyToQueueName, requestMessage.messageSequenceNumber });
-                        setResponseCorrelationId(connector, requestMessage, responseMessage);
-                        replyToQueue.put( responseMessage, replyOptions );
-                        logger.finer( "Sent response to " + replyToQueue );
-                        sent = true;
-                    } catch ( MQException e ) {
-                        logger.log( Level.WARNING, "Caught MQ exception while sending response", ExceptionUtils.getDebugException(e) );
-                    } finally {
-                        if (replyToQueue != null) {
-                            try {
-                                replyToQueue.close();
-                            } catch (MQException e) {
-                                logger.log(Level.WARNING, "Error closing reply queue: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        mqNativeClient.doWork( new UnaryThrows<Void, ClientBag, MQException>() {
+                            @Override
+                            public Void call( final ClientBag clientBag ) throws MQException {
+                                MQQueue replyToQueue = null;
+                                try {
+                                    replyToQueue = clientBag.getQueueManager().accessQueue(replyToQueueName, MQC.MQOO_OUTPUT);
+                                    logger.log(Level.FINER, "Sending response to {0} for request seqNum: {1}", new Object[] { replyToQueueName, requestMessage.messageSequenceNumber });
+                                    setResponseCorrelationId(connector, requestMessage, responseMessage);
+                                    replyToQueue.put( responseMessage, replyOptions );
+                                    logger.finer( "Sent response to " + replyToQueue );
+                                } finally {
+                                    MqNativeUtils.closeQuietly( replyToQueue );
+                                }
+                                return null;
                             }
-                        }
+                        }, allowReconnect );
+                        success = true;
+                    } catch ( MQException e ) {
+                        logger.log( Level.WARNING, "Error sending MQ response: " + getMessage(e), ExceptionUtils.getDebugException(e) );
+                    } catch ( MqNativeConfigException e ) {
+                        logger.log( Level.WARNING, "Error sending MQ response: " + getMessage(e), ExceptionUtils.getDebugException(e) );
                     }
                 }
                 break;
             case REPLY_SPECIFIED_QUEUE:
                 try {
-                    MQQueue specifiedReplyQueue = mqNativeClient.getSpecifiedReplyQueue();
-                    setResponseCorrelationId(connector, requestMessage, responseMessage);
-                    specifiedReplyQueue.put( responseMessage, replyOptions );
-                    logger.finer( "Sent response to " + specifiedReplyQueue );
-                    sent = true;
+                    mqNativeClient.doWork( new UnaryThrows<Void, ClientBag, MQException>() {
+                        @Override
+                        public Void call( final ClientBag clientBag ) throws MQException {
+                            final MQQueue specifiedReplyQueue = clientBag.getSpecifiedReplyQueue();
+                            if ( specifiedReplyQueue != null ) {
+                                setResponseCorrelationId( connector, requestMessage, responseMessage );
+                                specifiedReplyQueue.put( responseMessage, replyOptions );
+                                logger.finer( "Sent response to " + specifiedReplyQueue );
+                            } else {
+                                logger.log( Level.WARNING, "Error sending MQ response: specified queue not available" );
+                            }
+                            return null;
+                        }
+                    }, allowReconnect );
+                    success = true;
                 } catch ( MQException e ) {
-                    logger.log( Level.WARNING, "Caught MQ exception while sending response", ExceptionUtils.getDebugException(e) );
+                    logger.log( Level.WARNING, "Error sending MQ response: " + getMessage(e), ExceptionUtils.getDebugException(e) );
+                } catch ( MqNativeConfigException e ) {
+                    logger.log( Level.WARNING, "Error sending MQ response: " + getMessage(e), ExceptionUtils.getDebugException(e) );
                 }
                 break;
             default:
@@ -485,41 +543,47 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 break;
         }
 
-        return sent;
+        return success;
     }
 
     private void setResponseCorrelationId(final SsgActiveConnector connector, final MQMessage requestMessage, final MQMessage responseMessage) {
         if (connector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST)) {
-            logger.info( "reply correlationId = request correlationId" );
+            logger.finer( "reply correlationId = request correlationId" );
             responseMessage.correlationId = requestMessage.correlationId;
         } else {
-            logger.info( "reply correlationId = request messageId" );
+            logger.finer( "reply correlationId = request messageId" );
             responseMessage.correlationId = requestMessage.messageId;
         }
     }
 
-    private boolean postMessageToFailureQueue(final MQMessage requestMessage, SsgActiveConnector connector, MqNativeClient mqNativeClient) {
+    private boolean postMessageToFailureQueue( final MQMessage requestMessage,
+                                               final SsgActiveConnector connector,
+                                               final MqNativeClient mqNativeClient ) {
         boolean posted = false;
-        String failedQueueName = connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME);
-        if ( MqNativeUtils.isTransactional(connector) && !StringUtils.isEmpty(failedQueueName)) {
-            MQQueue failedQueue = null;
+        final String failedQueueName = connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME);
+        if ( !StringUtils.isEmpty(failedQueueName) ) {
             try {
-                failedQueue = mqNativeClient.getQueueManager().accessQueue( failedQueueName, MQC.MQOO_OUTPUT );
-                MQPutMessageOptions pmo = new MQPutMessageOptions();
-                pmo.options = MQC.MQPMO_NONE;
-                failedQueue.put(requestMessage, pmo);
-                logger.log( Level.INFO, "Message sent to failure queue");
-                posted = true;
-            } catch (MQException mex) {
-                logger.log( Level.WARNING, "Error sending message to failure queue"  + ExceptionUtils.getMessage(mex), ExceptionUtils.getDebugException(mex) );
-            } finally {
-                if (failedQueue != null) {
-                    try {
-                        failedQueue.close();
-                    } catch (MQException e) {
-                        logger.log(Level.WARNING, "Error closing failure queue: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                mqNativeClient.doWork( new UnaryThrows<Void, ClientBag, MQException>() {
+                    @Override
+                    public Void call( final ClientBag clientBag ) throws MQException {
+                        MQQueue failedQueue = null;
+                        try {
+                            failedQueue = clientBag.getQueueManager().accessQueue( failedQueueName, MQC.MQOO_OUTPUT );
+                            final MQPutMessageOptions pmo = new MQPutMessageOptions();
+                            pmo.options = MQC.MQPMO_SYNCPOINT;
+                            failedQueue.put(requestMessage, pmo);
+                            logger.log( Level.FINE, "Message sent to failure queue");
+                        } finally {
+                            closeQuietly( failedQueue );
+                        }
+                        return null;
                     }
-                }
+                }, false );
+                posted = true;
+            } catch (MQException e) {
+                logger.log( Level.WARNING, "Error sending message to failure queue: " + getMessage(e), getDebugException(e));
+            } catch ( MqNativeConfigException e ) {
+                logger.log( Level.WARNING, "Error sending message to failure queue: " + getMessage(e), getDebugException(e));
             }
         }
         return posted;

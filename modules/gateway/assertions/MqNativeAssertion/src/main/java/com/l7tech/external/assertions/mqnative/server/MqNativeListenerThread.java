@@ -1,16 +1,17 @@
 package com.l7tech.external.assertions.mqnative.server;
 
+import com.ibm.mq.MQC;
 import com.ibm.mq.MQException;
 import com.ibm.mq.MQGetMessageOptions;
 import com.ibm.mq.MQMessage;
-import com.ibm.mq.MQQueue;
+import com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
 
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+import com.l7tech.util.Functions.UnaryThrows;
 import static java.text.MessageFormat.format;
 
 /**
@@ -41,35 +42,26 @@ class MqNativeListenerThread extends Thread {
         int oopses = 0;
         try {
             MQMessage mqMessage;
-            MQMessage lastMsg = null;
-            boolean retryLastMsg = false;
             while ( !mqNativeListener.isStop() ) {
                 try {
-                    if (!retryLastMsg || lastMsg == null) {
-                        mqMessage = mqNativeListener.doWithMqNativeClient( new Functions.BinaryThrows<MQMessage,MQQueue,MQGetMessageOptions,MQException>() {
-                            @Override
-                            public MQMessage call(final MQQueue queue, final MQGetMessageOptions getMessageOptions) throws MQException {
-                                return mqNativeListener.receiveMessage( queue, getMessageOptions );
-                            }
-                        });
+                    mqMessage = mqNativeListener.doWithMqNativeClient( new UnaryThrows<MQMessage,ClientBag,MQException>() {
+                        @Override
+                        public MQMessage call( final ClientBag bag ) throws MQException {
+                            final MQGetMessageOptions getOptions = new MQGetMessageOptions();
+                            getOptions.options = MQC.MQGMO_WAIT | MQC.MQGMO_SYNCPOINT;
+                            return mqNativeListener.receiveMessage( bag.getTargetQueue(), getOptions );
+                        }
+                    });
 
-                        // TODO (TL) add configurable poll interval
+                    // TODO (TL) add configurable poll interval
 
-                        mqNativeListener.log(Level.FINE, MqNativeMessages.INFO_LISTENER_RECEIVE_MSG, connectorInfo,
-                                mqMessage == null ? null : new String(mqMessage.messageId));
-
-                        retryLastMsg = false;
-                        lastMsg = null;
-                    } else {
-                        retryLastMsg = false;
-                        mqMessage = lastMsg;
-                    }
+                    mqNativeListener.log(Level.FINE, MqNativeMessages.INFO_LISTENER_RECEIVE_MSG, connectorInfo,
+                            mqMessage == null ? null : new String(mqMessage.messageId));
 
                     if ( mqMessage != null && !mqNativeListener.isStop() ) {
                         oopses = 0;
 
                         // process on the message
-                        lastMsg = mqMessage;
                         mqNativeListener.handleMessage(mqMessage);
 
                     }
@@ -90,7 +82,6 @@ class MqNativeListenerThread extends Thread {
                     } else {
                         mqNativeListener.log(Level.WARNING, "Running out threads in the MQ ThreadPool, " +
                                 "consider increasing the mq.listenerThreadLimit : {0}", e.getMessage());
-                        retryLastMsg = true;
                     }
 
                     if ( ++oopses < MqNativeListener.MAXIMUM_OOPSES ) {

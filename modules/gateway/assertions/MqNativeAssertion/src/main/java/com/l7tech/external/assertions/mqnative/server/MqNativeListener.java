@@ -2,12 +2,16 @@ package com.l7tech.external.assertions.mqnative.server;
 
 import com.ibm.mq.*;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
+import com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.password.SecurePasswordManager;
-import com.l7tech.util.Functions;
+import com.l7tech.util.Functions.NullaryThrows;
+import com.l7tech.util.Functions.UnaryThrows;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.some;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TimeUnit;
 import org.apache.commons.lang.StringUtils;
@@ -18,8 +22,6 @@ import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.QUEUE_OPEN_OPTIONS_INBOUND;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.QUEUE_OPEN_OPTIONS_INBOUND_REPLY_SPECIFIED_QUEUE;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static java.text.MessageFormat.format;
 
@@ -160,48 +162,43 @@ public abstract class MqNativeListener {
         ResourceUtils.closeQuietly(mqNativeClient);
     }
 
-    SsgActiveConnector getSsgActiveConnector() {
-        return this.ssgActiveConnector;
-    }
-
     /**
      * Build a client to make calls to the MQ server.
      * @throws MqNativeConfigException if configuration settings don't work
      * @return MqNativeClient
      */
     protected MqNativeClient buildMqNativeClient() throws MqNativeConfigException {
-        MQQueueManager queueManager;
-        MQQueue targetQueue;
-        MQQueue specifiedReplyQueue = null;
-
-        try {
-            queueManager = new MQQueueManager(getConnectorProperty( PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME ), buildQueueManagerConnectProperties());
-
-            targetQueue = queueManager.accessQueue(getConnectorProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME), QUEUE_OPEN_OPTIONS_INBOUND);
-
-            MqNativeReplyType replyType = MqNativeReplyType.valueOf( getConnectorProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE) );
-            String specifiedReplyQueueName = getConnectorProperty( PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME );
-            if (MqNativeReplyType.REPLY_SPECIFIED_QUEUE == replyType && !StringUtils.isEmpty(specifiedReplyQueueName) ) {
-                 specifiedReplyQueue = queueManager.accessQueue(specifiedReplyQueueName, QUEUE_OPEN_OPTIONS_INBOUND_REPLY_SPECIFIED_QUEUE);
-            }
-        } catch (Exception e) {
-            throw new MqNativeConfigException("Error while attempting to access QueueManager and Queue.", e);
-        }
-
-        if (targetQueue == null) {
-            throw new MqNativeConfigException("Failed to instantiate MQ Queue: null");
-        }
-
-        return new MqNativeClient(queueManager, targetQueue, specifiedReplyQueue, RECEIVE_TIMEOUT, new MqNativeClient.MqNativeConnectionListener() {
+        final String queueManagerName = getConnectorProperty( PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME );
+        final NullaryThrows<Hashtable,MqNativeConfigException> queueManagerProperties =
+                new NullaryThrows<Hashtable,MqNativeConfigException>(){
             @Override
-            public void notifyConnected() {
-                fireConnected();
+            public Hashtable call() throws MqNativeConfigException {
+                return buildQueueManagerConnectProperties();
             }
+        };
+        final String queueName = getConnectorProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME);
+        final MqNativeReplyType replyType = MqNativeReplyType.valueOf( getConnectorProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE) );
+        final String specifiedReplyQueueName = getConnectorProperty( PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME );
+        final Option<String> replyQueueName = MqNativeReplyType.REPLY_SPECIFIED_QUEUE == replyType &&
+                !StringUtils.isEmpty(specifiedReplyQueueName) ?
+                    some(specifiedReplyQueueName) :
+                    Option.<String>none();
 
-            @Override
-            public void notifyConnectionError(String message) {
-                fireConnectError( message );
-            }
+        return new MqNativeClient(
+                queueManagerName,
+                queueManagerProperties,
+                queueName,
+                replyQueueName,
+                new MqNativeClient.MqNativeConnectionListener() {
+                    @Override
+                    public void notifyConnected() {
+                        fireConnected();
+                    }
+
+                    @Override
+                    public void notifyConnectionError(String message) {
+                        fireConnectError( message );
+                    }
         });
     }
 
@@ -240,11 +237,11 @@ public abstract class MqNativeListener {
 
     /**
      * Execute work in a callback function that requires a MQ native client.
-     * @param callback the work logic requiring a SFTP client
+     * @param callback the work logic requiring a MQ client
      * @return the any result(s) from the work done
      * @throws com.ibm.mq.MQException if there's an error
      */
-    <R> R doWithMqNativeClient( final Functions.BinaryThrows<R,MQQueue,MQGetMessageOptions,MQException> callback ) throws MQException {
+    <R> R doWithMqNativeClient( final UnaryThrows<R,ClientBag,MQException> callback ) throws MQException, MqNativeConfigException {
         return mqNativeClient.doWork( callback );
     }
 
