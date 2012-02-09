@@ -6,11 +6,11 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.samlpassertion.SamlStatus;
 import com.l7tech.external.assertions.samlpassertion.SamlVersion;
 import com.l7tech.external.assertions.samlpassertion.SamlpResponseBuilderAssertion;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ValidationUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -38,9 +38,6 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     @Override
     protected void initComponents() {
         super.initComponents();
-        if(TopComponents.getInstance().isApplet()){
-            contentPane.setPreferredSize(new Dimension(510, 470));
-        }
 
         samlIssuerPanel = new SamlIssuerPanel(false, true);
         samlIssuerHolderPanel.setLayout(new BorderLayout());
@@ -331,7 +328,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
             encryptedAssertionsTextField.setVisible(false);
             samlIssuerPanel.setVersion(1);
         }
-        SamlpResponseBuilderPropertiesDialog.this.pack();
+        DialogDisplayer.pack(SamlpResponseBuilderPropertiesDialog.this);
     }
 
     public static void main(String [] args){
