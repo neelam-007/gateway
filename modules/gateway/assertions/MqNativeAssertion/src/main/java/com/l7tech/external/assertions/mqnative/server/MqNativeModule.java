@@ -21,7 +21,9 @@ import com.l7tech.server.transport.ActiveTransportModule;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.*;
+import static com.l7tech.util.ConfigFactory.getBooleanProperty;
 import com.l7tech.util.Functions.UnaryThrows;
+import static com.l7tech.util.JdkLoggerConfigurator.debugState;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
@@ -66,6 +68,15 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     private final Map<Long, MqNativeListener> activeListeners = new ConcurrentHashMap<Long, MqNativeListener> ();
     private final ThreadPoolBean threadPoolBean;
 
+    static {
+        if ( !getBooleanProperty( "com.l7tech.external.assertions.mqnative.server.enableMqLogging", debugState() ) ) {
+            MQException.log = null; // This is part of the public API ...
+        } else {
+            // excluded log message when polling an empty queue.  i.e. excluded "MQJE001: Completion Code 2, Reason 2033"
+            MQException.logExclude(MQException.MQRC_NO_MSG_AVAILABLE);
+        }
+    }
+
     @Inject
     private GatewayState gatewayState;
     @Inject
@@ -105,9 +116,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         super.doStart();
         if (gatewayState.isReadyForMessages()) {
             try {
-                // excluded log message when polling an empty queue.  i.e. excluded "MQJE001: Completion Code 2, Reason 2033"
-				MQException.logExclude(MQException.MQRC_NO_MSG_AVAILABLE);
-
                 threadPoolBean.start();
                 startInitialListeners();
             } catch (FindException e) {
