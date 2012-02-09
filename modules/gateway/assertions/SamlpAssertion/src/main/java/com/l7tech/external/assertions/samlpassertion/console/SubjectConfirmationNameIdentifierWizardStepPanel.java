@@ -263,6 +263,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
                 final OkCancelDialog dlg = new OkCancelDialog<XmlElementEncryptionConfig>(
                         SubjectConfirmationNameIdentifierWizardStepPanel.this.owner,
                         "EncryptedID Encryption Properties", true, encryptionConfigPanel);
+                encryptionConfigPanel.setOwnerDialog(dlg);
                 dlg.pack();
                 com.l7tech.gui.util.Utilities.centerOnParentWindow(dlg);
                 DialogDisplayer.display(dlg, new Runnable() {

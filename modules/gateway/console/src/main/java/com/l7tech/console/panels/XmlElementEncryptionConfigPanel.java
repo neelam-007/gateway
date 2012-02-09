@@ -13,6 +13,7 @@ import com.l7tech.security.xml.XencUtil;
 import com.l7tech.security.xml.XmlElementEncryptionConfig;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -49,6 +50,8 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
     private String certb64;
 
     private final XmlElementEncryptionConfig model;
+    @Nullable
+    private JDialog ownerDialog;
 
     public XmlElementEncryptionConfigPanel(final XmlElementEncryptionConfig model) {
         this.model = model;
@@ -58,6 +61,16 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
 
     public XmlElementEncryptionConfigPanel() {
         this(new XmlElementEncryptionConfig());
+    }
+
+    /**
+     * Set a reference to the JDialog which is displaying this panel. If set when ever a user configuration event happens
+     * this owner JDialog will be packed via {@link DialogDisplayer#pack(javax.swing.JDialog)}
+     *
+     * @param ownerDialog owner JDialog
+     */
+    public void setOwnerDialog(@Nullable JDialog ownerDialog) {
+        this.ownerDialog = ownerDialog;
     }
 
     @Override
@@ -272,13 +285,9 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
 
     private void updateRecipientCertLabel() {
         recipientCertLabel.setText(getCertInfo(certb64));
-        // re pack parent window in case the user selection requires more space to be shown
-        final RootPaneContainer paneContainer = Utilities.getRootPaneContainerAncestor(this);
-        if (paneContainer != null) {
-            if (paneContainer instanceof Window) {
-                Window parentWindow = (Window) paneContainer;
-                parentWindow.pack();
-            }
+        if (ownerDialog != null) {
+            // user configuration may require more UI space
+            DialogDisplayer.pack(ownerDialog);
         }
     }
 
