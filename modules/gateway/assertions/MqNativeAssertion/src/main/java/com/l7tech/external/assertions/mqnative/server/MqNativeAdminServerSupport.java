@@ -52,12 +52,16 @@ public class MqNativeAdminServerSupport {
         securePasswordManager = context.getBean("securePasswordManager", SecurePasswordManager.class);
     }
 
+    public long getDefaultMqMessageMaxBytes() {
+        return config.getLongProperty(ServerConfigParams.PARAM_IO_MQ_MESSAGE_MAX_BYTES, 2621440L);  // ioMqMessageMaxBytes.default = 2621440
+    }
+
     public Collection<ExtensionInterfaceBinding> getExtensionInterfaceBindings() {
         ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<MqNativeAdmin>(MqNativeAdmin.class, null, new MqNativeAdmin() {
 
             @Override
             public long getDefaultMqMessageMaxBytes() {
-                return config.getLongProperty(ServerConfigParams.PARAM_IO_MQ_MESSAGE_MAX_BYTES, 2621440L);  // ioMqMessageMaxBytes.default = 2621440
+                return MqNativeAdminServerSupport.this.getDefaultMqMessageMaxBytes();
             }
 
             @Override
@@ -132,19 +136,10 @@ public class MqNativeAdminServerSupport {
                             logger.finer("... successfully got outbound specified reply queue " + replyQueue.name + "!");
                         }
                     }
+                } catch (MQException e) {
+                    logger.log(Level.INFO, "Caught MQException while testing MQ Native destination '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+                    throw new MqNativeTestException(testName + e.toString());
                 } catch (Throwable t) {
-                    try {
-                        // At admin extension load time the MQ jars may not have been installed. Cannot use MQException explicitly in this interface.
-                        final Class<?> aClass = Class.forName("com.ibm.mq.MQException", false, MqNativeAdminServerSupport.class.getClassLoader());
-                        if (aClass.isInstance(t)) {
-                            //noinspection ThrowableResultOfMethodCallIgnored
-                            logger.log(Level.INFO, "Caught MQException while testing MQ Native destination '" + ExceptionUtils.getMessage(t) + "'.", ExceptionUtils.getDebugException(t));
-                            throw new MqNativeTestException(testName + ExceptionUtils.getMessage(t));
-                        }
-                    } catch (ClassNotFoundException e) {
-                        throw new MqNativeTestException("Unable to test MQ Native destination as MQ Native jars are not installed.");
-                    }
-                    // fall through for non MQException
                     //noinspection ThrowableResultOfMethodCallIgnored
                     logger.log(Level.INFO, "Caught Throwable while testing MQ Native destination '" + ExceptionUtils.getMessage(t) + "'.", ExceptionUtils.getDebugException(t));
                     throw new MqNativeTestException(testName + ExceptionUtils.getMessage(t));
