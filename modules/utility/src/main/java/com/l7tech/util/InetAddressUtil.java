@@ -35,6 +35,8 @@ public class InetAddressUtil {
     /** Pattern that matches syntax (but not numeric sematics) of a valid IPv4 network address. */
     private static final Pattern IPV4_PAT = Pattern.compile("\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3})?)?)?(?:/\\d{1,2})?");
     private static final Pattern validIpAddressPattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
+    // hostname pattern according to RFC 952/1123
+    private static final Pattern validHostnamePattern = Pattern.compile("^(([a-zA-Z]|[a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z0-9\\-]*[A-Za-z0-9])$");
     private static final Pattern mightBeIpv6AddressPattern = Pattern.compile("^\\[?[a-fA-F0-9]+\\:[a-fA-F0-9:]+(?:\\d+\\.\\d+\\.\\d+\\.\\d+)?\\]?$");
     private static final int NO_EXPLICIT_IPV6_PREFIX = 129;
 
@@ -127,6 +129,19 @@ public class InetAddressUtil {
         return isValidIpv4Address( address, false );
     }
 
+    /**
+     * attempts to validate hostname against the valid hostname pattern
+     * pattern is defined in RFC 952/1123
+     * @param hostname  - name to validate
+     * @return  - true if  hostname is valid
+     */
+    public static boolean isValidHostName( final String hostname) {
+        if (null == hostname) return false;
+        
+        Matcher matcher = validHostnamePattern.matcher(hostname);
+        return matcher.matches();
+    }
+    
     /**
      * Verifies if the provided string parameter is a valid IPv4 address.
      *

@@ -164,12 +164,23 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep<Networking
     }
 
     private void doHostnamePrompt() throws IOException, WizardNavigationException {
-        String fqdn = getData(
-                new String[] {HOSTNAME_PROMPT},
-                "",
-                (String[]) null,
-                null
-        );
+        String fqdn = "";
+
+        boolean isValidHostname = false;
+        do {
+            fqdn = getData(
+                    new String[] {HOSTNAME_PROMPT},
+                    "",
+                    (String[]) null,
+                    null
+            );
+            //check if the hostname is valid
+            isValidHostname = InetAddressUtil.isValidHostName(fqdn);
+            if(!isValidHostname){
+                printText("Invalid hostname " + fqdn + ". The hostname must conform to RFC 952, RFC 1123");
+            }
+        } while (!isValidHostname);
+
         int firstDotPos = fqdn.indexOf(".");
         String justHostname = fqdn;
         String domainPart = "";

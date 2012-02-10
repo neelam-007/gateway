@@ -172,4 +172,17 @@ public class InetAddressUtilTest {
         assertEquals( "Localhost address with brackets", "::1", InetAddressUtil.stripIpv6Brackets( "[::1]" ) );
         assertEquals( "Full address with brackets", "2001:0db8:85a3:08d3:1319:8a2e:0370:7348", InetAddressUtil.stripIpv6Brackets( "[2001:0db8:85a3:08d3:1319:8a2e:0370:7348]" ) );
     }
+    
+    @Test
+    public void testValidHostNames() {
+        assertTrue(InetAddressUtil.isValidHostName("somehost"));
+        assertTrue(InetAddressUtil.isValidHostName("somehost.somedomain.com"));
+        assertTrue(InetAddressUtil.isValidHostName("123valid-host-name.DOMAIN.site"));
+        assertTrue(InetAddressUtil.isValidHostName("validhost.999-01.site"));
+        assertTrue(InetAddressUtil.isValidHostName("10.0.0.0"));
+        assertFalse(InetAddressUtil.isValidHostName("invalid_hostname.somedomain.com"));
+        assertFalse(InetAddressUtil.isValidHostName("_invalid-hostname.123.somedomain1.com"));
+        assertFalse(InetAddressUtil.isValidHostName("invalid-hostname.123-.somedomain-1.com"));
+        assertFalse(InetAddressUtil.isValidHostName(""));
+    }
 }
