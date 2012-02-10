@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
-import com.l7tech.server.policy.variable.ServerVariables;
+import static com.l7tech.server.policy.variable.ServerVariables.expandSinglePasswordOnlyVariable;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
@@ -90,11 +90,7 @@ public class JmsUtil {
 
         if ( username == null || password == null ) {
             username = connection.getUsername();
-            try {
-                password = ServerVariables.expandSinglePasswordOnlyVariable(new LoggingAudit(logger), connection.getPassword());
-            } catch (FindException e) {
-                throw new JmsConfigException("Unable to retrieve JMS connection password: " + ExceptionUtils.getMessage(e), e);
-            }
+            password = expandPassword( connection.getPassword() );
         }
 
         username = "\"\"".equals(username) ? "" : username;
@@ -108,6 +104,9 @@ public class JmsUtil {
         props.setProperty( Context.PROVIDER_URL, url );
         props.setProperty( Context.INITIAL_CONTEXT_FACTORY, icf );
         props.putAll( connection.properties() );
+        if ( props.getProperty( Context.SECURITY_CREDENTIALS ) != null ) {
+            props.put( Context.SECURITY_CREDENTIALS, expandPassword( props.getProperty( Context.SECURITY_CREDENTIALS ) ) );
+        }
         if (mapper != null)
             mapper.substitutePropertyValues(props);
         Context jndiContext = null;
@@ -532,6 +531,16 @@ public class JmsUtil {
         appendCauses( exception, builder );
 
         return builder.toString();
+    }
+
+    private static String expandPassword( final String passwordExpression ) throws JmsConfigException {
+        try {
+            return passwordExpression == null ?
+                    null :
+                    expandSinglePasswordOnlyVariable( new LoggingAudit( logger ), passwordExpression );
+        } catch ( FindException e ) {
+            throw new JmsConfigException("Unable to retrieve JMS password: " + ExceptionUtils.getMessage( e ), e);
+        }
     }
 
     private static void appendCauses( final Exception exception, final StringBuilder builder ) {
