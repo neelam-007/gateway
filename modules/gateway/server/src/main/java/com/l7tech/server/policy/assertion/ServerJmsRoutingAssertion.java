@@ -28,6 +28,8 @@ import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.*;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -37,7 +39,6 @@ import javax.jms.*;
 import javax.jms.Message;
 import javax.naming.CommunicationException;
 import javax.naming.NamingException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.IllegalStateException;
 import java.util.*;
@@ -49,6 +50,8 @@ import java.util.logging.Logger;
  * Server side implementation of JMS routing assertion.
  */
 public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRoutingAssertion> {
+    private static final String PROP_RETRY_DELAY = "com.l7tech.server.policy.assertion.jmsRoutingRetryDelay";
+    private static final String PROP_MAX_OOPS = "com.l7tech.server.policy.assertion.jmsRoutingMaxRetries";
     private static final int MAX_OOPSES = 5;
     private static final long RETRY_DELAY = 1000L;
     private static final long DEFAULT_MESSAGE_MAX_BYTES = 2621440L;
@@ -103,7 +106,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         try {
             requestMessage = context.getTargetMessage(assertion.getRequestTarget());
         } catch (NoSuchVariableException e) {
-            logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), getMessage( e ));
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
 
         }
@@ -142,6 +145,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 }
             }
 
+            final long retryDelay = serverConfig.getTimeUnitProperty( PROP_RETRY_DELAY, RETRY_DELAY );
+            final int maxOopses = serverConfig.getIntProperty( PROP_MAX_OOPS, MAX_OOPSES );
             int oopses = 0;
 
             // Get the current JmsEndpointConfig
@@ -164,40 +169,30 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         throw jre.getCause() != null ? jre.getCause() : jre;
                     }
 
-                    if (++oopses < MAX_OOPSES) {
-                        logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, ExceptionUtils.getDebugException(jre));
+                    if (++oopses < maxOopses) {
+                        logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(retryDelay)}, getDebugException( jre ));
                         jmsResourceManager.invalidate(cfg);
-
-                        try {
-                            Thread.sleep(RETRY_DELAY);
-                        } catch ( InterruptedException e ) {
-                            throw new JMSException("Interrupted during retry delay");
-                        }
+                        sleep( retryDelay );
                     } else {
-                        logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
+                        logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(maxOopses));
                         // Catcher will log/audit the stack trace
                         throw jre.getCause() != null ? jre.getCause() : jre;
                     }
                 } catch (JMSException e) {
                     if ( jrc.isMessageSent() ) throw e;
 
-                    if (++oopses < MAX_OOPSES) {
+                    if (++oopses < maxOopses) {
                         if (ExceptionUtils.causedBy(e, InvalidDestinationException.class)) {
-                            logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, ExceptionUtils.getDebugException(e));
+                            logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(retryDelay)}, getDebugException( e ));
                         } else {
-                            logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, e);
+                            logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(retryDelay)}, e);
                         }
                         jmsResourceManager.invalidate(cfg);
                         outboundDestinationHolder[0] = null;
                         inboundDestinationHolder[0] = null;
-
-                        try {
-                            Thread.sleep(RETRY_DELAY);
-                        } catch ( InterruptedException ie ) {
-                            throw new JMSException("Interrupted during send retry");
-                        }
+                        sleep( retryDelay );
                     } else {
-                        logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
+                        logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(maxOopses));
                         // Catcher will log/audit the stack trace
                         throw e;
                     }
@@ -208,13 +203,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                     // there is a chance that the LDAP connection will timeout when connecting to a
                     // MQSeries provider with LDAP -
-                    if (++oopses < MAX_OOPSES && nex instanceof CommunicationException) {
+                    if (++oopses < maxOopses && nex instanceof CommunicationException) {
                         jmsResourceManager.invalidate(cfg);
                         outboundDestinationHolder[0] = null;
                         inboundDestinationHolder[0] = null;
                     } else {
-                        if (oopses >= MAX_OOPSES)
-                            logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
+                        if (oopses >= maxOopses)
+                            logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(maxOopses));
                         final NamingException auditException = JmsUtil.isCausedByExpectedNamingException( nex ) ? null : nex;
                         logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error in outbound JMS request processing: " + JmsUtil.getJNDIErrorMessage( nex )}, auditException );
                         return AssertionStatus.FAILED;
@@ -233,8 +228,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             return AssertionStatus.FAILED;
         } catch ( JmsConfigException e ) {
             logAndAudit(AssertionMessages.JMS_ROUTING_CONFIGURATION_ERROR,
-                    new String[]{ExceptionUtils.getMessage(e)}, 
-                    ExceptionUtils.getDebugException(e));
+                    new String[]{ getMessage( e )},
+                    getDebugException( e ));
             return AssertionStatus.FAILED;
         } catch ( AssertionStatusException e ) {
             throw e;
@@ -245,16 +240,26 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         }
     }
 
+    private void sleep( final long retryDelay ) throws JMSException {
+        if ( retryDelay > 0 ) {
+            try {
+                Thread.sleep(retryDelay);
+            } catch ( InterruptedException e ) {
+                throw new JMSException("Interrupted during retry delay");
+            }
+        }
+    }
+
     private void auditException( final String description, final Throwable throwable ) {
         final Throwable auditException = JmsUtil.isCausedByExpectedJMSException( throwable ) ? null : throwable;
         final JMSException jmsException = ExceptionUtils.getCauseIfCausedBy( throwable, JMSException.class );
 
         String exceptionMessage = jmsException==null ?
-            ExceptionUtils.getMessage( throwable ) :
+            getMessage( throwable ) :
             JmsUtil.getJMSErrorMessage( jmsException );
 
         if ( throwable != jmsException ) {
-            exceptionMessage = ExceptionUtils.getMessage( throwable ) + "; " + exceptionMessage;    
+            exceptionMessage = getMessage( throwable ) + "; " + exceptionMessage;
         }
 
         logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ description + ": " + exceptionMessage }, auditException );
@@ -280,7 +285,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             try {
                 this.requestMessage = context.getTargetMessage(assertion.getRequestTarget());
             } catch (NoSuchVariableException e) {
-                logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
+                logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), getMessage( e ));
                 throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
             }
         }
@@ -658,7 +663,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         try {
             requestMessage = context.getTargetMessage(assertion.getRequestTarget());
         } catch (NoSuchVariableException e) {
-            logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), getMessage( e ));
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
         }
         final MimeKnob mk = requestMessage.getMimeKnob();

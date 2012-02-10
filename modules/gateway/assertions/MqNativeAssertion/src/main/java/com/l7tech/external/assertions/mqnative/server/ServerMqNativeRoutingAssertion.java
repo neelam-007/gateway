@@ -31,6 +31,8 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.SsgActiveConnectorManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.*;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryThrows;
 import org.apache.commons.lang.StringUtils;
@@ -70,6 +72,8 @@ import static java.util.Collections.unmodifiableMap;
  * @author vchan - tactical code on which this implementation is based.
  */
 public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNativeRoutingAssertion> {
+    private static final String PROP_RETRY_DELAY = "com.l7tech.external.assertions.mqnative.server.routingRetryDelay";
+    private static final String PROP_MAX_OOPS = "com.l7tech.external.assertions.mqnative.server.routingMaxRetries";
     private static final int MAX_OOPSES = 5;
     private static final long RETRY_DELAY = 1000L;
     private static final long DEFAULT_MESSAGE_MAX_BYTES = 2621440L;
@@ -140,6 +144,8 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 }
             }
 
+            final long retryDelay = config.getTimeUnitProperty( PROP_RETRY_DELAY, RETRY_DELAY );
+            final int maxOopses = config.getIntProperty( PROP_MAX_OOPS, MAX_OOPSES );
             int oopses = 0;
 
             final Option<MqNativeDynamicProperties> preProcessingMqDynamicProperties = optional( assertion.getDynamicMqRoutingProperties() );
@@ -170,17 +176,12 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                         }
                     }
 
-                    if (++oopses < MAX_OOPSES) {
-                        logAndAudit(MQ_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, ExceptionUtils.getDebugException( mqre ));
+                    if (++oopses < maxOopses) {
+                        logAndAudit(MQ_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(retryDelay)}, getDebugException( mqre ));
                         mqNativeResourceManager.invalidate(cfg);
-
-                        try {
-                            Thread.sleep(RETRY_DELAY);
-                        } catch ( InterruptedException e ) {
-                            throw new MQException(-1, -1, "Interrupted during retry delay");
-                        }
+                        sleep( retryDelay );
                     } else {
-                        logAndAudit(MQ_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
+                        logAndAudit(MQ_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(maxOopses));
                         // Catcher will log/audit the stack trace
                         throw mqre.getCause() != null ? mqre.getCause() : mqre;
                     }
@@ -198,17 +199,12 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                             return AssertionStatus.FALSIFIED;
                         }
                     }
-                    if (++oopses < MAX_OOPSES) {
-                        logAndAudit(MQ_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, e);
-                        mqNativeResourceManager.invalidate(cfg);
-
-                        try {
-                            Thread.sleep(RETRY_DELAY);
-                        } catch ( InterruptedException ie ) {
-                            throw new MQException(-1, -1, "Interrupted during send retry"); // FIX THIS
-                        }
+                    if (++oopses < maxOopses) {
+                        logAndAudit(MQ_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(retryDelay)}, e);
+                        mqNativeResourceManager.invalidate( cfg );
+                        sleep( retryDelay );
                     } else {
-                        logAndAudit(MQ_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
+                        logAndAudit(MQ_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(maxOopses));
                         //Create context variables for MQ exception completion and response codes here.
                         context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, e.completionCode);
                         context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, e.reasonCode);
@@ -224,21 +220,22 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
         } catch ( MqNativeConfigException e ) {
             logAndAudit(MQ_ROUTING_CONFIGURATION_ERROR,
-                    new String[]{ExceptionUtils.getMessage(e)},
-                    ExceptionUtils.getDebugException(e));
+                    new String[]{ getMessage( e )},
+                    getDebugException( e ));
             return AssertionStatus.FAILED;
         } catch ( AssertionStatusException e ) {
             throw e;
+        } catch ( MqRetriesInterruptedException e ) {
+            logAndAudit( EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ "Interrupted when retrying connection" }, getDebugException( e ) );
+            if (cfg!=null) mqNativeResourceManager.invalidate(cfg);
+            return AssertionStatus.FAILED;
         } catch ( Throwable t ) {
             if(t instanceof MQException){
                 context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, ((MQException)t).completionCode);
                 context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, ((MQException)t).reasonCode);
             }
 
-            logAndAudit(EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound MQ request processing: " + ExceptionUtils.getMessage(t)}, ExceptionUtils.getDebugException(t) );
-
-            // dev-debug only
-            t.printStackTrace();
+            logAndAudit(EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound MQ request processing: " + getMessage( t )}, getDebugException( t ) );
 
             if (cfg!=null) mqNativeResourceManager.invalidate(cfg);
             return AssertionStatus.SERVER_ERROR;
@@ -248,6 +245,18 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                connectionAttempts.decrementAndGet();
         }
     }
+
+    private void sleep( final long retryDelay ) throws MqRetriesInterruptedException {
+        if ( retryDelay > 0 ) {
+            try {
+                Thread.sleep(retryDelay);
+            } catch ( InterruptedException e ) {
+                throw new MqRetriesInterruptedException();
+            }
+        }
+    }
+
+    private static final class MqRetriesInterruptedException extends Exception {}
 
     private final class MqRoutingCallback implements MqTaskCallback {
         private final MqNativeEndpointConfig cfg;
@@ -726,7 +735,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
             }
         } catch (IOException ioex) {
-            logger.log(Level.WARNING, "Unable to write MQHeader due to: {0}", new Object[] {ExceptionUtils.getMessage(ioex)});
+            logger.log(Level.WARNING, "Unable to write MQHeader due to: {0}", new Object[] { getMessage( ioex )});
             throw new MqNativeRuntimeException(ioex);
         }
     }
