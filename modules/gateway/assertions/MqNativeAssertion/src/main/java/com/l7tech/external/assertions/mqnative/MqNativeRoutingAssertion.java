@@ -12,15 +12,14 @@ import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import static com.l7tech.policy.assertion.VariableUseSupport.expressions;
 import static com.l7tech.policy.assertion.VariableUseSupport.variables;
-
-import java.util.Map;
 
 /**
  * Route outbound MQ Native to WebSphere MQ.
@@ -42,6 +41,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     private String responseTimeout;
     private String responseSize;
     private boolean isPutToQueue = true; // Default: set the message direction to "Put to Queue"
+    private boolean isReplyNeeded;
     private MqNativeDynamicProperties dynamicMqRoutingProperties;
     @Nullable
     private Map<String,String> requestMessageAdvancedProperties;
@@ -166,6 +166,22 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     }
 
     /**
+     * Indicates whether the assertion will need to send a reply.
+     * @return
+     */
+    public boolean isReplyNeeded() {
+        return isReplyNeeded;
+    }
+
+    /**
+     * Sets whether the assertion will need to send a reply.
+     * @param replyNeeded
+     */
+    public void setReplyNeeded(boolean replyNeeded) {
+        isReplyNeeded = replyNeeded;
+    }
+
+    /**
      * Get the dynamic routing properties.
      *
      * @return The dynamic properties or null.
@@ -286,9 +302,9 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
               - the route is Get from Queue and target is Request
               - or the route is Put to Queue and reads reply queue to Request
         */
-        return  (!isPutToQueue() && TargetMessageType.REQUEST == responseTarget.getTarget()) ||
-                (isPutToQueue() && dynamicMqRoutingProperties != null &&
-                        !StringUtils.isEmpty(dynamicMqRoutingProperties.getReplyToQueue()) && TargetMessageType.REQUEST == responseTarget.getTarget());
+        boolean getFromQueueWritesToRequest = !isPutToQueue() && TargetMessageType.REQUEST == responseTarget.getTarget();
+        boolean putToQueueReadsReplyWritesToRequest = isPutToQueue() && isReplyNeeded && TargetMessageType.REQUEST == responseTarget.getTarget();
+        return  getFromQueueWritesToRequest || putToQueueReadsReplyWritesToRequest;
     }
 
     @Override
@@ -301,12 +317,12 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     public boolean initializesResponse() {
         /*
            when responding, the route assertion initializes the Response target if:
-              - the route is Get from Queue and target is Response
-              - or the route is Put to Queue and reads reply queue to Response
+              - the route is Get from Queue and writes to Response
+              - or the route is Put to Queue and reads reply queue and writes to Response
          */
-        return (!isPutToQueue() && TargetMessageType.RESPONSE == responseTarget.getTarget()) ||
-               (isPutToQueue() && dynamicMqRoutingProperties != null &&
-                       !StringUtils.isEmpty(dynamicMqRoutingProperties.getReplyToQueue()) && TargetMessageType.RESPONSE == responseTarget.getTarget());
+        boolean getFromQueueWritesToResponse = !isPutToQueue() && TargetMessageType.RESPONSE == responseTarget.getTarget();
+        boolean putToQueueReadsReplyWritesToResponse = isPutToQueue() && isReplyNeeded() && TargetMessageType.RESPONSE == responseTarget.getTarget();
+        return getFromQueueWritesToResponse || putToQueueReadsReplyWritesToResponse;
     }
 
     @Override

@@ -422,14 +422,15 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         assertion.setRequestTarget(sourceMessageTargetable);
         assertion.getRequestMqNativeMessagePropertyRuleSet().setPassThroughHeaders(sourcePassThroughHeadersCheckBox.isSelected());
 
+        boolean isConfiguredForReply = isConfiguredForReply( item );
+        assertion.setReplyNeeded( isConfiguredForReply );
         final MessageTargetableSupport targetMessageTargetable = new MessageTargetableSupport((MessageTargetable) messageTargetComboBox.getSelectedItem());
         if (targetMessageTargetable.getTarget() == TargetMessageType.OTHER) {
             targetMessageTargetable.setOtherTargetMessageVariable(targetMessageVariablePanel.getVariable());
             targetMessageTargetable.setSourceUsedByGateway(false);
 
             // target modified if 1) Get from Queue or 2) Put to Queue and reads a reply queue
-            targetMessageTargetable.setTargetModifiedByGateway( !assertion.isPutToQueue() ||
-                    (assertion.isPutToQueue() && isConfiguredForReply((SsgActiveConnector) queueComboBox.getSelectedItem())) );
+            targetMessageTargetable.setTargetModifiedByGateway( !assertion.isPutToQueue() || (assertion.isPutToQueue() && isConfiguredForReply) );
         }
         assertion.setResponseTarget(targetMessageTargetable);
         assertion.getResponseMqNativeMessagePropertyRuleSet().setPassThroughHeaders(targetPassThroughHeadersCheckBox.isSelected());
