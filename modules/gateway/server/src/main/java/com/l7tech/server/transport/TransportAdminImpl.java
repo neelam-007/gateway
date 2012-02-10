@@ -104,6 +104,18 @@ public class TransportAdminImpl implements TransportAdmin {
     }
 
     @Override
+    public SsgActiveConnector findSsgActiveConnectorByTypeAndName(String type, String name) throws FindException {
+        if (type == null || name == null) return null;
+
+        Collection<SsgActiveConnector> connectors = findSsgActiveConnectorsByType(type);
+        for (SsgActiveConnector connector: connectors) {
+            if (name.equals(connector.getName())) return connector;
+        }
+
+        return null;
+    }
+
+    @Override
     public Collection<SsgActiveConnector> findSsgActiveConnectorsByType( final String type ) throws FindException {
         return ssgActiveConnectorManager.findSsgActiveConnectorsByType(type);
     }

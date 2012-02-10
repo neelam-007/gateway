@@ -74,7 +74,7 @@ public class CustomAssertionReference extends ExternalReference {
     }
 
     @Override
-    void serializeToRefElement(Element referencesParentElement) {
+    public void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         setTypeAttribute( refEl );
         referencesParentElement.appendChild(refEl);
@@ -111,7 +111,7 @@ public class CustomAssertionReference extends ExternalReference {
      * and look for one with same name as the one from this reference.
      */
     @Override
-    boolean verifyReference() {
+    public boolean verifyReference() {
         final Collection assertions = getFinder().getAssertions();
         for ( final Object assertion : assertions ) {
             if ( assertion instanceof CustomAssertionHolder ) {
@@ -130,7 +130,7 @@ public class CustomAssertionReference extends ExternalReference {
     }
 
     @Override
-    boolean localizeAssertion(Assertion assertionToLocalize) {
+    public boolean localizeAssertion(Assertion assertionToLocalize) {
         if (localizeType == LocalizeAction.IGNORE) return true;
         // we need to instruct deletion for assertions that refer to this
         if (assertionToLocalize instanceof CustomAssertionHolder) {

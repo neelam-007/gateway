@@ -100,6 +100,18 @@ public interface TransportAdmin {
     SsgActiveConnector findSsgActiveConnectorByPrimaryKey( long oid ) throws FindException;
 
     /**
+     * Finds a particular {@link SsgActiveConnector} with the specified type and connector name, or null if no such connector can be found.
+     *
+     * @param type The active connector type
+     * @param name The active connector name
+     * @return the SsgActiveConnector with the specified type and connector name, or null if no such connector can be found.
+     * @throws FindException If there was a problem accessing the requested information.
+     */
+    @Secured(stereotype=FIND_ENTITY, types=SSG_ACTIVE_CONNECTOR)
+    @Transactional(readOnly=true)
+    SsgActiveConnector findSsgActiveConnectorByTypeAndName( String type, String name ) throws FindException;
+
+    /**
      * Retrieve all active connectors of the given type.
      *
      * @param type The active connector type

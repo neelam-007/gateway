@@ -34,6 +34,7 @@ import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.MockClusterPropertyManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.export.PolicyExporterImporterManagerStub;
 import com.l7tech.server.folder.FolderManagerStub;
 import com.l7tech.server.globalresources.ResourceEntryManagerStub;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -49,6 +50,7 @@ import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.server.security.rbac.RbacServicesStub;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.transport.SsgActiveConnectorManagerStub;
 import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
@@ -2189,6 +2191,8 @@ public class ServerGatewayManagementAssertionTest {
         beanFactory.addBean( "jdbcConnectionManager", new JdbcConnectionManagerStub(
                 connection( 1L, "A Test Connection"),
                 connection( 2L, "Test Connection") ) );
+        beanFactory.addBean( "ssgActiveConnectorManager", new SsgActiveConnectorManagerStub() );
+        beanFactory.addBean( "policyExporterImporterManager", new PolicyExporterImporterManagerStub() );
         beanFactory.addBean( "policyManager",  new PolicyManagerStub(
                 policy( 1L, PolicyType.INCLUDE_FRAGMENT, "Test Policy", true, POLICY),
                 policy( 2L, PolicyType.INCLUDE_FRAGMENT, "Test Policy For Move", true, POLICY) ));

@@ -1,7 +1,9 @@
 package com.l7tech.console.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
@@ -23,8 +25,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,7 +61,7 @@ public class PolicyExportUtils {
 
             final WspReader wspReader = TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
             final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
-            final PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, readDoc, wspReader, finder, finder, finder, finder );
+            final PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, readDoc, getExternalReferenceFactories(), wspReader, finder, finder, finder, finder );
             final Assertion newRoot = (result != null) ? result.assertion : null;
             // for some reason, the PublishedService class does not allow to set a policy
             // directly, it must be set through the XML
@@ -115,7 +116,7 @@ public class PolicyExportUtils {
                                               final File exportFile ) throws IOException, SAXException {
         final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
         PolicyExporter exporter = new PolicyExporter( finder, finder );
-        exporter.exportToFile(assertion, exportFile);
+        exporter.exportToFile(assertion, exportFile, getExternalReferenceFactories());
         return true;
     }
 
@@ -143,5 +144,14 @@ public class PolicyExportUtils {
             }
         }
     }
-
+    
+    private static Set<ExternalReferenceFactory> getExternalReferenceFactories() {
+        Registry registry = Registry.getDefault();
+        if (! registry.isAdminContextPresent()) {
+            logger.warning("Cannot get Policy Exporter and Importer Admin due to no Admin Context present.");
+            return null;
+        } else {
+            return registry.getPolicyExporterImporterAdmin().findAllExternalReferenceFactories();
+        }
+    }
 }

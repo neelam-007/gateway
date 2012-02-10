@@ -1,6 +1,7 @@
 package com.l7tech.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,12 +47,12 @@ public class PolicyExporter {
         this.entityResolver = entityResolver;
     }
 
-    public Document exportToDocument(Assertion rootAssertion) throws IOException, SAXException {
+    public Document exportToDocument(Assertion rootAssertion, Set<ExternalReferenceFactory> factories) throws IOException, SAXException {
         // do policy to xml
         final Document policyDoc = WspWriter.getPolicyDocument(rootAssertion);
         // go through each assertion and list external dependencies
         Collection<ExternalReference> refs = new ArrayList<ExternalReference>();
-        traverseAssertionTreeForReferences(rootAssertion, refs);
+        traverseAssertionTreeForReferences(rootAssertion, refs, factories);
         // add external dependencies to document
         Element referencesEl = wrapExportReferencesToPolicyDocument(policyDoc);
         serializeReferences(referencesEl, refs.toArray(new ExternalReference[refs.size()]));
@@ -63,8 +65,8 @@ public class PolicyExporter {
         }
     }
 
-    public void exportToFile(Assertion rootAssertion, File outputFile) throws IOException, SAXException {
-        Document doc = exportToDocument(rootAssertion);
+    public void exportToFile(Assertion rootAssertion, File outputFile, Set<ExternalReferenceFactory> factories) throws IOException, SAXException {
+        Document doc = exportToDocument(rootAssertion, factories);
         // write doc to file
         FileOutputStream fos = null;
         try {
@@ -80,16 +82,16 @@ public class PolicyExporter {
     /**
      * Recursively go through an assertion tree populating the references as necessary.
      */
-    private void traverseAssertionTreeForReferences(Assertion rootAssertion, Collection<ExternalReference> refs) {
+    private void traverseAssertionTreeForReferences(Assertion rootAssertion, Collection<ExternalReference> refs, Set<ExternalReferenceFactory> factories) {
         if (rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion ca = (CompositeAssertion)rootAssertion;
             //noinspection unchecked
             List<Assertion> children = ca.getChildren();
             for (Assertion child : children) {
-                traverseAssertionTreeForReferences(child, refs);
+                traverseAssertionTreeForReferences(child, refs, factories);
             }
         } else {
-            appendRelatedReferences(rootAssertion, refs);
+            appendRelatedReferences(rootAssertion, refs, factories);
         }
     }
 
@@ -98,7 +100,18 @@ public class PolicyExporter {
      * if applicable
      */
     private void appendRelatedReferences( final Assertion assertion,
-                                          final Collection<ExternalReference> refs ) {
+                                          final Collection<ExternalReference> refs,
+                                          final Set<ExternalReferenceFactory> factories) {
+
+        // Solving Modular Assertion's External References
+        if (factories != null && !factories.isEmpty()) {
+            for (ExternalReferenceFactory<ExternalReference, ExternalReferenceFinder> factory: factories) {
+                if (factory.matchByModularAssertion(assertion.getClass())) {
+                    addReference(factory.createExternalReference(finder, assertion), refs);
+                    break;
+                }
+            }
+        }
 
         if ( assertion instanceof CustomAssertionHolder ) {
             CustomAssertionHolder cahAss = (CustomAssertionHolder)assertion;
@@ -132,7 +145,7 @@ public class PolicyExporter {
                     }
 
                     try {
-                        traverseAssertionTreeForReferences(fragmentPolicy.getAssertion(), refs);
+                        traverseAssertionTreeForReferences(fragmentPolicy.getAssertion(), refs, factories);
                     } catch(IOException e) {
                         // Ignore and continue with the export
                         logger.log(Level.WARNING, "Failed to create policy from include reference (policy OID = " + includedReference.getGuid() + ")");

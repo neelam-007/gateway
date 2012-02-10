@@ -1,8 +1,10 @@
 package com.l7tech.external.assertions.mqnative.server;
 
+import com.l7tech.external.assertions.mqnative.MqNativeExternalReferenceFactory;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfig.PropertyRegistrationInfo;
+import com.l7tech.server.policy.export.PolicyExporterImporterManager;
 import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
@@ -26,6 +28,9 @@ public class MqNativeModuleLoadListener {
 
     // Manages all inbound MQ Native listener processes
     private static MqNativeModule mqNativeListenerModule;
+
+    private static PolicyExporterImporterManager policyExporterImporterManager;
+    private static MqNativeExternalReferenceFactory externalReferenceFactory;
 
     /**
      * This is a complete list of cluster-wide properties used by the MQNative module.
@@ -80,6 +85,9 @@ public class MqNativeModuleLoadListener {
                 logger.log(Level.WARNING, "MQ Native active connector module threw exception during startup: " + ExceptionUtils.getMessage(e), e);
             }
         }
+
+        // Register ExternalReferenceFactory
+        registerExternalReferenceFactory(context);
     }
 
     /*
@@ -99,6 +107,8 @@ public class MqNativeModuleLoadListener {
                 mqNativeListenerModule = null;
             }
         }
+
+        unregisterExternalReferenceFactory();
     }
 
     /**
@@ -117,5 +127,20 @@ public class MqNativeModuleLoadListener {
             }
         }
         config.registerServerConfigProperties( toAdd );
+    }
+
+    private static void registerExternalReferenceFactory(final ApplicationContext context) {
+        if (policyExporterImporterManager == null) {
+            policyExporterImporterManager = context.getBean("policyExporterImporterManager", PolicyExporterImporterManager.class);
+        }
+
+        externalReferenceFactory = new MqNativeExternalReferenceFactory();
+        policyExporterImporterManager.register(externalReferenceFactory);
+    }
+
+    private static void unregisterExternalReferenceFactory() {
+        if (policyExporterImporterManager != null) {
+            policyExporterImporterManager.unregister(externalReferenceFactory);
+        }
     }
 }

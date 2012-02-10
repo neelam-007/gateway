@@ -12,12 +12,14 @@ import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ResourceSet;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.Group;
@@ -61,9 +63,11 @@ import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.policy.PolicyManager;
+import com.l7tech.server.policy.export.PolicyExporterImporterManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.transport.SsgActiveConnectorManager;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.util.JaasUtils;
@@ -119,7 +123,7 @@ public class PolicyHelper {
     public PolicyExportResult exportPolicy( final Policy policy ) {
         try {
             final PolicyExporter exporter = new PolicyExporter( referenceFinder, entityResolver );
-            final Document exportDoc = exporter.exportToDocument( policy.getAssertion() );
+            final Document exportDoc = exporter.exportToDocument( policy.getAssertion(), referenceFinder.findAllExternalReferenceFactories() );
             final PolicyExportResult policyExportResult = ManagedObjectFactory.createPolicyExportResult();
             final Resource resource = ManagedObjectFactory.createResource();
             resource.setType( ResourceHelper.POLICY_EXPORT_TYPE );
@@ -130,6 +134,8 @@ public class PolicyHelper {
         } catch ( SAXException e ) {
             throw new ResourceFactory.ResourceAccessException("Error creating policy export '"+ExceptionUtils.getMessage( e )+"'.", e);
         } catch ( IOException e ) {
+            throw new ResourceFactory.ResourceAccessException("Error creating policy export '"+ExceptionUtils.getMessage( e )+"'.", e);
+        } catch (FindException e) {
             throw new ResourceFactory.ResourceAccessException("Error creating policy export '"+ExceptionUtils.getMessage( e )+"'.", e);
         }
     }
@@ -167,6 +173,7 @@ public class PolicyHelper {
                     PolicyImporter.importPolicy(
                             policy,
                             exportDoc,
+                            referenceFinder.findAllExternalReferenceFactories(),
                             wspReader,
                             referenceFinder,
                             entityResolver,
@@ -359,6 +366,8 @@ public class PolicyHelper {
         private final ResourceEntryManager resourceEntryManager;
         private final SsgKeyStoreManager ssgKeyStoreManager;
         private final TrustedCertManager trustedCertManager;
+        private final SsgActiveConnectorManager ssgActiveConnectorManager;
+        private final PolicyExporterImporterManager policyExporterImporterManager;
 
         public GatewayExternalReferenceFinder( final RbacServices rbacServices,
                                                final SecurityFilter securityFilter,
@@ -371,7 +380,9 @@ public class PolicyHelper {
                                                final PolicyManager policyManager,
                                                final ResourceEntryManager resourceEntryManager,
                                                final SsgKeyStoreManager ssgKeyStoreManager,
-                                               final TrustedCertManager trustedCertManager ) {
+                                               final TrustedCertManager trustedCertManager,
+                                               final SsgActiveConnectorManager ssgActiveConnectorManager,
+                                               final PolicyExporterImporterManager policyExporterImporterManager ) {
             this.rbacServices = rbacServices;
             this.securityFilter = securityFilter;
             this.customAssertionsRegistrar = customAssertionsRegistrar;
@@ -383,7 +394,9 @@ public class PolicyHelper {
             this.policyManager = policyManager;
             this.resourceEntryManager = resourceEntryManager;
             this.ssgKeyStoreManager = ssgKeyStoreManager;
-            this.trustedCertManager = trustedCertManager;    
+            this.trustedCertManager = trustedCertManager;
+            this.ssgActiveConnectorManager = ssgActiveConnectorManager;
+            this.policyExporterImporterManager = policyExporterImporterManager;
         }
 
         private User getUser() {
@@ -504,6 +517,16 @@ public class PolicyHelper {
         @Override
         public JmsConnection findConnectionByPrimaryKey( final long oid ) throws FindException {
             return filter( jmsConnectionManager.findByPrimaryKey( oid ) );
+        }
+
+        @Override
+        public SsgActiveConnector findConnectorByPrimaryKey(long oid) throws FindException {
+            return filter(ssgActiveConnectorManager.findByPrimaryKey(oid));
+        }
+
+        @Override
+        public Set<ExternalReferenceFactory> findAllExternalReferenceFactories() throws FindException {
+            return policyExporterImporterManager.findAllExternalReferenceFactories();
         }
 
         @Override

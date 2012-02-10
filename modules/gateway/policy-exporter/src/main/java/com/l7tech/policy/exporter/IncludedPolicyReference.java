@@ -93,7 +93,7 @@ public class IncludedPolicyReference extends ExternalReference {
     }
 
     @Override
-    void serializeToRefElement(Element referencesParentElement) {
+    public void serializeToRefElement(Element referencesParentElement) {
         Element includeEl = referencesParentElement.getOwnerDocument().createElement(getClass().getSimpleName());
         includeEl.setAttribute(ATTR_GUID, guid);
         setTypeAttribute( includeEl );
@@ -115,7 +115,7 @@ public class IncludedPolicyReference extends ExternalReference {
     }
 
     @Override
-    boolean verifyReference() throws InvalidPolicyStreamException {
+    public boolean verifyReference() throws InvalidPolicyStreamException {
         try {
             Policy policy = getFinder().findPolicyByGuid(guid);
             
@@ -191,7 +191,7 @@ public class IncludedPolicyReference extends ExternalReference {
     }
 
     @Override
-    boolean localizeAssertion(Assertion assertionToLocalize) {
+    public boolean localizeAssertion(Assertion assertionToLocalize) {
         if (assertionToLocalize instanceof Include) {
             Include include = (Include) assertionToLocalize;
             if(include.getPolicyGuid() == null && include.getPolicyOid() != null && include.getPolicyOid().equals(oid)) {

@@ -32,6 +32,7 @@
                 <ref bean="policyAdmin"/>
                 <ref bean="logSinkAdmin"/>
                 <ref bean="serviceAdmin"/>
+                <ref bean="policyExporterImporterAdmin"/>
                 <ref bean="folderAdmin"/>
                 <ref bean="emailAdmin"/>
                 <ref bean="uddiRegistryAdmin" />
@@ -153,6 +154,11 @@
     <bean id="serviceAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/ServiceAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.service.ServiceAdmin"/>
+    </bean>
+
+    <bean id="policyExporterImporterAdmin" parent="invokerCommon">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/PolicyExporterImporterAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.export.PolicyExporterImporterAdmin"/>
     </bean>
 
     <bean id="folderAdmin" parent="invokerCommon">

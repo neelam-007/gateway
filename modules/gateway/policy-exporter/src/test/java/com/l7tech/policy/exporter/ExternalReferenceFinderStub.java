@@ -1,9 +1,11 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.Group;
@@ -80,6 +82,16 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
 
     @Override
     public JmsConnection findConnectionByPrimaryKey( final long oid ) throws FindException {
+        return null;
+    }
+
+    @Override
+    public SsgActiveConnector findConnectorByPrimaryKey(long oid) throws FindException {
+        return null;
+    }
+
+    @Override
+    public Set<ExternalReferenceFactory> findAllExternalReferenceFactories() throws FindException {
         return null;
     }
 

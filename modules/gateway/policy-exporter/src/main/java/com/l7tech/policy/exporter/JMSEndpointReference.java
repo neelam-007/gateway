@@ -177,7 +177,7 @@ public class JMSEndpointReference extends ExternalReference {
     }
 
     @Override
-    void serializeToRefElement( final Element referencesParentElement ) {
+    public void serializeToRefElement( final Element referencesParentElement ) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         setTypeAttribute( refEl );
         referencesParentElement.appendChild(refEl);
@@ -243,7 +243,7 @@ public class JMSEndpointReference extends ExternalReference {
      * system without administrator interaction.
      */
     @Override
-    boolean verifyReference() {
+    public boolean verifyReference() {
         try {
             Collection<Pair<JmsEndpoint,JmsConnection>> tempMatches = new ArrayList<Pair<JmsEndpoint,JmsConnection>>(); // contains JmsAdmin.JmsTuple objects that have partial match
             List<Pair<JmsEndpoint,JmsConnection>> jmsQueues = getFinder().loadJmsQueues();
@@ -320,7 +320,7 @@ public class JMSEndpointReference extends ExternalReference {
     }
 
     @Override
-    boolean localizeAssertion( final Assertion assertionToLocalize ) {
+    public boolean localizeAssertion( final Assertion assertionToLocalize ) {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsRoutingAssertion = (JmsRoutingAssertion) assertionToLocalize;

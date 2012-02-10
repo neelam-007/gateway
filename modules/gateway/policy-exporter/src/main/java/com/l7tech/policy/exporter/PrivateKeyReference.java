@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
- * User: ghuang
+ * @author ghuang
  */
 public class PrivateKeyReference extends ExternalReference {
     private final Logger logger = Logger.getLogger(TrustedCertReference.class.getName());
@@ -143,7 +143,7 @@ public class PrivateKeyReference extends ExternalReference {
     }
 
     @Override
-    void serializeToRefElement(Element referencesParentElement) {
+    public void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         setTypeAttribute( refEl );
         referencesParentElement.appendChild(refEl);
@@ -167,7 +167,7 @@ public class PrivateKeyReference extends ExternalReference {
     }
 
     @Override
-    boolean verifyReference() throws InvalidPolicyStreamException {
+    public boolean verifyReference() throws InvalidPolicyStreamException {
         if (isDefaultKey) {
             localizeType = LocalizeAction.IGNORE;
             return true;
@@ -191,7 +191,7 @@ public class PrivateKeyReference extends ExternalReference {
     }
 
     @Override
-    boolean localizeAssertion(Assertion assertionToLocalize) {
+    public boolean localizeAssertion(Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE){
             if (assertionToLocalize instanceof PrivateKeyable) {
                 PrivateKeyable keyable = (PrivateKeyable)assertionToLocalize;

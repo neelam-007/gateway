@@ -72,7 +72,7 @@ public class TrustedCertReference extends ExternalReference {
     }
 
     @Override
-    void serializeToRefElement(Element referencesParentElement) {
+    public void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         setTypeAttribute( refEl );
         referencesParentElement.appendChild(refEl);
@@ -101,7 +101,7 @@ public class TrustedCertReference extends ExternalReference {
     }
 
     @Override
-    boolean verifyReference() throws InvalidPolicyStreamException {
+    public boolean verifyReference() throws InvalidPolicyStreamException {
         Collection<TrustedCert> tempMatches = new ArrayList<TrustedCert>();
         Collection<TrustedCert> allCerts;
         try {
@@ -144,7 +144,7 @@ public class TrustedCertReference extends ExternalReference {
     }
 
     @Override
-    boolean localizeAssertion(Assertion assertionToLocalize) {
+    public boolean localizeAssertion(Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof BridgeRoutingAssertion) {
                 BridgeRoutingAssertion bra = (BridgeRoutingAssertion) assertionToLocalize;

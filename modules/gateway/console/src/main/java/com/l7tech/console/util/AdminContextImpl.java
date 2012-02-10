@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.export.PolicyExporterImporterAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -52,6 +53,11 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
     @Override
     public ServiceAdmin getServiceAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(ServiceAdmin.class);
+    }
+
+    @Override
+    public PolicyExporterImporterAdmin getPolicyExporterImporterAdmin() throws SecurityException {
+        return this.getRemoteInterfaceForEndpoint(PolicyExporterImporterAdmin.class);
     }
 
     @Override

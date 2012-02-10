@@ -8,6 +8,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
+import com.l7tech.gateway.common.export.PolicyExporterImporterAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
@@ -15,6 +17,8 @@ import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -134,6 +138,18 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
     public JmsConnection findConnectionByPrimaryKey( final long oid ) throws FindException {
         JmsAdmin jmsAdmin = admin(Registry.getDefault().getJmsManager());
         return jmsAdmin.findConnectionByPrimaryKey( oid );
+    }
+
+    @Override
+    public SsgActiveConnector findConnectorByPrimaryKey(long oid) throws FindException {
+        TransportAdmin transportAdmin = admin(Registry.getDefault().getTransportAdmin());
+        return transportAdmin.findSsgActiveConnectorByPrimaryKey(oid);
+    }
+
+    @Override
+    public Set<ExternalReferenceFactory> findAllExternalReferenceFactories() throws FindException {
+        PolicyExporterImporterAdmin policyExporterImporterAdmin = admin(Registry.getDefault().getPolicyExporterImporterAdmin());
+        return policyExporterImporterAdmin.findAllExternalReferenceFactories();
     }
 
     @Override

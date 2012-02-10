@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.admin;
 
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.AuditAdmin;
+import com.l7tech.gateway.common.export.PolicyExporterImporterAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -34,6 +35,12 @@ public interface AdminContext {
      * @throws SecurityException on security error accessing the interface
      */
     ServiceAdmin getServiceAdmin() throws SecurityException;
+
+    /**
+     * @return the policy exporter and importer manager
+     * @throws SecurityException on security error accessing the interface
+     */
+    PolicyExporterImporterAdmin getPolicyExporterImporterAdmin() throws SecurityException;
 
     /**
      * @return the {@link FolderAdmin} implementation

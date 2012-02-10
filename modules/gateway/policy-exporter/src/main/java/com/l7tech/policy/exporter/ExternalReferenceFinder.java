@@ -1,9 +1,11 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.Group;
@@ -19,6 +21,7 @@ import com.l7tech.util.Pair;
 import java.security.KeyStoreException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Interface for finding external reference targets.
@@ -49,6 +52,10 @@ public interface ExternalReferenceFinder {
     JmsEndpoint findEndpointByPrimaryKey( long oid ) throws FindException;
 
     JmsConnection findConnectionByPrimaryKey( long oid ) throws FindException;
+
+    SsgActiveConnector findConnectorByPrimaryKey (long oid) throws FindException;
+
+    Set<ExternalReferenceFactory> findAllExternalReferenceFactories() throws FindException;
 
     List<Pair<JmsEndpoint,JmsConnection>> loadJmsQueues() throws FindException;
 

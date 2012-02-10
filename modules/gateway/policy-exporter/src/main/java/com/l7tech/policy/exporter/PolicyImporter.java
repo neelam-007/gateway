@@ -1,5 +1,6 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.policy.Policy;
@@ -62,6 +63,7 @@ public class PolicyImporter {
      */
     public static PolicyImporterResult importPolicy( final Policy receiverPolicy,
                                                      final Document policyExport,
+                                                     final Set<ExternalReferenceFactory> factories,
                                                      final WspReader wspReader,
                                                      final ExternalReferenceFinder finder,
                                                      final EntityResolver entityResolver,
@@ -78,7 +80,7 @@ public class PolicyImporter {
         HashMap<Long, String> fragmentOidToNameMap = new HashMap<Long, String>();
         if (referencesEl != null) {
             try {
-                references = ExternalReference.parseReferences(finder, entityResolver, referencesEl);
+                references = ExternalReference.parseReferences(finder, entityResolver, factories, referencesEl);
 
                 for(ExternalReference reference : references) {
                     reference.setExternalReferenceErrorListener(errorListener);

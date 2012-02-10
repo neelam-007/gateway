@@ -150,7 +150,7 @@ public class GlobalResourceReference extends ExternalReference {
     //- PACKAGE
 
     @Override
-    void serializeToRefElement( final Element referencesParentElement ) {
+    public void serializeToRefElement( final Element referencesParentElement ) {
         final Element refEl = referencesParentElement.getOwnerDocument().createElementNS(null, TOPEL_NAME);
         setTypeAttribute( refEl );
         addParamEl( refEl, SID_EL_NAME, systemIdentifier, false );
@@ -162,7 +162,7 @@ public class GlobalResourceReference extends ExternalReference {
     }
 
     @Override
-    boolean verifyReference() throws InvalidPolicyStreamException {
+    public boolean verifyReference() throws InvalidPolicyStreamException {
         // check that the resource entry is present on the target system
         try {
             if (systemIdentifier == null || getFinder().findResourceEntryByUriAndType( systemIdentifier, type )==null) {
@@ -179,7 +179,7 @@ public class GlobalResourceReference extends ExternalReference {
     }
 
     @Override
-    boolean localizeAssertion( final Assertion assertionToLocalize ) {
+    public boolean localizeAssertion( final Assertion assertionToLocalize ) {
         if ( assertionToLocalize instanceof SchemaValidation ) {
             final SchemaValidation schemaVal = (SchemaValidation) assertionToLocalize;
             final AssertionResourceInfo schemaResource = schemaVal.getResourceInfo();

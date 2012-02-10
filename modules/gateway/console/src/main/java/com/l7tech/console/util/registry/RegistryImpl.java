@@ -3,6 +3,7 @@ package com.l7tech.console.util.registry;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.LogonEvent;
+import com.l7tech.gateway.common.export.PolicyExporterImporterAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -58,6 +59,7 @@ public final class RegistryImpl extends Registry
     private AdminLogin adminLogin;
     private IdentityAdmin identityAdmin;
     private ServiceAdmin serviceAdmin;
+    private PolicyExporterImporterAdmin policyExporterImporterAdmin;
     private FolderAdmin folderAdmin;
     private JmsAdmin jmsAdmin;
     private FtpAdmin ftpAdmin;
@@ -135,6 +137,19 @@ public final class RegistryImpl extends Registry
         }
         serviceAdmin = adminContext.getServiceAdmin();
         return serviceAdmin;
+    }
+
+    /**
+     * @return the policy exporter and importer manager
+     */
+    @Override
+    public synchronized PolicyExporterImporterAdmin getPolicyExporterImporterAdmin() {
+        checkAdminContext();
+        if (policyExporterImporterAdmin != null) {
+            return policyExporterImporterAdmin;
+        }
+        policyExporterImporterAdmin = adminContext.getPolicyExporterImporterAdmin();
+        return policyExporterImporterAdmin;
     }
 
     @Override

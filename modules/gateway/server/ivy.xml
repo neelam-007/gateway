@@ -27,6 +27,7 @@
     <dependencies>
         <!-- Module dependencies -->
         <dependency name="layer7-gateway-common" rev="latest.integration" conf="core->default,optional; test->default,test,optional"/>
+        <dependency name="layer7-policy-exporter" rev="latest.integration" conf="core"/>
         <dependency name="layer7-uddi" rev="latest.integration" conf="core"/>
         <dependency name="layer7-utility" rev="latest.integration" conf="core; test->default,test"/>
         <dependency name="layer7-common" rev="latest.integration" conf="core; test->default,test"/>

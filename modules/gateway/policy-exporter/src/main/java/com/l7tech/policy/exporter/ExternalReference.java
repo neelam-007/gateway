@@ -1,6 +1,7 @@
 package com.l7tech.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.util.ExceptionUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -147,11 +148,11 @@ public abstract class ExternalReference {
 
     //- PACKAGE
 
-    ExternalReference( final ExternalReferenceFinder finder ) {
+    public ExternalReference( final ExternalReferenceFinder finder ) {
         this.finder = finder;
     }
 
-    ExternalReferenceFinder getFinder() {
+    public ExternalReferenceFinder getFinder() {
         return finder;
     }
 
@@ -168,7 +169,7 @@ public abstract class ExternalReference {
      * @return true if successful
      * @see #localizeAssertion(Assertion)
      */
-    boolean setLocalizeReplace( long identifier ) {
+    public boolean setLocalizeReplace( long identifier ) {
         return false;
     }
 
@@ -178,13 +179,13 @@ public abstract class ExternalReference {
      * references to xml format.
      * @param referencesParentElement
      */
-    abstract void serializeToRefElement(Element referencesParentElement);
+    public abstract void serializeToRefElement(Element referencesParentElement);
 
     /**
      * Checks whether or not an external reference can be mapped on this local
      * system without administrator interaction.
      */
-    abstract boolean verifyReference() throws InvalidPolicyStreamException;
+    public abstract boolean verifyReference() throws InvalidPolicyStreamException;
 
     /**
      * Once an exported policy is loaded with it's references and the references are
@@ -194,7 +195,7 @@ public abstract class ExternalReference {
      * Returns false if the assertion should be deleted from the tree.
      * @param assertionToLocalize will be fixed once this method returns.
      */
-    abstract boolean localizeAssertion(Assertion assertionToLocalize);
+    public abstract boolean localizeAssertion(Assertion assertionToLocalize);
 
     /**
      * Parse references from an exported policy's exp:References element.
@@ -202,6 +203,7 @@ public abstract class ExternalReference {
      */
     static Collection<ExternalReference> parseReferences(final ExternalReferenceFinder finder,
                                                          final EntityResolver entityResolver,
+                                                         final Set<ExternalReferenceFactory> factories,
                                                          final Element refElements) throws InvalidDocumentFormatException {
         // Verify that the passed element is what is expected
         if (!refElements.getLocalName().equals(ExporterConstants.EXPORTED_REFERENCES_ELNAME)) {
@@ -221,6 +223,21 @@ public abstract class ExternalReference {
                 Element refEl = (Element)child;
                 // Get the type of reference
                 String refType = refEl.getAttribute(ExporterConstants.REF_TYPE_ATTRNAME);
+
+                // Parse modular-assertion-related external references handled by ExternalReferenceFactory
+                boolean found = false;
+                if (factories != null) {
+                    for (ExternalReferenceFactory factory: factories) {
+                        if (factory.matchByExternalReference(refType)) {
+                            references.add((ExternalReference) factory.parseFromElement(finder, refEl));
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (found) continue;
+
+                // Parse external references not handled by ExternalReferenceFactory
                 if (refType.equals(getReferenceType(FederatedIdProviderReference.class))) {
                     references.add(FederatedIdProviderReference.parseFromElement(finder, refEl));
                 } else if (refType.equals(getReferenceType(IdProviderReference.class))) {
@@ -257,7 +274,7 @@ public abstract class ExternalReference {
         return type;
     }
 
-    static String getParamFromEl(Element parent, String param) {
+    public static String getParamFromEl(Element parent, String param) {
         NodeList nodeList = parent.getElementsByTagName(param);
         for (int i = 0; i < nodeList.getLength(); i++) {
             Element node = (Element)nodeList.item(i);
@@ -276,7 +293,7 @@ public abstract class ExternalReference {
         return value;
     }
 
-    void setTypeAttribute( final Element refEl ) {
+    public void setTypeAttribute( final Element refEl ) {
         refEl.setAttributeNS( null, ExporterConstants.REF_TYPE_ATTRNAME, getRefType() );
     }
 
@@ -323,7 +340,7 @@ public abstract class ExternalReference {
         return proceed;
     }
 
-    enum LocalizeAction { DELETE, IGNORE, REPLACE }
+    public enum LocalizeAction { DELETE, IGNORE, REPLACE }
 
     //- PRIVATE
 
@@ -341,5 +358,4 @@ public abstract class ExternalReference {
         PrivateKeyReference.class,
         JdbcConnectionReference.class
     )) );
-
 }

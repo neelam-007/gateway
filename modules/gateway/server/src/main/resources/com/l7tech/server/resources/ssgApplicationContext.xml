@@ -1944,6 +1944,8 @@
 
     <bean id="serviceTemplateManager" class="com.l7tech.server.service.ServiceTemplateManagerImpl"/>
 
+    <bean id="policyExporterImporterManager" class="com.l7tech.server.policy.export.PolicyExporterImporterManagerImpl"/>
+
     <bean id="securityTokenServiceTemplateRegistry"
           class="com.l7tech.server.tokenservice.SecurityTokenServiceTemplateRegistry">
         <constructor-arg index="0" ref="serviceTemplateManager"/>

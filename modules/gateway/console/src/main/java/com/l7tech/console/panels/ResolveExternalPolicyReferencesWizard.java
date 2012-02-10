@@ -1,21 +1,16 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
-import com.l7tech.policy.exporter.CustomAssertionReference;
-import com.l7tech.policy.exporter.ExternalReference;
-import com.l7tech.policy.exporter.ExternalSchemaReference;
-import com.l7tech.policy.exporter.GlobalResourceReference;
-import com.l7tech.policy.exporter.IdProviderReference;
-import com.l7tech.policy.exporter.IncludedPolicyReference;
-import com.l7tech.policy.exporter.JMSEndpointReference;
-import com.l7tech.policy.exporter.JdbcConnectionReference;
-import com.l7tech.policy.exporter.PrivateKeyReference;
-import com.l7tech.policy.exporter.TrustedCertReference;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
+import com.l7tech.policy.exporter.*;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
+import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * This wizard lets the administrator resolve external conflicts from a policy
@@ -27,6 +22,7 @@ import java.io.IOException;
  * Date: Jul 26, 2004<br/>
  */
 public class ResolveExternalPolicyReferencesWizard extends Wizard {
+    private static final Logger logger = Logger.getLogger(ResolveExternalPolicyReferencesWizard.class.getName());
 
     /**
      * Convenient method to create a wizard based on a number of problematic external references.
@@ -38,32 +34,49 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
         }
         WizardStepPanel previousPanel = null;
         WizardStepPanel firstPanel = null;
-        for (int i = 0; i < refs.length; i++) {
+        for (ExternalReference ref : refs) {
             WizardStepPanel panel = null;
-            if (refs[i] instanceof IdProviderReference) {
-                panel = new ResolveForeignIdentityProviderPanel(null, (IdProviderReference)(refs[i]));
-            } else if (refs[i] instanceof JMSEndpointReference) {
-                panel = new ResolveForeignJMSEndpointPanel(null, (JMSEndpointReference)(refs[i]));
-            } else if (refs[i] instanceof CustomAssertionReference) {
-                panel = new ResolveForeignCustomAssertionPanel(null, (CustomAssertionReference)(refs[i]));
-            } else if (refs[i] instanceof ExternalSchemaReference) {
-                panel = new ResolveExternalSchemaReferencePanel(null, (ExternalSchemaReference)(refs[i]));
-            } else if (refs[i] instanceof IncludedPolicyReference) {
-                try {
-                    panel = new ResolveForeignIncludedPolicyPanel(null, (IncludedPolicyReference)(refs[i]));
-                } catch(ResolveForeignIncludedPolicyPanel.NoLongerApplicableException e) {
-                    // Skip this reference, since the conflict has gone away
-                    panel = null;
+
+            // If a external reference is handled by ExternalReferenceFactory, then use the factory to get the WizardStepPanel.
+            boolean found = false;
+            Set<ExternalReferenceFactory> factories = getExternalReferenceFactories();
+            if (factories != null && !factories.isEmpty()) {
+                for (ExternalReferenceFactory factory : factories) {
+                    if (factory.matchByExternalReference(ref.getClass().getName())) {
+                        panel = (WizardStepPanel) factory.getResolveExternalReferenceWizardStepPanel(ref);
+                        found = true;
+                        break;
+                    }
                 }
-            } else if (refs[i] instanceof TrustedCertReference) {
-                panel = new ResolveForeignTrustedCertificatePanel(null,(TrustedCertReference)(refs[i]));
-            } else if (refs[i] instanceof PrivateKeyReference) {
-                panel = new ResolvePrivateKeyPanel(null, (PrivateKeyReference)(refs[i]));
-            } else if (refs[i] instanceof JdbcConnectionReference) {
-                panel = new ResolveJdbcConnectionPanel(null, (JdbcConnectionReference)(refs[i]));
-            } else if (refs[i] instanceof GlobalResourceReference ) { // must be after ExternalSchemaReference since that is a subclass
-                panel = new ResolveGlobalResourcePanel(null, (GlobalResourceReference)(refs[i]));
             }
+            // If the external reference is NOT handled by ExternalReferenceFactory, then directly create a specific WizardStepPanel.
+            if (! found) {
+                if (ref instanceof IdProviderReference) {
+                    panel = new ResolveForeignIdentityProviderPanel(null, (IdProviderReference) (ref));
+                } else if (ref instanceof JMSEndpointReference) {
+                    panel = new ResolveForeignJMSEndpointPanel(null, (JMSEndpointReference) (ref));
+                } else if (ref instanceof CustomAssertionReference) {
+                    panel = new ResolveForeignCustomAssertionPanel(null, (CustomAssertionReference) (ref));
+                } else if (ref instanceof ExternalSchemaReference) {
+                    panel = new ResolveExternalSchemaReferencePanel(null, (ExternalSchemaReference) (ref));
+                } else if (ref instanceof IncludedPolicyReference) {
+                    try {
+                        panel = new ResolveForeignIncludedPolicyPanel(null, (IncludedPolicyReference) (ref));
+                    } catch (ResolveForeignIncludedPolicyPanel.NoLongerApplicableException e) {
+                        // Skip this reference, since the conflict has gone away
+                        panel = null;
+                    }
+                } else if (ref instanceof TrustedCertReference) {
+                    panel = new ResolveForeignTrustedCertificatePanel(null, (TrustedCertReference) (ref));
+                } else if (ref instanceof PrivateKeyReference) {
+                    panel = new ResolvePrivateKeyPanel(null, (PrivateKeyReference) (ref));
+                } else if (ref instanceof JdbcConnectionReference) {
+                    panel = new ResolveJdbcConnectionPanel(null, (JdbcConnectionReference) (ref));
+                } else if (ref instanceof GlobalResourceReference) { // must be after ExternalSchemaReference since that is a subclass
+                    panel = new ResolveGlobalResourcePanel(null, (GlobalResourceReference) (ref));
+                }
+            }
+
             if (panel != null) {
                 if (firstPanel == null) {
                     firstPanel = panel;
@@ -87,5 +100,15 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
                 Actions.invokeHelp(ResolveExternalPolicyReferencesWizard.this);
             }
         });
+    }
+
+    private static Set<ExternalReferenceFactory> getExternalReferenceFactories() {
+        Registry registry = Registry.getDefault();
+        if (! registry.isAdminContextPresent()) {
+            logger.warning("Cannot get Policy Exporter and Importer Admin due to no Admin Context present.");
+            return null;
+        } else {
+            return registry.getPolicyExporterImporterAdmin().findAllExternalReferenceFactories();
+        }
     }
 }
