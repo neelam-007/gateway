@@ -22,6 +22,7 @@ import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.*;
 import static com.l7tech.util.ConfigFactory.getBooleanProperty;
+import static com.l7tech.util.ConfigFactory.getTimeUnitProperty;
 import com.l7tech.util.Functions.UnaryThrows;
 import static com.l7tech.util.JdkLoggerConfigurator.debugState;
 import com.l7tech.xml.soap.SoapFaultUtils;
@@ -51,7 +52,6 @@ import java.util.logging.Logger;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
-import static com.l7tech.message.Message.getMaxBytes;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_MQNATIVE_MESSAGE_INPUT;
 import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
@@ -69,6 +69,12 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     private final ThreadPoolBean threadPoolBean;
 
     static {
+        final long connectTimeout = getTimeUnitProperty("com.l7tech.external.assertions.mqnative.server.socketConnectTimeout", 30000L);
+        if ( SyspropUtil.getString( "com.ibm.mq.tuning.socketConnectTimeout", null ) == null ) {
+            logger.config( "Setting MQ socket timeout to " + connectTimeout + "ms" );
+            SyspropUtil.setProperty( "com.ibm.mq.tuning.socketConnectTimeout", String.valueOf(connectTimeout) );
+        }
+
         if ( !getBooleanProperty( "com.l7tech.external.assertions.mqnative.server.enableMqLogging", debugState() ) ) {
             MQException.log = null; // This is part of the public API ...
         } else {

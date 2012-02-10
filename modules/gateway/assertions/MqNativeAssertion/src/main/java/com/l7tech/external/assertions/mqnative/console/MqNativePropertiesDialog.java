@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.mqnative.console;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.*;
+import static com.l7tech.console.panels.CancelableOperationDialog.doWithDelayedCancelDialog;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.CipherSuiteGuiUtil;
@@ -9,6 +10,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
+import com.l7tech.external.assertions.mqnative.MqNativeAdmin.MqNativeTestException;
 import com.l7tech.external.assertions.mqnative.MqNativeMessageFormatType;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
@@ -17,13 +19,18 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
+import static com.l7tech.gui.util.DialogDisplayer.showMessageDialog;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
+import static com.l7tech.util.ExceptionUtils.getMessage;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.some;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,9 +39,11 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -672,7 +681,7 @@ public class MqNativePropertiesDialog extends JDialog {
                     } catch (IOException e1) {
                         logger.log(Level.WARNING,
                             MessageFormat.format("Error while parsing the Content-Type for Mq Destination {0}. Value was {1}", mqNativeActiveConnector.getName(), contentType),
-                            ExceptionUtils.getMessage(e1));
+                            getMessage( e1 ));
                     }
                 }
                 
@@ -897,22 +906,62 @@ public class MqNativePropertiesDialog extends JDialog {
     }
 
     private void onTest() {
+        final SsgActiveConnector settings = new SsgActiveConnector();
         try {
-            SsgActiveConnector settings = new SsgActiveConnector();
             viewToModel(settings);
-            getMqNativeAdmin().testSettings(settings);
-            JOptionPane.showMessageDialog(MqNativePropertiesDialog.this,
-                    "The Gateway has successfully verified this MQ Native setting.",
-                    "MQ Native Test Successful",
-                    JOptionPane.INFORMATION_MESSAGE);
-        }  catch (Exception e) {
-            JOptionPane.showMessageDialog(MqNativePropertiesDialog.this,
-                    "Unable to verify this MQ Native setting: " + ExceptionUtils.getMessage(e),
-                    "MQ Native Test Failed", JOptionPane.ERROR_MESSAGE);
+        } catch ( final MqNativeSettingsException e ) {
+            showMessageDialog(
+                    this,
+                    "Queue settings invalid: " + getMessage( e ),
+                    "Error Testing MQ Native Queue",
+                    JOptionPane.ERROR_MESSAGE,
+                    null );
+            return;
+        }
+
+        try {
+            final Option<? extends Exception> error = doWithDelayedCancelDialog(
+                    new Callable<Option<? extends Exception>>() {
+                        @Override
+                        public Option<? extends Exception> call() {
+                            Option<? extends Exception> result = none();
+                            try {
+                                getMqNativeAdmin().testSettings( settings );
+                            } catch ( MqNativeTestException e ) {
+                                result = some( e );
+                            }
+
+                            // ensure interrupted status is cleared
+                            Thread.interrupted();
+
+                            return result;
+                        }
+                    },
+                    this,
+                    "Testing Queue Settings",
+                    "Testing Queue settings, please wait ...",
+                    5000L );
+            if ( error.isSome() ) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Unable to verify this MQ Native setting: " + getMessage( error.some() ),
+                        "MQ Native Test Failed",
+                        JOptionPane.ERROR_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "The Gateway has successfully verified this MQ Native setting.",
+                        "MQ Native Test Successful",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch ( InterruptedException e ) {
+            // cancelled
+        } catch ( InvocationTargetException e ) {
+            throw ExceptionUtils.wrap( e.getTargetException() );
         }
     }
 
-    private void viewToModel(final SsgActiveConnector connector) throws IOException {
+    private void viewToModel( final SsgActiveConnector connector ) throws MqNativeSettingsException {
         connector.setEnabled(enabledCheckBox.isSelected());
 
         connector.setType(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE);
@@ -998,8 +1047,12 @@ public class MqNativePropertiesDialog extends JDialog {
                     if (contentTypeValues.getSelectedIndex() == -1 && contentTypeValues.getEditor().getItem() != null) {
                         String ctHeaderString = ((JTextField) contentTypeValues.getEditor().getEditorComponent()).getText();
                         // If the content type is not specified, it will be set as the default type, "text/xml".
-                        selectedContentType = StringUtils.isEmpty(ctHeaderString)?
-                            ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.parseValue(ctHeaderString);
+                        try {
+                            selectedContentType = StringUtils.isEmpty(ctHeaderString)?
+                                ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.parseValue(ctHeaderString);
+                        } catch ( IOException e ) {
+                            throw new MqNativeSettingsException( getMessage( e ), e );
+                        }
 
                         //check if the typed in content type matches to any one of the ones in our list
                         int foundIndex = findContentTypeInList(selectedContentType);
@@ -1055,7 +1108,7 @@ public class MqNativePropertiesDialog extends JDialog {
                 viewToModel(mqNativeActiveConnector);
                 admin.saveSsgActiveConnector( mqNativeActiveConnector );
             }  catch (Throwable t) {
-                DialogDisplayer.showMessageDialog(this, "Cannot save MQ Native Queue: " + ExceptionUtils.getMessage(t), "Error Saving MQ Native Queue", JOptionPane.ERROR_MESSAGE, null);
+                showMessageDialog( this, "Cannot save MQ Native Queue: " + getMessage( t ), "Error Saving MQ Native Queue", JOptionPane.ERROR_MESSAGE, null );
                 return;
             }
 
@@ -1127,5 +1180,11 @@ public class MqNativePropertiesDialog extends JDialog {
     public void selectNameField() {
         mqConnectionName.requestFocus();
         mqConnectionName.selectAll();
+    }
+
+    private static final class MqNativeSettingsException extends Exception {
+        public MqNativeSettingsException( final String message, final Throwable cause ) {
+            super( message, cause );
+        }
     }
 }
