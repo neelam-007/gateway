@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.password.SecurePassword.SecurePasswordType;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.PasswordDoubleEntryDialog;
+import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.objectmodel.FindException;
@@ -18,13 +19,13 @@ import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.ResourceBundle;
+import java.util.regex.Pattern;
 
 public class SecurePasswordPropertiesDialog extends JDialog {
     private static ResourceBundle resources = ResourceBundle.getBundle( SecurePasswordPropertiesDialog.class.getName() );
@@ -32,10 +33,12 @@ public class SecurePasswordPropertiesDialog extends JDialog {
     @SuppressWarnings({ "RedundantTypeArguments" })
     private static final Collection<Integer> RSA_KEY_SIZES = CollectionUtils.<Integer>list( 512, 768, 1024, 1280, 2048 );
 
+    private static final Pattern CONTEXT_VARIABLE_SYNTAX = Pattern.compile("[A-Za-z][A-Za-z0-9_\\-]*");
+
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JTextField nameField;
+    private SquigglyTextField nameField;
     private JLabel lastUpdateLabel;
     private JButton changePasswordButton;
     private JTextField descriptionField;
@@ -70,6 +73,9 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         getRootPane().setDefaultButton(buttonOK);
         Utilities.setEscKeyStrokeDisposes(this);
 
+        final boolean[] allowVariableCheckBoxStateStash = new boolean[1];
+
+
         this.securePassword = securePassword;
 
         newRecord = securePassword.getOid() == SecurePassword.DEFAULT_OID;
@@ -81,6 +87,41 @@ public class SecurePasswordPropertiesDialog extends JDialog {
                 dispose();
             }
         });
+
+        
+        nameField.getDocument().addDocumentListener(new RunOnChangeListener() {
+
+
+            @Override
+            public void run() {
+                
+                if ( (! ( CONTEXT_VARIABLE_SYNTAX.matcher(nameField.getText()).matches()
+                           || nameField.getText().equals(""))  )  )  {
+
+                    if ( allowVariableCheckBox.isEnabled() ) {
+                        allowVariableCheckBoxStateStash[0] = allowVariableCheckBox.isSelected();
+                        allowVariableCheckBox.setSelected(false);
+                        allowVariableCheckBox.setEnabled(false);
+                        nameField.setToolTipText("You may set this name but you will not be able to use the " +
+                                                 "corresponding Context Variable in Policy to obtain its value.");
+                        nameField.setAll();
+                     
+                    }
+
+                } else {
+
+                    if (! allowVariableCheckBox.isEnabled() ) {
+                        allowVariableCheckBox.setEnabled(true);
+                        allowVariableCheckBox.setSelected(allowVariableCheckBoxStateStash[0]);
+                        nameField.setToolTipText("");
+                        nameField.setNone();
+                    }
+
+                }
+
+            }
+        });
+
 
         final RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
             @Override
