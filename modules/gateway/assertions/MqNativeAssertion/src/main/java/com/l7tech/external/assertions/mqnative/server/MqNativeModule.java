@@ -301,6 +301,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         final ContentTypeHeader ctype;
         final Pair<byte[], byte[]> parsedRequest;
         final byte[] mqHeader;
+        final long requestSizeLimit;
         boolean messageTooLarge = false;
         boolean responseSuccess = false;
         try {
@@ -313,12 +314,12 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
             // enforce size restriction
             final int size = parsedRequest.right.length;
-            final long sizeLimit = connector.getLongProperty(
-                PROPERTIES_KEY_MQ_NATIVE_INBOUND_MQ_MESSAGE_MAX_BYTES,                                                    // prop value
+            requestSizeLimit = connector.getLongProperty(
+                PROPERTIES_KEY_REQUEST_SIZE_LIMIT,                                                    // prop value
                 serverConfig.getLongProperty(ServerConfigParams.PARAM_IO_MQ_MESSAGE_MAX_BYTES, DEFAULT_MESSAGE_MAX_BYTES) // default value
             );
 
-            if ( sizeLimit > 0 && size > sizeLimit ) {
+            if ( requestSizeLimit > 0 && size > requestSizeLimit ) {
                 messageTooLarge = true;
             }
         } catch (IOException ioe) {
@@ -333,7 +334,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             // convert the payload into an input stream
             final InputStream requestStream = new ByteArrayInputStream(parsedRequest.right);
 
-            final long requestSizeLimit = connector.getLongProperty( PROPERTIES_KEY_REQUEST_SIZE_LIMIT, getMaxBytes() );
             Message request = new Message();
             request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream, requestSizeLimit);
 

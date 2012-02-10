@@ -734,7 +734,7 @@ public class MqNativePropertiesDialog extends JDialog {
         }
 
         byteLimitPanel.setValue(
-            mqNativeActiveConnector == null? null : mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_MQ_MESSAGE_MAX_BYTES),
+            mqNativeActiveConnector == null? null : mqNativeActiveConnector.getProperty(PROPERTIES_KEY_REQUEST_SIZE_LIMIT),
             getMqNativeAdmin().getDefaultMqMessageMaxBytes()
         );
 
@@ -1021,7 +1021,7 @@ public class MqNativePropertiesDialog extends JDialog {
                 connector.setProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, ContentTypeHeader.XML_DEFAULT.getFullValue());
             }
 
-            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_MQ_MESSAGE_MAX_BYTES, byteLimitPanel.getValue());
+            connector.setProperty(PROPERTIES_KEY_REQUEST_SIZE_LIMIT, byteLimitPanel.getValue());
         } else {
             // else outbound
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE, Boolean.toString(isTemplateQueue.isSelected()));
