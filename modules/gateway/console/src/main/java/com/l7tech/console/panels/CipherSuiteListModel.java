@@ -20,6 +20,7 @@ public class CipherSuiteListModel extends JCheckBoxListModel {
     public CipherSuiteListModel(String[] allCiphers, Set<String> defaultCiphers) {
         super(new ArrayList<JCheckBox>());
         this.allCiphers = ArrayUtils.copy(allCiphers);
+        Arrays.sort(this.allCiphers,String.CASE_INSENSITIVE_ORDER);
         this.defaultCiphers = new LinkedHashSet<String>(defaultCiphers);
     }
 
@@ -71,16 +72,18 @@ public class CipherSuiteListModel extends JCheckBoxListModel {
             return;
         }
 
-        Set<String> enabled = new LinkedHashSet<String>(Arrays.asList(WS_COMMA_WS.split(cipherList)));
+        String[] enabled = WS_COMMA_WS.split(cipherList);
+        Arrays.sort(enabled,String.CASE_INSENSITIVE_ORDER);
+        Set<String> sortedEnabled = new LinkedHashSet<String>(Arrays.asList(enabled));
         Set<String> all = new LinkedHashSet<String>(Arrays.asList(allCiphers));
         List<JCheckBox> entries = getEntries();
         int oldsize = entries.size();
         entries.clear();
-        for (String cipher : enabled) {
+        for (String cipher : sortedEnabled) {
             entries.add(new JCheckBox(cipher, true));
         }
         for (String cipher : all) {
-            if (!enabled.contains(cipher))
+            if (!sortedEnabled.contains(cipher))
                 entries.add(new JCheckBox(cipher, false));
         }
         fireContentsChanged(this, 0, Math.max(oldsize, entries.size()));
