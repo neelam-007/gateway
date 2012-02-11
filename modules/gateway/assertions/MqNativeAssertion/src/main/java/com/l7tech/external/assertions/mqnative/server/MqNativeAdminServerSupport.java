@@ -138,7 +138,7 @@ public class MqNativeAdminServerSupport {
                     }
                 } catch (MQException e) {
                     logger.log(Level.INFO, "Caught MQException while testing MQ Native destination '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
-                    throw new MqNativeTestException(testName + e.toString());
+                    throw new MqNativeTestException(testName + getMeaningfulMqErrorDetail(e.toString()));
                 } catch (Throwable t) {
                     //noinspection ThrowableResultOfMethodCallIgnored
                     logger.log(Level.INFO, "Caught Throwable while testing MQ Native destination '" + ExceptionUtils.getMessage(t) + "'.", ExceptionUtils.getDebugException(t));
@@ -157,5 +157,34 @@ public class MqNativeAdminServerSupport {
         });
 
         return Collections.singletonList(binding);
+    }
+
+    /**
+     * Make a meaningful MQ error detail with MQ Reason Code from a original MQ error message.
+     * Currently we handle 5 types of Reason Codes: 2009, 2035, 2058, 2059, 2085, and 2397.
+     * If more reason codes are found, please add them into this method.
+     * If same codes specify different errors, please update them in this method.
+     *
+     * @param originalMqErrorMessage: the original MQ error message before this process
+     * @return a meaningful error detail
+     */
+    private String getMeaningfulMqErrorDetail(String originalMqErrorMessage) {
+        if (originalMqErrorMessage == null || originalMqErrorMessage.trim().isEmpty()) return null;
+
+        if (originalMqErrorMessage.contains("Reason 2009")) {
+            return "Invalid channel name used";
+        } else if (originalMqErrorMessage.contains("Reason 2035")) {
+            return "The user is not authorized to perform the operation attempted";
+        } else if (originalMqErrorMessage.contains("Reason 2058")) {
+            return "Invalid queue name or queue manager name used";
+        } else if (originalMqErrorMessage.contains("Reason 2059")) {
+            return "Invalid host name or incorrect port used";
+        } else if (originalMqErrorMessage.contains("Reason 2085")) {
+            return "Invalid reply queue used";
+        }  else if (originalMqErrorMessage.contains("Reason 2397")) {
+            return "Invalid SSL setting used";
+        }
+
+        return originalMqErrorMessage;
     }
 }

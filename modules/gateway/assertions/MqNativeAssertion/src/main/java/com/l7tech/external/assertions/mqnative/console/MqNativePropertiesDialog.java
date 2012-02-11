@@ -282,6 +282,7 @@ public class MqNativePropertiesDialog extends JDialog {
         queueNameTextBox.getDocument().addDocumentListener( enableDisableListener );
 
         securePasswordComboBox.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+        securePasswordComboBox.addActionListener(enableDisableListener);
 
         managePasswordsButton.addActionListener(new ActionListener(){
             @Override
@@ -290,9 +291,14 @@ public class MqNativePropertiesDialog extends JDialog {
                 final SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(TopComponents.getInstance().getTopParent());
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
-                DialogDisplayer.display(dialog);
-                securePasswordComboBox.reloadPasswordList();
-                DialogDisplayer.pack(MqNativePropertiesDialog.this);
+                DialogDisplayer.display(dialog, new Runnable() {
+                    @Override
+                    public void run() {
+                        securePasswordComboBox.reloadPasswordList();
+                        enableOrDisableComponents();
+                        DialogDisplayer.pack(MqNativePropertiesDialog.this);
+                    }
+                });
             }
         });
 
@@ -772,7 +778,7 @@ public class MqNativePropertiesDialog extends JDialog {
             isValid =  false;
         } else if (channelTextBox.getText().trim().length() == 0) {
             isValid =  false;
-        } else if (credentialsAreRequiredToCheckBox.isSelected() && (authUserNameTextBox.getText().trim().length()==0)) {
+        } else if (credentialsAreRequiredToCheckBox.isSelected() && (authUserNameTextBox.getText().trim().length() == 0 || securePasswordComboBox.getSelectedItem() == null)) {
             isValid =  false;
         } else if (outboundRadioButton.isSelected() && !isOutboundPaneValid(isTemplate)) {
             isValid =  false;
