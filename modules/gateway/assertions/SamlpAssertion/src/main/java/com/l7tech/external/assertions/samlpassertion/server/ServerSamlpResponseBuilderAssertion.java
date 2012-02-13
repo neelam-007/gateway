@@ -413,7 +413,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                                                     final String elemAttrName)
             throws InvalidRuntimeValueException {
         if (!Syntax.validateStringOnlyReferencesVariables(variablesOnly)) {
-            throw new InvalidRuntimeValueException("Value for field '" + variablesOnly + "' may only reference variables");
+            throw new InvalidRuntimeValueException("Value for field '" + variablesOnly + "' may only contain valid context variables references");
         }
 
         final List<Object> objects = ExpandVariables.processNoFormat(variablesOnly, vars, getAudit(), true);

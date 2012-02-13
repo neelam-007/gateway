@@ -250,9 +250,9 @@ public class ProcessSamlAttributeQueryRequestPropertiesDialog extends AssertionP
                 }
             }
         };
-        TextComponentPauseListenerManager.registerPauseListenerWhenFocused(destinationSquigglyTextField, pauseListenerAdapter, 500);
-        TextComponentPauseListenerManager.registerPauseListenerWhenFocused(customSubjectFormatsSquigglyTextField, pauseListenerAdapter, 500);
-        TextComponentPauseListenerManager.registerPauseListenerWhenFocused(customAttributeNameFormatsSquigglyTextField, pauseListenerAdapter, 500);
+        TextComponentPauseListenerManager.registerPauseListener(destinationSquigglyTextField, pauseListenerAdapter, 500);
+        TextComponentPauseListenerManager.registerPauseListener(customSubjectFormatsSquigglyTextField, pauseListenerAdapter, 500);
+        TextComponentPauseListenerManager.registerPauseListener(customAttributeNameFormatsSquigglyTextField, pauseListenerAdapter, 500);
 
         samlVersionComboBox.setModel(new DefaultComboBoxModel(new SamlVersion[]{SamlVersion.SAML2}));
         samlVersionComboBox.setRenderer(new TextListCellRenderer<SamlVersion>(new Functions.Unary<String, SamlVersion>() {

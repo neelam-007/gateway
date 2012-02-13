@@ -127,8 +127,30 @@ public class SyntaxTest {
 
         var = "test test";
         Assert.assertFalse(Syntax.validateStringOnlyReferencesVariables(var));
+
+        // bug 11586
+        var = "${var${var}";
+        Assert.assertFalse("Invalid variable reference", Syntax.validateStringOnlyReferencesVariables(var));
+
+        var = "${var}var}";
+        Assert.assertFalse("Invalid variable reference", Syntax.validateStringOnlyReferencesVariables(var));
     }
-    
+
+    @Test
+    public void testValidateAnyVariableReferences() throws Exception {
+        String expression = "Variable ${expression} which is valid";
+        Assert.assertTrue(Syntax.validateAnyVariableReferences(expression));
+
+        expression = "Invalid ${variable[x]} expression";
+        Assert.assertFalse(Syntax.validateAnyVariableReferences(expression));
+
+        expression = "Invalid ${var${var} expression";
+        Assert.assertFalse(Syntax.validateAnyVariableReferences(expression));
+
+        expression = "Invalid ${var}var} expression";
+        Assert.assertTrue(Syntax.validateAnyVariableReferences(expression));
+    }
+
     @Test
     public void testVariableExpression() throws Exception {
         final String varName = Syntax.getVariableExpression("varName");

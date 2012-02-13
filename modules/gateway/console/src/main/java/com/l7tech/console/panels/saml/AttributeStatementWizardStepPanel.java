@@ -421,15 +421,9 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         final String filterExp = filterExpressionTextField.getText().trim();
         boolean invalid = false;
         if (!"".equals(filterExp)) {
-            try {
-                if (!Syntax.validateStringOnlyReferencesVariables(filterExp)) {
-                    filterExpressionTextField.setSquiggly();
-                    filterExpressionTextField.setModelessFeedback("Only variables may be referenced");
-                    invalid = true;
-                }
-            } catch (VariableNameSyntaxException e) {
+            if (!Syntax.validateStringOnlyReferencesVariables(filterExp)) {
                 filterExpressionTextField.setSquiggly();
-                filterExpressionTextField.setModelessFeedback("Invalid variable reference");
+                filterExpressionTextField.setModelessFeedback("Only valid context variable references are allowed");
                 invalid = true;
             }
         }

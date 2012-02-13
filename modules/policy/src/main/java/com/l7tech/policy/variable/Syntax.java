@@ -201,25 +201,58 @@ public abstract class Syntax {
     /**
      * Validate that a string value contains only context variable references.
      * <p/>
+     * This method will return false if any variable reference is invalid.
+     * <p/>
      * " \t\n\r\f," characters are ignored and allowed. No spaces between variable references is also supported.
      *
+     * Note: This method never throws VariableNameSyntaxException
      * @param toValidate String which should only reference variables. Cannot be null
      * @return true if only variables are referenced.
      */
     public static boolean validateStringOnlyReferencesVariables(final String toValidate) {
-        final String[] refNames = Syntax.getReferencedNamesIndexedVarsNotOmitted(toValidate);
+        try {
+            final String[] refNames = Syntax.getReferencedNamesIndexedVarsNotOmitted(toValidate);
 
-        final StringBuilder syntaxString = new StringBuilder();
-        for (String refName : refNames) {
-            syntaxString.append(Syntax.getVariableExpression(refName));
-        }
+            final StringBuilder syntaxString = new StringBuilder();
+            for (String refName : refNames) {
+                final String error = VariableMetadata.validateName(refName, true);
+                if (error != null) {
+                    return false;
+                }
+                syntaxString.append(Syntax.getVariableExpression(refName));
+            }
 
-        final StringBuilder userString = new StringBuilder();
-        final StringTokenizer st = new StringTokenizer(toValidate, " \t\n\r\f,");
-        while (st.hasMoreTokens()) {
-            userString.append(st.nextToken());
+            final StringBuilder userString = new StringBuilder();
+            final StringTokenizer st = new StringTokenizer(toValidate, " \t\n\r\f,");
+            while (st.hasMoreTokens()) {
+                userString.append(st.nextToken());
+            }
+            return syntaxString.toString().equals(userString.toString());
+        } catch (VariableNameSyntaxException e) {
+            return false;
         }
-        return syntaxString.toString().equals(userString.toString());
+    }
+
+    /**
+     * Check if an expression contains in invalid variable reference.
+     *
+     * @param expression String to validate
+     * @return true if any refernces are valid, false otherwise.
+     */
+    public static boolean validateAnyVariableReferences(final @NotNull String expression) {
+        try {
+            final String[] refNames = Syntax.getReferencedNamesIndexedVarsNotOmitted(expression);
+            for (String refName : refNames) {
+                final String error = VariableMetadata.validateName(refName, true);
+                if (error != null) {
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (VariableNameSyntaxException e) {
+            return false;
+        }
     }
 
     /**

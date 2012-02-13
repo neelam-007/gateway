@@ -2,15 +2,12 @@ package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.saml.SamlIssuerPanel;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.samlpassertion.SamlStatus;
 import com.l7tech.external.assertions.samlpassertion.SamlVersion;
 import com.l7tech.external.assertions.samlpassertion.SamlpResponseBuilderAssertion;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
-import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -108,7 +105,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         responseIdTextField.addFocusListener(focusAdapter);
         issueInstantTextField.addFocusListener(focusAdapter);
         issueInstant1_1TextField.addFocusListener(focusAdapter);
-    }
+   }
 
     @Override
     public void setData(SamlpResponseBuilderAssertion assertion) {
@@ -244,7 +241,9 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
 
         //Check status code against assertion selection, also validate it's a URI
         final String samlStatus = ((String) statusCodeComboBox.getEditor().getItem()).trim();
-        final String statusString = resources.getString("responseStatus.code");
+        final String statusString = stripColon(resources.getString("responseStatus.code"));
+        final String variableRefErrorMsg = " may only contain valid context variables references";
+        final String invalidVarReference = " contains an invalid variable reference.";
         try {
             final String[] referencedNames = Syntax.getReferencedNames(samlStatus);
             if (referencedNames.length == 0) {
@@ -258,22 +257,19 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
                 }
             }
         } catch (VariableNameSyntaxException e) {
-            throw new ValidationException(statusString.substring(0, statusString.length() - 1) +
-                    " contains an invalid variable reference: " + ExceptionUtils.getMessage(e));
+            throw new ValidationException(statusString + invalidVarReference);
         }
 
         final String respAssertions = assertionsTextField.getText().trim();
 
         if(!respAssertions.isEmpty() && !Syntax.validateStringOnlyReferencesVariables(respAssertions)){
-            throw new ValidationException(resources.getString("responseElements.assertions") +
-                    " may only reference context variables");
+            throw new ValidationException(stripColon(resources.getString("responseElements.assertions")) + variableRefErrorMsg);
         }
 
         final String statusDetails = statusDetailTextField.getText();
         if(statusDetails != null && !statusDetails.trim().isEmpty()){
             if(!Syntax.validateStringOnlyReferencesVariables(statusDetails))
-                throw new ValidationException(resources.getString("responseStatus.detail") +
-                    " may only reference context variables");
+                throw new ValidationException(stripColon(resources.getString("responseStatus.detail")) + variableRefErrorMsg);
 
         }
 
@@ -283,8 +279,8 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
                 case SAML2:
                     final String encryptedAssertions = encryptedAssertionsTextField.getText().trim();
                     if(!encryptedAssertions.isEmpty() && !Syntax.validateStringOnlyReferencesVariables(encryptedAssertions))
-                        throw new ValidationException(resources.getString("responseElements.encryptedAssertions.2_0_only") +
-                                " may only reference context variables");
+                        throw new ValidationException(stripColon(resources.getString("responseElements.encryptedAssertions.2_0_only")) +
+                                variableRefErrorMsg);
 
                     final boolean isSuccess = samlStatus.equals(SamlStatus.SAML2_SUCCESS.getValue());
                     if(respAssertions.isEmpty() && encryptedAssertions.isEmpty() && isSuccess && validateWebSSORulesCheckBox.isSelected()){
@@ -296,11 +292,55 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
 
                     final String extensions = extensionsTextField.getText().trim();
                     if(!extensions.isEmpty() && !Syntax.validateStringOnlyReferencesVariables(extensions)){
-                        throw new ValidationException(resources.getString("responseElements.extensions.2_0_only") +
-                                " may only reference context variables");
+                        throw new ValidationException(stripColon(resources.getString("responseElements.extensions.2_0_only")) +
+                                variableRefErrorMsg);
                     }
                     break;
             }
+
+        if (!Syntax.validateAnyVariableReferences(statusMessageTextField.getText().trim())) {
+            throw new ValidationException(stripColon(resources.getString("responseStatus.message")) + invalidVarReference);
+        }
+
+        if (!Syntax.validateAnyVariableReferences(idTextField.getText().trim())) {
+            throw new ValidationException(stripColon(resources.getString("responseAttributes.Id")) + invalidVarReference);
+        }
+
+        if (!Syntax.validateAnyVariableReferences(responseIdTextField.getText().trim())) {
+            throw new ValidationException(stripColon(resources.getString("responseAttributes.responseId")) + invalidVarReference);
+        }
+
+        if (!Syntax.validateAnyVariableReferences(issueInstantTextField.getText().trim())) {
+            throw new ValidationException(stripColon(resources.getString("responseAttributes.issueInstant")) + invalidVarReference);
+        }
+
+        if (!Syntax.validateAnyVariableReferences(issueInstant1_1TextField.getText().trim())) {
+            throw new ValidationException(stripColon(resources.getString("responseAttributes.issueInstant")) + invalidVarReference);
+        }
+
+        if (!Syntax.validateAnyVariableReferences(inResponseToTextField.getText().trim())) {
+            throw new ValidationException(stripColon(resources.getString("responseAttributes.inResponseTo")) + invalidVarReference);
+        }
+
+        if (!Syntax.validateAnyVariableReferences(inResponseTo1_1TextField.getText().trim())) {
+            throw new ValidationException(stripColon(resources.getString("responseAttributes.inResponseTo")) + invalidVarReference);
+        }
+
+        if (!Syntax.validateAnyVariableReferences(destinationTextField.getText().trim())) {
+            throw new ValidationException(stripColon(resources.getString("responseAttributes.destination")) + invalidVarReference);
+        }
+
+        if (!Syntax.validateAnyVariableReferences(consentTextField.getText().trim())) {
+            throw new ValidationException(stripColon(resources.getString("responseAttributes.consent")) + invalidVarReference);
+        }
+
+        if (!Syntax.validateAnyVariableReferences(recipientTextField.getText().trim())) {
+            throw new ValidationException(stripColon(resources.getString("responseAttributes.recipient")) + invalidVarReference);
+        }
+    }
+
+    private String stripColon(String resourceName){
+        return resourceName.substring(0, resourceName.length() - 1);
     }
 
     private void updateComponentsForVersion(){
