@@ -322,7 +322,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         // Case 1: in the JNDI Tab
         icfTextField.setDocument(new MaxLengthDocument(255));
         jndiUrlTextField.setDocument(new MaxLengthDocument(255));
-        jndiUsernameTextField.setDocument(new MaxLengthDocument(1024));
+        jndiUsernameTextField.setDocument(new MaxLengthDocument(255));
         jndiPasswordField.setDocument(new MaxLengthDocument(255));
         PasswordGuiUtils.configureOptionalSecurePasswordField(this, jndiPasswordField, showJndiPasswordCheckBox, jndiPasswordWarningLabel);
         // Case 2: in the Destination Tab
