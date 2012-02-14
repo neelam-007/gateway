@@ -273,13 +273,9 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
 
     private void enableOrDisableComponents() {
         final boolean isPutToQueue = putToQueueRadioButton.isSelected();
-        messageSourceComboBox.setEnabled(isPutToQueue);
-        sourcePassThroughHeadersCheckBox.setEnabled(isPutToQueue);
+        messageSourceComboBox.setEnabled( isPutToQueue );
+        sourcePassThroughHeadersCheckBox.setEnabled( isPutToQueue );
 
-        final boolean isMessageTargetEnabled =
-                !isPutToQueue || isConfiguredForReply( (SsgActiveConnector) queueComboBox.getSelectedItem() );
-        messageTargetComboBox.setEnabled(isMessageTargetEnabled);
-        targetPassThroughHeadersCheckBox.setEnabled(isMessageTargetEnabled);
         targetMessageVariablePanel.setEnabled(
             (messageTargetComboBox.isEnabled() &&  messageTargetComboBox.getSelectedItem() != null && ((MessageTargetable)messageTargetComboBox.getSelectedItem()).getTarget() == TargetMessageType.OTHER)
         );
@@ -292,14 +288,6 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
 
         final boolean valid = responseByteLimitPanel.validateFields() == null;
         getOkButton().setEnabled(valid);
-    }
-
-    private boolean isConfiguredForReply(SsgActiveConnector connector) {
-        if ( connector != null ) {
-            final MqNativeReplyType mqNativeReplyType = connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class );
-            return mqNativeReplyType == REPLY_AUTOMATIC || mqNativeReplyType == REPLY_SPECIFIED_QUEUE;
-        }
-        return false;
     }
 
     private void populateDynamicPropertyFields() {
@@ -422,15 +410,13 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         assertion.setRequestTarget(sourceMessageTargetable);
         assertion.getRequestMqNativeMessagePropertyRuleSet().setPassThroughHeaders(sourcePassThroughHeadersCheckBox.isSelected());
 
-        boolean isConfiguredForReply = isConfiguredForReply( item );
-        assertion.setReplyNeeded( isConfiguredForReply );
         final MessageTargetableSupport targetMessageTargetable = new MessageTargetableSupport((MessageTargetable) messageTargetComboBox.getSelectedItem());
         if (targetMessageTargetable.getTarget() == TargetMessageType.OTHER) {
             targetMessageTargetable.setOtherTargetMessageVariable(targetMessageVariablePanel.getVariable());
             targetMessageTargetable.setSourceUsedByGateway(false);
 
             // target modified if 1) Get from Queue or 2) Put to Queue and reads a reply queue
-            targetMessageTargetable.setTargetModifiedByGateway( !assertion.isPutToQueue() || (assertion.isPutToQueue() && isConfiguredForReply) );
+            targetMessageTargetable.setTargetModifiedByGateway( true );
         }
         assertion.setResponseTarget(targetMessageTargetable);
         assertion.getResponseMqNativeMessagePropertyRuleSet().setPassThroughHeaders(targetPassThroughHeadersCheckBox.isSelected());

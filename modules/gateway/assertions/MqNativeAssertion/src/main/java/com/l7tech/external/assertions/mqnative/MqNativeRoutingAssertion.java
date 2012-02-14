@@ -41,7 +41,6 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     private String responseTimeout;
     private String responseSize;
     private boolean isPutToQueue = true; // Default: set the message direction to "Put to Queue"
-    private boolean isReplyNeeded;
     private MqNativeDynamicProperties dynamicMqRoutingProperties;
     @Nullable
     private Map<String,String> requestMessageAdvancedProperties;
@@ -166,22 +165,6 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     }
 
     /**
-     * Indicates whether the assertion will need to send a reply.
-     * @return
-     */
-    public boolean isReplyNeeded() {
-        return isReplyNeeded;
-    }
-
-    /**
-     * Sets whether the assertion will need to send a reply.
-     * @param replyNeeded
-     */
-    public void setReplyNeeded(boolean replyNeeded) {
-        isReplyNeeded = replyNeeded;
-    }
-
-    /**
      * Get the dynamic routing properties.
      *
      * @return The dynamic properties or null.
@@ -303,7 +286,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
               - or the route is Put to Queue and reads reply queue to Request
         */
         boolean getFromQueueWritesToRequest = !isPutToQueue() && TargetMessageType.REQUEST == responseTarget.getTarget();
-        boolean putToQueueReadsReplyWritesToRequest = isPutToQueue() && isReplyNeeded && TargetMessageType.REQUEST == responseTarget.getTarget();
+        boolean putToQueueReadsReplyWritesToRequest = isPutToQueue() && TargetMessageType.REQUEST == responseTarget.getTarget();
         return  getFromQueueWritesToRequest || putToQueueReadsReplyWritesToRequest;
     }
 
@@ -321,7 +304,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
               - or the route is Put to Queue and reads reply queue and writes to Response
          */
         boolean getFromQueueWritesToResponse = !isPutToQueue() && TargetMessageType.RESPONSE == responseTarget.getTarget();
-        boolean putToQueueReadsReplyWritesToResponse = isPutToQueue() && isReplyNeeded() && TargetMessageType.RESPONSE == responseTarget.getTarget();
+        boolean putToQueueReadsReplyWritesToResponse = isPutToQueue() && TargetMessageType.RESPONSE == responseTarget.getTarget();
         return getFromQueueWritesToResponse || putToQueueReadsReplyWritesToResponse;
     }
 
