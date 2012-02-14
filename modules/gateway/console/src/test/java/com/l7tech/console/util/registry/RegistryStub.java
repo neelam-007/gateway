@@ -1,6 +1,5 @@
 package com.l7tech.console.util.registry;
 
-import com.l7tech.gateway.common.export.PolicyExporterImporterAdmin;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.TrustedCertAdminStub;
@@ -96,11 +95,6 @@ public class RegistryStub extends Registry {
      */
     @Override
     public ServiceAdmin getServiceManager() {
-        return null;
-    }
-
-    @Override
-    public PolicyExporterImporterAdmin getPolicyExporterImporterAdmin() {
         return null;
     }
 

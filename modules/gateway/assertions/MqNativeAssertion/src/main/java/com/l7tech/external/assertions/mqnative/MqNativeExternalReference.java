@@ -6,10 +6,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.exporter.ExternalReference;
 import com.l7tech.policy.exporter.ExternalReferenceFinder;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
-import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.w3c.dom.Element;
-import org.w3c.dom.Text;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,6 +50,9 @@ public class MqNativeExternalReference extends ExternalReference {
 
         try {
             SsgActiveConnector connector = getFinder().findConnectorByPrimaryKey(oid);
+            if (connector == null)
+                throw new IllegalArgumentException("The MQ Native Queue (oid = " + oid + ") does not exist");
+
             connectorName = connector.getName();
             host = connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME);
             port = Integer.parseInt(connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_PORT));
@@ -106,22 +107,22 @@ public class MqNativeExternalReference extends ExternalReference {
     }
 
     @Override
-    public void serializeToRefElement(Element referencesParentElement) {
-        Element refEl = referencesParentElement.getOwnerDocument().createElement(EL_NAME_REF);
+    protected void serializeToRefElement(Element referencesParentElement) {
+        Element refEl = referencesParentElement.getOwnerDocument().createElementNS(null,EL_NAME_REF);
         setTypeAttribute(refEl);
         referencesParentElement.appendChild(refEl);
 
-        addElement(refEl, EL_NAME_OID, Long.toString(oid));
-        addElement(refEl, EL_NAME_CONN_NAME, connectorName);
-        addElement(refEl, EL_NAME_HOST, host);
-        addElement(refEl, EL_NAME_PORT, Long.toString(port));
-        addElement(refEl, EL_NAME_QUEUE_MANAGER_NAME, queueManagerName);
-        addElement(refEl, EL_NAME_CHANNEL_NAME, channelName);
-        addElement(refEl, EL_NAME_QUEUE_NAME, queueName);
+        addParamEl(refEl, EL_NAME_OID, Long.toString(oid), false);
+        addParamEl(refEl, EL_NAME_CONN_NAME, connectorName, false);
+        addParamEl(refEl, EL_NAME_HOST, host, false);
+        addParamEl(refEl, EL_NAME_PORT, Long.toString(port), false);
+        addParamEl(refEl, EL_NAME_QUEUE_MANAGER_NAME, queueManagerName, false);
+        addParamEl(refEl, EL_NAME_CHANNEL_NAME, channelName, false);
+        addParamEl(refEl, EL_NAME_QUEUE_NAME, queueName, false);
     }
 
     @Override
-    public boolean verifyReference() throws InvalidPolicyStreamException {
+    protected boolean verifyReference() throws InvalidPolicyStreamException {
         try {
             SsgActiveConnector activeConnector = getFinder().findConnectorByPrimaryKey(oid);
             if (activeConnector == null) {
@@ -143,7 +144,7 @@ public class MqNativeExternalReference extends ExternalReference {
     }
 
     @Override
-    public boolean localizeAssertion(Assertion assertionToLocalize) {
+    protected boolean localizeAssertion(Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE){
             if (assertionToLocalize instanceof MqNativeRoutingAssertion) {
                 final MqNativeRoutingAssertion mqNativeRoutingAssertion = (MqNativeRoutingAssertion) assertionToLocalize;
@@ -184,18 +185,6 @@ public class MqNativeExternalReference extends ExternalReference {
         output.queueName = getParamFromEl(el, EL_NAME_QUEUE_NAME);
 
         return output;
-    }
-
-    private void addElement(final Element parent,
-                            final String childElementName,
-                            final String text) {
-        Element childElement = parent.getOwnerDocument().createElement(childElementName);
-        parent.appendChild(childElement);
-
-        if (text != null) {
-            Text textNode = DomUtils.createTextNode(parent, text);
-            childElement.appendChild(textNode);
-        }
     }
 
     private String getActiveConnectorNameByOid( final long oid ) {

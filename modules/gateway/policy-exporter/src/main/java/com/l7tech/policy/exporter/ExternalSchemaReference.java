@@ -52,7 +52,7 @@ public class ExternalSchemaReference extends GlobalResourceReference {
     }
 
     @Override
-    public void serializeToRefElement(Element referencesParentElement) {
+    protected void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(TOPEL_NAME);
         setTypeAttribute( refEl );
         if (getName() != null) {

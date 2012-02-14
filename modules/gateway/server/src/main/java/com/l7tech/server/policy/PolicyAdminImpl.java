@@ -3,6 +3,7 @@ package com.l7tech.server.policy;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
@@ -19,6 +20,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.policy.export.PolicyExporterImporterManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.JaasUtils;
@@ -51,6 +53,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
     private final PolicyVersionManager policyVersionManager;
     private final ServiceManager serviceManager;
     private final ClusterPropertyManager clusterPropertyManager;
+    private final PolicyExporterImporterManager policyExporterImporterManager;
     private final RbacServices rbacServices;
 
     private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
@@ -68,6 +71,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
                            final PolicyVersionManager policyVersionManager,
                            final ServiceManager serviceManager,
                            final ClusterPropertyManager clusterPropertyManager,
+                           final PolicyExporterImporterManager policyExporterImporterManager,
                            final RbacServices rbacServices,
                            final LicenseManager licenseManager,
                            final DefaultKey defaultKey)
@@ -78,6 +82,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         this.policyVersionManager = policyVersionManager;
         this.serviceManager = serviceManager;
         this.clusterPropertyManager = clusterPropertyManager;
+        this.policyExporterImporterManager = policyExporterImporterManager;
         this.rbacServices = rbacServices;
         this.licenseManager = licenseManager;
         this.defaultKey = defaultKey;
@@ -566,6 +571,11 @@ public class PolicyAdminImpl implements PolicyAdmin {
     @Override
     public long getXmlMaxBytes(){
         return Message.getMaxBytes();
+    }
+
+    @Override
+    public Set<ExternalReferenceFactory> findAllExternalReferenceFactories() {
+        return policyExporterImporterManager.findAllExternalReferenceFactories();
     }
 
     @Override

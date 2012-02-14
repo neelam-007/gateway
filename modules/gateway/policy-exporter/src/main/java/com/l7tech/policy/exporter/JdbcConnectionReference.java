@@ -120,7 +120,7 @@ public class JdbcConnectionReference extends ExternalReference {
     }
 
     @Override
-    public void serializeToRefElement(final Element referencesParentElement) {
+    protected void serializeToRefElement(final Element referencesParentElement) {
         Element referenceElement = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_REF);
         setTypeAttribute( referenceElement );
         referencesParentElement.appendChild(referenceElement);
@@ -141,7 +141,7 @@ public class JdbcConnectionReference extends ExternalReference {
     }
 
     @Override
-    public boolean verifyReference() throws InvalidPolicyStreamException {
+    protected boolean verifyReference() throws InvalidPolicyStreamException {
         if (Syntax.getReferencedNames(connectionName).length > 0) {
             return true;
         }
@@ -160,7 +160,7 @@ public class JdbcConnectionReference extends ExternalReference {
     }
 
     @Override
-    public boolean localizeAssertion(Assertion assertionToLocalize) {
+    protected boolean localizeAssertion(Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE){
             if (assertionToLocalize instanceof JdbcConnectionable) {
                 final JdbcConnectionable connable = (JdbcConnectionable)assertionToLocalize;

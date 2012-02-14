@@ -2,6 +2,8 @@ package com.l7tech.gateway.common.admin;
 
 import static com.l7tech.objectmodel.EntityType.POLICY;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
+
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
@@ -274,4 +276,10 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      */
     @Transactional(readOnly=true)
     long getXmlMaxBytes();
+
+    /**
+     * Find all ExternalReferenceFactory's, which have been registered when the gateway loads modular assertions.
+     * @return a set of ExternalReferenceFactory's
+     */
+    Set<ExternalReferenceFactory> findAllExternalReferenceFactories();
 }

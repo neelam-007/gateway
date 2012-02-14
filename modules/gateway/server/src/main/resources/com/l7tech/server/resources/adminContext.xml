@@ -331,11 +331,6 @@
         <constructor-arg ref="resolutionConfigurationManager"/>
     </bean>
 
-    <!-- policy exporter and importer admin servant -->
-    <bean id="policyExporterImporterAdmin" class="com.l7tech.server.policy.export.PolicyExporterImporterAdminImpl">
-        <constructor-arg ref="policyExporterImporterManager"/>
-    </bean>
-
     <bean id="folderAdmin" class="com.l7tech.server.folder.FolderAdminImpl">
         <constructor-arg index="0" ref="folderManager"/>
         <constructor-arg index="1">
@@ -470,6 +465,7 @@
         <constructor-arg ref="policyVersionManager"/>
         <constructor-arg ref="serviceManager"/>
         <constructor-arg ref="clusterPropertyManager"/>
+        <constructor-arg ref="policyExporterImporterManager"/>
         <constructor-arg ref="rbacServices"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="defaultKey"/>

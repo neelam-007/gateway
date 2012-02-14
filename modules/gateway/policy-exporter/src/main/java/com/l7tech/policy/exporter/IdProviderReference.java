@@ -107,7 +107,7 @@ public class IdProviderReference extends ExternalReference {
     }
 
     @Override
-    public void serializeToRefElement(Element referencesParentElement) {
+    protected void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         setTypeAttribute( refEl );
         referencesParentElement.appendChild(refEl);
@@ -147,7 +147,7 @@ public class IdProviderReference extends ExternalReference {
      * 3. Otherwise => this reference if 'not verified'.
      */
     @Override
-    public boolean verifyReference() {
+    protected boolean verifyReference() {
         // 1. Look for same oid and name. If that exists, => record perfect match.
         IdentityProviderConfig configOnThisSystem = null;
         try {
@@ -264,7 +264,7 @@ public class IdProviderReference extends ExternalReference {
      * return false if the localized assertion should be deleted from the tree
      */
     @Override
-    public boolean localizeAssertion(Assertion assertionToLocalize) {
+    protected boolean localizeAssertion(Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof IdentityAssertion) {
                 IdentityAssertion idass = (IdentityAssertion)assertionToLocalize;

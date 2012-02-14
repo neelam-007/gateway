@@ -3,7 +3,6 @@ package com.l7tech.console.util;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.admin.*;
-import com.l7tech.gateway.common.export.PolicyExporterImporterAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
@@ -103,12 +102,6 @@ public abstract class Registry {
      * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     abstract public ServiceAdmin getServiceManager();
-
-    /**
-     * @return the policy exporter and importer manager. Never null.
-     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
-     */
-    abstract public PolicyExporterImporterAdmin getPolicyExporterImporterAdmin();
 
     /**
      * @return the folder admin. Never null.
@@ -289,11 +282,6 @@ public abstract class Registry {
          */
         @Override
         public ServiceAdmin getServiceManager() {
-            throw new IllegalStateException(ILLEGAL_STATE_MSG);
-        }
-
-        @Override
-        public PolicyExporterImporterAdmin getPolicyExporterImporterAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

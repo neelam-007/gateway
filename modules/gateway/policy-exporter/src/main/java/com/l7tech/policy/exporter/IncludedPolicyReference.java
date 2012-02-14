@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.policy.exporter;
 
 import com.l7tech.policy.Policy;
@@ -93,7 +90,7 @@ public class IncludedPolicyReference extends ExternalReference {
     }
 
     @Override
-    public void serializeToRefElement(Element referencesParentElement) {
+    protected void serializeToRefElement(Element referencesParentElement) {
         Element includeEl = referencesParentElement.getOwnerDocument().createElement(getClass().getSimpleName());
         includeEl.setAttribute(ATTR_GUID, guid);
         setTypeAttribute( includeEl );
@@ -115,7 +112,7 @@ public class IncludedPolicyReference extends ExternalReference {
     }
 
     @Override
-    public boolean verifyReference() throws InvalidPolicyStreamException {
+    protected boolean verifyReference() throws InvalidPolicyStreamException {
         try {
             Policy policy = getFinder().findPolicyByGuid(guid);
             
@@ -191,7 +188,7 @@ public class IncludedPolicyReference extends ExternalReference {
     }
 
     @Override
-    public boolean localizeAssertion(Assertion assertionToLocalize) {
+    protected boolean localizeAssertion(Assertion assertionToLocalize) {
         if (assertionToLocalize instanceof Include) {
             Include include = (Include) assertionToLocalize;
             if(include.getPolicyGuid() == null && include.getPolicyOid() != null && include.getPolicyOid().equals(oid)) {

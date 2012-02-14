@@ -227,7 +227,7 @@ public class FederatedIdProviderReference extends IdProviderReference {
     }
 
     @Override
-    public void serializeToRefElement(Element referencesParentElement) {
+    protected void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         setTypeAttribute( refEl );
         referencesParentElement.appendChild(refEl);

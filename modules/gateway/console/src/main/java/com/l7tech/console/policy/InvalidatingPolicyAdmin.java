@@ -1,5 +1,6 @@
 package com.l7tech.console.policy;
 
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.*;
@@ -142,6 +143,11 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
     @Override
     public long getXmlMaxBytes(){
         return delegate.getXmlMaxBytes();
+    }
+
+    @Override
+    public Set<ExternalReferenceFactory> findAllExternalReferenceFactories() {
+        return delegate.findAllExternalReferenceFactories();
     }
 
     //- PRIVATE

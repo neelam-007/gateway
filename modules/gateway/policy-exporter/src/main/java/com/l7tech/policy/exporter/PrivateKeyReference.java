@@ -143,7 +143,7 @@ public class PrivateKeyReference extends ExternalReference {
     }
 
     @Override
-    public void serializeToRefElement(Element referencesParentElement) {
+    protected void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         setTypeAttribute( refEl );
         referencesParentElement.appendChild(refEl);
@@ -167,7 +167,7 @@ public class PrivateKeyReference extends ExternalReference {
     }
 
     @Override
-    public boolean verifyReference() throws InvalidPolicyStreamException {
+    protected boolean verifyReference() throws InvalidPolicyStreamException {
         if (isDefaultKey) {
             localizeType = LocalizeAction.IGNORE;
             return true;
@@ -191,7 +191,7 @@ public class PrivateKeyReference extends ExternalReference {
     }
 
     @Override
-    public boolean localizeAssertion(Assertion assertionToLocalize) {
+    protected boolean localizeAssertion(Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE){
             if (assertionToLocalize instanceof PrivateKeyable) {
                 PrivateKeyable keyable = (PrivateKeyable)assertionToLocalize;

@@ -9,7 +9,6 @@ import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
-import com.l7tech.gateway.common.export.PolicyExporterImporterAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
@@ -148,8 +147,8 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
 
     @Override
     public Set<ExternalReferenceFactory> findAllExternalReferenceFactories() throws FindException {
-        PolicyExporterImporterAdmin policyExporterImporterAdmin = admin(Registry.getDefault().getPolicyExporterImporterAdmin());
-        return policyExporterImporterAdmin.findAllExternalReferenceFactories();
+        PolicyAdmin policyAdmin = admin(Registry.getDefault().getPolicyAdmin());
+        return policyAdmin.findAllExternalReferenceFactories();
     }
 
     @Override

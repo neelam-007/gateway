@@ -108,7 +108,7 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
             logger.warning("Cannot get Policy Exporter and Importer Admin due to no Admin Context present.");
             return null;
         } else {
-            return registry.getPolicyExporterImporterAdmin().findAllExternalReferenceFactories();
+            return registry.getPolicyAdmin().findAllExternalReferenceFactories();
         }
     }
 }

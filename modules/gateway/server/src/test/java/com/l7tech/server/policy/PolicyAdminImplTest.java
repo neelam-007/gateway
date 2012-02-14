@@ -17,7 +17,7 @@ public class PolicyAdminImplTest {
 
         final TestLicenseManager licenseManager = new TestLicenseManager();
 
-        PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, licenseManager, null);
+        PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, null, licenseManager, null);
 
         final String amfDefaultXml = policyManager.getDefaultPolicyXml(PolicyType.INTERNAL, PolicyType.TAG_AUDIT_MESSAGE_FILTER);
         Assert.assertEquals("Default XML should have been returned", PolicyAdminImpl.getDefaultAuditMessageFilterPolicyXml(null), amfDefaultXml);
@@ -29,7 +29,7 @@ public class PolicyAdminImplTest {
     @Test
     @BugNumber(10057)
     public void testDefaultAuditMessageFilterPolicyXml_NotLicensed(){
-        PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, NO_UNKNOWN_LICENSE_MANAGER, null);
+        PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, null, NO_UNKNOWN_LICENSE_MANAGER, null);
 
         final String amfDefaultXml = policyManager.getDefaultPolicyXml(PolicyType.INTERNAL, PolicyType.TAG_AUDIT_MESSAGE_FILTER);
         Assert.assertEquals("Default XML should have been returned", PolicyAdminImpl.FALLBACK_AUDIT_MESSAGE_FILTER_POLICY_XML, amfDefaultXml);
@@ -47,7 +47,7 @@ public class PolicyAdminImplTest {
     @Test
     @BugNumber(10057)
     public void testAllLicensed() throws Exception {
-        PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, NO_UNKNOWN_LICENSE_MANAGER, null);
+        PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, null, NO_UNKNOWN_LICENSE_MANAGER, null);
 
         final String defaultXml = policyManager.getDefaultXmlBasedOnLicense(allLicensedXml, "", PolicyType.TAG_AUDIT_MESSAGE_FILTER);
         Assert.assertEquals("Default should be returned", allLicensedXml, defaultXml);
@@ -61,7 +61,7 @@ public class PolicyAdminImplTest {
     @Test
     @BugNumber(10057)
     public void testAllLicensedApartFromUnknown() throws Exception{
-        PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, NO_UNKNOWN_LICENSE_MANAGER, null);
+        PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, null, NO_UNKNOWN_LICENSE_MANAGER, null);
 
         final String fallbackXml = "fallback";
         final String defaultXml = policyManager.getDefaultXmlBasedOnLicense(

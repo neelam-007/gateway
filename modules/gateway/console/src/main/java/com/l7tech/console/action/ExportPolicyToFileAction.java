@@ -178,6 +178,11 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
             }
         } catch (SAXException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Cannot export policy to file " + name);
+        } catch (IllegalArgumentException e) {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                "Cannot export the policy: " + ExceptionUtils.getMessage(e),
+                "Error Exporting Policy",
+                JOptionPane.WARNING_MESSAGE, null);
         }
 
         return null;

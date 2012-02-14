@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.mqnative;
 
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 
 @Secured
+@Administrative
 public interface MqNativeAdmin {
 
     static public class MqNativeTestException extends Exception {

@@ -146,16 +146,6 @@ public abstract class ExternalReference {
      */
     public abstract void setLocalizeIgnore();
 
-    //- PACKAGE
-
-    public ExternalReference( final ExternalReferenceFinder finder ) {
-        this.finder = finder;
-    }
-
-    public ExternalReferenceFinder getFinder() {
-        return finder;
-    }
-
     /**
      * Configure this reference to be replaced on import.
      *
@@ -173,19 +163,29 @@ public abstract class ExternalReference {
         return false;
     }
 
+    //- PROTECTED
+
+    protected ExternalReference( final ExternalReferenceFinder finder ) {
+        this.finder = finder;
+    }
+
+    protected final ExternalReferenceFinder getFinder() {
+        return finder;
+    }
+
     /**
      * Adds a child element to the passed references element that contains the xml
      * form of this reference object. Used by the policy exporter when serializing
      * references to xml format.
      * @param referencesParentElement
      */
-    public abstract void serializeToRefElement(Element referencesParentElement);
+    protected abstract void serializeToRefElement(Element referencesParentElement);
 
     /**
      * Checks whether or not an external reference can be mapped on this local
      * system without administrator interaction.
      */
-    public abstract boolean verifyReference() throws InvalidPolicyStreamException;
+    protected abstract boolean verifyReference() throws InvalidPolicyStreamException;
 
     /**
      * Once an exported policy is loaded with it's references and the references are
@@ -195,7 +195,49 @@ public abstract class ExternalReference {
      * Returns false if the assertion should be deleted from the tree.
      * @param assertionToLocalize will be fixed once this method returns.
      */
-    public abstract boolean localizeAssertion(Assertion assertionToLocalize);
+    protected abstract boolean localizeAssertion(Assertion assertionToLocalize);
+
+    protected static String getParamFromEl(Element parent, String param) {
+        NodeList nodeList = parent.getElementsByTagName(param);
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Element node = (Element)nodeList.item(i);
+            String val = DomUtils.getTextValue(node);
+            if (val != null && val.length() > 0) return val;
+        }
+        return null;
+    }
+
+    protected static String getRequiredParamFromEl( final Element parent,
+                                          final String param ) throws InvalidDocumentFormatException {
+        final String value = getParamFromEl( parent, param );
+        if ( value == null ) {
+            throw new InvalidDocumentFormatException( parent.getLocalName() + " missing required element " + param );
+        }
+        return value;
+    }
+
+    protected static void addParamEl( final Element parent,
+                                      final String param,
+                                      final String value,
+                                      final boolean alwaysAdd ) {
+        if ( value != null || alwaysAdd ) {
+            final Element paramElement = parent.getOwnerDocument().createElementNS( null, param );
+            parent.appendChild( paramElement );
+
+            if ( value != null ) {
+                final Text textNode = DomUtils.createTextNode(parent, value);
+                paramElement.appendChild( textNode );
+            }
+        }
+    }
+
+    protected final void setTypeAttribute( final Element refEl ) {
+        refEl.setAttributeNS( null, ExporterConstants.REF_TYPE_ATTRNAME, getRefType() );
+    }
+
+    protected enum LocalizeAction { DELETE, IGNORE, REPLACE }
+
+    //- PACKAGE
 
     /**
      * Parse references from an exported policy's exp:References element.
@@ -274,44 +316,6 @@ public abstract class ExternalReference {
         return type;
     }
 
-    public static String getParamFromEl(Element parent, String param) {
-        NodeList nodeList = parent.getElementsByTagName(param);
-        for (int i = 0; i < nodeList.getLength(); i++) {
-            Element node = (Element)nodeList.item(i);
-            String val = DomUtils.getTextValue(node);
-            if (val != null && val.length() > 0) return val;
-        }
-        return null;
-    }
-
-    static String getRequiredParamFromEl( final Element parent,
-                                          final String param ) throws InvalidDocumentFormatException {
-        final String value = getParamFromEl( parent, param );
-        if ( value == null ) {
-            throw new InvalidDocumentFormatException( parent.getLocalName() + " missing required element " + param );
-        }
-        return value;
-    }
-
-    public void setTypeAttribute( final Element refEl ) {
-        refEl.setAttributeNS( null, ExporterConstants.REF_TYPE_ATTRNAME, getRefType() );
-    }
-
-    void addParamEl( final Element parent,
-                     final String param,
-                     final String value,
-                     final boolean alwaysAdd ) {
-        if ( value != null || alwaysAdd ) {
-            final Element paramElement = parent.getOwnerDocument().createElementNS( null, param );
-            parent.appendChild( paramElement );
-
-            if ( value != null ) {
-                final Text textNode = DomUtils.createTextNode(parent, value);
-                paramElement.appendChild( textNode );
-            }
-        }
-    }
-
     void warning( final String title, final String message ) {
         final ExternalReferenceErrorListener errorListener = this.errorListener;
         if ( errorListener != null ) {
@@ -339,8 +343,6 @@ public abstract class ExternalReference {
         }
         return proceed;
     }
-
-    public enum LocalizeAction { DELETE, IGNORE, REPLACE }
 
     //- PRIVATE
 
