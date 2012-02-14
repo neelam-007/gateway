@@ -199,6 +199,17 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
     }
 
     /**
+     * Overrides setEnabled method to reset popupCancelled state
+     * @param enabled  a boolean value, where true enables the component and
+     *          false disables it
+     */
+    @Override
+    public void setEnabled(boolean enabled){
+        super.setEnabled(enabled);
+        this.popUpCancelled = false;
+    }
+
+    /**
      * Both okToLoopForward and okToLoopBack allow for the behaviour where the first time results are exhausted
      * in a direction, the user can be shown a message (via returning null), but the subsequent time an attempt is made
      * to move in that direction, the index will loop back to the correct index (either the start or the end)
