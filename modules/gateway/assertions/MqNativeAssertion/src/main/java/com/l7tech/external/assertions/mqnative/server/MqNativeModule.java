@@ -64,18 +64,22 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     private static final Logger logger = Logger.getLogger(MqNativeModule.class.getName());
     private static final int DEFAULT_MESSAGE_MAX_BYTES = 2621440;
     private static final Set<String> SUPPORTED_TYPES = caseInsensitiveSet( ACTIVE_CONNECTOR_TYPE_MQ_NATIVE );
+    private static final String PROP_ENABLE_POOLING = "com.l7tech.external.assertions.mqnative.server.enablePooling";
+    private static final String PROP_SOCKET_CONNECT_TIMEOUT = "com.l7tech.external.assertions.mqnative.server.socketConnectTimeout";
+    private static final String PROP_ENABLE_MQ_LOGGING = "com.l7tech.external.assertions.mqnative.server.enableMqLogging";
+    private static final String SYSPROP_MQ_SOCKET_CONNECT_TIMEOUT = "com.ibm.mq.tuning.socketConnectTimeout";
 
     private final Map<Long, MqNativeListener> activeListeners = new ConcurrentHashMap<Long, MqNativeListener> ();
     private final ThreadPoolBean threadPoolBean;
 
     static {
-        final long connectTimeout = getTimeUnitProperty("com.l7tech.external.assertions.mqnative.server.socketConnectTimeout", 30000L);
-        if ( SyspropUtil.getString( "com.ibm.mq.tuning.socketConnectTimeout", null ) == null ) {
+        final long connectTimeout = getTimeUnitProperty( PROP_SOCKET_CONNECT_TIMEOUT, 30000L);
+        if ( SyspropUtil.getString( SYSPROP_MQ_SOCKET_CONNECT_TIMEOUT, null ) == null ) {
             logger.config( "Setting MQ socket timeout to " + connectTimeout + "ms" );
-            SyspropUtil.setProperty( "com.ibm.mq.tuning.socketConnectTimeout", String.valueOf(connectTimeout) );
+            SyspropUtil.setProperty( SYSPROP_MQ_SOCKET_CONNECT_TIMEOUT, String.valueOf(connectTimeout) );
         }
 
-        if ( !getBooleanProperty( "com.l7tech.external.assertions.mqnative.server.enableMqLogging", debugState() ) ) {
+        if ( !getBooleanProperty( PROP_ENABLE_MQ_LOGGING, debugState() ) ) {
             MQException.log = null; // This is part of the public API ...
         } else {
             // excluded log message when polling an empty queue.  i.e. excluded "MQJE001: Completion Code 2, Reason 2033"
@@ -119,6 +123,12 @@ public class MqNativeModule extends ActiveTransportModule implements Application
      */
     @Override
     protected void doStart() throws LifecycleException {
+        // initialize the default connection pool
+        if ( connectionPoolToken == null && serverConfig.getBooleanProperty( PROP_ENABLE_POOLING, false ) ) {
+            connectionPoolToken = new MQPoolToken();
+            MQEnvironment.addConnectionPoolToken(connectionPoolToken);
+        }
+
         super.doStart();
         if (gatewayState.isReadyForMessages()) {
             try {
@@ -143,11 +153,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             for ( final SsgActiveConnector connector : connectors ) {
                 if ( connector.isEnabled() && connectorIsOwnedByThisModule( connector ) && isValidConnectorConfig( connector ) ) {
                     try {
-                        // initialize the default connection pool
-                        if (connectionPoolToken == null) {
-                            connectionPoolToken = new MQPoolToken();
-                            MQEnvironment.addConnectionPoolToken(connectionPoolToken);
-                        }
                         addConnector( connector.getReadOnlyCopy() );
                     } catch ( Exception e ) {
                         logger.log(Level.WARNING, "Unable to start MQ native active connector " + connector.getName() +
@@ -179,6 +184,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
         if (connectionPoolToken != null) {
             MQEnvironment.removeConnectionPoolToken(connectionPoolToken);
+            connectionPoolToken = null;
         }
     }
 
