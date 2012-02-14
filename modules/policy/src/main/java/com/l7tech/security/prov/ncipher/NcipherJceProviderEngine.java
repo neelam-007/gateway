@@ -2,6 +2,7 @@ package com.l7tech.security.prov.ncipher;
 
 import com.l7tech.security.prov.GcmCipher;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import com.ncipher.km.nfkm.Module;
@@ -33,14 +34,27 @@ public class NcipherJceProviderEngine extends JceProvider {
             // Prefer module-level key protection by default
             SyspropUtil.setProperty( "protect", "module" );
         }
+
+        boolean mostPref = "highest".equalsIgnoreCase(ConfigFactory.getProperty("com.l7tech.ncipher.preference", "default"));
+
         Provider existing =  Security.getProvider("nCipherKM");
         if (null == existing) {
             // Insert nCipher as highest-preference provider
             PROVIDER = new nCipherKM();
-            Security.insertProviderAt(PROVIDER, 1);
+            if (mostPref) {
+                Security.insertProviderAt(PROVIDER, 1);
+            } else {
+                Security.addProvider(PROVIDER);
+            }
         } else {
-            // Leave existing provider order unchanged
-            PROVIDER = existing;
+            if (mostPref) {
+                PROVIDER = new nCipherKM();
+                Security.removeProvider(existing.getName());
+                Security.insertProviderAt(PROVIDER, 1);
+            } else {
+                // Leave existing provider order unchanged
+                PROVIDER = existing;
+            }
         }
         PROVIDER.remove("KeyStore.JKS"); // Bug #10109 - avoid message to STDERR from nCipher prov when third-party software loads truststores using JKS
         MESSAGE_DIGEST_PROVIDER = Security.getProvider("SUN"); // Bug #10327 - use Sun JDK provider for MD5, SHA-1, and SHA-2, if available, to avoid clobbering a nethsm with Sha512Crypt password hashes

@@ -53,13 +53,15 @@ public class KeyStorePrivateKeyMasterPasswordFinder implements MasterPasswordMan
     /** Provider to use when no more-specific provider is specified. */
     public static final String PROP_PROVIDER = "provider";
 
+    private static final boolean wantHighestPreference = "highest".equalsIgnoreCase(ConfigFactory.getProperty("com.l7tech.ncipher.preference", "default"));
+    
     static final String CONFIG_PROFILE_NCIPHER_SWORLD_RSA = "ncipher.sworld.rsa";
     private static final String PROV_NCIPHER_CLASSNAME = "com.ncipher.provider.km.nCipherKM";
     protected static final Map<String, String> CONFIG_PROFILE_NCIPHER_RSA;
     static {
         Map<String, String> p = new LinkedHashMap<String, String>();
         p.put(PROP_KEYSTORE_TYPE, "nCipher.sworld");
-        p.put(PROP_PREPEND_PROVIDERS, PROV_NCIPHER_CLASSNAME);
+        p.put(wantHighestPreference ? PROP_PREPEND_PROVIDERS : PROP_APPEND_PROVIDERS, PROV_NCIPHER_CLASSNAME);
         p.put(PROP_NCIPHER_PROTECT, "module");
         p.put(PROP_KEYSTORE_PASSWORD, "NULL");
         p.put(PROP_KEYSTORE_ENTRY_PASSWORD, "NULL");
