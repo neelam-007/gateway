@@ -38,7 +38,7 @@ public interface MqNativeConstants {
 
     String MQ_CONNECTION_CACHE_MAX_SIZE_PROPERTY = "ioMqConnectionCacheSize";
     String MQ_CONNECTION_CACHE_MAX_SIZE_UI_PROPERTY = "io.mqConnectionCacheSize";
-    String MQ_CONNECTION_CACHE_MAX_SIZE_DESC = "The number of MQ Native connections to cache (not a hard limit) or 0 for no limit (Integer)";
+    String MQ_CONNECTION_CACHE_MAX_SIZE_DESC = "The number of MQ Native connections to cache, this is not a hard limit, 0 for no caching (Integer)";
 
     // configurable MQ properties (from Queue config UI)
     String MQ_PROPERTY_APPDATA = "applicationIdData";
