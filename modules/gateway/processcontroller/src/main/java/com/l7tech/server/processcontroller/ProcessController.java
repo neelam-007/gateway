@@ -75,8 +75,8 @@ public class ProcessController implements InitializingBean {
     private volatile boolean daemon;
     private static final int NODEAPI_FAST_CONNECT_TIMEOUT = 2000;
     private static final int NODEAPI_FAST_RECEIVE_TIMEOUT = 2000;
-    private static final int NODEAPI_CONNECT_TIMEOUT = 90000;
-    private static final int NODEAPI_RECEIVE_TIMEOUT = 90000;
+    private static final int NODEAPI_CONNECT_TIMEOUT = 30000;
+    private static final int NODEAPI_RECEIVE_TIMEOUT = 60000;
 
     public ProcessController() {
         System.setProperty("com.l7tech.common.security.jceProviderEngineName", "BC");
