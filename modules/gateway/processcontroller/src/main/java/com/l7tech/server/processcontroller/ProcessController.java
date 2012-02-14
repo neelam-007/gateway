@@ -46,7 +46,7 @@ public class ProcessController implements InitializingBean {
     private ConfigService configService;
 
     /** The maximum amount of time the PC should wait for a node to start */
-    private int NODE_START_TIME_MAX = 60000;
+    private int NODE_START_TIME_MAX = 90000;
     /** The amount of time the PC should wait for a node to start before beginning to test whether it's started yet */
     private int NODE_START_TIME_MIN = 5000;
     /** The amount of time the PC should wait after a node has died before beginning to attempt to restart it */
@@ -75,8 +75,8 @@ public class ProcessController implements InitializingBean {
     private volatile boolean daemon;
     private static final int NODEAPI_FAST_CONNECT_TIMEOUT = 2000;
     private static final int NODEAPI_FAST_RECEIVE_TIMEOUT = 2000;
-    private static final int NODEAPI_CONNECT_TIMEOUT = 30000;
-    private static final int NODEAPI_RECEIVE_TIMEOUT = 60000;
+    private static final int NODEAPI_CONNECT_TIMEOUT = 90000;
+    private static final int NODEAPI_RECEIVE_TIMEOUT = 90000;
 
     public ProcessController() {
         System.setProperty("com.l7tech.common.security.jceProviderEngineName", "BC");
