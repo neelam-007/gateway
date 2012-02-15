@@ -279,6 +279,15 @@ public class ServerSamlpResponseBuilderAssertionTest {
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("Status is not success so no SAML token can be configured.", correctExceptionThrown);
 
+        //If not success, then no assertions are allowed - validate when status code uses a variable
+        final String statusCode = SamlStatus.SAML2_AUTHN_FAILED.getValue();
+        assertion.setSamlStatusCode("${statusCode}");
+        assertion.setResponseAssertions("${samlToken}");
+        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_2_0)));
+        context.setVariable("statusCode", statusCode);
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("Status is not success so no SAML token can be configured.", correctExceptionThrown);
+
         //Issuer required if response is signed
         assertion.setSamlStatusCode(SamlStatus.SAML2_SUCCESS.getValue());
         assertion.setSignResponse(true);

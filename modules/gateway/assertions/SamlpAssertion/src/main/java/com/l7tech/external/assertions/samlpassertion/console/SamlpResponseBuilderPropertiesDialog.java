@@ -282,12 +282,15 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
                         throw new ValidationException(stripColon(resources.getString("responseElements.encryptedAssertions.2_0_only")) +
                                 variableRefErrorMsg);
 
-                    final boolean isSuccess = samlStatus.equals(SamlStatus.SAML2_SUCCESS.getValue());
-                    if(respAssertions.isEmpty() && encryptedAssertions.isEmpty() && isSuccess && validateWebSSORulesCheckBox.isSelected()){
-                        throw new ValidationException("If no assertions are entered the status cannot be success when Validate Web SSO Rules is configured.");
-                    } else if ((!respAssertions.isEmpty() || !encryptedAssertions.isEmpty()) && !isSuccess){
-                        // status must be success
-                        throw new ValidationException("If status is not success then no assertions can be entered.");
+                    if (validateWebSSORulesCheckBox.isSelected()) {
+                        final boolean statusHasVar = Syntax.getReferencedNames(samlStatus).length != 0;
+                        final boolean isSuccess = samlStatus.equals(SamlStatus.SAML2_SUCCESS.getValue());
+                        if(respAssertions.isEmpty() && encryptedAssertions.isEmpty() && isSuccess && validateWebSSORulesCheckBox.isSelected()){
+                            throw new ValidationException("If no assertions are entered the status cannot be success when Validate Web SSO Rules is configured.");
+                        } else if ((!respAssertions.isEmpty() || !encryptedAssertions.isEmpty()) && !isSuccess && !statusHasVar){
+                            // status must be success
+                            throw new ValidationException("If status is not success then no assertions can be entered when Validate Web SSO Rules is configured.");
+                        }
                     }
 
                     final String extensions = extensionsTextField.getText().trim();
