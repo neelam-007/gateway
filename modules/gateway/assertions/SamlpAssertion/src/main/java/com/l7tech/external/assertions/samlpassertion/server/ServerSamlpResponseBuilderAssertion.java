@@ -761,7 +761,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final JAXBElement<ResponseType> typeJAXBElement = v2SamlpFactory.createResponse(response);
         if (validateWebSsoRules) {
-            validateV2Response(typeJAXBElement.getValue());
+            validateV2Response(typeJAXBElement.getValue(), responseContext);
             //fix - bug 10855 - remove assertions now that validation has been done
             final ResponseType responseType = typeJAXBElement.getValue();
             // clean up - remove added assertions - we will add them manually
@@ -871,12 +871,12 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         }
     }
 
-    private void validateV2Response(final ResponseType responseType){
+    private void validateV2Response(final ResponseType responseType, final ResponseContext responseContext){
         //validate the assertion bean
         final String respAssertions = assertion.getResponseAssertions();
         final String encryptedAssertions = assertion.getEncryptedAssertions();
 
-        final boolean isSuccessResponse = assertion.getSamlStatusCode().equals(SamlStatus.SAML2_SUCCESS.getValue());
+        final boolean isSuccessResponse = SamlStatus.SAML2_SUCCESS.getValue().equals(responseContext.statusCode);
         final boolean assertionsNotSupplied = (respAssertions == null || respAssertions.trim().isEmpty()) &&
                 (encryptedAssertions == null || encryptedAssertions.trim().isEmpty());
 

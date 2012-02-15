@@ -1769,7 +1769,6 @@ public class ServerSamlpResponseBuilderAssertionTest {
             );
 
             final PolicyEnforcementContext context = getContext();
-            context.setVariable("var", SamlStatus.SAML_SUCCESS.getValue());
 
             final AssertionStatus status = serverAssertion.checkRequest(context);
             Assert.assertEquals("Status should be SERVER ERROR", AssertionStatus.SERVER_ERROR, status);
@@ -1803,7 +1802,6 @@ public class ServerSamlpResponseBuilderAssertionTest {
             );
 
             final PolicyEnforcementContext context = getContext();
-            context.setVariable("var", SamlStatus.SAML2_SUCCESS.getValue());
 
             final AssertionStatus status = serverAssertion.checkRequest(context);
             Assert.assertEquals("Status should be SERVER ERROR", AssertionStatus.SERVER_ERROR, status);
@@ -1815,6 +1813,51 @@ public class ServerSamlpResponseBuilderAssertionTest {
             Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC));
             Assert.assertTrue(testAudit.isAuditPresentContaining("Unknown SAML 2.0 status code value:"));
         }
+    }
+
+    /**
+     * If a variable was used to supply the status code, it's value must be used when determining if an assertion is
+     * required when validating Web SSO rules.
+     *
+     */
+    @BugNumber(11907)
+    @Test
+    public void testStatusCodeSupportsVariables_ValidatesWebSsoCorrectly() throws Exception{
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSignResponse(false);
+        assertion.setTarget(TargetMessageType.OTHER);
+        final String outputVar = "outputVar";
+        assertion.setOtherTargetMessageVariable(outputVar);
+        assertion.setVersion(SamlVersion.SAML2.getVersionInt());
+        // this means an assertion is required with success
+        assertion.setValidateWebSsoRules(true);
+
+        assertion.setSamlStatusCode("${statusVar}");
+
+        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("auditFactory", testAudit.factory())
+                .unmodifiableMap()
+        );
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable("statusVar", SamlStatus.SAML2_SUCCESS.getValue());
+
+        try {
+            serverAssertion.checkRequest(context);
+            Assert.fail("Assertion should have thrown");
+        } catch (AssertionStatusException e) {
+            // pass
+        }
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION));
+        Assert.assertTrue(testAudit.isAuditPresentContaining("Assertion(s) and / or EncryptedAssertion(s) are not configured. One ore more assertions are required when Response represents Success"));
     }
 
     private HashMap<String, String> getNamespaces() {
