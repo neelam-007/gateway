@@ -158,7 +158,7 @@ class MqNativeUtils {
         connProps.put(MQC.HOST_NAME_PROPERTY,
                 validated( connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_HOST_NAME ), "Host is required", isNotEmpty() ));
         connProps.put(MQC.PORT_PROPERTY,
-                validated( connector.getIntegerProperty( PROPERTIES_KEY_MQ_NATIVE_PORT, -1 ), "Port is invalid", getMinMaxPredicate( 1, 65535 ) ));
+                validated( connector.getIntegerProperty( PROPERTIES_KEY_MQ_NATIVE_PORT, -1 ), "Port is out of the range [1, 65535]", getMinMaxPredicate( 1, 65535 ) ));
         connProps.put(MQC.CHANNEL_PROPERTY,
                 validated( connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_CHANNEL ), "Channel is required", isNotEmpty() ));
 

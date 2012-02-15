@@ -161,7 +161,7 @@ public class MqNativeAdminServerSupport {
 
     /**
      * Make a meaningful MQ error detail with MQ Reason Code from a original MQ error message.
-     * Currently we handle 5 types of Reason Codes: 2009, 2035, 2058, 2059, 2085, and 2397.
+     * Currently we handle 6 types of Reason Codes: 2009, 2035, 2058, 2059, 2085, and 2397.
      * If more reason codes are found, please add them into this method.
      * If same codes specify different errors, please update them in this method.
      *
@@ -172,17 +172,17 @@ public class MqNativeAdminServerSupport {
         if (originalMqErrorMessage == null || originalMqErrorMessage.trim().isEmpty()) return null;
 
         if (originalMqErrorMessage.contains("Reason 2009")) {
-            return "Invalid channel name used";
+            return "Invalid channel name";
         } else if (originalMqErrorMessage.contains("Reason 2035")) {
             return "The user is not authorized to perform the operation attempted";
         } else if (originalMqErrorMessage.contains("Reason 2058")) {
-            return "Invalid queue name or queue manager name used";
+            return "Invalid queue manager name";
         } else if (originalMqErrorMessage.contains("Reason 2059")) {
-            return "Invalid host name or incorrect port used";
+            return "Invalid host name or port number";
         } else if (originalMqErrorMessage.contains("Reason 2085")) {
-            return "Invalid reply queue used";
+            return "Invalid queue name or reply queue name";
         }  else if (originalMqErrorMessage.contains("Reason 2397")) {
-            return "Invalid SSL setting used";
+            return "Invalid SSL setting";
         }
 
         return originalMqErrorMessage;

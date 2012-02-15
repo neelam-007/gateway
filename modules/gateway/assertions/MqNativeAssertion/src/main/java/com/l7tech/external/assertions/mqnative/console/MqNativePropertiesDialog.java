@@ -963,7 +963,18 @@ public class MqNativePropertiesDialog extends JDialog {
         } catch ( InterruptedException e ) {
             // cancelled
         } catch ( InvocationTargetException e ) {
-            throw ExceptionUtils.wrap( e.getTargetException() );
+            final Throwable cause = ExceptionUtils.unnestToRoot(e);
+            if (cause.getClass().getCanonicalName().equals(
+                "com.l7tech.external.assertions.mqnative.MqNativeAdmin.MqNativeTestException")) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Unable to verify this MQ Native setting: " + cause.getMessage(),
+                    "MQ Native Test Failed",
+                    JOptionPane.ERROR_MESSAGE
+                );
+            } else {
+                throw ExceptionUtils.wrap( e.getTargetException() );
+            }
         }
     }
 
