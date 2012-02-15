@@ -13,7 +13,7 @@ import com.l7tech.security.xml.XencUtil;
 import com.l7tech.security.xml.XmlElementEncryptionConfig;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import org.jetbrains.annotations.Nullable;
+import com.l7tech.util.TextUtils;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -50,27 +50,21 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
     private String certb64;
 
     private final XmlElementEncryptionConfig model;
-    @Nullable
-    private JDialog ownerDialog;
+    private final boolean truncateCertName;
 
-    public XmlElementEncryptionConfigPanel(final XmlElementEncryptionConfig model) {
+    public XmlElementEncryptionConfigPanel(final XmlElementEncryptionConfig model, final boolean truncateCertName) {
         this.model = model;
+        this.truncateCertName = truncateCertName;
         init();
         setData(model);
     }
 
-    public XmlElementEncryptionConfigPanel() {
-        this(new XmlElementEncryptionConfig());
+    public XmlElementEncryptionConfigPanel(final boolean truncateCertName) {
+        this(new XmlElementEncryptionConfig(), truncateCertName);
     }
 
-    /**
-     * Set a reference to the JDialog which is displaying this panel. If set when ever a user configuration event happens
-     * this owner JDialog will be packed via {@link DialogDisplayer#pack(javax.swing.JDialog)}
-     *
-     * @param ownerDialog owner JDialog
-     */
-    public void setOwnerDialog(@Nullable JDialog ownerDialog) {
-        this.ownerDialog = ownerDialog;
+    public XmlElementEncryptionConfigPanel() {
+        this(new XmlElementEncryptionConfig(), false);
     }
 
     @Override
@@ -284,11 +278,10 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
     }
 
     private void updateRecipientCertLabel() {
-        recipientCertLabel.setText(getCertInfo(certb64));
-        if (ownerDialog != null) {
-            // user configuration may require more UI space
-            DialogDisplayer.pack(ownerDialog);
-        }
+        final FontMetrics fontMetrics = recipientCertLabel.getFontMetrics(recipientCertLabel.getFont());
+        final String certInfo = getCertInfo(certb64);
+        final String certText = (truncateCertName)? TextUtils.truncateBelowActualScreenSize(fontMetrics, certInfo, 390): certInfo;
+        recipientCertLabel.setText(certText);
     }
 
     private String getCertInfo(String certb64) {

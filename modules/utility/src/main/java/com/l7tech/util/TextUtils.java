@@ -8,6 +8,8 @@ import static com.l7tech.util.Functions.map;
 import static com.l7tech.util.Functions.negate;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -543,6 +545,20 @@ public class TextUtils {
         return s;
     }
 
+    public static String truncateBelowActualScreenSize(final FontMetrics fontMetrics, final String s, final int maxSize) {
+        final int width = SwingUtilities.computeStringWidth(fontMetrics, s);
+
+        if (width <= maxSize) {
+            return s;
+        }
+
+        final int maxCharSizeToRemove = width - maxSize; // need to remove this much width from String s
+        // Use a wide character
+        final int wideChar = SwingUtilities.computeStringWidth(fontMetrics, "w");
+        final int howManyCharsToRemove = maxCharSizeToRemove / wideChar; // how many chars to remove from end?
+
+        return truncateStringAtEnd(s, s.length() - howManyCharsToRemove);
+    }
 
     /**
      * Same idea as truncStringMiddle, except that the string is guaranteed to be the length of sizeOfReturnString,
