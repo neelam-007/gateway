@@ -5,10 +5,8 @@ import com.ibm.mq.MQException;
 import com.ibm.mq.MQManagedObject;
 import com.ibm.mq.MQMessage;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
@@ -20,15 +18,12 @@ import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryVoidThrows;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.none;
-import static com.l7tech.util.Option.some;
 import com.l7tech.util.Pair;
-import static com.l7tech.util.TextUtils.isNotEmpty;
-import static com.l7tech.util.ValidationUtils.getMinMaxPredicate;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Hashtable;
@@ -37,7 +32,12 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.net.ssl.SSLSocketFactory;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.some;
+import static com.l7tech.util.TextUtils.isNotEmpty;
+import static com.l7tech.util.ValidationUtils.getMinMaxPredicate;
 
 /**
  * MQ Native connector helper class.
@@ -165,10 +165,10 @@ class MqNativeUtils {
         // apply userId and password
         if ( connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED )) {
             final String userId = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_USERID );
-            if (!StringUtils.isEmpty( userId )) {
+            if (userId != null) {
                 connProps.put(MQC.USER_ID_PROPERTY, userId);
             }
-            if (!StringUtils.isEmpty(password.toNull())) {
+            if (password.isSome()) {
                 connProps.put(MQC.PASSWORD_PROPERTY, password.some());
             }
         }
