@@ -18,7 +18,7 @@ import java.util.*;
 public class ProcessSamlAttributeQueryRequestAssertion extends MessageTargetableAssertion {
 
     // - PUBLIC
-    public static final String DEFAULT_PREFIX = "attributeQuery";
+    public static final String DEFAULT_PREFIX = "attrQuery";
 
     public static final Collection<String> VARIABLE_SUFFIXES_V2 = Collections.unmodifiableCollection(Arrays.asList(
             ProtocolRequestUtilities.SUFFIX_ATTRIBUTES,
@@ -297,7 +297,6 @@ public class ProcessSamlAttributeQueryRequestAssertion extends MessageTargetable
             variablesSet = super.doGetVariablesSet();
         } else {
             variablesSet = super.doGetVariablesSet().withVariables(
-                    //todo [Donal] - verify these are declared correctly
                 new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_ATTRIBUTES, false, false, null, false, DataType.ELEMENT),
                 new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_SUBJECT, false, false, null, false, DataType.STRING),
                 new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_SUBJECT_NAME_QUALIFIER, false, false, null, false, DataType.STRING),

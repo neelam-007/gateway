@@ -28,7 +28,7 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
     public static final String SUFFIX_NO_ATTRIBUTES_ADDED = "noAttributes";
     public static final String SUFFIX_EXCLUDED_ATTRIBUTES = "excludedAttributes";
     public static final String SUFFIX_FILTERED_ATTRIBUTES = "filteredAttributes";
-    public static final String DEFAULT_VARIABLE_PREFIX = "attrStmt";
+    public static final String DEFAULT_VARIABLE_PREFIX = "attrStatement";
 
     public static final Collection<String> VARIABLE_SUFFIXES = Collections.unmodifiableCollection(Arrays.asList(
             SUFFIX_UNKNOWN_ATTRIBUTE_NAMES,
