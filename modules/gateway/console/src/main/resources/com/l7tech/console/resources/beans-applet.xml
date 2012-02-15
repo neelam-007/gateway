@@ -7,7 +7,18 @@
 
     <bean id="preferences" class="com.l7tech.console.util.AppletSsmPreferences"/>
         
-    <bean id="httpRequestExecutor" class="com.l7tech.gateway.common.spring.remoting.http.SimpleBrowserHttpInvokerRequestExecutor"/>
+    <bean id="httpRequestExecutor" class="com.l7tech.gateway.common.spring.remoting.http.SimpleBrowserHttpInvokerRequestExecutor">
+        <constructor-arg index="0">
+            <set>
+                <value>com.l7tech.external.assertions</value>
+            </set>
+        </constructor-arg>
+        <constructor-arg index="1">
+            <bean class="com.l7tech.console.policy.ConsoleModularAssertionClassFinder">
+                <constructor-arg index="0" ref="assertionRegistry"/>
+            </bean>
+        </constructor-arg>
+    </bean>
 
     <!-- shared invoker properties, inherited with parent= -->
     <bean id="invokerCommon" abstract="true" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">

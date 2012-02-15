@@ -1,15 +1,25 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.net.HttpURLConnection;
 import java.io.IOException;
-import java.io.ByteArrayOutputStream;
 
+import static com.l7tech.util.CollectionUtils.toSet;
+import com.l7tech.util.FilterClassLoader;
+import com.l7tech.util.Functions.BinaryThrows;
 import com.l7tech.util.InetAddressUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.remoting.httpinvoker.SimpleHttpInvokerRequestExecutor;
 import org.springframework.remoting.httpinvoker.HttpInvokerClientConfiguration;
-import org.springframework.remoting.support.RemoteInvocationResult;
+import org.springframework.remoting.rmi.CodebaseAwareObjectInputStream;
 
 import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
 
@@ -22,10 +32,20 @@ public class SimpleBrowserHttpInvokerRequestExecutor extends SimpleHttpInvokerRe
 
     //- PUBLIC
 
-    public SimpleBrowserHttpInvokerRequestExecutor() {
+    public SimpleBrowserHttpInvokerRequestExecutor( @NotNull  final Set<String> excludedBeanPackages,
+                                                    @Nullable final BinaryThrows<Class,String,ClassNotFoundException,ClassNotFoundException> classFinder ) {
         this.hostSubstitutionPattern = Pattern.compile(HOST_REGEX);
         this.sessionInfoHolder = new SessionSupport();
-
+        this.excludedBeanPackages = toSet( excludedBeanPackages );
+        this.classFinder = classFinder != null ?
+                classFinder :
+                new BinaryThrows<Class,String,ClassNotFoundException,ClassNotFoundException>(){
+                    @Override
+                    public Class call( final String s, final ClassNotFoundException e ) throws ClassNotFoundException {
+                        throw e;
+                    }
+                };
+        this.useExcludedPackages.set( !this.excludedBeanPackages.isEmpty() );
     }
 
     public void setSession(String host, int port, String sessionId) {
@@ -53,8 +73,31 @@ public class SimpleBrowserHttpInvokerRequestExecutor extends SimpleHttpInvokerRe
     }
 
     @Override
-    protected RemoteInvocationResult doExecuteRequest(HttpInvokerClientConfiguration httpInvokerClientConfiguration, ByteArrayOutputStream byteArrayOutputStream) throws IOException, ClassNotFoundException {
-        return super.doExecuteRequest(httpInvokerClientConfiguration, byteArrayOutputStream);    //To change body of overridden methods use File | Settings | File Templates.
+    protected ObjectInputStream createObjectInputStream( final InputStream is, final String codebaseUrl ) throws IOException {
+        ClassLoader loader = getBeanClassLoader();
+        if ( useExcludedPackages.get() ) {
+            try {
+                loader = AccessController.doPrivileged( new PrivilegedAction<ClassLoader>() {
+                    @Override
+                    public ClassLoader run() {
+                        return new FilterClassLoader(getBeanClassLoader(), null, excludedBeanPackages, false);
+                    }
+                } );
+            } catch ( SecurityException e ) {
+                // no filtering
+                useExcludedPackages.set( false );
+            }
+        }
+        return new CodebaseAwareObjectInputStream(is, loader, codebaseUrl){
+            @Override
+            protected Class resolveFallbackIfPossible( final String className, final ClassNotFoundException ex ) throws IOException, ClassNotFoundException {
+                try {
+                    return classFinder.call( className, ex );
+                } catch ( ClassNotFoundException e ) {
+                    return super.resolveFallbackIfPossible( className, ex );
+                }
+            }
+        };
     }
 
     //- PRIVATE
@@ -63,6 +106,9 @@ public class SimpleBrowserHttpInvokerRequestExecutor extends SimpleHttpInvokerRe
 
     private Pattern hostSubstitutionPattern;
     private final SessionSupport sessionInfoHolder;
+    private final Set<String> excludedBeanPackages;
+    private final BinaryThrows<Class,String,ClassNotFoundException,ClassNotFoundException> classFinder;
+    private final AtomicBoolean useExcludedPackages = new AtomicBoolean(false);
 
      private class HttpInvokerClientConfigurationImpl implements HttpInvokerClientConfiguration {
         private final HttpInvokerClientConfiguration delegate;
