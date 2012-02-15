@@ -134,8 +134,8 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     private enum SupportedCipher {
         AES128CTR(new AES128CTR.Factory()),
         AES128CBC(new AES128CBC.Factory()),
-        TripleDESCBC(new BlowfishCBC.Factory()),
-        BlowfishCBC(new TripleDESCBC.Factory()),
+        TripleDESCBC(new TripleDESCBC.Factory()),
+        BlowfishCBC(new BlowfishCBC.Factory()),
         AES192CTR(new AES192CTR.Factory()),
         AES192CBC(new AES192CBC.Factory()),
         AES256CTR(new AES256CTR.Factory()),
