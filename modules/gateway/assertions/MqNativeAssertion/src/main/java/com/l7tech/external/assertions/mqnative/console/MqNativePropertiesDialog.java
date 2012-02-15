@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.mqnative.console;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.*;
-import static com.l7tech.console.panels.CancelableOperationDialog.doWithDelayedCancelDialog;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.CipherSuiteGuiUtil;
@@ -19,18 +18,14 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
-import static com.l7tech.gui.util.DialogDisplayer.showMessageDialog;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
-import static com.l7tech.util.ExceptionUtils.getMessage;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.none;
-import static com.l7tech.util.Option.some;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,10 +42,15 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.console.panels.CancelableOperationDialog.doWithDelayedCancelDialog;
 import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.values;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static com.l7tech.gui.util.DialogDisplayer.showMessageDialog;
+import static com.l7tech.util.ExceptionUtils.getMessage;
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.some;
 import static java.lang.String.CASE_INSENSITIVE_ORDER;
 import static java.util.Arrays.sort;
 
@@ -778,7 +778,7 @@ public class MqNativePropertiesDialog extends JDialog {
             isValid =  false;
         } else if (channelTextBox.getText().trim().length() == 0) {
             isValid =  false;
-        } else if (credentialsAreRequiredToCheckBox.isSelected() && (authUserNameTextBox.getText().trim().length() == 0 || securePasswordComboBox.getSelectedItem() == null)) {
+        } else if (credentialsAreRequiredToCheckBox.isSelected() && securePasswordComboBox.getSelectedItem() == null) {
             isValid =  false;
         } else if (outboundRadioButton.isSelected() && !isOutboundPaneValid(isTemplate)) {
             isValid =  false;
@@ -983,9 +983,7 @@ public class MqNativePropertiesDialog extends JDialog {
         boolean isCredentialsRequired = credentialsAreRequiredToCheckBox.isSelected();
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED, Boolean.toString(isCredentialsRequired));
         if (isCredentialsRequired) {
-            if(authUserNameTextBox.getText().trim().length() > 0) {
-                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_USERID, authUserNameTextBox.getText());
-            }
+            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_USERID, authUserNameTextBox.getText());
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID,
                 Long.toString(securePasswordComboBox.getSelectedSecurePassword().getOid()));
         } else {
