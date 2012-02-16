@@ -111,7 +111,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                             WSSecurityProcessorUtils.addSignatureConfirmations(message, getAudit());
                             wssDecorator.decorateMessage(message, decoration);
                         } catch ( DecoratorException de ) {
-                            logAndAudit( AssertionMessages.WSSECURITY_ERROR, assertion.getTargetName(), ExceptionUtils.getMessage( de ) );
+                            logAndAudit( AssertionMessages.WSSECURITY_ERROR, new String[] { assertion.getTargetName(), ExceptionUtils.getMessage( de ) }, ExceptionUtils.getDebugException(de) );
                             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                         }
                     }
