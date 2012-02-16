@@ -4,8 +4,6 @@ import com.ibm.mq.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.isTransactional;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
@@ -21,10 +19,7 @@ import com.l7tech.server.transport.ActiveTransportModule;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.*;
-import static com.l7tech.util.ConfigFactory.getBooleanProperty;
-import static com.l7tech.util.ConfigFactory.getTimeUnitProperty;
 import com.l7tech.util.Functions.UnaryThrows;
-import static com.l7tech.util.JdkLoggerConfigurator.debugState;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
@@ -41,21 +36,23 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECT_ERROR_SLEEP_PROPERTY;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.QUEUE_OPEN_OPTIONS_INBOUND_FAILURE_QUEUE;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.isTransactional;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_MQNATIVE_MESSAGE_INPUT;
 import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
+import static com.l7tech.util.ConfigFactory.getBooleanProperty;
+import static com.l7tech.util.ConfigFactory.getTimeUnitProperty;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.ExceptionUtils.getMessage;
+import static com.l7tech.util.JdkLoggerConfigurator.debugState;
 
 /**
  * MQ native listener module (aka boot process).
@@ -588,7 +585,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                     public Void call( final ClientBag clientBag ) throws MQException {
                         MQQueue failedQueue = null;
                         try {
-                            failedQueue = clientBag.getQueueManager().accessQueue( failedQueueName, MQC.MQOO_OUTPUT );
+                            failedQueue = clientBag.getQueueManager().accessQueue( failedQueueName, QUEUE_OPEN_OPTIONS_INBOUND_FAILURE_QUEUE );
                             final MQPutMessageOptions pmo = new MQPutMessageOptions();
                             pmo.options = MQC.MQPMO_SYNCPOINT;
                             failedQueue.put(requestMessage, pmo);

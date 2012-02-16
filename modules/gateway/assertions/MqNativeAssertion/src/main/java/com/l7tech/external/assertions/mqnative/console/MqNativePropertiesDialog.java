@@ -267,6 +267,8 @@ public class MqNativePropertiesDialog extends JDialog {
 
         outboundMessagePanel.setVisible(false);
 
+        isTemplateQueue.addActionListener(enableDisableListener);
+
         hostNameTextBox.setDocument(new MaxLengthDocument(255));
         hostNameTextBox.getDocument().addDocumentListener( enableDisableListener );
 

@@ -101,6 +101,16 @@ public class MqNativeAdminServerSupport {
                             logger.finer("... successfully got specified inbound reply queue " + replyQueue.name + "!");
                         }
 
+                        // if applicable test failure queue
+                        String failureQueueName = mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME );
+                        if (!StringUtils.isEmpty(failureQueueName)) {
+                            logger.finer("Attempting to get inbound failure queue ...");
+                            testName = "inbound failure queue - ";
+                            replyQueue = queueManager.accessQueue( failureQueueName, QUEUE_OPEN_OPTIONS_INBOUND_FAILURE_QUEUE );
+                            replyQueue.close();
+                            logger.finer("... successfully got inbound failure queue " + replyQueue.name + "!");
+                        }
+
                     // else test outbound when queue is not a template
                     } else if ( !mqNativeActiveConnector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE ) ) {
                         // test target queue
@@ -180,7 +190,7 @@ public class MqNativeAdminServerSupport {
         } else if (originalMqErrorMessage.contains("Reason 2059")) {
             return "Invalid host name or port number";
         } else if (originalMqErrorMessage.contains("Reason 2085")) {
-            return "Invalid queue name or reply queue name";
+            return "Invalid queue name or reply queue name or failure queue name";
         }  else if (originalMqErrorMessage.contains("Reason 2397")) {
             return "Invalid SSL setting";
         }
