@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -55,5 +56,6 @@ public class DelegatingServerMqNativeRoutingAssertion extends ServerRoutingAsser
     }
 
     // - PRIVATE
+    @Nullable
     private final ServerMqNativeRoutingAssertion mqNativeRoutingAssertion;
 }
