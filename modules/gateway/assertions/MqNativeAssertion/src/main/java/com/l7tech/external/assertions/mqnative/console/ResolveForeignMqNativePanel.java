@@ -96,6 +96,30 @@ public class ResolveForeignMqNativePanel extends WizardStepPanel {
         channelNameTextField.setText(foreignRef.getChannelName());
         queueNameTextField.setText(foreignRef.getQueueName());
 
+        // default is delete
+        removeRadioButton.setSelected(true);
+        queueSelectorComboBox.setEnabled(false);
+
+        // enable/disable provider selector as per action type selected
+        changeRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                queueSelectorComboBox.setEnabled(true);
+            }
+        });
+        removeRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                queueSelectorComboBox.setEnabled(false);
+            }
+        });
+        ignoreRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                queueSelectorComboBox.setEnabled(false);
+            }
+        });
+
         queueSelectorComboBox.setRenderer(new TextListCellRenderer<SsgActiveConnector>(new Functions.Unary<String, SsgActiveConnector>() {
             @Override
             public String call( final SsgActiveConnector ssgActiveConnector ) {

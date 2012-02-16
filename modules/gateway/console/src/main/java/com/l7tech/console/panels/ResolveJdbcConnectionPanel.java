@@ -93,6 +93,30 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
         jdbcUrlTextField.setText( connectionReference.getJdbcUrl() );
         jdbcUrlTextField.setCaretPosition( 0 );
 
+        // default is delete
+        removeRadioButton.setSelected(true);
+        connectionComboBox.setEnabled(false);
+
+        // enable/disable provider selector as per action type selected
+        changeRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                connectionComboBox.setEnabled(true);
+            }
+        });
+        removeRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                connectionComboBox.setEnabled(false);
+            }
+        });
+        ignoreRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                connectionComboBox.setEnabled(false);
+            }
+        });
+
         manageConnectionsButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
