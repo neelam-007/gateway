@@ -14,6 +14,9 @@ import java.io.IOException;
  * Utility methods for dealing with classes, class names and resources.
  */
 public class ClassUtils {
+
+    //- PUBLIC
+
     /**
      * Strips the package name and any enclosing class names from a fully-qualified class name.
      * For example, if passed "java.lang.String",
@@ -131,6 +134,30 @@ public class ClassUtils {
     }
 
     /**
+     * Is the given class name for an array type.
+     *
+     * <p>This currently returns false for primitive arrays.</p>
+     *
+     * @param name The class name to check.
+     * @return True if the class is an array class
+     */
+    public static boolean isArrayClassName( final String name ) {
+        // From :
+        //   http://java.sun.com/docs/books/jvms/second_edition/html/ConstantPool.doc.html#73272
+        //
+        // For an array class of M dimensions, the name begins with M occurrences
+        // of the ASCII "[" character followed by a representation of the element type:
+        //
+        // If the element type is a primitive type, it is represented by the
+        // corresponding field descriptor.
+        //
+        // Otherwise, if the element type is a reference type, it is represented by the
+        // ASCII "L" character followed by the fully qualified name of the element type
+        // followed by the ASCII ";" character.
+        return name.startsWith( ARRAY_PREFIX ) && name.endsWith( ARRAY_SUFFIX );
+    }
+
+    /**
      * List the resources contained in the path.
      *
      * <p>WARNING: This should work for JAR / file resources, but will not work
@@ -176,4 +203,9 @@ public class ClassUtils {
             }
         };
     }
+
+    //- PRIVATE
+
+    private static final String ARRAY_PREFIX = "[";
+    private static final String ARRAY_SUFFIX = ";";
 }
