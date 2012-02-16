@@ -190,7 +190,7 @@ public class MqNativeAdminServerSupport {
         } else if (originalMqErrorMessage.contains("Reason 2059")) {
             return "Invalid host name or port number";
         } else if (originalMqErrorMessage.contains("Reason 2085")) {
-            return "Invalid queue name or reply queue name or failure queue name";
+            return "Invalid queue name, reply queue name, or failure queue name";
         }  else if (originalMqErrorMessage.contains("Reason 2397")) {
             return "Invalid SSL setting";
         }
