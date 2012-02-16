@@ -1086,9 +1086,7 @@ public class MqNativePropertiesDialog extends JDialog {
                 }
             } else {
                 connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE_FROM_PROPERTY);
-
-                // If the content type is not specified, it will be set as the default type, "text/xml".
-                connector.setProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, ContentTypeHeader.XML_DEFAULT.getFullValue());
+                connector.removeProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE);
             }
 
             connector.setProperty(PROPERTIES_KEY_REQUEST_SIZE_LIMIT, byteLimitPanel.getValue());

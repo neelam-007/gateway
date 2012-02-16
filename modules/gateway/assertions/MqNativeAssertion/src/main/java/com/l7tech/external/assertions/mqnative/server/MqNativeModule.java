@@ -315,7 +315,12 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         boolean responseSuccess = false;
         try {
             // get the content type
-            ctype = ContentTypeHeader.parseValue( connector.getProperty( PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE ) );
+            String contentTypeValue = connector.getProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE);
+            // If the content type is not specified, it will be set as the default type, "text/xml".
+            if (contentTypeValue == null || contentTypeValue.trim().length() == 0) {
+                contentTypeValue = ContentTypeHeader.XML_DEFAULT.getFullValue();
+            }
+            ctype = ContentTypeHeader.parseValue(contentTypeValue);
 
             // parse the request message
             parsedRequest = MqNativeUtils.parseHeader(requestMessage); // TODO (TL) need help changing; this is reading the whole message into memory
