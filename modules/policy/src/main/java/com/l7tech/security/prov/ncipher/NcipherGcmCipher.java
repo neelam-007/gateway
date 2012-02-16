@@ -23,7 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A GcmCipher implementation coded against the low-level nCore API.
+ * A GcmCipher implementation coded against the low-level nCore API.  Not threadsafe.
  */
 class NcipherGcmCipher implements GcmCipher, Closeable {
     private static final Logger logger = Logger.getLogger(NcipherGcmCipher.class.getName());
@@ -109,11 +109,8 @@ class NcipherGcmCipher implements GcmCipher, Closeable {
     }
 
     private EasyConnection connection() throws InvalidAlgorithmParameterException {
-        if (conn != null)
-            return conn;
-
         try {
-            return conn = EasyConnection.connect();
+            return conn != null ? conn : (conn = NcipherConnectionPool.getConnection());
         } catch (ConnectionFailed e) {
             throw new InvalidAlgorithmParameterException("nCipher GCM is currently unavailable: " + ExceptionUtils.getMessage(e), e);
         } catch (ClientException e) {
@@ -133,7 +130,9 @@ class NcipherGcmCipher implements GcmCipher, Closeable {
                 keyIdNeedsToBeDestroyed = false;
             }
 
+            EasyConnection c = conn;
             conn = null;
+            NcipherConnectionPool.returnConnection(c);
         }
         key = null;
     }
@@ -151,6 +150,7 @@ class NcipherGcmCipher implements GcmCipher, Closeable {
     }
 
     // If this method returns normally, this.keyId is a valid key identifier of an nCore session symmetric key
+    // As a side-effect, the local field "conn" will have been populated if necessary
     private void prepareKey(Key key) throws InvalidKeyException, InvalidAlgorithmParameterException {
         if (key instanceof nCKey) {
             this.keyIdNeedsToBeDestroyed = false;
