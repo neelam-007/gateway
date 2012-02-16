@@ -20,6 +20,8 @@ import java.io.IOException;
  */
 public class DelegatingServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNativeRoutingAssertion> {
 
+    // - PUBLIC
+
     public DelegatingServerMqNativeRoutingAssertion(final MqNativeRoutingAssertion data,
                                                     final ApplicationContext applicationContext) {
         super(data, applicationContext);
@@ -38,9 +40,10 @@ public class DelegatingServerMqNativeRoutingAssertion extends ServerRoutingAsser
     }
 
     @Override
-    protected void injectDependencies() {
+    public void close() {
+        super.close();
         if (mqNativeRoutingAssertion != null) {
-            inject(mqNativeRoutingAssertion);
+            mqNativeRoutingAssertion.close();
         }
     }
 
@@ -53,6 +56,14 @@ public class DelegatingServerMqNativeRoutingAssertion extends ServerRoutingAsser
 
         logAndAudit(AssertionMessages.MQ_ROUTING_CONFIGURATION_ERROR, "MQ Native jars are not installed on the Gateway");
         return AssertionStatus.SERVER_ERROR;
+    }
+
+    // - PROTECTED
+    @Override
+    protected void injectDependencies() {
+        if (mqNativeRoutingAssertion != null) {
+            inject(mqNativeRoutingAssertion);
+        }
     }
 
     // - PRIVATE
