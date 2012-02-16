@@ -76,7 +76,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         providerNameTextField.addKeyListener(keyListener);
 
         ldapSearchBaseTextField.addKeyListener(keyListener);
-        PasswordGuiUtils.configureOptionalSecurePasswordField(this, ldapBindPasswordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
+        PasswordGuiUtils.configureOptionalSecurePasswordField(ldapBindPasswordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
         providerTypesCombo.setEnabled(providerTypeSelectable);
         LdapIdentityProviderConfig[] templates;

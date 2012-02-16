@@ -39,7 +39,7 @@ public class WssDigestAssertionPropertiesDialog extends AssertionPropertiesOkCan
 
     @Override
     protected JPanel createPropertyPanel() {
-        PasswordGuiUtils.configureOptionalSecurePasswordField(this, passwordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
+        PasswordGuiUtils.configureOptionalSecurePasswordField(passwordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
         return contentPane;
     }
 }

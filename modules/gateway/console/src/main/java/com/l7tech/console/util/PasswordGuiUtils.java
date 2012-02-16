@@ -1,8 +1,9 @@
 package com.l7tech.console.util;
 
-import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -24,12 +25,13 @@ public class PasswordGuiUtils {
      * Configure GUI controls for a field that can contain either a literal password or a ${secpass} reference but where
      * the secpass reference is strongly preferred.
      *
-     * @param container: the component containing the passwordField.  It could be a Window or a WizardStepPanel.
      * @param passwordField the password field to configure.  Required.
      * @param showPasswordCheckBox a "Show Password" checkbox to wire up to remove the masking character from the password field, or null.
      * @param plaintextPasswordWarningLabel a label in which to show a warning when a non-empty plaintext password is present, or null.
      */
-    public static void configureOptionalSecurePasswordField(final Container container, final JPasswordField passwordField, final JCheckBox showPasswordCheckBox, final JLabel plaintextPasswordWarningLabel) {
+    public static void configureOptionalSecurePasswordField( @NotNull  final JPasswordField passwordField,
+                                                             @Nullable final JCheckBox showPasswordCheckBox,
+                                                             @Nullable final JLabel plaintextPasswordWarningLabel ) {
         if (showPasswordCheckBox != null) {
             Utilities.configureShowPasswordButton(showPasswordCheckBox, passwordField);
         }
@@ -55,12 +57,22 @@ public class PasswordGuiUtils {
                     plaintextPasswordWarningLabel.setText(msg);
                     plaintextPasswordWarningLabel.setToolTipText(tooltip);
 
-                    // Resize the dialog if the actual dimension of the dialog becomes bigger, after the password warning displays.
-                    if (container instanceof Window) {
-                        ((Window)container).pack();
-                    } else if (container instanceof WizardStepPanel) {
-                        Window owner = ((WizardStepPanel)container).getOwner();
-                        if (owner != null) owner.pack();
+                    final RootPaneContainer rootContainer = Utilities.getRootPaneContainerAncestor( plaintextPasswordWarningLabel );
+                    final Dimension minimumSize = rootContainer==null ? null : rootContainer.getRootPane().getMinimumSize();
+                    if ( rootContainer!=null && (
+                            rootContainer.getRootPane().getSize().width < minimumSize.width ||
+                            rootContainer.getRootPane().getSize().height < minimumSize.height ) ) {
+                        // Resize the container if necessary, after the password warning displays.
+                        if ( rootContainer instanceof Window ) {
+                            ((Window)rootContainer).pack();
+                        } else if ( rootContainer instanceof JInternalFrame ) {
+                            ((JInternalFrame)rootContainer).setPreferredSize( null );
+                            ((JInternalFrame)rootContainer).pack();
+                        }
+                    } else if ( rootContainer!=null && plaintextPasswordWarningLabel.getText().isEmpty() ) {
+                        // Validate to ensure any space that was used for the
+                        // warning label is reallocated
+                        rootContainer.getContentPane().validate();
                     }
                 }
             }));

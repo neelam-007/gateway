@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import static com.l7tech.console.panels.CancelableOperationDialog.doWithDelayedCancelDialog;
 import static com.l7tech.gui.util.DialogDisplayer.showMessageDialog;
-import static com.l7tech.gui.util.Utilities.setMinimumSize;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MutablePair;
 import com.l7tech.console.util.PasswordGuiUtils;
@@ -25,7 +24,6 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -168,7 +166,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
             }
         });
 
-        PasswordGuiUtils.configureOptionalSecurePasswordField(this, passwordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
+        PasswordGuiUtils.configureOptionalSecurePasswordField(passwordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
         modelToView();
         enableOrDisableButtons();
