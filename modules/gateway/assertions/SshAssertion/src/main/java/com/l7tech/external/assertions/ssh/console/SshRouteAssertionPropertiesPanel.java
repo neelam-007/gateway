@@ -116,11 +116,17 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
                 SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(TopComponents.getInstance().getTopParent());
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
+                // save selection
+                final long selectedPasswordOid = passwordField.getSelectedSecurePassword().getOid();
+                final long selectedPrivateKeyOid = privateKeyField.getSelectedSecurePassword().getOid();
                 DialogDisplayer.display(dialog, new Runnable() {
                     @Override
                     public void run() {
                         passwordField.reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
                         privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+                        // load selection
+                        passwordField.setSelectedSecurePassword(selectedPasswordOid);
+                        privateKeyField.setSelectedSecurePassword(selectedPrivateKeyOid);
                         pack();
                     }
                 });
