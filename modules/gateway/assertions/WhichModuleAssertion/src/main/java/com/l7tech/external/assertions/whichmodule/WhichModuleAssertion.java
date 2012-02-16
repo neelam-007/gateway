@@ -88,8 +88,8 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
             public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
                 ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<DemoExtensionInterface>(DemoExtensionInterface.class, null, new DemoExtensionInterface() {
                     @Override
-                    public DemoReturnVal demoHello(DemoArgument arg) {
-                        return new DemoReturnVal("Hello from Gateway anon inner class!  You sent: " + arg.s);
+                    public DemoReturnVal[] demoHello(DemoArgument[] args) {
+                        return new DemoReturnVal[] { new DemoReturnVal("Hello from Gateway anon inner class!  You sent: " + args[0].s) };
                     }
                 });
                 return Collections.singletonList(binding);
@@ -108,8 +108,8 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         @Override
         public void actionPerformed(ActionEvent e) {
             final DemoExtensionInterface demoInterface = Registry.getDefault().getExtensionInterface(DemoExtensionInterface.class, null);
-            DemoExtensionInterface.DemoReturnVal response = demoInterface.demoHello(new DemoExtensionInterface.DemoArgument("Info from SSM packed inside DemoArgument"));
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Which Module Assertion .AAR File", "Response from Gateway from DemoReturnVal: " + response.v, null);
+            DemoExtensionInterface.DemoReturnVal[] response = demoInterface.demoHello(new DemoExtensionInterface.DemoArgument[] { new DemoExtensionInterface.DemoArgument("Info from SSM packed inside DemoArgument") });
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Which Module Assertion .AAR File", "Response from Gateway from DemoReturnVal: " + response[0].v, null);
         }
     }
 
@@ -124,7 +124,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         // Demonstrate passing arguments and return values that are themselves classes loaded from the .aar
         // Naturally, passing serializable JDK classes works as well, as does passing classes shared between the core gateway and SSM (as long as they are serializable)
         @Secured(stereotype=DELETE_MULTI, types=SSG_KEY_ENTRY)
-        public DemoReturnVal demoHello(DemoArgument arg);
+        public DemoReturnVal[] demoHello(DemoArgument[] args);
 
         public static class DemoArgument implements Serializable {
             public final String s;
