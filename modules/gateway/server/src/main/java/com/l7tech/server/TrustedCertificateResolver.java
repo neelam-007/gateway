@@ -14,13 +14,13 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Background;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SoapConstants;
 import com.whirlycott.cache.Cache;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 /**
  * Looks up any certificate known to the SSG by a variety of search criteria.
  */
-public class TrustedCertificateResolver implements SecurityTokenResolver, ApplicationListener {
+public class TrustedCertificateResolver implements SecurityTokenResolver, PostStartupApplicationListener {
     private static final Logger logger = Logger.getLogger(TrustedCertificateResolver.class.getName());
     private final TrustedCertManager trustedCertManager;
 

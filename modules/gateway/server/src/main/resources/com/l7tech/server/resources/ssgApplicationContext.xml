@@ -2344,6 +2344,8 @@
 
     <bean id="ldapTemplateManager" class="com.l7tech.server.identity.ldap.LdapConfigTemplateManager"/>
 
+    <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration"/>
+
     <!-- export beans to JMX -->
     <context:mbean-export/>
 

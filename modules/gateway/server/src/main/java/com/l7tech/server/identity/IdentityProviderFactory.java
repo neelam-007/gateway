@@ -1,17 +1,13 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.identity;
 
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
 
 import java.util.*;
@@ -24,7 +20,7 @@ import java.util.logging.Logger;
  *
  * @author alex
  */
-public class IdentityProviderFactory implements ApplicationContextAware, ApplicationListener {
+public class IdentityProviderFactory implements ApplicationContextAware, PostStartupApplicationListener {
 
     // - PUBLIC
 

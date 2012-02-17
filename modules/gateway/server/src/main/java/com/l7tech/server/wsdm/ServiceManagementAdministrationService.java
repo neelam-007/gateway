@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.ServiceEnablementEvent;
 import com.l7tech.server.service.ServiceCache;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.server.wsdm.faults.FaultMappableException;
 import com.l7tech.server.wsdm.faults.ResourceUnknownFault;
 import com.l7tech.server.wsdm.method.*;
@@ -16,7 +17,6 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.message.Message;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -38,7 +38,7 @@ import java.io.IOException;
  * User: flascell<br/>
  * Date: Nov 2, 2007<br/>
  */
-public class ServiceManagementAdministrationService implements ApplicationListener {
+public class ServiceManagementAdministrationService implements PostStartupApplicationListener {
     private static final Logger logger = Logger.getLogger(ServiceManagementAdministrationService.class.getName());
 
     @Inject

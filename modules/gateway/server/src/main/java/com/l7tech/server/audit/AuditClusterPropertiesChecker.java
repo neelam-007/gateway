@@ -5,12 +5,12 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.SystemEvent;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Config;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -27,7 +27,7 @@ import org.springframework.core.Ordered;
  *
  * @author ghuang
  */
-public class AuditClusterPropertiesChecker implements ApplicationContextAware, ApplicationListener, Ordered {
+public class AuditClusterPropertiesChecker implements ApplicationContextAware, PostStartupApplicationListener, Ordered {
     public static final String CLUSTER_PROP_ADMIN_AUDIT_THRESHOLD = "audit.adminThreshold";
     public static final String INTERNAL_AUDIT_SYSTEM = "Internal Audit System";
     public static final String AUDIT_SINK_POLICY = "Audit Sink Policy";

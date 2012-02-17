@@ -6,11 +6,11 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.transport.SsgConnectorActivationListener;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.FileUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  * <p>If there is no listener with the PC feature enabled then an empty file is written
  * so that the PC is aware that the port is disabled (as opposed to just not working).</p>
  */
-public final class PcApiConnectorActivationListener implements SsgConnectorActivationListener, ApplicationListener, InitializingBean {
+public final class PcApiConnectorActivationListener implements SsgConnectorActivationListener, PostStartupApplicationListener, InitializingBean {
 
     //- PUBLIC
 

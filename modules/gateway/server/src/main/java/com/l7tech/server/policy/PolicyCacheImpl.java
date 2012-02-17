@@ -21,6 +21,7 @@ import com.l7tech.server.folder.FolderCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.Pair;
@@ -72,7 +73,7 @@ import static com.l7tech.util.ArrayUtils.zipI;
  * @see PolicyCacheEvent
  */
 @ManagedResource(description="Policy Cache", objectName="l7tech:type=PolicyCache")
-public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, ApplicationListener {
+public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, PostStartupApplicationListener {
 
     //- PUBLIC
 

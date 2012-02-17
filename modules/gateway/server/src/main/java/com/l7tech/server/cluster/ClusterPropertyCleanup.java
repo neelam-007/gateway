@@ -3,7 +3,7 @@ package com.l7tech.server.cluster;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.ObjectModelException;
-import org.springframework.context.ApplicationListener;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
@@ -23,7 +23,7 @@ import java.util.logging.Level;
  * <p>This is intended to perform removal of properties that are no longer
  * required.</p>
  */
-public class ClusterPropertyCleanup implements ApplicationListener {
+public class ClusterPropertyCleanup implements PostStartupApplicationListener {
 
     //- PUBLIC
 

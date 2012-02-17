@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.util;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -30,6 +27,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -48,7 +46,7 @@ import java.sql.Statement;
  * <p/>
  * Currently this just checks for flagged database upgrade tasks in the cluster properties table.
  */
-public class GatewaySanityChecker extends ApplicationObjectSupport implements InitializingBean, ApplicationListener {
+public class GatewaySanityChecker extends ApplicationObjectSupport implements InitializingBean {
     private static final Logger logger = Logger.getLogger(GatewaySanityChecker.class.getName());
     private static final String CPROP_PREFIX_UPGRADE = "upgrade.task.";
 
@@ -105,8 +103,15 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
     public void afterPropertiesSet() throws Exception {
         this.auditor = new Auditor(this, getApplicationContext(), logger);
 
-
         ApplicationContext appCtx = getApplicationContext();
+        ApplicationEventMulticaster eventMulticaster = appCtx.getBean( "applicationEventMulticaster", ApplicationEventMulticaster.class );
+        eventMulticaster.addApplicationListener( new ApplicationListener(){
+            @Override
+            public void onApplicationEvent(ApplicationEvent event) {
+                GatewaySanityChecker.this.onApplicationEvent( event );
+            }
+        } );
+
         //Check if the DB is the right version. This will only work for newer (5.0+) gateways, but it's at least a good start.
         SessionFactory sf = ((SessionFactory)appCtx.getBean("sessionFactory"));
 
@@ -266,6 +271,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
         }
 
         runTask(task, property);
+        logger.info( "Completed upgrade task: " + taskName );
     }
 
     /**
@@ -291,7 +297,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                     try {
                         // If triggered by a cluster property, remove it so noone else repeats the work
                         if (propToDelete != null)
-                            clusterPropertyManager.delete(propToDelete);
+                            clusterPropertyManager.delete( propToDelete );
 
                         // Do the actual work
                         task.upgrade(getApplicationContext());
@@ -355,8 +361,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
         return (UpgradeTask)c.newInstance();
     }
 
-    @Override
-    public void onApplicationEvent(ApplicationEvent applicationEvent) {
+    private void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof SystemEvent) {
             SystemEvent event = (SystemEvent) applicationEvent;
 

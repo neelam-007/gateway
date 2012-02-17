@@ -15,6 +15,7 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
@@ -22,7 +23,6 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -45,7 +45,7 @@ import java.util.logging.Logger;
  * Cache for HTTP Configuration data
  */
 @ManagedResource(description="HTTP Configuration Cache", objectName="l7tech:type=HttpConfigurationCache")
-public class HttpConfigurationCache implements ApplicationListener, InitializingBean, PropertyChangeListener {
+public class HttpConfigurationCache implements PostStartupApplicationListener, InitializingBean, PropertyChangeListener {
 
     //- PUBLIC
 

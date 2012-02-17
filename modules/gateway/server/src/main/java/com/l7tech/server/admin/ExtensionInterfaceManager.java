@@ -2,6 +2,7 @@ package com.l7tech.server.admin;
 
 import com.l7tech.policy.assertion.ExtensionInterfaceBinding;
 import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Option;
@@ -12,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.PointcutAdvisor;
 import org.springframework.aop.framework.ReflectiveMethodInvocation;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
@@ -28,7 +28,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * Allows registration and use of admin interfaces added at runtime.
  */
-public class ExtensionInterfaceManager implements ApplicationListener {
+public class ExtensionInterfaceManager implements PostStartupApplicationListener {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Map<String, Reference<Class>> classesByName = new HashMap<String, Reference<Class>>();
     private final Map<InterfaceKey, InterfaceImpl> implsByInterfaceClassAndId = new HashMap<InterfaceKey, InterfaceImpl>();

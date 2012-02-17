@@ -15,10 +15,10 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.xml.sax.EntityResolver;
 
 import java.io.IOException;
@@ -32,7 +32,7 @@ import java.util.logging.Logger;
  *
  * <p>This source does not support resolution by target namespace.</p>
  */
-public class HttpSchemaSourceResolver implements ApplicationListener, SchemaSourceResolver {
+public class HttpSchemaSourceResolver implements PostStartupApplicationListener, SchemaSourceResolver {
 
     //- PUBLIC
 

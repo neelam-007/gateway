@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.*;
@@ -11,9 +8,9 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -22,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /** @author alex */
-public class RbacServicesImpl implements RbacServices, InitializingBean, ApplicationListener {
+public class RbacServicesImpl implements RbacServices, InitializingBean, PostStartupApplicationListener {
     private static final Logger logger = Logger.getLogger(RbacServicesImpl.class.getName());
               
     private final Map<Class<? extends ScopePredicate>, ScopeEvaluatorFactory> scopeEvaluatorFactories = new HashMap<Class<? extends ScopePredicate>, ScopeEvaluatorFactory>() {{

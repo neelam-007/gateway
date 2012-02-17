@@ -29,6 +29,7 @@ import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.security.rbac.RoleManagerIdentitySourceSupport;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Background;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
@@ -39,7 +40,6 @@ import com.l7tech.util.ValidatedConfig;
 import com.l7tech.util.Functions;
 import org.apache.commons.collections.map.LRUMap;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
 import javax.security.auth.login.LoginException;
 import java.beans.PropertyChangeEvent;
@@ -57,7 +57,7 @@ import java.util.logging.Logger;
  * resume an admin session as that user; thus, the cookies must be sent over SSL, never written to disk by
  * either client or server, and not kept longer than necessary.</p>
  */
-public class AdminSessionManager extends RoleManagerIdentitySourceSupport implements ApplicationListener, PropertyChangeListener {
+public class AdminSessionManager extends RoleManagerIdentitySourceSupport implements PostStartupApplicationListener, PropertyChangeListener {
 
     //- PUBLIC
 

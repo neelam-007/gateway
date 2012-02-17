@@ -11,11 +11,11 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
 import java.io.IOException;
 import java.util.Queue;
@@ -32,7 +32,7 @@ import java.util.logging.Logger;
  * when the policy cache is opened.  Non-system records will trigger an exception since it is not expected
  * that admin or message audit records can be generated before the policy cache has started.
  */
-public class AuditPolicyEvaluator implements ApplicationListener {
+public class AuditPolicyEvaluator implements PostStartupApplicationListener {
     private static final Logger logger = Logger.getLogger(AuditPolicyEvaluator.class.getName());
 
     private final Config config;

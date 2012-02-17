@@ -18,6 +18,7 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.SystemEvent;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Config;
 import com.l7tech.util.HexUtils;
@@ -25,7 +26,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.core.Ordered;
 
 import java.beans.PropertyChangeEvent;
@@ -42,7 +42,7 @@ import java.util.logging.Logger;
  * User: dlee
  * Date: Jun 18, 2008
  */
-public class PasswordEnforcerManager implements PropertyChangeListener, ApplicationContextAware, ApplicationListener, Ordered {
+public class PasswordEnforcerManager implements PropertyChangeListener, ApplicationContextAware, PostStartupApplicationListener, Ordered {
 
     private static final Logger logger = Logger.getLogger(PasswordEnforcerManager.class.getName());
 

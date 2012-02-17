@@ -4,6 +4,8 @@ import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.server.util.PostStartupApplicationListener;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.BeanUtils;
 import static com.l7tech.util.CollectionUtils.set;
 import com.l7tech.util.Functions;
@@ -19,6 +21,7 @@ import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.config.TypedStringValue;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
+import org.springframework.context.ApplicationListener;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
@@ -59,6 +62,7 @@ public class ApplicationContextTest  {
         EntityType.ESM_NOTIFICATION_RULE,
         EntityType.ESM_LOG,
         EntityType.VALUE_REFERENCE);
+    private static final Set<String> IGNORED_APPLICATION_LISTENER_BEANS = set( "adminAuditListener", "applicationEventProxy", "cryptoInit", "gatewayState", "keystoreMutatorSwitch", "messageProcessingAuditListener", "systemAuditListener" );
 
     /**
      * Loading the definitions in this way will check the syntax and that all the
@@ -420,6 +424,48 @@ public class ApplicationContextTest  {
             }
         }
 
+    }
+
+    /**
+     * Test that beans use the PostStartupApplicationListener interface instead of ApplicationListener.
+     *
+     * Directly implementing ApplicationListener can lead to a bean being initialized too
+     * early in the startup process. When an event is fired the application context is
+     * inspected and any ApplicationListeners must be created in order to handle the
+     * event. Using PostStartupApplicationListener works around this problem, as the
+     * beans are located by the StartupListenerRegistration bean and registered as
+     * ApplicationListeners only when the ApplicationContext (implementation) is started.
+     */
+    @Test
+    public void testPostStartupApplicationListenerUsage() throws Exception {
+        final DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
+        final XmlBeanDefinitionReader xbdr = new XmlBeanDefinitionReader(dlbf);
+
+        for ( final String context : CONTEXTS ) {
+            xbdr.loadBeanDefinitions(new ClassPathResource(context));
+        }
+
+        final Collection<String> beans = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        int postStartupListenerCount = 0;
+        for ( final String beanId : dlbf.getBeanDefinitionNames() ) {
+            if ( !IGNORED_APPLICATION_LISTENER_BEANS.contains(beanId) ) {
+                final BeanDefinition beanDef = dlbf.getBeanDefinition( beanId );
+                if ( beanDef.getBeanClassName()==null ) continue;
+                final Class<?> beanClass = Class.forName(beanDef.getBeanClassName());
+
+                if ( ArrayUtils.contains( beanClass.getInterfaces(), ApplicationListener.class ) ) {
+                    beans.add( beanId );
+                } else if ( ArrayUtils.contains( beanClass.getInterfaces(), PostStartupApplicationListener.class ) ) {
+                    postStartupListenerCount++;
+                }
+            }
+        }
+
+        if ( !beans.isEmpty() )
+            Assert.fail( "Beans "+beans+" implement ApplicationListener, consider switching to PostStartupApplicationListener (or add to IGNORED_APPLICATION_LISTENER_BEANS whitelist)" );
+
+        // Sanity check to ensure test is still working
+        if (postStartupListenerCount==0) Assert.fail("Failed to find any listeners.");
     }
 
     @SuppressWarnings({"unchecked"})

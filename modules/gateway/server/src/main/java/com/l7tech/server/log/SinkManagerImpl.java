@@ -31,6 +31,7 @@ import static com.l7tech.util.Functions.grepFirst;
 import static com.l7tech.util.Functions.map;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.optional;
+import static java.util.Collections.singletonList;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -217,11 +218,15 @@ public class SinkManagerImpl
 
     @Override
     public void createRoles(SinkConfiguration entity) throws SaveException {
+        for ( final Role role : createRolesForSink( entity ) ) {
+            logger.info("Creating new Role: " + role.getName());
+            roleManager.save(role);
+        }
+    }
 
+    public static Collection<Role> createRolesForSink( final SinkConfiguration entity ) {
         String nameForRole = TextUtils.truncStringMiddle( entity.getName(), 50 );
         String name = MessageFormat.format(ROLE_READ_NAME_PATTERN, nameForRole, entity.getOid());
-
-        logger.info("Creating new Role: " + name);
 
         Role role = new Role();
         role.setName(name);
@@ -236,7 +241,7 @@ public class SinkManagerImpl
         role.setEntityOid(entity.getOidAsLong());
         role.setDescription("Users assigned to the {0} role have the ability to read the log sink and any associated log files.");
 
-        roleManager.save(role);
+        return singletonList(role);
     }
 
     @Override

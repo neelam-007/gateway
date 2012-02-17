@@ -15,6 +15,7 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
@@ -22,7 +23,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import sun.security.provider.certpath.AdjacencyList;
 import sun.security.provider.certpath.BuildStep;
 import sun.security.provider.certpath.SunCertPathBuilderException;
@@ -47,7 +47,7 @@ import java.util.logging.Logger;
  *
  * @author alex
  */
-public class CertValidationProcessorImpl implements CertValidationProcessor, ApplicationListener, PropertyChangeListener, InitializingBean {
+public class CertValidationProcessorImpl implements CertValidationProcessor, PostStartupApplicationListener, PropertyChangeListener, InitializingBean {
     private static final Logger logger = Logger.getLogger(CertValidationProcessorImpl.class.getName());
 
     private static final boolean USE_EXCEPTION_DECODER = ConfigFactory.getBooleanProperty( "com.l7tech.server.security.cert.useExceptionDecoder", true );

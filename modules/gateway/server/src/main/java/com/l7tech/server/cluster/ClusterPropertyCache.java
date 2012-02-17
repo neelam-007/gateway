@@ -5,8 +5,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.l7tech.server.util.PostStartupApplicationListener;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.jmx.export.annotation.ManagedResource;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
@@ -22,7 +22,7 @@ import com.l7tech.gateway.common.cluster.ImmutableClusterProperty;
  * @author Steve Jones
  */
 @ManagedResource(description="Cluster Property Cache", objectName="l7tech:type=ClusterPropertyCache")
-public class ClusterPropertyCache implements ApplicationListener {
+public class ClusterPropertyCache implements PostStartupApplicationListener {
 
     //- PUBLIC
 

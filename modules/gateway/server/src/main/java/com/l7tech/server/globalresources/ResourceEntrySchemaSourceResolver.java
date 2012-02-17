@@ -7,11 +7,11 @@ import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.communityschemas.SchemaSourceResolver;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.xml.sax.InputSource;
 import org.xml.sax.ext.EntityResolver2;
 
@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Schema source for global resources.
  */
-public class ResourceEntrySchemaSourceResolver implements ApplicationListener, EntityResolver2, SchemaSourceResolver {
+public class ResourceEntrySchemaSourceResolver implements PostStartupApplicationListener, EntityResolver2, SchemaSourceResolver {
 
     //- PUBLIC
 

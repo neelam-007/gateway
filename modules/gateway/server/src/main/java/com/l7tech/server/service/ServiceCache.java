@@ -27,6 +27,7 @@ import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.server.service.resolution.ServiceResolutionManager;
 import com.l7tech.server.service.resolution.UriResolver;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
@@ -35,7 +36,6 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
@@ -67,7 +67,7 @@ import java.util.logging.Logger;
  */
 public class ServiceCache
         extends ApplicationObjectSupport
-        implements InitializingBean, DisposableBean, ApplicationListener, ServiceCacheResolver
+        implements InitializingBean, DisposableBean, PostStartupApplicationListener, ServiceCacheResolver
 {
     private static final Logger logger = Logger.getLogger(ServiceCache.class.getName());
 

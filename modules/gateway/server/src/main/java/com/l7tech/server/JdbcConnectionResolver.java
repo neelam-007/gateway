@@ -1,7 +1,7 @@
 package com.l7tech.server;
 
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ExceptionUtils;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 /**
  * @author ghuang
  */
-public class JdbcConnectionResolver implements ApplicationListener {
+public class JdbcConnectionResolver implements PostStartupApplicationListener {
     private static final Logger logger = Logger.getLogger(JdbcConnectionResolver.class.getName());
 
     private JdbcConnectionManager jdbcConnectionManager;

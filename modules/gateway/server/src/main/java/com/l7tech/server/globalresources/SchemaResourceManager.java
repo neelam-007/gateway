@@ -10,13 +10,13 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.communityschemas.SchemaHandle;
 import com.l7tech.server.communityschemas.SchemaManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.Triple;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -43,7 +43,7 @@ import java.util.logging.Logger;
 /**
  * Provides the glue between the ResourceEntryManager and SchemaManager.
  */
-public class SchemaResourceManager implements ApplicationListener, InitializingBean, PropertyChangeListener {
+public class SchemaResourceManager implements PostStartupApplicationListener, InitializingBean, PropertyChangeListener {
 
     //- PUBLIC
 

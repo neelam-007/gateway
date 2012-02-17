@@ -7,13 +7,13 @@ import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.LoggingAudit;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.*;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.TarariSchemaHandler;
 import com.l7tech.xml.tarari.TarariSchemaSource;
 import static com.l7tech.server.communityschemas.SchemaSourceResolver.*;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -57,7 +57,7 @@ import java.util.regex.Pattern;
  * relies on their prompt closure.
  */
 @ManagedResource(description="XML Schema Manager", objectName="l7tech:type=XMLSchemaManager")
-public class SchemaManagerImpl implements ApplicationListener, SchemaManager, SchemaSourceResolver.SchemaInvalidationListener {
+public class SchemaManagerImpl implements PostStartupApplicationListener, SchemaManager, SchemaSourceResolver.SchemaInvalidationListener {
     private static final Logger logger = Logger.getLogger(SchemaManagerImpl.class.getName());
 
     private static final long minCleanupPeriod = ConfigFactory.getLongProperty( "com.l7tech.server.schema.minCleanupPeriod", 5000L );

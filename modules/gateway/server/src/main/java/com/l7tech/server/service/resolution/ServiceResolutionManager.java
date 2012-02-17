@@ -11,12 +11,12 @@ import com.l7tech.message.SoapKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.transport.ResolutionConfigurationManager;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  *
  * <p>Prior to 5.3 this functionality was part of the ServiceCache.</p>
  */
-public class ServiceResolutionManager implements ApplicationListener, InitializingBean {
+public class ServiceResolutionManager implements PostStartupApplicationListener, InitializingBean {
 
     //- PUBLIC
 
