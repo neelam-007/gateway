@@ -5,14 +5,14 @@ import java.net.MalformedURLException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.l7tech.policy.wsp.ClassLoaderUtil;
+import static com.l7tech.util.ClassUtils.isArrayClassName;
 
 /**
  * RMIClassLoaderSpi that is backed by a CustomAssertionClassLoader.
  *
  * <p>This class also initializes the SSM classloaders.</p>
  *
- * @author Steve Jones, $Author$
- * @version $Revision$
+ * @author Steve Jones
  * @see ClassLoaderUtil#setClassloader
  */
 public class CustomAssertionRMIClassLoaderSpi extends RMIClassLoaderSpi {
@@ -33,6 +33,9 @@ public class CustomAssertionRMIClassLoaderSpi extends RMIClassLoaderSpi {
     }
 
     public Class<?> loadClass(String codebase, String name, ClassLoader defaultLoader) throws MalformedURLException, ClassNotFoundException {
+        if ( isArrayClassName( name ) ) {
+            return Class.forName( name, true, classLoader.get() );
+        }
         return classLoader.get().loadClass(name);
     }
 

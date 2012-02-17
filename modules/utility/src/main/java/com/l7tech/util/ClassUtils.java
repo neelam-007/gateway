@@ -158,6 +158,26 @@ public class ClassUtils {
     }
 
     /**
+     * Get the array element class name.
+     *
+     * @param name The class name
+     * @return The given name or the element name for an array class.
+     */
+    public static String getArrayElementClassName( final String name ) {
+        String arrayClass = name;
+
+        final int index = name.indexOf( 'L' );
+        if ( isArrayClassName(name) &&
+                index > 0 &&
+                index < 10 && // limits array dimensions
+                index < name.length() -1 ) {
+            arrayClass = name.substring( index+1, name.length() -1 );
+        }
+
+        return arrayClass;
+    }
+
+    /**
      * List the resources contained in the path.
      *
      * <p>WARNING: This should work for JAR / file resources, but will not work

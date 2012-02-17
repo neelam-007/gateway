@@ -1,7 +1,6 @@
 package com.l7tech.console.util;
 
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import static com.l7tech.util.ClassUtils.isArrayClassName;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
@@ -118,10 +117,6 @@ public class CustomAssertionClassLoader extends ClassLoader {
      */
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        if ( isArrayClassName( name ) ) {
-            return Class.forName( name, true, this );
-        }
-
         String path = name.replace('.','/') + ".class";
         byte[] classBytes = findResourceBytes(path);
         if (classBytes == null || classBytes.length < 1)

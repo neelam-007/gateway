@@ -1,6 +1,8 @@
 package com.l7tech.console.policy;
 
 import com.l7tech.policy.assertion.Assertion;
+import static com.l7tech.util.ClassUtils.getArrayElementClassName;
+import static com.l7tech.util.ClassUtils.isArrayClassName;
 import com.l7tech.util.Functions.BinaryThrows;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.optional;
@@ -29,11 +31,22 @@ public class ConsoleModularAssertionClassFinder implements BinaryThrows<Class,St
         if (logger.isLoggable( Level.FINE )) {
             logger.log( Level.FINE, "Loading class: " + className );
         }
-        final Option<String> moduleName = optional( registry.getModuleNameMatchingPackage( className ) );
+
+        final boolean isArrayClass = isArrayClassName( className );
+        String cleanClassName = className;
+        if ( isArrayClass ) {
+            cleanClassName = getArrayElementClassName( className );
+        }
+
+        final Option<String> moduleName = optional( registry.getModuleNameMatchingPackage( cleanClassName ) );
         if ( moduleName.isSome() ) {
             for ( final Assertion assertion : registry.getAssertions() ) {
                 if ( moduleName.some().equals( registry.getModuleNameMatchingPackage( assertion.getClass().getName() ) ) ) {
-                    return assertion.getClass().getClassLoader().loadClass( className );
+                    if ( isArrayClass ) {
+                        return Class.forName( className, true, assertion.getClass().getClassLoader() );
+                    } else {
+                        return assertion.getClass().getClassLoader().loadClass( className );
+                    }
                 }
             }
         }
