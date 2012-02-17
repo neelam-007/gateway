@@ -1,17 +1,20 @@
 package com.l7tech.external.assertions.mqnative.server;
 
-import com.ibm.mq.*;
+import com.ibm.mq.MQException;
+import com.ibm.mq.MQGetMessageOptions;
+import com.ibm.mq.MQMessage;
+import com.ibm.mq.MQQueue;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.Functions.NullaryThrows;
 import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.some;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TimeUnit;
 import org.apache.commons.lang.StringUtils;
@@ -22,7 +25,10 @@ import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECT_ERROR_SLEEP_PROPERTY;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_LISTENER_POLLING_INTERVAL_PROPERTY;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static com.l7tech.util.Option.some;
 import static java.text.MessageFormat.format;
 
 /**
@@ -41,14 +47,15 @@ public abstract class MqNativeListener {
 
     static final long SHUTDOWN_TIMEOUT = 7 * 1000;
     static final int OOPS_RETRY = 5000; // Five seconds
-    static final int DEFAULT_OOPS_SLEEP = 60 * 1000; // One minute
+    static final long DEFAULT_OOPS_SLEEP = 60 * 1000; // One minute
     static final int MIN_OOPS_SLEEP = 10 * 1000; // 10 seconds
     static final int MAX_OOPS_SLEEP = TimeUnit.DAYS.getMultiplier(); // 24 hours
     static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 minutes
+    static final long DEFAULT_POLL_INTERVAL = 60 * 1000; // One minute
 
     /** The properties for the MQ native resource that the listener is processing messages on */
     final SsgActiveConnector ssgActiveConnector;
-    final ApplicationEventPublisher eventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
     private final SecurePasswordManager securePasswordManager;
 
     final MqNativeListenerThread listenerThread;
@@ -62,12 +69,14 @@ public abstract class MqNativeListener {
 
     public MqNativeListener(@NotNull final SsgActiveConnector ssgActiveConnector,
                             @NotNull final ApplicationEventPublisher eventPublisher,
-                            @NotNull final SecurePasswordManager securePasswordManager) throws MqNativeConfigException {
+                            @NotNull final SecurePasswordManager securePasswordManager,
+                            @NotNull final ServerConfig serverConfig) throws MqNativeConfigException {
         this.ssgActiveConnector = ssgActiveConnector;
         this.eventPublisher = eventPublisher;
         this.securePasswordManager = securePasswordManager;
         this.mqNativeClient = buildMqNativeClient();
         this.listenerThread = new MqNativeListenerThread(this, toString());
+        configureThreadProperties(serverConfig);
     }
 
     public String getDisplayName() {
@@ -203,11 +212,11 @@ public abstract class MqNativeListener {
     }
 
     protected Hashtable buildQueueManagerConnectProperties() throws MqNativeConfigException {
-        return MqNativeUtils.buildQueueManagerConnectProperties( ssgActiveConnector, securePasswordManager );
+        return MqNativeUtils.buildQueueManagerConnectProperties(ssgActiveConnector, securePasswordManager);
     }
 
     protected String getConnectorProperty( final String name ) {
-        return ssgActiveConnector.getProperty( name );
+        return ssgActiveConnector.getProperty(name);
     }
 
     /**
@@ -240,6 +249,7 @@ public abstract class MqNativeListener {
      * @param callback the work logic requiring a MQ client
      * @return the any result(s) from the work done
      * @throws com.ibm.mq.MQException if there's an error
+     * @throws MqNativeConfigException if there's a config error
      */
     <R> R doWithMqNativeClient( final UnaryThrows<R,ClientBag,MQException> callback ) throws MQException, MqNativeConfigException {
         return mqNativeClient.doWork( callback );
@@ -294,7 +304,12 @@ public abstract class MqNativeListener {
         logger.log(level, messageKey, ex);
     }
 
-    protected void setErrorSleepTime(String stringValue) {
+    private void configureThreadProperties(ServerConfig serverConfig) {
+        listenerThread.setOopsSleep( getErrorSleepTime(serverConfig.getProperty(MQ_CONNECT_ERROR_SLEEP_PROPERTY)) );
+        listenerThread.setPollInterval( getPollInterval(serverConfig.getProperty(MQ_LISTENER_POLLING_INTERVAL_PROPERTY)) );
+    }
+
+    private long getErrorSleepTime(String stringValue) {
         long newErrorSleepTime = DEFAULT_OOPS_SLEEP;
 
         try {
@@ -312,6 +327,17 @@ public abstract class MqNativeListener {
         }
 
         logger.log(Level.CONFIG, "Updated MQ error sleep time to {0}ms.", newErrorSleepTime);
-        listenerThread.setOopsSleep((int)newErrorSleepTime);
+        return newErrorSleepTime;
+    }
+
+    private long getPollInterval(String stringValue) {
+        long pollInterval = DEFAULT_POLL_INTERVAL;
+        try {
+            pollInterval = TimeUnit.parse(stringValue, TimeUnit.SECONDS);
+        } catch (NumberFormatException nfe) {
+            logger.log(Level.WARNING, "Ignoring invalid MQ poll interval ''{0}'' (using default).", stringValue);
+        }
+        logger.log(Level.CONFIG, "Updated MQ poll interval to {0}ms.", pollInterval);
+        return pollInterval;
     }
 }

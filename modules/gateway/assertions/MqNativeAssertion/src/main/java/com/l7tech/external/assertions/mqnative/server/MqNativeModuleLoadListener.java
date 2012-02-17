@@ -37,7 +37,8 @@ public class MqNativeModuleLoadListener {
      */
     private static final List<PropertyRegistrationInfo> MODULE_CLUSTER_PROPERTIES = list(
             prInfo( MQ_MESSAGE_MAX_BYTES_PROPERTY, MQ_MESSAGE_MAX_BYTES_UI_PROPERTY, MQ_MESSAGE_MAX_BYTES_DESC, "2621440" ),
-            prInfo( LISTENER_THREAD_LIMIT_PROPERTY, LISTENER_THREAD_LIMIT_UI_PROPERTY, LISTENER_THREAD_LIMIT_DESC, "25" ),
+            prInfo( MQ_LISTENER_THREAD_LIMIT_PROPERTY, MQ_LISTENER_THREAD_LIMIT_UI_PROPERTY, MQ_LISTENER_THREAD_LIMIT_DESC, "25" ),
+            prInfo( MQ_LISTENER_POLLING_INTERVAL_PROPERTY, MQ_LISTENER_POLLING_INTERVAL_UI_PROPERTY, MQ_LISTENER_POLLING_INTERVAL_DESC, "60s" ),
             prInfo( MQ_RESPONSE_TIMEOUT_PROPERTY, MQ_RESPONSE_TIMEOUT_UI_PROPERTY, MQ_RESPONSE_TIMEOUT_DESC, "10000" ),
             prInfo( MQ_CONNECT_ERROR_SLEEP_PROPERTY, MQ_CONNECT_ERROR_SLEEP_UI_PROPERTY, MQ_CONNECT_ERROR_SLEEP_DESC, "10s" ),
             // connection cache properties
@@ -68,8 +69,8 @@ public class MqNativeModuleLoadListener {
             ThreadPoolBean pool = new ThreadPoolBean(
                     ServerConfig.getInstance(),
                     "MQ Native Listener Pool",
-                    LISTENER_THREAD_LIMIT_PROPERTY,
-                    LISTENER_THREAD_LIMIT_UI_PROPERTY,
+                    MQ_LISTENER_THREAD_LIMIT_PROPERTY,
+                    MQ_LISTENER_THREAD_LIMIT_UI_PROPERTY,
                     25);
             final Injector injector = context.getBean( "injector", Injector.class );
             mqNativeListenerModule = new MqNativeModule(pool);

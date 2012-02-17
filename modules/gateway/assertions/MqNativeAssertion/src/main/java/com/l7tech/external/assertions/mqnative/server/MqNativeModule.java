@@ -40,7 +40,6 @@ import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECT_ERROR_SLEEP_PROPERTY;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.QUEUE_OPEN_OPTIONS_INBOUND_FAILURE_QUEUE;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
@@ -194,7 +193,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     protected void addConnector( @NotNull final SsgActiveConnector ssgActiveConnector ) throws ListenerException {
         MqNativeListener newListener = null;
         try {
-            newListener = new MqNativeListener( ssgActiveConnector, getApplicationContext(), securePasswordManager ) {
+            newListener = new MqNativeListener( ssgActiveConnector, getApplicationContext(), securePasswordManager, serverConfig ) {
                 @Override
                 void handleMessage( final MQMessage queueMessage ) throws MqNativeException {
                     try {
@@ -237,7 +236,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                     }
                 }
             };
-            newListener.setErrorSleepTime(serverConfig.getProperty(MQ_CONNECT_ERROR_SLEEP_PROPERTY));
             newListener.start();
             activeListeners.put( ssgActiveConnector.getOid(), newListener );
         } catch (LifecycleException e) {
@@ -269,6 +267,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
      *
      * @param mqNativeClient  The MQ native client to access the MQ server
      * @throws MQException if an error occurs
+     * @throws MqNativeConfigException if a config error occurs
      */
     private void commitWork( @NotNull final MqNativeClient mqNativeClient ) throws MQException, MqNativeConfigException {
         mqNativeClient.doWork( new UnaryThrows<Void,ClientBag,MQException>() {
@@ -285,6 +284,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
      *
      * @param mqNativeClient  The MQ native client to access the MQ server
      * @throws MQException if an error occurs
+     * @throws MqNativeConfigException if a config error occurs
      */
     private void rollbackWork( @NotNull final MqNativeClient mqNativeClient ) throws MQException, MqNativeConfigException {
         mqNativeClient.doWork( new UnaryThrows<Void, ClientBag, MQException>() {

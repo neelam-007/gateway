@@ -16,17 +16,21 @@ public interface MqNativeConstants {
     String MQ_MESSAGE_MAX_BYTES_UI_PROPERTY = "io.mqMessageMaxBytes";
     String MQ_MESSAGE_MAX_BYTES_DESC = "Maximum number of bytes permitted for an MQ Native message, or 0 for unlimited (Integer)";
 
-    String LISTENER_THREAD_LIMIT_PROPERTY = "mqListenerThreadLimit";
-    String LISTENER_THREAD_LIMIT_UI_PROPERTY = "mq.listenerThreadLimit";
-    String LISTENER_THREAD_LIMIT_DESC = "The global limit on the number of processing threads that can be created to work off all MQ Native queue listeners. Value must be >= 5.";
+    String MQ_LISTENER_POLLING_INTERVAL_PROPERTY = "mqListenerPollingInterval";
+    String MQ_LISTENER_POLLING_INTERVAL_UI_PROPERTY = "mq.listenerPollingInterval";
+    String MQ_LISTENER_POLLING_INTERVAL_DESC = "Time interval to wait before polling again on an empty queue (timeunit)";
 
-    String MQ_RESPONSE_TIMEOUT_PROPERTY = "ioMqResponseTimeout";
-    String MQ_RESPONSE_TIMEOUT_UI_PROPERTY = "io.mqResponseTimeout";
-    String MQ_RESPONSE_TIMEOUT_DESC = "Timeout for MQ Native routing to wait on the replyTo queue in milliseconds, default 10 seconds.";
+    String MQ_LISTENER_THREAD_LIMIT_PROPERTY = "mqListenerThreadLimit";
+    String MQ_LISTENER_THREAD_LIMIT_UI_PROPERTY = "mq.listenerThreadLimit";
+    String MQ_LISTENER_THREAD_LIMIT_DESC = "The global limit on the number of processing threads that can be created to work off all MQ Native queue listeners. Value must be >= 5.";
 
     String MQ_CONNECT_ERROR_SLEEP_PROPERTY = "mqConnectErrorSleep";
     String MQ_CONNECT_ERROR_SLEEP_UI_PROPERTY = "mq.connectErrorSleep";
     String MQ_CONNECT_ERROR_SLEEP_DESC = "Time to sleep after a connection error for an inbound MQ Native queue (timeunit)";
+
+    String MQ_RESPONSE_TIMEOUT_PROPERTY = "ioMqResponseTimeout";
+    String MQ_RESPONSE_TIMEOUT_UI_PROPERTY = "io.mqResponseTimeout";
+    String MQ_RESPONSE_TIMEOUT_DESC = "Timeout for MQ Native routing to wait on the reply to queue in milliseconds, default 10 seconds.";
 
     String MQ_CONNECTION_CACHE_MAX_AGE_PROPERTY = "ioMqConnectionCacheMaxAge";
     String MQ_CONNECTION_CACHE_MAX_AGE_UI_PROPERTY = "io.mqConnectionCacheMaxAge";

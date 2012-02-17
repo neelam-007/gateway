@@ -6,20 +6,22 @@ import com.ibm.mq.MQGetMessageOptions;
 import com.ibm.mq.MQMessage;
 import com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions.UnaryThrows;
 
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
-import com.l7tech.util.Functions.UnaryThrows;
 import static java.text.MessageFormat.format;
 
 /**
  * Listener thread responsible for receiving messages from the MQ endpoint.
  */
 class MqNativeListenerThread extends Thread {
-    /* The amount of time the thread sleeps when the MAXIMUM_OOPSES limit is reached */
-    private final AtomicInteger oopsSleep = new AtomicInteger(MqNativeListener.DEFAULT_OOPS_SLEEP);
+    // The amount of time the thread sleeps when the MAXIMUM_OOPSES limit is reached
+    private final AtomicLong oopsSleep = new AtomicLong(MqNativeListener.DEFAULT_OOPS_SLEEP);
+    // Time interval to wait before polling again on an empty queue
+    private final AtomicLong pollInterval = new AtomicLong(MqNativeListener.DEFAULT_POLL_INTERVAL);
 
     private final MqNativeListener mqNativeListener;
     private final String connectorInfo;
@@ -31,8 +33,12 @@ class MqNativeListenerThread extends Thread {
         this.connectorInfo = mqNativeEndpointListener.getDisplayName();
     }
 
-    public void setOopsSleep(int oopsSleepInt) {
-        this.oopsSleep.set(oopsSleepInt);
+    public void setOopsSleep(long oopsSleepLong) {
+        this.oopsSleep.set(oopsSleepLong);
+    }
+
+    public void setPollInterval(long pollIntervalLong) {
+        this.pollInterval.set(pollIntervalLong);
     }
 
     @Override
@@ -53,17 +59,20 @@ class MqNativeListenerThread extends Thread {
                         }
                     });
 
-                    // TODO (TL) add configurable poll interval
-
                     mqNativeListener.log(Level.FINE, MqNativeMessages.INFO_LISTENER_RECEIVE_MSG, connectorInfo,
                             mqMessage == null ? null : new String(mqMessage.messageId));
 
                     if ( mqMessage != null && !mqNativeListener.isStop() ) {
                         oopses = 0;
 
-                        // process on the message
+                        // process the message
                         mqNativeListener.handleMessage(mqMessage);
+                    } else {
 
+                        // if no message (e.g. empty queue), sleep for a while
+                        try {
+                            Thread.sleep( pollInterval.get() );
+                        } catch(InterruptedException ignore) {}
                     }
                 } catch ( Throwable e ) {
                     if (ExceptionUtils.causedBy(e, InterruptedException.class)) {
@@ -96,7 +105,7 @@ class MqNativeListenerThread extends Thread {
 
                     } else {
                         // max oops reached .. sleep for a longer period of time before retrying
-                        int sleepTime = oopsSleep.get();
+                        long sleepTime = oopsSleep.get();
                         mqNativeListener.log(Level.WARNING, MqNativeMessages.WARN_LISTENER_MAX_OOPS_REACHED, connectorInfo,
                                 MqNativeListener.MAXIMUM_OOPSES, sleepTime);
                         try {
