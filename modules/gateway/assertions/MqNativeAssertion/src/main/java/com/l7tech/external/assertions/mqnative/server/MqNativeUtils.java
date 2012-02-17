@@ -396,7 +396,32 @@ class MqNativeUtils {
         }
     }
 
-
+    /**
+     *  Expected reason codes:
+     *      2009: MQRC_CONNECTION_BROKEN
+     *      2035: MQRC_NOT_AUTHORIZED
+     *      2058: MQRC_Q_MGR_NAME_ERROR
+     *      2059: MQRC_Q_MGR_NOT_AVAILABLE
+     *      2085: MQRC_UNKNOWN_OBJECT_NAME
+     *      2397: MQRC_JSSE_ERROR
+     *
+     *      http://publib.boulder.ibm.com/infocenter/wmqv6/v6r0/topic/com.ibm.mq.csqsao.doc/zm36720_.htm
+     *
+     * @param e MQ exception
+     * @return original exception or if expected reason code, return exception only if in debug mode
+     */
+    static MQException getDebugExceptionForExpectedReasonCode(MQException e) {
+        String errorMessage = ExceptionUtils.getMessage(e);
+        if (errorMessage.contains("Reason 2009")
+                || errorMessage.contains("Reason 2035")
+                || errorMessage.contains("Reason 2058")
+                || errorMessage.contains("Reason 2059")
+                || errorMessage.contains("Reason 2085")
+                || errorMessage.contains("Reason 2397") ) {
+            return ExceptionUtils.getDebugException( e );
+        }
+        return e;
+    }
 
     private static SecurePassword getSecurePassword( final SecurePasswordManager securePasswordManager,
                                                      final long passwordOid ) {

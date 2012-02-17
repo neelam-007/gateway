@@ -14,7 +14,6 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.Message;
 import com.l7tech.message.MessageRole;
 import com.l7tech.message.MimeKnob;
-import static com.l7tech.objectmodel.EntityUtil.name;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -31,8 +30,6 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.SsgActiveConnectorManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.*;
-import static com.l7tech.util.ExceptionUtils.getDebugException;
-import static com.l7tech.util.ExceptionUtils.getMessage;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryThrows;
 import org.apache.commons.lang.StringUtils;
@@ -60,8 +57,11 @@ import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_IS_INBOUND;
 import static com.l7tech.message.Message.getMaxBytes;
+import static com.l7tech.objectmodel.EntityUtil.name;
 import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_MESSAGE_MAX_BYTES;
 import static com.l7tech.util.ArrayUtils.contains;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
 import static com.l7tech.util.Option.optional;
 import static com.l7tech.util.Option.some;
 import static java.util.Collections.unmodifiableMap;
@@ -200,7 +200,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                         }
                     }
                     if (++oopses < maxOopses) {
-                        logAndAudit(MQ_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(retryDelay)}, e);
+                        logAndAudit(MQ_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(retryDelay)}, getDebugExceptionForExpectedReasonCode(e) );
                         mqNativeResourceManager.invalidate( cfg );
                         sleep( retryDelay );
                     } else {
