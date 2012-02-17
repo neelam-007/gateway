@@ -112,7 +112,6 @@ public class CaptureProperty extends JDialog {
                 itemListener.itemStateChanged(null); // init desc
             }
         }
-        Utilities.setMaxLength(valueField.getDocument(),1000000);
         ((AbstractDocument)((JTextField)keyComboBox.getEditor().getEditorComponent()).getDocument())
                 .setDocumentFilter(new DocumentSizeFilter(128));
         cancelButton.addActionListener(new ActionListener() {
