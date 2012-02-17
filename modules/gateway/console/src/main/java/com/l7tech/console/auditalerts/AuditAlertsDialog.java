@@ -6,6 +6,8 @@ import com.l7tech.console.action.BaseAction;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 public class AuditAlertsDialog extends JDialog {
     private JPanel contentPane;
@@ -15,16 +17,18 @@ public class AuditAlertsDialog extends JDialog {
 
     private final AuditWatcher watcher;
     private final long auditTime;
+    static private ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.auditalerts.AuditAlertsDialog", Locale.getDefault());
+
 
     public AuditAlertsDialog(Frame owner, AuditWatcher watcher, long time) throws HeadlessException {
-        super(owner, "Audit Alerts");
+        super(owner, resources.getString("dialog.title"));
         this.watcher = watcher;
         this.auditTime = time;
         init();
     }
 
     public AuditAlertsDialog(Dialog owner, AuditWatcher watcher, long time) throws HeadlessException {
-        super(owner, "Audit Alerts");
+        super(owner, resources.getString("dialog.title"));
         this.watcher = watcher;
         this.auditTime = time;
         init();
@@ -35,23 +39,28 @@ public class AuditAlertsDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(viewAuditsButton);
 
-        viewAuditsButton.setAction(
-                new ViewGatewayAuditsAction(auditTime){
-                    protected void performAction() {
-                        dispose();
-                        if (watcher != null) watcher.auditsViewed();
-                        super.performAction();
-                    }
-
-                    public String getName() {
-                        return "View Audits";
+        viewAuditsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        ViewGatewayAuditsAction action = new ViewGatewayAuditsAction(auditTime){
+                            protected void performAction() {
+                                if (watcher != null) watcher.auditsViewed();
+                                super.performAction();
+                            }
+                        };
+                        action.invoke();
                     }
                 });
+        }});
 
         ignoreAuditsButton.setAction(
                 new BaseAction(){
                     public String getName() {
-                        return "Acknowledge Audits";
+                        return resources.getString("ignoreAuditsButton.label");
                     }
 
                     protected String iconResource() {
