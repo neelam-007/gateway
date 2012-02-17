@@ -9,6 +9,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.UnaryThrows;
 
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
@@ -21,7 +22,7 @@ class MqNativeListenerThread extends Thread {
     // The amount of time the thread sleeps when the MAXIMUM_OOPSES limit is reached
     private final AtomicLong oopsSleep = new AtomicLong(MqNativeListener.DEFAULT_OOPS_SLEEP);
     // Time interval to wait before polling again on an empty queue
-    private final AtomicLong pollInterval = new AtomicLong(MqNativeListener.DEFAULT_POLL_INTERVAL);
+    private final AtomicInteger pollInterval = new AtomicInteger(MqNativeListener.DEFAULT_POLL_INTERVAL);
 
     private final MqNativeListener mqNativeListener;
     private final String connectorInfo;
@@ -37,8 +38,8 @@ class MqNativeListenerThread extends Thread {
         this.oopsSleep.set(oopsSleepLong);
     }
 
-    public void setPollInterval(long pollIntervalLong) {
-        this.pollInterval.set(pollIntervalLong);
+    public void setPollInterval(int pollIntervalInt) {
+        this.pollInterval.set(pollIntervalInt);
     }
 
     @Override
@@ -55,6 +56,7 @@ class MqNativeListenerThread extends Thread {
                         public MQMessage call( final ClientBag bag ) throws MQException {
                             final MQGetMessageOptions getOptions = new MQGetMessageOptions();
                             getOptions.options = MQC.MQGMO_WAIT | MQC.MQGMO_SYNCPOINT;
+                            getOptions.waitInterval = pollInterval.get();
                             return mqNativeListener.receiveMessage( bag.getTargetQueue(), getOptions );
                         }
                     });
@@ -67,12 +69,6 @@ class MqNativeListenerThread extends Thread {
 
                         // process the message
                         mqNativeListener.handleMessage(mqMessage);
-                    } else {
-
-                        // if no message (e.g. empty queue), sleep for a while
-                        try {
-                            Thread.sleep( pollInterval.get() );
-                        } catch(InterruptedException ignore) {}
                     }
                 } catch ( Throwable e ) {
                     if (ExceptionUtils.causedBy(e, InterruptedException.class)) {

@@ -51,7 +51,7 @@ public abstract class MqNativeListener {
     static final int MIN_OOPS_SLEEP = 10 * 1000; // 10 seconds
     static final int MAX_OOPS_SLEEP = TimeUnit.DAYS.getMultiplier(); // 24 hours
     static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 minutes
-    static final long DEFAULT_POLL_INTERVAL = 60 * 1000; // One minute
+    static final int DEFAULT_POLL_INTERVAL = 60 * 1000; // One minute
 
     /** The properties for the MQ native resource that the listener is processing messages on */
     final SsgActiveConnector ssgActiveConnector;
@@ -330,10 +330,14 @@ public abstract class MqNativeListener {
         return newErrorSleepTime;
     }
 
-    private long getPollInterval(String stringValue) {
-        long pollInterval = DEFAULT_POLL_INTERVAL;
+    private int getPollInterval(String stringValue) {
+        int pollInterval = DEFAULT_POLL_INTERVAL;
         try {
-            pollInterval = TimeUnit.parse(stringValue, TimeUnit.SECONDS);
+            long pollIntervalLong = TimeUnit.parse(stringValue, TimeUnit.SECONDS);
+            if (pollIntervalLong < Integer.MIN_VALUE || pollIntervalLong > Integer.MAX_VALUE) {
+                throw new NumberFormatException(pollIntervalLong + " cannot be cast to int without changing its value.");
+            }
+            pollInterval = (int) pollIntervalLong;
         } catch (NumberFormatException nfe) {
             logger.log(Level.WARNING, "Ignoring invalid MQ poll interval ''{0}'' (using default).", stringValue);
         }
