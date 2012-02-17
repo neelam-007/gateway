@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.external.assertions.samlpassertion.server.AbstractSamlp2MessageGenerator;
 import com.l7tech.external.assertions.samlpassertion.server.SamlpAssertionException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import saml.v2.protocol.AuthnRequestType;
 
 import javax.xml.bind.JAXBElement;
@@ -17,7 +18,7 @@ public class AuthnRequestGenerator extends AbstractSamlp2MessageGenerator<AuthnR
 
     public AuthnRequestGenerator(@NotNull final Map<String, Object> variablesMap,
                                  @NotNull final Audit auditor,
-                                 @NotNull final NameIdentifierResolver issuerNameResolver)
+                                 @Nullable final NameIdentifierResolver issuerNameResolver)
         throws SamlpAssertionException
     {
         super(variablesMap, auditor, issuerNameResolver);

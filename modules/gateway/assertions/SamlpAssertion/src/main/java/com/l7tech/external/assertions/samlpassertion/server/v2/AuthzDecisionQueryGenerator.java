@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.samlpassertion.server.SamlpAssertionExcept
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import saml.v2.assertion.*;
 import saml.v2.protocol.AuthzDecisionQueryType;
 
@@ -27,7 +28,7 @@ public final class AuthzDecisionQueryGenerator extends AbstractSamlp2MessageGene
 
     public AuthzDecisionQueryGenerator(@NotNull final Map<String, Object> variablesMap,
                                        @NotNull final Audit auditor,
-                                       @NotNull final NameIdentifierResolver issuerNameResolver)
+                                       @Nullable final NameIdentifierResolver issuerNameResolver)
         throws SamlpAssertionException
     {
         super(variablesMap, auditor, issuerNameResolver);
