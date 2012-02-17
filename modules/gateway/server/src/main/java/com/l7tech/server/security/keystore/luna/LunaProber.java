@@ -38,7 +38,7 @@ public class LunaProber {
             logger.log(Level.WARNING, "Luna " + ver + " client libraries not present or not configured: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return false;
         } catch (InvocationTargetException e) {
-            if (ExceptionUtils.causedBy(e, ClassNotFoundException.class) || ExceptionUtils.causedBy(e, UnsatisfiedLinkError.class)) {
+            if (ExceptionUtils.causedBy(e, ClassNotFoundException.class) || ExceptionUtils.causedBy(e, UnsatisfiedLinkError.class) || ExceptionUtils.causedBy(e, NoClassDefFoundError.class)) {
                 logger.log(Level.WARNING, "Luna " + ver + " client libraries not present or not configured: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 return false;
             }
