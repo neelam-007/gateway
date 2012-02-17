@@ -33,6 +33,8 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     private boolean assertionFailureEnabled = true;
     private Map<String, String> namingMap = new TreeMap<String, String>();
 
+    private boolean allowMultiValuedVariables = false;
+
     public JdbcQueryAssertion() {}
 
     @Override
@@ -118,6 +120,14 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
 
     public void setNamingMap(Map<String, String> namingMap) {
         this.namingMap = namingMap;
+    }
+
+    public boolean isAllowMultiValuedVariables() {
+        return allowMultiValuedVariables;
+    }
+
+    public void setAllowMultiValuedVariables(boolean allowMultiValuedVariables) {
+        this.allowMultiValuedVariables = allowMultiValuedVariables;
     }
 
     @Override

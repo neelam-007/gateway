@@ -5,16 +5,18 @@ import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.jdbc.MockJdbcDatabaseManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -22,27 +24,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * @author ghuang
  */
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = "/com/l7tech/server/resources/testApplicationContext.xml")
 public class ServerJdbcQueryAssertionTest {
+    @Autowired
     private ApplicationContext appCtx;
+
     private PolicyEnforcementContext peCtx;
 
-    @Before
-    public void setUp() {
-        // Get the spring app context
-        if (appCtx == null) {
-            appCtx = ApplicationContexts.getTestApplicationContext();
-            Assert.assertNotNull("Fail - Unable to get applicationContext instance", appCtx);
-        }
+    private JdbcQueryAssertion assertion;
 
+    private ServerJdbcQueryAssertion fixture;
+
+
+    @Before
+    public void setUp() throws Exception {
         // Get the policy enforcement context
         peCtx = makeContext("<myrequest/>", "<myresponse/>");
+        //create assertion
+        assertion = new JdbcQueryAssertion();
+        fixture = new ServerJdbcQueryAssertion(assertion, appCtx);
     }
 
     /**
@@ -52,8 +58,6 @@ public class ServerJdbcQueryAssertionTest {
      */
     @Test
     public void testPlainQueryStatementAndPreparedStatementParameters() throws PolicyAssertionException {
-        JdbcQueryAssertion assertion = new JdbcQueryAssertion();
-        ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, appCtx);
 
         final String department = "Production";
         final String[] employee_info = new String[] {"John", "Male", "45"};
@@ -70,7 +74,7 @@ public class ServerJdbcQueryAssertionTest {
         assertion.setSqlQuery(query);
 
         String expectedPlainQuery = "SELECT * FROM employees WHERE employee_department = ? AND name = ? ADN sex = ? AND age = ?";
-        String actualPlainQuery = serverAssertion.getQueryStatementWithoutContextVariables(query, params, peCtx);
+        String actualPlainQuery = fixture.getQueryStatementWithoutContextVariables(query, params, peCtx);
 
         // Check the query statement
         assertEquals("Correct plain query produced", expectedPlainQuery, actualPlainQuery);
@@ -80,6 +84,87 @@ public class ServerJdbcQueryAssertionTest {
         assertEquals("Employee Name found", employee_info[0], params.get(1));
         assertEquals("Employee Sex found", employee_info[1], params.get(2));
         assertEquals("Employee Age found", employee_info[2], params.get(3));
+    }
+
+    @Test
+    public void shouldReturnConstructedQueryWhenMultiValueParametersUsed() throws Exception {
+
+        final String department = "Production";
+        final List<Object> employeeIds = new ArrayList<Object>();
+        employeeIds.add(1);
+        employeeIds.add(2);
+        employeeIds.add(3);
+
+        peCtx.setVariable("var_dept", department);
+        peCtx.setVariable("var_ids", employeeIds);
+
+        List<Object> params = new ArrayList<Object>();
+        String query = "select * from employees where id in (${var_ids}) and department = ${var_dept}";
+        assertion.setSqlQuery(query);
+        assertion.setAllowMultiValuedVariables(true);
+
+        String expectedPlainQuery = "select * from employees where id in (?, ?, ?) and department = ?";
+        String actualPlainQuery = fixture.getQueryStatementWithoutContextVariables(query, params, peCtx);
+        assertEquals(expectedPlainQuery, actualPlainQuery);
+        assertEquals(employeeIds.get(0), params.get(0));
+        assertEquals(employeeIds.get(1), params.get(1));
+        assertEquals(employeeIds.get(2), params.get(2));
+        assertEquals(department, params.get(3));
+    }
+
+    @Test
+    public void shouldReturnConstructedQueryWhenTheSameParameterUsedTwiceAndMultiValueParametersUsed() throws Exception {
+
+        final String department = "Production";
+        final List<Object> employeeIds = new ArrayList<Object>();
+        employeeIds.add(1);
+        employeeIds.add(2);
+        employeeIds.add(3);
+
+        peCtx.setVariable("var_dept", department);
+        peCtx.setVariable("var_ids", employeeIds);
+
+        List<Object> params = new ArrayList<Object>();
+        String query = "select * from employees e1, employees e2 where e1.id in (${var_ids}) and e2.id in (${var_ids}) and e1.department = ${var_dept}";
+        assertion.setSqlQuery(query);
+        assertion.setAllowMultiValuedVariables(true);
+
+        String expectedPlainQuery = "select * from employees e1, employees e2 where e1.id in (?, ?, ?) and e2.id in (?, ?, ?) and e1.department = ?";
+        String actualPlainQuery = fixture.getQueryStatementWithoutContextVariables(query, params, peCtx);
+        assertEquals(expectedPlainQuery, actualPlainQuery);
+        assertEquals(employeeIds.get(0), params.get(0));
+        assertEquals(employeeIds.get(1), params.get(1));
+        assertEquals(employeeIds.get(2), params.get(2));
+        assertEquals(employeeIds.get(0), params.get(3));
+        assertEquals(employeeIds.get(1), params.get(4));
+        assertEquals(employeeIds.get(2), params.get(5));
+        assertEquals(department, params.get(6));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldThrowExceptionWhenVariableValueNotFound() throws Exception {
+        final List<Object> employeeIds = new ArrayList<Object>();
+        employeeIds.add(1);
+        employeeIds.add(2);
+
+        peCtx.setVariable("var_dept", "department");
+        peCtx.setVariable("var_ids", "1");
+
+        List<Object> params = new ArrayList<Object>();
+        String query = "select * from employees where id=${var_ids[3]} and department = ${var_dept}";
+        assertion.setSqlQuery(query);
+        fixture.getQueryStatementWithoutContextVariables(query, params, peCtx);
+    }
+
+    @Test
+    public void shouldReturnUnalteredQueryStringWhenNoContextVariablesPresent() throws Exception {
+        List<Object> params = new ArrayList<Object>();
+        String expectedQuery = "select * from employees where id=1 and department = 'Production'";
+        assertion.setSqlQuery(expectedQuery);
+        String actualQuery = fixture.getQueryStatementWithoutContextVariables(expectedQuery, params, peCtx);
+        assertEquals(expectedQuery, actualQuery);
+        assertTrue(params.size() == 0);
+
     }
 
     /**
@@ -95,15 +180,13 @@ public class ServerJdbcQueryAssertionTest {
         String originalDeptColumnName = MockJdbcDatabaseManager.MOCK_COLUMN_NAMES[1];
         namingMap.put(originalDeptColumnName, "dept");
 
-        JdbcQueryAssertion assertion = new JdbcQueryAssertion();
         assertion.setNamingMap(namingMap);
         assertion.setMaxRecords(MockJdbcDatabaseManager.MOCK_MAX_ROWS);
 
         JdbcQueryingManager jdbcQueryingManager = (JdbcQueryingManager) appCtx.getBean("jdbcQueryingManager");
         SqlRowSet resultSet = jdbcQueryingManager.getMockSqlRowSet();
 
-        ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, appCtx);
-        int numOfRecords = serverAssertion.setContextVariables(resultSet, peCtx);
+        int numOfRecords = fixture.setContextVariables(resultSet, peCtx);
 
         // Check the number of returned records by the query
         assertEquals("The number of returned numOfRecords matched", MockJdbcDatabaseManager.MOCK_MAX_ROWS, numOfRecords);
