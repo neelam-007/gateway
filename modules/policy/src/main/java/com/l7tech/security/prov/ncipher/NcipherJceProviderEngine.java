@@ -23,6 +23,7 @@ import java.util.Arrays;
 public class NcipherJceProviderEngine extends JceProvider {
     final Provider PROVIDER;
     final Provider MESSAGE_DIGEST_PROVIDER;
+    final Provider SOFTWARE_DH_PROVIDER;
 
     final long moduleId;
 
@@ -58,6 +59,7 @@ public class NcipherJceProviderEngine extends JceProvider {
         }
         PROVIDER.remove("KeyStore.JKS"); // Bug #10109 - avoid message to STDERR from nCipher prov when third-party software loads truststores using JKS
         MESSAGE_DIGEST_PROVIDER = Security.getProvider("SUN"); // Bug #10327 - use Sun JDK provider for MD5, SHA-1, and SHA-2, if available, to avoid clobbering a nethsm with Sha512Crypt password hashes
+        SOFTWARE_DH_PROVIDER = Security.getProvider("SunJCE"); // Bug #11810 - use Sun JDK provider for Diffie-Hellman KeyPairGenerator for JSCAPE software SFTP
         try {
             moduleId = findFirstUsableModuleId();
         } catch (NFException e) {
@@ -109,6 +111,8 @@ public class NcipherJceProviderEngine extends JceProvider {
     public Provider getProviderFor(String service) {
         if (service.startsWith("MessageDigest."))
             return MESSAGE_DIGEST_PROVIDER;
+        if (SERVICE_DIFFIE_HELLMAN_SOFTWARE.equals(service))
+            return SOFTWARE_DH_PROVIDER;
         return super.getProviderFor(service);
     }
 
@@ -123,5 +127,4 @@ public class NcipherJceProviderEngine extends JceProvider {
         }
         throw new NFException("No usable nCipher module is connected");
     }
-
 }

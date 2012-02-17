@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.keys.PemUtils;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayState;
 import com.l7tech.server.LifecycleException;
@@ -67,6 +68,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
 import java.security.InvalidKeyException;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.text.ParseException;
@@ -121,6 +123,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     private static final Pattern SPLIT_DELIMITER = Pattern.compile("<split>");
     private static final Set<String> SUPPORTED_SCHEMES = caseInsensitiveSet( SCHEME_SSH );
     private static final String SSHD_PROPERTY_PREFIX = "sshd.";
+    private static final String JSCAPE_KEX_PROVIDER = "jscape.kex.provider";
 
     // Configuration defaults
     private static final String DEFAULT_SERVER_VERSION = "GatewaySSH-1.0";
@@ -185,6 +188,13 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     }
 
     static SshServerModule createModule( final ApplicationContext appContext ) {
+        if (SyspropUtil.getString(JSCAPE_KEX_PROVIDER, null) == null) {
+            Provider prov = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_DIFFIE_HELLMAN_SOFTWARE);
+            if (prov != null) {
+                SyspropUtil.setProperty(JSCAPE_KEX_PROVIDER, prov.getName());
+            }
+        }
+        
         final InjectingConstructor injector = appContext.getBean( InjectingConstructor.class );
         return injector.injectNew( SshServerModule.class );
     }

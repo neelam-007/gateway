@@ -28,6 +28,7 @@ public class Pkcs11JceProviderEngine extends JceProvider {
     private static final String DEFAULT_CONFIG_PATH = "/opt/SecureSpan/Appliance/etc/pkcs11_linux.cfg";
     private static final String CONFIG_PATH = ConfigFactory.getProperty( PROPERTY_CONFIG_PATH, DEFAULT_CONFIG_PATH );
     private static final Provider PROVIDER;
+    private static final Provider SUNJCE_PROVIDER;
 
     static {
         Provider found = null;
@@ -50,6 +51,7 @@ public class Pkcs11JceProviderEngine extends JceProvider {
         }
 
         PROVIDER = found;
+        SUNJCE_PROVIDER = Security.getProvider("SunJCE");
     }
 
     @Override
@@ -81,5 +83,12 @@ public class Pkcs11JceProviderEngine extends JceProvider {
     @Override
     public String getRsaPkcs1PaddingCipherName() {
         return "RSA/ECB/PKCS1Padding";
+    }
+
+    @Override
+    public Provider getProviderFor(String service) {
+        if (SERVICE_DIFFIE_HELLMAN_SOFTWARE.equals(service))
+            return SUNJCE_PROVIDER;
+        return super.getProviderFor(service);
     }
 }
