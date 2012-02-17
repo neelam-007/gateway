@@ -54,6 +54,11 @@ public class GatewayBoot {
     //if it's enabled.
     public static final String SYSPROP_ENABLE_HSM = "com.l7tech.server.sca.enable";
 
+    /**
+     * Circular references are disabled by default as of 6.2
+     */
+    public static final String SYSPROP_ALLOW_CIRCULARITY = "com.l7tech.server.boot.allowCircularReferences";
+
     public static final String PKCS11_CFG_FILE = "/opt/SecureSpan/Appliance/etc/pkcs11_linux.cfg";
 
     public static final String[] HSM_SECURITY_PROVIDERS =
@@ -244,6 +249,7 @@ public class GatewayBoot {
     }
 
     private void createApplicationContext() {
+        final boolean allowCircularDependencies = ConfigFactory.getBooleanProperty( SYSPROP_ALLOW_CIRCULARITY, false );
         final long startTime = System.currentTimeMillis();
         applicationContext = new ClassPathXmlApplicationContext(new String[]{
                 "com/l7tech/server/resources/dataAccessContext.xml",
@@ -251,7 +257,7 @@ public class GatewayBoot {
                 "com/l7tech/server/resources/adminContext.xml",
                 "com/l7tech/server/resources/cxfSupportContext.xml",
         }, false );
-        applicationContext.setAllowCircularReferences( false );
+        applicationContext.setAllowCircularReferences( allowCircularDependencies );
         applicationContext.refresh();
         shutdowner = applicationContext.getBean("ssgShutdown", ShutdownWatcher.class);
         logger.log( FINE, "Created application context in {0}ms", System.currentTimeMillis() - startTime );
