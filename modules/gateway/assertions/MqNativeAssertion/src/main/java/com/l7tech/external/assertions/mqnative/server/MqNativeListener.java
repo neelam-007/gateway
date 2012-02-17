@@ -42,16 +42,13 @@ public abstract class MqNativeListener {
 
     protected static final int MAXIMUM_OOPSES = 5;
 
-    // Set to five seconds so that the un-interrupt-able poll doesn't pause server shutdown for too long.
-    static final int RECEIVE_TIMEOUT = 5 * 1000;
-
     static final long SHUTDOWN_TIMEOUT = 7 * 1000;
     static final int OOPS_RETRY = 5000; // Five seconds
     static final long DEFAULT_OOPS_SLEEP = 60 * 1000; // One minute
     static final int MIN_OOPS_SLEEP = 10 * 1000; // 10 seconds
     static final int MAX_OOPS_SLEEP = TimeUnit.DAYS.getMultiplier(); // 24 hours
     static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 minutes
-    static final int DEFAULT_POLL_INTERVAL = 60 * 1000; // One minute
+    static final int DEFAULT_POLL_INTERVAL = 5 * 1000; // Set to five seconds so that the un-interrupt-able poll doesn't pause server shutdown for too long.
 
     /** The properties for the MQ native resource that the listener is processing messages on */
     final SsgActiveConnector ssgActiveConnector;

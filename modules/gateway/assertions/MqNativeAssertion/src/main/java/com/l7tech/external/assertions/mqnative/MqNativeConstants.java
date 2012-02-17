@@ -18,7 +18,7 @@ public interface MqNativeConstants {
 
     String MQ_LISTENER_POLLING_INTERVAL_PROPERTY = "mqListenerPollingInterval";
     String MQ_LISTENER_POLLING_INTERVAL_UI_PROPERTY = "mq.listenerPollingInterval";
-    String MQ_LISTENER_POLLING_INTERVAL_DESC = "Time interval to wait before polling again on an empty queue (timeunit)";
+    String MQ_LISTENER_POLLING_INTERVAL_DESC = "Time to wait when polling for messages on an empty queue (timeunit)";
 
     String MQ_LISTENER_THREAD_LIMIT_PROPERTY = "mqListenerThreadLimit";
     String MQ_LISTENER_THREAD_LIMIT_UI_PROPERTY = "mq.listenerThreadLimit";
