@@ -56,7 +56,7 @@ public class MqNativeExternalReference extends ExternalReference {
             connectorName = connector.getName();
             host = connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME);
             port = Integer.parseInt(connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_PORT));
-            queueManagerName = connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME);
+            queueManagerName = connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME);
             channelName = connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_CHANNEL);
             queueName = connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME);
         } catch (FindException e) {
