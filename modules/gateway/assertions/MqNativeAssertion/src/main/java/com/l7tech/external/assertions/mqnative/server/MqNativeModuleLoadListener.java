@@ -52,6 +52,11 @@ public class MqNativeModuleLoadListener {
         if (mqNativeListenerModule != null) {
             logger.log(Level.WARNING, "MQ Native active connector module is already initialized");
         } else {
+            // Create (if does not exist) all context variables used by this module
+            initializeModuleClusterProperties(context.getBean("serverConfig", ServerConfig.class));
+
+            // Register ExternalReferenceFactory
+            registerExternalReferenceFactory(context);
 
             // Probe for MQ native class files - not installed by default on the Gateway
             try {
@@ -62,10 +67,7 @@ public class MqNativeModuleLoadListener {
                 return;
             }
 
-            // (1) Create (if does not exist) all context variables used by this module
-            initializeModuleClusterProperties(context.getBean("serverConfig", ServerConfig.class));
-
-            // (2) Instantiate the MQ native boot process
+            // Instantiate the MQ native boot process
             ThreadPoolBean pool = new ThreadPoolBean(
                     ServerConfig.getInstance(),
                     "MQ Native Listener Pool",
@@ -77,7 +79,7 @@ public class MqNativeModuleLoadListener {
             injector.inject( mqNativeListenerModule );
             mqNativeListenerModule.setApplicationContext(context);
 
-            // (3) Start the module
+            // Start the module
             try {
                 // Start the MqBootProcess which will start the listeners
                 logger.log(Level.INFO, "MQNativeConnector MqNativeModuleLoadListener - starting MqNativeModuleLoadListener...");
@@ -86,9 +88,6 @@ public class MqNativeModuleLoadListener {
                 logger.log(Level.WARNING, "MQ Native active connector module threw exception during startup: " + ExceptionUtils.getMessage(e), e);
             }
         }
-
-        // Register ExternalReferenceFactory
-        registerExternalReferenceFactory(context);
     }
 
     /*
@@ -131,6 +130,8 @@ public class MqNativeModuleLoadListener {
     }
 
     private static void registerExternalReferenceFactory(final ApplicationContext context) {
+        unregisterExternalReferenceFactory(); // ensure not already registered
+
         if (policyExporterImporterManager == null) {
             policyExporterImporterManager = context.getBean("policyExporterImporterManager", PolicyExporterImporterManager.class);
         }
@@ -140,8 +141,9 @@ public class MqNativeModuleLoadListener {
     }
 
     private static void unregisterExternalReferenceFactory() {
-        if (policyExporterImporterManager != null) {
+        if (policyExporterImporterManager != null && externalReferenceFactory!=null) {
             policyExporterImporterManager.unregister(externalReferenceFactory);
+            externalReferenceFactory = null;
         }
     }
 }

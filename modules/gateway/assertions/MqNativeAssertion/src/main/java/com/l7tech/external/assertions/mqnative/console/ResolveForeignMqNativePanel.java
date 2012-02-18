@@ -178,6 +178,7 @@ public class ResolveForeignMqNativePanel extends WizardStepPanel {
                     }
                     changeRadioButton.setEnabled(true);
                     changeRadioButton.setSelected(true);
+                    queueSelectorComboBox.setEnabled(true);
                 }
             }
         });
