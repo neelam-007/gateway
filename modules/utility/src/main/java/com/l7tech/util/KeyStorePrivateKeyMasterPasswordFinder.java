@@ -32,6 +32,7 @@ public class KeyStorePrivateKeyMasterPasswordFinder implements MasterPasswordMan
     public static final String PROP_KEYSTORE_PASSWORD = "keystore.password";
     public static final String PROP_KEYSTORE_ENTRY_PASSWORD = "keystore.entry.password";
     public static final String PROP_NCIPHER_PROTECT = "ncipher.protect";
+    public static final String PROP_NCIPHER_PREFERENCE = "ncipher.preference";
     public static final String PROP_PREPEND_PROVIDERS = "prepend.providers";
     public static final String PROP_APPEND_PROVIDERS = "append.providers";
     public static final String PROP_MASTER_PASSPHRASE_CIPHERTEXT_BASE64 = "master.passphrase.ciphertext.base64";
@@ -53,11 +54,13 @@ public class KeyStorePrivateKeyMasterPasswordFinder implements MasterPasswordMan
     /** Provider to use when no more-specific provider is specified. */
     public static final String PROP_PROVIDER = "provider";
 
-    private static final boolean wantHighestPreference = "highest".equalsIgnoreCase(ConfigFactory.getProperty("com.l7tech.ncipher.preference", "default"));
-    
-    static final String CONFIG_PROFILE_NCIPHER_SWORLD_RSA = "ncipher.sworld.rsa";
+    public static final String SYSPROP_NCIPHER_PREFERENCE = "com.l7tech.ncipher.preference";
+    private static final boolean wantHighestPreference = "highest".equalsIgnoreCase(ConfigFactory.getProperty(SYSPROP_NCIPHER_PREFERENCE, "default"));
+
     private static final String PROV_NCIPHER_CLASSNAME = "com.ncipher.provider.km.nCipherKM";
-    protected static final Map<String, String> CONFIG_PROFILE_NCIPHER_RSA;
+
+    static final String CONFIG_PROFILE_NCIPHER_SWORLD_RSA_NAME = "ncipher.sworld.rsa";
+    protected static final Map<String, String> CONFIG_PROFILE_NCIPHER_SWORLD_RSA;
     static {
         Map<String, String> p = new LinkedHashMap<String, String>();
         p.put(PROP_KEYSTORE_TYPE, "nCipher.sworld");
@@ -67,16 +70,31 @@ public class KeyStorePrivateKeyMasterPasswordFinder implements MasterPasswordMan
         p.put(PROP_KEYSTORE_ENTRY_PASSWORD, "NULL");
         p.put(PROP_KEYSTORE_CREATION_PASSWORD, "NULL");
         p.put(PROP_RSA_CIPHER_NAME, "RSA/ECB/PKCS1Padding");
-        //p.put(PROP_RSA_PROVIDER_CLASSNAME, PROV_NCIPHER_CLASSNAME);
         p.put(PROP_SECURERANDOM_NAME, "RNG");
-        //p.put(PROP_SECURERANDOM_PROVIDER_CLASSNAME, PROV_NCIPHER_CLASSNAME);
-        CONFIG_PROFILE_NCIPHER_RSA = p;
+        CONFIG_PROFILE_NCIPHER_SWORLD_RSA = p;
+    }
+
+    static final String CONFIG_PROFILE_NCIPHER_FIPSSWORLD_RSA_NAME = "ncipher.fipssworld.rsa";
+    protected static final Map<String, String> CONFIG_PROFILE_NCIPHER_FIPSSWORLD_RSA;
+    static {
+        Map<String, String> p = new LinkedHashMap<String, String>();
+        p.put(PROP_KEYSTORE_TYPE, "nCipher.sworld");
+        p.put(PROP_PREPEND_PROVIDERS, PROV_NCIPHER_CLASSNAME);
+        p.put(PROP_NCIPHER_PROTECT, "module");
+        p.put(PROP_NCIPHER_PREFERENCE, "highest");
+        p.put(PROP_KEYSTORE_PASSWORD, "NULL");
+        p.put(PROP_KEYSTORE_ENTRY_PASSWORD, "NULL");
+        p.put(PROP_KEYSTORE_CREATION_PASSWORD, "NULL");
+        p.put(PROP_RSA_CIPHER_NAME, "RSA/ECB/PKCS1Padding");
+        p.put(PROP_SECURERANDOM_NAME, "RNG");
+        CONFIG_PROFILE_NCIPHER_FIPSSWORLD_RSA = p;
     }
 
     protected static final Map<String, Map<String,String>> CONFIG_PROFILES;
     static {
         Map<String, Map<String,String>> p = new HashMap<String, Map<String,String>>();
-        p.put(CONFIG_PROFILE_NCIPHER_SWORLD_RSA, CONFIG_PROFILE_NCIPHER_RSA);
+        p.put(CONFIG_PROFILE_NCIPHER_SWORLD_RSA_NAME, CONFIG_PROFILE_NCIPHER_SWORLD_RSA);
+        p.put(CONFIG_PROFILE_NCIPHER_FIPSSWORLD_RSA_NAME, CONFIG_PROFILE_NCIPHER_FIPSSWORLD_RSA);
         CONFIG_PROFILES = p;
     }
 
@@ -244,6 +262,10 @@ public class KeyStorePrivateKeyMasterPasswordFinder implements MasterPasswordMan
         String protect = prop(PROP_NCIPHER_PROTECT);
         if (protect.length() > 0 && !protect.equals(SyspropUtil.getProperty("protect")))
             SyspropUtil.setProperty("protect", protect);
+        
+        String preference = prop(PROP_NCIPHER_PREFERENCE);
+        if (preference.length() > 0 && !preference.equals(SyspropUtil.getProperty(SYSPROP_NCIPHER_PREFERENCE)))
+            SyspropUtil.setProperty(SYSPROP_NCIPHER_PREFERENCE, preference);
     }
 
     protected KeyStore newKeyStore() throws Exception {

@@ -48,7 +48,7 @@ my @CLEAR_WORLD_B64 = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -key
 my @CLEAR_WORLD_KEYSTOREID = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -keystoreProperty clear 4 initialKeystoreId);
 my @CLEAR_WORLD_DATABYTES = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -keystoreProperty clear 4 databytes);
 my @CLEAR_IGNORE_KEYSTOREIDS = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -keystoreProperty clear 4 ignoreKeystoreIds);
-my @GENERATE_NEW_KMP = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -changeMasterPassphrase kmp generateAll ncipher.sworld.rsa);
+my @GENERATE_NEW_KMP = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -changeMasterPassphrase kmp generateAll);
 my @MIGRATE_KMP_TO_OMP = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -changeMasterPassphrase kmp migrateFromKmpToOmp);
 my $LIST_KEYSTORE_CONTENTS = q[/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -changeMasterPassphrase kmp listKeystoreContents ignoreKmpFile config.profile=ncipher.sworld.rsa keystore.contents.base64=];
 
@@ -57,6 +57,7 @@ my @NOPCLEARFAIL = qw(/opt/nfast/bin/nopclearfail ca);
 my @NEWWORLD = qw(/opt/nfast/bin/new-world -m 1 -s 0 -Q 2/3 -k rijndael);
 my @PROGRAMWORLD = qw(/opt/nfast/bin/new-world --program --module=1);
 my $CHECK_MODE = q[/opt/nfast/bin/enquiry -m 1 | grep "^ mode" | awk '{print $2}'];
+my $CHECK_FIPS = q[/opt/nfast/bin/nfkminfo -w | grep ' StrictFIPS140'];
 
 sub stopGateway() {
     { local $/;  print "Stopping Gateway... "; }
@@ -150,6 +151,13 @@ sub getCurrentModuleMode() {
     return $mode;
 }
 
+sub isStrictFipsWorld() {
+    my $fips = `$CHECK_FIPS`;
+    die "Failed to check for StrictFIPS140 world: $?" if $?;
+    chomp($fips);
+    my $empty = $fips =~ /^\s*$/;
+    return !$empty;
+}
 
 # Load the world information from the database.
 # Returns the binary content of the "world" file from the database, or undef.
@@ -808,7 +816,9 @@ sub doGenerateNewKmp() {
     die "Unable to generate new keystore-protected master passphrase: the file " . KMPFILE . " already exists\n"
         if -e KMPFILE;
 
-    system(@GENERATE_NEW_KMP) == 0
+    my $profile = isStrictFipsWorld() ? "ncipher.fipssworld.rsa" : "ncipher.sworld.rsa";
+
+    system(@GENERATE_NEW_KMP, $profile) == 0
         or die "Failed to generate a new keystore-protected master passphrase: $?\n";
 }
 
