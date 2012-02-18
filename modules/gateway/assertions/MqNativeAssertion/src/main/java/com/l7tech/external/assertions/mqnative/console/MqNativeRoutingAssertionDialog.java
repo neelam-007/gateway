@@ -16,6 +16,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import static com.l7tech.objectmodel.EntityUtil.name;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.util.Functions.*;
@@ -168,10 +169,13 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
                     @Override
                     public void run() {
                         if (! mqQueuePropertiesDialog.isCanceled()) {
+                            final String newQueueName = mqQueuePropertiesDialog.getTheMqResource().getName();
                             List<SsgActiveConnector> newQueues = loadQueueItems();
                             sortQueueList(newQueues);
                             queueComboBox.setModel(comboBoxModel(newQueues));
-                            queueComboBox.getModel().setSelectedItem(mqQueuePropertiesDialog.getTheMqResource());
+                            queueComboBox.getModel().setSelectedItem(
+                                    grepFirst(newQueues, equality(name(),newQueueName))
+                            );
                         }
                     }
                 });
