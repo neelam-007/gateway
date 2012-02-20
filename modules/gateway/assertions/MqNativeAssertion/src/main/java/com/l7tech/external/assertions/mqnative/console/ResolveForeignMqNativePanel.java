@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.mqnative.console;
 
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
@@ -19,11 +20,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME;
+import static com.l7tech.util.Functions.grep;
+import static com.l7tech.util.Functions.negate;
 import static com.l7tech.util.TextUtils.truncStringMiddleExact;
+import static java.util.Collections.emptyList;
 
 /**
  * @author ghuang
@@ -153,7 +158,7 @@ public class ResolveForeignMqNativePanel extends WizardStepPanel {
 
     private void editAndSave(final SsgActiveConnector connector){
         final MqNativePropertiesDialog mqQueuePropertiesDialog = MqNativePropertiesDialog.createInstance(
-            TopComponents.getInstance().getTopParent(), connector, false, true);
+            TopComponents.getInstance().getTopParent(), connector, true, true);
 
         mqQueuePropertiesDialog.pack();
         Utilities.centerOnScreen(mqQueuePropertiesDialog);
@@ -189,13 +194,7 @@ public class ResolveForeignMqNativePanel extends WizardStepPanel {
         if (admin == null) return;
 
         final Object selectedItem = queueSelectorComboBox.getSelectedItem();
-        final Collection<SsgActiveConnector> connectors;
-        try {
-            connectors = admin.findSsgActiveConnectorsByType(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE);
-        } catch (FindException e) {
-            logger.warning("Cannot find Active Connectors");
-            return;
-        }
+        final Collection<SsgActiveConnector> connectors = findAllOutboundQueues();
 
         // Sort connectors by combination name
         Collections.sort((List<SsgActiveConnector>)connectors, new Comparator<SsgActiveConnector>() {
@@ -214,6 +213,20 @@ public class ResolveForeignMqNativePanel extends WizardStepPanel {
                 queueSelectorComboBox.setSelectedIndex(0);
             }
         }
+    }
+
+    private List<SsgActiveConnector> findAllOutboundQueues() {
+        try {
+            final TransportAdmin transportAdmin = Registry.getDefault().getTransportAdmin();
+            return grep( transportAdmin.findSsgActiveConnectorsByType( ACTIVE_CONNECTOR_TYPE_MQ_NATIVE ),
+                negate( booleanProperty( PROPERTIES_KEY_IS_INBOUND ) ) );
+        } catch ( IllegalStateException e ) {
+            // no admin context available
+            logger.info( "Unable to access queues from server." );
+        } catch ( FindException e ) {
+            ErrorManager.getDefault().notify( Level.WARNING, e, "Error loading queues" );
+        }
+        return emptyList();
     }
 
     private TransportAdmin getTransportAdmin() {

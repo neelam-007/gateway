@@ -162,7 +162,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
             @Override
             public void actionPerformed(ActionEvent e) {
                 final MqNativePropertiesDialog mqQueuePropertiesDialog =
-                        MqNativePropertiesDialog.createInstance(MqNativeRoutingAssertionDialog.this, null, false, false);
+                        MqNativePropertiesDialog.createInstance(MqNativeRoutingAssertionDialog.this, null, true, false);
                 mqQueuePropertiesDialog.pack();
                 Utilities.centerOnParentWindow( mqQueuePropertiesDialog );
                 DialogDisplayer.display(mqQueuePropertiesDialog, new Runnable() {
