@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.samlissuer.SamlIssuerAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.CommonMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
@@ -54,6 +55,7 @@ import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribut
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.EmptyBehavior.EXISTS_NO_VALUE;
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.EmptyBehavior.NULL_VALUE;
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.VariableNotFoundBehavior.REPLACE_EXPRESSION_EMPTY_STRING;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings({"JavaDoc"})
 public class ServerSamlIssuerAssertionTest {
@@ -108,13 +110,13 @@ public class ServerSamlIssuerAssertionTest {
         final String notBefore = conditionsNode.getAttributes().getNamedItem("NotBefore").getNodeValue();
         final Calendar notBeforeDate = DatatypeConverter.parseDate(notBefore);
         System.out.println(notBefore + " not before");
-        Assert.assertTrue("Issue instant must be before or equal to notBeforeDate", issueInstantCal.before(notBeforeDate) || issueInstantCal.equals(notBeforeDate));
+        assertTrue("Issue instant must be before or equal to notBeforeDate", issueInstantCal.before(notBeforeDate) || issueInstantCal.equals(notBeforeDate));
 
         //not part of bug, just adding sanity check
         final String notOnOrAfter = conditionsNode.getAttributes().getNamedItem("NotOnOrAfter").getNodeValue();
         final Calendar notOnOrAfterDate = DatatypeConverter.parseDate(notOnOrAfter);
         System.out.println(notOnOrAfter + " not on or after");
-        Assert.assertTrue("Not on or after must be after not before date.", notBeforeDate.before(notOnOrAfterDate));
+        assertTrue("Not on or after must be after not before date.", notBeforeDate.before(notOnOrAfterDate));
     }
 
     /**
@@ -166,20 +168,20 @@ public class ServerSamlIssuerAssertionTest {
         final String notBefore = conditionsNode.getAttributes().getNamedItem("NotBefore").getNodeValue();
         final Calendar notBeforeDate = DatatypeConverter.parseDate(notBefore);
         System.out.println(notBefore + " not before");
-        Assert.assertTrue("Issue instant must be before or equal to notBeforeDate", issueInstantCal.before(notBeforeDate) || issueInstantCal.equals(notBeforeDate));
+        assertTrue("Issue instant must be before or equal to notBeforeDate", issueInstantCal.before(notBeforeDate) || issueInstantCal.equals(notBeforeDate));
 
         //not part of bug, just adding sanity check
         final String notOnOrAfter = conditionsNode.getAttributes().getNamedItem("NotOnOrAfter").getNodeValue();
         final Calendar notOnOrAfterDate = DatatypeConverter.parseDate(notOnOrAfter);
         System.out.println(notOnOrAfter + " not on or after");
-        Assert.assertTrue("Not on or after must be after not before date.", notBeforeDate.before(notOnOrAfterDate));
+        assertTrue("Not on or after must be after not before date.", notBeforeDate.before(notOnOrAfterDate));
 
         //test subject confirmation not before date
         final Node subjectConfirmationDataNode = document.getElementsByTagNameNS(SamlConstants.NS_SAML2, "SubjectConfirmationData").item(0);
         final String subConfNotBefore = subjectConfirmationDataNode.getAttributes().getNamedItem("NotBefore").getNodeValue();
         final Calendar subConfNotBeforeCal = DatatypeConverter.parseDate(subConfNotBefore);
         System.out.println(subConfNotBefore + " subject confirmation data not before");
-        Assert.assertTrue("Subject confirmation data's not before should be after the issue instant.", issueInstantCal.before(subConfNotBeforeCal) || issueInstantCal.equals(subConfNotBeforeCal));
+        assertTrue("Subject confirmation data's not before should be after the issue instant.", issueInstantCal.before(subConfNotBeforeCal) || issueInstantCal.equals(subConfNotBeforeCal));
     }
 
     // Basic test coverage for existing support - Attributes are added to an AttributeStatement
@@ -1067,7 +1069,77 @@ public class ServerSamlIssuerAssertionTest {
         final String filterExpression = "${attributeQuery.attributes}";
         final List<Element> reqAttributes = getAttributesFromRequest(attributeRequest_V2, SamlConstants.NS_SAML2, "Attribute");
 
-        runTest(attributes, filterExpression, Arrays.asList(new Pair<String, Object>("attributeQuery.attributes", reqAttributes)), SamlConstants.NS_SAML2, 3, 2);
+        TestAudit audit = runTest(attributes, filterExpression, Arrays.asList(new Pair<String, Object>("attributeQuery.attributes", reqAttributes)), SamlConstants.NS_SAML2, 3, 2).right;
+        for (String s : audit) {
+            System.out.println(s);
+        }
+        assertTrue(audit.isAuditPresent(AssertionMessages.SAML_ISSUER_ATTR_STMT_FILTERED_ATTRIBUTES));
+    }
+
+    /**
+     * Validate support for an filter expression that yields no usable variable values. If no usable values are supported
+     * then no filtering will be done, in this case supplying an attribute filter has no affect. When this happens it is
+     * audited at the WARNING level.
+     * <p/>
+     * This test validates support for an empty multi valued variable, empty string and non empty string.
+     * <p/>
+     * Audits are verified to ensure enough debug information is provided for these situations.
+     */
+    @Test
+    public void testEmptyFilter_SupportedAndAuditing() throws Exception {
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        // Statically configure 3 attributes
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        nameAttr.setValue("James");
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+
+        //This is the attribute we expect to not be included in the created saml token
+        final SamlAttributeStatement.Attribute attributeNotInRequest = new SamlAttributeStatement.Attribute();
+        attributeNotInRequest.setName("not_in_request");
+        attributeNotInRequest.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        attributeNotInRequest.setValue("not_in_request_value");
+
+        attributes.add(nameAttr);
+        attributes.addAll(middleAndLastName);
+        attributes.add(attributeNotInRequest);
+
+        final String filterExpression = "${attributeQuery.attributes}";
+        TestAudit testAudit = runTest(attributes, filterExpression, Collections.<Pair<String, Object>>emptyList(), SamlConstants.NS_SAML2, 4, 2).right;
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertTrue(testAudit.isAuditPresent(CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE));
+
+        // in this case the filter is simply empty - variable exsits but no values were found
+        testAudit = runTest(attributes, filterExpression, Arrays.asList(new Pair<String, Object>("attributeQuery.attributes", Collections.emptyList())), SamlConstants.NS_SAML2, 4, 2).right;
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SAML_ISSUER_ATTR_STMT_FILTER_EXPRESSION_NO_VALUES));
+        assertTrue(testAudit.isAuditPresentContaining("Filter expression '${attributeQuery.attributes}' yielded no values."));
+
+        // an emtpy string is found at runtime, this is logged with a warning.
+        testAudit = runTest(attributes, filterExpression, Arrays.asList(new Pair<String, Object>("attributeQuery.attributes", "")), SamlConstants.NS_SAML2, 4, 2).right;
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SAML_ISSUER_ATTR_STMT_PROCESSING_WARNING));
+        assertTrue(testAudit.isAuditPresentContaining("Unsupported variable value found of type String when extracting filter Attributes: ''"));
+        assertTrue(testAudit.isAuditPresentContaining("Filter expression '${attributeQuery.attributes}' yielded no values."));
+
+        testAudit = runTest(attributes, filterExpression, Arrays.asList(new Pair<String, Object>("attributeQuery.attributes", "something odd resolved at runtime")), SamlConstants.NS_SAML2, 4, 2).right;
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SAML_ISSUER_ATTR_STMT_PROCESSING_WARNING));
+        assertTrue(testAudit.isAuditPresentContaining("Unsupported variable value found of type String when extracting filter Attributes: 'something odd resolved at runtime'"));
+        assertTrue(testAudit.isAuditPresentContaining("Filter expression '${attributeQuery.attributes}' yielded no values."));
     }
 
     /**
@@ -1113,7 +1185,7 @@ public class ServerSamlIssuerAssertionTest {
         final Document document = runTest(attributes, filterExpression,
                 Arrays.asList(new Pair<String, Object>("attributeQuery.attributes", reqAttrs.get(0)), //just first element
                         new Pair<String, Object>("MiddleName", mVar)),
-                SamlConstants.NS_SAML2, 2, 2);
+                SamlConstants.NS_SAML2, 2, 2).left;
 
         System.out.println(XmlUtil.nodeToFormattedString(document.getDocumentElement()));
 
@@ -1205,6 +1277,12 @@ public class ServerSamlIssuerAssertionTest {
         samlAttributeStatement.setFilterExpression("${" + varName + "}");
         ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
 
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("auditFactory", testAudit.factory())
+                .unmodifiableMap()
+        );
+
         final PolicyEnforcementContext context = getContext();
         context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2, "Attribute"));
 
@@ -1218,6 +1296,12 @@ public class ServerSamlIssuerAssertionTest {
         final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
         final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
         Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement", 2, attribute.size());
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SAML_ISSUER_ATTR_STMT_VALUE_EXCLUDED_ATTRIBUTE_DETAILS));
+        assertTrue(testAudit.isAuditPresentContaining("Resolved value for Attribute 'nc:PersonGivenName' was filtered as its value 'Name does not match request so this attribute should be filtered out' was not included in the corresponding filter Attribute's AttributeValue."));
     }
 
     /**
@@ -2353,7 +2437,7 @@ public class ServerSamlIssuerAssertionTest {
             System.out.println(s);
         }
 
-        Assert.assertTrue(testAudit.isAuditPresentContaining("Attribute filter AttributeValue excluded some Attributes: [Name=nc:PersonGivenName NameFormat=urn:oasis:names:tc:SAML:2.0:attrname-format:basic]"));
+        assertTrue(testAudit.isAuditPresentContaining("Attribute filter AttributeValue excluded some Attributes: [Name=nc:PersonGivenName NameFormat=urn:oasis:names:tc:SAML:2.0:attrname-format:basic]"));
         final Object filterVariable = context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES);
         Assert.assertNotNull(filterVariable);
         Assert.assertEquals(filterVariable.toString(), "[Name=nc:PersonGivenName NameFormat=urn:oasis:names:tc:SAML:2.0:attrname-format:basic]");
@@ -2718,7 +2802,7 @@ public class ServerSamlIssuerAssertionTest {
             System.out.println(s);
         }
 
-        Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAML_ISSUER_CANNOT_PARSE_XML));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SAML_ISSUER_CANNOT_PARSE_XML));
     }
 
     private void validateVariableNotNull(String variableName, String expectedValue, final PolicyEnforcementContext context) throws NoSuchVariableException {
@@ -3076,7 +3160,7 @@ public class ServerSamlIssuerAssertionTest {
      * @return Document for issued SAML Assertion
      * @throws Exception any exceptions
      */
-    private Document runTest(List<SamlAttributeStatement.Attribute> attributes,
+    private Pair<Document, TestAudit> runTest(List<SamlAttributeStatement.Attribute> attributes,
                          String filterExpression,
                          List<Pair<String, Object>> varNameValuePair,
                          String samlNamespace,
@@ -3097,6 +3181,12 @@ public class ServerSamlIssuerAssertionTest {
         addCredentials(context);
         context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
 
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("auditFactory", testAudit.factory())
+                .unmodifiableMap()
+        );
+
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
 
@@ -3108,7 +3198,7 @@ public class ServerSamlIssuerAssertionTest {
         final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, samlNamespace, "Attribute");
         Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement", expectedReturnedAttributes, attribute.size());
 
-        return document;
+        return new Pair<Document, TestAudit>(document, testAudit);
     }
 
     private List<Element> getElementsFromXml(String attributeRequest, String samlNS, String nameAttrName) throws Exception {

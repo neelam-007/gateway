@@ -457,7 +457,6 @@ public class ServerProcessSamlAttributeQueryAssertionTest {
         Assert.assertFalse("EncryptedID element should not have been found", xpathResultSetIterator.hasNext());
     }
 
-    //todo [Donal] - update this test to also check for the values of the confirmation data
     @BugNumber(11703)
     @Test
     public void testSuccessCase_DecryptEncryptedNameIdentifier_WithSubjectConfirmation() throws Exception{

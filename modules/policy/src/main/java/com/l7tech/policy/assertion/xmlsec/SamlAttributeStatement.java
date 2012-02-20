@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
@@ -58,11 +60,12 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
         }
     }
 
+    @NotNull
     public String getFilterExpression() {
         return filterExpression;
     }
 
-    public void setFilterExpression(String filterExpression) {
+    public void setFilterExpression(@NotNull String filterExpression) {
         this.filterExpression = filterExpression;
     }
 
