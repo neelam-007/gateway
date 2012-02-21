@@ -153,7 +153,6 @@ sub getCurrentModuleMode() {
 
 sub isStrictFipsWorld() {
     my $fips = `$CHECK_FIPS`;
-    die "Failed to check for StrictFIPS140 world: $?" if $?;
     chomp($fips);
     my $empty = $fips =~ /^\s*$/;
     return !$empty;
