@@ -112,6 +112,30 @@ public class ServerJdbcQueryAssertionTest {
         assertEquals(department, params.get(3));
     }
 
+
+    @Test
+     public void shouldTestMultivaluedVariableExpansionWhenAllowMultivalueTurnedOff() throws Exception {
+        final String department = "Production";
+        final List<Object> employeeIds = new ArrayList<Object>();
+        employeeIds.add(1);
+        employeeIds.add(2);
+        employeeIds.add(3);
+
+        peCtx.setVariable("var_dept", department);
+        peCtx.setVariable("var_ids", employeeIds);
+
+        List<Object> params = new ArrayList<Object>();
+        String query = "select * from employees where id in (${var_ids}) and department = ${var_dept}";
+        assertion.setSqlQuery(query);
+        assertion.setAllowMultiValuedVariables(false);
+
+        String expectedPlainQuery = "select * from employees where id in (?) and department = ?";
+        String actualPlainQuery = fixture.getQueryStatementWithoutContextVariables(query, params, peCtx);
+        assertEquals(expectedPlainQuery, actualPlainQuery);
+        assertEquals("1, 2, 3", params.get(0));
+        assertEquals(department, params.get(1));
+     }
+
     @Test
     public void shouldReturnConstructedQueryWhenTheSameParameterUsedTwiceAndMultiValueParametersUsed() throws Exception {
 
@@ -146,6 +170,7 @@ public class ServerJdbcQueryAssertionTest {
         final List<Object> employeeIds = new ArrayList<Object>();
         employeeIds.add(1);
         employeeIds.add(2);
+        assertion.setAllowMultiValuedVariables(true);
 
         peCtx.setVariable("var_dept", "department");
         peCtx.setVariable("var_ids", "1");
@@ -156,6 +181,26 @@ public class ServerJdbcQueryAssertionTest {
         fixture.getQueryStatementWithoutContextVariables(query, params, peCtx);
     }
 
+    @Test
+    public void shouldReturnEmptyVaslueWhenVariableIndexOutOfBounds() throws Exception {
+        final List<Object> employeeIds = new ArrayList<Object>();
+        final String department = "Production";
+        employeeIds.add(1);
+        employeeIds.add(2);
+
+        peCtx.setVariable("var_dept", department);
+        peCtx.setVariable("var_ids", "1");
+
+        List<Object> params = new ArrayList<Object>();
+        String query = "select * from employees where id=${var_ids[3]} and department = ${var_dept}";
+        assertion.setSqlQuery(query);
+        String actualQuery = fixture.getQueryStatementWithoutContextVariables(query, params, peCtx);
+        assertEquals("select * from employees where id=? and department = ?", actualQuery);
+        assertEquals("", params.get(0));
+        assertEquals(department, params.get(1));
+        
+    }
+    
     @Test
     public void shouldReturnUnalteredQueryStringWhenNoContextVariablesPresent() throws Exception {
         List<Object> params = new ArrayList<Object>();

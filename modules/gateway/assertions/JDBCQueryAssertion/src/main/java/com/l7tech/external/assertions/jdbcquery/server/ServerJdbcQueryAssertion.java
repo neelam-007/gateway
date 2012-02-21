@@ -96,8 +96,8 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         final String[] varsWithoutIndex = assertion.getVariablesUsed();
         final Map<String, Pattern> varPatternMap = new HashMap<String, Pattern>();
         for (final String varWithIndex: varsWithIndex) {
-            List<Object> varValues = ExpandVariables.processNoFormat("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit(), true);
             if(assertion.isAllowMultiValuedVariables()) {
+                List<Object> varValues = ExpandVariables.processNoFormat("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit(), true);
                 //when parameters are multi-value, make each value as a separate parameter of the parameterized query separated by comma.
                 StringBuilder sb = new StringBuilder();
                 Iterator<Object> iter = varValues.iterator();
@@ -111,10 +111,9 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                 Matcher matcher = searchPattern.matcher(query);
                 query = matcher.replaceFirst(sb.toString());
             }
-            else if(varValues.size() > 0){
-//                String value = ExpandVariables.process("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit());
-                //here we assume that the value is not multi-valued so the value is in the first element
-                params.add(varValues.get(0));
+            else {
+                String value = ExpandVariables.process("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit());
+                params.add(value);
             }
         }
 
