@@ -2,11 +2,10 @@ package com.l7tech.security.prov.ncipher;
 
 import com.l7tech.security.prov.GcmCipher;
 import com.l7tech.util.ExceptionUtils;
-import com.ncipher.nfast.connect.ClientException;
-import com.ncipher.nfast.connect.ConnectionFailed;
 import com.ncipher.nfast.connect.utils.Channel;
 import com.ncipher.nfast.connect.utils.EasyConnection;
 import com.ncipher.nfast.marshall.*;
+import com.ncipher.provider.km.nCipherKM;
 import com.ncipher.provider.nCKey;
 
 import javax.crypto.BadPaddingException;
@@ -109,13 +108,10 @@ class NcipherGcmCipher implements GcmCipher, Closeable {
     }
 
     private EasyConnection connection() throws InvalidAlgorithmParameterException {
-        try {
-            return conn != null ? conn : (conn = NcipherConnectionPool.getConnection());
-        } catch (ConnectionFailed e) {
-            throw new InvalidAlgorithmParameterException("nCipher GCM is currently unavailable: " + ExceptionUtils.getMessage(e), e);
-        } catch (ClientException e) {
-            throw new InvalidAlgorithmParameterException("nCipher GCM is currently unavailable: " + ExceptionUtils.getMessage(e), e);
+        if (conn == null) {
+            conn = new EasyConnection(nCipherKM.getConnection());
         }
+        return conn;
     }
 
     public void close() {
@@ -132,7 +128,6 @@ class NcipherGcmCipher implements GcmCipher, Closeable {
 
             EasyConnection c = conn;
             conn = null;
-            NcipherConnectionPool.returnConnection(c);
         }
         key = null;
     }
