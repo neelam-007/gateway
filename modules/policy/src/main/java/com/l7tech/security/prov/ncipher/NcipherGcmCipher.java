@@ -126,7 +126,6 @@ class NcipherGcmCipher implements GcmCipher, Closeable {
                 keyIdNeedsToBeDestroyed = false;
             }
 
-            EasyConnection c = conn;
             conn = null;
         }
         key = null;
