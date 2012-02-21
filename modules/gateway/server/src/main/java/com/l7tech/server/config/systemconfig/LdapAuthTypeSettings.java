@@ -55,6 +55,7 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
 
 
     private boolean ldapSecure;
+    private boolean isActiveDirectory;
     private String ldapServer;
     private String ldapBaseDn="";
     private String ldapPort="389";
@@ -87,6 +88,14 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
     private String pamMinUid="0";
 
 
+    public void setIsActiveDirectory(boolean ad) {
+        this.isActiveDirectory = ad;
+    }
+
+    public boolean isActiveDirectory() {
+        return isActiveDirectory;
+    }
+
     public String getLdapServer() {
         return ldapServer;
     }
@@ -114,6 +123,7 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
 
     private List<String> writeConfigLines() {
         List<String> configLines = new ArrayList<String>();
+        configLines.add(makeNameValuePair("AD",(isActiveDirectory()?"yes":"no")));
         configLines.add(makeNameValuePair("LDAP_TYPE",(isLdapSecure()?"ldaps":"ldap")));
         configLines.add(makeNameValuePair("LDAP_SRV", getLdapServer()));
         configLines.add(makeNameValuePair("LDAP_PORT", getLdapPort()));
@@ -163,6 +173,7 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
         List<String> descs = new ArrayList<String>();
         descs.add("The following LDAP configuration will be applied:");
 
+        if (isActiveDirectory()) descs.add("\tActive Directory is being used");
         descs.add("\tLDAP Server IP : " + getLdapServer());
         descs.add("\tLDAP Server Port : " + getLdapPort());
         descs.add("\tLDAP Base DN : " + getLdapBaseDn());

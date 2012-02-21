@@ -320,16 +320,6 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
     }
 
     private void doLdapAccessControlPrompts(LdapAuthTypeSettings ldapView, boolean isLdapOnly) throws IOException, WizardNavigationException {
-        /* collects for the following always (ldap_only or radius_ldap):
-           LDAP_GROUP_NAME
-           PASS_HASH_ALGO
-
-           prompts for hte following only when authentication type is LDAP_ONLY:
-           NSS_BASE_PASSWD
-           NSS_BASE_GROUP
-           NSS_BASE_SHADOW
-         */
-
 
         printText(EOL);
         String defaultGroup = "ssgconfig_ldap";
@@ -351,55 +341,26 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         printText(EOL);
         ldapView.setPamFilter(ldapView.createPamFilterFromGids(new String[]{ldapGid}));
 
-        //password hash algorithm selection
-        String[] hashAlgs = new String[]{"md5","sha512"};
-        List<String> prompts = new ArrayList<String>();
-
-        int x = 1;
-        for (String alg : hashAlgs) {
-            String prompt = String.valueOf(x++) + ") " + alg;
-            prompts.add(prompt + EOL);
-        }
-        prompts.add("Please make a selection : [1] ");
-        printText("Specify the the hashing algorithm for the LDAP user's passwords." + EOL);
-
-        String[] allowedEntries = new String[x];
-        for (int index=1; index <= x; ++index) {
-            allowedEntries[index-1] = String.valueOf(index);
-        }
-        String whichChoice = getData(
-                prompts.toArray(new String[prompts.size()]),
-                "1",
-                allowedEntries,
-                "*** Invalid Selection: Please select from one of the available options. ***"
-        );
-        int choice = Integer.parseInt(whichChoice);
-
-        String passHashAlg = hashAlgs[choice -1];
-        ldapView.setPassHashAlg(passHashAlg);
-
         if (isLdapOnly) {
-            String defaultObjectName = "ou=posixAccounts";
             String nssBasePasswd = getData(
-                new String[]{"Which object in the LDAP will be used to find the password for users : " + "[" + defaultObjectName + "] "},
-                    defaultObjectName,
-                Pattern.compile("\\S+"),
+                new String[]{"Which object in the LDAP will be used to find the password for users : "},
+                    "",
+                DN_PATTERN,
                 "*** Invalid Entry: Please enter a valid object name***"
             );
 
             // Since they may have chosen a new base Object other than the default, use it
-            defaultObjectName = nssBasePasswd;
             String nssBaseGroup = getData(
-                new String[]{"Which object in the LDAP will be used to find the groups for users : " + "[" + defaultObjectName + "] "},
-                    defaultObjectName,
-                Pattern.compile("\\S+"),
+                new String[]{"Which object in the LDAP will be used to find the groups for users : "},
+                    "",
+                DN_PATTERN,
                 "*** Invalid Entry: Please enter a valid object name***"
             );
 
             String nssBaseShadow = getData(
-                new String[]{"Which object in the LDAP will be used to find the shadow entries for users : " + "[" + defaultObjectName + "] "},
-                    defaultObjectName,
-                Pattern.compile("\\S+"),
+                new String[]{"Which object in the LDAP will be used to find the shadow entries for users : "},
+                    "",
+                DN_PATTERN,
                 "*** Invalid Entry: Please enter a valid object name***"
             );
 
@@ -410,6 +371,9 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
     }
 
     private void doLdapServerPrompts(LdapAuthTypeSettings ldapView) throws IOException, WizardNavigationException {
+
+        boolean isAD = getConfirmationFromUser("Is the directory service to be used an Active Directory?","n");
+
         boolean isLdapSecure = getConfirmationFromUser("Do you want to use LDAPS (secure)?", "n");
         String ldapServer = getData(
                 new String[] {"Enter the address of the LDAP server: "},
@@ -432,6 +396,7 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
                 DN_PATTERN,
                 "*** Invalid Entry: Please enter a valid LDAP base DN ***"
         );
+        ldapView.setIsActiveDirectory(isAD);
         ldapView.setLdapSecure(isLdapSecure);
         ldapView.setLdapServer(ldapServer);
         ldapView.setLdapPort(ldapPort);
