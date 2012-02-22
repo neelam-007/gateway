@@ -113,6 +113,8 @@ public class NcipherJceProviderEngine extends JceProvider {
             return MESSAGE_DIGEST_PROVIDER;
         if (SERVICE_DIFFIE_HELLMAN_SOFTWARE.equals(service))
             return SOFTWARE_DH_PROVIDER;
+        if (SERVICE_SIGNATURE_RSA_PRIVATE_KEY.equals(service))
+            return PROVIDER;
         return super.getProviderFor(service);
     }
 

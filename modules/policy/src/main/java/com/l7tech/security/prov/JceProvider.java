@@ -60,6 +60,8 @@ public abstract class JceProvider {
     public static final String SERVICE_PBE_WITH_SHA1_AND_DESEDE = "Cipher.PBEWithSHA1AndDESede";
     public static final String SERVICE_CERTIFICATE_GENERATOR = "Signature.BouncyCastleCertificateGenerator";
     public static final String SERVICE_CSR_SIGNING = "Signature.BouncyCastleCsrSigner";
+    public static final String SERVICE_SIGNATURE_RSA_PRIVATE_KEY = "Signature.NONEwithRSA.privateKey"; // any RSA signing using a private key that might be from an HSM
+    public static final String SERVICE_SIGNATURE_ECDSA = "Signature.NONEwithECDSA"; // any ECDSA signing or signature verification
     public static final String SERVICE_KEYSTORE_PKCS12 = "KeyStore.PKCS12";
     public static final String SERVICE_TLS10 = "SSLContext.TLSv1";   // Not the real service name, but lets us distinguish
     public static final String SERVICE_TLS12 = "SSLContext.TLSv1.2"; // SunJSSE from RsaJsse on the basis of which one (currently) support TLSv1.2

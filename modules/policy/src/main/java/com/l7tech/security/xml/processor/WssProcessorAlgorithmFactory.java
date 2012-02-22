@@ -8,23 +8,23 @@ import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.ibm.xml.enc.EncryptionEngine;
 import com.ibm.xml.enc.StructureException;
 import com.ibm.xml.enc.type.EncryptionMethod;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.*;
-import static com.l7tech.util.CollectionUtils.set;
 import com.l7tech.util.ConfigFactory;
-import static com.l7tech.util.ConfigFactory.getProperty;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.optional;
-import static com.l7tech.util.TextUtils.split;
 import com.l7tech.xml.soap.SoapUtil;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Node;
 
 import javax.crypto.NoSuchPaddingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
+import java.security.*;
 import java.util.*;
 import java.util.regex.Pattern;
+
+import static com.l7tech.util.CollectionUtils.set;
+import static com.l7tech.util.ConfigFactory.getProperty;
+import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.TextUtils.split;
 
 /**
  * An XSS4J AlgorithmFactory that adds some additonal features:
@@ -59,7 +59,8 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     private final Map<String, String> ecdsaSignatureMethodTable = new HashMap<String, String>();
     private final Set<String> enabledDigestSet;
     private final Set<String> enabledTransformSet;
-
+    private final String ecdsaProviderName;
+    
     /**
      * Create a basic algorithm factory
      */
@@ -72,8 +73,19 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
      *
      * @param strToTarget a map of SecurityTokenReference -> target nodes.  If null, STR-Transform will not be supported.
      */
+    public WssProcessorAlgorithmFactory( @Nullable final Map<Node, Node> strToTarget ) {
+        this( strToTarget, null, JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_SIGNATURE_ECDSA) );
+    }
+    
+    /**
+     * Create an algorithm factory that will allow the STR-Transform.
+     *
+     * @param strToTarget a map of SecurityTokenReference -> target nodes.  If null, STR-Transform will not be supported.
+     * @param defaultProvider  security provider to hardwire for everything except ECDSA, or null to select dynamically
+     * @param ecdsaProvider  security provider to hardwire for ECDSA, or null to select dynamically
+     */
     @SuppressWarnings("unchecked")
-    public WssProcessorAlgorithmFactory( @Nullable final Map<Node, Node> strToTarget) {
+    public WssProcessorAlgorithmFactory( @Nullable final Map<Node, Node> strToTarget, @Nullable Provider defaultProvider, @Nullable Provider ecdsaProvider ) {
         this.strToTarget = strToTarget;
         this.signatureMethodTable.put(SupportedSignatureMethods.RSA_SHA256.getAlgorithmIdentifier(), "SHA256withRSA");
         this.signatureMethodTable.put(SupportedSignatureMethods.RSA_SHA384.getAlgorithmIdentifier(), "SHA384withRSA");
@@ -96,6 +108,9 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
                 optional(getProperty( PROP_PERMITTED_TRANSFORM_ALGS, DEFAULT_PERMITTED_TRANSFORM_ALGS ))
                         .map( split( LIST_SPLITTER ) );
         enabledTransformSet = transformsOption.isSome() ? set( transformsOption.some() ) : Collections.<String>emptySet();
+        if (defaultProvider != null)
+            setProvider(defaultProvider.getName());
+        this.ecdsaProviderName = ecdsaProvider == null ? null : ecdsaProvider.getName();
     }
 
     @Override
@@ -111,10 +126,11 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     @Override
     public SignatureMethod getSignatureMethod(String uri, Object o) throws NoSuchAlgorithmException, NoSuchProviderException {
         String sigMethod = ecdsaSignatureMethodTable.get(uri);
-        if (sigMethod == null)
+        if (sigMethod == null) {
             return checkSignatureMethod(super.getSignatureMethod(uri, o));
+        }
 
-        return checkSignatureMethod(new EcdsaSignatureMethod(sigMethod, uri, getProvider()));
+        return checkSignatureMethod(new EcdsaSignatureMethod(sigMethod, uri, ecdsaProviderName));
     }
 
     private SignatureMethod checkSignatureMethod(SignatureMethod signatureMethod) throws NoSuchAlgorithmException {
@@ -152,19 +168,29 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
 
     @Override
     public MessageDigest getDigestMethod(String s) throws NoSuchAlgorithmException, NoSuchProviderException {
-
-        MessageDigest md;
-
+        String transform;
         if ("http://www.w3.org/2001/04/xmlenc#sha256".equals(s)) {
-            md = MessageDigest.getInstance("SHA-256");
+            transform = "SHA-256";
         } else if ("http://www.w3.org/2001/04/xmldsig-more#sha384".equals(s)) {
-            md = MessageDigest.getInstance("SHA-384");
+            transform = "SHA-384";
         } else if ("http://www.w3.org/2001/04/xmlenc#sha512".equals(s)) {
-            md = MessageDigest.getInstance("SHA-512");
+            transform = "SHA-512";
+        } else if ("http://www.w3.org/2000/09/xmldsig#sha1".equals(s)) {
+            transform = "SHA-1";
         } else {
-            md = super.getDigestMethod(s);
+            transform = (String)digestMethodTable.get(s);
+            if(transform == null)
+                throw new NoSuchAlgorithmException("No DigestMethod for " + s);
         }
-        return checkDigestMethod(md);
+        checkDigestMethod(transform.toUpperCase());
+        return MessageDigest.getInstance(transform);
+    }
+
+    @Override
+    public void releaseDigestMethod(MessageDigest md, String uri) {
+        // Ignore this until we establish that pooling MessageDigest instances is once again worth doing.
+        // The current XSS4J pooling is actually worse than no pooling at all, on our modern server with loads
+        // of CPU cores, due to its use of synchronized data structures
     }
 
     @Override
@@ -186,10 +212,9 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
         hmacPool.clear();
     }
 
-    private MessageDigest checkDigestMethod(MessageDigest md) throws NoSuchAlgorithmException {
+    private void checkDigestMethod(String transform) throws NoSuchAlgorithmException {
         // Ensure that the digest method uses a digest algorithm which is enabled
-        if (!enabledDigestSet.contains(md.getAlgorithm().toUpperCase()))
-            throw new NoSuchAlgorithmException("The algorithm " + md.getAlgorithm() + " is not permitted for use as the digest method for signature verification.");
-        return md;
+        if (!enabledDigestSet.contains(transform))
+            throw new NoSuchAlgorithmException("The algorithm " + transform + " is not permitted for use as the digest method for signature verification.");
     }
 }

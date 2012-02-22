@@ -6,7 +6,6 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.*;
-import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.NamespaceFactory;
 import com.l7tech.xml.soap.SoapUtil;
 import org.jetbrains.annotations.NotNull;
@@ -58,7 +57,7 @@ public class RequestSigner {
         template.addReference(ref);
 
         SignatureContext context = new SignatureContext();
-        context.setAlgorithmFactory( new WssProcessorAlgorithmFactory() );
+        context.setAlgorithmFactory( DsigUtil.createSignatureAlgorithmFactory(signingKey, null) );
         context.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         context.setIDResolver(new IDResolver() {
             @Override

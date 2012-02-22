@@ -10,7 +10,6 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.*;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
@@ -225,7 +224,7 @@ public class SamlAssertionGenerator {
         template.addReference(ref);
 
         SignatureContext context = new SignatureContext();
-        context.setAlgorithmFactory(new WssProcessorAlgorithmFactory());
+        context.setAlgorithmFactory(DsigUtil.createSignatureAlgorithmFactory(signingKey, null));
         context.setEntityResolver( XmlUtil.getXss4jEntityResolver());
         context.setIDResolver(new IDResolver() {
             @Override

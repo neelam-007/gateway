@@ -16,7 +16,6 @@ import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.xml.*;
 import com.l7tech.security.xml.processor.SecurityContext;
-import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.security.xml.processor.X509SigningSecurityTokenImpl;
 import com.l7tech.util.*;
@@ -1368,7 +1367,7 @@ public class WssDecoratorImpl implements WssDecorator {
             }
         });
         sigContext.setEntityResolver(c.attachmentResolver);
-        sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(strTransformsNodeToNode));
+        sigContext.setAlgorithmFactory(DsigUtil.createSignatureAlgorithmFactory(senderSigningKey, strTransformsNodeToNode));
         try {
             KeyUsageChecker.requireActivityForKey(KeyUsageActivity.signXml, senderSigningCert, senderSigningKey);
             sigContext.sign(emptySignatureElement, senderSigningKey);

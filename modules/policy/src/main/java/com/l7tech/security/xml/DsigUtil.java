@@ -11,6 +11,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.ConfigFactory;
@@ -22,6 +23,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import javax.xml.parsers.ParserConfigurationException;
@@ -38,8 +42,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.l7tech.security.xml.SupportedDigestMethods.*;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 /**
  * Utility class to help with XML digital signatures.
@@ -71,7 +73,7 @@ public class DsigUtil {
     }
 
     /**
-     * Create a new SignatureContext with easonable defaults for validation.
+     * Create a new SignatureContext with reasonable defaults for validation.
      *
      * @return The new signature context.
      */
@@ -236,12 +238,31 @@ public class DsigUtil {
         } catch (CertificateException e) {
             throw new SignatureException(e);
         }
-        sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory());
+        sigContext.setAlgorithmFactory(createSignatureAlgorithmFactory(senderSigningKey, null));
         try {
             return sigContext.sign(sigElement, senderSigningKey);
         } catch (XSignatureException e) {
             repairXSignatureException(e);
             throw e;
+        }
+    }
+
+    /**
+     * Create an algorithm factory for peforming an XML (or WSS) signature using the specified signing key.
+     * <p/>
+     * This will hardwire a security Provider for signing if indicated by the current JceProvider for this key type.
+     * 
+     * @param signingKey the secret or private key we will be signing with.  Required.
+     * @param strToTarget a map of SecurityTokenReference -> target nodes.  If null, STR-Transform will not be supported.
+     * @return an appropriately-configured algorithm factory.  Never null.
+     */
+    public static WssProcessorAlgorithmFactory createSignatureAlgorithmFactory( @NotNull Key signingKey, @Nullable final Map<Node, Node> strToTarget ) {
+        if ("RSA".equalsIgnoreCase(signingKey.getAlgorithm())) {
+            return new WssProcessorAlgorithmFactory(strToTarget, JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_SIGNATURE_RSA_PRIVATE_KEY), null);
+        } else if ("EC".equals(signingKey.getAlgorithm()) || "ECDSA".equals(signingKey.getAlgorithm())) {
+            return new WssProcessorAlgorithmFactory(strToTarget, null, JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_SIGNATURE_ECDSA));
+        } else {        
+            return new WssProcessorAlgorithmFactory(strToTarget);
         }
     }
 
