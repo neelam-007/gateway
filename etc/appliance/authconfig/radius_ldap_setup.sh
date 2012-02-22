@@ -583,12 +583,27 @@ else
 	
 	# pam_login_attribute field
 	if [ "X$PAM_LOGIN_ATTR" != "X" ]; then
-		sed -i "s|\(^# The user ID attribute.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_login_attribute $PAM_LOGIN_ATTR\n|" $NSS_LDAP_CONF_FILE
-		if [ $? -ne 0 ] || [ "X$(grep "^pam_login_attribute" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_LOGIN_ATTR" ]; then
-			toLog "    ERROR - Configuring 'pam_login_attribute' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			STATUS=1
+		if [ "X$AD" == "Xyes" ]; then pam_login_attribute sAMAccountName
+			toLog "    INFO - Directory Server is an AD."
+			sed -i "s|\(^# The user ID attribute.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_login_attribute sAMAccountName\n|" $NSS_LDAP_CONF_FILE
+			if [ $? -ne 0 ] || [ "X$(grep "^pam_login_attribute" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "XsAMAccountName" ]; then
+				toLog "    ERROR - Configuring 'pam_login_attribute' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+				STATUS=1
+			else
+				toLog "    Success - 'pam_login_attribute' field set to 'sAMAccountName' in $NSS_LDAP_CONF_FILE."
+			fi
+		elif [ "X$AD" == "Xno" ]; then
+			toLog "    INFO - Directory Server is not an AD."
+			sed -i "s|\(^# The user ID attribute.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_login_attribute $PAM_LOGIN_ATTR\n|" $NSS_LDAP_CONF_FILE
+			if [ $? -ne 0 ] || [ "X$(grep "^pam_login_attribute" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_LOGIN_ATTR" ]; then
+				toLog "    ERROR - Configuring 'pam_login_attribute' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+				STATUS=1
+			else
+				toLog "    Success - 'pam_login_attribute' field set to $PAM_LOGIN_ATTR in $NSS_LDAP_CONF_FILE."
+			fi
 		else
-			toLog "    Success - 'pam_login_attribute' field set to $PAM_LOGIN_ATTR in $NSS_LDAP_CONF_FILE."
+			toLog "    ERROR - AD has an unexpected value. Exiting..."
+			STATUS=1
 		fi
 	else
 		toLog "    ERROR - PAM_LOGIN_ATTR cannot be empty! Exiting..."
@@ -608,7 +623,29 @@ else
 		toLog "    ERROR - PAM_FILTER cannot be empty! Exiting..."
 		STATUS=1
 	fi
-		
+
+	# mappings for AD 2003 and newer with SFU enabled
+	if [ "X$AD" == "Xyes" ]; then
+		sed -i "s|\(^pam_filter.*$\)|\1\n\n# Added by $0 on $DATE_TIME:\n\
+nss_map_objectclass posixAccount User\n\
+nss_map_objectclass shadowAccount User\n\
+nss_map_objectclass posixGroup Group\n\
+nss_map_attribute uid sAMAccountName\n\
+nss_map_attribute uniqueMember Member\n\
+nss_map_attribute homeDirectory unixHomeDirectory\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^nss_map_attribute uid" $NSS_LDAP_CONF_FILE)" != "Xnss_map_attribute uid sAMAccountName" ]; then
+			toLog "    ERROR - Adding mappings for AD in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			STATUS=1
+		else
+			toLog "    Success - AD mappings conmfigured in $NSS_LDAP_CONF_FILE."
+		fi
+	elif [ "X$AD" == "Xno" ]; then
+		toLog "    INFO - Directory Server is not an AD."
+	else
+		toLog "    ERROR - AD has an unexpected value. Exiting..."
+		STATUS=1
+	fi
+
 	# pam_groupdn field
 	#if [ "X$PAM_GROUPDN" != "X" ]; then
 	#	sed -i "s|\(^#pam_groupdn cn=PAM.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_groupdn $PAM_GROUPDN\n|" $NSS_LDAP_CONF_FILE
