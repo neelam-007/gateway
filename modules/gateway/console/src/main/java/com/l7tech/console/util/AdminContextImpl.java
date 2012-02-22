@@ -19,6 +19,7 @@ import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gui.util.Utilities;
+import static com.l7tech.gui.util.Utilities.getBlockerOrSelf;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -196,18 +197,23 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
 
         // Running on Swing event thread, and no delayed cancel dialog already pending
         try {
-            final Object result = CancelableOperationDialog.doWithDelayedCancelDialog(new Callable<Object>() {
-                @Override
-                public Object call() throws Exception {
-                    try {
-                        return AdminContextImpl.super.doRemoteInvocation(targetObject, method, args);
-                    } catch (InterruptedException ie) {
-                        throw ie;
-                    } catch (Throwable throwable) {
-                        throw new ThrowableWrapper(throwable);
-                    }
-                }
-            }, TopComponents.getInstance().getTopParent(), "Waiting for Server", "Waiting for response from Gateway...", MS_BEFORE_DLG);
+            final Object result = CancelableOperationDialog.doWithDelayedCancelDialog(
+                    new Callable<Object>() {
+                        @Override
+                        public Object call() throws Exception {
+                            try {
+                                return AdminContextImpl.super.doRemoteInvocation(targetObject, method, args);
+                            } catch (InterruptedException ie) {
+                                throw ie;
+                            } catch (Throwable throwable) {
+                                throw new ThrowableWrapper(throwable);
+                            }
+                        }
+                    },
+                    getBlockerOrSelf( TopComponents.getInstance().getTopParent() ),
+                    "Waiting for Server",
+                    "Waiting for response from Gateway...",
+                    MS_BEFORE_DLG );
             if ( !background && activityCallback != null ) {
                 activityCallback.call();
             }

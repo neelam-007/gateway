@@ -1,6 +1,9 @@
 package com.l7tech.gui.util;
 
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.some;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,6 +17,7 @@ import javax.swing.text.JTextComponent;
 import javax.swing.text.Document;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
+import java.awt.Dialog.ModalityType;
 import java.awt.datatransfer.Clipboard;
 import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
@@ -310,7 +314,45 @@ public class Utilities {
         }
     }
 
+    /**
+     * Get the window blocking the given window or the given window.
+     *
+     * @param window The window
+     * @return The window, or the window it is being blocked by
+     */
+    public static Window getBlockerOrSelf( final Window window ) {
+        final Option<JDialog> blockingDialog = Utilities.getBlockingDialog( window );
+        return blockingDialog.isSome() ? blockingDialog.some() : window;
+    }
 
+    /**
+     * Get the JDialog that is currently blocking the given window.
+     *
+     * @param window The (possibly) blocked window
+     * @return The optional JDialog or none if not blocked or not a JDialog
+     */
+    public static Option<JDialog> getBlockingDialog( final Window window ) {
+        Option<JDialog> dialog = none();
+
+        if ( window != null ) {
+            final Window[] windows = window.getOwnedWindows();
+            if ( windows != null ) {
+                for ( final Window child : windows ) {
+                    if ( child.isShowing() ) {
+                        final Option<JDialog> childOption = child instanceof JDialog &&
+                            ((JDialog) child).getModalityType()!= ModalityType.MODELESS ?
+                                some( (JDialog) child ) :
+                                Option.<JDialog>none();
+                        final Option<JDialog> childBlocker = getBlockingDialog( child ).orElse( childOption );
+                        if ( childBlocker.isSome() )
+                            return childBlocker;
+                    }
+                }
+            }
+        }
+
+        return dialog;
+    }
 
     /**
      * Loads an image from the specified resourceD.
