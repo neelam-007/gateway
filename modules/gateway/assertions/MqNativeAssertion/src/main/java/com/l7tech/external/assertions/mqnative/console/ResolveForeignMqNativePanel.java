@@ -145,6 +145,7 @@ public class ResolveForeignMqNativePanel extends WizardStepPanel {
 
     private void createQueue() {
         final SsgActiveConnector newConnector = new SsgActiveConnector();
+        newConnector.setEnabled(true);
         newConnector.setName(foreignRef.getConnectorName());
         newConnector.setProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME, foreignRef.getHost());
         newConnector.setProperty(PROPERTIES_KEY_MQ_NATIVE_PORT, String.valueOf(foreignRef.getPort()));
