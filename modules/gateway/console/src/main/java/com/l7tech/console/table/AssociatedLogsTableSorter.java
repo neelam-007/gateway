@@ -244,7 +244,7 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
             } else {
                 if (ascending) {
                     if (elementA instanceof Integer && elementB instanceof Integer) {
-                        return ((Integer) elementA).intValue() > ((Integer) elementB).intValue()?1:0;
+                        return ((Integer) elementA).compareTo((Integer) elementB);
                     } else if(elementA instanceof String && elementB instanceof String) {
                         return ((String)elementA).compareToIgnoreCase((String)elementB);
                     } else {
@@ -253,7 +253,7 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
                     }
                 } else {
                      if (elementA instanceof Integer && elementB instanceof Integer) {
-                        return ((Integer) elementB).intValue() > ((Integer) elementA).intValue()?1:0;
+                        return ((Integer) elementB).compareTo((Integer) elementA);
                     } else if(elementA instanceof String && elementB instanceof String) {
                         return ((String)elementB).compareToIgnoreCase((String)elementA);
                     } else {
