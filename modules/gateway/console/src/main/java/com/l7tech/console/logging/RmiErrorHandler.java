@@ -8,6 +8,7 @@ import org.springframework.remoting.RemoteAccessException;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
+import javax.swing.*;
 import java.awt.*;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -59,7 +60,7 @@ public class RmiErrorHandler implements ErrorHandler {
                 message = "The SSL/TLS handshake with the Gateway has failed: " + ExceptionUtils.getMessage(throwable);
                 t = null;
             }
-            topParent.repaint();
+            refreshUI( topParent );
             DialogDisplayer.showMessageDialog(topParent, null, message, t);
         } else if (topParent != null &&
             (throwable instanceof RemoteException ||
@@ -84,11 +85,22 @@ public class RmiErrorHandler implements ErrorHandler {
                 message = "Connection to the Gateway has been broken.";
                 t = null;
             }
-            topParent.repaint();
+
+            // ensure redraw after any errors
+            refreshUI( topParent );
+
             // if t = null, show message dialog, otherwise, show error dialog.
             DialogDisplayer.showMessageDialog(topParent, null, message, t);
         } else {
             e.handle();
+        }
+    }
+
+    private void refreshUI( final Frame topParent ) {
+        if ( topParent instanceof RootPaneContainer ) {
+            ((RootPaneContainer) topParent).getContentPane().validate();
+        } else {
+            topParent.validate();
         }
     }
 }

@@ -284,7 +284,8 @@ public class Utilities {
         }
         Window parent = toCenter.getOwner();
 
-        if (parent == null || !parent.isVisible()) {
+        if (parent == null || !parent.isVisible() || !parent.isShowing() ||
+                (parent instanceof Frame && ((Frame) parent).getState()==Frame.ICONIFIED)) {
             centerOnScreen(toCenter);
         }
         else {

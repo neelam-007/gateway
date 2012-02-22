@@ -3378,17 +3378,21 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (inactivityTimeout > 0L &&
                 (now - lastActivityTime) > inactivityTimeout) { // match
             inactivityTimer.stop(); // stop timer
-            MainWindow.this.getStatusMsgRight().
-                    setText("inactivity timeout expired; disconnecting...");
             // make sure it is invoked on event dispatching thread
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
+                    MainWindow.this.getStatusMsgRight().
+                            setText("inactivity timeout expired; disconnecting...");
+
                     try {
                         getWorkSpacePanel().clearWorkspace();  // vetoable
                         MainWindow.this.disconnectFromGateway();
                         SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
                         if (securityProvider != null) securityProvider.logoff();
+
+                        // ensure redraw after any errors
+                        validate();
 
                         // add a top level dlg that indicates the connection was closed
                         DialogDisplayer.showMessageDialog(MainWindow.this,

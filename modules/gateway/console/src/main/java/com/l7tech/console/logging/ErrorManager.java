@@ -2,6 +2,7 @@ package com.l7tech.console.logging;
 
 import com.l7tech.util.ExceptionUtils;
 
+import javax.swing.*;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -106,10 +107,16 @@ public class ErrorManager {
         Thread.setDefaultUncaughtExceptionHandler( new UncaughtExceptionHandler(){
             @Override
             public void uncaughtException( final Thread thread, final Throwable throwable ) {
-                ErrorManager.getDefault().notify(
-                        Level.WARNING,
-                        throwable,
-                        "Uncaught exception in thread '" +thread.getName()+ "' [Id:" +thread.getId()+ "]." );
+                if ( SwingUtilities.isEventDispatchThread() ) {
+                    // This simulates Java 6 behaviour on Java 7 where the AWT
+                    // handler is no longer used.
+                    new AwtErrorHandler().handle( throwable );
+                } else {
+                    ErrorManager.getDefault().notify(
+                            Level.WARNING,
+                            throwable,
+                            "Uncaught exception in thread '" +thread.getName()+ "' [Id:" +thread.getId()+ "]." );
+                }
             }
         } );
     }
