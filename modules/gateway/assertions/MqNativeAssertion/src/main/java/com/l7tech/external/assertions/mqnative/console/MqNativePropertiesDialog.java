@@ -622,9 +622,9 @@ public class MqNativePropertiesDialog extends JDialog {
                         PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, AUTOMATIC, MqNativeAcknowledgementType.class );
                 acknowledgementModeComboBox.setSelectedItem(acknowledgementType);
                 if ( acknowledgementType == ON_COMPLETION ) {
+                    useQueueForFailedCheckBox.setSelected(mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_USED));
                     String failQueueName = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME);
                     if (!StringUtils.isEmpty(failQueueName)) {
-                        useQueueForFailedCheckBox.setSelected(true);
                         failureQueueNameTextField.setText(failQueueName);
                     }
                 }
@@ -1018,8 +1018,13 @@ public class MqNativePropertiesDialog extends JDialog {
             final MqNativeAcknowledgementType acknowledgementType = (MqNativeAcknowledgementType) acknowledgementModeComboBox.getSelectedItem();
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, acknowledgementType.toString());
 
-            if (useQueueForFailedCheckBox.isSelected() && failureQueueNameTextField.getText().trim().length() > 0) {
-                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME, failureQueueNameTextField.getText());
+            boolean isFailedQueueUsed = useQueueForFailedCheckBox.isSelected();
+            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_USED, Boolean.toString(isFailedQueueUsed));
+            String failedQueueName = failureQueueNameTextField.getText();
+            if (!StringUtils.isEmpty(failedQueueName)) {
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME, failedQueueName);
+            } else {
+                connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME);
             }
 
             connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME);

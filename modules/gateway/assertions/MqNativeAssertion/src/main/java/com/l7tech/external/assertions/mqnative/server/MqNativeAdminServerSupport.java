@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.isTransactional;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 
 /**
@@ -103,7 +104,9 @@ public class MqNativeAdminServerSupport {
 
                         // if applicable test failure queue
                         String failureQueueName = mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME );
-                        if (!StringUtils.isEmpty(failureQueueName)) {
+                        if (isTransactional( mqNativeActiveConnector )
+                                && mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_USED)
+                                && !StringUtils.isEmpty(failureQueueName)) {
                             logger.finer("Attempting to get inbound failure queue ...");
                             testName = "inbound failure queue - ";
                             replyQueue = queueManager.accessQueue( failureQueueName, QUEUE_OPEN_OPTIONS_INBOUND_FAILURE_QUEUE );
