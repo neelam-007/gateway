@@ -218,9 +218,9 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             }
 
             if (assertion.isScpProtocol()) {
-                sshClient = new ScpClient(new Scp(sshParams,buildSshConfiguration()));
+                sshClient = new ScpClient(new Scp(sshParams,buildSshConfiguration(sshParams)));
             } else {
-                sshClient = new SftpClient(new Sftp(sshParams, new SftpConfiguration(buildSshConfiguration())));
+                sshClient = new SftpClient(new Sftp(sshParams, new SftpConfiguration(buildSshConfiguration(sshParams))));
             }
             sshClient.connect();
 
@@ -316,10 +316,11 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         }
     }
 
-    private SshConfiguration buildSshConfiguration() {
+    private SshConfiguration buildSshConfiguration( final SshParameters sshParams ) {
         final AlgorithmFactory algorithmFactory = buildAlgorithmFactory();
         final SshConfiguration sshConfiguration = new SshConfiguration();
         sshConfiguration.getTransportConfiguration().setAlgorithmFactory( algorithmFactory );
+        sshConfiguration.getTransportConfiguration().setHostKeyVerifier( sshParams.getHostKeyVerifier() );
         return sshConfiguration;
     }
 
