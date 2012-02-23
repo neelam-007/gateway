@@ -239,6 +239,15 @@ public abstract class ExternalReference {
         return permitMapping( Long.toString( importOid ), Long.toString( targetOid ) );
     }
 
+    protected boolean permitMapping( final String importId, final String targetId ) {
+        boolean proceed = true;
+        PolicyImporter.PolicyImporterAdvisor advisor = this.advisor;
+        if ( !importId.equals( targetId ) && advisor != null ) {
+            proceed = advisor.mapReference( getRefType(), importId, targetId );
+        }
+        return proceed;
+    }
+
     protected enum LocalizeAction { DELETE, IGNORE, REPLACE }
 
     //- PACKAGE
@@ -333,15 +342,6 @@ public abstract class ExternalReference {
 
     void setPolicyImporterAdvisor( final PolicyImporter.PolicyImporterAdvisor advisor ) {
         this.advisor = advisor;        
-    }
-
-    boolean permitMapping( final String importId, final String targetId ) {
-        boolean proceed = true;
-        PolicyImporter.PolicyImporterAdvisor advisor = this.advisor;
-        if ( !importId.equals( targetId ) && advisor != null ) {
-            proceed = advisor.mapReference( getRefType(), importId, targetId );
-        }
-        return proceed;
     }
 
     //- PRIVATE
