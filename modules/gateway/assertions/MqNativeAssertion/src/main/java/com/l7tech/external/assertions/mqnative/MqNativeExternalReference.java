@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.mqnative;
 
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
@@ -9,10 +10,15 @@ import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.w3c.dom.Element;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static com.l7tech.util.Functions.grep;
+import static com.l7tech.util.Functions.negate;
+import static java.util.Collections.emptyList;
 
 /**
  * @author ghuang
@@ -123,17 +129,41 @@ public class MqNativeExternalReference extends ExternalReference {
 
     @Override
     protected boolean verifyReference() throws InvalidPolicyStreamException {
+
         try {
-            SsgActiveConnector activeConnector = getFinder().findConnectorByPrimaryKey(oid);
-            if (activeConnector == null) {
-                logger.warning("The active connector cannot be resolved from oid, " + oid);
-                localizeType = LocalizeAction.REPLACE;
-                return false;
-            } else {
-                String connectorName = activeConnector.getName();
-                if (connectorName != null && connectorName.equals(this.connectorName)) {
-                    logger.warning("The active connector was resolved from oid, " + oid);
+            final SsgActiveConnector activeConnector = getFinder().findConnectorByPrimaryKey(oid);
+            if (activeConnector != null) {
+                if (isMatch(activeConnector.getName(), connectorName) && permitMapping(oid, activeConnector.getOid())) {
+                    // Perfect Match (OID and name are matched.)
+                    logger.fine("The MQ Native queue was resolved by oid '" + oid + "' and name '" + activeConnector.getName() + "'");
                     return true;
+                }
+            } else {
+                final Collection<SsgActiveConnector> outboundQueues = findAllOutboundQueues();
+                for (SsgActiveConnector connector: outboundQueues) {
+                    if (isMatch(connector.getName(), connectorName) && permitMapping(oid, connector.getOid())) {
+                        // Connector Name matched
+                        logger.fine("The MQ Native queue was resolved from oid '" + oid + "' to '" + connector.getOid() + "'");
+                        localOid = connector.getOid();
+                        localizeType = LocalizeAction.REPLACE;
+                        return true;
+                    }
+                }
+
+                // Check if partial matched
+                for (SsgActiveConnector connector: outboundQueues) {
+                    if (isMatch(connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME), host) &&
+                        isMatch(connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_PORT), Long.toString(port)) &&
+                        isMatch(connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME), queueManagerName) &&
+                        isMatch(connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_CHANNEL), channelName) &&
+                        isMatch(connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME), queueName) &&
+                        permitMapping(oid, connector.getOid())) {
+                        // Partial matched
+                        logger.fine("The MQ Native queue was resolved from oid '" + oid + "' to '" + connector.getOid() + "'");
+                        localOid = connector.getOid();
+                        localizeType = LocalizeAction.REPLACE;
+                        return true;
+                    }
                 }
             }
         } catch (FindException e) {
@@ -197,5 +227,27 @@ public class MqNativeExternalReference extends ExternalReference {
         }
         logger.warning("The oid " + oid + " could not be used to get an active connector connectorName.");
         return null;
+    }
+
+    private List<SsgActiveConnector> findAllOutboundQueues() {
+        try {
+            return grep( getFinder().findSsgActiveConnectorsByType(ACTIVE_CONNECTOR_TYPE_MQ_NATIVE ),
+                negate( booleanProperty( PROPERTIES_KEY_IS_INBOUND ) ) );
+        } catch ( IllegalStateException e ) {
+            // no admin context available
+            logger.info( "Unable to access queues from server." );
+        } catch ( FindException e ) {
+            ErrorManager.getDefault().notify( Level.WARNING, e, "Error loading queues" );
+        }
+        return emptyList();
+    }
+
+    private boolean isMissing( final String value ) {
+        return value == null || value.isEmpty();
+    }
+
+    private boolean isMatch( final String leftValue,
+                             final String rightValue) {
+        return isMissing(leftValue) ? isMissing(rightValue) : leftValue.equals(rightValue);
     }
 }

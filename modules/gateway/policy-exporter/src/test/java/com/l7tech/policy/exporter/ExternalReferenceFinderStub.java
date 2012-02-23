@@ -91,6 +91,11 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
     }
 
     @Override
+    public Collection<SsgActiveConnector> findSsgActiveConnectorsByType(String type) throws FindException {
+        return null;
+    }
+
+    @Override
     public Set<ExternalReferenceFactory> findAllExternalReferenceFactories() throws FindException {
         return null;
     }

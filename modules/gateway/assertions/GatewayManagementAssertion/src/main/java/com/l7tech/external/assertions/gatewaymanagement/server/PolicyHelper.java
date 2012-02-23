@@ -525,6 +525,11 @@ public class PolicyHelper {
         }
 
         @Override
+        public Collection<SsgActiveConnector> findSsgActiveConnectorsByType(String type) throws FindException {
+            return filter(ssgActiveConnectorManager.findSsgActiveConnectorsByType(type));
+        }
+
+        @Override
         public Set<ExternalReferenceFactory> findAllExternalReferenceFactories() throws FindException {
             return policyExporterImporterManager.findAllExternalReferenceFactories();
         }

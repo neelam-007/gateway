@@ -55,6 +55,8 @@ public interface ExternalReferenceFinder {
 
     SsgActiveConnector findConnectorByPrimaryKey (long oid) throws FindException;
 
+    Collection<SsgActiveConnector> findSsgActiveConnectorsByType(String type) throws FindException;
+
     Set<ExternalReferenceFactory> findAllExternalReferenceFactories() throws FindException;
 
     List<Pair<JmsEndpoint,JmsConnection>> loadJmsQueues() throws FindException;

@@ -235,6 +235,10 @@ public abstract class ExternalReference {
         refEl.setAttributeNS( null, ExporterConstants.REF_TYPE_ATTRNAME, getRefType() );
     }
 
+    protected boolean permitMapping( final long importOid, final long targetOid ) {
+        return permitMapping( Long.toString( importOid ), Long.toString( targetOid ) );
+    }
+
     protected enum LocalizeAction { DELETE, IGNORE, REPLACE }
 
     //- PACKAGE
@@ -329,10 +333,6 @@ public abstract class ExternalReference {
 
     void setPolicyImporterAdvisor( final PolicyImporter.PolicyImporterAdvisor advisor ) {
         this.advisor = advisor;        
-    }
-
-    boolean permitMapping( final long importOid, final long targetOid ) {
-        return permitMapping( Long.toString( importOid ), Long.toString( targetOid ) );
     }
 
     boolean permitMapping( final String importId, final String targetId ) {

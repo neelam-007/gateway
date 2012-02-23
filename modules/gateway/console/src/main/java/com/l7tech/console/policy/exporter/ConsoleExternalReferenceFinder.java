@@ -106,7 +106,7 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
     @Override
     public Policy findPolicyByUniqueName( final String name ) throws FindException {
         PolicyAdmin policyAdmin = admin(Registry.getDefault().getPolicyAdmin());
-        return policyAdmin.findPolicyByUniqueName( name );        
+        return policyAdmin.findPolicyByUniqueName( name );
     }
 
     @Override
@@ -143,6 +143,12 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
     public SsgActiveConnector findConnectorByPrimaryKey(long oid) throws FindException {
         TransportAdmin transportAdmin = admin(Registry.getDefault().getTransportAdmin());
         return transportAdmin.findSsgActiveConnectorByPrimaryKey(oid);
+    }
+
+    @Override
+    public Collection<SsgActiveConnector> findSsgActiveConnectorsByType(String type) throws FindException {
+        TransportAdmin transportAdmin = admin(Registry.getDefault().getTransportAdmin());
+        return transportAdmin.findSsgActiveConnectorsByType(type);
     }
 
     @Override
