@@ -101,6 +101,7 @@ public class MessagesTest {
     /**
      * Test for duplicated assertion status
      */
+    @Test
     public void assertionStatusTest() throws Exception {
         Field[] fields = AssertionStatus.class.getFields();
         for (int i=0; i<fields.length; i++) {
