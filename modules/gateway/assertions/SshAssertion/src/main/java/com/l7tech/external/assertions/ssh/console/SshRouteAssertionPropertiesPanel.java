@@ -11,10 +11,13 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import static com.l7tech.objectmodel.imp.PersistentEntityUtil.oid;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
 
 import javax.swing.*;
 import java.awt.*;
@@ -117,16 +120,16 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
                 // save selection
-                final long selectedPasswordOid = passwordField.getSelectedSecurePassword().getOid();
-                final long selectedPrivateKeyOid = privateKeyField.getSelectedSecurePassword().getOid();
+                final Option<Long> selectedPasswordOid = optional( passwordField.getSelectedSecurePassword() ).map( oid() );
+                final Option<Long> selectedPrivateKeyOid = optional( privateKeyField.getSelectedSecurePassword() ).map( oid() );
                 DialogDisplayer.display(dialog, new Runnable() {
                     @Override
                     public void run() {
                         passwordField.reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
                         privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
                         // load selection
-                        passwordField.setSelectedSecurePassword(selectedPasswordOid);
-                        privateKeyField.setSelectedSecurePassword(selectedPrivateKeyOid);
+                        if (selectedPasswordOid.isSome()) passwordField.setSelectedSecurePassword(selectedPasswordOid.some());
+                        if (selectedPrivateKeyOid.isSome()) privateKeyField.setSelectedSecurePassword(selectedPrivateKeyOid.some());
                         pack();
                     }
                 });
