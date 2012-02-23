@@ -48,6 +48,8 @@ public class OrganizationSelectionTree<LEH extends OrganizationHeader> extends J
 
     public void initTree( @NotNull final Collection<FolderHeader> folders,
                           @NotNull final Collection<LEH> leafEntityHeaders ){
+        rootNode.removeAllChildren();
+
         final List<LEH> leafHeadersList = new ArrayList<LEH>( leafEntityHeaders );
         Collections.sort( leafHeadersList, new ResolvingComparator<LEH, String>(new Resolver<LEH, String>() {
             @Override
@@ -75,6 +77,7 @@ public class OrganizationSelectionTree<LEH extends OrganizationHeader> extends J
 
         //noinspection unchecked
         insertNodes( iterable( allFolderHeaders, leafHeadersList ), rootNode, root.getOid() );
+        organizationTreeModel.reload(rootNode);
 
         expandPath(new TreePath(rootNode.getPath()));
     }
