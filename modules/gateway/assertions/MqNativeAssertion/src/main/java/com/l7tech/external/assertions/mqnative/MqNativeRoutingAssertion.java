@@ -25,12 +25,16 @@ import static com.l7tech.policy.assertion.VariableUseSupport.variables;
  * Route outbound MQ Native to WebSphere MQ.
  */
 public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEntities, UsesVariables, SetsVariables {
-    private static final String baseName = "Route via MQ Native";
+    private static final String routePrefix = "Route";
+    private static final String getPrefix = "Get";
+    private static final String baseName = " via MQ Native";
+
     private static final AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<MqNativeRoutingAssertion>(){
         @Override
         public String getAssertionName( final MqNativeRoutingAssertion assertion, final boolean decorate ) {
-            if(!decorate || assertion.getSsgActiveConnectorName()==null) return baseName;
-            return baseName + " Queue " + assertion.getSsgActiveConnectorName();
+            String prefix = assertion.isPutToQueue() ? routePrefix : getPrefix;
+            if(!decorate || assertion.getSsgActiveConnectorName()==null) return prefix + baseName;
+            return prefix + baseName + " Queue " + assertion.getSsgActiveConnectorName();
         }
     };
     private static final String META_INITIALIZED = MqNativeRoutingAssertion.class.getName() + ".metadataInitialized";
@@ -320,7 +324,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put( SHORT_NAME, baseName );
+        meta.put( SHORT_NAME, routePrefix + baseName );
         meta.put( DESCRIPTION, "The incoming message will be routed via MQ Native to the protected service." );
         meta.put( PALETTE_FOLDERS, new String[] { "routing" } );
         meta.put( PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif" );
