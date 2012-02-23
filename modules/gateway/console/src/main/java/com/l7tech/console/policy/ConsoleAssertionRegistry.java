@@ -1,6 +1,7 @@
 package com.l7tech.console.policy;
 
 import com.l7tech.console.action.DefaultAssertionPropertiesAction;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
 import com.l7tech.console.panels.DefaultAssertionPropertiesEditor;
 import com.l7tech.console.tree.AbstractAssertionPaletteNode;
@@ -248,14 +249,35 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                             String resName = name.replace(".", "/").concat(".class");
                             resUrl = resourceLoader.getResource(resName);
                         }
-                        if (resUrl == null)
+                        if (resUrl == null) {
+                            // test session validity, in case the failure is due
+                            // to session timeout
+                            try {
+                                Registry.getDefault().getAdminLogin().ping();
+                            } catch ( IllegalArgumentException e ) {
+                                // assume disconnection already handled
+                            }
                             throw new ClassNotFoundException("Resource not found for class '" + name + "'.");
+                        }
 
                         resIn = resUrl.openStream();
                         byte[] classData = IOUtils.slurpStream(resIn, 102400);
+
+                        int i = name.lastIndexOf( '.' );
+                        if ( i != -1 ) {
+                            final String pkgname = name.substring( 0, i );
+                            final Package pkg = getPackage( pkgname );
+                            if ( pkg == null ) {
+                                definePackage( pkgname, null, null, null, null, null, null, null );
+                            }
+                        }
+
                         return defineClass(name, classData, 0, classData.length, protectionDomain);
                     } catch(IOException ioe) {
                         throw new ClassNotFoundException("Error loading resource for class '" + name + "'.", ioe);
+                    } catch(RuntimeException e) {
+                        ErrorManager.getDefault().notify( Level.WARNING, e, "Error loading custom/modular assertion class or resource." );
+                        throw new ClassNotFoundException("Error loading resource for class '" + name + "'.", e);
                     } finally {
                         ResourceUtils.closeQuietly( resIn );
                     }

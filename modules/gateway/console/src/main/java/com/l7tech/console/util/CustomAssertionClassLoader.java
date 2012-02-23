@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
@@ -103,7 +104,7 @@ public class CustomAssertionClassLoader extends ClassLoader {
             }
             return processResourceData( path, car.getAssertionResourceData(path) );
         } catch (RuntimeException e) {
-            logger.log(Level.WARNING, "Unable to load custom/modular assertion class or resource: " + ExceptionUtils.getMessage(e), e);
+            ErrorManager.getDefault().notify( Level.WARNING, e, "Error loading custom/modular assertion class or resource." );
             return null;
         }
     }
