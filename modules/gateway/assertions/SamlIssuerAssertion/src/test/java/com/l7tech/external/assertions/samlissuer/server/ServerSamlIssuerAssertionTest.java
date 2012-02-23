@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.samlissuer.server;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.samlissuer.SamlIssuerAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -45,6 +46,7 @@ import x0Assertion.oasisNamesTcSAML2.AttributeType;
 
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.namespace.QName;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
@@ -1387,6 +1389,10 @@ public class ServerSamlIssuerAssertionTest {
 
     /**
      * Validate that a variable used in the Filter Attribute text field which resolves to null does not NPE
+     *
+     * Also validates that if an AttributeValue contains a Message with invalid XML no NPE occurs.
+     *
+     * Auditing is validated for both scenarios.
      */
     @BugNumber(11613)
     @Test
@@ -1397,7 +1403,7 @@ public class ServerSamlIssuerAssertionTest {
         final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
         nameAttr.setName("nc:PersonGivenName");
         nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
-        nameAttr.setValue("${nullvar}");
+        nameAttr.setValue("${notxml}");
         nameAttr.setAddBehavior(SamlAttributeStatement.Attribute.AttributeValueAddBehavior.ADD_AS_XML);
 
         final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
@@ -1416,9 +1422,16 @@ public class ServerSamlIssuerAssertionTest {
         // Bug repro - this variable will be null at runtime
         samlAttributeStatement.setFilterExpression("${nullvar}");
         ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("auditFactory", testAudit.factory())
+                .unmodifiableMap()
+        );
 
         final PolicyEnforcementContext context = getContext();
+        final Message notXmlMsg = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream("not xml".getBytes()));
         context.setVariable("nullvar", null);
+        context.setVariable("notxml", notXmlMsg);
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
@@ -1431,6 +1444,131 @@ public class ServerSamlIssuerAssertionTest {
         final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
         // We expect all attributes as none were filtered
         Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement, none should have been filtered", 4, attribute.size());
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAML_ISSUER_ATTR_STMT_PROCESSING_WARNING));
+        Assert.assertTrue(testAudit.isAuditPresentContaining("Invalid XML message referenced within Attribute configuration"));
+    }
+
+    @BugNumber(11955)
+    @Test
+    public void testAttriubuteStatement_Filter_InvalidXML_NoNPE() throws Exception {
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        nameAttr.setValue("name");
+        nameAttr.setAddBehavior(SamlAttributeStatement.Attribute.AttributeValueAddBehavior.ADD_AS_XML);
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+
+        final SamlAttributeStatement.Attribute attributeNotInRequest = new SamlAttributeStatement.Attribute();
+        attributeNotInRequest.setName("not_in_request");
+        attributeNotInRequest.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        attributeNotInRequest.setValue("not_in_request_value");
+
+        attributes.add(nameAttr);
+        attributes.addAll(middleAndLastName);
+        attributes.add(attributeNotInRequest);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+
+        samlAttributeStatement.setFilterExpression("${notXml}");
+        ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("auditFactory", testAudit.factory())
+                .unmodifiableMap()
+        );
+
+        final PolicyEnforcementContext context = getContext();
+        final Message notXmlMsg = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream("not xml".getBytes()));
+        context.setVariable("notXml", notXmlMsg);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+        final Document document = getIssuedSamlAssertionDoc(context);
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Element assertionElm = document.getDocumentElement();
+        final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
+        final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
+        // We expect all attributes as none were filtered
+        Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement, none should have been filtered", 4, attribute.size());
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.MESSAGE_VARIABLE_BAD_XML));
+
+        Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAML_ISSUER_ATTR_STMT_FILTER_EXPRESSION_NO_VALUES));
+        Assert.assertTrue(testAudit.isAuditPresentContaining("Filter expression '${notXml}' yielded no values."));
+    }
+
+    @BugNumber(11955)
+    @Test
+    public void testAttriubuteStatement_Filter_EmptyMessage_NoNPE() throws Exception {
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        nameAttr.setValue("name");
+        nameAttr.setAddBehavior(SamlAttributeStatement.Attribute.AttributeValueAddBehavior.ADD_AS_XML);
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+
+        final SamlAttributeStatement.Attribute attributeNotInRequest = new SamlAttributeStatement.Attribute();
+        attributeNotInRequest.setName("not_in_request");
+        attributeNotInRequest.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        attributeNotInRequest.setValue("not_in_request_value");
+
+        attributes.add(nameAttr);
+        attributes.addAll(middleAndLastName);
+        attributes.add(attributeNotInRequest);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+
+        samlAttributeStatement.setFilterExpression("${emptyMsg}");
+        ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("auditFactory", testAudit.factory())
+                .unmodifiableMap()
+        );
+
+        final PolicyEnforcementContext context = getContext();
+        final Message notXmlMsg = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream("".getBytes()));
+        context.setVariable("emptyMsg", notXmlMsg);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+        final Document document = getIssuedSamlAssertionDoc(context);
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Element assertionElm = document.getDocumentElement();
+        final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
+        final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
+        // We expect all attributes as none were filtered
+        Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement, none should have been filtered", 4, attribute.size());
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.MESSAGE_VARIABLE_BAD_XML));
+
+        Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAML_ISSUER_ATTR_STMT_FILTER_EXPRESSION_NO_VALUES));
+        Assert.assertTrue(testAudit.isAuditPresentContaining("Filter expression '${emptyMsg}' yielded no values."));
     }
 
     /**

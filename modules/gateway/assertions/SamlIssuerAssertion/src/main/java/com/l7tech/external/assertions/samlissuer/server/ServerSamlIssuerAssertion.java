@@ -1066,7 +1066,9 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 foundElements.add((Element) object);
             } else if (object instanceof Message) {
                 final Element element = processMessageVariable((Message) object);
-                foundElements.add(element);
+                if (element != null) {
+                    foundElements.add(element);
+                }
             } else if (null != object) {
                 logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_PROCESSING_WARNING,
                         "Unsupported variable value found of type " + object.getClass().getSimpleName() + " when extracting filter Attributes: '" + object.toString() + "'");
