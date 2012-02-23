@@ -31,9 +31,7 @@ import java.util.EventObject;
 import java.util.logging.Logger;
 
 /**
- * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
- * <p> @author fpang </p>
- * $Id$
+ * @author fpang
  */
 public class AssociatedLogsTable extends JTable {
 
@@ -405,8 +403,8 @@ public class AssociatedLogsTable extends JTable {
                 }
             });
 
-            this.button.setNextFocusableComponent(AssociatedLogsTable.this);
-            this.buttonComponent.setNextFocusableComponent(AssociatedLogsTable.this);
+            this.button.setFocusable(false);
+            this.buttonComponent.setFocusable(false);
         }
 
         public void valueChanged(ListSelectionEvent e) {
@@ -427,12 +425,6 @@ public class AssociatedLogsTable extends JTable {
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
             this.value = (String) value;
             this.row = row;
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    fireEditingStopped();
-                }
-            });
             // Case 1: for "Message" tab in the 5th Column (index = 4)
             if (column == 4) {
                 JComponent tempButtonComponent = buildButtonComponent(button);
@@ -478,10 +470,6 @@ public class AssociatedLogsTable extends JTable {
                 buttonComponent.dispatchEvent((MouseEvent)anEvent);
             }
             return true;
-        }
-
-        public boolean stopCellEditing() {
-            return false;
         }
 
         private String getValue(EventObject anEvent) {
