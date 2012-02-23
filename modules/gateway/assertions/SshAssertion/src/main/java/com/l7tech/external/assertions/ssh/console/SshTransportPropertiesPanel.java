@@ -10,7 +10,10 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import static com.l7tech.objectmodel.imp.PersistentEntityUtil.oid;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
 
 import javax.swing.*;
 import java.awt.*;
@@ -142,10 +145,12 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
                 final SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(ownerJDialog);
                 dialog.pack();
                 Utilities.centerOnParentWindow(dialog);
+                final Option<Long> selectedPrivateKeyOid = optional( privateKeyField.getSelectedSecurePassword() ).map( oid() );
                 DialogDisplayer.display(dialog, new Runnable() {
                     @Override
                     public void run() {
                         privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+                        if (selectedPrivateKeyOid.isSome()) privateKeyField.setSelectedSecurePassword(selectedPrivateKeyOid.some());
                         if (ownerJDialog != null) {
                             DialogDisplayer.pack(ownerJDialog);
                         }
