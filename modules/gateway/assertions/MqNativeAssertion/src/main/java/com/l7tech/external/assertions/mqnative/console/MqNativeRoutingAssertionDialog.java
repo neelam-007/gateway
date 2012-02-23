@@ -16,7 +16,6 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import static com.l7tech.objectmodel.EntityUtil.name;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.util.Functions.*;
@@ -42,6 +41,7 @@ import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SP
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.gui.util.Utilities.comboBoxModel;
 import static com.l7tech.gui.util.Utilities.enableGrayOnDisabled;
+import static com.l7tech.objectmodel.EntityUtil.name;
 import static com.l7tech.objectmodel.imp.PersistentEntityUtil.oid;
 import static com.l7tech.policy.variable.Syntax.getReferencedNames;
 import static com.l7tech.util.TextUtils.truncStringMiddleExact;
@@ -183,7 +183,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         });
 
         InputValidator inputValidator = new InputValidator(this, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
-        inputValidator.ensureComboBoxSelection( "MQ Destination", queueComboBox );
+        inputValidator.ensureComboBoxSelection( "MQ Native Queues", queueComboBox );
         inputValidator.constrainTextFieldToBeNonEmpty( "Queue name", dynamicDestQueueName, null );
         inputValidator.constrainTextFieldToBeNonEmpty( "Reply queue name", dynamicReplyQueueName, null );
         inputValidator.constrainTextField(mqResponseTimeout, new InputValidator.ValidationRule() {

@@ -688,7 +688,7 @@ public class MqNativePropertiesDialog extends JDialog {
                         specifyContentTypeFreeForm.setSelected(true);
                     } catch (IOException e1) {
                         logger.log(Level.WARNING,
-                            MessageFormat.format("Error while parsing the Content-Type for Mq Destination {0}. Value was {1}", mqNativeActiveConnector.getName(), contentType),
+                            MessageFormat.format("Error while parsing the Content-Type for MQ Native queue {0}. Value was {1}", mqNativeActiveConnector.getName(), contentType),
                             getMessage( e1 ));
                     }
                 }
