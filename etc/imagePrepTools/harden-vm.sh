@@ -1,4 +1,12 @@
 #!/bin/sh
+export HISTSIZE=0
+history -c
+rm -f ~/.bash_history
+
+#vmware tools config for current running kernel
+echo "Configuring VMware tools"
+/usr/bin/vmware-config-tools.pl -d
+
 echo "Cleaning up ssh..."
 rm -rf ~/.ssh/
 
@@ -49,12 +57,6 @@ echo "" > /etc/security/opasswd
 echo "Removing ssh keys..."
 rm -f /etc/ssh/ssh_host_*
 
-# below only applies if run interactively
-echo "the hardening of this vm is now complete. Now run:"
-echo ""
-echo "export HISTSIZE=0"
-echo "rm -f /root/.bash_history"
-echo "/usr/bin/vmware-config-tools.pl -d"
-echo "rm $0"
-echo "poweroff -d"
+rm $0
+echo "VM prep complete, please reboot or power off now"
 echo ""
