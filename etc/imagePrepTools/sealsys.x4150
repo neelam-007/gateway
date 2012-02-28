@@ -5,11 +5,79 @@
 # SSG Pre/Seal Script
 #
 
+
+doScaTest() {
+    if [ -e "/opt/sun/sca6000/sbin/scadiag" ] ; then
+        # Confirm SSL card is loaded and works
+        MCA=`scadiag -v mca0 | grep Firmware`
+        if [ "$MCA" ] ; then
+            echo ""
+            echo "SCA SSL Card loaded:"
+            echo $MCA
+            echo ""
+            MCA_FIRMWARE_VERSION="`echo $MCA | cut -d ' ' -f 3`"
+            echo "Firmware version is $MCA_FIRMWARE_VERSION"
+            if [ ! "$MCA_FIRMWARE_VERSION" = "1.1.2" ] ; then
+                echo "****** ERROR - SSL Card has old firmware on it, update by running $0 scaupgrade"
+            fi
+        else
+            echo ""
+            echo "SCA SSL Card NOT loaded."
+            echo ""
+        fi
+    else
+        echo "****** No SCA Support software found. Is a SCA6000 SSL Card installed? ******"
+    fi
+}
+
+doTarariTest() {
+
+    TARARIFOUND=`rpm -qa | grep tarari`
+    if [ -n "${TARARIFOUND}" ] ; then
+        # Confirm Tarari firmware loads.
+        #
+        echo "Loading Tarari XML card drivers:"
+        service tarari stop ; service tarari start
+        echo ""
+
+        # Ensure the drivers load
+        CPP=`cat /proc/driver/cpp | grep Driver`
+        if [ "$CPP" ] ; then
+            [ -e /opt/SecureSpan/Gateway/runtime/etc/profile.d/tarariopts.sh ] && source /opt/SecureSpan/Gateway/runtime/etc/profile.d/tarariopts.sh
+            echo ""
+            echo "Tarari XML Card driver loaded:"
+            echo $CPP
+            echo ""
+
+            # Run through Tarari tests.
+            echo "Running Tarari XML card tests (may take a few minutes):"
+            TESTS=`/usr/local/Tarari/bin/cpp_manager_static -v -t all`
+            if [ "`echo $TESTS | grep PASSED`" ] ; then
+                echo "Passed"
+                echo ""
+            else
+                echo "Failed!"
+                echo "Some Tarari XML card tests didn't pass, re-running in verbose mode:"
+                /usr/local/Tarari/bin/cpp_manager_static -v -t all
+                ERROR=1
+                echo ""
+            fi
+        else
+            echo ""
+            echo "Tarari XML Card driver NOT loaded"
+            echo ""
+        fi
+    else
+        echo "***** ERROR No Tarari software was found. This is an error for hardware appliances ***** "
+        ERROR=1
+    fi
+}
+
 disable_sca_if_needed() {
   FOO=`lspci`
   if [ ! $? -eq 0 ] ; then
       echo ""
-      echo "ERROR: can't run lspci - are you running as root?"
+      echo "****** ERROR: can't run lspci - are you running as root? *****"
       echo ""
       exit 1;
   fi
@@ -20,19 +88,19 @@ disable_sca_if_needed() {
   if [ -n "${SCA_CARD_INSTALLED}" ] ; then
       echo "SCA card seems to be installed - Nothing to do"
   else
-      echo "WARNING: The SCA card does not appear to be installed - disabling"
+      echo "***** WARNING: The SCA card does not appear to be installed - disabling *****"
       SCADIAG="/opt/sun/sca6000/sbin/scadiag"
       if [ -s ${SCADIAG} ] ; then
             echo "SCA support software appears to be installed"
       else
-            echo "ERROR: SCA support software does not appear to be installed"
+            echo "***** ERROR: SCA support software does not appear to be installed ***** "
       fi
 
       SCA_SSG_SOFTWARE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"
       if [ -s ${SCA_SSG_SOFTWARE} ] ; then
             echo "The SSG SCA support software appears to be installed"
       else
-            echo "ERROR: The SSG SCA support software does not appear to be installed"
+            echo "***** ERROR: The SSG SCA support software does not appear to be installed *****"
       fi
 
 
@@ -65,7 +133,7 @@ config_or_disable_nfast() {
         echo "an nShield card appears to be installed, configuring the drivers"
         /opt/nfast/sbin/install
     else
-        echo "WARNING: nShield does not appear to be installed. Removing support software"
+        echo "***** WARNING: nShield does not appear to be installed. Removing support software ***** "
         NFASTRPM=`rpm -qa | grep ssg-nshieldpci`
         [ -n "${NFASTRPM}" ] && rpm -e ssg-nshieldpci
     fi
@@ -89,59 +157,8 @@ chkconfig cpuspeed off
 test)
 
 ERROR=0
-# Confirm SSL card is loaded and works
-MCA=`scadiag -v mca0 | grep Firmware`
-if [ "$MCA" ] ; then
-	echo ""
-	echo "SSL Card loaded:"
-	echo $MCA
-	echo "" 
-	MCA_FIRMWARE_VERSION="`echo $MCA | cut -d ' ' -f 3`"
-	echo "Firmware version is $MCA_FIRMWARE_VERSION"
-	if [ ! "$MCA_FIRMWARE_VERSION" = "1.1.2" ] ; then
-		echo "ERROR - SSL Card has old firmware on it, update by running $0 scaupgrade"
-	fi
-else
-	echo ""
-	echo "SSL Card NOT loaded."
-	echo ""
-fi
-
-# Confirm Tarari firmware loads.
-#
-echo "Loading Tarari XML card drivers:"
-service tarari stop ; service tarari start
-echo ""
-
-# Ensure the drivers load
-CPP=`cat /proc/driver/cpp | grep Driver`
-if [ "$CPP" ] ; then
-	[ -e /opt/SecureSpan/Gateway/runtime/etc/profile.d/tarariopts.sh ] && source /opt/SecureSpan/Gateway/runtime/etc/profile.d/tarariopts.sh
-	echo ""
-	echo "Tarari XML Card driver loaded:"
-	echo $CPP
-	echo ""
-	
-	# Run through Tarari tests.
-	echo "Running Tarari XML card tests (may take a few minutes):"
-	TESTS=`/usr/local/Tarari/bin/cpp_manager_static -v -t all`
-	if [ "`echo $TESTS | grep PASSED`" ] ; then
-		echo "Passed"
-		echo ""
-	else 
-		echo "Failed!"
-		echo "Some Tarari XML card tests didn't pass, re-running in verbose mode:"
-		/usr/local/Tarari/bin/cpp_manager_static -v -t all
-		ERROR=1
-		echo ""
-	fi
-else 
-	echo ""
-	echo "Tarari XML Card driver NOT loaded"
-	echo ""
-fi
-
-
+doScaTest
+doTarariTest
 
 ##########
 # SSG Version
@@ -155,7 +172,7 @@ echo ""
 if [ -e "/usr/local/Tarari/bin/cpp_manager" ] ; then
   echo "Tarari Card Serial Number =$(cat /proc/driver/cpp0 | grep "Serial Number"|cut -d = -f 2|cut -d ':' -f 2)"
 else
-  echo "ERROR cpp_manager not found. ERROR"
+  echo " ***** ERROR cpp_manager not found. ERROR ***** "
   ERROR=1
 fi
 echo ""
@@ -178,14 +195,14 @@ echo ""
 # md0
 echo "Checking RAID status:"
 if [ "$(cat /proc/mdstat |grep md0|grep "\[0\]")" = "" ]; then
-  echo "ERROR md0 device 0 ERROR"
+  echo "***** ERROR md0 device 0 ERROR ***** "
   md00=error
   ERROR=1
 else
   echo "PASS md0 device 0"
 fi
 if [ "$(cat /proc/mdstat |grep md0|grep "\[1\]")" = "" ]; then
-  echo "ERROR md0 device 1 ERROR"
+  echo "***** ERROR md0 device 1 ERROR *****"
   md01=error
   ERROR=1
 else
@@ -195,14 +212,14 @@ echo ""
 
 # md1
 if [ "$(cat /proc/mdstat |grep md1|grep "\[0\]")" = "" ]; then
-  echo "ERROR md1 device 0 ERROR"
+  echo "***** ERROR md1 device 0 ERROR ***** "
   md10=error
   ERROR=1
 else
   echo "PASS md1 device 0"
 fi
 if [ "$(cat /proc/mdstat |grep md1|grep "\[1\]")" = "" ]; then
-  echo "ERROR md1 device 1 ERROR"
+  echo "***** ERROR md1 device 1 ERROR *****"
   md11=error
   ERROR=1
 else
@@ -210,26 +227,26 @@ else
 fi
 # Check if a raid set is in recovery mode.
 if [ "$(cat /proc/mdstat |grep recovery)" != "" ]; then
-  echo "ERROR Failed Raid Device Rebuilding ERROR"
+  echo "***** ERROR Failed Raid Device Rebuilding ERROR *****"
   recovery=error
   ERROR=1
 fi
 # Exit if there are any error with the raid sets.
 if [ "$md00" = "error" ] || [ "$md01" = "error" ] || [ "$md10" = "error" ] || [ "$md11" = "error" ] || [ "$recovery" = "error" ]; then
   echo ""
-  echo "###################"
-  echo "# RAID SET ERRORS #"
-  echo "###################"
+  echo "#########################################"
+  echo "# ***** THERE ARE RAID SET ERRORS ***** #"
+  echo "#########################################"
   exit 1
 fi
 echo ""
 
 if [ $ERROR -eq 1 ] ; then
 	echo ""
-	echo "* * * * * * * WARNING * * * * * * * * * "
-	echo "There was an error detected somewhere in the test process, please"
-	echo "scroll up and check to see if this was in fact a fatal error or not."
-	echo "* * * * * * * WARNING * * * * * * * * * "
+	echo "************* WARNING *******************"
+	echo "There was an error detected during the test process, please"
+	echo "scroll up (using SHIFT+PG-UP and SHIFT+PG-DOWN) to verify the errors."
+	echo "************* WARNING *******************"
 	echo ""
 	exit
 fi 
