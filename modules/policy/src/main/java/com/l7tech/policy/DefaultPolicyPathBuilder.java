@@ -79,13 +79,15 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      * Generate the policy path result (policy assertion paths for
      * the <code>Assertion</code> tree.
      *
+     *
      * @param assertion the assertion tree to attempt the build
      *                  path for.
+     * @param maxPaths maximum number of paths to collect  A PolicyTooComplexException will be thrown if we find more than this many paths.
      * @return the result of the build
      */
     @Override
-    public PolicyPathResult generate(Assertion assertion, boolean processIncludes) throws InterruptedException, PolicyAssertionException {
-        Set<AssertionPath> paths = generatePaths(assertion,processIncludes);
+    public PolicyPathResult generate(Assertion assertion, boolean processIncludes, int maxPaths) throws InterruptedException, PolicyAssertionException {
+        Set<AssertionPath> paths = generatePaths(assertion, processIncludes, maxPaths);
         int pathOrder = 0;
         for (Iterator iterator = paths.iterator(); iterator.hasNext(); pathOrder++) {
             AssertionPath path = (AssertionPath)iterator.next();
@@ -146,7 +148,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      *
      * @param assertion the root assertion
      */
-    private Set<AssertionPath> generatePaths(Assertion assertion, boolean processIncludes) throws InterruptedException, PolicyAssertionException {
+    private Set<AssertionPath> generatePaths(Assertion assertion, boolean processIncludes, int maxPaths) throws InterruptedException, PolicyAssertionException, PolicyTooComplexException {
         long startTime = System.currentTimeMillis();
         Set<AssertionPath> assertionPaths = new LinkedHashSet<AssertionPath>();
         Iterator preorder = processIncludes ?
@@ -157,8 +159,11 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         pathStack.push(initPath);
 
         for (; preorder.hasNext();) {
-            if (Thread.interrupted()) throw new InterruptedException();
+            if (Thread.interrupted())
+                throw new InterruptedException();
             Assertion anext = (Assertion)preorder.next();
+            if (assertionPaths.size() > maxPaths)
+                throw new PolicyTooComplexException(anext, "Policy too complex to analyze -- too many paths through the policy");
             if (parentCreatesNewPaths(anext)) {
                 AssertionPath cp = pathStack.peek();
 

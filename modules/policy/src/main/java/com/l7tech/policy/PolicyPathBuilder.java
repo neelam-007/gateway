@@ -2,10 +2,11 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.util.ConfigFactory;
 
-import java.util.logging.Logger;
-import java.util.Set;
 import java.util.List;
+import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * A class for building policy assertion paths.
@@ -20,6 +21,8 @@ import java.util.List;
  */
 public abstract class PolicyPathBuilder {
     static Logger log = Logger.getLogger(PolicyPathBuilder.class.getName());
+    public static final String POLICY_VALIDATION_MAX_PATHS = "policyValidation.maxPaths";
+    public static final int DEFAULT_POLICY_VALIDATION_MAX_PATHS = 500000;
 
     /**
      * Protected constructor, the <code>PolicyPathBuilder</code> instances
@@ -49,7 +52,7 @@ public abstract class PolicyPathBuilder {
      * @return the result of the build
      */
     public PolicyPathResult generate(Assertion assertion) throws InterruptedException, PolicyAssertionException {
-        return generate( assertion, true );
+        return generate( assertion, true, ConfigFactory.getIntProperty(POLICY_VALIDATION_MAX_PATHS, DEFAULT_POLICY_VALIDATION_MAX_PATHS) );
     }
 
     /**
@@ -66,9 +69,12 @@ public abstract class PolicyPathBuilder {
      * Generate the policy path result (policy assertion paths for
      * the <code>Assertion</code> tree.
      *
+     *
      * @param assertion the assertion tree to attempt the build
      * path for.
+     * @param processIncludes if true, include assertions will be expanded and included in the generated paths
+     * @param maxPaths maximum number of policy paths to build.  set a limit to avoid running out of memory for complex policies.
      * @return the result of the build
      */
-    abstract public PolicyPathResult generate(Assertion assertion, boolean processIncludes) throws InterruptedException, PolicyAssertionException;
+    abstract public PolicyPathResult generate(Assertion assertion, boolean processIncludes, int maxPaths) throws InterruptedException, PolicyAssertionException;
 }
