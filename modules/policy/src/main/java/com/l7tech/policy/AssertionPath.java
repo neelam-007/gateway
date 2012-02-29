@@ -19,6 +19,7 @@ public class AssertionPath implements Serializable {
     private final AssertionPath parentPath;
     /** Last path assertion. */
     private final Assertion lastPathComponent;
+    private final int pathCount;
     private int pathOrder;
     private int hashCode;
 
@@ -37,6 +38,7 @@ public class AssertionPath implements Serializable {
             parentPath = new AssertionPath(assertions, assertions.length - 1);
         else
             parentPath = null;
+        pathCount = assertions.length;
     }
 
     /**
@@ -52,18 +54,21 @@ public class AssertionPath implements Serializable {
             throw new IllegalArgumentException("path in AssertionPath must be non null.");
         lastPathComponent = singlePath;
         parentPath = null;
+        pathCount = 1;
     }
 
     /** copy constructor */
     public AssertionPath(AssertionPath ap) {
         this.parentPath = ap.parentPath;
         this.lastPathComponent = ap.lastPathComponent;
+        this.pathCount = ap.pathCount;
     }
 
     protected AssertionPath( final AssertionPath parentPath,
                              final Assertion lastPathComponent ) {
         this.parentPath = parentPath;
         this.lastPathComponent = lastPathComponent;
+        this.pathCount = parentPath.pathCount + 1;
     }
 
     /**
@@ -76,6 +81,21 @@ public class AssertionPath implements Serializable {
             parentPath = new AssertionPath(assertionPath, length - 1);
         else
             parentPath = null;
+        pathCount = length;
+    }
+
+    /**
+     * Test whether the assertion path contains the a assertion's sibling
+     *
+     * @param a             the assertion to test
+     * @return true if this assertion path contains a's sibling, false otherwise
+     */
+    public boolean containsSibling(Assertion a) {
+        for (AssertionPath path = this; path != null; path = path.parentPath) {
+            if ( Assertion.isSibling( path.lastPathComponent, a ) )
+                return true;
+        }
+        return false;
     }
 
     /**
@@ -207,7 +227,7 @@ public class AssertionPath implements Serializable {
         if (a == null) return false;
         Assertion[] path = getPath();
         for (Assertion assertion : path) {
-            if (a.equals(assertion)) return true;
+            if (a == assertion) return true;
         }
         return false;
     }
@@ -223,7 +243,7 @@ public class AssertionPath implements Serializable {
         if (assertionClass == null) return false;
         Assertion[] path = getPath();
         for (Assertion assertion : path) {
-            if (assertionClass.equals(assertion.getClass())) return true;
+            if (assertionClass  == assertion.getClass()) return true;
         }
         return false;
     }
@@ -232,7 +252,7 @@ public class AssertionPath implements Serializable {
     /**
      * Tests two AssertionPaths for equality by checking each element of
      * the paths for equality. Two paths are considered equal if they are
-     * of the same length, and contain the same elements (<code>.equals</code>).
+     * of the same length, and contain the same elements (<code>==</code>).
      *
      * @param o the Object to compare
      */
@@ -249,7 +269,7 @@ public class AssertionPath implements Serializable {
                 return false;
 
             while ( apath != null ) {
-                if (!(apath.lastPathComponent.equals(oAssertionPath.lastPathComponent))) {
+                if (!(apath.lastPathComponent == oAssertionPath.lastPathComponent)) {
                     return false;
                 }
                 apath = apath.parentPath;

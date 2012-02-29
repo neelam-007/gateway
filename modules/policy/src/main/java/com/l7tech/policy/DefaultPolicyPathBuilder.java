@@ -167,15 +167,15 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
             if (parentCreatesNewPaths(anext)) {
                 AssertionPath cp = pathStack.peek();
 
-                List siblings = anext.getParent().getChildren();
-                boolean lastChild = siblings.indexOf(anext) + 1 == siblings.size();
+                List<Assertion> siblings = anext.getParent().getChildren();
+                boolean lastChild = siblings.get(siblings.size() - 1) == anext;
 
                 Set<AssertionPath> add = new LinkedHashSet<AssertionPath>();
                 Set<AssertionPath> remove = new HashSet<AssertionPath>();
 
                 for( AssertionPath assertionPath : assertionPaths ) {
                     if( assertionPath.contains( anext.getParent() ) &&
-                            !containsSibling( assertionPath, anext ) ) {
+                            !assertionPath.containsSibling(anext) ) {
                         AssertionPath a = assertionPath.addAssertion( anext );
                         if ( lastChild )
                             remove.add( assertionPath );
@@ -236,27 +236,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         return assertionPaths;
     }
 
-    /**
-     * Test whether the assertion path contains the a assertion's sibling
-     *
-     * @param assertionPath the assertion path
-     * @param a             the assertion to test
-     * @return true if the assertion path contiansd a's sibling, false otherwise
-     */
-    private boolean containsSibling(AssertionPath assertionPath, Assertion a) {
-        Assertion[] path = assertionPath.getPath();
-
-        for( Assertion assertion : path ) {
-            if( isSibling( assertion, a ) ) return true;
-        }
-        return false;
-    }
-
-    private boolean isSibling(Assertion assertion, Assertion anext) {
-        return assertion.getParent() == anext.getParent() && assertion != anext;
-    }
-
-    private Stack<AssertionPath> pathStack = new Stack<AssertionPath>();
+    private Deque<AssertionPath> pathStack = new ArrayDeque<AssertionPath>();
 
 
     /**

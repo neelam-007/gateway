@@ -166,6 +166,18 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     /**
+     * Quickly test whether two assertions are siblings.  This method considers assertions to be siblings
+     * if they are different assertions that share a parent.
+     *
+     * @param a an assertion
+     * @param b an assertion
+     * @return true if these assertions share a parent and are different assertions
+     */
+    public static boolean isSibling(Assertion a, Assertion b) {
+        return a != b && a.parent == b.parent;
+    }
+
+    /**
      * Renumber this assertion (and its children, if any) starting from the specified number.  After calling this,
      * getOrdinal() on this assertion (or its children, if any) will return meaningful values.
      * <p>

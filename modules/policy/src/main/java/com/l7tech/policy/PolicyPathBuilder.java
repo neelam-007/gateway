@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 public abstract class PolicyPathBuilder {
     static Logger log = Logger.getLogger(PolicyPathBuilder.class.getName());
     public static final String POLICY_VALIDATION_MAX_PATHS = "policyValidation.maxPaths";
-    public static final int DEFAULT_POLICY_VALIDATION_MAX_PATHS = 500000;
+    public static final int DEFAULT_POLICY_VALIDATION_MAX_PATHS = 2000000;
 
     /**
      * Protected constructor, the <code>PolicyPathBuilder</code> instances

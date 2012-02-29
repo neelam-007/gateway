@@ -10,6 +10,7 @@ import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyPathResult;
+import com.l7tech.policy.PolicyTooComplexException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -635,7 +636,16 @@ public class PolicyService extends ApplicationObjectSupport {
             }
             return false; // normally can't happen
         }
-        PolicyPathResult paths = policyPathBuilderFactory.makePathBuilder().generate(rootAssertion);
+        
+        
+        PolicyPathResult paths;
+        try {
+            paths = policyPathBuilderFactory.makePathBuilder().generate(rootAssertion);
+        } catch (PolicyTooComplexException e) {
+            // Fail closed -- assume the policy does not contain any anonymous paths
+            logger.log(Level.INFO, "Policy too complex to analyze -- assuming it contains no paths allowing unauthenticated access");
+            return false;
+        }
         for (AssertionPath assertionPath : paths.paths()) {
             Assertion[] path = assertionPath.getPath();
             boolean pathContainsIdAssertion = false;
