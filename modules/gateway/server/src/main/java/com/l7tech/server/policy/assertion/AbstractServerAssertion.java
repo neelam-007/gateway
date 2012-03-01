@@ -6,13 +6,19 @@ import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.AuditHaver;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.Injector;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
@@ -29,8 +35,7 @@ public abstract class AbstractServerAssertion<AT extends Assertion> implements S
     //- PUBLIC
 
     public AbstractServerAssertion( @NotNull final AT assertion ) {
-        this.assertion = assertion;
-        this.logger = Logger.getLogger( getClass().getName() );
+        this( assertion, null );
     }
 
     /**
@@ -47,6 +52,13 @@ public abstract class AbstractServerAssertion<AT extends Assertion> implements S
         this.assertion = assertion;
         this.auditFactory = auditFactory;
         this.logger = Logger.getLogger( getClass().getName() );
+
+        if ( assertion instanceof UsesVariables ) {
+            final UsesVariables usesVariables = (UsesVariables) assertion;
+            variablesUsed = Option.some( usesVariables.getVariablesUsed() ); //TODO [steve] presumably we want to throw here on invalid variable names?
+        } else {
+            variablesUsed = Option.none();
+        }
     }
 
     @NotNull
@@ -173,12 +185,73 @@ public abstract class AbstractServerAssertion<AT extends Assertion> implements S
     protected void injectDependencies() {
     }
 
+    /**
+     * Get the variable expander for this policies assertion.
+     *
+     * @param context The context for the request
+     * @return The variable expander
+     */
+    @NotNull
+    protected final VariableExpander getVariableExpander( @NotNull final PolicyEnforcementContext context ) {
+        final Audit audit = getAudit();
+        final Map<String,Object> variables;
+        if ( variablesUsed.isSome() ) {
+            variables = context.getVariableMap( variablesUsed.some(), audit );
+        } else {
+            variables = Collections.emptyMap();
+        }
+
+        return new VariableExpander( audit, variables );
+    }
+
+    /**
+     * Support class for variable expansion.
+     */
+    protected static final class VariableExpander {
+        @NotNull private final Audit audit;
+        @NotNull private final Map<String,Object> variables;
+
+        private VariableExpander( @NotNull final Audit audit,
+                                  @NotNull final Map<String,Object> variables ) {
+            this.audit = audit;
+            this.variables = variables;
+        }
+
+        /**
+         * Expand variables in the given text.
+         *
+         * <p>If the given text is null then the result is an empty string.</p>
+         *
+         * @param text The text to expand.
+         * @return The expanded text
+         */
+        @NotNull
+        public String expandVariables( final String text ) {
+            return text==null ?
+                    "" :
+                    ExpandVariables.process( text, variables, audit ); //TODO [steve] any exception handling for strict expansion errors?
+        }
+
+        /**
+         * Expand variables in the given text.
+         *
+         * <p>If the given text is null then the result is null.</p>
+         *
+         * @param text The text to expand.
+         * @return The expanded text
+         */
+        public String expandVariablesNull( final String text ) {
+            return text==null ? null : expandVariables( text );
+        }
+    }
+
     //- PRIVATE
 
     @Inject
     private AuditFactory auditFactory;
     private Injector injector;
     private final AtomicReference<Audit> auditReference = new AtomicReference<Audit>();
+    private final Option<String[]> variablesUsed;
 
     private Audit getAudit( boolean allowLazy ) {
         Audit audit = auditReference.get();
@@ -216,6 +289,5 @@ public abstract class AbstractServerAssertion<AT extends Assertion> implements S
             }
         }
         return audit;
-
     }
 }

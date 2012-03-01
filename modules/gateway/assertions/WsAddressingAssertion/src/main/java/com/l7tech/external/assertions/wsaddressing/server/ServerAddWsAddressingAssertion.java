@@ -10,7 +10,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
@@ -28,7 +27,6 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
 
     public ServerAddWsAddressingAssertion(final AddWsAddressingAssertion assertion ) throws PolicyAssertionException {
         super(assertion);
-        this.variablesUsed = assertion.getVariablesUsed();
         //validate required fields
         if(assertion.getWsaNamespaceUri() == null){
             throw new PolicyAssertionException(assertion, "WS-Addressing namespace is required.");
@@ -69,9 +67,9 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
         }
 
         try {
-            final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
+            final VariableExpander variableExpander = getVariableExpander( context );
 
-            String wsaNs = resolveProperty(assertion.getWsaNamespaceUri(), vars);
+            String wsaNs = resolveProperty(assertion.getWsaNamespaceUri(), variableExpander);
 
             if(!ValidationUtils.isValidUri(wsaNs)){
                 logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_NAMESPACE, wsaNs, "Namespace is not a valid URI");
@@ -81,7 +79,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
                 return AssertionStatus.FAILED;
             }
 
-            String resolvedAction = resolveProperty(assertion.getAction(), vars);
+            String resolvedAction = resolveProperty(assertion.getAction(), variableExpander);
             if(resolvedAction == null){
                 logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_ACTION_SUPPLIED);
                 return AssertionStatus.FAILED;
@@ -179,7 +177,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
             int elementNumber = 0;
             addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_ACTION, resolvedAction, elementNumber++, false);
 
-            final String resolvedMessageId = resolveProperty(assertion.getMessageId(), vars);
+            final String resolvedMessageId = resolveProperty(assertion.getMessageId(), variableExpander);
 
             final String msgIdToUse;
             if(AddWsAddressingAssertion.MESSAGE_ID_AUTOMATIC.equals(resolvedMessageId)){
@@ -198,7 +196,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
                 addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_MESSAGE_ID, msgIdToUse, elementNumber++, false);
             }
 
-            final String destination = resolveProperty(assertion.getDestination(), vars);
+            final String destination = resolveProperty(assertion.getDestination(), variableExpander);
             if(destination != null){
                 if (!ValidationUtils.isValidUri(destination)) {
                     logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, destination, SoapConstants.WSA_MSG_PROP_DESTINATION);
@@ -207,7 +205,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
                 }
             }
 
-            final String from = resolveProperty(assertion.getSourceEndpoint(), vars);
+            final String from = resolveProperty(assertion.getSourceEndpoint(), variableExpander);
             if(from != null){
                 if (!ValidationUtils.isValidUri(from)) {
                     logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, from, SoapConstants.WSA_MSG_PROP_SOURCE_ENDPOINT);
@@ -216,7 +214,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
                 }
             }
 
-            final String replyTo = resolveProperty(assertion.getReplyEndpoint(), vars);
+            final String replyTo = resolveProperty(assertion.getReplyEndpoint(), variableExpander);
             if(replyTo != null){
                 if (!ValidationUtils.isValidUri(replyTo)) {
                     logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, replyTo, SoapConstants.WSA_MSG_PROP_REPLY_TO);
@@ -225,7 +223,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
                 }
             }
 
-            final String faultTo = resolveProperty(assertion.getFaultEndpoint(), vars);
+            final String faultTo = resolveProperty(assertion.getFaultEndpoint(), variableExpander);
             if(faultTo != null){
                 if (!ValidationUtils.isValidUri(faultTo)) {
                     logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, faultTo, SoapConstants.WSA_MSG_PROP_FAULT_TO);
@@ -234,7 +232,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
                 }
             }
 
-            final String relatesMsgId = resolveProperty(assertion.getRelatesToMessageId(), vars);
+            final String relatesMsgId = resolveProperty(assertion.getRelatesToMessageId(), variableExpander);
             if(relatesMsgId != null){
                 if (!ValidationUtils.isValidUri(relatesMsgId)) {
                     logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, relatesMsgId, SoapConstants.WSA_MSG_PROP_RELATES_TO);
@@ -265,20 +263,19 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
     /**
      * Convert a string variable into it's expanded form in the case it references any variables.
      *
-     * @param vars Available context variables
      * @param maybeAVariable String. Must not be null and must not be the empty string
      * @return resolved String.
      * @throws InvalidRuntimeValueException if the String value maybeAVariable cannot be processed.
      */
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-    private String getStringVariable(final Map<String, Object> vars, String maybeAVariable)
+    private String getStringVariable(final VariableExpander variableExpander, String maybeAVariable)
             throws InvalidRuntimeValueException{
         //explicitly checking as exception throw below should only happen for the case when a string resolves to nothing.
         if(maybeAVariable == null || maybeAVariable.trim().isEmpty()) throw new IllegalArgumentException("maybeAVariable must be non null and not empty");
 
         final String value;
         try {
-            value =  ExpandVariables.process(maybeAVariable, vars, getAudit());
+            value =  variableExpander.expandVariables( maybeAVariable );
         } catch (Exception e) {
             //we want to catch any exception which the above call can generate. Any exception means the assertion fails.
             throw new InvalidRuntimeValueException("Error getting value: " + ExceptionUtils.getMessage(e),
@@ -294,10 +291,10 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
 
     private String resolveProperty(
             final String propertyValue,
-            final Map<String, Object> vars) throws InvalidRuntimeValueException {
+            final VariableExpander variableExpander ) throws InvalidRuntimeValueException {
         if(propertyValue == null || propertyValue.trim().isEmpty()) return null;
 
-        final String resolved = getStringVariable(vars, propertyValue);
+        final String resolved = getStringVariable(variableExpander, propertyValue);
 
         if(resolved == null || resolved.trim().isEmpty()) return null;
 
@@ -329,8 +326,4 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
 
         return newHeaderEl;
     }
-
-    // - PRIVATE
-
-    private final String[] variablesUsed;
 }
