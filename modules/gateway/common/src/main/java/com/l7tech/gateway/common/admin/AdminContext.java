@@ -137,4 +137,14 @@ public interface AdminContext {
      * @throws SecurityException on security error accessing the interface
      */
     UDDIRegistryAdmin getUDDIRegistryAdmin() throws SecurityException;
+
+    /**
+     * Get the administrative interface of the given type.
+     *
+     * @param adminInterfaceClass
+     * @param <AI> The interface type
+     * @return The interface or null if not supported.
+     * @throws SecurityException on security error accessing the interface
+     */
+    <AI> AI getAdminInterface( Class<AI> adminInterfaceClass ) throws SecurityException;
 }

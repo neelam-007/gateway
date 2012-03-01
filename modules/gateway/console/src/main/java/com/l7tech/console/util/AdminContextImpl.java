@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -17,9 +18,7 @@ import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
-import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gui.util.Utilities;
-import static com.l7tech.gui.util.Utilities.getBlockerOrSelf;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -32,6 +31,8 @@ import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.gui.util.Utilities.getBlockerOrSelf;
 
 /**
  * Admin context implementation
@@ -138,6 +139,11 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
     @Override
     public UDDIRegistryAdmin getUDDIRegistryAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(UDDIRegistryAdmin.class);
+    }
+
+    @Override
+    public <AI> AI getAdminInterface( final Class<AI> adminInterfaceClass ) throws SecurityException {
+        return this.getRemoteInterfaceForEndpoint(adminInterfaceClass);
     }
 
     //- PACKAGE

@@ -1,6 +1,5 @@
 package com.l7tech.console.util.registry;
 
-import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.TrustedCertAdminStub;
 import com.l7tech.console.security.SecurityProvider;
@@ -23,11 +22,7 @@ import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.transport.ResolutionConfiguration;
-import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.gateway.common.transport.TransportDescriptor;
+import com.l7tech.gateway.common.transport.*;
 import com.l7tech.gateway.common.transport.email.*;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdminStub;
@@ -41,6 +36,8 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
+import com.l7tech.util.InetAddressUtil;
+import com.l7tech.util.Option;
 
 import javax.security.auth.login.LoginException;
 import java.lang.reflect.InvocationHandler;
@@ -51,6 +48,8 @@ import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collection;
+
+import static com.l7tech.util.Option.none;
 
 
 /**
@@ -463,6 +462,11 @@ public class RegistryStub extends Registry {
                 throw new NoSuchMethodException("No extension interfaces in stub");
             }
         });
+    }
+
+    @Override
+    public <T> Option<T> getAdminInterface( final Class<T> interfaceClass ) {
+        return none();
     }
 
     @Override

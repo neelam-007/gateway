@@ -1,29 +1,29 @@
 package com.l7tech.console.util.registry;
 
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.LogonEvent;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
+import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
-import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.admin.*;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.GuidBasedEntityManager;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.Policy;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.jdbc.JdbcAdmin;
-import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.util.Either;
 import com.l7tech.util.Eithers;
 import com.l7tech.util.Option;
@@ -39,6 +39,9 @@ import java.lang.reflect.Proxy;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.optional;
+
 
 /**
  * A central place that provides initial access to all components
@@ -52,7 +55,7 @@ public final class RegistryImpl extends Registry
     private final Logger logger = Logger.getLogger(RegistryImpl.class.getName());
 
     // When you add an admin interface don't forget to
-    // add it to the reset method
+    // add it to the reset method and
     private ApplicationContext applicationContext;
     private AdminContext adminContext = null;
     private AdminLogin adminLogin;
@@ -360,6 +363,15 @@ public final class RegistryImpl extends Registry
                 return Eithers.extract( result ).toNull();
             }
         });
+    }
+
+    @Override
+    public <T> Option<T> getAdminInterface(final Class<T> interfaceClass) {
+        try {
+            return optional( adminContext.getAdminInterface( interfaceClass ) );
+        } catch ( final IllegalStateException e ) {
+            return none();
+        }
     }
 
     /**

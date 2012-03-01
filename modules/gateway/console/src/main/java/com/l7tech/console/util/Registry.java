@@ -1,32 +1,35 @@
 package com.l7tech.console.util;
 
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.gateway.common.audit.AuditAdmin;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.gateway.common.admin.*;
+import com.l7tech.gateway.common.audit.AuditAdmin;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.transport.TransportAdmin;
+import com.l7tech.gateway.common.transport.email.EmailAdmin;
+import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
-import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
-import com.l7tech.gateway.common.transport.email.EmailAdmin;
-import com.l7tech.gateway.common.log.LogSinkAdmin;
-import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.GuidBasedEntityManager;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.Policy;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.jdbc.JdbcAdmin;
-import com.l7tech.objectmodel.GuidBasedEntityManager;
+import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+
+import static com.l7tech.util.Option.none;
 
 /**
  * A central place that provides initial access to all components
@@ -242,6 +245,18 @@ public abstract class Registry {
      */
     public abstract <T> T getExtensionInterface(Class<T> interfaceClass, @Nullable String instanceIdentifier);
 
+    /**
+     * Get a standard administrative interface.
+     *
+     * <p>This is a safer to use alternative to the "getUDDIRegistryAdmin"
+     * methods which throw unchecked exceptions.</p>
+     *
+     * @param interfaceClass The class for the desired type.
+     * @param <T> The interface type
+     * @return The (optional) instance, which is "none" if the interface is unavailable.
+     */
+    public abstract <T> Option<T> getAdminInterface(final Class<T> interfaceClass);
+
     public ConsoleLicenseManager getLicenseManager() {
         return ConsoleLicenseManager.getInstance();
     }
@@ -402,6 +417,11 @@ public abstract class Registry {
                     throw new IllegalStateException(ILLEGAL_STATE_MSG);
                 }
             });
+        }
+
+        @Override
+        public <T> Option<T> getAdminInterface( final Class<T> interfaceClass ) {
+            return none();
         }
     }
 }

@@ -8,6 +8,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
@@ -38,6 +39,7 @@ import com.l7tech.policy.exporter.PolicyImporter;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
@@ -65,26 +67,26 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
 
     @Override
     public TrustedCert findCertByPrimaryKey( long certOid ) throws FindException {
-        final TrustedCertAdmin admin = admin(Registry.getDefault().getTrustedCertManager());
+        final TrustedCertAdmin admin =  getAdminInterface( TrustedCertAdmin.class );
         return admin.findCertByPrimaryKey(certOid);
     }
 
     @Override
     public Collection<TrustedCert> findAllCerts() throws FindException {
-        final TrustedCertAdmin admin = admin(Registry.getDefault().getTrustedCertManager());
+        final TrustedCertAdmin admin = getAdminInterface(TrustedCertAdmin.class);
         return admin.findAllCerts(); 
     }
 
     @Override
     public SsgKeyEntry findKeyEntry( final String alias, final long keystoreOid ) throws FindException, KeyStoreException {
-        final TrustedCertAdmin admin = admin(Registry.getDefault().getTrustedCertManager());
+        final TrustedCertAdmin admin = getAdminInterface( TrustedCertAdmin.class );
         return admin.findKeyEntry( alias, keystoreOid );
     }
 
     @Override
     public Collection getAssertions() {
         try {
-            return admin(Registry.getDefault().getCustomAssertionsRegistrar()).getAssertions();
+            return getAdminInterface(CustomAssertionsRegistrar.class).getAssertions();
         } catch (RuntimeException e) {
             if ( ExceptionUtils.causedBy(e, LicenseException.class)) {
                 logger.log( Level.INFO, "Custom assertions unavailable or unlicensed");
@@ -99,61 +101,61 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
 
     @Override
     public Policy findPolicyByGuid( final String guid ) throws FindException {
-        PolicyAdmin policyAdmin = admin(Registry.getDefault().getPolicyAdmin());
+        PolicyAdmin policyAdmin = getAdminInterface(PolicyAdmin.class);
         return policyAdmin.findPolicyByGuid( guid );
     }
 
     @Override
     public Policy findPolicyByUniqueName( final String name ) throws FindException {
-        PolicyAdmin policyAdmin = admin(Registry.getDefault().getPolicyAdmin());
+        PolicyAdmin policyAdmin = getAdminInterface( PolicyAdmin.class );
         return policyAdmin.findPolicyByUniqueName( name );
     }
 
     @Override
     public ResourceEntryHeader findResourceEntryByUriAndType( final String uri, final ResourceType type ) throws FindException {
-        ResourceAdmin resourceAdmin = admin(Registry.getDefault().getResourceAdmin());
+        ResourceAdmin resourceAdmin = getAdminInterface( ResourceAdmin.class );
         return resourceAdmin.findResourceHeaderByUriAndType( uri, type );
     }
 
     @Override
     public Collection<ResourceEntryHeader> findResourceEntryByKeyAndType( final String key, final ResourceType type ) throws FindException {
-        ResourceAdmin resourceAdmin = admin(Registry.getDefault().getResourceAdmin());
+        ResourceAdmin resourceAdmin = getAdminInterface( ResourceAdmin.class );
         return resourceAdmin.findResourceHeadersByKeyAndType( key, type );
     }
 
     @Override
     public JdbcConnection getJdbcConnection( final String name ) throws FindException {
-        JdbcAdmin jdbcAdmin = admin(Registry.getDefault().getJdbcConnectionAdmin());
+        JdbcAdmin jdbcAdmin = getAdminInterface( JdbcAdmin.class );
         return jdbcAdmin.getJdbcConnection( name );
     }
 
     @Override
     public JmsEndpoint findEndpointByPrimaryKey( final long oid ) throws FindException {
-        JmsAdmin jmsAdmin = admin(Registry.getDefault().getJmsManager());
+        JmsAdmin jmsAdmin = getAdminInterface( JmsAdmin.class );
         return jmsAdmin.findEndpointByPrimaryKey( oid );
     }
 
     @Override
     public JmsConnection findConnectionByPrimaryKey( final long oid ) throws FindException {
-        JmsAdmin jmsAdmin = admin(Registry.getDefault().getJmsManager());
+        JmsAdmin jmsAdmin = getAdminInterface( JmsAdmin.class );
         return jmsAdmin.findConnectionByPrimaryKey( oid );
     }
 
     @Override
     public SsgActiveConnector findConnectorByPrimaryKey(long oid) throws FindException {
-        TransportAdmin transportAdmin = admin(Registry.getDefault().getTransportAdmin());
+        TransportAdmin transportAdmin = getAdminInterface( TransportAdmin.class );
         return transportAdmin.findSsgActiveConnectorByPrimaryKey(oid);
     }
 
     @Override
     public Collection<SsgActiveConnector> findSsgActiveConnectorsByType(String type) throws FindException {
-        TransportAdmin transportAdmin = admin(Registry.getDefault().getTransportAdmin());
+        TransportAdmin transportAdmin = getAdminInterface( TransportAdmin.class );
         return transportAdmin.findSsgActiveConnectorsByType(type);
     }
 
     @Override
     public Set<ExternalReferenceFactory> findAllExternalReferenceFactories() throws FindException {
-        PolicyAdmin policyAdmin = admin(Registry.getDefault().getPolicyAdmin());
+        PolicyAdmin policyAdmin = getAdminInterface( PolicyAdmin.class );
         return policyAdmin.findAllExternalReferenceFactories();
     }
 
@@ -169,55 +171,55 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
 
     @Override
     public EntityHeader[] findAllIdentityProviderConfig() throws FindException {
-        IdentityAdmin idAdmin = admin(Registry.getDefault().getIdentityAdmin());
+        IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findAllIdentityProviderConfig();        
     }
 
     @Override
     public IdentityProviderConfig findIdentityProviderConfigByID( long providerOid ) throws FindException {
-        IdentityAdmin idAdmin = admin(Registry.getDefault().getIdentityAdmin());
+        IdentityAdmin idAdmin = getAdminInterface(IdentityAdmin.class);
         return idAdmin.findIdentityProviderConfigByID( providerOid );
     }
 
     @Override
     public EntityHeaderSet<IdentityHeader> findAllGroups( long providerOid ) throws FindException {
-        IdentityAdmin idAdmin = admin(Registry.getDefault().getIdentityAdmin());
+        IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findAllGroups( providerOid );
     }
 
     @Override
     public Group findGroupByID( long providerOid, String groupId ) throws FindException {
-        IdentityAdmin idAdmin = admin(Registry.getDefault().getIdentityAdmin());
+        IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findGroupByID( providerOid, groupId );        
     }
 
     @Override
     public Group findGroupByName( long providerOid, String name ) throws FindException {
-        IdentityAdmin idAdmin = admin(Registry.getDefault().getIdentityAdmin());
+        IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findGroupByName( providerOid, name );        
     }
 
     @Override
     public Set<IdentityHeader> getUserHeaders( long providerOid, String groupId ) throws FindException {
-        IdentityAdmin idAdmin = admin(Registry.getDefault().getIdentityAdmin());
+        IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.getUserHeaders( providerOid, groupId );        
     }
 
     @Override
     public  EntityHeaderSet<IdentityHeader> findAllUsers( long providerOid ) throws FindException {
-        IdentityAdmin idAdmin = admin(Registry.getDefault().getIdentityAdmin());
+        IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findAllUsers( providerOid );
     }
 
     @Override
     public User findUserByID( long providerOid, String userId ) throws FindException {
-        IdentityAdmin idAdmin = admin(Registry.getDefault().getIdentityAdmin());
+        IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findUserByID( providerOid, userId );        
     }
 
     @Override
     public User findUserByLogin( long providerOid, String login ) throws FindException {
-        IdentityAdmin idAdmin = admin(Registry.getDefault().getIdentityAdmin());
+        IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
         return idAdmin.findUserByLogin( providerOid, login );        
     }
 
@@ -277,10 +279,12 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
 
     private static final Logger logger = Logger.getLogger( ConsoleExternalReferenceFinder.class.getName() );
 
-    private <AI> AI admin( final AI adminInterface ) throws FindException {
-        if ( adminInterface == null ) {
-            throw new FindException( "Error accessing gateway." ); 
+    private <AI> AI getAdminInterface( final Class<AI> adminInterfaceClass ) throws FindException {
+        final Option<AI> adminInterface = Registry.getDefault().getAdminInterface(adminInterfaceClass);
+        if ( adminInterface.isSome() ) {
+            return adminInterface.some();
+        } else {
+            throw new FindException( "Error accessing gateway." );
         }
-        return adminInterface;
     }
 }
