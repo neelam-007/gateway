@@ -4,10 +4,12 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -53,7 +55,9 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Server side implementation of the GatewayManagementAssertion.
@@ -100,17 +104,34 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
                                                 final BeanFactory context,
                                                 final String assertionContextResource ) throws PolicyAssertionException {
         super(assertion);
-        this.agent = buildAgent();
-        this.assertionContext = new XmlBeanFactory(new ClassPathResource(assertionContextResource, ServerGatewayManagementAssertion.class), context);
-        this.assertionContext.preInstantiateSingletons();
-    }    
+        this.agent = getAgent( getAudit(), logger, assertion );
+        this.assertionContext = buildContext( context, assertionContextResource );
+    }
 
     //- PRIVATE
 
-    private final XmlBeanFactory assertionContext;
-    private final WSManAgent agent;
+    private static final AtomicReference<WSManReflectiveAgent> sharedAgent = new AtomicReference<WSManReflectiveAgent>();
 
-    private WSManReflectiveAgent buildAgent() throws PolicyAssertionException {
+    private final WSManAgent agent;
+    private final XmlBeanFactory assertionContext;
+
+    private static XmlBeanFactory buildContext( final BeanFactory context,
+                                              final String assertionContextResource ) {
+        XmlBeanFactory assertionContext = new XmlBeanFactory(new ClassPathResource(assertionContextResource, ServerGatewayManagementAssertion.class), context);
+        assertionContext.preInstantiateSingletons();
+        return assertionContext;
+    }
+
+    private static WSManReflectiveAgent getAgent( final Audit audit, final Logger logger, final Assertion assertion ) throws PolicyAssertionException {
+        WSManReflectiveAgent agent = sharedAgent.get();
+        if ( agent == null ) {
+            agent = buildAgent( audit, logger, assertion );
+            sharedAgent.compareAndSet( null, agent );
+        }
+        return agent;
+    }
+
+    private static WSManReflectiveAgent buildAgent( final Audit audit, final Logger logger, final Assertion assertion ) throws PolicyAssertionException {
         try {
             return new WSManReflectiveAgent(null, ValidationUtils.getSchemaSources(), null){
                 @SuppressWarnings({"ThrowableInstanceNeverThrown"})
@@ -123,7 +144,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
 
                     try {
                         validateManagementHeaders( request );
-                        validateAddressing( request );
+                        validateAddressing( audit, request );
                         response = processForIdentify( request );
                     } catch (Throwable th) {
                         if ( th instanceof AssertionStatusException ) throw (AssertionStatusException) th;
@@ -283,7 +304,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
      * Validate management headers early by accessing them, we'll handle
      * this error so we don't return a generic fault.
      */
-    private void validateManagementHeaders( final Management request ) throws SOAPException, JAXBException, SchemaValidationException {
+    private static void validateManagementHeaders( final Management request ) throws SOAPException, JAXBException, SchemaValidationException {
         try {
             request.getTimeout();
             request.getResourceURI();
@@ -304,17 +325,17 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
      * Wiseman supports async messages but we don't, so fail if the response
      * is not the anonymous address.
      */
-    private void validateAddressing( final Management request ) throws SOAPException, JAXBException {
-        ensureAnonymous( request.getReplyTo() );
-        if ( request.getReplyTo() == null ) ensureAnonymous( request.getFrom() );
-        ensureAnonymous( request.getFaultTo() );
+    private static void validateAddressing( final Audit audit, final Management request ) throws SOAPException, JAXBException {
+        ensureAnonymous( audit, request.getReplyTo() );
+        if ( request.getReplyTo() == null ) ensureAnonymous( audit, request.getFrom() );
+        ensureAnonymous( audit, request.getFaultTo() );
     }
 
-    private void ensureAnonymous( final EndpointReferenceType endpointReference )  {
+    private static void ensureAnonymous( final Audit audit, final EndpointReferenceType endpointReference )  {
         if ( endpointReference != null &&
              endpointReference.getAddress() != null &&
              !Addressing.ANONYMOUS_ENDPOINT_URI.equals(endpointReference.getAddress().getValue()) ) {
-            logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, "Unsupported response endpoint address '"+endpointReference.getAddress().getValue()+"'" );
+            audit.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, "Unsupported response endpoint address '" + endpointReference.getAddress().getValue() + "'" );
             throw new AssertionStatusException( AssertionStatus.FALSIFIED );
         }
     }
@@ -323,7 +344,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
                                final Map<String,?> properties ) {
         final String prefix = assertion.getVariablePrefix();
         if ( prefix != null && prefix.length() > 0 ) {
-            context.setVariable( prefix + "." + GatewayManagementAssertion.SUFFIX_ACTION, properties.get( "com.l7tech.status.action" )  );
+            context.setVariable( prefix + "." + GatewayManagementAssertion.SUFFIX_ACTION, properties.get( "com.l7tech.status.action" ) );
             context.setVariable( prefix + "." + GatewayManagementAssertion.SUFFIX_ENTITY_ID, properties.get( "com.l7tech.status.entityId" )  );
             context.setVariable( prefix + "." + GatewayManagementAssertion.SUFFIX_ENTITY_TYPE, properties.get( "com.l7tech.status.entityType" )  );
             context.setVariable( prefix + "." + GatewayManagementAssertion.SUFFIX_MESSAGE, properties.get( "com.l7tech.status.message" ) );
@@ -339,7 +360,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
             soapResponse.writeTo( os );
             response.initialize( ContentTypeHeader.SOAP_1_2_DEFAULT, os.toByteArray() );
         } else {
-            sendManagementResponse( (Management) soapResponse, response);
+            sendManagementResponse( (Management) soapResponse, response );
         }
     }
 
