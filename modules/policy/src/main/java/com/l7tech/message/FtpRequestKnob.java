@@ -7,7 +7,7 @@ import java.net.PasswordAuthentication;
  *
  * @author Steve Jones
  */
-public interface FtpRequestKnob extends TcpKnob {
+public interface FtpRequestKnob extends TcpKnob, UriKnob {
 
     /**
      * The path of the file being uploaded.
@@ -22,15 +22,6 @@ public interface FtpRequestKnob extends TcpKnob {
      * @return the file name
      */
     String getFile();
-
-    /**
-     * URI part of the URL for this request (e.g. /ssg/soap). Never null or empty.
-     *
-     * <p>This is used for service resolution.</p>
-     *
-     * @return the uri
-     */
-    String getRequestUri();
 
     /**
      * The (constructed) URL for this request (e.g. ftps://gateway:2121/ssg/soap/file.xml).

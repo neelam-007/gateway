@@ -18,7 +18,7 @@ import java.util.Map;
  *
  * Note that in keeping with the Java Servlet API, requests allow headers to be read but not set.
  */
-public interface HttpRequestKnob extends TcpKnob, HasSoapAction, HasHeaders {
+public interface HttpRequestKnob extends TcpKnob, UriKnob, HasSoapAction, HasHeaders {
     /**
      * @return the array of {@link HttpCookie}s that were found in this request. Never null, but may be empty.
      */
@@ -34,11 +34,6 @@ public interface HttpRequestKnob extends TcpKnob, HasSoapAction, HasHeaders {
      * @return the HTTP method as a String.  Never null or empty.
      */
     String getMethodAsString();
-
-    /**
-     * @return the URI part of the URL for this request (e.g. /ssg/soap). Never null or empty.
-     */
-    String getRequestUri();
 
     /**
      * @return the complete URL of this request (e.g. https://ssg.example.com/ssg/soap). Never null or empty.

@@ -250,8 +250,8 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
             final long requestSizeLimit = connector.getLongProperty( PROPERTIES_KEY_REQUEST_SIZE_LIMIT, getMaxBytes() );
             request.initialize(stashManagerFactory.createStashManager(), ctype, pis, requestSizeLimit);
 
-            request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob( null, 0, null,
-                    0, processingFileName, directory, null, null ));
+            request.attachKnob(MessageProcessingSshUtil.buildSshKnob( null, 0, null,
+                    0, processingFileName, directory, null, null ), SshKnob.class, UriKnob.class); // Avoid advertising TcpKnob since we don't have actual transport-level data for it
 
             final Long hardwiredServiceOid = connector.getHardwiredServiceOid();
             if ( hardwiredServiceOid != null ) {

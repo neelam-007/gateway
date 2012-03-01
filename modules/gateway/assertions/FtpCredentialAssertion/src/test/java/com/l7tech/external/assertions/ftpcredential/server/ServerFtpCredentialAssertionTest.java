@@ -1,18 +1,19 @@
 package com.l7tech.external.assertions.ftpcredential.server;
 
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.common.TestDocuments;
+import com.l7tech.external.assertions.ftpcredential.FtpCredentialAssertion;
+import com.l7tech.message.FtpRequestKnob;
+import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.message.Message;
-import com.l7tech.message.FtpRequestKnob;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.external.assertions.ftpcredential.FtpCredentialAssertion;
-import com.l7tech.common.TestDocuments;
-
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 import java.net.PasswordAuthentication;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Test the ServerFtpCredentialAssertion.
@@ -47,7 +48,7 @@ public class ServerFtpCredentialAssertionTest {
                 }
                 @Override
                 public String getRequestUri() {
-                    return null;
+                    return "";
                 }
                 @Override
                 public String getRequestUrl() {

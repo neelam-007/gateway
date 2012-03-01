@@ -5,7 +5,7 @@ import java.net.PasswordAuthentication;
 /**
  * Information about a message over SSH.
  */
-public interface SshKnob extends TcpKnob {
+public interface SshKnob extends TcpKnob, UriKnob {
 
     /**
      * This class is a data holder that is used by SshKnob.
@@ -42,15 +42,6 @@ public interface SshKnob extends TcpKnob {
      * @return the file name
      */
     String getFile();
-
-    /**
-     * URI part of the URL for this request (e.g. /ssg/soap). Never null or empty.
-     *
-     * <p>This is used for service resolution.</p>
-     *
-     * @return the uri
-     */
-    String getRequestUri();
 
     /**
      * Get the user name and password for the session.

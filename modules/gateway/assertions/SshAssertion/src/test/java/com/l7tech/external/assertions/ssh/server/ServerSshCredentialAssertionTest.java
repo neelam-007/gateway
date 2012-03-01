@@ -41,7 +41,7 @@ public class ServerSshCredentialAssertionTest {
 
                 @Override
                 public String getRequestUri() {
-                    return null;
+                    return "";
                 }
 
                 @Override

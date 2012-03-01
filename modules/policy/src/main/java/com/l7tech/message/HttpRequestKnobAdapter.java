@@ -46,7 +46,7 @@ public class HttpRequestKnobAdapter extends TcpKnobAdapter implements HttpReques
     public String getMethodAsString() { return getMethod().name(); }
 
     @Override
-    public String getRequestUri() {return null;}
+    public String getRequestUri() {return "";}
 
     @Override
     public String getRequestUrl() {return null;}

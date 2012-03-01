@@ -5,10 +5,7 @@ import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
-import com.l7tech.message.FtpRequestKnob;
-import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.message.Message;
-import com.l7tech.message.SshKnob;
+import com.l7tech.message.*;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -283,43 +280,34 @@ public class UriResolver extends ServiceResolver<String> {
     }
 
     private String getRequestValue(Message request) throws ServiceResolutionException {
+        UriKnob uriKnob = request.getKnob(UriKnob.class);
+        if (uriKnob == null)
+            throw new ServiceResolutionException("Unable to access HTTP, FTP or SSH path.");
+        String uri = uriKnob.getRequestUri();
+        
         HttpRequestKnob httpReqKnob = request.getKnob(HttpRequestKnob.class);
-        if (httpReqKnob == null) {
-            FtpRequestKnob ftpReqKnob = request.getKnob(FtpRequestKnob.class);
-            String uri = "";
-            if (ftpReqKnob != null) {
-                uri = ftpReqKnob.getRequestUri();
-            } else {
-                SshKnob sshKnob = request.getKnob(SshKnob.class);
-                if (sshKnob == null) throw new ServiceResolutionException("Unable to access HTTP, FTP or SSH path.");
-                uri = sshKnob.getRequestUri();
+        if (httpReqKnob != null) {
+            final String originalUrl = enableOriginalUrlHeader.get() ?
+                    httpReqKnob.getHeaderFirstValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL) :
+                    null;
+            if (originalUrl != null) {
+                try {
+                    URL url = new URL(originalUrl);
+                    uri = url.getFile();
+                    if (uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX) || uri.equals("/")) uri = "";
+                    auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_URI_FROM_HEADER, uri);
+                    return uri;
+                } catch (MalformedURLException e) {
+                    String err = MessageFormat.format("Invalid L7-Original-URL value: ''{0}''", originalUrl);
+                    logger.log(Level.WARNING, err, e);
+                    throw new ServiceResolutionException(err);
+                }
             }
-            if (uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) uri = "";
-            auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_REAL_URI, uri);
-            return uri;
         }
 
-        final String originalUrl = enableOriginalUrlHeader.get() ?
-                httpReqKnob.getHeaderFirstValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL) :
-                null;
-        if (originalUrl == null) {
-            String uri = httpReqKnob.getRequestUri();
-            if (uri == null || uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) uri = "";
-            auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_REAL_URI, uri);
-            return uri;
-        } else {
-            try {
-                URL url = new URL(originalUrl);
-                String uri = url.getFile();
-                if (uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX) || uri.equals("/")) uri = "";
-                auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_URI_FROM_HEADER, uri);
-                return uri;
-            } catch (MalformedURLException e) {
-                String err = MessageFormat.format("Invalid L7-Original-URL value: ''{0}''", originalUrl);
-                logger.log( Level.WARNING, err, e );
-                throw new ServiceResolutionException( err );
-            }
-        }
+        if (uri == null || uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) uri = "";
+        auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_REAL_URI, uri);
+        return uri;
     }
 
     /**

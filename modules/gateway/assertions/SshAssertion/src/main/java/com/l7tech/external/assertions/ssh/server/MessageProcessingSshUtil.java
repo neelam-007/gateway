@@ -103,7 +103,7 @@ public class MessageProcessingSshUtil {
                         path,
                         publicKeyAuthentication,
                         passwordAuthentication );
-        request.attachKnob( knob, SshKnob.class, TcpKnob.class );
+        request.attachKnob( knob, SshKnob.class, UriKnob.class, TcpKnob.class );
 
         final long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L);
         if (hardwiredServiceOid != -1L) {
