@@ -55,7 +55,7 @@ public final class RegistryImpl extends Registry
     private final Logger logger = Logger.getLogger(RegistryImpl.class.getName());
 
     // When you add an admin interface don't forget to
-    // add it to the reset method and
+    // add it to the reset method
     private ApplicationContext applicationContext;
     private AdminContext adminContext = null;
     private AdminLogin adminLogin;
