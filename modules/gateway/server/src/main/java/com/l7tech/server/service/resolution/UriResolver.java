@@ -282,7 +282,7 @@ public class UriResolver extends ServiceResolver<String> {
     private String getRequestValue(Message request) throws ServiceResolutionException {
         UriKnob uriKnob = request.getKnob(UriKnob.class);
         if (uriKnob == null)
-            throw new ServiceResolutionException("Unable to access HTTP, FTP or SSH path.");
+            throw new ServiceResolutionException("Unable to access request URI.");
         String uri = uriKnob.getRequestUri();
         
         HttpRequestKnob httpReqKnob = request.getKnob(HttpRequestKnob.class);
@@ -323,8 +323,7 @@ public class UriResolver extends ServiceResolver<String> {
     }
 
     public static boolean canResolveByURI( final Message request ) {
-        return (request.getKnob(HttpRequestKnob.class) != null) || (request.getKnob(FtpRequestKnob.class) != null)
-                || (request.getKnob(SshKnob.class) != null);
+        return request.getKnob(UriKnob.class) != null;
     }
 
     public static class URIResolutionParam {
