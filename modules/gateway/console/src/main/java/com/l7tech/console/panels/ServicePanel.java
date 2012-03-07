@@ -5,6 +5,8 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,6 +18,15 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap12.SOAP12Binding;
 import javax.wsdl.extensions.soap.SOAPBinding;
 
+import static com.l7tech.util.CollectionUtils.toSet;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
+import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.map;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.some;
+import static com.l7tech.util.Option.somes;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
@@ -134,6 +145,15 @@ public class ServicePanel extends WizardStepPanel {
                     sa.getAssertion().addChild(sa.getRoutingAssertion());
                 }
             }
+
+            final Unary<Option<String>, String> pathMapper = getUriPathMapper();
+            if ( wsdlPortInfo != null ) {
+                sa.setCustomUriOptions( toSet( pathMapper.call( wsdlPortInfo.getAccessPointURL() ).toList() ) );
+            } else if ( wsdl != null ) {
+                final Set<String> uris = new TreeSet<String>( String.CASE_INSENSITIVE_ORDER );
+                uris.addAll( somes( map( wsdl.getServiceURIs(), pathMapper ) ) );
+                sa.setCustomUriOptions( uris );
+            }
         } catch (Exception e) {
             logger.log(Level.INFO, "Error storing settings.", e); // this used to do e.printStackTrace() this is slightly better.
         }
@@ -230,5 +250,21 @@ public class ServicePanel extends WizardStepPanel {
         }
 
         return processed;
+    }
+
+    private Unary<Option<String>, String> getUriPathMapper() {
+        return new Unary<Option<String>,String>() {
+            @Override
+            public Option<String> call( final String uri ) {
+                if ( uri != null ) {
+                    try {
+                        return some( new URI( uri ).getPath() );
+                    } catch ( URISyntaxException e ) {
+                        logger.log( Level.INFO, "Error processing custom uri option: " + getMessage(e), getDebugException(e) );
+                    }
+                }
+                return none();
+            }
+        };
     }
 }

@@ -21,11 +21,13 @@ import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import static com.l7tech.util.CollectionUtils.toSet;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.uddi.WsdlPortInfo;
+import static java.util.Collections.emptySet;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -38,6 +40,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.net.MalformedURLException;
@@ -131,6 +134,14 @@ public class PublishServiceWizard extends Wizard {
                     wsdlPortInfo.isWasWsdlPortSelected();
         }
 
+        public Set<String> getCustomUriOptions() {
+            return customUriOptions;
+        }
+
+        public void setCustomUriOptions( final Set<String> customUriOptions ) {
+            this.customUriOptions = toSet( customUriOptions );
+        }
+
         private boolean sharedPolicy = false;
         private RoutingAssertion routingAssertion;
         private PublishedService service = new PublishedService();
@@ -141,6 +152,7 @@ public class PublishServiceWizard extends Wizard {
          */
         private WsdlPortInfo wsdlPortInfo;
         private Option<Folder> folder = Option.none();
+        private Set<String> customUriOptions = emptySet();
     }
 
     private ServiceAndAssertion saBundle = new ServiceAndAssertion();

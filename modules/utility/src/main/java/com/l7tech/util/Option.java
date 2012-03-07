@@ -1,10 +1,12 @@
 package com.l7tech.util;
 
 import com.l7tech.util.Functions.*;
+import static com.l7tech.util.Functions.reduce;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -289,6 +291,24 @@ public class Option<T> implements Serializable {
         return isSome() ?
                 Collections.singletonList( some() ) :
                 Collections.<T>emptyList();
+    }
+
+    /**
+     * Reduce a list of options to a list of values.
+     *
+     * @param values The values to process
+     * @param <O> The option type
+     * @return The list of values
+     */
+    @NotNull
+    public static <O> List<O> somes( @NotNull final Iterable<Option<O>> values ) {
+        return reduce( values, new ArrayList<O>(), new Binary<ArrayList<O>, ArrayList<O>, Option<O>>() {
+            @Override
+            public ArrayList<O> call( final ArrayList<O> someValues, final Option<O> option ) {
+                if ( option.isSome() ) someValues.add( option.some() );
+                return someValues;
+            }
+        } );
     }
 
     //- PRIVATE

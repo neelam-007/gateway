@@ -4,6 +4,7 @@ import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.*;
+import com.l7tech.util.Functions.Unary;
 import org.apache.ws.policy.Assertion;
 import org.apache.ws.policy.Policy;
 import org.apache.ws.policy.PolicyReference;
@@ -410,24 +411,31 @@ public class Wsdl {
      *         is not found
      */
     public String getServiceURI() {
-        for (Service svc : getServices()) {
-            //noinspection unchecked
-            Map<QName, Port> ports = svc.getPorts();
-            for (Port p : ports.values()) {
-                //noinspection unchecked
-                List<ExtensibilityElement> elements = p.getExtensibilityElements();
-                for (ExtensibilityElement element : elements) {
-                    if (element instanceof SOAPAddress) {
-                        SOAPAddress sa = (SOAPAddress) element;
-                        return sa.getLocationURI();
-                    } else if (element instanceof SOAP12Address) {
-                        SOAP12Address sa = (SOAP12Address) element;
-                        return sa.getLocationURI();
-                    }
-                }
+        return visitServiceUris( new Unary<Boolean,String>(){
+            @Override
+            public Boolean call( final String uri ) {
+                return false;
             }
-        }
-        return null;
+        } );
+    }
+
+    /**
+     * Returns the service URIs (url) from the WSDL <code>Port</code>s.
+     *
+     * @return the service url or an empty set if a service url is not found
+     */
+    public Set<String> getServiceURIs() {
+        final Set<String> uris = new LinkedHashSet<String>();
+
+        visitServiceUris( new Unary<Boolean,String>(){
+            @Override
+            public Boolean call( final String uri ) {
+                uris.add( uri );
+                return true;
+            }
+        } );
+
+        return uris;
     }
 
     /**
@@ -1566,6 +1574,37 @@ public class Wsdl {
                 }
             }
         }
+    }
+
+    /**
+     * Visit the service urls, terminate when callback returns false.
+     *
+     * @param callback The uri callback
+     * @return The last visited uri
+     */
+    private String visitServiceUris( final Unary<Boolean,String> callback ) {
+        String uri = null;
+        outer:
+        for ( final Service svc : getServices() ) {
+            //noinspection unchecked
+            final Map<QName, Port> ports = svc.getPorts();
+            for ( final Port p : ports.values()) {
+                //noinspection unchecked
+                final List<ExtensibilityElement> elements = p.getExtensibilityElements();
+                for (final ExtensibilityElement element : elements) {
+                    if (element instanceof SOAPAddress) {
+                        final SOAPAddress sa = (SOAPAddress) element;
+                        uri = sa.getLocationURI();
+                        if (!callback.call(uri)) break outer;
+                    } else if (element instanceof SOAP12Address) {
+                        final SOAP12Address sa = (SOAP12Address) element;
+                        uri = sa.getLocationURI();
+                        if (!callback.call(uri)) break outer;
+                    }
+                }
+            }
+        }
+        return uri;
     }
 
     private String getLocalName( Service service ) {
