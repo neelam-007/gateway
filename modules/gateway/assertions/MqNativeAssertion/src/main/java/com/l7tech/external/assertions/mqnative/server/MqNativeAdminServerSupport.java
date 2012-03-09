@@ -84,7 +84,7 @@ public class MqNativeAdminServerSupport {
                     logger.finer("... successfully got queue manager " + queueManager.name + "!");
                     
                     logger.finer("Attempting to get queue to inquire on its properties ...");
-                    testName = "outbound queue - ";
+                    testName = "inquiry queue properties (type) - ";
                     targetQueue = queueManager.accessQueue(
                             mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME ), MQC.MQOO_INQUIRE);
                     targetQueueType = targetQueue.getQueueType();
