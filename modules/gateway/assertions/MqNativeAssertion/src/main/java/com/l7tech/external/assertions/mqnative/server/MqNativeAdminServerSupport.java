@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.mqnative.server;
 import com.ibm.mq.MQException;
 import com.ibm.mq.MQQueue;
 import com.ibm.mq.MQQueueManager;
+import com.ibm.mq.MQC;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
@@ -71,6 +72,8 @@ public class MqNativeAdminServerSupport {
                 MQQueue targetQueue = null;
                 MQQueue replyQueue = null;
                 String testName = "";
+                int targetQueueType;
+                
                 try {
                     // test queue manager
                     logger.finer("Attempting to get queue manager ...");
@@ -79,6 +82,14 @@ public class MqNativeAdminServerSupport {
                             mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME ),
                             MqNativeUtils.buildQueueManagerConnectProperties( mqNativeActiveConnector, securePasswordManager ) );
                     logger.finer("... successfully got queue manager " + queueManager.name + "!");
+                    
+                    logger.finer("Attempting to get queue to inquire on its properties ...");
+                    testName = "outbound queue - ";
+                    targetQueue = queueManager.accessQueue(
+                            mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME ), MQC.MQOO_INQUIRE);
+                    targetQueueType = targetQueue.getQueueType();
+                    targetQueue.close();
+                    logger.finer("... successfully got queue properties");
 
                     // test inbound
                     if (mqNativeActiveConnector.getBooleanProperty( PROPERTIES_KEY_IS_INBOUND )) {
@@ -124,12 +135,14 @@ public class MqNativeAdminServerSupport {
                         targetQueue.close();
                         logger.finer("... successfully got outbound put queue " + targetQueue.name + "!");
 
-                        logger.finer("Attempting to get outbound get queue ...");
-                        targetQueue = queueManager.accessQueue(
-                                mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME ), QUEUE_OPEN_OPTIONS_OUTBOUND_GET );
-                        targetQueue.close();
-                        logger.finer("... successfully got outbound get queue " + targetQueue.name + "!");
-
+                        if ( targetQueueType !=  MQC.MQQT_REMOTE ) {    // GETs cannot be performed on Remote Queues
+                            logger.finer("Attempting to get outbound get queue ...");
+                            targetQueue = queueManager.accessQueue(
+                                    mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME ), QUEUE_OPEN_OPTIONS_OUTBOUND_GET );
+                            targetQueue.close();
+                            logger.finer("... successfully got outbound get queue " + targetQueue.name + "!");
+                        }
+                        
                         MqNativeReplyType replyType = MqNativeReplyType.valueOf( mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE) );
                         if ( MqNativeReplyType.REPLY_AUTOMATIC == replyType) {
                             // if applicable test model queue
