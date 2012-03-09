@@ -867,7 +867,7 @@ public class ServerVariables {
         public Object get(String name, PolicyEnforcementContext context) {
             SoapKnob soapKnob = context.getRequest().getKnob(SoapKnob.class);
             if (soapKnob == null) {
-                logger.info("Can't get SOAP namespace for non-SOAP message");
+                logger.fine("Can't get SOAP namespace for non-SOAP message");
                 return null;
             }
 
