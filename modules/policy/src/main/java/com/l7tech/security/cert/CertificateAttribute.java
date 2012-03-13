@@ -1,10 +1,7 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ISO8601Date;
+import com.l7tech.util.*;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
@@ -302,6 +299,15 @@ public enum CertificateAttribute {
         }},
 
     /**
+     * "Other Name" (if any) for the Subject Alternative Name, encoded as Base-64 (e.g. "3027060a2b060104018237140203a019a0170c15313730303030303030302e5640736d696c2e6d696c")
+     */
+    SUBJECT_ALT_OTHER("subjectAltNameOther", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.OTHER));
+        }},
+
+    /**
      * The BASE64 encoded value of the SHA-1 hash for the DER encoded certificate .
      */
     THUMBPRINT_SHA1("thumbprintSHA1", false, false) {
@@ -520,7 +526,7 @@ public enum CertificateAttribute {
 
     // from X509Certificate#getSubjectAlternativeNames(), since there doesn't seem to be set of constants elsewhere
     private static enum AltName {
-        OTHER        ("altNameOther",        0),   // otherName                  [0]     OtherName,
+        OTHER        ("altNameOther",        0, true),// otherName               [0]     OtherName,
         EMAIL        ("altNameEmail",        1),   // rfc822Name                 [1]     IA5String,
         DNS          ("altNameDNS",          2),   // dNSName                    [2]     IA5String,
         X400         ("altNameX400",         3),   // x400Address                [3]     ORAddress,
@@ -531,12 +537,18 @@ public enum CertificateAttribute {
         REGISTERED_ID("altNameRegisteredID", 8),   // registeredID               [8]     OBJECT IDENTIFIER}
         ;
 
-        private String friendlyName;
-        private int intType;
+        private final String friendlyName;
+        private final int intType;
+        private final boolean exposeAsBase64;
 
         private AltName(String friendlyName, int intType) {
+            this(friendlyName, intType, false);
+        }
+        
+        private AltName(String friendlyName, int intType, boolean exposeAsBase64) {
             this.friendlyName = friendlyName;
             this.intType = intType;
+            this.exposeAsBase64 = exposeAsBase64;
         }
 
         @Override
@@ -546,6 +558,10 @@ public enum CertificateAttribute {
 
         public Integer getType() {
             return intType;
+        }
+
+        public boolean isExposeAsBase64() {
+            return exposeAsBase64;
         }
     }
 
@@ -648,7 +664,10 @@ public enum CertificateAttribute {
                         return (String) value;
                     } else if (value instanceof byte[]) {
                         try {
-                            return (new DerValue((byte[]) value)).toString();
+                            final byte[] bytesVal = (byte[]) value;
+                            return altNameType.isExposeAsBase64()
+                                    ? HexUtils.encodeBase64(bytesVal, true)
+                                    : (new DerValue(bytesVal)).toString();
                         } catch (IOException e) {
                             logger.log(Level.WARNING, "Error extracting value for {0}", altNameType);
                             return null;
@@ -689,6 +708,8 @@ public enum CertificateAttribute {
      * Separate class since this uses server only lib.
      */
     private static final class BCSubjectDirectoryAttributesExtractor {
+        private static final String ALLOW_X509_C = "com.l7tech.x509.sda.coc.permitCOid";
+
         /**
          * Country of citizenship values from the Subject Directory Attributes field.
          *
@@ -724,7 +745,7 @@ public enum CertificateAttribute {
                     }
 
                     DERObjectIdentifier id = (DERObjectIdentifier)seq.getObjectAt(0);
-			        if(id.equals(X509Name.COUNTRY_OF_CITIZENSHIP)) {
+			        if(id.equals(X509Name.COUNTRY_OF_CITIZENSHIP) || (ConfigFactory.getBooleanProperty(ALLOW_X509_C, true) && id.equals(X509Name.C))) {
                         if(!(seq.getObjectAt(1) instanceof DERSet)) {
                             continue;
                         }
@@ -738,7 +759,7 @@ public enum CertificateAttribute {
                             DERPrintableString countryCode = (DERPrintableString)cocSet.getObjectAt(j);
                             addToMap(citizenshipCountries, attrName, countryCode.getString());
                         }
-		        	}
+                    }
 		        }
 
                 return citizenshipCountries;

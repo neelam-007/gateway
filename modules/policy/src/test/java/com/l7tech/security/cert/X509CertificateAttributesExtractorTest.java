@@ -176,18 +176,17 @@ public class X509CertificateAttributesExtractorTest {
         X509Certificate cert = CertUtils.decodeFromPEM(ALT_NAME_CERT_B64, false);
         X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
 
-        // TODO current expected result is for this to fail, since we do not expose otherName.  Update test if support is later added
         assertNull("otherName not exposed as subjectAltNameDNS", cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_DNS.toString()));
         assertNull("otherName not exposed as subjectAltNameEmail", cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_EMAIL.toString()));
         assertNull("otherName not exposed as subjectAltNameURI", cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_URI.toString()));
+        assertEquals("otherName exposed as subjectAltNameOther, Base-64 encoded", "MCcGCisGAQQBgjcUAgOgGaAXDBUxNzAwMDAwMDAwLlZAc21pbC5taWw=", cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_OTHER.toString()));
 
-        // TODO current expected result is for this to fail, since we do not recognize OID "2.5.4.6" (X509Name country code) as
-        // equivalent to "1.3.6.1.5.5.7.9.4" (id-pda-countryOfCitizenship).  Update test if this islater modified.
+        // Recognized as to "1.3.6.1.5.5.7.9.4" (id-pda-countryOfCitizenship), or as "2.5.4.6" (X.509 Name "C" country code).  Update test if this is later modified.
         final Object countriesOfCitizenship = cae.getAttributeValue("countryOfCitizenship");
         assertTrue("Countries of citizenship returns an array", countriesOfCitizenship instanceof Object[]);
         Object[] citizenships = (Object[]) countriesOfCitizenship;
-        assertEquals("citizenships", 0, citizenships.length);
-        //assertEquals("US", citizenships[0]);
+        assertEquals("citizenships should have 1 entry", 1, citizenships.length);
+        assertEquals("country of citizenship should be US", "US", citizenships[0]);
     }
 
     @Test
