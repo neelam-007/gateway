@@ -204,6 +204,15 @@ public enum CertificateAttribute {
         }},
 
     /**
+     * "Other Name" (if any) for the Issuer Alternative Name, encoded as Base-64 (e.g. "3027060a2b060104018237140203a019a0170c15313730303030303030302e5640736d696c2e6d696c")
+     */
+    ISSUER_ALT_OTHER("issuerAltNameOther", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap(this.toString(), getIssuerAltName(certificate, AltName.OTHER));
+        }},
+
+    /**
      * The Subject DN (e.g. "CN=Alice, OU=OASIS Interop Test Cert, O=OASIS")
      */
     SUBJECT("subject", false, false) {
