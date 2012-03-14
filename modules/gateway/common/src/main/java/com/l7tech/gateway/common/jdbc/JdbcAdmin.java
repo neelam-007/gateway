@@ -1,7 +1,10 @@
 package com.l7tech.gateway.common.jdbc;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.util.ConfigFactory;
 import org.springframework.transaction.annotation.Transactional;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITIES;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
@@ -21,7 +24,7 @@ import java.util.List;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types= EntityType.JDBC_CONNECTION)
 @Administrative
-public interface JdbcAdmin {
+public interface JdbcAdmin extends AsyncAdminMethods{
 
     // The original driver class list.  If you add more driver classes, separate them by '\n'.
     static final String ORIGINAL_DRIVERCLASS_LIST = "com.mysql.jdbc.Driver";
@@ -97,7 +100,8 @@ public interface JdbcAdmin {
      * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
      */
     @Transactional(readOnly=true)
-    String testJdbcConnection(JdbcConnection connection);
+    @Secured(types = EntityType.JDBC_CONNECTION, stereotype = FIND_ENTITIES)
+    AsyncAdminMethods.JobId<String> testJdbcConnection(JdbcConnection connection);
 
     /**
      * Test a JDBC query and see if it is a valid SQL statement.
@@ -107,7 +111,7 @@ public interface JdbcAdmin {
      * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
      */
     @Transactional(readOnly=true)
-    String testJdbcQuery(String connectionName, String query);
+    AsyncAdminMethods.JobId<String> testJdbcQuery(String connectionName, String query);
 
     /**
      * Get a property, default driver class list from the global cluster properties.  if failed to get its value,

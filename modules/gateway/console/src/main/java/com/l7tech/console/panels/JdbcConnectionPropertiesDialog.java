@@ -1,8 +1,6 @@
 package com.l7tech.console.panels;
 
-import static com.l7tech.console.panels.CancelableOperationDialog.doWithDelayedCancelDialog;
-import static com.l7tech.gui.util.DialogDisplayer.showMessageDialog;
-import com.l7tech.util.ExceptionUtils;
+import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 import com.l7tech.util.MutablePair;
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
@@ -31,7 +29,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
-import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 /**
@@ -464,39 +461,31 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         viewToModel(connForTest);
 
         try {
-            final String warningMessage = doWithDelayedCancelDialog(
-                    new Callable<String>() {
-                        @Override
-                        public String call() {
-                            final String warningMessage = admin.testJdbcConnection( connForTest );
-
-                            // ensure interrupted status is cleared
-                            Thread.interrupted();
-
-                            return warningMessage;
-                        }
-                    },
-                    this,
-                    resources.getString( "message.testing.cancel.title" ),
-                    resources.getString( "message.testing.cancel.message" ),
-                    5000L );
-
-            final String message = warningMessage == null ?
-                    resources.getString( "message.testing.jdbc.conn.passed" ) :
-                    MessageFormat.format( resources.getString( "message.testing.jdbc.conn.failed" ), warningMessage );
-
-            showMessageDialog(
+            String result = doAsyncAdmin(
+                    admin,
                     JdbcConnectionPropertiesDialog.this,
-                    message,
-                    resources.getString( "dialog.title.jdbc.conn.test" ),
-                    warningMessage == null ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
-                    null );
+                    resources.getString("message.testing.progress"),
+                    resources.getString("message.testing"),
+                    admin.testJdbcConnection(connForTest)).right();
+
+            String message = result.isEmpty() ?
+                    resources.getString("message.testing.jdbc.conn.passed") : MessageFormat.format(resources.getString("message.testing.jdbc.conn.failed"), result);
+
+            DialogDisplayer.showMessageDialog(this, message, resources.getString("dialog.title.jdbc.conn.test"),
+                    result.isEmpty() ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE, null);
 
 
         } catch (InterruptedException e) {
-            // cancelled
+            // do nothing, user cancelled
+
         } catch (InvocationTargetException e) {
-            throw ExceptionUtils.wrap( e.getTargetException() );
+            DialogDisplayer.showMessageDialog(this, MessageFormat.format(resources.getString("message.testing.jdbc.conn.failed"), e.getMessage()),
+                    resources.getString("dialog.title.jdbc.conn.test"),
+                    JOptionPane.WARNING_MESSAGE, null);
+        } catch (RuntimeException e) {
+            DialogDisplayer.showMessageDialog(this, MessageFormat.format(resources.getString("message.testing.jdbc.conn.failed"), e.getMessage()),
+                    resources.getString("dialog.title.jdbc.conn.test"),
+                    JOptionPane.WARNING_MESSAGE, null);
         }
     }
 

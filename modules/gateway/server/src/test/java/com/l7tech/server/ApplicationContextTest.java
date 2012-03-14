@@ -51,7 +51,7 @@ public class ApplicationContextTest  {
     private static final Set<String> NON_ADMIN_BEANS = set( "logAccessAdmin", "clusterLogAccessAdmin" );
     private static final Set<String> EXTRA_ADMIN_BEANS = set( "adminLogin", "customAssertionRegistrar" );
     private static final Set<String> NON_SECURED_BEANS = set( "customAssertionRegistrar" );
-    private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = set( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin" );
+    private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = set( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin","jdbcAdmin" );
     private static final Set<String> TRANSACTION_ROLLBACK_WHITELIST = set( "adminLogin", "clusterIDManager", "counterManager", "distributedMessageIdManager", "ftpAdmin", "kerberosAdmin", "schemaEntryManager" );
     private static final Set<EntityType> IGNORE_ENTITY_TYPES = set(
         EntityType.ESM_ENTERPRISE_FOLDER,  

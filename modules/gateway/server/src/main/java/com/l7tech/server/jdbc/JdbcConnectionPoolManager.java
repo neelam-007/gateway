@@ -28,7 +28,6 @@ import javax.sql.DataSource;
 import java.beans.PropertyDescriptor;
 import java.beans.PropertyVetoException;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
@@ -192,6 +191,8 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
 
          // Create a new data source
         ComboPooledDataSource cpds = new ComboPooledDataSource();
+        cpds.setConnectionCustomizerClassName("com.l7tech.server.util.JdbcConnectionCustomizer");
+
         try {
             setDataSourceByJdbcConnection(cpds, connection);
         } catch (InvalidPropertyException e) {
@@ -219,12 +220,13 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
     }
 
     /**
-     * Test a JDBC Connection entity.
+     * Creates the connection pool for testing
      *
      * @param connection: the JDBC Connection to be tested.
-     * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
+     * @return connection pool to test with
+     * @throws InvalidPropertyException
      */
-    public String testJdbcConnection(JdbcConnection connection) {
+    public ComboPooledDataSource getTestConnectionPool(JdbcConnection connection) throws Throwable{
         Pair<ComboPooledDataSource, String> results;
 
         // By calling the method updateConnectionPool, test if all properties of a JDBC Connection are valid or not.
@@ -233,33 +235,12 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
             results = updateConnectionPool(connection, true);  // "true" means this method called is for testing.
         } catch (Throwable e) {
             // Report all other unknown and unexpected exceptions
-            return e.getClass().getSimpleName() + " occurs";
+            throw new Throwable( e.getClass().getSimpleName() + " occurs");
         }
 
-        if (results.right != null) return results.right;
-        else if (results.left == null) return "Illegal State: data source must not be null";
-
-        ComboPooledDataSource cpds  = results.left;
-
-        Connection conn = null;
-        try {
-            conn = cpds.getConnection();
-        } catch (SQLException e) {
-            return "invalid connection properties setting.";
-        } catch (Throwable e) {
-            return "unexpected error, " + e.getClass().getSimpleName() + " thrown";
-        } finally {
-            if (conn != null) try {
-                conn.close();
-            } catch (SQLException e) {
-                logger.warning("Cannot close a JDBC connection.");
-            }
-
-            cpds.close();
-        }
-
-        // Returning null means no errors.
-        return null;
+        if (results.right != null) throw new InvalidPropertyException( results.right);
+        else if (results.left == null) throw new IllegalStateException(  "Illegal State: data source must not be null");
+        return results.left;
     }
 
     /**

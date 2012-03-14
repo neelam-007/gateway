@@ -24,10 +24,13 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 
 /**
  * Properties dialog for the JDBC Query Assertion.
@@ -344,8 +347,19 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                     }
 
                     JdbcAdmin admin = getJdbcConnectionAdmin();
-                    displayQueryTestingResult(admin == null ?
-                        "Cannot process testing due to JDBC Conneciton Admin unavailable." : admin.testJdbcQuery(connName, query));
+                    try {
+                        displayQueryTestingResult(admin == null ?
+                            "Cannot process testing due to JDBC Conneciton Admin unavailable." : doAsyncAdmin(
+                            admin,
+                            JdbcQueryAssertionPropertiesDialog.this,
+                            resources.getString("dialog.title.test.query"),
+                            resources.getString("dialog.title.test.query"),
+                            admin.testJdbcQuery(connName, query)).right());
+                    } catch (InterruptedException e) {
+                        // operation cancelled by user, do nothing
+                    } catch (InvocationTargetException e) {
+                        displayQueryTestingResult(e.getMessage());
+                    }
                 }
             }
         );

@@ -1,23 +1,33 @@
 package com.l7tech.server.jdbc;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.admin.AsyncAdminMethodsImpl;
+import com.l7tech.util.Background;
 import com.l7tech.util.Config;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.TimerTask;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
+
+import static com.l7tech.server.event.AdminInfo.find;
 
 /**
  * The implementation of the interface JdbcAdmin to manage JDBC Connection Entities, JDBC Connection Pooling, and JDBC Querying.
  *
- * @author ghuang
  */
-public class JdbcAdminImpl implements JdbcAdmin {
+public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
     private JdbcConnectionManager jdbcConnectionManager;
     private JdbcQueryingManager jdbcQueryingManager;
     private JdbcConnectionPoolManager jdbcConnectionPoolManager;
@@ -105,8 +115,52 @@ public class JdbcAdminImpl implements JdbcAdmin {
      * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
      */
     @Override
-    public String testJdbcConnection(JdbcConnection connection) {
-        return jdbcConnectionPoolManager.testJdbcConnection(connection);
+    public AsyncAdminMethods.JobId<String> testJdbcConnection(JdbcConnection connection) {
+        ComboPooledDataSource cpds = null ;
+
+        String error = null;
+        try {
+            cpds = jdbcConnectionPoolManager.getTestConnectionPool(connection);
+        }catch (Throwable e){
+            error = e.getMessage();
+        }
+
+
+        final String finalError = error;
+        final ComboPooledDataSource finalCpds = cpds;
+        final FutureTask<String> connectTask = new FutureTask<String>( find( false ).wrapCallable( new Callable<String>(){
+            @Override
+            public String call() throws Exception {
+
+                if(finalError != null) return finalError;
+
+                Connection conn = null;
+                try {
+                    conn = finalCpds.getConnection();
+                } catch (SQLException e) {
+                    return "invalid connection properties setting. \n"  + e.getMessage();
+                } catch (Throwable e) {
+                    return "unexpected error, " + e.getClass().getSimpleName() + " thrown";
+                } finally {
+                    if (conn != null) try {
+                        conn.close();
+                    } catch (SQLException e) {
+                        logger.warning("Cannot close a JDBC connection.");
+                    }
+                    finalCpds.close();
+                }
+                return "";
+            }
+        } ) );
+
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                connectTask.run();
+            }
+        }, 0L);
+
+        return registerJob( connectTask, String.class );
     }
 
     /**
@@ -117,9 +171,24 @@ public class JdbcAdminImpl implements JdbcAdmin {
      * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
      */
     @Override
-    public String testJdbcQuery(String connectionName, String query) {
-        Object result = jdbcQueryingManager.performJdbcQuery(connectionName, query, 1, null);
-        return (result instanceof String)? (String)result : null;
+    public AsyncAdminMethods.JobId<String> testJdbcQuery(final String connectionName, final String query) {
+        final FutureTask<String> queryTask = new FutureTask<String>( find( false ).wrapCallable( new Callable<String>(){
+            @Override
+            public String call() throws Exception {
+
+                Object result = jdbcQueryingManager.performJdbcQuery(connectionName, query, 1, null);
+                return (result instanceof String)? (String)result : null;
+            }
+        }));
+
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                queryTask.run();
+            }
+        }, 0L);
+
+        return registerJob( queryTask, String.class );
     }
 
     /**

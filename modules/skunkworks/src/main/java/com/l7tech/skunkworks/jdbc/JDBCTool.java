@@ -1,5 +1,6 @@
 package com.l7tech.skunkworks.jdbc;
 
+import com.ddtek.jdbc.extensions.ExtEmbeddedConnection;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
@@ -39,8 +40,7 @@ public class JDBCTool {
     private JPanel mainPanel;
     private JButton updateButton;
     private JLabel statusLabel;
-
-    private static final String[] JDBC_DRIVER_NAMES = { "com.mysql.jdbc.Driver", "org.apache.derby.jdbc.EmbeddedDriver" };
+    private static final String[] JDBC_DRIVER_NAMES = { "com.mysql.jdbc.Driver", "org.apache.derby.jdbc.EmbeddedDriver","com.l7tech.jdbc.sqlserver.SQLServerDriver"};
 
     static {
         for ( String jdbcDriverClass : JDBC_DRIVER_NAMES ) {
@@ -61,7 +61,9 @@ public class JDBCTool {
     }
 
     public JDBCTool() {
-        jdbcUrlTextField.setText("jdbc:derby:var/db/emsdb");
+        jdbcUrlTextField.setText("jdbc:mysql://localhost/ssg");
+     jdbcUrlTextField.setText("jdbc:l7tech:sqlserver://127.0.0.1:57710;databaseName=test");
+
         queryButton.addActionListener( new ActionListener() {
             public void actionPerformed( final ActionEvent actionEvent ) {
                 runQuery();
@@ -92,6 +94,12 @@ public class JDBCTool {
         ResultSet results = null;
         try {
             conn = DriverManager.getConnection(url, username, password);
+            if (conn instanceof ExtEmbeddedConnection) {
+                ExtEmbeddedConnection embeddedCon = (ExtEmbeddedConnection)conn;
+                boolean unlocked = embeddedCon.unlock("Layer7!@Tech#$");
+                if(!unlocked)  logger.log( Level.WARNING, "failed unlocking" );
+            }
+
             statement = conn.createStatement();
             results = statement.executeQuery( queryEditorPane.getText() );
             queryTable.setModel( buildResultsModel( results ) );
