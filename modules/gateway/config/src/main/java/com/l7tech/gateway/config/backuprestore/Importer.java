@@ -248,7 +248,7 @@ public final class Importer{
 
             if(!isDbComponent){
                 //if the db component is not requested, then we must update node.properties
-                //not writing to node.properties here, but creating the instnace variable nodePropertyConfig
+                //not writing to node.properties here, but creating the instance variable nodePropertyConfig
                 //this is a corner case specific to the existing 5.0 behaviour of migrate
                 final String msg = "Reading migrate host's node.properties";
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
@@ -434,12 +434,15 @@ public final class Importer{
         if(isDbComponent || args.containsKey(CommonCommandLineOptions.OS_OPTION.getName())){
             //if we know that OS or db (my.cnf) components will be restored, then make sure the internal folder can be created
             //to fail fast, and to remove any dependency between the ordering of restored components.
-            new OSConfigManager(ssgHome, false, isVerbose, printStream).emptyCreateOrThrowInternalFolder(true);
+            //these files may only be restored on an Appliance
+            if (OSConfigManager.isAppliance(ssgHome)) {
+                new OSConfigManager(ssgHome, false, isVerbose, printStream).emptyCreateOrThrowInternalFolder(true);
+            }
         }
 
         if(args.containsKey(CommonCommandLineOptions.HALT_ON_FIRST_FAILURE.getName())) isHaltOnFirstFailure = true;
 
-        //do a quick check to see if the -esm was requrested
+        //do a quick check to see if the -esm was requested
         final boolean esmRequested = args.containsKey("-"
                 + ImportExportUtilities.ComponentType.ESM.getComponentName());
         //if the esm is requested, then it's required

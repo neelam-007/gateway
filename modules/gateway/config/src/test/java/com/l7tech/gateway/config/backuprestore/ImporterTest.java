@@ -17,6 +17,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
+/**
+ * Note: not all of these tests can be ran within Idea on Windows
+ */
 public class ImporterTest {
 
     private File tmpSecureSpanHome;
@@ -167,6 +170,10 @@ public class ImporterTest {
      * Tests that my.cnf is correctly extracted from the backup image and placed into the temporary folder prior to reboot.
      * Also tests that after reboot my.cnf is copied to it's correct location.
      * @throws Exception
+     *
+     * Note: This test will not run on Windows. It requires the ability to concatanate file paths, which works fine
+     * on Linux e.g. /backupfolder + /etc/my.cnf = /backupfolder/etc/my.cnf where as on windows this is
+     * c:/backupfolder + c:/etc/my.cnf = c:/backupfolderc:/etc/my.cnf
      */
     @BugNumber(9501)
     @Test
@@ -180,8 +187,8 @@ public class ImporterTest {
                 "-v"
         };
 
-        //this test validtes of files too
-        //=> make the appliance direcotry
+        //this test validates of files too
+        //=> make the appliance directory
         final File applianceFolder = new File(tmpSecureSpanHome, ImportExportUtilities.APPLIANCE);
         applianceFolder.mkdir();
 
@@ -213,6 +220,34 @@ public class ImporterTest {
             FileUtils.deleteDir(new File(tempDirectory));
             SyspropUtil.clearProperty( "com.l7tech.config.backuprestore.osrootdir" );
         }
+    }
+
+    /**
+     * Validates a restore on a non appliance. Simply tests that the Custom and Modular assertions can be restored.
+     */
+    @Test
+    @BugNumber(12012)
+    public void testSoftwareBackupCanProceed() throws Exception {
+
+        // first clean up from the setup() method
+        final File backupManifest = new File(tmpSsgHome, OSConfigManager.BACKUP_MANIFEST);
+        boolean wasDeleted = backupManifest.delete();
+        Assert.assertTrue(OSConfigManager.BACKUP_MANIFEST + " should have been deleted", wasDeleted);
+
+        final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
+        final String [] args = new String[]{"import",
+                "-image", buzzcutImage.getPath(),
+                "-v",
+                "-ca",
+                "-ma",
+                "-os" //-os is required to invoke the code path which caused the bug. Cannot do full restore as cannot restore db component.
+        };
+
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertNotNull("result should not be null", result);
+
+        Assert.assertEquals("result should be success", ImportExportUtilities.UtilityResult.Status.PARTIAL_SUCCESS, result.getStatus());
     }
 
     /**
@@ -569,6 +604,7 @@ public class ImporterTest {
 
         //confirm the excluded files are not there - /etc/hosts
         final File etcHosts = new File(configFiles + "/etc", "hosts");
+        //this assert will fail if running on windows
         Assert.assertFalse("File '"+etcHosts.getAbsolutePath()+"' should not have been copied.", etcHosts.exists());
 
         result = restore.restoreComponentMainDb(false, null);

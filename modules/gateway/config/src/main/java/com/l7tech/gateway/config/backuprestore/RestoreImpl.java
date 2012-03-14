@@ -84,7 +84,7 @@ final class RestoreImpl implements Restore{
         esmHome = new File(secureSpanHome, ImportExportUtilities.ENTERPRISE_SERVICE_MANAGER);//may not exist, that's ok
 
         this.printStream = printStream;
-        if((new File(ssgHome, OSConfigManager.BACKUP_MANIFEST).exists())){
+        if(OSConfigManager.isAppliance(ssgHome)){
             osConfigManager = new OSConfigManager(ssgHome, false, isVerbose, printStream);
         }else{
             osConfigManager = null;

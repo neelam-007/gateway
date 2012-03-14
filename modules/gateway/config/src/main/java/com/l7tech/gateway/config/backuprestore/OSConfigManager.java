@@ -72,6 +72,17 @@ final class OSConfigManager {
         this.printStream = printStream;
     }
 
+    /**
+     * Test if this installation is an Appliance or not.
+     *
+     * @param ssgHome SSG installation directory
+     * @return true if the gateway is an appliance based on the existence of backup_manifest
+     */
+    static boolean isAppliance(final File ssgHome) {
+        final File testForBackupManifest = new File(ssgHome, BACKUP_MANIFEST);
+        return testForBackupManifest.exists() && testForBackupManifest.isFile();
+    }
+
     public static class OSConfigManagerException extends Exception{
         public OSConfigManagerException(String message) {
             super(message);
