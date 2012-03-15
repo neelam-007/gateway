@@ -448,14 +448,16 @@ public class PrivateKeyManagerWindow extends JDialog {
 
 
     private SsgKeyEntry performImport(long keystoreId, String alias) {
-        byte[] pkcs12bytes = null;
-        String pkcs12alias = null;
+        byte[] ksbytes = null;
+        String kstype = null;
+        String ksalias = null;
+        boolean jks = false;
 
         while ( true ) {
             boolean passwordError = false;
             Throwable err;
             try {
-                if ( pkcs12bytes == null ) {
+                if ( ksbytes == null ) {
                     JFileChooser fc = GuiCertUtil.createFileChooser(true);
                     int r = fc.showDialog(this, "Load");
                     if (r != JFileChooser.APPROVE_OPTION)
@@ -464,24 +466,30 @@ public class PrivateKeyManagerWindow extends JDialog {
                     if (file == null)
                         return null;
 
-                    pkcs12bytes = IOUtils.slurpFile(file);
+                    ksbytes = IOUtils.slurpFile(file);
+                    jks = file.getName().toLowerCase().endsWith(".jks") || file.getName().toLowerCase().endsWith(".ks");
+                    kstype = jks ? "JKS" : "PKCS12";
                 }
 
-                final char[] pkcs12pass = PasswordEntryDialog.promptForPassword(this, "Enter pass phrase for PKCS#12 file");
-                if (pkcs12pass == null)
+                final char[] kspass = PasswordEntryDialog.promptForPassword(this, "Enter pass phrase for key store file");
+                if (kspass == null)
+                    return null;
+
+                final char[] entrypass = jks ? PasswordEntryDialog.promptForPassword(this, "Enter pass phrase for key entry") : kspass;
+                if (entrypass == null)
                     return null;
 
                 try {
-                    return Registry.getDefault().getTrustedCertManager().importKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, pkcs12alias);
+                    return Registry.getDefault().getTrustedCertManager().importKeyFromKeyStoreFile(keystoreId, alias, ksbytes, kstype, kspass, entrypass, ksalias);
                 } catch (MultipleAliasesException e) {
                     Object defaultOptionPaneUI = UIManager.get("OptionPaneUI");
                     UIManager.put("OptionPaneUI", ComboBoxOptionPaneUI.class.getName());  // Let JOptionPane use JCombobox rather than JList to display aliases
-                    pkcs12alias = (String) JOptionPane.showInputDialog(this, "Select alias to import", "Select Alias", JOptionPane.QUESTION_MESSAGE, null, e.getAliases(), null);
+                    ksalias = (String) JOptionPane.showInputDialog(this, "Select alias to import", "Select Alias", JOptionPane.QUESTION_MESSAGE, null, e.getAliases(), null);
                     UIManager.put("OptionPaneUI", defaultOptionPaneUI);
 
-                    if (pkcs12alias == null)
+                    if (ksalias == null)
                         return null;
-                    return Registry.getDefault().getTrustedCertManager().importKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, pkcs12alias);
+                    return Registry.getDefault().getTrustedCertManager().importKeyFromKeyStoreFile(keystoreId, alias, ksbytes, kstype, kspass, entrypass, ksalias);
                 }
 
             } catch (AccessControlException ace) {

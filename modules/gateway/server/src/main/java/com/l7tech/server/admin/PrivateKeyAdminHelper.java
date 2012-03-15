@@ -9,11 +9,7 @@ import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.EntityChangeSet;
@@ -30,6 +26,7 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -37,14 +34,7 @@ import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -64,7 +54,7 @@ public class PrivateKeyAdminHelper {
     //- PUBLIC
 
     /**
-     * Provider for parsing PKCS#12 files when someone calls {@link #doImportKeyFromPkcs12}.  Values:
+     * Provider for parsing PKCS#12 files when someone calls {@link #doImportKeyFromKeyStoreFile}.  Values:
      *   "default" to use the system current most-preferred implementation of KeyStore.PKCS12;  "BC" to use
      *   Bouncy Castle's implementation (note that Bouncy Castle need not be registered as a Security provider
      *   for this to work); or else the name of any registered Security provider that offers KeyStore.PKCS12.
@@ -214,30 +204,34 @@ public class PrivateKeyAdminHelper {
     }
 
     /**
-     * Import a private key from a PKCS12 file.
+     * Import a private key from a keystore file.
      *
      * @param keystoreId The target keystore oid
      * @param alias The target alias
-     * @param pkcs12bytes The PKCS12 keystore data
-     * @param pkcs12pass The PKCS12 keystore password
-     * @param pkcs12alias The alias of the key in the PKCS12 keystore
+     * @param keyStoreBytes The keystore data
+     * @param keyStoreType  the type of key store, eg "PKCS12" or "JKS"
+     * @param keyStorePass The keystore password, or null to pass null as the second argument to KeyStore.load()
+     * @param entryPass  The per-entry password protecting the private key entry, or null to pass null as the second argument to KeyStore.getKey()
+     * @param entryAlias The alias of the key in the keystore
      * @return The newly imported key
      */
-    public SsgKeyEntry doImportKeyFromPkcs12( final long keystoreId,
+    public SsgKeyEntry doImportKeyFromKeyStoreFile( final long keystoreId,
                                               final String alias,
-                                              final byte[] pkcs12bytes,
-                                              final char[] pkcs12pass,
-                                              String pkcs12alias )
+                                              @Nullable final byte[] keyStoreBytes, 
+                                              String keyStoreType, 
+                                              @Nullable final char[] keyStorePass, 
+                                              final char[] entryPass, 
+                                              String entryAlias )
             throws KeyStoreException, NoSuchProviderException, IOException, NoSuchAlgorithmException, CertificateException,
                 AliasNotFoundException, MultipleAliasesException, UnrecoverableKeyException, SaveException, InterruptedException, ExecutionException, ObjectNotFoundException
     {
-        KeyStore inks = createKeyStoreForParsingPkcs12();
-        inks.load(new ByteArrayInputStream(pkcs12bytes), pkcs12pass);
+        KeyStore inks = createKeyStoreForParsingKeyStoreFile(keyStoreType);
+        inks.load(new ByteArrayInputStream(keyStoreBytes), keyStorePass);
 
-        if (pkcs12alias == null) {
+        if (entryAlias == null) {
             List<String> aliases = new ArrayList<String>( Collections.list( inks.aliases() ));
             if (aliases.isEmpty())
-                throw new AliasNotFoundException("PKCS#12 file contains no private key entries");
+                throw new AliasNotFoundException("KeyStore file contains no private key entries");
             if (aliases.size() > 1) {
                 // Retain private keys and filter out those certificates.
                 for (Iterator<String> itr = aliases.iterator(); itr.hasNext();) {
@@ -247,13 +241,13 @@ public class PrivateKeyAdminHelper {
                 }
                 throw new MultipleAliasesException(aliases.toArray(new String[aliases.size()]));
             }
-            pkcs12alias = aliases.iterator().next();
+            entryAlias = aliases.iterator().next();
         }
 
-        Certificate[] chain = inks.getCertificateChain(pkcs12alias);
-        Key key = inks.getKey(pkcs12alias, pkcs12pass);
+        Certificate[] chain = inks.getCertificateChain(entryAlias);
+        Key key = inks.getKey(entryAlias, entryPass);
         if (chain == null || key == null)
-            throw new AliasNotFoundException("alias not found in PKCS#12 file: " + pkcs12alias);
+            throw new AliasNotFoundException("alias not found in KeyStore file: " + entryAlias);
 
         X509Certificate[] x509chain = CertUtils.asX509CertificateArray( chain );
         if (!(key instanceof PrivateKey))
@@ -360,13 +354,19 @@ public class PrivateKeyAdminHelper {
         return cert.getSubjectDN().getName();
     }
 
-    private KeyStore createKeyStoreForParsingPkcs12() throws KeyStoreException, NoSuchProviderException {
-        String p = ConfigFactory.getProperty( PROP_PKCS12_PARSING_PROVIDER, "BC" );
-        if (null == p || p.length() < 1 || p.equalsIgnoreCase("default"))
-            return KeyStore.getInstance("PKCS12");
-        if ("BC".equalsIgnoreCase(p))
-            return KeyStore.getInstance("PKCS12", new BouncyCastleProvider());
-        return KeyStore.getInstance("PKCS12", p);
+    private KeyStore createKeyStoreForParsingKeyStoreFile(String keyStoreType) throws KeyStoreException, NoSuchProviderException {
+        if ("PKCS12".equals(keyStoreType)) {
+            String p = ConfigFactory.getProperty( PROP_PKCS12_PARSING_PROVIDER, "BC" );
+            if (null == p || p.length() < 1 || p.equalsIgnoreCase("default"))
+                return KeyStore.getInstance("PKCS12");
+            if ("BC".equalsIgnoreCase(p))
+                return KeyStore.getInstance("PKCS12", new BouncyCastleProvider());
+            return KeyStore.getInstance("PKCS12", p);
+        } else if ("JKS".equals(keyStoreType)) {
+            return KeyStore.getInstance("JKS");
+        } else {
+            throw new KeyStoreException("KeyStore file type not supported: " + keyStoreType);
+        }
     }
 
     private SsgKeyStore getKeyStore(long keystoreId) throws SaveException {

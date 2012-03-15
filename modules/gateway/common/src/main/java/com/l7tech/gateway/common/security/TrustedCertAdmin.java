@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -357,19 +358,22 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
 
     /**
      * Import an RSA or ECC private key and certificate chain into the specified keystore ID under the specified alias,
-     * from the specified PKCS#12 file (passed in as a byte array), decrypted with the specified passphrase.
+     * from the specified PKCS#12 or JKS file (passed in as a byte array), decrypted with the specified passphrase.
      * <p/>
      * If a pkcs12alias is not provided, this method will expect there to be exactly one private key entry
-     * in the provided PKCS#12 file.
+     * in the provided PKCS#12 or JKS file.
      * <p/>
-     * This method will take care to destroy all of its copies of the passphrase and PKCS#12 bytes after
+     * This method will take care to destroy all of its copies of the passphrase and keystore bytes after
      * completion, regardless of whether the import succeeds or fails.
      *
      * @param keystoreId   the target keystore ID.  Required.
      * @param alias        the target alias within the keystore.  Required.
-     * @param pkcs12bytes  the bytes of the PKCS#12 file.  Required.
-     * @param pkcs12pass   the pass phrase for the PKCS#12 file.  Required.
-     * @param pkcs12alias  the alias of the key entry within the PKCS#12 file to import, or null to
+     * @param keyStoreBytes  the bytes of the keystore file.  Required.
+     * @param keyStoreType   the type of keystore, such as "PKCS12" or "JKS".  Required.
+     * @param keyStorePass   the pass phrase for the keystore file.  May be null to pass null as the second argument to KeyStore.load().
+     * @param entryPass      the pass phrase to use when retrieving the relevant private key entry.  
+     *                          A null value may be provided to pass null as the second argument to KeyStore.getKey().
+     * @param entryAlias  the alias of the key entry within the kesytore file to import, or null to
      *                     import exactly one entry.
      * @return the successfully-imported key entry.  Never null.
      * @throws ObjectNotFoundException if the specified keystore ID does not exist
@@ -386,7 +390,14 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     // TODO need an annotation to note that this methods arguments must never be persisted in any debug or audit traces
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype= SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    SsgKeyEntry importKeyFromPkcs12(long keystoreId, String alias, byte[] pkcs12bytes, char[] pkcs12pass, String pkcs12alias) throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException;
+    SsgKeyEntry importKeyFromKeyStoreFile(long keystoreId,
+                                          String alias,
+                                          byte[] keyStoreBytes,
+                                          String keyStoreType,
+                                          @Nullable char[] keyStorePass,
+                                          @Nullable char[] entryPass,
+                                          String entryAlias)
+            throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException;
 
     /**
      * Export a private key and certificate chain as a PKCS#12 file, if the private key is available to be exported.

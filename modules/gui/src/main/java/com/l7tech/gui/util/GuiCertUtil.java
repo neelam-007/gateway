@@ -38,6 +38,7 @@ public class GuiCertUtil {
     public static final FileFilter pemFilter = buildFilter(new String[] {".pem"}, "(*.pem) PEM/BASE64 X.509 certificates.");
     public static final FileFilter cerFilter = buildFilter(new String[] {".cer"}, "(*.cer) DER encoded X.509 certificates.");
     public static final FileFilter p12Filter = buildFilter(new String[] {".p12", ".pfx"}, "(*.p12, *.pfx) PKCS 12 key store.");
+    public static final FileFilter jksFilter = buildFilter(new String[] {".jks", ".ks"}, "(*.jks, *.ks) Java JKS key store.");
     public static final FileFilter p7bFilter = buildFilter(new String[] {".p7b", ".p7c"}, "(*.p7b, *.p7c) PKCS#7 empty envelope");
 
     /**
@@ -90,8 +91,8 @@ public class GuiCertUtil {
     /**
      * Create a JFileChooser for browsing for the appropriate file types for importing a certificate,
      * possibly including a private key.
-     * @param privateKeyRequired  if true, will accept only PKCS#12 files.  If false, will additionall accept
-     *                            .PEM and .CSR files.
+     * @param privateKeyRequired  if true, will accept only PKCS#12 or JKS files.  If false, will additionally accept
+     *                            .PEM, .CER and .P7B files.
      * @return a JFileChooser configured to browser for the appropriate file types.
      */
     public static JFileChooser createFileChooser(boolean privateKeyRequired) {
@@ -100,11 +101,13 @@ public class GuiCertUtil {
         if (privateKeyRequired) {
             fc.setDialogTitle("Load Private Key");
             fc.addChoosableFileFilter(p12Filter);
+            fc.addChoosableFileFilter(jksFilter);
         } else {
             fc.setDialogTitle("Load Certificate");
             fc.addChoosableFileFilter(pemFilter);
             fc.addChoosableFileFilter(cerFilter);
             fc.addChoosableFileFilter(p12Filter);
+            fc.addChoosableFileFilter(jksFilter);
             fc.addChoosableFileFilter(p7bFilter);
         }
 
@@ -255,6 +258,7 @@ public class GuiCertUtil {
                         if (selectedFilter != pemFilter &&
                             selectedFilter != cerFilter &&
                             selectedFilter != p12Filter &&
+                            selectedFilter != jksFilter &&
                             selectedFilter != p7bFilter) { // detect from extension
                             if (selectedFileName.endsWith(".pem") ||
                                 selectedFileName.endsWith(".txt")) {
@@ -266,6 +270,8 @@ public class GuiCertUtil {
                                 selectedFilter = p12Filter;
                             } else if (selectedFileName.endsWith(".p7b") || selectedFileName.endsWith(".p7c")) {
                                 selectedFilter = p7bFilter;
+                            } else if (selectedFileName.endsWith(".jks") || selectedFileName.endsWith(".ks")) {
+                                selectedFilter = jksFilter;
                             }
                         }
 
@@ -311,9 +317,11 @@ public class GuiCertUtil {
                                 X509Certificate[] x509Certs = CertUtils.asX509CertificateArray(certs.toArray(new Certificate[certs.size()]));
                                 importData(x509Certs, null, importCallback);
                             }
-                            else if (selectedFilter == p12Filter) {
+                            else if (selectedFilter == p12Filter || selectedFilter == jksFilter) {
+                                boolean jks = selectedFilter == jksFilter;
                                 try {
-                                    KeyStore keyStore = KeyStore.getInstance("PKCS12");
+                                    String kstype = jks ? "JKS" : "PKCS12";
+                                    KeyStore keyStore = KeyStore.getInstance(kstype);
 
                                     //javax.crypto.BadPaddingException
                                     boolean loaded = false;
@@ -323,32 +331,37 @@ public class GuiCertUtil {
                                             keyStore.load(new ByteArrayInputStream(fileBytes), password);
                                             loaded = true;
                                         }
-                                        catch(IOException ioe) {
+                                        catch(Exception e) {
                                             if (callbackHandler != null &&
-                                                ExceptionUtils.causedBy(ioe, javax.crypto.BadPaddingException.class)) {
+                                                    (ExceptionUtils.causedBy(e, javax.crypto.BadPaddingException.class) ||
+                                                     ExceptionUtils.causedBy(e, UnrecoverableKeyException.class) ||
+                                                     ExceptionUtils.causedBy(e, UnrecoverableEntryException.class))) {
                                                 PasswordCallback passwordCallback = new PasswordCallback("Keystore password", false);
                                                 Callback[] callbacks = new Callback[]{passwordCallback};
                                                 callbackHandler.handle(callbacks);
                                                 password = passwordCallback.getPassword(); // if null IOException thrown on next load
                                             }
                                             else {
-                                                throw ioe;
+                                                if (e instanceof IOException) {
+                                                    throw (IOException)e;
+                                                }
+                                                throw new IOException(e);
                                             }
                                         }
                                     }
 
                                     List<String> aliases = Collections.list(keyStore.aliases());
                                     if ( aliases.isEmpty() )
-                                        throw new CausedIOException("PKCS12 keystore is empty");
+                                        throw new CausedIOException(kstype + " keystore is empty");
                                     else if ( aliases.size() > 1 && maximumImportedItems==1 )
-                                        throw new CausedIOException("PKCS12 has unsupported number of entries (must be 1)"); // for backwards compatible behaviour
+                                        throw new CausedIOException(kstype + " has unsupported number of entries (must be 1)"); // for backwards compatible behaviour
 
                                     int importedCount = 0;
                                     for ( String alias : aliases ) {
                                         if ( maximumImportedItems > 0 && importedCount >= maximumImportedItems ) break;
 
                                         if ( privateKeyRequired && !keyStore.isKeyEntry(alias) )
-                                            throw new CausedIOException("PKCS12 entry '"+alias+"' is not a key.");
+                                            throw new CausedIOException(kstype + " entry '"+alias+"' is not a key.");
 
                                         Key key = null;
                                         while (key == null) {
@@ -370,21 +383,26 @@ public class GuiCertUtil {
                                             }
                                         }
                                         if ( privateKeyRequired && null == key )
-                                            throw new IOException("PKCS12 entry '"+alias+"' does not contain a key.");
+                                            throw new IOException(kstype + " entry '"+alias+"' does not contain a key.");
                                         if ( privateKeyRequired && !(key instanceof PrivateKey))
-                                            throw new IOException("PKCS12 entry '"+alias+"' key is not a private key.");
+                                            throw new IOException(kstype + " entry '"+alias+"' key is not a private key.");
 
                                         Certificate[] chain = keyStore.getCertificateChain(alias);
+                                        if ( chain == null && !privateKeyRequired ) {
+                                            final Certificate certificate = keyStore.getCertificate(alias);
+                                            if (certificate != null)
+                                                chain = new Certificate[] {certificate};
+                                        }
                                         if ( chain==null || chain.length==0 ) {
                                             if ( maximumImportedItems != 1 ) continue;
-                                            throw new CausedIOException("PKCS12 entry '"+alias+"' missing does not contain a certificate chain.");
+                                            throw new CausedIOException(kstype + " entry '"+alias+"' missing does not contain a certificate chain.");
                                         }
                                         List<X509Certificate> got = new ArrayList<X509Certificate>();
                                         for (Certificate cert : chain) {
                                             if (cert == null)
-                                                throw new IOException("PKCS12 entry '" + alias + "' contains a null certificate in its certificate chain.");
+                                                throw new IOException(kstype + " entry '" + alias + "' contains a null certificate in its certificate chain.");
                                             if (!(cert instanceof X509Certificate))
-                                                throw new IOException("PKCS12 entry '" + alias + "' certificate chain contains a non-X.509 certificate.");
+                                                throw new IOException(kstype + " entry '" + alias + "' certificate chain contains a non-X.509 certificate.");
                                             got.add((X509Certificate)cert);
                                         }
 

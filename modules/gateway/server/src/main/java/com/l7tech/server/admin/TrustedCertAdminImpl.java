@@ -24,21 +24,17 @@ import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import static com.l7tech.server.event.AdminInfo.find;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.Background;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SslCertificateSniffer;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 
@@ -58,6 +54,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.event.AdminInfo.find;
 
 public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements ApplicationEventPublisherAware, TrustedCertAdmin {
 
@@ -426,14 +424,20 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public SsgKeyEntry importKeyFromPkcs12(long keystoreId, String alias, byte[] pkcs12bytes, char[] pkcs12pass, String pkcs12alias)
+    public SsgKeyEntry importKeyFromKeyStoreFile(long keystoreId,
+                                                 String alias,
+                                                 byte[] keyStoreBytes,
+                                                 String keyStoreType,
+                                                 @Nullable char[] keyStorePass,
+                                                 @Nullable char[] entryPass,
+                                                 String entryAlias)
             throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException
     {
         try {
             checkLicenseKeyStore();
 
             final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
-            return helper.doImportKeyFromPkcs12( keystoreId, alias, pkcs12bytes, pkcs12pass, pkcs12alias );
+            return helper.doImportKeyFromKeyStoreFile(keystoreId, alias, keyStoreBytes, keyStoreType, keyStorePass, entryPass, entryAlias);
 
         } catch (IOException e) {
             throw new KeyStoreException(ExceptionUtils.getMessage( e ), e);
@@ -452,8 +456,12 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             logger.log(Level.WARNING, "Invalid " + PrivateKeyAdminHelper.PROP_PKCS12_PARSING_PROVIDER + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             throw new KeyStoreException(e);
         } finally {
-            ArrayUtils.zero(pkcs12bytes);
-            ArrayUtils.zero(pkcs12pass);
+            if (keyStoreBytes != null)
+                ArrayUtils.zero(keyStoreBytes);
+            if (keyStorePass != null)
+                ArrayUtils.zero(keyStorePass);
+            if (entryPass != null)
+                ArrayUtils.zero(entryPass);
         }
     }
 

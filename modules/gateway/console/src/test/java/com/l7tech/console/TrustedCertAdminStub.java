@@ -140,7 +140,7 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public SsgKeyEntry importKeyFromPkcs12(long keystoreId, String alias, byte[] pkcs12bytes, char[] pkcs12pass, String pkcs12alias) throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException {
+    public SsgKeyEntry importKeyFromKeyStoreFile(long keystoreId, String alias, byte[] keyStoreBytes, String keyStoreType, char[] keyStorePass, char[] entryPass, String entryAlias) throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException {
         return null;
     }
 
