@@ -27,6 +27,7 @@ public class RsaJceProviderEngine extends JceProvider {
     private static final CryptoJWrapper cryptoj;
     private static final Provider PROVIDER;
     private static final Provider PKCS12_PROVIDER;
+    private static final Provider PKIX_PROVIDER;
     private static final Provider TLS10_PROVIDER;
     private static final Provider TLS12_PROVIDER;
     private static final String cryptojVersion;
@@ -63,6 +64,7 @@ public class RsaJceProviderEngine extends JceProvider {
             cryptojVersion = String.valueOf(cryptoj.getVersion());
             logger.info("RSA Crypto-J version: " + cryptojVersion);
             PKCS12_PROVIDER = findPkcs12Provider(cryptoj.provider.getClass().getClassLoader());
+            PKIX_PROVIDER = findSunJsseProvider(cryptoj.provider.getClass().getClassLoader());
             TLS10_PROVIDER = findTls10Provider(cryptojVersion, cryptoj.getClass().getClassLoader());
             TLS12_PROVIDER = findTls12Provider(cryptojVersion);
             maybeChangeDefaultTlsProvider(cryptojVersion);
@@ -254,6 +256,8 @@ public class RsaJceProviderEngine extends JceProvider {
             return TLS10_PROVIDER;
         if (TLS12_PROVIDER != null && SERVICE_TLS12.equals(service))
             return TLS12_PROVIDER;
+        if ("TrustManagerFactory.PKIX".equals(service))
+            return PKIX_PROVIDER;
         return super.getProviderFor(service);
     }
 

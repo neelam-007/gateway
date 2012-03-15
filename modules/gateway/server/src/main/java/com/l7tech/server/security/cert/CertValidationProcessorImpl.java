@@ -7,20 +7,15 @@ import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.types.CertificateValidationResult;
-import static com.l7tech.security.types.CertificateValidationResult.OK;
 import com.l7tech.security.types.CertificateValidationType;
-import static com.l7tech.security.types.CertificateValidationType.CERTIFICATE_ONLY;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.util.PostStartupApplicationListener;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
+import com.l7tech.util.*;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import sun.security.provider.certpath.AdjacencyList;
@@ -41,6 +36,9 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.security.types.CertificateValidationResult.OK;
+import static com.l7tech.security.types.CertificateValidationType.CERTIFICATE_ONLY;
 
 /**
  * Implementation for CertValidationProcessor
@@ -640,7 +638,9 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
         if ( includeDefaults ) {
             TrustManagerFactory tmf;
             try {
-                tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                final String alg = TrustManagerFactory.getDefaultAlgorithm();
+                Provider prov = JceProvider.getInstance().getProviderFor("TrustManagerFactory." + alg);
+                tmf = prov == null ? TrustManagerFactory.getInstance(alg) : TrustManagerFactory.getInstance(alg, prov);
                 tmf.init((KeyStore)null);
             } catch (NoSuchAlgorithmException e) {
                 logger.log(Level.SEVERE, e.toString(), e);
