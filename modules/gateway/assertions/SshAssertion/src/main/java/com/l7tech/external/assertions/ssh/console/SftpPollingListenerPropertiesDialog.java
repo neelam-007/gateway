@@ -4,9 +4,11 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -14,15 +16,22 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_SFTP_DELETE_ON_RECEIVE;
 
 /**
  * SFTP polling listener properties dialog.
@@ -54,8 +63,14 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     private JButton cancelButton;
     private JButton okButton;
     private JPanel byteLimitHolderPanel;
+    private JList propertyList;
+    private JButton editPropertyButton;
+    private JButton addPropertyButton;
+    private JButton removePropertyButton;
     private ByteLimitPanel byteLimitPanel;
 
+    private DefaultListModel propertyListModel = new DefaultListModel();
+    private java.util.List<String> toBeRemovedProperties = new ArrayList<String>();
     private String hostKey;
     private SsgActiveConnector connector;
     private boolean confirmed = false;
@@ -190,6 +205,61 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             }
         });
 
+        propertyList.setModel(propertyListModel);
+        propertyList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                //noinspection unchecked
+                Pair<String, String> prop = (Pair<String, String>)value;
+                String msg = prop.left + '=' + prop.right;
+                setText(msg);
+                return this;
+            }
+        });
+        propertyList.addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                enableOrDisablePropertyButtons();
+            }
+        });
+        addPropertyButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                editProperty(null);
+            }
+        });
+        editPropertyButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //noinspection unchecked
+                Pair<String, String> property = (Pair<String, String>)propertyList.getSelectedValue();
+                if (property == null) return;
+                editProperty(property);
+            }
+        });
+        removePropertyButton.addActionListener(new ActionListener() {
+            @Override
+            @SuppressWarnings({"unchecked"})
+            public void actionPerformed(ActionEvent e) {
+                // Check if the removing list contains the property name.  If so, don't add the property name.
+                Pair<String, String> property = (Pair<String, String>)propertyList.getSelectedValue();
+                boolean found = false;
+                for (String propertyName: toBeRemovedProperties) {
+                    if (propertyName.equals(property.left)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    toBeRemovedProperties.add(property.left);
+                }
+
+                int idx = propertyList.getSelectedIndex();
+                if (idx >= 0) propertyListModel.remove(idx);
+            }
+        });
+
         pack();
         modelToView( connector );
         enableOrDisableComponents();
@@ -258,6 +328,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             enableOkButton = false;
         }
 
+        enableOrDisablePropertyButtons();
         okButton.setEnabled(enableOkButton);
     }
 
@@ -319,6 +390,19 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             byteLimitPanel.setValue( connector.getProperty(PROPERTIES_KEY_REQUEST_SIZE_LIMIT), transportAdmin.getXmlMaxBytes() );
         }
 
+        // hide properties reserved for use by GUI
+        List<String> propertyNames = new ArrayList<String>(connector.getPropertyNames());
+        String[] advancedPropertyNamesUsedByGui = getAdvancedPropertyNamesUsedByGui();
+        for (int i = 0; i < advancedPropertyNamesUsedByGui.length; i++) {
+            propertyNames.remove(advancedPropertyNamesUsedByGui[i]);
+        }
+
+        propertyListModel.removeAllElements();
+        for (String property : propertyNames) {
+            final String value = connector.getProperty(property);
+            if (value != null) propertyListModel.addElement(new Pair<String,String>(property, value));
+        }
+
         enableOrDisableComponents();
     }
 
@@ -367,6 +451,18 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         if (!StringUtils.isEmpty(requestByteLimit)) {
             setProperty( connector, PROPERTIES_KEY_REQUEST_SIZE_LIMIT, requestByteLimit );
         }
+
+        // Delete those removed properties
+        // Note: make sure the step (removeProperty) is prior to the next step (setProperty), since there
+        // is a case - some property is removed first and then added back again.
+        for (String propertyName: toBeRemovedProperties)
+            connector.removeProperty(propertyName);
+
+        // Save user-overridden properties last
+        // noinspection unchecked
+        List<Pair<String,String>> props = (List<Pair<String,String>>)Collections.list(propertyListModel.elements());
+        for (Pair<String, String> prop : props)
+            connector.setProperty(prop.left, prop.right);
     }
 
     private void setProperty( final SsgActiveConnector connector, final String name, final String value ) {
@@ -434,5 +530,49 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             return null;
         }
         return registry.getTransportAdmin();
+    }
+
+    private void enableOrDisablePropertyButtons() {
+        boolean haveSel = propertyList.getSelectedIndex() >= 0;
+        editPropertyButton.setEnabled(haveSel);
+        removePropertyButton.setEnabled(haveSel);
+    }
+
+    private void editProperty(@Nullable final Pair<String, String> origPair) {
+        final SimplePropertyDialog dlg = origPair == null ? new SimplePropertyDialog(this) : new SimplePropertyDialog(this, origPair);
+        dlg.pack();
+        Utilities.centerOnParentWindow(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            /** @noinspection unchecked*/
+            @Override
+            public void run() {
+                if (dlg.isConfirmed()) {
+                    final Pair<String, String> property = dlg.getData();
+                    java.util.List<Pair<String,String>> elms = (java.util.List<Pair<String,String>>)Collections.list(propertyListModel.elements());
+                    for (Pair<String, String> elm : elms)
+                        if (elm.left.equals(property.left)) propertyListModel.removeElement(elm);
+                    if (origPair != null) propertyListModel.removeElement(origPair);
+                    propertyListModel.addElement(property);
+                }
+            }
+        });
+    }
+
+    public String[] getAdvancedPropertyNamesUsedByGui() {
+        return new String[] {
+                PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE,
+                PROPERTIES_KEY_ENABLE_RESPONSE_MESSAGES,
+                PROPERTIES_KEY_POLLING_INTERVAL,
+                PROPERTIES_KEY_REQUEST_SIZE_LIMIT,
+                ACTIVE_CONNECTOR_TYPE_SFTP,
+                PROPERTIES_KEY_SFTP_HOST,
+                PROPERTIES_KEY_SFTP_PORT ,
+                PROPERTIES_KEY_SFTP_DIRECTORY,
+                PROPERTIES_KEY_SFTP_USERNAME,
+                PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID,
+                PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID,
+                PROPERTIES_KEY_SFTP_SERVER_FINGER_PRINT,
+                PROPERTIES_KEY_SFTP_DELETE_ON_RECEIVE,
+        };
     }
 }

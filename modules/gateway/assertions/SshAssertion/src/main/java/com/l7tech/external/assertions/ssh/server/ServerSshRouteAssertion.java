@@ -5,10 +5,7 @@ import com.jscape.inet.scp.ScpException;
 import com.jscape.inet.sftp.Sftp;
 import com.jscape.inet.sftp.SftpConfiguration;
 import com.jscape.inet.sftp.SftpException;
-import com.jscape.inet.ssh.SshConfiguration;
-import com.jscape.inet.ssh.transport.AlgorithmFactory;
 import com.jscape.inet.ssh.transport.TransportException;
-import com.jscape.inet.ssh.types.SshNameList;
 import com.jscape.inet.ssh.util.HostKeyFingerprintVerifier;
 import com.jscape.inet.ssh.util.SshHostKeys;
 import com.jscape.inet.ssh.util.SshParameters;
@@ -20,7 +17,11 @@ import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.*;
 import com.l7tech.external.assertions.ssh.server.client.ScpClient;
 import com.l7tech.external.assertions.ssh.server.client.SftpClient;
 import com.l7tech.external.assertions.ssh.server.client.SshClient;
+
+import static com.l7tech.external.assertions.ssh.server.client.SshClientConfiguration.defaultCipherOrder;
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
+
+import com.l7tech.external.assertions.ssh.server.client.SshClientConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
@@ -44,10 +45,7 @@ import static com.l7tech.util.CollectionUtils.toSet;
 import static com.l7tech.util.ExceptionUtils.causedBy;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.ExceptionUtils.getMessage;
-import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.equality;
 import static com.l7tech.util.Functions.grep;
-import static com.l7tech.util.Functions.grepFirst;
 import static com.l7tech.util.Functions.map;
 import static com.l7tech.util.TextUtils.isNotEmpty;
 import static com.l7tech.util.TextUtils.trim;
@@ -55,8 +53,6 @@ import com.l7tech.util.ThreadPool.ThreadPoolShutDownException;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
@@ -65,7 +61,6 @@ import java.io.PipedOutputStream;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.text.ParseException;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -74,7 +69,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.l7tech.message.Message.getMaxBytes;
 
@@ -84,10 +78,6 @@ import static com.l7tech.message.Message.getMaxBytes;
  * @see com.l7tech.external.assertions.ssh.SshRouteAssertion
  */
 public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAssertion> {
-
-    private static final boolean enableMacNone = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.ssh.server.enableMacNone", false );
-    private static final boolean enableMacMd5 = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.ssh.server.enableMacMd5", false );
-    private static final String defaultCipherOrder = "aes128-ctr, aes128-cbc, 3des-cbc, blowfish-cbc, aes192-ctr, aes192-cbc, aes256-ctr, aes256-cbc";
 
     @Inject
     private Config config;
@@ -217,10 +207,11 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 sshParams.setPrivateKey(privateKeyText);
             }
 
+            final Set<String> ciphers = toSet( grep( map( list( config.getProperty( "sshRoutingEnabledCiphers", defaultCipherOrder ).split( "\\s*,\\s*" ) ), trim() ), isNotEmpty() ) );
             if (assertion.isScpProtocol()) {
-                sshClient = new ScpClient(new Scp(sshParams,buildSshConfiguration(sshParams)));
+                sshClient = new ScpClient(new Scp(sshParams, new SshClientConfiguration(sshParams, ciphers)));
             } else {
-                sshClient = new SftpClient(new Sftp(sshParams, new SftpConfiguration(buildSshConfiguration(sshParams))));
+                sshClient = new SftpClient(new Sftp(sshParams, new SftpConfiguration(new SshClientConfiguration(sshParams, ciphers))));
             }
             sshClient.connect();
 
@@ -316,145 +307,9 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         }
     }
 
-    private SshConfiguration buildSshConfiguration( final SshParameters sshParams ) {
-        final AlgorithmFactory algorithmFactory = buildAlgorithmFactory();
-        final SshConfiguration sshConfiguration = new SshConfiguration();
-        sshConfiguration.getTransportConfiguration().setAlgorithmFactory( algorithmFactory );
-        sshConfiguration.getTransportConfiguration().setHostKeyVerifier( sshParams.getHostKeyVerifier() );
-        return sshConfiguration;
-    }
 
-    private AlgorithmFactory buildAlgorithmFactory() {
-        final Set<String> ciphers = toSet( grep( map( list( config.getProperty( "sshRoutingEnabledCiphers", defaultCipherOrder ).split( "\\s*,\\s*" ) ), trim() ), isNotEmpty() ) );
-        final List<String> cipherList = map( grep( map( ciphers, SshCipher.bySshName() ), SshCipher.available() ), SshCipher.sshName() );
 
-        final AlgorithmFactory algorithmFactory = new AlgorithmFactory(){
-            @Override
-            public SshNameList getAllCiphers() {
-                // overridden to return list in priority order
-                return new SshNameList( cipherList.toArray( new String[cipherList.size()] ) );
-            }
-        };
 
-        if (!enableMacNone) algorithmFactory.removeMac( "none" );
-        // Remove MD5 hash by default, always prefer SHA-1
-        if ( !enableMacMd5 ) {
-            algorithmFactory.removeMac( "hmac-md5" );
-        }
-        algorithmFactory.setPrefferedMac( "hmac-sha1" );
-
-        // Register all available supported ciphers
-        for ( final SshCipher cipher : SshCipher.values() ) {
-            if ( !cipher.isRegisteredByDefault() && cipherList.contains( cipher.getSshName() ) ) {
-                algorithmFactory.addCipher( cipher.getSshName(), cipher.getJavaCipherName(), cipher.getBlockSize() );
-            } else if ( cipher.isRegisteredByDefault() && !cipherList.contains( cipher.getSshName() )) {
-                algorithmFactory.removeCipher( cipher.getSshName() );
-            }
-        }
-
-        return algorithmFactory;
-    }
-
-    private enum SshCipher {
-        None("none"),
-        AES128CBC("aes128-cbc", "AES", "AES/CBC/NoPadding", 16),
-        AES128CTR("aes128-ctr", "AES", "AES/CTR/NoPadding", 16),
-        AES192CBC("aes192-cbc", "AES", "AES/CBC/NoPadding", 24),
-        AES192CTR("aes192-ctr", "AES", "AES/CTR/NoPadding", 24),
-        AES256CBC("aes256-cbc", "AES", "AES/CBC/NoPadding", 32),
-        AES256CTR("aes256-ctr", "AES", "AES/CTR/NoPadding", 32),
-        BlowfishCBC("blowfish-cbc", "Blowfish", "Blowfish/CBC/NoPadding", 16),
-        TripleDESCBC("3des-cbc", "DESede", "DESede/CBC/NoPadding", 24);
-
-        public boolean isAvailable() {
-            return available;
-        }
-
-        public boolean isRegisteredByDefault() {
-            return registeredByDefault;
-        }
-
-        public int getBlockSize() {
-            return blockSize;
-        }
-
-        public String getJavaCipherName() {
-            return javaCipherName;
-        }
-
-        public String getSshName() {
-            return sshName;
-        }
-
-        public static Unary<String,SshCipher> sshName() {
-            return new Unary<String,SshCipher>() {
-                @Override
-                public String call( final SshCipher sshCipher ) {
-                    return sshCipher.getSshName();
-                }
-            };
-        }
-
-        public static Unary<Boolean,SshCipher> available() {
-            return new Unary<Boolean,SshCipher>() {
-                @Override
-                public Boolean call( final SshCipher sshCipher ) {
-                    return sshCipher!=null && sshCipher.isAvailable();
-                }
-            };
-        }
-
-        public static Unary<SshCipher,String> bySshName() {
-            return new Unary<SshCipher,String>() {
-                @Override
-                public SshCipher call( final String sshName ) {
-                    return grepFirst( list( SshCipher.values() ), equality( sshName(), sshName ) );
-                }
-            };
-        }
-
-        private final Logger logger = Logger.getLogger(SshCipher.class.getName()); // static logger not initialized early enough
-        private final String sshName;
-        private final String javaAlgorithmName;
-        private final String javaCipherName;
-        private final int blockSize;
-        private final boolean available;
-        private final boolean registeredByDefault;
-
-        private SshCipher( final String sshName ) {
-            this.sshName = sshName;
-            this.javaAlgorithmName = null;
-            this.javaCipherName = null;
-            this.blockSize = -1;
-            this.available = true;
-            this.registeredByDefault = true;
-        }
-
-        private SshCipher( final String sshName,
-                           final String javaAlgorithmName,
-                           final String javaCipherName,
-                           final int blockSize ) {
-            this.sshName = sshName;
-            this.javaAlgorithmName = javaAlgorithmName;
-            this.javaCipherName = javaCipherName;
-            this.blockSize = blockSize;
-            this.available = checkCipherAvailable();
-            this.registeredByDefault = false;
-        }
-
-        private boolean checkCipherAvailable() {
-            boolean available = false;
-            try {
-                final Cipher cipher = Cipher.getInstance( javaCipherName );
-                final byte[] key = new byte[blockSize];
-                cipher.init( Cipher.ENCRYPT_MODE, new SecretKeySpec( key, javaAlgorithmName ));
-                available = true;
-            } catch (Exception e) {
-                logger.log( Level.FINE, "SSH cipher not available: " + sshName, getDebugException( e ) );
-            }
-            return available;
-        }
-    }
 
     AssertionStatus handleJscapeException(final Exception e, final String username, final String host, final String directory, String filename) {
         if ( getMessage( e ).contains("No such file or directory") || getMessage( e ).contains("FileNotFoundException")){

@@ -3,23 +3,23 @@ package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 import com.jscape.inet.sftp.Sftp;
 import com.jscape.inet.sftp.SftpException;
 import com.jscape.inet.sftp.SftpFile;
+import com.jscape.inet.ssh.transport.TransportException;
 import com.jscape.inet.ssh.util.HostKeyFingerprintVerifier;
 import com.jscape.inet.ssh.util.SshHostKeys;
 import com.jscape.inet.ssh.util.SshParameters;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpClient.SftpConnectionListener;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.password.SecurePasswordManager;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.*;
 import com.l7tech.util.Functions.UnaryThrows;
-import com.l7tech.util.Option;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -27,15 +27,23 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashSet;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.SSH_ALGORITHM_EXCEPTION;
 import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.SSH_INVALID_PUBLIC_KEY_FINGERPRINT_EXCEPTION;
+import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.SSH_NO_SUCH_PART_ERROR;
+import static com.l7tech.external.assertions.ssh.server.client.SshClientConfiguration.defaultCipherOrder;
+import static com.l7tech.gateway.common.audit.AssertionMessages.SSH_ROUTING_ERROR;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static com.l7tech.util.CollectionUtils.toSet;
+import static com.l7tech.util.ExceptionUtils.causedBy;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.Functions.grep;
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.TextUtils.isNotEmpty;
+import static com.l7tech.util.TextUtils.trim;
 import static java.text.MessageFormat.format;
 import static java.util.Collections.list;
 
@@ -232,7 +240,9 @@ abstract class SftpPollingListener {
             }
         }
 
-        return new SftpClient(sshParams, directory, new SftpConnectionListener(){
+        final Set<String> ciphers = toSet( grep( map( CollectionUtils.list(ssgActiveConnector.getProperty(
+                "l7.ssh.enabledCipherList", defaultCipherOrder).split("\\s*,\\s*")), trim() ), isNotEmpty() ) );
+        return new SftpClient(sshParams, directory, ciphers, new SftpConnectionListener(){
             @Override
             public void notifyConnected() {
                 fireConnected();

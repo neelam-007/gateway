@@ -1,9 +1,12 @@
 package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 
 import com.jscape.inet.sftp.Sftp;
+import com.jscape.inet.sftp.SftpConfiguration;
 import com.jscape.inet.sftp.SftpException;
 import com.jscape.inet.sftp.SftpFileNotFoundException;
+import com.jscape.inet.ssh.transport.TransportException;
 import com.jscape.inet.ssh.util.SshParameters;
+import com.l7tech.external.assertions.ssh.server.client.SshClientConfiguration;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.UnaryThrows;
 import org.jetbrains.annotations.NotNull;
@@ -12,8 +15,15 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.SSH_ALGORITHM_EXCEPTION;
+import static com.l7tech.gateway.common.audit.AssertionMessages.SSH_ROUTING_ERROR;
+import static com.l7tech.util.ExceptionUtils.causedBy;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
 
 /**
  * SFTP client for polling listener.
@@ -27,8 +37,9 @@ class SftpClient implements Closeable {
 
     SftpClient( @NotNull final SshParameters parameters,
                 @NotNull final String remoteDirectory,
+                @NotNull final Set<String> ciphers,
                 @NotNull final SftpConnectionListener listener ) {
-        this.client = new Sftp(parameters);
+        this.client = new Sftp(parameters, new SftpConfiguration(new SshClientConfiguration(parameters, ciphers)));
         this.client.disableFileAccessLogging();
         this.parameters = parameters;
         this.remoteDirectory = remoteDirectory;
@@ -131,6 +142,9 @@ class SftpClient implements Closeable {
                 final String host = parameters.getSshHostname();
                 final int port = parameters.getSshPort();
                 message = "Unable to connect to " + host + ":" + port;
+                throw new SftpException( message, e );
+            } else if ( causedBy( e, TransportException.class ) && causedBy( e, NoSuchElementException.class ) && "no common elements found".equals(ExceptionUtils.unnestToRoot( e ).getMessage())){
+                message = SSH_ALGORITHM_EXCEPTION;
                 throw new SftpException( message, e );
             }
             throw e;
