@@ -112,7 +112,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         }
 
         // if uploading from the Gateway, delete current security header if necessary
-        if (!assertion.isDownloadCopyMethod()) {
+        final boolean isDownloadCopyMethod = assertion.isDownloadCopyMethod();
+        if (!isDownloadCopyMethod) {
             try {
                 handleProcessedSecurityHeader(request);
             } catch(SAXException se) {
@@ -226,7 +227,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             final String filename = ExpandVariables.process( assertion.getFileName(), variables, getAudit() );
             final String directory = ExpandVariables.process( assertion.getDirectory(), variables, getAudit() );
             try {
-                if (assertion.isDownloadCopyMethod()) {
+                if (isDownloadCopyMethod) {
                     final PipedInputStream pis = new PipedInputStream();
                     final PipedOutputStream pos = new PipedOutputStream(pis);
 
@@ -262,16 +263,20 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 return AssertionStatus.FAILED;
             } catch (ExecutionException e) {
                 if ( getMessage( e ).contains("jscape") || getMessage( e ).contains("No such file or directory")){
-                    return handleJscapeException(e, username, host, directory, filename);
+                    return handleJscapeException(e, isDownloadCopyMethod, username, host, directory, filename);
                 }
                 throw e;
             } catch (ScpException e) {
-                return handleJscapeException(e, username, host, directory, filename);
+                return handleJscapeException(e, isDownloadCopyMethod, username, host, directory, filename);
             } catch (SftpException e) {
-                return handleJscapeException(e, username, host, directory, filename);
+                return handleJscapeException(e, isDownloadCopyMethod, username, host, directory, filename);
             } catch (IOException e) {
-                logAndAudit(SSH_ROUTING_ERROR,
-                        new String[]{SSH_IO_EXCEPTION + " '" + getMessage( e ) + "', server: " + host}, getDebugException( e ));
+                if ( getMessage( e ).contains("No such file or directory")){
+                    return handleJscapeException(e, isDownloadCopyMethod, username, host, directory, filename);
+                } else {
+                    logAndAudit(SSH_ROUTING_ERROR,
+                            new String[]{SSH_IO_EXCEPTION + " '" + getMessage( e ) + "', server: " + host}, getDebugException( e ));
+                }
                 return AssertionStatus.FAILED;
             } catch (Throwable t) {
                 logAndAudit(SSH_ROUTING_ERROR,
@@ -307,18 +312,22 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         }
     }
 
-
-
-
-
-    AssertionStatus handleJscapeException(final Exception e, final String username, final String host, final String directory, String filename) {
-        if ( getMessage( e ).contains("No such file or directory") || getMessage( e ).contains("FileNotFoundException")){
-            logAndAudit(SSH_ROUTING_ERROR,
-                    new String[] { SSH_DIR_FILE_DOESNT_EXIST_ERROR + ", directory: " + directory  + ", file: " + filename  +", username: " + username},
-                    getDebugException( e ));
+    AssertionStatus handleJscapeException(final Exception e, final boolean isDownloadCopyMethod, final String username,
+                                          final String host, final String directory, String filename) {
+        if ( getMessage( e ).contains("No such file or directory") || getMessage( e ).contains("File or directory No such file not found")){
+            if (isDownloadCopyMethod) {
+                logAndAudit(SSH_ROUTING_ERROR,
+                        new String[] {SSH_DIR_FILE_DOESNT_EXIST_ERROR + " copy method: download, directory: " + directory  + ", file: " + filename  +", username: " + username},
+                        getDebugException( e ));
+            } else {
+                // else upload copy method
+                logAndAudit(SSH_ROUTING_ERROR,
+                        new String[] {SSH_DIR_DOESNT_EXIST_ERROR + " copy method: upload, directory: " + directory + ", username: " + username},
+                        getDebugException( e ));
+            }
         } else{
             logAndAudit(SSH_ROUTING_ERROR,
-                    new String[] { SSH_EXCEPTION_ERROR+ " '" + getMessage( e ) + "', server: " + host}, getDebugException( e ));
+                    new String[] {SSH_EXCEPTION_ERROR + " '" + getMessage( e ) + "', server: " + host}, getDebugException( e ));
         }
         return AssertionStatus.FAILED;
     }
