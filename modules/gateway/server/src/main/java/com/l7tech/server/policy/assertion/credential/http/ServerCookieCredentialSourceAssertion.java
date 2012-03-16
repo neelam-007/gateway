@@ -5,12 +5,14 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
+import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
-import com.l7tech.security.token.OpaqueSecurityToken;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -27,13 +29,32 @@ public class ServerCookieCredentialSourceAssertion extends ServerCredentialSourc
     }
 
     @Override
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        final AssertionStatus assertionStatus = super.checkRequest(context);
+        if (AssertionStatus.NONE.equals(assertionStatus)) {
+            if (StringUtils.isNotBlank(assertion.getVariablePrefix())) {
+                // set cookie context variable
+                for (final HttpCookie cookie : context.getRequest().getHttpRequestKnob().getCookies()) {
+                    if (cookie.getCookieName().equals(cookieName)) {
+                        context.setVariable(assertion.getVariablePrefix() + "." + cookie.getCookieName(), cookie.getCookieValue());
+                        break;
+                    }
+                }
+            }else{
+                logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, "No variable prefix specified. Cannot set cookie context variable.");
+            }
+        }
+        return assertionStatus;
+    }
+
+    @Override
     protected LoginCredentials findCredentials(Message request, Map<String, String> authParams) throws IOException, CredentialFinderException {
         HttpRequestKnob hrk = request.getHttpRequestKnob();
         HttpCookie[] cookies = hrk.getCookies();
-        for ( final HttpCookie cookie : cookies ) {
+        for (final HttpCookie cookie : cookies) {
             if (cookieName.equalsIgnoreCase(cookie.getCookieName())) {
                 final String cookieValue = cookie.getCookieValue();
-                if ( cookieValue != null && cookieValue.length() > 0 ) {
+                if (cookieValue != null && cookieValue.length() > 0) {
                     logAndAudit(AssertionMessages.HTTPCOOKIE_FOUND, cookieName);
                     return LoginCredentials.makeLoginCredentials(new OpaqueSecurityToken(null, cookieValue.toCharArray()), CookieCredentialSourceAssertion.class);
                 } else {
@@ -49,7 +70,7 @@ public class ServerCookieCredentialSourceAssertion extends ServerCredentialSourc
 
     @Override
     protected AssertionStatus checkCredentials(LoginCredentials pc, Map<String, String> authParams) throws CredentialFinderException {
-        if ( pc == null ) return AssertionStatus.AUTH_REQUIRED;
+        if (pc == null) return AssertionStatus.AUTH_REQUIRED;
 
         char[] cookie = pc.getCredentials();
         if (cookie == null || cookie.length < 1)
