@@ -6,6 +6,8 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -16,6 +18,7 @@ import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspSensitive;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,7 +39,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * @author mike
  * @version 1.0
  */
-public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements UsesVariables, SetsVariables, OptionalPrivateKeyable
+public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements UsesEntities, UsesVariables, SetsVariables, OptionalPrivateKeyable
 {
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = -1;
     public static final String VAR_ROUTING_LATENCY = "httpRouting.latency";
@@ -111,6 +114,8 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     protected String tlsVersion;
     protected String tlsCipherSuites;
+    protected Long[] tlsTrustedCertOids;
+    protected String[] tlsTrustedCertNames;
 
     // TODO WARNING
     // TODO WARNING
@@ -174,6 +179,8 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         this.setPassThroughSoapFaults(source.isPassThroughSoapFaults());
         this.setTlsCipherSuites(source.getTlsCipherSuites());
         this.setTlsVersion(source.getTlsVersion());
+        this.setTlsTrustedCertOids(source.getTlsTrustedCertOids());
+        this.setTlsTrustedCertNames(source.getTlsTrustedCertNames());
     }
 
     @Override
@@ -427,6 +434,71 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         return customIpAddresses;
     }
 
+    /**
+     * @return OIDs of a subset of trusted certs to trust as server certs for outbound TLS, or null.
+     */
+    public Long[] getTlsTrustedCertOids() {
+        return tlsTrustedCertOids;
+    }
+
+    public void setTlsTrustedCertOids(@Nullable Long[] tlsTrustedCertOids) {
+        this.tlsTrustedCertOids = tlsTrustedCertOids;
+    }
+
+    /**
+     * @return names corresponding to elements of tlsTrustedCertOids, or null.
+     *         names array is not guaranteed to be present even if OIDs array is present.
+     *         if names array is present, it is not guaranteed to be the same size as (or even as large as) the OIDs array.
+     */
+    public String[] getTlsTrustedCertNames() {
+        return tlsTrustedCertNames;
+    }
+
+    /**
+     * Utility method for looking up a cert name, respecting the condition that the cert names array may not exist
+     * or may be smaller than the OIDs array.
+     *
+     * @param i index of OID whose name to look up
+     * @return the corresponding name from TlsTrustedCertNames, or null if not available.
+     */
+    public String certName(int i) {
+        return tlsTrustedCertNames == null || i >= tlsTrustedCertNames.length ? null : tlsTrustedCertNames[i];
+    }
+
+    public void setTlsTrustedCertNames(@Nullable String[] tlsTrustedCertNames) {
+        this.tlsTrustedCertNames = tlsTrustedCertNames;
+    }
+
+    @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
+    public EntityHeader[] getEntitiesUsed() {
+        if (tlsTrustedCertOids == null || tlsTrustedCertOids.length < 1)
+            return new EntityHeader[0];
+        
+        EntityHeader[] ret = new EntityHeader[tlsTrustedCertOids.length];
+        for (int i = 0; i < tlsTrustedCertOids.length; i++) {
+            long oid = tlsTrustedCertOids[i];
+            String name = certName(i);
+            ret[i] = new EntityHeader(oid, EntityType.TRUSTED_CERT, name, "Server certificate trusted for outbound SSL/TLS connection");
+        }
+        return ret;
+    }
+    
+    @Override
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if (tlsTrustedCertOids == null || 
+                !EntityType.TRUSTED_CERT.equals(oldEntityHeader.getType()) || 
+                !EntityType.TRUSTED_CERT.equals(newEntityHeader.getType()))
+            return;
+
+        for (int i = 0; i < tlsTrustedCertOids.length; i++) {
+            if (tlsTrustedCertOids[i] == oldEntityHeader.getOid()) {
+                tlsTrustedCertOids[i] = newEntityHeader.getOid();
+                if (tlsTrustedCertNames != null && tlsTrustedCertNames.length > i)
+                    tlsTrustedCertNames[i] = newEntityHeader.getName();
+            }
+        }
+    }
 
     @Migration(mapName = NONE, mapValue = OPTIONAL, valueType = HTTP_URL_ARRAY, resolver = PropertyResolver.Type.VALUE_REFERENCE)
     public String[] getCustomURLs() {

@@ -11,11 +11,13 @@ import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.X509TrustManager;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,10 +29,18 @@ public class SslClientTrustManager implements X509TrustManager {
     private final TrustedCertServices trustedCertServices;
     private final CertValidationProcessor certValidationProcessor;
     private final CertValidationProcessor.Facility facility;
+    @Nullable private final Set<Long> trustedCertOids; // Non-null if only a subset of trusted certs should be trusted by this trust manager
 
     public SslClientTrustManager(final TrustedCertServices trustedCertServices,
                                  final CertValidationProcessor certValidationProcessor,
                                  final CertValidationProcessor.Facility facility) {
+        this(trustedCertServices, certValidationProcessor, facility, null);        
+    }
+    
+    public SslClientTrustManager(final TrustedCertServices trustedCertServices,
+                                 final CertValidationProcessor certValidationProcessor,
+                                 final CertValidationProcessor.Facility facility,
+                                 @Nullable final Set<Long> trustedCertOids) {
         if (trustedCertServices == null)  throw new IllegalArgumentException("Trusted Cert Services is required");
         if (certValidationProcessor == null)  throw new IllegalArgumentException("Cert Validation Processor is required");
         if (facility == null)  throw new IllegalArgumentException("Facility is required");
@@ -38,6 +48,7 @@ public class SslClientTrustManager implements X509TrustManager {
         this.trustedCertServices = trustedCertServices;
         this.certValidationProcessor = certValidationProcessor;
         this.facility = facility;
+        this.trustedCertOids = trustedCertOids;
     }
 
     @Override
@@ -58,7 +69,7 @@ public class SslClientTrustManager implements X509TrustManager {
 
         boolean isCartel = false;
         try {
-            trustedCertServices.checkSslTrust(certs);
+            trustedCertServices.checkSslTrust(certs, trustedCertOids);
         } catch (TrustedCertManager.UnknownCertificateException uce) {
             // this is ok, as long as it is a cert from a known CA
             isCartel = true;
@@ -87,5 +98,15 @@ public class SslClientTrustManager implements X509TrustManager {
         } catch (SignatureException se) {
             throw new CertificateException("Certificate path validation and/or revocation checking error", se);
         }
+    }
+
+    /**
+     * Create an X509TrustManager that uses our regular trust rules but only trusts the specified trusted certs.
+     *
+     * @param customTrustedCerts certs to trust, or null to trust all registered trusted certs.
+     * @return a new X509TrustManager instance.  Never null.
+     */
+    public X509TrustManager createTrustManagerWithCustomTrustedCerts(Set<Long> customTrustedCerts) {
+        return new SslClientTrustManager(trustedCertServices, certValidationProcessor, facility, customTrustedCerts);
     }
 }

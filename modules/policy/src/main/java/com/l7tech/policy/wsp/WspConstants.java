@@ -175,6 +175,7 @@ public class WspConstants {
         // Container types
         new ArrayTypeMapping(new Object[0], "arrayValue"),
         new ArrayTypeMapping(new String[0], "stringArrayValue"),
+        new ArrayTypeMapping(new Long[0], "longArrayValue"),
         new ArrayTypeMapping(new CertificateInfo[0], "certificateInfoArrayValue"),
         new MapTypeMapping(),
         new CollectionTypeMapping(Set.class, String.class, HashSet.class, "stringSetValue"),

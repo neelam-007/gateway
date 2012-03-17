@@ -19,7 +19,6 @@ import com.l7tech.server.security.cert.TestCertValidationProcessor;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import com.l7tech.xml.saml.SamlAssertion;
-import static org.junit.Assert.*;
 import org.junit.Test;
 
 import java.security.SignatureException;
@@ -28,6 +27,8 @@ import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -120,7 +121,7 @@ public class FederatedIdentityProviderTest {
         provider.setTrustedCertManager( new TestTrustedCertManager( new TrustedCert(){{ setOid(1); setCertBase64(SAML_ISSUER_B64); }} ) );
         provider.setTrustedCertServices( new TrustedCertServices(){
             @Override
-            public void checkSslTrust( final X509Certificate[] serverCertChain ) throws CertificateException {
+            public void checkSslTrust( final X509Certificate[] serverCertChain, Set<Long> requiredOids ) throws CertificateException {
             }
 
             @Override

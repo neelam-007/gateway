@@ -29,15 +29,15 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
     }
 
     @Override
-    public void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException {
+    public void checkSslTrust(X509Certificate[] serverCertChain, Set<Long> trustedCertOids) throws CertificateException {
         String issuerDn = CertUtils.getIssuerDN(serverCertChain[0]);
         try {
             // Check if this cert is trusted as-is
-            if (isTrustedAsIs(serverCertChain))
+            if (isTrustedAsIs(serverCertChain, trustedCertOids))
                 return;
 
             // Check if this chain has a trusted signer
-            checkIssuerIsTrusted(serverCertChain, issuerDn);
+            checkIssuerIsTrusted(serverCertChain, issuerDn, trustedCertOids);
 
         } catch (Exception e) {
             if (e instanceof CertificateException) throw (CertificateException) e;
@@ -74,8 +74,8 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
         return Collections.unmodifiableCollection(ret);
     }
 
-    private void checkIssuerIsTrusted(X509Certificate[] serverCertChain, String issuerDn) throws FindException, CertificateException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        Collection<TrustedCert> caTrusts = getCertsBySubjectDnFiltered(issuerDn, true, EnumSet.of(TrustedCert.TrustedFor.SIGNING_SERVER_CERTS), null);
+    private void checkIssuerIsTrusted(X509Certificate[] serverCertChain, String issuerDn, Set<Long> trustedCertOids) throws FindException, CertificateException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+        Collection<TrustedCert> caTrusts = getCertsBySubjectDnFiltered(issuerDn, true, EnumSet.of(TrustedCert.TrustedFor.SIGNING_SERVER_CERTS), trustedCertOids);
 
         if (caTrusts.isEmpty()) {
             String subjectDn = CertUtils.getSubjectDN(serverCertChain[0]);
@@ -95,10 +95,10 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
         throw new CertificateException("CA Cert(s) with DN '" + issuerDn + "' found but not trusted for signing SSL Server Certs");
     }
 
-    private boolean isTrustedAsIs(X509Certificate[] serverCertChain) throws CertificateException {
+    private boolean isTrustedAsIs(X509Certificate[] serverCertChain, Set<Long> trustedCertOids) throws CertificateException {
         try {
             String subjectDn = CertUtils.getSubjectDN(serverCertChain[0]);
-            Collection<TrustedCert> selfTrusts = getCertsBySubjectDnFiltered(subjectDn, true, EnumSet.of(TrustedCert.TrustedFor.SSL), null);
+            Collection<TrustedCert> selfTrusts = getCertsBySubjectDnFiltered(subjectDn, true, EnumSet.of(TrustedCert.TrustedFor.SSL), trustedCertOids);
             for (TrustedCert selfTrust : selfTrusts) {
                 final X509Certificate selfTrustCert = selfTrust.getCertificate();
                 if (CertUtils.certsAreEqual(selfTrustCert, serverCertChain[0]) && CertUtils.isValid(selfTrustCert))

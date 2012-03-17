@@ -16,6 +16,8 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.IpListPanel;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
@@ -40,6 +42,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -147,6 +150,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JCheckBox showProxyPasswordCheckBox;
     private JCheckBox useKeepalivesCheckBox;
     private JButton cipherSuitesButton;
+    private JButton trustedServerCertsButton;
     private JComboBox tlsVersionComboBox;
     private ByteLimitPanel byteLimitPanel;
 
@@ -162,6 +166,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private Assertion assertionToUseInSearchForPredecessorVariables;
     private InputValidator inputValidator;
     private String tlsCipherSuites;
+    private Set<EntityHeader> tlsTrustedCerts;
 
     /**
      * Creates new form ServicePanel
@@ -483,7 +488,18 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
             }
         });
-        Utilities.enableGrayOnDisabled(cipherSuitesButton);
+        trustedServerCertsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                TrustedCertsDialog.show(HttpRoutingAssertionDialog.this, "Trusted TLS Server Certificates", null, readOnly, tlsTrustedCerts, new Functions.UnaryVoid<List<EntityHeader>>() {
+                    @Override
+                    public void call(List<EntityHeader> entityHeaders) {
+                        tlsTrustedCerts = entityHeaders == null ? null : new LinkedHashSet<EntityHeader>(entityHeaders);
+                    }
+                });
+            }
+        });
+        Utilities.enableGrayOnDisabled(cipherSuitesButton, trustedServerCertsButton);
 
         initializeHttpRulesTabs();
         initializeProxyTab();
@@ -823,6 +839,21 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         String tlsVersion = (String) tlsVersionComboBox.getSelectedItem();
         assertion.setTlsVersion(tlsVersion == null || ANY_TLS_VERSION.equals(tlsVersion) ? null : tlsVersion);
         assertion.setTlsCipherSuites(tlsCipherSuites);
+        if (tlsTrustedCerts == null) {
+            assertion.setTlsTrustedCertOids(null);
+            assertion.setTlsTrustedCertNames(null);
+        } else {
+            EntityHeader[] certs = tlsTrustedCerts.toArray(new EntityHeader[tlsTrustedCerts.size()]);
+            Long[] oids = new Long[certs.length];
+            String[] names = new String[certs.length];
+            for (int i = 0; i < certs.length; i++) {
+                EntityHeader cert = certs[i];
+                oids[i] = cert.getOid();
+                names[i] = cert.getName();
+            }
+            assertion.setTlsTrustedCertOids(oids);
+            assertion.setTlsTrustedCertNames(names);
+        }
 
         confirmed = true;
         fireEventAssertionChanged(assertion);
@@ -961,6 +992,19 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         tlsCipherSuites = assertion.getTlsCipherSuites();
         cipherSuitesButton.setEnabled(!bra);
+
+        if (assertion.getTlsTrustedCertOids() == null) {
+            tlsTrustedCerts = null;
+        } else {
+            tlsTrustedCerts = new LinkedHashSet<EntityHeader>();
+            Long[] oids = assertion.getTlsTrustedCertOids();
+            for (int i = 0; i < oids.length; i++) {
+                Long oid = oids[i];
+                String name = assertion.certName(i);
+                tlsTrustedCerts.add(new EntityHeader(oid, EntityType.TRUSTED_CERT, name, "Trusted SSL/TLS server cert"));
+            }
+        }
+        trustedServerCertsButton.setEnabled(!bra);
 
         enableOrDisableProxyFields();
     }

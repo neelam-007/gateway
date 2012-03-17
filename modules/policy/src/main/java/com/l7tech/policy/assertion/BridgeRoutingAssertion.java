@@ -12,8 +12,7 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
@@ -156,15 +155,16 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
-        if (serverCertificateOid != null) {
-            return new EntityHeader[] { new EntityHeader(serverCertificateOid.toString(), EntityType.TRUSTED_CERT, serverCertificateName, "Trusted certificate to be used by the bridge routing assertion")};
-        } else {
-            return new EntityHeader[0];
-        }
+        List<EntityHeader> ret = new ArrayList<EntityHeader>();
+        if (serverCertificateOid != null)
+            ret.add( new EntityHeader(serverCertificateOid.toString(), EntityType.TRUSTED_CERT, serverCertificateName, "Trusted certificate to be used by the bridge routing assertion") );
+        ret.addAll(Arrays.asList(super.getEntitiesUsed()));
+        return ret.toArray(new EntityHeader[ret.size()]);
     }
 
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        super.replaceEntity(oldEntityHeader, newEntityHeader);
         if(oldEntityHeader.getType().equals(EntityType.TRUSTED_CERT) && serverCertificateOid != null &&
                 oldEntityHeader.getOid() == serverCertificateOid && newEntityHeader.getType().equals(EntityType.TRUSTED_CERT))
         {

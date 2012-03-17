@@ -28,6 +28,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.kerberos.KerberosRoutingClient;
+import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.server.util.IdentityBindingHttpClientFactory;
 import com.l7tech.util.*;
@@ -43,8 +44,7 @@ import java.net.*;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
 
@@ -128,7 +128,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
             SSLContext sslContext = SSLContext.getInstance("TLS");
 
-            final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("routingTrustManager");
+            final Long[] tlsTrustedCertOids = assertion.getTlsTrustedCertOids();
+            Set<Long> customTrustedCerts = tlsTrustedCertOids == null ? null : new HashSet<Long>(Arrays.asList(tlsTrustedCertOids));
+
+            final SslClientTrustManager sslClientTrustManager = applicationContext.getBean("routingTrustManager", SslClientTrustManager.class);
+            final X509TrustManager trustManager = customTrustedCerts != null
+                    ? sslClientTrustManager.createTrustManagerWithCustomTrustedCerts(customTrustedCerts)
+                    : sslClientTrustManager;
+
             sslContext.init(keyManagers, new TrustManager[]{trustManager}, null);
             final int timeout = ConfigFactory.getIntProperty( HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT );
             sslContext.getClientSessionContext().setSessionTimeout(timeout);

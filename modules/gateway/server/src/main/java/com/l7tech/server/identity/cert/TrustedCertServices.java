@@ -1,7 +1,7 @@
 package com.l7tech.server.identity.cert;
 
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.TrustedCert;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -21,9 +21,10 @@ public interface TrustedCertServices {
      * option set.
      * <p>
      * @param serverCertChain the certificate chain
+     * @param trustedCertOids a list of OIDs of trusted certificates to trust, or null to use the list from the database.
      * @throws java.security.cert.CertificateException if there is a problem decoding a certificate
      */
-    void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException;
+    void checkSslTrust(X509Certificate[] serverCertChain, Set<Long> trustedCertOids) throws CertificateException;
 
     /**
      * Perform a cached lookup of trusted certs by subject DN, filtered to include only TrustedCert instances

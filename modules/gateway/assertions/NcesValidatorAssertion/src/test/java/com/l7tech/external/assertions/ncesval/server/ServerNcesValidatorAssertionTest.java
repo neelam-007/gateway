@@ -89,7 +89,7 @@ public class ServerNcesValidatorAssertionTest {
     private TrustedCertServices getTrustedCertServices() {
         return new TrustedCertServices(){
             @Override
-            public void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException {
+            public void checkSslTrust(X509Certificate[] serverCertChain, Set<Long> requiredOids) throws CertificateException {
             }
             @Override
             public Collection<TrustedCert> getCertsBySubjectDnFiltered(String subjectDn,
