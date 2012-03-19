@@ -99,7 +99,7 @@ public class LogPanel extends JPanel {
     private int[] tableColumnWidths = new int[20];
     private boolean signAudits;
     private JPanel bottomPane;
-    private JLabel filterLabel;
+    private JLabel constraintWarningLabel;
     private JScrollPane msgTablePane;
     private JPanel statusPane;
     private JTable msgTable;
@@ -304,9 +304,13 @@ public class LogPanel extends JPanel {
             }
         });
 
+        final JPanel splitTop = new JPanel( new BorderLayout() );
+        splitTop.add( getMsgTablePane(), BorderLayout.CENTER );
+        splitTop.add( getConstraintWarningLabel(), BorderLayout.SOUTH );
+
         logSplitPane = new JSplitPane();
         logSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
-        logSplitPane.setTopComponent(getMsgTablePane());
+        logSplitPane.setTopComponent(splitTop);
         logSplitPane.setBottomComponent(getMsgDetailsPane());
         logSplitPane.setOneTouchExpandable(true);
         logSplitPane.setDividerLocation(300);
@@ -557,21 +561,12 @@ public class LogPanel extends JPanel {
         setSignatureStatusText();
     }
 
+    /**
+     * Display the visual indication message, "Caution! Constraint may exclude some events", if any search criteria applied.
+     */
     private void setCautionIndicatorPanelState() {
-        // Display the visual indication message, "Caution! Constraint may exclude some events", if any search criteria applied.
-        // controlPanel.cautionIndicatorPanel.setVisible(isAuditType && hasSearchCriteriaApplied());  // Note: this indicator is not for Gateway Logs Events.
-
-        final Color bgColor;
-        final boolean showWarning = hasSearchCriteriaApplied();
-        if (showWarning) {
-            bgColor = new Color(255, 255, 225);
-            controlPanel.cautionTextField.setVisible(true);
-        } else {
-            bgColor = controlPanel.mainPanel.getBackground();
-            controlPanel.cautionTextField.setVisible(false);
+        getConstraintWarningLabel().setVisible( hasSearchCriteriaApplied() );
         }
-        controlPanel.cautionIndicatorPanel.setBackground(bgColor);
-    }
 
     /**
      *  Check if there is any search criterion applied.  Make sure this method is called after all search criteria data have been collected.
@@ -1528,9 +1523,10 @@ public class LogPanel extends JPanel {
             bottomPane.setLayout(new BorderLayout());
             bottomPane.add(getStatusPane(), BorderLayout.WEST);
 
-            JPanel buttonPanel = new JPanel();
-            //buttonPanel.add(getSearchButton());
-            bottomPane.add(buttonPanel, BorderLayout.EAST);
+            final JLabel statusAuditSink = new JLabel("Audit Sink: <internal>"); //TODO Implement display of audit sink used in current search
+            statusAuditSink.setHorizontalAlignment( JLabel.RIGHT );
+            statusAuditSink.setVerticalAlignment( JLabel.BOTTOM );
+            bottomPane.add(statusAuditSink, BorderLayout.EAST);
         }
 
         return bottomPane;
@@ -1578,6 +1574,19 @@ public class LogPanel extends JPanel {
             }
         }
         statusLabel.setText(builder.toString());
+    }
+
+    private JLabel getConstraintWarningLabel() {
+        if ( constraintWarningLabel == null ) {
+            constraintWarningLabel = new JLabel();
+            constraintWarningLabel.setBackground( new Color(255,255,225) );
+            constraintWarningLabel.setText( "Caution! Constraint may exclude some events" );
+            constraintWarningLabel.setHorizontalAlignment( JLabel.CENTER );
+            constraintWarningLabel.setOpaque( true );
+            constraintWarningLabel.setVisible( false );
+        }
+
+        return constraintWarningLabel;
     }
 
     /**
@@ -2680,10 +2689,9 @@ public class LogPanel extends JPanel {
         private JPanel associatedLogsSearchingPane;
         private JPanel userNamePane;
         private JPanel userIdPane;
-        private JPanel cautionIndicatorPanel;
-        private JLabel cautionTextField;
         private JCheckBox validateSignaturesCheckBox;
         private JButton clearButton;
         private JButton cancelButton;
+        private JComboBox comboBox1;
     }
 }

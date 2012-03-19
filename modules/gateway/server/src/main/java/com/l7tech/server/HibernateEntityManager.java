@@ -5,6 +5,7 @@ import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Functions.UnaryThrows;
 import org.hibernate.*;
 import org.hibernate.criterion.*;
 import org.hibernate.jdbc.Work;
@@ -163,23 +164,17 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      */
     protected int findCount( final Class clazz, final Criterion... restrictions ) throws FindException {
         final Class targetClass = clazz==null ? getImpClass() : clazz;
-        try {            if ( useOptimizedCount && restrictions.length == 0 && targetClass.equals( getImpClass() ) ) {
+        try {
+            if ( useOptimizedCount && restrictions.length == 0 && targetClass.equals( getImpClass() ) ) {
                 // Warning: This is not strictly correct since it ignores the possibility of manager
                 // specific criteria.
-                return getHibernateTemplate().execute( new ReadOnlyHibernateCallback<Integer>() {
+                return doReadOnlyWork( new UnaryThrows<Integer,Connection,SQLException>() {
                     @Override
-                    protected Integer doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
-                        final int[] count = new int[1];
-                        session.doWork( new Work(){
-                            @Override
-                            public void execute( final Connection connection ) throws SQLException {
+                    public Integer call( final Connection connection ) throws SQLException {
                                 final SimpleJdbcTemplate template = new SimpleJdbcTemplate( new SingleConnectionDataSource(connection, true) );
-                                count[0] = template.queryForInt( "select count(*) from " + getTableName() );
+                        return template.queryForInt( "select count(*) from " + getTableName() );
                             }
                         } );
-                        return count[0];
-                    }
-                } );
             } else {
                 return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<Integer>() {
                     @Override
@@ -1019,6 +1014,31 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         } catch (DataAccessException e) {
             throw new FindException("Couldn't find cert(s)", e);
         }
+    }
+
+    /**
+     * Perform (read-only) JDBC work.
+     *
+     * @param callback The connection callback.
+     * @param <R> The result type
+     * @return The result value as returned from the callback.
+     * @throws SQLException If an error occurs
+     */
+    protected final <R> R doReadOnlyWork( final UnaryThrows<? extends R, Connection, SQLException> callback ) throws SQLException {
+        return getHibernateTemplate().execute( new ReadOnlyHibernateCallback<R>() {
+            @SuppressWarnings({ "unchecked" })
+            @Override
+            protected R doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
+                final Object[] result = new Object[]{ null };
+                session.doWork( new Work(){
+                    @Override
+                    public void execute( final Connection conn ) throws SQLException {
+                        result[0] = callback.call( conn );
+                    }
+                } );
+                return (R) result[0];
+            }
+        } );
     }
 
     protected UniqueType getUniqueType() {

@@ -2,12 +2,10 @@ package com.l7tech.objectmodel.imp;
 
 import com.l7tech.objectmodel.PersistentEntity;
 import org.hibernate.annotations.*;
-import org.hibernate.annotations.Parameter;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlID;
-import javax.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
 
 /**
@@ -28,10 +26,10 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
     }
 
     @Override
-    @Id @XmlTransient
+    @Id
     @Column(name="objectid", nullable=false, updatable=false)
-    @GenericGenerator( name="generator", strategy = "seqhilo", parameters = @Parameter(name="max_lo", value="32767") )
-    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator = "generator")
+    @GenericGenerator( name="generator", strategy = "layer7-generator" )
+    @GeneratedValue( generator = "generator")
     public long getOid() {
         return _oid;
     }

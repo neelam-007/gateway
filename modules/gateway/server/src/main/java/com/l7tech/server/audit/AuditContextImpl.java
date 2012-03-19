@@ -54,11 +54,11 @@ public class AuditContextImpl implements AuditContext {
      * @param auditFilterPolicyManager may be null
      * @param nodeId should not be null
      */
-    public AuditContextImpl(Config config,
-                            AuditRecordManager auditRecordManager,
-                            AuditPolicyEvaluator auditPolicyEvaluator,
-                            AuditFilterPolicyManager auditFilterPolicyManager,
-                            String nodeId) {
+    public AuditContextImpl( final Config config,
+                             final SimpleAuditRecordManager auditRecordManager,
+                             final AuditPolicyEvaluator auditPolicyEvaluator,
+                             final AuditFilterPolicyManager auditFilterPolicyManager,
+                             final String nodeId ) {
         if ( config == null) {
             throw new IllegalArgumentException("Server Config is required");
         }
@@ -372,14 +372,15 @@ public class AuditContextImpl implements AuditContext {
 
         //check audit message size
         if( rec instanceof MessageSummaryAuditRecord){
-            if(auditRecordManager.getMessageLimitSize() > 0L ){
+            final long messageLimitSize = config.getLongProperty( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 10485760L);  // 10MB
+            if( messageLimitSize > 0L ){
                 MessageSummaryAuditRecord messageSummaryAuditRecord = (MessageSummaryAuditRecord)rec;
                 if(messageSummaryAuditRecord.getRequestXml()!=null  &&
-                        (long) messageSummaryAuditRecord.getRequestXml().length() > auditRecordManager.getMessageLimitSize()){
+                        (long) messageSummaryAuditRecord.getRequestXml().length() > messageLimitSize){
                     messageSummaryAuditRecord.setRequestXml(MESSAGE_TOO_LARGE);
                 }
                 if(messageSummaryAuditRecord.getResponseXml()!=null &&
-                        (long) messageSummaryAuditRecord.getResponseXml().length() > auditRecordManager.getMessageLimitSize()){
+                        (long) messageSummaryAuditRecord.getResponseXml().length() > messageLimitSize){
                     messageSummaryAuditRecord.setResponseXml(MESSAGE_TOO_LARGE);
                 }
             }
@@ -610,7 +611,7 @@ public class AuditContextImpl implements AuditContext {
     private static final String OUR_IP = InetAddressUtil.getLocalHost().getHostAddress();
 
     private final Config config;
-    private final AuditRecordManager auditRecordManager;
+    private final SimpleAuditRecordManager auditRecordManager;
     private final String nodeId;
     private AuditPolicyEvaluator auditPolicyEvaluator;
     private final AuditFilterPolicyManager auditFilterPolicyManager;

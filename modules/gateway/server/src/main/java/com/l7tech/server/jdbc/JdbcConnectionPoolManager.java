@@ -1,15 +1,12 @@
 package com.l7tech.server.jdbc;
 
-import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.jdbc.InvalidPropertyException;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.LifecycleBean;
-import com.l7tech.server.LifecycleException;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.policy.variable.ServerVariables;
 import static com.l7tech.util.BeanUtils.getProperties;
 import static com.l7tech.util.BeanUtils.omitProperties;
@@ -19,7 +16,10 @@ import static com.l7tech.util.Functions.equality;
 import static com.l7tech.util.Functions.grepFirst;
 import com.l7tech.util.Pair;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.InitializingBean;
 
+import javax.inject.Inject;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
@@ -37,44 +37,26 @@ import java.util.logging.Logger;
  * 
  * @author ghuang
  */
-public class JdbcConnectionPoolManager extends LifecycleBean {
+public class JdbcConnectionPoolManager implements InitializingBean {
     private static final Logger logger = Logger.getLogger(JdbcConnectionPoolManager.class.getName());
 
     private static final long MIN_CHECK_AGE = ConfigFactory.getLongProperty( "com.l7tech.server.jdbc.poolConnectionCheckMinAge", 30000L );
     private static final String[] CPDS_IGNORE_PROPS = new String[]{ "connectionPoolDataSource", "driverClass", "initialPoolSize", "jdbcUrl", "logWriter", "maxPoolSize", "minPoolSize", "password", "properties", "propertyCycle", "user", "userOverridesAsString" };
 
-    private JdbcConnectionManager jdbcConnectionManager;
-    private Timer timer;
+    private final Audit auditor;
+    private final JdbcConnectionManager jdbcConnectionManager;
     private Context context;
-    private Auditor auditor;
 
-    public JdbcConnectionPoolManager(
-        final LicenseManager licenseManager,
-        final JdbcConnectionManager jdbcConnectionManager,
-        final Timer timer) {
-
-        super("JDBC Connection Pooling Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager);
-
-        this.timer = timer;
+    @Inject
+    public JdbcConnectionPoolManager( @NotNull final AuditFactory auditFactory,
+                                      @NotNull final JdbcConnectionManager jdbcConnectionManager ) {
+        this.auditor = auditFactory.newInstance( this, logger );
         this.jdbcConnectionManager = jdbcConnectionManager;
     }
 
     @Override
-    protected void init() {
-        auditor = new Auditor(this, getApplicationContext(), logger);
-
-        // This timer is created for future use.  Currently its schedule is empty.
-        timer.schedule(new TimerTask(){
-            @Override
-            public void run() {
-                // TBD: probably there are somethings to update here.
-            }
-        }, 30000, 30000 );
-    }
-
-    @Override
-    protected void doStart() throws LifecycleException {
-        logger.info("Starting JDBC Connections Pooling.");
+    public void afterPropertiesSet() throws Exception {
+        logger.info("Initializing JDBC connection pooling.");
 
         // Step 1: initialize JNDI Context
         try {
@@ -102,8 +84,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
                 // Log and audit all other unknown and unexpected exceptions
                 auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), e.getClass().getSimpleName() + " occurs");
             }
-        }
-    }
+        }    }
 
     /**
      * Get a data source by using a JDBC connection name.

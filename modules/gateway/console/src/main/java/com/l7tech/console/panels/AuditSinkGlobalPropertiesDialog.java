@@ -6,7 +6,9 @@ import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.ClusterPropertyCrud;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -18,7 +20,9 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import java.awt.*;
@@ -43,19 +47,92 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JCheckBox cbOutputToPolicy;
+    private JButton addButton;
+    private JButton editButton;
+    private JButton deleteButton;
+    private JTable jdbcSinkTable;
     private JCheckBox cbSaveToDb;
 
+    private SimpleTableModel<JdbcSink> jdbcSinkTableModel;
     boolean committed = false;
     boolean policyEditRequested = false;
 
+    public static final class JdbcSink {
+        private String name;
+        private String outputs;
+        private boolean fallbackToInternal;
+
+        public JdbcSink(){
+        }
+
+        public JdbcSink( final String name,
+                         final String outputs,
+                         final boolean fallbackToInternal ) {
+            this.fallbackToInternal = fallbackToInternal;
+            this.name = name;
+            this.outputs = outputs;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName( final String name ) {
+            this.name = name;
+        }
+
+        public String getOutputs() {
+            return outputs;
+        }
+
+        public void setOutputs( final String outputs ) {
+            this.outputs = outputs;
+        }
+
+        public boolean isFallbackToInternal() {
+            return fallbackToInternal;
+        }
+
+        public void setFallbackToInternal( final boolean fallbackToInternal ) {
+            this.fallbackToInternal = fallbackToInternal;
+        }
+    }
+
+    private static Functions.Unary<String,JdbcSink> property(String propName) {
+        return Functions.propertyTransform(JdbcSink.class, propName);
+    }
+    private static Functions.Unary<Boolean,JdbcSink> bproperty(String propName) {
+        return Functions.propertyTransform(JdbcSink.class, propName);
+    }
+
+
     public AuditSinkGlobalPropertiesDialog(Window owner) {
-        super(owner, "Audit Sink Properties", ModalityType.DOCUMENT_MODAL);
+        super(owner, "Audit/Metrics Sink Properties", ModalityType.DOCUMENT_MODAL);
         getContentPane().setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
         initMainPanel();
     }
 
     private void initMainPanel() {
+        cbSaveToDb = new JCheckBox(  );
+        jdbcSinkTableModel = TableUtil.configureTable(
+                jdbcSinkTable,
+                TableUtil.column( "Name",     40, 240, 100000, property( "name" ), String.class ),
+                TableUtil.column( "Outputs",  40, 240, 100000, property( "outputs" ), String.class ),
+                TableUtil.column( "Fallback", 40, 80,  180,    bproperty( "fallbackToInternal" ), Boolean.class )
+        );
+        jdbcSinkTable.setModel( jdbcSinkTableModel );
+        jdbcSinkTable.getTableHeader().setReorderingAllowed( false );
+        jdbcSinkTable.setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
+        jdbcSinkTableModel.setRows( CollectionUtils.list( new JdbcSink( "<internal>", "Audits, Metrics", false ) ) );
+
+        addButton.addActionListener( new ActionListener(){
+            @Override
+            public void actionPerformed( final ActionEvent e ) {
+                addJdbcSink();
+            }
+        } );
+
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -87,6 +164,10 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
         final boolean usingSinkPolicy = isUsingSinkPolicy();
         cbOutputToPolicy.setSelected(usingSinkPolicy);
         cbSaveToDb.setSelected(!usingSinkPolicy || isAlwaysSaveToDb());
+    }
+
+    private void addJdbcSink() {
+        new JdbcSinkPropertiesDialog(this).setVisible( true );
     }
 
     private boolean isUsingSinkPolicy() {

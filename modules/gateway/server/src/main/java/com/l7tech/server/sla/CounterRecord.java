@@ -1,13 +1,11 @@
 package com.l7tech.server.sla;
 
 import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Column;
 import java.io.Serializable;
@@ -25,8 +23,8 @@ public class CounterRecord implements Serializable {
     public String counterName;
 
     @Id
-    @GeneratedValue(strategy= GenerationType.SEQUENCE, generator="generator")
-    @GenericGenerator( name="generator", strategy = "seqhilo", parameters = @Parameter(name="max_lo", value="32767") )
+    @GenericGenerator( name="generator", strategy = "layer7-generator" )
+    @GeneratedValue( generator = "generator")
     public long getCounterId() {
         return counterId;
     }

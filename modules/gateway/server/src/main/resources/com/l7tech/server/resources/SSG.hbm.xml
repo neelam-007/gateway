@@ -25,9 +25,7 @@
 
     <class name="com.l7tech.gateway.common.service.PublishedService" table="published_service" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="seqhilo">
-                <param name="max_lo">32767</param>
-            </generator>
+            <generator class="layer7-generator"/>
         </id>
 
         <version name="version" column="version" type="integer"/>
@@ -54,9 +52,7 @@
 
     <class name="com.l7tech.gateway.common.service.PublishedServiceAlias" table="published_service_alias" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="seqhilo">
-                <param name="max_lo">32767</param>
-            </generator>
+            <generator class="layer7-generator"/>
         </id>
         <version name="version" type="int"/>
 
@@ -67,9 +63,7 @@
 
     <class name="com.l7tech.policy.Policy" table="policy" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="seqhilo">
-                <param name="max_lo">32767</param>
-            </generator>
+            <generator class="layer7-generator"/>
         </id>
         <version name="version" type="int"/>
         <property name="guid" column="guid" type="string"/>
@@ -84,9 +78,7 @@
 
     <class name="com.l7tech.policy.PolicyVersion" table="policy_version" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="seqhilo">
-                <param name="max_lo">32767</param>
-            </generator>
+            <generator class="layer7-generator"/>
         </id>
         <version name="version" type="int"/>
         <property name="name" column="name" type="string"/>
@@ -101,9 +93,7 @@
 
     <class name="com.l7tech.policy.PolicyAlias" table="policy_alias" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="seqhilo">
-                <param name="max_lo">32767</param>
-            </generator>
+            <generator class="layer7-generator"/>
         </id>
 
         <version name="version" type="int"/>
@@ -115,9 +105,7 @@
 
     <class name="com.l7tech.objectmodel.folder.Folder" table="folder" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="seqhilo">
-                <param name="max_lo">32767</param>
-            </generator>
+            <generator class="layer7-generator"/>
         </id>
 
         <version name="version" column="version" type="int"/>
@@ -139,9 +127,7 @@
 
     <class name="com.l7tech.gateway.common.service.SampleMessage" table="sample_messages" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="seqhilo">
-                <param name="max_lo">32767</param>
-            </generator>
+            <generator class="layer7-generator"/>
         </id>
 
         <property name="name" type="string"/>
@@ -152,9 +138,7 @@
 
     <class name="com.l7tech.gateway.common.service.MetricsBin" table="service_metrics">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="seqhilo">
-                <param name="max_lo">32767</param>
-            </generator>
+            <generator class="layer7-generator"/>
         </id>
 
         <property name="clusterNodeId" column="nodeid" type="string"/>
@@ -203,9 +187,7 @@
 
     <class name="com.l7tech.gateway.common.service.ServiceDocument" table="service_documents">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="seqhilo">
-                <param name="max_lo">32767</param>
-            </generator>
+            <generator class="layer7-generator"/>
         </id>
 
         <version name="version" column="version" type="integer"/>

@@ -9,11 +9,9 @@ import javax.persistence.Column;
 import javax.persistence.Version;
 import javax.persistence.Id;
 import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Transient;
 
 import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Proxy;
 
 /**
@@ -46,19 +44,22 @@ public class InternalGroupMembership extends GroupMembership {
         super.thisGroupProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
     }
 
+    @Override
     @Id
     @Column(name="objectid", nullable=false, updatable=false)
-    @GenericGenerator( name="generator", strategy = "seqhilo", parameters = @Parameter(name="max_lo", value="32767") )
-    @GeneratedValue(strategy= GenerationType.SEQUENCE, generator = "generator")
+    @GenericGenerator( name="generator", strategy = "layer7-generator" )
+    @GeneratedValue( generator = "generator")
     public long getOid() {
         return _oid;
     }
 
+    @Override
     @Transient
     public String getId() {
         return Long.toString(_oid);
     }
 
+    @Override
     public void setOid( long oid ) {
         _oid = oid;
     }
@@ -69,11 +70,13 @@ public class InternalGroupMembership extends GroupMembership {
         return super.getMemberUserId();
     }
 
+    @Override
     @Column(name="internal_group")
     public String getThisGroupId() {
         return Long.toString(thisGroupOid);
     }
 
+    @Override
     public void setThisGroupId(String thisGroupId) {
         this.thisGroupOid = Long.parseLong(thisGroupId);
     }
@@ -151,12 +154,14 @@ public class InternalGroupMembership extends GroupMembership {
         this.memberSubgroupId = memberSubgroupId;
     }
 
+    @Override
     @Version
     @Column(name="version")
     public int getVersion() {
         return _version;
     }
 
+    @Override
     public void setVersion(int version) {
         this._version = version;
     }

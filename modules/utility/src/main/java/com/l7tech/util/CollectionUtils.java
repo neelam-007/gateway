@@ -1,7 +1,6 @@
 package com.l7tech.util;
 
 import com.l7tech.util.Functions.Binary;
-import com.l7tech.util.Functions.Unary;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -355,22 +354,6 @@ public final class CollectionUtils {
             return collection.containsAll( targets );
         }
         return false;
-    }
-
-    /**
-     * Predicate for contains.
-     *
-     * @param values The values to check.
-     * @param <T> The value type.
-     * @return True if the collection contains the value
-     */
-    public static <T> Unary<Boolean,T> contains( final Collection<? super T> values ) {
-        return new Unary<Boolean,T>(){
-            @Override
-            public Boolean call( final T t ) {
-                return values.contains( t );
-            }
-        };
     }
 
     /**

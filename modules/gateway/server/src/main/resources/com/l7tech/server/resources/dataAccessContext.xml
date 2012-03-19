@@ -111,7 +111,12 @@
     <!--
     Default Hibernate Session Manager
     -->
-    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+    <bean id="sessionFactory" class="com.l7tech.server.util.ConfiguredSessionFactoryBean">
+        <constructor-arg index="0">
+            <map>
+                <entry key="layer7-generator" value="com.l7tech.server.util.ConfiguredSessionFactoryBean$ConfiguredHiLoGenerator"/>
+            </map>
+        </constructor-arg>
         <property name="mappingResources">
             <list>
                 <value>com/l7tech/server/resources/SSG.hbm.xml</value>

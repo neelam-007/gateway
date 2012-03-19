@@ -412,7 +412,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     @Override
     public int getMaxDigestRecords() {
-        return auditRecordManager.getAuditValidatedConfig().getIntProperty( ServerConfigParams.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
+        return config.getIntProperty( ServerConfigParams.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
     }
 
     @Override

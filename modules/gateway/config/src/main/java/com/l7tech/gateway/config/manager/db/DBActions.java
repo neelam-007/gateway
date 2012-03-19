@@ -1,9 +1,14 @@
 package com.l7tech.gateway.config.manager.db;
 
+import com.l7tech.util.Functions.NullaryThrows;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.*;
 import com.l7tech.server.management.config.node.DatabaseConfig;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.sql.*;
@@ -76,7 +81,7 @@ public class DBActions {
         ssgDbChecker = new CheckSSGDatabase();
         //always sort the dbCheckers in reverse in case someone has added one out of sequence so things still work properly
 
-        List<DbVersionChecker> dbCheckers = Arrays.asList(
+        List<DbVersionChecker> dbCheckers = asList(
             new DbVersion50Checker(),
             new DbVersion465Checker(),    
             new DbVersion46Checker(),
@@ -126,6 +131,15 @@ public class DBActions {
     }
 
     public DBActionsResult createDb(DatabaseConfig config, Set<String> hosts, String dbCreateScript, boolean overwriteDb) throws IOException {
+        return createDb( config, hosts, singleton(dbCreateScript), overwriteDb );
+    }
+
+    public DBActionsResult createDb( @NotNull  final DatabaseConfig config,
+                                     @Nullable final Set<String> hosts,
+                                     @NotNull  final Set<String> dbCreateScripts,
+                                               final boolean overwriteDb ) throws IOException {
+        final String[] dbCreateStatements = getStatementsFromFiles( dbCreateScripts );
+
         Connection conn = null;
         try {
             conn = getConnection(config, true);
@@ -135,14 +149,14 @@ public class DBActions {
                     //we should overwrite the db
                     dropDatabase( conn, config.getName(), false );
                     createDatabaseWithGrants( conn, config, hosts );
-                    createTables( config, dbCreateScript );
+                    createTables( config, dbCreateStatements );
                     return new DBActionsResult(StatusType.SUCCESS);
                 } else {
                     return new DBActionsResult(StatusType.ALREADY_EXISTS);
                 }
             } else {
                 createDatabaseWithGrants( conn, config, hosts );
-                createTables( config, dbCreateScript );
+                createTables( config, dbCreateStatements );
                 return new DBActionsResult(StatusType.SUCCESS);
             }
         } catch (SQLException e) {
@@ -153,7 +167,6 @@ public class DBActions {
             ResourceUtils.closeQuietly(conn);
         }
     }
-
 
     public DBActionsResult upgradeDbSchema(DatabaseConfig databaseConfig,
                                            boolean useAdminConnection,
@@ -874,10 +887,8 @@ public class DBActions {
         }
     }
 
-    private void createTables( DatabaseConfig databaseConfig, String dbCreateScript ) throws SQLException, IOException {
-        if ( dbCreateScript != null ) {
-            String[] sql = getStatementsFromFile(dbCreateScript);
-            if ( sql != null ) {
+    private void createTables( @NotNull final DatabaseConfig databaseConfig,
+                               @NotNull final String[] sql ) throws SQLException, IOException {
                 logger.info( "Creating schema for " + databaseConfig.getName() + " database" );
 
                 Connection connection = null;
@@ -888,10 +899,6 @@ public class DBActions {
                     ResourceUtils.closeQuietly( connection );
                 }
             }
-        } else {
-            logger.info("Skipping creation of tables and rows");
-        }
-    }
 
     public String[] getGrantStatements(DatabaseConfig databaseConfig, Set<String> hosts) {
         return getPermissionChangeStatements(databaseConfig, hosts, true);
@@ -921,6 +928,7 @@ public class DBActions {
         return new DBPermission(databaseConfig, hosts, doGrants).getStatements();
     }
 
+    @NotNull
     private String[] getStatementsFromFile( final String sqlScriptFilename ) throws IOException {
         String[] statements;
 
@@ -933,6 +941,16 @@ public class DBActions {
         }
 
         return statements;
+    }
+
+    private String[] getStatementsFromFiles( final Set<String> sqlScriptFilenames ) throws IOException {
+        final List<String> statements = new ArrayList<String>();
+
+        for ( final String sqlScriptFilename : sqlScriptFilenames ) {
+            statements.addAll( asList( getStatementsFromFile( sqlScriptFilename ) ) );
+        }
+
+        return statements.toArray( new String[ statements.size() ] );
     }
 
     private String[] getDbCreateStatementsFromDb(Connection dbConn) throws SQLException {
@@ -1476,6 +1494,7 @@ public class DBActions {
 
     private static final class DBPermission {
         private final DatabaseConfig databaseConfig;
+        @Nullable
         private final Set<String> hosts;
         private final boolean isGrant;
 
@@ -1486,7 +1505,7 @@ public class DBActions {
          * @param hosts the database hosts for the cluster
          * @param isGrant true if this is a grant, false if this is a revocation
          */
-        DBPermission(DatabaseConfig databaseConfig, Set<String> hosts, boolean isGrant) {
+        DBPermission(DatabaseConfig databaseConfig, @Nullable Set<String> hosts, boolean isGrant) {
             this.databaseConfig = databaseConfig;
             this.hosts = hosts;
             this.isGrant = isGrant;

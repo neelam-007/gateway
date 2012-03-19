@@ -7,7 +7,6 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.*;
-import org.hibernate.annotations.Parameter;
 
 import java.io.Serializable;
 
@@ -74,8 +73,8 @@ public class EmailListenerState implements PersistentEntity, Serializable {
 
     @Id
     @Column(name="objectid", nullable=false, updatable=false)
-    @GenericGenerator( name="generator", strategy = "seqhilo", parameters = @Parameter(name="max_lo", value="32767") )
-    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator = "generator")
+    @GenericGenerator( name="generator", strategy = "layer7-generator" )
+    @GeneratedValue( generator = "generator")
     public Long getObjectId() {
         return Id;
     }

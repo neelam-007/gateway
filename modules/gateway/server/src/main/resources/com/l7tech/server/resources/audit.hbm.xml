@@ -11,9 +11,7 @@
 
     <class name="com.l7tech.gateway.common.audit.AuditRecord" table="audit_main" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="seqhilo">
-                <param name="max_lo">32767</param>
-            </generator>
+            <generator class="layer7-generator"/>
         </id>
 
         <!-- No version column required, since these never get modified -->
@@ -68,9 +66,7 @@
 
     <class name="com.l7tech.gateway.common.audit.AuditDetail" table="audit_detail" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="seqhilo">
-                <param name="max_lo">32767</param>
-            </generator>
+            <generator class="layer7-generator"/>
         </id>
 
         <property name="time" type="long"/>

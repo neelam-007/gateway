@@ -267,11 +267,6 @@
                                 <value>customerMapping.addToGatewayAuditEvents</value>
                             </list>
                         </entry>
-                         <entry key="auditRecordManager">
-                            <list>
-                                <value>audit.messageSizeLimit</value>
-                            </list>
-                        </entry>
                         <entry key="ssgConnectorManager">
                             <list>
                                 <value>interfaceTags</value>
@@ -484,6 +479,11 @@
                                 <value>db.replicationDelayCheckInterval</value>
                                 <value>db.replicationDelayThreshold</value>
                                 <value>db.replicationErrorAuditInterval</value>
+                            </list>
+                        </entry>
+                        <entry key="defaultAuditRecordManager">
+                            <list>
+                                <value>audit.external.name</value>
                             </list>
                         </entry>
                     </map>
@@ -1264,6 +1264,13 @@
     <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl" parent="hibernateBean">
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
+
+    <bean id="defaultAuditRecordManager" class="com.l7tech.server.audit.DefaultSimpleAuditRecordManager">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="auditRecordManager"/>
+        <constructor-arg index="2" ref="entityManagementContextProvider"/>
+    </bean>
+
     <!-- server side audit download manager -->
     <bean id="auditDownloadManager" class="com.l7tech.server.audit.AuditDownloadManager">
         <constructor-arg ref="defaultKey"/>
@@ -1367,7 +1374,7 @@
 
     <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" scope="prototype">
         <constructor-arg ref="serverConfig"/>
-        <constructor-arg ref="auditRecordManager"/>
+        <constructor-arg ref="defaultAuditRecordManager"/>
         <constructor-arg ref="auditPolicyEvaluator"/>
         <constructor-arg ref="auditFilterPolicyManager"/>
         <constructor-arg ref="clusterNodeId"/>
@@ -1663,7 +1670,7 @@
     <!-- A fast event channel just for MessageProcessingEvent subclasses. -->
     <bean id="messageProcessingEventChannel" class="com.l7tech.server.util.EventChannel"/>
 
-    <bean id="managedBackgroundTimer" class="com.l7tech.server.util.ManagedTimer">
+    <bean id="managedBackgroundTimer" class="com.l7tech.server.util.ManagedTimer" primary="true">
         <constructor-arg value="Background timer"/>
     </bean>
 
@@ -1793,11 +1800,7 @@
         <constructor-arg ref="managedBackgroundTimer"/>
     </bean>
 
-    <bean id="jdbcConnectionPoolManager" class="com.l7tech.server.jdbc.JdbcConnectionPoolManager">
-        <constructor-arg ref="licenseManager"/>
-        <constructor-arg ref="jdbcConnectionManager"/>
-        <constructor-arg ref="managedBackgroundTimer"/>
-    </bean>
+    <bean id="jdbcConnectionPoolManager" class="com.l7tech.server.jdbc.JdbcConnectionPoolManager"/>
 
     <bean id="jdbcQueryingManager" class="com.l7tech.server.jdbc.JdbcQueryingManagerImpl">
         <constructor-arg ref="jdbcConnectionPoolManager"/>
@@ -2345,6 +2348,8 @@
     <bean id="ldapTemplateManager" class="com.l7tech.server.identity.ldap.LdapConfigTemplateManager"/>
 
     <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration"/>
+
+    <bean id="entityManagementContextProvider" class="com.l7tech.server.EntityManagementContextProvider"/>
 
     <!-- export beans to JMX -->
     <context:mbean-export/>

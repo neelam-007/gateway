@@ -9,9 +9,13 @@ import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.CausedIOException;
+import static com.l7tech.util.CollectionUtils.set;
+import static com.l7tech.util.CollectionUtils.toSet;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.map;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.HexUtils;
@@ -38,7 +42,8 @@ public class NodeConfigurationManager {
 
     private static final File gatewayDir = new File( ConfigFactory.getProperty( "com.l7tech.gateway.home", "/opt/SecureSpan/Gateway" ) );
     private static final File nodesDir = new File(gatewayDir, "node");
-    private static final String sqlPath = "../config/etc/sql/ssg.sql";
+    private static final String sqlPath = "../config/etc/sql/";
+    private static final Set<String> sqlFiles = set( "ssg_core.sql", "ssg_customer_mapping.sql", "ssg_audit.sql", "ssg_metrics.sql", "ssg.sql" );
     private static final String configPath = "{0}/etc/conf";
 
     private static final String NODE_PROPS_FILE = "node.properties";
@@ -294,9 +299,14 @@ public class NodeConfigurationManager {
         hosts.add( databaseConfig.getHost() );
         if (extraGrantHosts != null) hosts.addAll(extraGrantHosts);
 
-        String pathToSqlScript = MessageFormat.format( sqlPath, nodeName );
+        final Set<String> scriptPaths = toSet( map( sqlFiles, new Unary<String,String>(){
+            @Override
+            public String call( final String text ) {
+                return new File(nodesDir, sqlPath + text).getAbsolutePath();
+            }
+        } ) );
 
-        DBActions.DBActionsResult res = dbActions.createDb(localConfig, hosts, new File(nodesDir,pathToSqlScript).getAbsolutePath(), false);
+        DBActions.DBActionsResult res = dbActions.createDb(localConfig, hosts, scriptPaths, false);
         if ( res.getStatus() != DBActions.StatusType.SUCCESS ) {
             throw new CausedIOException(MessageFormat.format("Cannot create database: ''{2}'' [code:{0}, {1}]",
                     res.getStatus().getCode(), res.getStatus(), res.getErrorMessage() == null ? "" : res.getErrorMessage() ), res.getThrown());
