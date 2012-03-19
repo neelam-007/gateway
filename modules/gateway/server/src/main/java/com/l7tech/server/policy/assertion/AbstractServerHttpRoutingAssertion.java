@@ -69,7 +69,7 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
      */
     @Override
     protected int getTimeout(Map vars) {
-        Integer timeout = expandVariableAsInt(assertion.getTimeout(), "Timeout", 1, 86400000, vars);
+        Integer timeout = expandVariableAsInt(assertion.getTimeout(), "Read Timeout", 1, 86400000, vars);
         if (timeout == null)
             timeout = super.getTimeout(null);
 

@@ -9,6 +9,8 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
@@ -33,11 +35,35 @@ import org.springframework.mock.web.MockServletContext;
 
 import java.io.InputStream;
 import java.net.PasswordAuthentication;
+import java.util.Collections;
 import java.util.List;
 
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 
 public class ServerHttpRoutingAssertionTest {
+
+    @Test(expected = AssertionStatusException.class)
+    @BugNumber(11385)
+    public void testInvalidTimeout() throws Exception {
+        final HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setTimeout("invalid");
+        assertion.setProtectedServiceUrl("http://localhost:17380/testurl");
+        final TestAudit testAudit = new TestAudit();
+        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+        ApplicationContexts.inject(serverAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
+        final PolicyEnforcementContext policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+
+        try {
+            serverAssertion.checkRequest(policyContext);
+        } catch (final AssertionStatusException e) {
+            assertEquals(AssertionStatus.FAILED, e.getAssertionStatus());
+            assertTrue(testAudit.isAuditPresent(AssertionMessages.HTTPROUTE_CONFIGURATION_ERROR));
+            assertTrue(testAudit.isAuditPresentContaining("Read Timeout"));
+            throw e;
+        }
+
+    }
 
     /**
      * Test that its possible to overwrite a Message variable with the contents of a response, when the message variable
@@ -45,7 +71,7 @@ public class ServerHttpRoutingAssertionTest {
      */
     @Test
     @BugNumber(8396)
-    public void testOverwriteResponseVariable() throws Exception{
+    public void testOverwriteResponseVariable() throws Exception {
         HttpRoutingAssertion hra = new HttpRoutingAssertion();
         final String responseVariable = "result";
         hra.setResponseMsgDest(responseVariable);
@@ -106,8 +132,8 @@ public class ServerHttpRoutingAssertionTest {
 
         TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
 
-        final Object[] requestRecordedExtraHeaders = { null };
-        final PasswordAuthentication[] requestRecordedPasswordAuthentication = { null };
+        final Object[] requestRecordedExtraHeaders = {null};
+        final PasswordAuthentication[] requestRecordedPasswordAuthentication = {null};
 
         final String expectedResponse = "<bar/>";
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
@@ -165,8 +191,8 @@ public class ServerHttpRoutingAssertionTest {
 
         TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
 
-        final Object[] requestRecordedExtraHeaders = { null };
-        final PasswordAuthentication[] requestRecordedPasswordAuthentication = { null };
+        final Object[] requestRecordedExtraHeaders = {null};
+        final PasswordAuthentication[] requestRecordedPasswordAuthentication = {null};
 
         final String expectedResponse = "<bar/>";
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
@@ -220,7 +246,7 @@ public class ServerHttpRoutingAssertionTest {
         TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
 
         final byte[] expectedResponse = IOUtils.compressGzip("<bar/>".getBytes());
-        final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[] { new GenericHttpHeader("Content-Encoding", "gzip") });
+        final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[]{new GenericHttpHeader("Content-Encoding", "gzip")});
         final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, expectedResponse);
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
@@ -252,7 +278,7 @@ public class ServerHttpRoutingAssertionTest {
 
         TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
 
-        final Object[] requestRecordedExtraHeaders = { null };
+        final Object[] requestRecordedExtraHeaders = {null};
 
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
         final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, "<bar/>".getBytes());
