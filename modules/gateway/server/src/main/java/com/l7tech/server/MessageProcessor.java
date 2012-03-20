@@ -1032,9 +1032,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         }
 
         public void lookupServerPolicy() throws ServiceResolutionException {
-            serverPolicy = serviceCache.getServerPolicy(context.getService().getOid());
+            final long serviceOid = context.getService().getOid();
+            serverPolicy = serviceCache.getServerPolicy(serviceOid);
             if (serverPolicy == null)
-                throw new ServiceResolutionException("service is resolved but the corresponding policy is invalid");
+                throw new ServiceResolutionException("service is resolved but the corresponding policy is invalid for service OID " + serviceOid + " (" + context.getService().getName() + ")");
             context.setServicePolicyMetadata( serverPolicy.getPolicyMetadata() );
         }
 
