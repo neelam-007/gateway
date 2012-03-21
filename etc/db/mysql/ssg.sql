@@ -1546,4 +1546,19 @@ CREATE TABLE wssc_session (
   PRIMARY KEY (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+DROP TABLE IF EXISTS generic_entity;
+CREATE TABLE generic_entity (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  name varchar(255),
+  description mediumtext,
+  classname varchar(255) NOT NULL,
+  enabled boolean DEFAULT TRUE,
+  value_xml mediumtext,
+  PRIMARY KEY (objectid),
+  UNIQUE KEY i_classname_name (classname, name)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+INSERT INTO generic_entity (objectid, version, name, description, classname, enabled, value_xml) values (-2,0,'default','','com.l7tech.gateway.common.audit.JdbcAuditSink',false, '');
+
+
 SET FOREIGN_KEY_CHECKS = 1;

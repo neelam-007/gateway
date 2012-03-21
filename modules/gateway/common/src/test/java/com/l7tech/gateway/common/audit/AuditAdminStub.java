@@ -1,10 +1,14 @@
 package com.l7tech.gateway.common.audit;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.OpaqueId;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -127,5 +131,45 @@ public class AuditAdminStub implements AuditAdmin {
     @Override
     public Collection<String> getAllEntityClassNames() {
         return null;
+    }
+
+    @Override
+    public void deleteJdbcAuditSink(JdbcAuditSink entity) throws DeleteException, FindException {
+        throw new UnsupportedOperationException("Not supported in stub mode");
+    }
+
+    @Override
+    public Collection<JdbcAuditSink> findAllJdbcAuditSinks() throws FindException {
+        return null;
+    }
+
+    @Override
+    public long saveJdbcAuditSink(JdbcAuditSink entity) throws SaveException, UpdateException {
+        throw new UnsupportedOperationException("Not supported in stub mode");
+    }
+
+    @Override
+    public String createJdbcAuditSinkSchema(JdbcAuditSink sinkConfig) {
+        throw new UnsupportedOperationException("Not supported in stub mode");
+    }
+
+    @Override
+    public JobId<String> testJdbcAuditSink(JdbcAuditSink sinkConfig) {
+        throw new UnsupportedOperationException("Not supported in stub mode");
+    }
+
+    @Override
+    public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
+        throw new UnsupportedOperationException("Not supported in stub mode");
+    }
+
+    @Override
+    public <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException {
+        throw new UnsupportedOperationException("Not supported in stub mode");
+    }
+
+    @Override
+    public <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning) {
+        throw new UnsupportedOperationException("Not supported in stub mode");
     }
 }

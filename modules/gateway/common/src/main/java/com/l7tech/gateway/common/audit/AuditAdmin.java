@@ -2,11 +2,11 @@ package com.l7tech.gateway.common.audit;
 
 import static com.l7tech.objectmodel.EntityType.AUDIT_RECORD;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
+
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.OpaqueId;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import org.springframework.transaction.annotation.Propagation;
@@ -27,7 +27,7 @@ import java.util.logging.Level;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=AUDIT_RECORD)
 @Administrative
-public interface AuditAdmin {
+public interface AuditAdmin extends AsyncAdminMethods{
 
     /**
      * Retrieves the {@link AuditRecord} with the given oid, or null if no such record exists.
@@ -273,4 +273,55 @@ public interface AuditAdmin {
      */
     @Transactional(propagation= Propagation.SUPPORTS)
     int getSystemLogRefresh();
+
+    /**
+     * Find all jdbc audit sink entity instances.
+     *
+     * @return a collection of instances.  May be empty but never null.
+     * @throws FindException if there is a problem reading the database
+     */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES)
+    Collection<JdbcAuditSink> findAllJdbcAuditSinks() throws FindException;
+
+    /**
+     * Save a new or changed jdbc audit sink entity.
+     *
+     * @param entity the entity to save.  Required.
+     * @return the oid assigned to the entity (useful when saving a new one)
+     * @throws com.l7tech.objectmodel.SaveException if t here is a problem saving the entity
+     * @throws UpdateException if there is a problem updatingan existing entity
+     */
+    @Secured(stereotype=SAVE_OR_UPDATE)
+    long saveJdbcAuditSink(JdbcAuditSink entity) throws SaveException, UpdateException;
+
+    /**
+     * Delete a jdbc audit sink entity.
+     *
+     * @param entity the entity to delete.  Required.
+     * @throws DeleteException if entity cannot be deleted
+     * @throws FindException if entity cannot be located before deletion
+     */
+    @Secured(stereotype=DELETE_ENTITY)
+    void deleteJdbcAuditSink(JdbcAuditSink entity) throws DeleteException, FindException;
+
+    /**
+     * Test a audit sink configuration
+     *
+     * @param sinkConfig: the audit sink configuration to be tested.
+     * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
+     */
+    @Transactional(readOnly=true)
+    @Secured(types = EntityType.GENERIC, stereotype = FIND_ENTITIES)
+    AsyncAdminMethods.JobId<String> testJdbcAuditSink(JdbcAuditSink sinkConfig);
+
+    /**
+     * create schema for specified audit sink config
+     *
+     * @param sinkConfig: the audit sink configuration to  create schema for.
+     * @return created schema
+     */
+    @Transactional(readOnly=true)
+    @Secured(types = EntityType.GENERIC, stereotype = FIND_ENTITIES)
+    String createJdbcAuditSinkSchema(JdbcAuditSink sinkConfig);
 }

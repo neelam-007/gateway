@@ -6,13 +6,13 @@ import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.ClusterPropertyCrud;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.audit.AuditAdmin;
+import com.l7tech.gateway.common.audit.JdbcAuditSink;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyCheckpointState;
 import com.l7tech.policy.PolicyHeader;
@@ -29,8 +29,12 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Collection;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.Functions.grepFirst;
 
 /**
  *
@@ -42,7 +46,7 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
     public static final String AUDIT_SINK_POLICY_GUID_CLUSTER_PROP = "audit.sink.policy.guid";
     public static final String AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP = "audit.sink.alwaysSaveInternal";
 
-
+    private ResourceBundle resources = null;
     private JPanel mainPanel;
     private JButton okButton;
     private JButton cancelButton;
@@ -51,87 +55,63 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
     private JButton editButton;
     private JButton deleteButton;
     private JTable jdbcSinkTable;
+    private JButton manageDataButton;
     private JCheckBox cbSaveToDb;
 
-    private SimpleTableModel<JdbcSink> jdbcSinkTableModel;
+    private SimpleTableModel<JdbcAuditSink> jdbcSinkTableModel;
     boolean committed = false;
     boolean policyEditRequested = false;
 
-    public static final class JdbcSink {
-        private String name;
-        private String outputs;
-        private boolean fallbackToInternal;
 
-        public JdbcSink(){
-        }
-
-        public JdbcSink( final String name,
-                         final String outputs,
-                         final boolean fallbackToInternal ) {
-            this.fallbackToInternal = fallbackToInternal;
-            this.name = name;
-            this.outputs = outputs;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName( final String name ) {
-            this.name = name;
-        }
-
-        public String getOutputs() {
-            return outputs;
-        }
-
-        public void setOutputs( final String outputs ) {
-            this.outputs = outputs;
-        }
-
-        public boolean isFallbackToInternal() {
-            return fallbackToInternal;
-        }
-
-        public void setFallbackToInternal( final boolean fallbackToInternal ) {
-            this.fallbackToInternal = fallbackToInternal;
-        }
+    private static Functions.Unary<String,JdbcAuditSink> property(String propName) {
+        return Functions.propertyTransform(JdbcAuditSink.class, propName);
     }
-
-    private static Functions.Unary<String,JdbcSink> property(String propName) {
-        return Functions.propertyTransform(JdbcSink.class, propName);
-    }
-    private static Functions.Unary<Boolean,JdbcSink> bproperty(String propName) {
-        return Functions.propertyTransform(JdbcSink.class, propName);
+    private static Functions.Unary<Boolean,JdbcAuditSink> bproperty(String propName) {
+        return Functions.propertyTransform(JdbcAuditSink.class, propName);
     }
 
 
     public AuditSinkGlobalPropertiesDialog(Window owner) {
-        super(owner, "Audit/Metrics Sink Properties", ModalityType.DOCUMENT_MODAL);
+        super(owner, "Audit/Metrics Sink Properties" , ModalityType.DOCUMENT_MODAL);
         getContentPane().setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+        initialize();
+    }
+
+    private void initialize(){
+        initResources();
         initMainPanel();
+    }
+    private void initResources(){
+        Locale locale = Locale.getDefault();
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.LogSinkManagerWindow", locale);
+        this.setTitle(resources.getString("title.label"));
     }
 
     private void initMainPanel() {
         cbSaveToDb = new JCheckBox(  );
-        jdbcSinkTableModel = TableUtil.configureTable(
-                jdbcSinkTable,
-                TableUtil.column( "Name",     40, 240, 100000, property( "name" ), String.class ),
-                TableUtil.column( "Outputs",  40, 240, 100000, property( "outputs" ), String.class ),
-                TableUtil.column( "Fallback", 40, 80,  180,    bproperty( "fallbackToInternal" ), Boolean.class )
-        );
-        jdbcSinkTable.setModel( jdbcSinkTableModel );
-        jdbcSinkTable.getTableHeader().setReorderingAllowed( false );
-        jdbcSinkTable.setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
-        jdbcSinkTableModel.setRows( CollectionUtils.list( new JdbcSink( "<internal>", "Audits, Metrics", false ) ) );
+        initJdbcTable();
 
-        addButton.addActionListener( new ActionListener(){
+        addButton.addActionListener(new ActionListener() {
             @Override
-            public void actionPerformed( final ActionEvent e ) {
+            public void actionPerformed(final ActionEvent e) {
                 addJdbcSink();
             }
-        } );
+        });
+
+        editButton.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                editJdbcSink();
+            }
+        });
+
+        deleteButton.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deleteJdbcSink();
+            }
+        });
 
         okButton.addActionListener(new ActionListener() {
             @Override
@@ -157,17 +137,139 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
         cbSaveToDb.addActionListener(buttonListener);
         cbOutputToPolicy.addActionListener(buttonListener);
 
-        //getRootPane().setDefaultButton(okButton); // Not sure we want to make this quite THAT easy to commit
         Utilities.setEscKeyStrokeDisposes(this);
         Utilities.equalizeButtonSizes(okButton, cancelButton);
+        Utilities.setDoubleClickAction(jdbcSinkTable, editButton);
 
         final boolean usingSinkPolicy = isUsingSinkPolicy();
         cbOutputToPolicy.setSelected(usingSinkPolicy);
         cbSaveToDb.setSelected(!usingSinkPolicy || isAlwaysSaveToDb());
     }
 
+    private void deleteJdbcSink() {
+        int sel = jdbcSinkTable.getSelectedRow();
+        JdbcAuditSink sink = jdbcSinkTableModel.getRowObject(sel);
+
+        String message = resources.getString("confirmDelete.message.long");
+        message = message.replace("$1", sink.getName());
+        int result = JOptionPane.showConfirmDialog(this,
+                message,
+                resources.getString("confirmDelete.message.short"),
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+        if (result != JOptionPane.YES_OPTION)
+            return;
+
+
+        try {
+            getAuditAdmin().deleteJdbcAuditSink(sink);
+        } catch (DeleteException e) {
+            showErrorMessage( resources.getString( "errors.deleteFailed.title" ),
+                    resources.getString( "errors.deleteFailed.message" ) + " " + ExceptionUtils.getMessage( e ),
+                    ExceptionUtils.getDebugException( e ));
+        } catch (FindException e) {
+            showErrorMessage( resources.getString( "errors.deleteFailed.title" ),
+                    resources.getString( "errors.deleteFailed.message" ) + " " + ExceptionUtils.getMessage( e ),
+                    ExceptionUtils.getDebugException( e ));
+        }
+        loadSinkConfigurations();
+    }
+
+    private void editJdbcSink() {
+        int sel = jdbcSinkTable.getSelectedRow();
+        JdbcAuditSink sink = jdbcSinkTableModel.getRowObject(sel);
+        editAndSave(sink, true);
+    }
+
+    private void showErrorMessage(String title, String msg, Throwable e) {
+        showErrorMessage( title, msg, e, null );
+    }
+
+    private void showErrorMessage(String title, String msg, Throwable e, Runnable continuation) {
+        logger.log(Level.WARNING, msg, e);
+        DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, continuation);
+    }
+
+    private void initJdbcTable() {
+
+        jdbcSinkTableModel = TableUtil.configureTable(
+                jdbcSinkTable,
+                TableUtil.column( "Enabled",  40, 60,  180,    bproperty( "enabled" ), Boolean.class ),
+                TableUtil.column( "Name",     40, 240, 100000, property( "name" ), String.class ),
+                TableUtil.column( "Outputs",  40, 240, 100000, property( "outputs" ), String.class ),
+                TableUtil.column( "Fallback", 40, 80,  180,    bproperty( "fallbackToInternal" ), Boolean.class )
+        );
+        jdbcSinkTable.setModel(jdbcSinkTableModel);
+        jdbcSinkTable.getTableHeader().setReorderingAllowed(false);
+        jdbcSinkTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        loadSinkConfigurations();
+    }
+
+    private void loadSinkConfigurations(){
+        int viewRow = jdbcSinkTable.getSelectedRow();
+        try{
+            jdbcSinkTableModel.setRows( CollectionUtils.toList(getAuditAdmin().findAllJdbcAuditSinks()));
+            if (viewRow >= 0) {
+                jdbcSinkTable.getSelectionModel().setSelectionInterval(viewRow, viewRow);
+            }
+        } catch (FindException e) {
+            showErrorMessage(resources.getString("errors.loadFailed.title"),
+                    resources.getString("errors.loadFailed.message") + " " + ExceptionUtils.getMessage(e),
+                    e);
+        }
+    }
+    
+    private AuditAdmin getAuditAdmin(){
+        Registry reg = Registry.getDefault();
+        if (!reg.isAdminContextPresent())
+            return null;
+        return reg.getAuditAdmin();
+    }
+
     private void addJdbcSink() {
-        new JdbcSinkPropertiesDialog(this).setVisible( true );
+        editAndSave(new JdbcAuditSink(), true);
+    }
+
+    private void editAndSave(final JdbcAuditSink sinkConfiguration, final boolean selectNameField) {
+        final JdbcSinkPropertiesDialog dlg = new JdbcSinkPropertiesDialog(this, sinkConfiguration);
+        dlg.pack();
+        Utilities.centerOnScreen( dlg );
+        if(selectNameField)
+            dlg.selectNameField();
+        DialogDisplayer.display( dlg, new Runnable() {
+            @Override
+            public void run() {
+                if ( dlg.isConfirmed() ) {
+                    final JdbcAuditSink newSink = dlg.getSinkConfiguration();
+                    Runnable reedit = new Runnable() {
+                        @Override
+                        public void run() {
+                            loadSinkConfigurations();
+                            editAndSave( newSink, selectNameField );
+                        }
+                    };
+
+                    try {
+                        long oid = getAuditAdmin().saveJdbcAuditSink(newSink);
+                        if ( oid != sinkConfiguration.getOid() ) sinkConfiguration.setOid( oid );
+                        reedit = null;
+                        loadSinkConfigurations();
+
+                    } catch ( SaveException e ) {
+                        showErrorMessage( resources.getString( "errors.saveFailed.title" ),
+                                resources.getString( "errors.saveFailed.message" ) + " " + ExceptionUtils.getMessage( e ),
+                                ExceptionUtils.getDebugException( e ),
+                                reedit );
+                    } catch ( UpdateException e ) {
+                        showErrorMessage( resources.getString( "errors.saveFailed.title" ),
+                                resources.getString( "errors.saveFailed.message" ) + " " + ExceptionUtils.getMessage( e ),
+                                ExceptionUtils.getDebugException( e ),
+                                reedit );
+                    }
+                }
+            }
+        } );
     }
 
     private boolean isUsingSinkPolicy() {

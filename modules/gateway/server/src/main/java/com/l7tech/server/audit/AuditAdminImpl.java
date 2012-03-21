@@ -1,5 +1,6 @@
 package com.l7tech.server.audit;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -9,10 +10,13 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.fed.FederatedGroupMembership;
 import com.l7tech.identity.internal.InternalGroupMembership;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.GatewayKeyAccessFilter;
 import com.l7tech.server.PersistenceEventInterceptor;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.AuditViewGatewayAuditsData;
@@ -31,16 +35,20 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.event.AdminInfo.find;
 
 /**
  * Implementation of AuditAdmin in SSG.
  */
-public class AuditAdminImpl implements AuditAdmin, InitializingBean, ApplicationContextAware {
+public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin, InitializingBean, ApplicationContextAware  {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
     private static final String CLUSTER_PROP_LAST_AUDITACK_TIME = "audit.acknowledge.highestTime";
     private static final int MAX_CRITERIA_HISTORY = ConfigFactory.getIntProperty( "com.l7tech.server.audit.maxAuditSearchCriteria", 20 );
@@ -63,6 +71,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     private AuditDownloadManager auditDownloadManager;
     private AuditRecordManager auditRecordManager;
+    private EntityManager<JdbcAuditSink, GenericEntityHeader>  jdbcAuditSinkManager = null;
     private SecurityFilter filter;
     private Config config;
     private ClusterPropertyManager clusterPropertyManager;
@@ -529,6 +538,64 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         }
 
         return entityClassNamesList;
+    }
+
+
+    @Override
+    public Collection<JdbcAuditSink> findAllJdbcAuditSinks() throws FindException{
+        return getJdbcAuditSinkManager().findAll();
+    }
+
+    @Override
+    public void deleteJdbcAuditSink(JdbcAuditSink entity) throws DeleteException, FindException {
+        getJdbcAuditSinkManager().delete(entity);
+    }
+
+    @Override
+    public long saveJdbcAuditSink(JdbcAuditSink entity) throws SaveException, UpdateException {
+        if(entity.getOid() == PersistentEntity.DEFAULT_OID)
+        {
+            return getJdbcAuditSinkManager().save(entity);
+        }
+        getJdbcAuditSinkManager().update(entity);
+        return entity.getOid();
+    }
+
+    private EntityManager<JdbcAuditSink, GenericEntityHeader> getJdbcAuditSinkManager() {
+        if(jdbcAuditSinkManager == null){
+            GenericEntityManager gem = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
+            gem.registerClass(JdbcAuditSink.class);
+            jdbcAuditSinkManager = gem.getEntityManager(JdbcAuditSink.class);
+        }
+        return jdbcAuditSinkManager;
+    }
+
+    @Override
+    public String createJdbcAuditSinkSchema(JdbcAuditSink sinkConfig) {
+        // todo
+        return "Not yet implemented";
+    }
+
+    @Override
+    public JobId<String> testJdbcAuditSink(JdbcAuditSink sinkConfig) {
+        final FutureTask<String> queryTask = new FutureTask<String>( find( false ).wrapCallable( new Callable<String>(){
+            @Override
+            public String call() throws Exception {
+
+                // todo magic
+                String result = "Not yet implemented";
+                return (result instanceof String)? (String)result : null;
+            }
+        }));
+
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                queryTask.run();
+            }
+        }, 0L);
+
+        return registerJob( queryTask, String.class );
     }
 
     private String evaluatePolicy(final String messageXml,
