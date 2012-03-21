@@ -2,18 +2,13 @@ package com.l7tech.server.jdbc;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.jdbc.InvalidPropertyException;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.policy.variable.ServerVariables;
-import static com.l7tech.util.BeanUtils.getProperties;
-import static com.l7tech.util.BeanUtils.omitProperties;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.equality;
-import static com.l7tech.util.Functions.grepFirst;
 import com.l7tech.util.Pair;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +27,11 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 
+import static com.l7tech.util.BeanUtils.getProperties;
+import static com.l7tech.util.BeanUtils.omitProperties;
+import static com.l7tech.util.Functions.equality;
+import static com.l7tech.util.Functions.grepFirst;
+
 /**
  * An implementation manages JDBC connection pooling and data sources (i.e., pools).
  * 
@@ -43,14 +43,12 @@ public class JdbcConnectionPoolManager implements InitializingBean {
     private static final long MIN_CHECK_AGE = ConfigFactory.getLongProperty( "com.l7tech.server.jdbc.poolConnectionCheckMinAge", 30000L );
     private static final String[] CPDS_IGNORE_PROPS = new String[]{ "connectionPoolDataSource", "driverClass", "initialPoolSize", "jdbcUrl", "logWriter", "maxPoolSize", "minPoolSize", "password", "properties", "propertyCycle", "user", "userOverridesAsString" };
 
-    private final Audit auditor;
+    private final Audit auditor = new LoggingAudit(logger);
     private final JdbcConnectionManager jdbcConnectionManager;
     private Context context;
 
     @Inject
-    public JdbcConnectionPoolManager( @NotNull final AuditFactory auditFactory,
-                                      @NotNull final JdbcConnectionManager jdbcConnectionManager ) {
-        this.auditor = auditFactory.newInstance( this, logger );
+    public JdbcConnectionPoolManager( @NotNull final JdbcConnectionManager jdbcConnectionManager ) {
         this.jdbcConnectionManager = jdbcConnectionManager;
     }
 
@@ -84,7 +82,8 @@ public class JdbcConnectionPoolManager implements InitializingBean {
                 // Log and audit all other unknown and unexpected exceptions
                 auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), e.getClass().getSimpleName() + " occurs");
             }
-        }    }
+        }
+    }
 
     /**
      * Get a data source by using a JDBC connection name.
