@@ -18,6 +18,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.PolicyVariableUtils;
@@ -249,12 +250,27 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                         sb.append("Sets ");
 
                     for (int i = 0; i < vars.length; i++) {
-                        String name = vars[i].getName();
+                        final VariableMetadata var = vars[i];
+                        String name = var.getName();
                         sb.append(Syntax.SYNTAX_PREFIX)
                             .append("<b>")
                             .append(name)
                             .append("</b>")
                             .append(Syntax.SYNTAX_SUFFIX);
+                        final DataType type = var.getType();
+                        if(type != null || var.isMultivalued()){
+                            sb.append(" [");
+                            if(type != null){
+                                sb.append(type.getName());
+                                if(var.isMultivalued()){
+                                    sb.append(", ");
+                                }
+                            }
+                            if(var.isMultivalued()){
+                                sb.append("Multivalued");
+                            }
+                            sb.append("]");
+                        }
                         if (i < vars.length-1) sb.append(", ");
                         if (i%3 == 2) sb.append("<br>");
                     }
