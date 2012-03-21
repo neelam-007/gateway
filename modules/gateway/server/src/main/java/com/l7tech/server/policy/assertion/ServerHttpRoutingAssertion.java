@@ -261,7 +261,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
                     return AssertionStatus.FAILED;
                 } catch (MalformedURLException mue) {
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Invalid routing URL, " + ExceptionUtils.getMessage( mue )}, mue);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Invalid routing URL, " + ExceptionUtils.getMessage( mue )}, ExceptionUtils.getDebugException(mue));
                     return AssertionStatus.FAILED;
                 }
 
