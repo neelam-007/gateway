@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.IntegerOrContextVariableValidationRule;
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
@@ -20,6 +21,7 @@ import java.io.IOException;
  * Config dialog for HardcodedResponseAssertion.
  */
 public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<HardcodedResponseAssertion> {
+    public static final String RESPONSE_HTTP_STATUS = "Response HTTP Status";
     private final InputValidator validator;
     private JPanel mainPanel;
     private JButton cancelButton;
@@ -42,10 +44,9 @@ public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<Ha
 
     private void doInit(HardcodedResponseAssertion assertion) {
         this.assertion = assertion;
-        httpStatus.setDocument(new NumberField(String.valueOf(Long.MAX_VALUE).length()));
-
-        validator.constrainTextFieldToNumberRange("HTTP status", httpStatus, 1, Integer.MAX_VALUE);
-        validator.addRule( getVariableValidationRule() );
+        validator.constrainTextFieldToBeNonEmpty(RESPONSE_HTTP_STATUS, httpStatus, null);
+        validator.addRule(getVariableValidationRule());
+        validator.addRule(new IntegerOrContextVariableValidationRule(1, Integer.MAX_VALUE, "Response HTTP Status", httpStatus));
         Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
 
         validator.attachToButton(okButton, new ActionListener() {
@@ -69,7 +70,7 @@ public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<Ha
     }
 
     private void updateView() {
-        httpStatus.setText(String.valueOf(assertion.getResponseStatus()));
+        httpStatus.setText(assertion.getResponseStatus());
         earlyResponseCheckBox.setSelected(assertion.isEarlyResponse());
         String body = assertion.responseBodyString();
         if (body == null || body.trim().isEmpty()) {
@@ -94,11 +95,7 @@ public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<Ha
     }
 
     private void doSave() {
-        int status = Integer.parseInt(httpStatus.getText());
-        if (status < 1) {
-            status = 1;
-        }
-        assertion.setResponseStatus(status);
+        assertion.setResponseStatus(httpStatus.getText().trim());
         assertion.setEarlyResponse(earlyResponseCheckBox.isSelected());
         final String ctype = contentType.getText();
         assertion.setResponseContentType(ctype);

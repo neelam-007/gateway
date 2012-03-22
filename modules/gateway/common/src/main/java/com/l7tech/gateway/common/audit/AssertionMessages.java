@@ -895,6 +895,7 @@ public class AssertionMessages extends Messages {
 
     public static final M TEMPLATE_RESPONSE_EARLY = m(8600, Level.FINE, "Sending response early");
     public static final M TEMPLATE_RESPONSE_NOT_HTTP = m(8601, Level.WARNING, "Unable to send early response for non HTTP message.");
+    public static final M TEMPLATE_RESPONSE_INVALID_STATUS = m(8602, Level.WARNING, "Invalid response status: {0}");
 
     public static final M NCESDECO_NOT_SOAP = m(8650, Level.WARNING, "{0} is not SOAP");
     public static final M NCESDECO_BAD_XML = m(8651, Level.WARNING, "{0} parse failure: {1}");

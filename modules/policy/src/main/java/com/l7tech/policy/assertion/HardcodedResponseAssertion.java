@@ -15,7 +15,8 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * response status and content type.
  */
 public class HardcodedResponseAssertion extends RoutingAssertion implements UsesVariables, RoutingAssertionDoesNotRoute {
-    private int responseStatus = 200;
+    public static final String DEFAULT_STATUS = "200";
+    private String responseStatus = DEFAULT_STATUS;
     private boolean earlyResponse;
     private String responseContentType = "text/xml; charset=UTF-8";
     private String base64ResponseBody = "";
@@ -23,12 +24,19 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
     public HardcodedResponseAssertion() {
     }
 
-    public int getResponseStatus() {
+    public String getResponseStatus() {
         return responseStatus;
     }
 
-    public void setResponseStatus(int responseStatus) {
+    public void setResponseStatus(final String responseStatus) {
         this.responseStatus = responseStatus;
+    }
+
+    /**
+     * Int setter required for backwards compatibility.
+     */
+    public void setResponseStatus(final int responseStatus) {
+        this.responseStatus = String.valueOf(responseStatus);
     }
 
     public boolean isEarlyResponse() {
@@ -58,7 +66,7 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(responseBodyString(), responseContentType);
+        return Syntax.getReferencedNames(responseBodyString(), responseContentType, responseStatus);
     }
 
     public String getBase64ResponseBody() {
@@ -98,7 +106,7 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
         meta.put(DESCRIPTION, "Return a template response message.");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/MessageLength-16x16.gif");
-        meta.put(PALETTE_FOLDERS, new String[] { "routing" });
+        meta.put(PALETTE_FOLDERS, new String[]{"routing"});
 
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
 
