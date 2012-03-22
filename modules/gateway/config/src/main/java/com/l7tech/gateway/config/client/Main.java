@@ -57,7 +57,7 @@ public class Main {
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties");
 
         if ( !isStrongCryptoEnabledInJvm() ) {
-            String message = "The Java virtual machine does not have strong cryptography enabled.  The unlimited strength juristiction JCE policy files may need to be installed.";
+            String message = "The Java virtual machine does not have strong cryptography enabled.  The unlimited strength jurisdiction JCE policy files may need to be installed.";
             logger.warning( message );
             System.out.println( message );
             System.exit( 1 );
