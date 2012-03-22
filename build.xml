@@ -3264,7 +3264,7 @@
                 <!-- Copy misc. stuff -->
                 <copy todir="@{dir}/${install.src.ssg.sql}">
                     <fileset dir="${src.root}/etc/db/${database.type}">
-                        <include name="ssg.sql"/>
+                        <include name="ssg*.sql"/>
                         <include name="upgrade*.sql"/>
                     </fileset>
                 </copy>
