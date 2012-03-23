@@ -4,9 +4,13 @@ import com.l7tech.console.SsmApplication;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.security.keys.PemUtils;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
 
 import javax.swing.*;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -25,7 +29,8 @@ public class SecurePasswordPemPrivateKeyDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JPanel pemPrivateKeyPanel;
-
+    private JButton passphraseButton;
+    private char[] pemKeyPassphrase;
     private boolean confirmed = false;
 
     public SecurePasswordPemPrivateKeyDialog(Window owner, String title, int maxPasswordLength) {
@@ -45,6 +50,7 @@ public class SecurePasswordPemPrivateKeyDialog extends JDialog {
         pemPrivateKeyField.setText("");
         pemPrivateKeyField.setEditable(true);
         pemPrivateKeyPanel.setBorder(BorderFactory.createEtchedBorder());
+        passphraseButton.setEnabled(false);
 
         pemPrivateKeyField.getDocument().addDocumentListener(new RunOnChangeListener() {
             @Override
@@ -81,6 +87,30 @@ public class SecurePasswordPemPrivateKeyDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 confirmed = false;
                 dispose();
+            }
+        });
+
+        passphraseButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                JPasswordField pass = new JPasswordField(10);
+                int result = JOptionPane.showConfirmDialog(SecurePasswordPemPrivateKeyDialog.this,pass,"Enter Private Key Pass Phrase", JOptionPane.OK_CANCEL_OPTION);
+                if ( result >= 0 ) {
+                    pemKeyPassphrase = pass.getPassword();
+                }
+            }
+        });
+
+        pemPrivateKeyField.addCaretListener(new CaretListener() {
+            @Override
+            public void caretUpdate(CaretEvent e) {
+
+                if (PemUtils.isEncryptedPem(pemPrivateKeyField.getText()) ) {
+                    passphraseButton.setEnabled(true);
+                } else {
+                    passphraseButton.setEnabled(false);
+                }
             }
         });
 
@@ -133,11 +163,14 @@ public class SecurePasswordPemPrivateKeyDialog extends JDialog {
      * @param title
      * @return The password the user typed, or null if the dialog was canceled.
      */
-    public static char[] getPemPrivateKey(Window parent, String title, int maxPasswordLength) {
+    public static Pair<char[],char[]>  getPemPrivateKey(Window parent, String title, int maxPasswordLength) {
         SecurePasswordPemPrivateKeyDialog dialog = new SecurePasswordPemPrivateKeyDialog(parent, title, maxPasswordLength);
         String word = dialog.runPemPrivateKeyPrompt();
+        char[] pemKey = word != null ? word.toCharArray() : null;
+        char[] passPhrase = dialog.getPemKeyPassphrase();
+        Pair<char[],char[]> res = new Pair<char[], char[]>(pemKey,passPhrase);
         dialog.dispose();
-        return word != null ? word.toCharArray() : null;
+        return res;
     }
 
     private String runPemPrivateKeyPrompt() {
@@ -146,5 +179,9 @@ public class SecurePasswordPemPrivateKeyDialog extends JDialog {
         Utilities.centerOnScreen(this);
         setVisible(true);
         return confirmed ? getPemPrivateKey() : null;
+    }
+
+    public char[] getPemKeyPassphrase() {
+        return pemKeyPassphrase;
     }
 }

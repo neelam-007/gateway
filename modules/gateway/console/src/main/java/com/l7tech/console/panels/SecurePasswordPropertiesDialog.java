@@ -11,15 +11,16 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.IOUtils;
+import com.l7tech.security.keys.PemUtils;
+import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -57,6 +58,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
     private JButton viewPublicKeyButton;
     private JCheckBox generateCheckBox;
     private JComboBox generateKeyBitsComboBox;
+    private JButton passphraseButton;
 
     private final SecurePassword securePassword;
     private final boolean newRecord;
@@ -64,6 +66,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
     private boolean confirmed = false;
     private char[] enteredPassword;
     private String pemPublicKey;
+    private char[] pemKeyPassPhrase;
     private int generateKeybits;
 
     public SecurePasswordPropertiesDialog( final Window owner, final SecurePassword securePassword) {
@@ -147,6 +150,30 @@ public class SecurePasswordPropertiesDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent evt) {
                 readFromFile();
+            }
+        });
+        
+        passphraseButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                
+                JPasswordField pass = new JPasswordField(10);
+                int result = JOptionPane.showConfirmDialog(SecurePasswordPropertiesDialog.this,pass,"Enter Private Key Pass Phrase", JOptionPane.OK_CANCEL_OPTION);
+                if ( result >= 0 ) {
+                    pemKeyPassPhrase = pass.getPassword();
+                 }
+            }
+        });
+
+        pemPrivateKeyField.addCaretListener(new CaretListener() {
+            @Override
+            public void caretUpdate(CaretEvent e) {
+
+                if (PemUtils.isEncryptedPem(pemPrivateKeyField.getText()) ) {
+                    passphraseButton.setEnabled(true);
+                } else {
+                    passphraseButton.setEnabled(false);
+                }
             }
         });
 
@@ -234,22 +261,27 @@ public class SecurePasswordPropertiesDialog extends JDialog {
     }
 
     private void changePassword( final int maxPasswordLength ) {
-        char[] got = null;
+
         switch ((SecurePasswordType) typeComboBox.getSelectedItem()) {
             case PASSWORD:
-                got = PasswordDoubleEntryDialog.getPassword( this, "Enter Password", maxPasswordLength );
+                char[] got = PasswordDoubleEntryDialog.getPassword( this, "Enter Password", maxPasswordLength );
+                if (got == null)
+                    return;
+                pemPublicKey = null;
+                enteredPassword = got;
                 break;
             case PEM_PRIVATE_KEY:
-                got = SecurePasswordPemPrivateKeyDialog.getPemPrivateKey( this, "Enter PEM Private Key", maxPasswordLength );
+                Pair<char[],char[]> gotPair = SecurePasswordPemPrivateKeyDialog.getPemPrivateKey( this, "Enter PEM Private Key", maxPasswordLength );
+                if (gotPair.left == null)
+                    return;
+                pemPublicKey = null;
+                enteredPassword = gotPair.left;
+                pemKeyPassPhrase = gotPair.right;
                 break;
             default:
                 break;
         }
 
-        if (got == null)
-            return;
-        pemPublicKey = null;
-        enteredPassword = got;
         lastUpdateLabel.setText(new Date().toString());
         enableOrDisableComponents();
     }
@@ -313,6 +345,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
                     generateKeyBitsComboBox.setEnabled( generateCheckBox.isSelected() );
                     pemPrivateKeyField.setEnabled( !generateCheckBox.isSelected() );
                     loadFromFileButton.setEnabled( !generateCheckBox.isSelected() );
+                    passphraseButton.setEnabled( false );
                     break;
                 default:
                     break;
@@ -414,5 +447,9 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         } catch(IOException ioe) {
             JOptionPane.showMessageDialog(this, ioe.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    public char[] getPemKeyPassPhrase() {
+        return pemKeyPassPhrase;
     }
 }

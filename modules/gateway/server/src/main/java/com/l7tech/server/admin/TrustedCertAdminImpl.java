@@ -34,12 +34,17 @@ import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PEMWriter;
+import org.bouncycastle.openssl.PasswordFinder;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -594,6 +599,27 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         existing.setLastUpdate(System.currentTimeMillis());
         securePasswordManager.update( existing );
     }
+    
+    public void setEncryptedSecurePassword(final long securePasswordOid,final char[] newPassword,final char[] encryptionPassPhrase,final boolean delete) throws
+             FindException, UpdateException {
+        SecurePassword existing = securePasswordManager.findByPrimaryKey(securePasswordOid);
+        if ( existing == null ) throw new ObjectNotFoundException();
+        try {
+            char [] pemPrivateKey = doPemPrivateKeyDecrypt(newPassword, encryptionPassPhrase);
+            existing.setEncodedPassword(securePasswordManager.encryptPassword(pemPrivateKey));
+            existing.setLastUpdate(System.currentTimeMillis());
+        } catch  (IOException e) {
+           logger.warning("Can't decrypt SSH PEM Private Key");
+           try  {
+               if ( delete ) deleteSecurePassword(securePasswordOid);
+           } catch (DeleteException e1) {
+               logger.warning("Can't delete SSH PEM Private Key after failed decryption attempt.");
+           } finally {
+               throw new UpdateException("Can't decrypt SSH PEM Private Key");
+           }
+        }
+        securePasswordManager.update(existing);
+    }
 
     @Override
     public JobId<Boolean> setGeneratedSecurePassword( final long securePasswordOid,
@@ -756,5 +782,26 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     @Override
     public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
         this.applicationEventPublisher = applicationEventPublisher;
+    }
+
+
+    private char[] doPemPrivateKeyDecrypt(char[] encryptedPemKey,final char[] pemPassPhrase) throws IOException {
+
+        StringReader stringReader = new StringReader( new String(encryptedPemKey) );
+        PEMReader pemReader = new PEMReader(stringReader, new PasswordFinder() {
+            @Override
+            public char[] getPassword() {
+                return pemPassPhrase;
+            }
+         },"JsafeJCE");
+        StringWriter stringWriter = new StringWriter();
+        PEMWriter pemWriter = new PEMWriter(stringWriter);
+
+        KeyPair keyPair = (KeyPair) pemReader.readObject();
+        pemWriter.writeObject(keyPair.getPrivate());
+        pemWriter.flush();
+        pemWriter.close();
+
+        return stringWriter.toString().toCharArray();
     }
 }
