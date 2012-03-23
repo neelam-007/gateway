@@ -1368,7 +1368,15 @@
         <constructor-arg ref="inboundSecureConversationContextManager"/>
     </bean>
 
-    <bean id="auditContext" class="com.l7tech.server.audit.ThreadLocalAuditContext">
+    <bean id="auditContext" class="com.l7tech.server.audit.ImplementationSwitchingAuditContext">
+        <constructor-arg index="0" ref="memoryBufferingAuditContext"/>
+        <constructor-arg index="1" ref="threadLocalAuditContext"/>
+    </bean>
+
+    <bean id="memoryBufferingAuditContext" class="com.l7tech.server.audit.MemoryBufferingAuditContext">
+    </bean>
+
+    <bean id="threadLocalAuditContext" class="com.l7tech.server.audit.ThreadLocalAuditContext">
         <property name="targetId" value="auditContextImpl"/>
     </bean>
 
@@ -2350,6 +2358,11 @@
     <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration"/>
 
     <bean id="entityManagementContextProvider" class="com.l7tech.server.EntityManagementContextProvider"/>
+
+    <bean id="switchAuditContextImplementations" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean" depends-on="defaultAuditRecordManager defaultKey">
+        <property name="targetObject" ref="auditContext"/>
+        <property name="targetMethod" value="switchImplementations"/>
+    </bean>
 
     <!-- export beans to JMX -->
     <context:mbean-export/>
