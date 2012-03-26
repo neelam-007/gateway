@@ -496,23 +496,6 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * As a side-effect, this will set the lastUpdate timestamp.
      *
      * @param securePasswordOid the objectid of the SecurePassword to modify. Required.
-     * @param newPassword the new encrypted PEM PRivate Key to assign for this SecurePassword instance.  Required.
-     * @param encryptionPassPhrase the pass phrased used to decrypt the PEM Private key in newPassword.
-     * @param delete - delete the existing key if method fails to decrypt key with pass phrase
-     *                 delete = true if it's a new key, delete = false if it's an existing key.
-     * @throws FindException if there is a problem locating the specified secure password.
-     * @throws UpdateException if there is a problem updating the secure password.
-     */
-    @Transactional(propagation=Propagation.REQUIRED)
-    @Secured(types=SECURE_PASSWORD,stereotype=SET_PROPERTY_BY_ID,relevantArg=0)
-    public void setEncryptedSecurePassword(final long securePasswordOid,final char[] newPassword,final char[] encryptionPassPhrase,final boolean delete) throws
-            FindException, UpdateException;
-
-    /**
-     * Set or update the password field for the specified SecurePassword objectid.
-     * As a side-effect, this will set the lastUpdate timestamp.
-     *
-     * @param securePasswordOid the objectid of the SecurePassword to modify. Required.
      * @param newPassword the new plaintext password to assign for this SecurePassword instance.  Required.
      * @throws FindException if there is a problem locating the specified secure password.
      * @throws UpdateException if there is a problem updating the secure password.

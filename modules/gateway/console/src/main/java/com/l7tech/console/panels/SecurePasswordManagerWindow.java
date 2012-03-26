@@ -68,7 +68,7 @@ public class SecurePasswordManagerWindow extends JDialog {
         final ActionListener addEditAction = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final boolean isEdit = editButton == e.getSource();
+                boolean isEdit = editButton == e.getSource();
 
                 final SecurePassword securePassword = isEdit ? getSelectedSecurePassword() : new SecurePassword();
                 if (securePassword == null)
@@ -88,16 +88,9 @@ public class SecurePasswordManagerWindow extends JDialog {
                                 securePassword.setOid(oid);
 
                                 // Update password field, if necessary
-                                char[] newPassword = dlg.getEnteredPassword();
-
-                                if (newPassword != null)  {
-                                    char [] pemKeyPassPhrase = dlg.getPemKeyPassPhrase();
-                                    if ( pemKeyPassPhrase != null ) {
-                                        admin.setEncryptedSecurePassword(oid,newPassword,pemKeyPassPhrase,!isEdit);
-                                    } else {
-                                        admin.setSecurePassword( oid, newPassword );
-                                    }
-                                }
+                                char[] newpass = dlg.getEnteredPassword();
+                                if (newpass != null)
+                                    admin.setSecurePassword( oid, newpass );
 
                                 int keybits = dlg.getGenerateKeybits();
                                 if ( keybits > 0 ) {

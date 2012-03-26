@@ -219,11 +219,4 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     @Override
     public <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning) {
     }
-
-    @Override
-    public void setEncryptedSecurePassword(long securePasswordOid, char[] newPassword, char[] encryptionPassPhrase, boolean delete) throws
-            FindException, UpdateException {
-
-    }
-
 }

@@ -26,8 +26,6 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Utility methods for working with PEM keys.
@@ -153,17 +151,5 @@ public class PemUtils {
     public static String getProviderNameForService( final String service ) {
         final Provider provider = JceProvider.getInstance().getPreferredProvider( service );
         return provider == null ? null : provider.getName();
-    }
-
-    /**
-     * Determine if the PEM private key passed in is encrypted:
-     *
-     * @param pem The key to write (required)
-     * @return boolean
-     */
-    public static boolean isEncryptedPem(String pem) {
-        final Pattern pattern = Pattern.compile(".*\nProc-Type:.*ENCRYPTED.*",Pattern.DOTALL|Pattern.MULTILINE);
-        final Matcher matcher = pattern.matcher(pem);
-        return matcher.matches();
     }
 }
