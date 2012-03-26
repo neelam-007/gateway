@@ -241,6 +241,8 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
                 }
             } catch ( RuntimeException e ) {
                 logger.log( Level.WARNING, "Unexpected error in connection cleanup: " + ExceptionUtils.getMessage( e ), e );
+            } catch ( Throwable e ) {
+                logger.log( Level.SEVERE, "Unexpected severe error in connection cleanup: " + ExceptionUtils.getMessage( e ), e );
             }
         }
     }
