@@ -36,8 +36,11 @@ import org.springframework.mock.web.MockServletContext;
 import java.io.InputStream;
 import java.net.PasswordAuthentication;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 
@@ -307,4 +310,166 @@ public class ServerHttpRoutingAssertionTest {
         assertEquals("A SOAPAction header shall have been passed through", 1, numSoapAction);
     }
 
+    @Test
+    @BugNumber(12060)
+    /**
+     * Test that when 'Pass through all parameters' is enabled, it should pass through all form parameters.
+     */
+    public void testPassThroughAllRequestParameters() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl("http://localhost:17380/testPassThroughAllRequestParameters");
+
+        //set to pass through all parameters
+        hra.setRequestParamRules(new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{}));
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        Message request = new Message(XmlUtil.stringAsDocument("<foo/>"));
+
+        MockServletContext servletContext = new MockServletContext();
+        MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
+        hrequest.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        hrequest.setMethod("POST");
+
+        hrequest.setContent("foo=bar&hello=world".getBytes("UTF-8"));
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        
+        final String expectedResponse = "<bar/>";
+        final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
+        
+        final Map<String, String> actualParameters = new HashMap<String, String>();
+        mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
+            @Override
+            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                return mockClient.new MockGenericHttpRequest(){
+                    @Override
+                    public void addParameter(final String paramName, final String paramValue) throws IllegalArgumentException, IllegalStateException {
+                        actualParameters.put(paramName, paramValue);
+                    }
+                };
+
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        routingAssertion.checkRequest(pec);
+
+        //actualParameters should contain foo & hello
+        assertTrue("test for existence of 'foo' parameter", actualParameters.containsKey("foo"));
+        assertTrue("test for existence of 'hello' parameter", actualParameters.containsKey("hello"));
+    }
+
+    @Test
+    @BugNumber(12060)
+    /**
+     * Test that when 'Customize parameters to pass through' is enabled, it should only pass through the specified.
+     */
+    public void testPassThroughCustomizeRequestParameters() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl("http://localhost:17380/testPassThroughCustomizeRequestParameters");
+
+        //set to pass through certain parameters
+        hra.setRequestParamRules(new HttpPassthroughRuleSet(false, new HttpPassthroughRule[]{
+                new HttpPassthroughRule("foo", true, "foofoefum"),
+                new HttpPassthroughRule("layer", false, "7")
+        }));
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        Message request = new Message(XmlUtil.stringAsDocument("<foo/>"));
+
+        MockServletContext servletContext = new MockServletContext();
+        MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
+        hrequest.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        hrequest.setMethod("POST");
+
+        hrequest.setContent("foo=bar&hello=world&layer=seven".getBytes("UTF-8"));
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+
+        final String expectedResponse = "<bar/>";
+        final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
+
+        final Map<String, String> actualParameters = new HashMap<String, String>();
+        mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
+            @Override
+            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                return mockClient.new MockGenericHttpRequest(){
+                    @Override
+                    public void addParameter(final String paramName, final String paramValue) throws IllegalArgumentException, IllegalStateException {
+                        actualParameters.put(paramName, paramValue);
+                    }
+                };
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        routingAssertion.checkRequest(pec);
+
+        //actualParameters should contain foo and NOT hello
+        assertTrue("test for existence of 'foo' parameter", actualParameters.containsKey("foo"));
+        assertEquals("test for 'foo' parameter value change", "foofoefum", actualParameters.get("foo"));
+
+        assertTrue("test for existence of 'layer' parameter", actualParameters.containsKey("layer"));
+        assertEquals("test of 'seven' parameter value change (it should not change)", "seven", actualParameters.get("layer"));
+
+        assertTrue("test for existence of 'hello' parameter (it should not exist)", !actualParameters.containsKey("hello"));
+    }
+
+    @Test
+    @BugNumber(12060)
+    /**
+     * Test that when 'Customize parameters to pass through' is enabled AND there are no entries, it SHOULD NOT pass
+     * any parameters.  Please see bug http://sarek.l7tech.com/bugzilla/show_bug.cgi?id=12060
+     */
+    public void testPassThroughAllRequestParametersDefault() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl("http://localhost:17380/testPassThroughAllRequestParametersDefault");
+
+        hra.setRequestParamRules(new HttpPassthroughRuleSet(false, new HttpPassthroughRule[]{}));
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        Message request = new Message(XmlUtil.stringAsDocument("<foo/>"));
+
+        MockServletContext servletContext = new MockServletContext();
+        MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
+        hrequest.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        hrequest.setMethod("POST");
+
+        hrequest.setContent("foo=bar&hello=world&layer=seven".getBytes("UTF-8"));
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+
+        final String expectedResponse = "<bar/>";
+        final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
+
+        final Map<String, String> actualParameters = new HashMap<String, String>();
+        mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
+            @Override
+            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                return mockClient.new MockGenericHttpRequest(){
+                    @Override
+                    public void addParameter(final String paramName, final String paramValue) throws IllegalArgumentException, IllegalStateException {
+                        actualParameters.put(paramName, paramValue);
+                    }
+                };
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        routingAssertion.checkRequest(pec);
+
+        assertTrue("there should be no parameters forwarded", actualParameters.isEmpty());
+    }
 }

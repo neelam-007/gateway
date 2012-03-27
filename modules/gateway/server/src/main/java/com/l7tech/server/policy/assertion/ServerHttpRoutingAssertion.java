@@ -569,7 +569,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     handleRequestParameters(context, requestMessage, assertion.getRequestParamRules(), getAudit(), vars, varNames);
 
 
-            if (paramRes != null && paramRes.size() > 0) {
+            if (paramRes != null) {
                 for (HttpForwardingRuleEnforcer.Param p : paramRes) {
                     routedRequest.addParameter(p.name, p.value);
                 }
