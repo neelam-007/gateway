@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -37,11 +39,22 @@ public class ServerMapValueAssertion extends AbstractServerAssertion<MapValueAss
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        String inputStr = ExpandVariables.process(assertion.getInputExpr(), context.getVariableMap(varsUsed, getAudit()), getAudit());
+        final Map<String,Object> variableMap = context.getVariableMap(varsUsed, getAudit());
+        String inputStr = ExpandVariables.process(assertion.getInputExpr(), variableMap, getAudit());
 
         for (Pair<Pattern, String> mapping : mappings) {
-            if (mapping.left.matcher(inputStr).find()) {
-                context.setVariable(assertion.getOutputVar(), mapping.right);
+            final Matcher matcher = mapping.left.matcher(inputStr);
+            if (matcher.find()) {
+                // Add capture groups to variable map prior to expansion:  ${0} (entire match),  ${1} (first capture group), etc
+                int groupCount = matcher.groupCount();
+                for (int i = 0; i <= groupCount; ++i) {
+                    String captureValue = matcher.group(i);
+                    variableMap.put(String.valueOf(i), captureValue); // no need to copy variableMap first
+                }
+
+                String result = ExpandVariables.process(mapping.right, variableMap, getAudit());
+                
+                context.setVariable(assertion.getOutputVar(), result);
                 return AssertionStatus.NONE;
             }
         }

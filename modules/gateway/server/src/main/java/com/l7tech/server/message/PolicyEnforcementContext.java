@@ -209,7 +209,7 @@ public interface PolicyEnforcementContext extends Closeable {
     Object getVariable(String name) throws NoSuchVariableException;
 
     /**
-     * Get variables Map for named variables.
+     * Get variables Map for named variables in a new mutable case-insensitive map.
      *
      * @param names variables to retrieve
      * @param auditor for any audit messages

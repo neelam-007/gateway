@@ -11,10 +11,17 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.Functions;
 import com.l7tech.util.NameValuePair;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import static com.l7tech.util.Functions.grep;
+import static java.util.Arrays.asList;
 
 
 /**
@@ -60,7 +67,19 @@ public class MapValueAssertion extends Assertion implements UsesVariables, SetsV
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(inputExpr);
+        List<String> vars = new ArrayList<String>();
+
+        vars.addAll(asList(Syntax.getReferencedNames(inputExpr)));
+
+        if (mappings != null) for (NameValuePair mapping : mappings) {
+            // Declare variables used in the mapping output, but omit any regex capture group pseudo-vars (like ${0}, ${1}, etc)
+            // which the policy validator has no way of knowing about at design time (besides which the actual number won't be known until runtime,
+            // when we see which mapping ends up matching the input).
+            final List<String> outVars = asList(Syntax.getReferencedNames(mapping.getValue()));
+            vars.addAll(grep(outVars, IS_NOT_ALL_DIGITS_PREDICATE));
+        }
+
+        return vars.toArray(new String[vars.size()]);
     }
 
     @Override
@@ -78,4 +97,13 @@ public class MapValueAssertion extends Assertion implements UsesVariables, SetsV
 
         return meta;
     }
+
+    // A predicate that returns true if and only if the specified string does NOT consist entirely of one or more characters from '0' to '9' inclusive.
+    private final Functions.Unary<Boolean,String> IS_NOT_ALL_DIGITS_PREDICATE = new Functions.Unary<Boolean, String>() {
+        private final Pattern IS_ALL_DIGITS_REGEX = Pattern.compile("^\\d+$");
+        @Override
+        public Boolean call(String s) {
+            return !IS_ALL_DIGITS_REGEX.matcher(s).matches();
+        }
+    };
 }
