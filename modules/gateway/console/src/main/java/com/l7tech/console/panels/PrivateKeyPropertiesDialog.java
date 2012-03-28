@@ -801,7 +801,6 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             confirmationDialogTitle,
             JOptionPane.OK_CANCEL_OPTION,
             JOptionPane.WARNING_MESSAGE,
-            465, 180,
             new DialogDisplayer.OptionListener() {
                 @Override
                 public void reportResult(int option) {

@@ -4,11 +4,9 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -26,12 +24,12 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_SFTP_DELETE_ON_RECEIVE;
 
 /**
  * SFTP polling listener properties dialog.
@@ -485,7 +483,6 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
                     "Confirm Use of Root Directory",
                     JOptionPane.OK_CANCEL_OPTION,
                     JOptionPane.WARNING_MESSAGE,
-                    465, 180,
                     new DialogDisplayer.OptionListener() {
                         @Override
                         public void reportResult(int option) {
