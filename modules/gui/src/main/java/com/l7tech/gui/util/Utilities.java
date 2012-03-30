@@ -2,8 +2,6 @@ package com.l7tech.gui.util;
 
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.none;
-import static com.l7tech.util.Option.some;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,9 +11,9 @@ import javax.swing.plaf.basic.BasicSplitPaneDivider;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
-import javax.swing.text.JTextComponent;
-import javax.swing.text.Document;
 import javax.swing.text.AbstractDocument;
+import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.Dialog.ModalityType;
 import java.awt.datatransfer.Clipboard;
@@ -29,6 +27,9 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.some;
 
 /**
  * This class is a bag of utilites shared by panels.
@@ -929,7 +930,7 @@ public class Utilities {
     public static <W extends Window & RootPaneContainer> void setMinimumSize( final W window ) {
         final Insets insets = window.getInsets();
         final Dimension content = window.getContentPane().getMinimumSize();
-        window.setMinimumSize( new Dimension( content.width + insets.left + insets.right, content.height + insets.top + insets.bottom ) );
+        window.setMinimumSize(new Dimension(content.width + insets.left + insets.right, content.height + insets.top + insets.bottom));
     }
 
     /**
@@ -1209,6 +1210,18 @@ public class Utilities {
 
     private static final Color DISABLED_FOREGROUND_COLOR = Color.GRAY;
     private static final Color DISABLED_BACKGROUND_COLOR = new Color(232, 232, 232);
+
+    /**
+     * Force a component to respect the default focus traversal keys.  This prevents (for example)
+     * a JTextArea from swallowing tab keys and causing them to insert a tab character.
+     *
+     * @param component the component to adjust.  Required.
+     *                  If this is a text component, insertion of tab characters will be disabled.
+     */
+    public static void enableDefaultFocusTraversal(Component component) {
+        component.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, null);
+        component.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, null);
+    }
 
     /**
      * Enable/disable a component and its children.

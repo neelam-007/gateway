@@ -68,6 +68,7 @@
                         </constraints>
                         <properties>
                           <text value="&amp;Match and Replace (always proceed)"/>
+                          <toolTipText value="If the pattern matches, replace the match with the replacement expression, then proceed to process the message"/>
                         </properties>
                       </component>
                       <component id="ba0e2" class="javax.swing.JLabel">

@@ -40,6 +40,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
     private Regex regexAssertion;
     private BeanEditSupport beanEditSupport = new BeanEditSupport(this);
     private Pattern pattern = null;
+    private boolean patternWarning = false;
     private JCheckBox caseInsensitivecheckBox;
     private JRadioButton proceedIfMatchRadioButton;
     private JRadioButton matchAndReplaceRadioButton;
@@ -86,8 +87,6 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         contentPane.add(mainPanel);
 
         targetMessagePanel.setTitle("Source");
-
-        matchAndReplaceRadioButton.setToolTipText("If the pattern matches, replace the match with the replacement expression, then proceed to process the message");
 
         repeatCountField.setDocument(new NumberField(8));
 
@@ -162,6 +161,8 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
             }
         });
 
+        Utilities.enableDefaultFocusTraversal(regexTextArea);
+
         DocumentListener doTestListener = new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) { doTest(); }
@@ -189,7 +190,12 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
                     regexTextArea.setColor(Color.RED);
                     regexTextArea.setSquiggly();
                 } else {
-                    regexTextArea.setNone();
+                    if (patternWarning) {
+                        regexTextArea.setColor(Color.green);
+                        regexTextArea.setSquiggly();
+                    } else {
+                        regexTextArea.setNone();
+                    }
                 }
             }
         }, 700);
@@ -442,6 +448,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
 
     private void updatePattern() {
         regexTextArea.setToolTipText(null);
+        patternWarning = false;
         if (!empty(regexTextArea)) {
             try {
                 int flags = Pattern.DOTALL | Pattern.MULTILINE;
@@ -452,7 +459,14 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
                 if (Syntax.getReferencedNames(text, false).length > 0)
                     text = Pattern.quote(Syntax.regexPattern.matcher(text).replaceAll("\\${$1}"));
                 pattern = Pattern.compile(text, flags);
-                regexTextArea.setToolTipText("OK");
+                
+                // Warn on leading or trailing whitespace
+                if (regexTextArea.getText().matches("^\\s.*|.*\\s$")) {
+                    regexTextArea.setToolTipText("Note: pattern contains leading or trailing whitespace");
+                    patternWarning = true;
+                } else {
+                    regexTextArea.setToolTipText("OK");
+                }
             } catch (PatternSyntaxException e1) {
                 regexTextArea.setToolTipText(e1.getDescription() + " index: " + e1.getIndex());
                 pattern = null;
