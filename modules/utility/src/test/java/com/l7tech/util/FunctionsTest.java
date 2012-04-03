@@ -1,12 +1,12 @@
 package com.l7tech.util;
 
-import static com.l7tech.util.CollectionUtils.list;
-import static com.l7tech.util.CollectionUtils.set;
 import org.junit.Test;
 
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static com.l7tech.util.CollectionUtils.list;
+import static com.l7tech.util.CollectionUtils.set;
 import static com.l7tech.util.Functions.*;
 import static org.junit.Assert.*;
 
@@ -315,6 +315,19 @@ public class FunctionsTest {
         };
         final List<Set<String>> result = grep( source, equality( size, 3 ) );
         assertEquals( "Sets of size three", list(set("a","b","c"), set("1","2","3")), result );
+    }
+
+    @Test
+    public void testExists() {
+        assertTrue( exists(list("a","b","c"), HAS_VOWEL) );
+        assertTrue( exists(list("x","b","c","i","j"), HAS_VOWEL) );
+        assertFalse( exists(list("x","b","c", "h"), HAS_VOWEL) );
+    }
+
+    @Test
+    public void testForall() {
+        assertTrue( forall(list("a","e","o","u"), HAS_VOWEL) );
+        assertFalse( forall(list("a","e","x","u"), HAS_VOWEL) );
     }
 
 }

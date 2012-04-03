@@ -507,8 +507,24 @@ public final class Functions {
      * @param <I> the type of element in the iterable
      * @return <code>true</code> if any element matches the predicate, <code>false</code> otherwise.
      */
-    public static <I> boolean exists(Iterable<I> in, Unary<Boolean, I> predicate) {
+    public static <I> boolean exists(@NotNull Iterable<I> in, @NotNull Unary<Boolean, I> predicate) {
         return grepFirst(in, predicate) != null;
+    }
+
+    /**
+     * Returns <code>true</code> if all elements match the predicate, <code>false</code> otherwise.
+     *
+     * @param in the iterable to search
+     * @param predicate the predicate to evaluate
+     * @param <I> the type of element in the iterable
+     * @return <code>true</code> if all elements matche the predicate, <code>false</code> otherwise.
+     */
+    public static <I> boolean forall(@NotNull Iterable<I> in, @NotNull Unary<Boolean, ? super I> predicate) {
+        for (I i : in) {
+            if (!predicate.call(i))
+                return false;
+        }
+        return true;
     }
 
     /**
