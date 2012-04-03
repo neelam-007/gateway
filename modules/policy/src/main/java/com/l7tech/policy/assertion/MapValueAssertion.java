@@ -72,6 +72,9 @@ public class MapValueAssertion extends Assertion implements UsesVariables, SetsV
         vars.addAll(asList(Syntax.getReferencedNames(inputExpr)));
 
         if (mappings != null) for (NameValuePair mapping : mappings) {
+            // Declare variables used in the mapping input pattern
+            vars.addAll(asList(Syntax.getReferencedNames(mapping.getKey())));
+
             // Declare variables used in the mapping output, but omit any regex capture group pseudo-vars (like ${0}, ${1}, etc)
             // which the policy validator has no way of knowing about at design time (besides which the actual number won't be known until runtime,
             // when we see which mapping ends up matching the input).

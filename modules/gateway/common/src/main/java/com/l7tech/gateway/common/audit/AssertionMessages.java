@@ -668,6 +668,11 @@ public class AssertionMessages extends Messages {
     // HTTP Form POST
     public static final M INVERSE_HTTPFORM_NO_SUCH_PART = m(7001, Level.WARNING, "Message has no part #{0}");
     public static final M INVERSE_HTTPFORM_TOO_BIG = m(7002, Level.WARNING, "Part #{0} is too large (>= " + 512 * 1024 + " bytes)");
+    
+    // Map Value
+    public static final Messages.M MAP_VALUE_PATTERN_NOT_MATCHED = m(7025, Level.FINE, "Pattern not matched: {0}");
+    public static final Messages.M MAP_VALUE_NO_PATTERNS_MATCHED = m(7026, Level.INFO, "No patterns were matched");
+    public static final Messages.M MAP_VALUE_PATTERN_MATCHED = m(7027, Level.INFO, "Pattern matched: {0}");
 
     // Echo Routing assertion
     public static final M _UNUSED_CANNOT_ECHO_NON_XML = m(7050, Level.INFO, "Request cannot be echoed because it is not XML (Content-Type {0})");

@@ -10,6 +10,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static com.l7tech.util.Functions.forall;
+import static com.l7tech.util.Functions.negate;
+import static com.l7tech.util.Functions.reduce;
+
 /**
  * And audit implementation for use in tests
  */
@@ -40,6 +44,14 @@ public class TestAudit implements Audit, AuditHaver, Iterable<String> {
     @Override
     public Audit getAuditor() {
         return this;
+    }
+
+    public boolean isAllOfAuditsPresent( final Iterable<AuditDetailMessage> messages ) {
+        return forall(messages, isAuditPresentPredicate());
+    }
+
+    public boolean isNoneOfAuditsPresent( final Iterable<AuditDetailMessage> messages ) {
+        return forall(messages, negate(isAuditPresentPredicate()));
     }
 
     public boolean isAuditPresent( final AuditDetailMessage message ) {
@@ -96,12 +108,21 @@ public class TestAudit implements Audit, AuditHaver, Iterable<String> {
     }
 
     private boolean matchAudit( final Functions.Unary<Boolean,Triple<AuditDetailMessage, String[], Throwable>> matcher ) {
-        return Functions.reduce( audits, Boolean.FALSE, new Functions.Binary<Boolean, Boolean, Triple<AuditDetailMessage, String[], Throwable>>() {
+        return reduce(audits, Boolean.FALSE, new Functions.Binary<Boolean, Boolean, Triple<AuditDetailMessage, String[], Throwable>>() {
             @Override
-            public Boolean call( final Boolean aBoolean, final Triple<AuditDetailMessage, String[], Throwable> auditDetailMessageThrowableTriple ) {
-                return aBoolean || matcher.call( auditDetailMessageThrowableTriple );
+            public Boolean call(final Boolean aBoolean, final Triple<AuditDetailMessage, String[], Throwable> auditDetailMessageThrowableTriple) {
+                return aBoolean || matcher.call(auditDetailMessageThrowableTriple);
             }
-        } );
+        });
+    }
+
+    private <Msg extends AuditDetailMessage> Functions.Unary<Boolean, ? super Msg> isAuditPresentPredicate() {
+        return new Functions.Unary<Boolean, Msg>() {
+            @Override
+            public Boolean call(Msg msg) {
+                return isAuditPresent(msg);
+            }
+        };
     }
 
     @Override
