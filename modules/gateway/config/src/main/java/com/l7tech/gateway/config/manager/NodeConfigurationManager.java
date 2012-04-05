@@ -43,7 +43,7 @@ public class NodeConfigurationManager {
     private static final File gatewayDir = new File( ConfigFactory.getProperty( "com.l7tech.gateway.home", "/opt/SecureSpan/Gateway" ) );
     private static final File nodesDir = new File(gatewayDir, "node");
     private static final String sqlPath = "../config/etc/sql/";
-    private static final Set<String> sqlFiles = set( "ssg_core.sql", "ssg_customer_mapping.sql", "ssg_audit.sql", "ssg_metrics.sql", "ssg.sql" );
+    private static final Set<String> sqlFiles = set( "ssg.sql" );
     private static final String configPath = "{0}/etc/conf";
 
     private static final String NODE_PROPS_FILE = "node.properties";

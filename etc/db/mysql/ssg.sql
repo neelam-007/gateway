@@ -1,15 +1,39 @@
 --
 -- MySQL version of SSG database creation script.
 --
--- This script depends on:
---
---   ssg_core.sql
---   ssg_customer_mapping.sql
---   ssg_audit.sql
---   ssg_metrics.sql
---
 
 SET FOREIGN_KEY_CHECKS = 0;
+
+--
+-- Table structure for table 'hibernate_unique_key'
+--
+
+DROP TABLE IF EXISTS hibernate_unique_key;
+CREATE TABLE hibernate_unique_key (
+  next_hi int(11) default NULL
+) ENGINE=MyISAM DEFAULT CHARACTER SET utf8;
+
+--
+-- Dumping data for table 'hibernate_unique_key'
+--
+
+
+INSERT INTO hibernate_unique_key VALUES (1);
+
+--
+-- Create "sequence" function for next_hi value
+--
+-- NOTE that the function is safe when either row based or statement based replication is in use.
+--
+DROP FUNCTION IF EXISTS next_hi;
+delimiter //
+CREATE FUNCTION next_hi() RETURNS bigint NOT DETERMINISTIC MODIFIES SQL DATA SQL SECURITY INVOKER
+BEGIN
+    UPDATE hibernate_unique_key SET next_hi=last_insert_id(next_hi)+IF(@@global.server_id=0,1,2);
+    RETURN IF((last_insert_id()%2=0 and @@global.server_id=1) or (last_insert_id()%2=1 and @@global.server_id=2),last_insert_id()+1,last_insert_id());
+END
+//
+delimiter ;
 
 --
 -- Table for replication monitoring
@@ -539,6 +563,154 @@ CREATE TABLE fed_group_virtual (
   UNIQUE KEY i_name (provider_oid, name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+--
+-- Table structure for message_context_mapping_keys
+--
+DROP TABLE IF EXISTS message_context_mapping_keys;
+CREATE TABLE message_context_mapping_keys (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  digested char(36) NOT NULL,
+  mapping1_type varchar(36),
+  mapping1_key varchar(128),
+  mapping2_type varchar(36),
+  mapping2_key varchar(128),
+  mapping3_type varchar(36),
+  mapping3_key varchar(128),
+  mapping4_type varchar(36),
+  mapping4_key varchar(128),
+  mapping5_type varchar(36),
+  mapping5_key varchar(128),
+  create_time bigint(20),
+  PRIMARY KEY (objectid),
+  INDEX (digested)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Table structure for message_context_mapping_values
+--
+DROP TABLE IF EXISTS message_context_mapping_values;
+CREATE TABLE message_context_mapping_values (
+  objectid bigint(20) NOT NULL,
+  digested char(36) NOT NULL,
+  mapping_keys_oid bigint(20) NOT NULL,
+  auth_user_provider_id bigint(20),
+  auth_user_id varchar(255),
+  auth_user_unique_id varchar(255),
+  service_operation varchar(255),
+  mapping1_value varchar(255),
+  mapping2_value varchar(255),
+  mapping3_value varchar(255),
+  mapping4_value varchar(255),
+  mapping5_value varchar(255),
+  create_time bigint(20),
+  PRIMARY KEY  (objectid),
+  FOREIGN KEY (mapping_keys_oid) REFERENCES message_context_mapping_keys (objectid),
+  INDEX (digested)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;
+
+--
+-- Table structure for table `audit`
+--
+
+DROP TABLE IF EXISTS audit_main;
+CREATE TABLE audit_main (
+  objectid bigint(20) NOT NULL,
+  nodeid varchar(32) NOT NULL,
+  time bigint(20) NOT NULL,
+  audit_level varchar(12) NOT NULL,
+  name varchar(255),
+  message varchar(255) NOT NULL,
+  ip_address varchar(39),
+  user_name varchar(255),
+  user_id varchar(255),
+  provider_oid bigint(20) NOT NULL DEFAULT -1,
+  signature varchar(1024),
+  PRIMARY KEY  (objectid),
+  KEY idx_time (time),
+  KEY idx_ip_address (ip_address),
+  KEY idx_prov_user (provider_oid, user_id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Table structure for table `audit_admin`
+--
+
+DROP TABLE IF EXISTS audit_admin;
+CREATE TABLE audit_admin (
+  objectid bigint(20) NOT NULL,
+  entity_class varchar(255),
+  entity_id bigint(20),
+  action char(1),
+  PRIMARY KEY  (objectid),
+  KEY idx_class (entity_class),
+  KEY idx_oid (entity_id),
+  FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Table structure for table `audit_message`
+--
+
+DROP TABLE IF EXISTS audit_message;
+CREATE TABLE audit_message (
+  objectid bigint(20) NOT NULL,
+  status varchar(32) NOT NULL,
+  request_id varchar(40) NOT NULL,
+  service_oid bigint(20),
+  operation_name varchar(255),
+  authenticated tinyint(1) default '0',
+  authenticationType int(11),
+  request_length int(11) NOT NULL,
+  response_length int(11),
+  request_zipxml mediumblob,
+  response_zipxml mediumblob,
+  response_status int(11),
+  routing_latency int(11),
+  mapping_values_oid BIGINT(20),
+  PRIMARY KEY  (objectid),
+  KEY idx_status (status),
+  KEY idx_request_id (request_id),
+  KEY idx_service_oid (service_oid),
+  FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE,
+  CONSTRAINT message_context_mapping FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS audit_system;
+CREATE TABLE audit_system (
+  objectid bigint(20) NOT NULL,
+  component_id integer NOT NULL,
+  action varchar(32) NOT NULL,
+  PRIMARY KEY (objectid),
+  KEY idx_component_id (component_id),
+  KEY idx_action (action),
+  FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS audit_detail;
+CREATE TABLE audit_detail (
+  objectid bigint(20) NOT NULL,
+  audit_oid bigint(20) NOT NULL,
+  time bigint(20) NOT NULL,
+  component_id integer,
+  ordinal integer,
+  message_id integer NOT NULL,
+  exception_message MEDIUMTEXT,
+  PRIMARY KEY (objectid),
+  KEY idx_component_id (component_id),
+  KEY idx_audit_oid (audit_oid),
+  FOREIGN KEY (audit_oid) REFERENCES audit_main (objectid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS audit_detail_params;
+CREATE TABLE audit_detail_params (
+  audit_detail_oid bigint(20) NOT NULL,
+  position integer NOT NULL,
+  value MEDIUMTEXT NOT NULL,
+  PRIMARY KEY (audit_detail_oid, position),
+  FOREIGN KEY (audit_detail_oid) REFERENCES audit_detail (objectid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
 DROP TABLE IF EXISTS message_id;
 CREATE TABLE message_id (
   messageid varchar(255) NOT NULL PRIMARY KEY,
@@ -616,6 +788,51 @@ CREATE TABLE sample_messages (
   INDEX i_operation_name (operation_name),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
   PRIMARY KEY (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS service_metrics;
+CREATE TABLE service_metrics (
+  objectid bigint(20) NOT NULL,
+  nodeid VARCHAR(32) NOT NULL,
+  published_service_oid BIGINT(20) NOT NULL,
+  resolution INTEGER NOT NULL,
+  period_start BIGINT(20) NOT NULL,
+  start_time BIGINT(20) NOT NULL,
+  interval_size INTEGER NOT NULL,
+  end_time BIGINT(20) NOT NULL,
+  attempted INTEGER NOT NULL,
+  authorized INTEGER NOT NULL,
+  completed INTEGER NOT NULL,
+  back_min INTEGER,
+  back_max INTEGER,
+  back_sum INTEGER NOT NULL,
+  front_min INTEGER,
+  front_max INTEGER,
+  front_sum INTEGER NOT NULL,
+  service_state VARCHAR(16),
+  INDEX i_sm_nodeid (nodeid),
+  INDEX i_sm_serviceoid (published_service_oid),
+  INDEX i_sm_pstart (period_start),
+  PRIMARY KEY (objectid),
+  UNIQUE (nodeid, published_service_oid, resolution, period_start)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS service_metrics_details;
+CREATE TABLE service_metrics_details (
+  service_metrics_oid BIGINT(20) NOT NULL,
+  mapping_values_oid BIGINT(20) NOT NULL,
+  attempted INTEGER NOT NULL,
+  authorized INTEGER NOT NULL,
+  completed INTEGER NOT NULL,
+  back_min INTEGER,
+  back_max INTEGER,
+  back_sum INTEGER NOT NULL,
+  front_min INTEGER,
+  front_max INTEGER,
+  front_sum INTEGER NOT NULL,
+  PRIMARY KEY (service_metrics_oid, mapping_values_oid),
+  FOREIGN KEY (service_metrics_oid) REFERENCES service_metrics (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1227,7 +1444,7 @@ INSERT INTO rbac_permission VALUES (-606,0,-600,'READ',NULL,'REVOCATION_CHECK_PO
 INSERT INTO rbac_permission VALUES (-607,0,-600,'DELETE',NULL,'REVOCATION_CHECK_POLICY');
 INSERT INTO rbac_permission VALUES (-608,0,-600,'CREATE',NULL,'REVOCATION_CHECK_POLICY');
 
-INSERT INTO rbac_role VALUES (-650,0,'Manage JMS Connections', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JMS connections.');
+INSERT INTO rbac_role VALUES (-650,0,'Manage Message Destinations', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete message destinations.');
 INSERT INTO rbac_permission VALUES (-651,1,-650,'READ',NULL,'JMS_CONNECTION');
 INSERT INTO rbac_permission VALUES (-652,1,-650,'DELETE',NULL,'JMS_CONNECTION');
 INSERT INTO rbac_permission VALUES (-653,1,-650,'CREATE',NULL,'JMS_CONNECTION');
@@ -1239,6 +1456,19 @@ INSERT INTO rbac_permission VALUES (-658,1,-650,'READ',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-659,1,-650,'READ',NULL,'SERVICE');
 INSERT INTO rbac_permission VALUES (-660,1,-650,'READ',NULL,'SSG_KEYSTORE');
 INSERT INTO rbac_permission VALUES (-661,1,-650,'READ',NULL,'SSG_KEY_ENTRY');
+INSERT INTO rbac_permission VALUES (-662,1,-650,'READ',NULL,'SSG_ACTIVE_CONNECTOR');
+INSERT INTO rbac_predicate VALUES (-663,0,-662);
+INSERT INTO rbac_predicate_attribute VALUES (-663,'type','MqNative');
+INSERT INTO rbac_permission VALUES (-664,1,-650,'DELETE',NULL,'SSG_ACTIVE_CONNECTOR');
+INSERT INTO rbac_predicate VALUES (-665,0,-664);
+INSERT INTO rbac_predicate_attribute VALUES (-665,'type','MqNative');
+INSERT INTO rbac_permission VALUES (-666,1,-650,'CREATE',NULL,'SSG_ACTIVE_CONNECTOR');
+INSERT INTO rbac_predicate VALUES (-667,0,-666);
+INSERT INTO rbac_predicate_attribute VALUES (-667,'type','MqNative');
+INSERT INTO rbac_permission VALUES (-668,1,-650,'UPDATE',NULL,'SSG_ACTIVE_CONNECTOR');
+INSERT INTO rbac_predicate VALUES (-669,0,-668);
+INSERT INTO rbac_predicate_attribute VALUES (-669,'type','MqNative');
+INSERT INTO rbac_permission VALUES (-670,0,-650,'READ',NULL,'SECURE_PASSWORD');
 
 INSERT INTO rbac_role VALUES (-700,0,'Manage Cluster Properties', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster properties.');
 INSERT INTO rbac_permission VALUES (-701,0,-700,'READ',NULL,'CLUSTER_PROPERTY');
@@ -1546,6 +1776,9 @@ CREATE TABLE wssc_session (
   PRIMARY KEY (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+--
+-- Table for generic (runtime) entity types
+--
 DROP TABLE IF EXISTS generic_entity;
 CREATE TABLE generic_entity (
   objectid bigint(20) NOT NULL,
@@ -1558,7 +1791,14 @@ CREATE TABLE generic_entity (
   PRIMARY KEY (objectid),
   UNIQUE KEY i_classname_name (classname, name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
-INSERT INTO generic_entity (objectid, version, name, description, classname, enabled, value_xml) values (-2,0,'default','','com.l7tech.gateway.common.audit.JdbcAuditSink',false, '');
 
+
+DROP TABLE IF EXISTS ssg_version;
+CREATE TABLE ssg_version (
+   current_version char(10) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+INSERT INTO ssg_version (current_version) VALUES ('6.2.0');
 
 SET FOREIGN_KEY_CHECKS = 1;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
