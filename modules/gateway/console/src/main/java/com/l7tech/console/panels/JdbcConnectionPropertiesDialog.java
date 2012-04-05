@@ -251,21 +251,23 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         okButton.setEnabled(enabled);
         testButton.setEnabled(enabled);
 
+        String customDriverString = resources.getString("custom.driver.description");
         try{
             if(driverClassComboBox.getSelectedItem()!=null){
                 String driverClass = ((String) driverClassComboBox.getSelectedItem()).trim();
-                String description = resources.getString(driverClass);
+                String description = resources.getString(driverClass+".description");
+                String tooltip = resources.getString(driverClass+".tooltip");
                 driverClassDescription.setText(description);
-                driverClassDescription.setToolTipText(description);
+                driverClassDescription.setToolTipText(tooltip);
 
             }
             else{
-                driverClassDescription.setText(" ");
-                driverClassDescription.setToolTipText(" ");
+                driverClassDescription.setText(customDriverString);
+                driverClassDescription.setToolTipText(null);
             }
         } catch(MissingResourceException e){
-            driverClassDescription.setText(" ");
-            driverClassDescription.setToolTipText(" ");
+            driverClassDescription.setText(customDriverString);
+            driverClassDescription.setToolTipText(null);
         }
 
     }
