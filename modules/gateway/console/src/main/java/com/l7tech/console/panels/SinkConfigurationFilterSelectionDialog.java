@@ -176,6 +176,9 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
 
         enableDisableComponents();
 
+        // init user panel now for layout
+        initalizeUser();
+
         pack();
         Utilities.setMinimumSize( this );
         Utilities.centerOnParentWindow( this );
@@ -194,9 +197,6 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
                 break;
             case POLICY :
                 policiesTree.initTree(filterContext.getFolderHeaders(),new ArrayList<PolicyHeader>(filterContext.getPolicyHeaders()));
-                break;
-            case USER:
-                initalizeUser();
                 break;
         }
     }
