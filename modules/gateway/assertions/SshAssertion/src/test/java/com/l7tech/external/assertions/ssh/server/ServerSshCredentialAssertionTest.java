@@ -102,6 +102,12 @@ public class ServerSshCredentialAssertionTest {
                 public String getLocalHost() {
                     return null;
                 }
+
+                @Override
+                public FileMetadata getFileMetadata() {
+                    FileMetadata metadata = new FileMetadata(System.currentTimeMillis(), System.currentTimeMillis(), 644);
+                    return metadata;
+                }
             });
         }
 

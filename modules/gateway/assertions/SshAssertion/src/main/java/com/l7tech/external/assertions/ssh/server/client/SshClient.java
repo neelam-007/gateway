@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.ssh.server.client;
 
 import com.jscape.inet.scp.ScpException;
 import com.jscape.inet.sftp.SftpException;
+import com.l7tech.message.SshKnob.FileMetadata;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,5 +17,6 @@ public interface SshClient {
     public boolean isConnected();
     public void disconnect();
     public void upload(InputStream in, String remoteDir, String remoteFile) throws IOException;
+    public void upload(InputStream in, String remoteDir, String remoteFile, FileMetadata fileMetadata) throws IOException;
     public void download(OutputStream out, String remoteDir, String remoteFile) throws IOException;
 }

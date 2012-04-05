@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 
+import com.jscape.inet.sftp.SftpFile;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.ssh.server.MessageProcessingSshUtil;
@@ -150,13 +151,13 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
         try {
             newListener = new SftpPollingListener( ssgActiveConnector, getApplicationContext(), securePasswordManager ) {
                 @Override
-                void handleFile( final String filename ) throws SftpPollingListenerException {
+                void handleFile( final SftpFile file ) throws SftpPollingListenerException {
                     try {
                         final Future<SftpPollingListenerException> result = threadPoolBean.submitTask( new Callable<SftpPollingListenerException>(){
                             @Override
                             public SftpPollingListenerException call() {
                                 try {
-                                    handleFileForConnector( ssgActiveConnector, sftpClient, filename );
+                                    handleFileForConnector( ssgActiveConnector, sftpClient, file );
                                 } catch ( SftpPollingListenerException e ) {
                                     return e;
                                 } catch ( Exception e ) {
@@ -214,16 +215,16 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
      *
      * @param connector The SFTP listener configuration that this handler operates on
      * @param sftpClient The SFTP client connection
-     * @param fileName The file to process
+     * @param file The file to process
      * @throws SftpPollingListenerException if an error occurs
      */
     public void handleFileForConnector( final SsgActiveConnector connector,
                                         final SftpClient sftpClient,
-                                        final String fileName ) throws SftpPollingListenerException {
+                                        final SftpFile file ) throws SftpPollingListenerException {
         final ContentTypeHeader ctype;
         boolean fileTooLarge = false;
         final String directory = connector.getProperty( PROPERTIES_KEY_SFTP_DIRECTORY );
-        final String processingFileName = fileName + PROCESSING_FILE_EXTENSION;
+        final String processingFileName = file.getFilename() + PROCESSING_FILE_EXTENSION;
         try {
             // get the content type
             ctype = ContentTypeHeader.parseValue( connector.getProperty( PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE ) );
@@ -250,8 +251,11 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
             final long requestSizeLimit = connector.getLongProperty( PROPERTIES_KEY_REQUEST_SIZE_LIMIT, getMaxBytes() );
             request.initialize(stashManagerFactory.createStashManager(), ctype, pis, requestSizeLimit);
 
+            SshKnob.FileMetadata metadata = new SshKnob.FileMetadata(file.getAccessTime() * 1000,
+                                                                     file.getModificationTime() * 1000,
+                                                                     file.getPermissions().intValue());
             request.attachKnob(MessageProcessingSshUtil.buildSshKnob( null, 0, null,
-                    0, processingFileName, directory, null, null ), SshKnob.class, UriKnob.class); // Avoid advertising TcpKnob since we don't have actual transport-level data for it
+                    0, processingFileName, directory, null, null, metadata ), SshKnob.class, UriKnob.class); // Avoid advertising TcpKnob since we don't have actual transport-level data for it
 
             final Long hardwiredServiceOid = connector.getHardwiredServiceOid();
             if ( hardwiredServiceOid != null ) {
@@ -315,7 +319,7 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
                         if( connector.getBooleanProperty( PROPERTIES_KEY_SFTP_DELETE_ON_RECEIVE )) {
                             sftpClient.deleteFile(processingFileName);
                         } else {
-                            sftpClient.renameFile(processingFileName, fileName + PROCESSED_FILE_EXTENSION);
+                            sftpClient.renameFile(processingFileName, file.getFilename() + PROCESSED_FILE_EXTENSION);
                         }
                     } catch (IOException ioe) {
                         logger.log( Level.SEVERE, "Could not delete or rename file.  Error: " + getDebugException( ioe ) );
@@ -355,9 +359,9 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
 
             if (!stealthMode && replyExpected) {
                 long startResp = System.currentTimeMillis();
-                sendResponse( responseStream, sftpClient, directory, fileName );
+                sendResponse( responseStream, sftpClient, directory, file );
                 logger.log(Level.INFO, "Send response took {0} millis; {1}; {2}", new Object[] {
-                        (System.currentTimeMillis() - startResp), connector.getName(), fileName + RESPONSE_FILE_EXTENSION});
+                        (System.currentTimeMillis() - startResp), connector.getName(), file.getFilename() + RESPONSE_FILE_EXTENSION});
             }
         } catch (IOException e) {
             throw new SftpPollingListenerException(e);
@@ -410,9 +414,9 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
         return thread;
     }
 
-    private void sendResponse( final InputStream responseIn, SftpClient client, String directory, String filename) {
+    private void sendResponse( final InputStream responseIn, SftpClient client, String directory, SftpFile file) {
         try {
-            client.upload(responseIn, directory, filename + RESPONSE_FILE_EXTENSION);
+            client.upload(responseIn, directory, file.getFilename() + RESPONSE_FILE_EXTENSION);
         } catch ( IOException e ) {
             logger.log( Level.WARNING, "Caught IOException while sending response", getDebugException( e ) );
         }

@@ -3,18 +3,15 @@ package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 import com.jscape.inet.sftp.Sftp;
 import com.jscape.inet.sftp.SftpException;
 import com.jscape.inet.sftp.SftpFile;
-import com.jscape.inet.ssh.transport.TransportException;
 import com.jscape.inet.ssh.util.HostKeyFingerprintVerifier;
 import com.jscape.inet.ssh.util.SshHostKeys;
 import com.jscape.inet.ssh.util.SshParameters;
-import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpClient.SftpConnectionListener;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.password.SecurePasswordManager;
@@ -31,15 +28,10 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.SSH_ALGORITHM_EXCEPTION;
 import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.SSH_INVALID_PUBLIC_KEY_FINGERPRINT_EXCEPTION;
-import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.SSH_NO_SUCH_PART_ERROR;
 import static com.l7tech.external.assertions.ssh.server.client.SshClientConfiguration.defaultCipherOrder;
-import static com.l7tech.gateway.common.audit.AssertionMessages.SSH_ROUTING_ERROR;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.util.CollectionUtils.toSet;
-import static com.l7tech.util.ExceptionUtils.causedBy;
-import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.Functions.grep;
 import static com.l7tech.util.Functions.map;
 import static com.l7tech.util.TextUtils.isNotEmpty;
@@ -113,10 +105,10 @@ abstract class SftpPollingListener {
      * Perform the processing on a file.  This is the point where an implementation
      * of the SftpPollingListener would override.
      *
-     * @param filename the file to process
+     * @param file the file to process
      * @throws SftpPollingListenerException error encountered while processing the file
      */
-    abstract void handleFile(String filename) throws SftpPollingListenerException;
+    abstract void handleFile(SftpFile file) throws SftpPollingListenerException;
 
     /**
      * Starts the listener thread.
@@ -275,9 +267,9 @@ abstract class SftpPollingListener {
      * @throws java.io.IOException caused by an error while reading the directory
      */
     @SuppressWarnings({ "unchecked" })
-    Collection<String> scanDirectoryForFiles( final Sftp sftp ) throws IOException
+    Collection<SftpFile> scanDirectoryForFiles( final Sftp sftp ) throws IOException
     {
-        final Collection<String> fileNames = new ArrayList<String>();
+        final Collection<SftpFile> fileNames = new ArrayList<SftpFile>();
 
         // build a set of already processed files
         final Collection<String> processedFiles = new HashSet<String>();
@@ -297,7 +289,7 @@ abstract class SftpPollingListener {
                     && !fileName.endsWith(RESPONSE_FILE_EXTENSION) && !processedFiles.contains(fileName)) {
                 try {
                     sftp.renameFile(fileName, fileName + PROCESSING_FILE_EXTENSION);
-                    fileNames.add(fileName);
+                    fileNames.add(file);
                 } catch(SftpException sftpe) {
                     // exception means that the file no longer exists
                 }

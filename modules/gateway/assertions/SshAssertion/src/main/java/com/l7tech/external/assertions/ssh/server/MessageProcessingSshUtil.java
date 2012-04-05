@@ -4,6 +4,7 @@ import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.*;
+import com.l7tech.message.SshKnob.FileMetadata;
 import com.l7tech.message.SshKnob.PublicKeyAuthentication;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -102,7 +103,7 @@ public class MessageProcessingSshUtil {
                         file,
                         path,
                         publicKeyAuthentication,
-                        passwordAuthentication );
+                        passwordAuthentication, null );
         request.attachKnob( knob, SshKnob.class, UriKnob.class, TcpKnob.class );
 
         final long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L);
@@ -121,7 +122,8 @@ public class MessageProcessingSshUtil {
                                  final String file,
                                  final String path,
                                  final PublicKeyAuthentication publicKeyCredential,
-                                 final PasswordAuthentication passwordCredential) {
+                                 final PasswordAuthentication passwordCredential,
+                                 @Nullable final FileMetadata fileMetadata) {
 
         // SocketAddress requires us to parse for host and port (e.g. /127.0.0.1:22)
         final Pair<String,String> localHostPortPair = getHostAndPort(localSocketAddress.toString());
@@ -133,7 +135,7 @@ public class MessageProcessingSshUtil {
         final int remotePortFinal = Integer.parseInt(remoteHostPortPair.getValue());
 
         return buildSshKnob(localHostFinal, localPortFinal, remoteHostFinal, remotePortFinal, file, path,
-                publicKeyCredential, passwordCredential);
+                publicKeyCredential, passwordCredential, fileMetadata);
     }
 
     /*
@@ -146,7 +148,8 @@ public class MessageProcessingSshUtil {
                                         final String file,
                                         final String path,
                                         @Nullable final PublicKeyAuthentication publicKeyCredential,
-                                        @Nullable final PasswordAuthentication passwordCredential) {
+                                        @Nullable final PasswordAuthentication passwordCredential,
+                                        @Nullable final FileMetadata fileMetadata) {
 
         return new SshKnob(){
             @Override
@@ -191,11 +194,16 @@ public class MessageProcessingSshUtil {
             }
             @Override
             public PasswordAuthentication getPasswordAuthentication() {
-                    return passwordCredential;
+                return passwordCredential;
             }
             @Override
             public PublicKeyAuthentication getPublicKeyAuthentication() {
-                    return publicKeyCredential;
+                return publicKeyCredential;
+            }
+
+            @Override
+            public FileMetadata getFileMetadata() {
+                return fileMetadata;
             }
         };
     }

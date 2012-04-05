@@ -29,6 +29,37 @@ public interface SshKnob extends TcpKnob, UriKnob {
         }
     }
 
+    public class FileMetadata {
+        
+        private final long accessTime;
+        private final long modificationTime;
+        private final int  permission;
+
+        public FileMetadata(final long accessTime, final long modificationTime, final int mode) {
+            this.accessTime = accessTime;
+            this.modificationTime = modificationTime;
+            this.permission = mode;
+        }
+
+        public long getAccessTime() {
+            return accessTime;
+        }
+
+        public long getModificationTime() {
+            return modificationTime;
+        }
+
+        public int getPermission() {
+            return permission;
+        }
+    }
+
+    /**
+     * The metadata associated with the file.
+     * @return the file metadata if present, null otherwise.
+     */
+    FileMetadata getFileMetadata();
+
     /**
      * The path of the file being uploaded/downloaded.
      *

@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.ssh.server.client;
 import com.jscape.inet.scp.Scp;
 import com.jscape.inet.scp.ScpException;
 import com.jscape.inet.sftp.SftpException;
+import com.l7tech.message.SshKnob.FileMetadata;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +34,11 @@ public class ScpClient implements SshClient {
 
     public void upload(InputStream in, String remoteDir, String remoteFile) throws IOException {
         scpClient.upload(in, normalizeAndAppendDirectorySeparator(remoteDir), remoteFile);
+    }
+
+    @Override
+    public void upload(final InputStream in, final String remoteDir, final String remoteFile, final FileMetadata fileMetadata) throws IOException {
+        throw new UnsupportedOperationException("this method is not supported");
     }
 
     public void download(OutputStream out, String remoteDir, String remoteFile) throws IOException {

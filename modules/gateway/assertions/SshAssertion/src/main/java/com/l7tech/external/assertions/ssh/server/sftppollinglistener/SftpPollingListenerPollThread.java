@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 
 import com.jscape.inet.sftp.Sftp;
+import com.jscape.inet.sftp.SftpFile;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.UnaryThrows;
@@ -47,14 +48,14 @@ class SftpPollingListenerPollThread extends Thread {
         final long pollInterval = ssgActiveConnector.getLongProperty( PROPERTIES_KEY_POLLING_INTERVAL, 60L ) * 1000L;
 
         int oopses = 0;
-        String messageFilename;
-        String lastMessageFilename = null;
+        SftpFile currentFile;
+        SftpFile previousFile = null;
         boolean retryLastMsg = false;
         try {
-            final List<String> fileNames = new LinkedList<String>();
+            final List<SftpFile> fileNames = new LinkedList<SftpFile>();
             while(!sftpPollingListener.isStop()) {
                 try {
-                    if(!retryLastMsg || lastMessageFilename == null) {
+                    if(!retryLastMsg || previousFile == null) {
                         // look for files to process
                         if( fileNames.isEmpty() ) {
                             sftpPollingListener.doWithSftpClient( new UnaryThrows<Void, Sftp, IOException>() {
@@ -77,24 +78,24 @@ class SftpPollingListenerPollThread extends Thread {
                         }
 
                         // work with the first file from list
-                        messageFilename = fileNames.remove(0);
+                        currentFile = fileNames.remove(0);
 
                         sftpPollingListener.log(Level.FINE, SftpPollingListenerMessages.INFO_LISTENER_RECEIVE_MSG,
-                                connectorInfo, messageFilename );
+                                connectorInfo, currentFile.getFilename() );
 
                         retryLastMsg = false;
-                        lastMessageFilename = null;
+                        previousFile = null;
                     } else {
                         retryLastMsg = false;
-                        messageFilename = lastMessageFilename;
+                        currentFile = previousFile;
                     }
 
-                    if ( messageFilename != null && !sftpPollingListener.isStop() ) {
+                    if ( currentFile != null && !sftpPollingListener.isStop() ) {
                         oopses = 0;
 
                         // process the message
-                        lastMessageFilename = messageFilename;
-                        sftpPollingListener.handleFile(messageFilename);
+                        previousFile = currentFile;
+                        sftpPollingListener.handleFile(currentFile);
                     }
                 } catch ( Throwable e ) {
                     if (ExceptionUtils.causedBy(e, InterruptedException.class)) {

@@ -13,18 +13,14 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
-import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.*;
 import com.l7tech.external.assertions.ssh.server.client.ScpClient;
 import com.l7tech.external.assertions.ssh.server.client.SftpClient;
 import com.l7tech.external.assertions.ssh.server.client.SshClient;
-
-import static com.l7tech.external.assertions.ssh.server.client.SshClientConfiguration.defaultCipherOrder;
-import static com.l7tech.gateway.common.audit.AssertionMessages.*;
-
 import com.l7tech.external.assertions.ssh.server.client.SshClientConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
+import com.l7tech.message.SshKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -40,15 +36,6 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.*;
-import static com.l7tech.util.CollectionUtils.list;
-import static com.l7tech.util.CollectionUtils.toSet;
-import static com.l7tech.util.ExceptionUtils.causedBy;
-import static com.l7tech.util.ExceptionUtils.getDebugException;
-import static com.l7tech.util.ExceptionUtils.getMessage;
-import static com.l7tech.util.Functions.grep;
-import static com.l7tech.util.Functions.map;
-import static com.l7tech.util.TextUtils.isNotEmpty;
-import static com.l7tech.util.TextUtils.trim;
 import com.l7tech.util.ThreadPool.ThreadPoolShutDownException;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -70,7 +57,18 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 
+import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.*;
+import static com.l7tech.external.assertions.ssh.server.client.SshClientConfiguration.defaultCipherOrder;
+import static com.l7tech.gateway.common.audit.AssertionMessages.SSH_ROUTING_ERROR;
+import static com.l7tech.gateway.common.audit.AssertionMessages.SSH_ROUTING_PASSTHRU_NO_USERNAME;
 import static com.l7tech.message.Message.getMaxBytes;
+import static com.l7tech.util.CollectionUtils.list;
+import static com.l7tech.util.CollectionUtils.toSet;
+import static com.l7tech.util.ExceptionUtils.*;
+import static com.l7tech.util.Functions.grep;
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.TextUtils.isNotEmpty;
+import static com.l7tech.util.TextUtils.trim;
 
 /**
  * Server side implementation of the SshRouteAssertion.
@@ -255,7 +253,12 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
 
                     future.get();
                 } else {
-                    sshClient.upload( mimeKnob.getEntireMessageBodyAsInputStream(), directory, filename );
+                    final SshKnob sshKnob = request.getKnob(SshKnob.class);
+                    SshKnob.FileMetadata fileMetadata = null;
+                    if(sshKnob != null){
+                        fileMetadata = sshKnob.getFileMetadata();
+                    }
+                    sshClient.upload( mimeKnob.getEntireMessageBodyAsInputStream(), directory, filename, fileMetadata );
                 }
             } catch (NoSuchPartException e) {
                 logAndAudit(SSH_ROUTING_ERROR,
