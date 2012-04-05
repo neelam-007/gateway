@@ -24,11 +24,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -63,6 +59,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     private JButton testButton;
     private JButton okButton;
     private JButton cancelButton;
+    private JLabel driverClassDescription;
 
     private JdbcConnection connection;
     private final Map<String, Object> additionalPropMap = new TreeMap<String,Object>();
@@ -253,6 +250,24 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         
         okButton.setEnabled(enabled);
         testButton.setEnabled(enabled);
+
+        try{
+            if(driverClassComboBox.getSelectedItem()!=null){
+                String driverClass = ((String) driverClassComboBox.getSelectedItem()).trim();
+                String description = resources.getString(driverClass);
+                driverClassDescription.setText(description);
+                driverClassDescription.setToolTipText(description);
+
+            }
+            else{
+                driverClassDescription.setText(" ");
+                driverClassDescription.setToolTipText(" ");
+            }
+        } catch(MissingResourceException e){
+            driverClassDescription.setText(" ");
+            driverClassDescription.setToolTipText(" ");
+        }
+
     }
 
     private boolean isNonEmptyRequiredTextField(String text) {

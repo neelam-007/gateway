@@ -206,7 +206,7 @@ public class JdbcConnectionPoolManager implements InitializingBean {
      * @return connection pool to test with
      * @throws InvalidPropertyException
      */
-    public ComboPooledDataSource getTestConnectionPool(JdbcConnection connection) throws Throwable{
+    public ComboPooledDataSource getTestConnectionPool(JdbcConnection connection) throws InvalidPropertyException{
         Pair<ComboPooledDataSource, String> results;
 
         // By calling the method updateConnectionPool, test if all properties of a JDBC Connection are valid or not.
@@ -215,7 +215,7 @@ public class JdbcConnectionPoolManager implements InitializingBean {
             results = updateConnectionPool(connection, true);  // "true" means this method called is for testing.
         } catch (Throwable e) {
             // Report all other unknown and unexpected exceptions
-            throw new Throwable( e.getClass().getSimpleName() + " occurs");
+            throw new RuntimeException(e.getClass().getSimpleName() + " occurs");
         }
 
         if (results.right != null) throw new InvalidPropertyException( results.right);

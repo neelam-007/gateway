@@ -1,6 +1,7 @@
 package com.l7tech.server.jdbc;
 
 import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.gateway.common.jdbc.InvalidPropertyException;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
@@ -10,6 +11,8 @@ import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.util.Background;
 import com.l7tech.util.Config;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 import java.sql.Connection;
@@ -20,6 +23,7 @@ import java.util.StringTokenizer;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
+import java.util.logging.Level;
 
 import static com.l7tech.server.event.AdminInfo.find;
 
@@ -112,42 +116,35 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
      * Test a JDBC Connection entity.
      *
      * @param connection: the JDBC Connection to be tested.
-     * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
+     * @return empty string. Never null. Empty if the testing is successful, otherwise it will contain an error message.
      */
     @Override
-    public AsyncAdminMethods.JobId<String> testJdbcConnection(JdbcConnection connection) {
-        ComboPooledDataSource cpds = null ;
-
-        String error = null;
-        try {
-            cpds = jdbcConnectionPoolManager.getTestConnectionPool(connection);
-        }catch (Throwable e){
-            error = e.getMessage();
-        }
-
-
-        final String finalError = error;
-        final ComboPooledDataSource finalCpds = cpds;
+    public AsyncAdminMethods.JobId<String> testJdbcConnection(final JdbcConnection connection) {
         final FutureTask<String> connectTask = new FutureTask<String>( find( false ).wrapCallable( new Callable<String>(){
             @Override
             public String call() throws Exception {
 
-                if(finalError != null) return finalError;
+                final ComboPooledDataSource cpds;
+                try {
+                    cpds = jdbcConnectionPoolManager.getTestConnectionPool(connection);
+                } catch (InvalidPropertyException e) {
+                    return e.getMessage();
+                } catch (RuntimeException re) {
+                    final String msg = "Unexpected problem testing connection.";
+                    logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(re), ExceptionUtils.getDebugException(re));
+                    return msg;
+                }
 
                 Connection conn = null;
                 try {
-                    conn = finalCpds.getConnection();
+                    conn = cpds.getConnection();
                 } catch (SQLException e) {
-                    return "invalid connection properties setting. \n"  + e.getMessage();
+                    return "invalid connection properties setting. \n"  + ExceptionUtils.getMessage(e);
                 } catch (Throwable e) {
                     return "unexpected error, " + e.getClass().getSimpleName() + " thrown";
                 } finally {
-                    if (conn != null) try {
-                        conn.close();
-                    } catch (SQLException e) {
-                        logger.warning("Cannot close a JDBC connection.");
-                    }
-                    finalCpds.close();
+                    ResourceUtils.closeQuietly(conn);
+                    cpds.close();
                 }
                 return "";
             }
