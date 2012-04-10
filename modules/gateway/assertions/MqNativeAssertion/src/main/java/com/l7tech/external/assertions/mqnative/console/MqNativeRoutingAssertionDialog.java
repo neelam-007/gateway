@@ -205,7 +205,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         putToQueueRadioButton.addActionListener(enableDisableListener);
         getFromQueueRadioButton.addActionListener(enableDisableListener);
 
-        messageSourceComboBox.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", "Message Variable"), null, true ) );
+        messageSourceComboBox.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", null), null, true ) );
         messageSourceComboBox.addActionListener( enableDisableListener );
         messageTargetComboBox.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", "Message Variable"), null, true ) );
         messageTargetComboBox.addActionListener( enableDisableListener );
