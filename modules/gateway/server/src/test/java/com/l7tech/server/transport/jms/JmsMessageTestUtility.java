@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
 import java.util.Arrays;
 import java.util.List;
@@ -13,7 +14,7 @@ import static org.junit.Assert.*;
 
 public final class JmsMessageTestUtility {
     public static final String DESTINATION = "testQueue";
-    public static final int DELIVERYMODE = 1;
+    public static final int DELIVERYMODE = DeliveryMode.NON_PERSISTENT;
     public static final long EXPIRATION = 1234L;
     public static final int PRIORITY = 0;
     public static final String MESSAGEID = "abcdefg";
@@ -58,7 +59,7 @@ public final class JmsMessageTestUtility {
         assertTrue(headerNamesAsList.contains(JmsUtil.JMS_TYPE));
         assertTrue(headerNamesAsList.contains(JmsUtil.JMS_REDELIVERED));
         assertEquals(DESTINATION, jmsKnob.getHeaderValues(JmsUtil.JMS_DESTINATION)[0]);
-        assertEquals(String.valueOf(DELIVERYMODE), jmsKnob.getHeaderValues(JmsUtil.JMS_DELIVERY_MODE)[0]);
+        assertEquals(JmsUtil.DELIVERY_MODE_NON_PERSISTENT, jmsKnob.getHeaderValues(JmsUtil.JMS_DELIVERY_MODE)[0]);
         assertEquals(String.valueOf(EXPIRATION), jmsKnob.getHeaderValues(JmsUtil.JMS_EXPIRATION)[0]);
         assertEquals(String.valueOf(PRIORITY), jmsKnob.getHeaderValues(JmsUtil.JMS_PRIORITY)[0]);
         assertEquals(MESSAGEID, jmsKnob.getHeaderValues(JmsUtil.JMS_MESSAGE_ID)[0]);

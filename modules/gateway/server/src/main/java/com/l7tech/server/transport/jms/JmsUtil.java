@@ -39,6 +39,8 @@ public class JmsUtil {
     public static final String JMS_REPLY_TO = "JMSReplyTo";
     public static final String JMS_TYPE = "JMSType";
     public static final String JMS_REDELIVERED = "JMSRedelivered";
+    public static final String DELIVERY_MODE_PERSISTENT = "persistent";
+    public static final String DELIVERY_MODE_NON_PERSISTENT = "nonpersistent";
     public static final boolean detectTypes = ConfigFactory.getBooleanProperty( "com.l7tech.server.transport.jms.detectJmsTypes", true );
     public static final boolean useTopicTypes = ConfigFactory.getBooleanProperty( "com.l7tech.server.transport.jms.useTopicTypes", false );
 
@@ -570,7 +572,12 @@ public class JmsUtil {
         if (jmsMessage.getJMSDestination() != null) {
             headers.put(JMS_DESTINATION, jmsMessage.getJMSDestination().toString());
         }
-        headers.put(JMS_DELIVERY_MODE, String.valueOf(jmsMessage.getJMSDeliveryMode()));
+        final int deliveryMode = jmsMessage.getJMSDeliveryMode();
+        if(deliveryMode == DeliveryMode.NON_PERSISTENT){
+            headers.put(JMS_DELIVERY_MODE, DELIVERY_MODE_NON_PERSISTENT);
+        }else if(deliveryMode == DeliveryMode.PERSISTENT){
+            headers.put(JMS_DELIVERY_MODE, DELIVERY_MODE_PERSISTENT);
+        }
         headers.put(JMS_EXPIRATION, String.valueOf(jmsMessage.getJMSExpiration()));
         headers.put(JMS_PRIORITY, String.valueOf(jmsMessage.getJMSPriority()));
         if (jmsMessage.getJMSMessageID() != null) {
