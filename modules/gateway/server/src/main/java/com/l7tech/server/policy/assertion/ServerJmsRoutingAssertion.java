@@ -265,7 +265,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ description + ": " + exceptionMessage }, auditException );
     }
 
-    private final class JmsRoutingCallback implements JmsResourceManager.JmsResourceCallback {
+    final class JmsRoutingCallback implements JmsResourceManager.JmsResourceCallback {
         private final JmsEndpointConfig cfg;
         private final PolicyEnforcementContext context;
         private final com.l7tech.message.Message requestMessage;
@@ -274,7 +274,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         private Exception exception;
         private boolean messageSent = false;
 
-        private JmsRoutingCallback ( final PolicyEnforcementContext context,
+        JmsRoutingCallback ( final PolicyEnforcementContext context,
                                      final JmsEndpointConfig cfg,
                                      final Destination[] jmsOutboundDestinationHolder,
                                      final Destination[] jmsInboundDestinationHolder ) {
@@ -288,6 +288,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), getMessage( e ));
                 throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
             }
+        }
+
+        Exception getException(){
+            return exception;
         }
 
         private boolean isMessageSent() {
@@ -487,6 +491,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         inResJmsMsgProps.put(name, value);
                     }
 
+                    final Map<String, String> inResJmsMsgHeaders = JmsUtil.getJmsHeaders(jmsResponse);
+
                     responseMessage.attachJmsKnob(new JmsKnob() {
                         @Override
                         public boolean isBytesMessage() {
@@ -503,6 +509,21 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         @Override
                         public long getServiceOid() {
                             return 0L;
+                        }
+
+                        @Override
+                        public String[] getHeaderValues(final String name) {
+                            final String headerValue = inResJmsMsgHeaders.get(name);
+                        if (headerValue != null) {
+                            return new String[]{headerValue};
+                        } else {
+                            return new String[0];
+                        }
+                        }
+
+                        @Override
+                        public String[] getHeaderNames() {
+                            return inResJmsMsgHeaders.keySet().toArray(new String[inResJmsMsgHeaders.size()]);
                         }
                     });
 

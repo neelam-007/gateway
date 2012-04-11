@@ -16,6 +16,8 @@ import java.net.PasswordAuthentication;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,6 +29,16 @@ public class JmsUtil {
     private static final Logger logger = Logger.getLogger(JmsUtil.class.getName());
     public static final String DEFAULT_ENCODING = "UTF-8";
     private static final int MAX_CAUSE_DEPTH = 25;
+    public static final String JMS_DESTINATION = "JMSDestination";
+    public static final String JMS_DELIVERY_MODE = "JMSDeliveryMode";
+    public static final String JMS_EXPIRATION = "JMSExpiration";
+    public static final String JMS_PRIORITY = "JMSPriority";
+    public static final String JMS_MESSAGE_ID = "JMSMessageID";
+    public static final String JMS_TIMESTAMP = "JMSTimestamp";
+    public static final String JMS_CORRELATION_ID = "JMSCorrelationID";
+    public static final String JMS_REPLY_TO = "JMSReplyTo";
+    public static final String JMS_TYPE = "JMSType";
+    public static final String JMS_REDELIVERED = "JMSRedelivered";
     public static final boolean detectTypes = ConfigFactory.getBooleanProperty( "com.l7tech.server.transport.jms.detectJmsTypes", true );
     public static final boolean useTopicTypes = ConfigFactory.getBooleanProperty( "com.l7tech.server.transport.jms.useTopicTypes", false );
 
@@ -47,7 +59,7 @@ public class JmsUtil {
      * The JmsBag should eventually be closed by the caller, since the {@link Connection} and {@link Session}
      * objects inside are often pretty heavyweight.
      * <p/>
-     * NOTE: If createSession is false then the returned JmsBag will contain a 
+     * NOTE: If createSession is false then the returned JmsBag will contain a
      * null JMS Session.
      *
      * @param connection a {@link com.l7tech.gateway.common.transport.jms.JmsConnection} that encapsulates the information required
@@ -95,7 +107,7 @@ public class JmsUtil {
 
         username = "\"\"".equals(username) ? "" : username;
         password = "\"\"".equals(password) ? "" : password;
-        
+
         ConnectionFactory connFactory;
         Connection conn = null;
         Session session = null;
@@ -131,7 +143,7 @@ public class JmsUtil {
             Object o = jndiContext.lookup( cfUrl );
             if ( o instanceof Reference ) {
                 String msg = "The ConnectionFactory lookup returned a reference to the class\n"
-                             + ((Reference)o).getClassName() + ",  which cannot be loaded on the Gateway.\n" 
+                             + ((Reference)o).getClassName() + ",  which cannot be loaded on the Gateway.\n"
                              + "Most likely the Gateway has not yet been configured for this JMS provider.";
                 logger.warning( msg );
                 throw new JmsConfigException(msg);
@@ -213,7 +225,7 @@ public class JmsUtil {
         } catch ( RuntimeException rte ) {
             throw new JmsConfigException("Error connecting to JMS : " + ExceptionUtils.getMessage(rte), rte);
         } finally {
-            Thread.currentThread().setContextClassLoader(contextLoader);            
+            Thread.currentThread().setContextClassLoader(contextLoader);
             try { if ( session != null ) session.close(); } catch (Throwable t) { logit(t); }
             try { if ( conn != null ) conn.close(); } catch (Throwable t) { logit(t); }
             try { if ( jndiContext != null ) jndiContext.close(); } catch (Throwable t) { logit(t); }
@@ -531,6 +543,51 @@ public class JmsUtil {
         appendCauses( exception, builder );
 
         return builder.toString();
+    }
+
+    /**
+     * Retrieves all JMS headers from the given Message and stores them in a map.
+     * <p/>
+     * Possible headers:
+     * <p/>
+     * JMSDestination<br />
+     * JMSDeliveryMode<br />
+     * JMSExpiration<br />
+     * JMSPriority<br />
+     * JMSMessageID<br />
+     * JMSTimestamp<br />
+     * JMSCorrelationID<br />
+     * JMSReplyTo<br />
+     * JMSType<br />
+     * JMSRedelivered<br />
+     *
+     * @param jmsMessage the JMS message from which to retrieve headers.
+     * @return a map of JMS headers present on the given message.
+     * @throws JMSException if an error occurs retrieving headers from the given message.
+     */
+    public static Map<String, String> getJmsHeaders(final Message jmsMessage) throws JMSException {
+        final Map<String, String> headers = new HashMap<String, String>();
+        if (jmsMessage.getJMSDestination() != null) {
+            headers.put(JMS_DESTINATION, jmsMessage.getJMSDestination().toString());
+        }
+        headers.put(JMS_DELIVERY_MODE, String.valueOf(jmsMessage.getJMSDeliveryMode()));
+        headers.put(JMS_EXPIRATION, String.valueOf(jmsMessage.getJMSExpiration()));
+        headers.put(JMS_PRIORITY, String.valueOf(jmsMessage.getJMSPriority()));
+        if (jmsMessage.getJMSMessageID() != null) {
+            headers.put(JMS_MESSAGE_ID, jmsMessage.getJMSMessageID());
+        }
+        headers.put(JMS_TIMESTAMP, String.valueOf(jmsMessage.getJMSTimestamp()));
+        if (jmsMessage.getJMSCorrelationID() != null) {
+            headers.put(JMS_CORRELATION_ID, jmsMessage.getJMSCorrelationID());
+        }
+        if (jmsMessage.getJMSReplyTo() != null) {
+            headers.put(JMS_REPLY_TO, jmsMessage.getJMSReplyTo().toString());
+        }
+        if (jmsMessage.getJMSType() != null) {
+            headers.put(JMS_TYPE, jmsMessage.getJMSType());
+        }
+        headers.put(JMS_REDELIVERED, String.valueOf(jmsMessage.getJMSRedelivered()));
+        return headers;
     }
 
     private static String expandPassword( final String passwordExpression ) throws JmsConfigException {

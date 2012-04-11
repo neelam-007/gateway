@@ -1752,6 +1752,16 @@ public class PolicyProcessingTest {
             public long getServiceOid() {
                 return serviceOid;
             }
+
+            @Override
+            public String[] getHeaderValues(String name) {
+                return new String[0];
+            }
+
+            @Override
+            public String[] getHeaderNames() {
+                return new String[0];
+            }
         });
 
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);

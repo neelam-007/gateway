@@ -85,6 +85,10 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String SOAP_ENVELOPE_URI = "soap.envelopens";
     private static final String SOAP_VERSION = "soap.version";
 
+    private static final String JMS_HEADER_PREFIX = "jms.header.";
+    private static final String JMS_HEADERNAMES = "jms.headernames";
+    private static final String JMS_ALLHEADERVALUES = "jms.allheadervalues";
+
     private static final Map<String, Functions.Unary<Object, TcpKnob>> TCP_FIELDS = Collections.unmodifiableMap(new HashMap<String, Functions.Unary<Object, TcpKnob>>() {{
         put(TCP_REMOTE_ADDRESS, Functions.propertyTransform(TcpKnob.class, "remoteAddress"));
         put(TCP_REMOTE_IP, Functions.propertyTransform(TcpKnob.class, "remoteAddress"));
@@ -103,6 +107,11 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     }});
 
     private static final Pattern PATTERN_PERIOD = Pattern.compile("\\.");
+
+    private static final List<Class<? extends HasHeaders>> httpHeaderHaverKnobClasses =
+            Arrays.<Class<? extends HasHeaders>>asList(HttpRequestKnob.class, HttpOutboundRequestKnob.class, HttpResponseKnob.class, HttpInboundResponseKnob.class);
+
+    private static final List<Class<? extends HasHeaders>> jmsHeaderHaverKnobClasses = Arrays.<Class<? extends HasHeaders>>asList(JmsKnob.class);
 
     @Override
     public Class<Message> getContextObjectClass() {
@@ -180,6 +189,12 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = select(new AuthenticatedUserGetter<String>(AUTH_USER_DNS, true, String.class, AuthenticatedUserGetter.USER_TO_DN, message));
         } else if (lname.startsWith(AUTH_USER_DN)) {
             selector = select(new AuthenticatedUserGetter<String>(AUTH_USER_DN, false, String.class, AuthenticatedUserGetter.USER_TO_DN, message));
+        } else if (lname.startsWith(JMS_HEADER_PREFIX)) {
+            selector = jmsHeaderSelector;
+        } else if (lname.startsWith(JMS_HEADERNAMES)) {
+            selector = jmsHeaderNamesSelector;
+        } else if (lname.startsWith(JMS_ALLHEADERVALUES)) {
+            selector = jmsAllHeaderValuesSelector;
         } else {
             final Functions.Unary<Object,TcpKnob> tcpFieldGetter = TCP_FIELDS.get(lname);
             if (tcpFieldGetter != null) {
@@ -203,6 +218,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     static String[] getPrefixes() {
         return new String[]{
                 "http",
+                "jms",
                 "mainpart",
                 "parts",
                 "originalmainpart",
@@ -425,7 +441,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
             try {
                 final List<PartInfo> partList = new ArrayList<PartInfo>();
                 for ( final PartInfo partInfo : mk ) {
-                    partList.add( partInfo );           
+                    partList.add( partInfo );
                 }
                 String remainingName = null;
                 if ( name.length() > PARTS_NAME.length() ) {
@@ -512,11 +528,20 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
         return index < 1 || index > candidates.size() ? null : candidates.get(index - 1).getCertificate();
     }
 
-    private static final MessageAttributeSelector headerNamesSelector = new MessageAttributeSelector() {
+    private static final MessageAttributeSelector headerNamesSelector = new HeaderNamesSelector(httpHeaderHaverKnobClasses);
+    private static final MessageAttributeSelector jmsHeaderNamesSelector = new HeaderNamesSelector(jmsHeaderHaverKnobClasses);
+
+    private static class HeaderNamesSelector implements MessageAttributeSelector {
+        final List<Class<? extends HasHeaders>> supportedClasses;
+
+        private HeaderNamesSelector(final List<Class<? extends HasHeaders>> supportedClasses) {
+            this.supportedClasses = supportedClasses;
+        }
+
         @Override
         public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
             boolean sawHeaderHaver = false;
-            for (Class<? extends HasHeaders> headerKnob : headerHaverKnobClasses) {
+            for (Class<? extends HasHeaders> headerKnob : supportedClasses) {
                 HasHeaders hrk = context.getKnob(headerKnob);
                 if (hrk != null) {
                     sawHeaderHaver = true;
@@ -532,16 +557,25 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
                 String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
                 if (strict) throw new IllegalArgumentException(msg);
                 return null;
-            }                         
+            }
         }
     };
 
 
-    private static final MessageAttributeSelector allHeaderValuesSelector = new MessageAttributeSelector() {
+    private static final MessageAttributeSelector allHeaderValuesSelector = new AllHeaderValuesSelector(httpHeaderHaverKnobClasses);
+    private static final MessageAttributeSelector jmsAllHeaderValuesSelector = new AllHeaderValuesSelector(jmsHeaderHaverKnobClasses);
+
+    private static final class AllHeaderValuesSelector implements MessageAttributeSelector {
+        final List<Class<? extends HasHeaders>> supportedClasses;
+
+        private AllHeaderValuesSelector(final List<Class<? extends HasHeaders>> supportedClasses) {
+            this.supportedClasses = supportedClasses;
+        }
+
         @Override
         public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
             boolean sawHeaderHaver = false;
-            for (Class<? extends HasHeaders> headerKnob : headerHaverKnobClasses) {
+            for (Class<? extends HasHeaders> headerKnob : supportedClasses) {
                 HasHeaders hrk = context.getKnob(headerKnob);
                 if (hrk != null) {
                     sawHeaderHaver = true;
@@ -568,27 +602,28 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
                 return null;
             }
         }
-    };
-    private static final HeaderSelector singleHeaderSelector = new HeaderSelector(HTTP_HEADER_PREFIX, false);
-    private static final HeaderSelector multiHeaderSelector = new HeaderSelector(HTTP_HEADERVALUES_PREFIX, true);
+    }
 
-    private static final List<Class<? extends HasHeaders>> headerHaverKnobClasses =
-            Arrays.<Class<? extends HasHeaders>>asList(HttpRequestKnob.class, HttpOutboundRequestKnob.class, HttpResponseKnob.class, HttpInboundResponseKnob.class); 
+    private static final HeaderSelector singleHeaderSelector = new HeaderSelector(HTTP_HEADER_PREFIX, false, httpHeaderHaverKnobClasses);
+    private static final HeaderSelector multiHeaderSelector = new HeaderSelector(HTTP_HEADERVALUES_PREFIX, true, httpHeaderHaverKnobClasses);
+    private static final HeaderSelector jmsHeaderSelector = new HeaderSelector(JMS_HEADER_PREFIX, false, jmsHeaderHaverKnobClasses);
 
     private static class HeaderSelector implements MessageAttributeSelector {
-        String prefix;
-        boolean multi;
+        final String prefix;
+        final boolean multi;
+        final List<Class<? extends HasHeaders>> supportedClasses;
 
-        private HeaderSelector(String prefix, boolean multi) {
+        private HeaderSelector(final String prefix, final boolean multi, final List<Class<? extends HasHeaders>> supportedClasses) {
             this.prefix = prefix;
             this.multi = multi;
+            this.supportedClasses = supportedClasses;
         }
 
         @Override
         public Selection select(Message message, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
             boolean sawHeaderHaver = false;
             final String hname = name.substring(prefix.length());
-            for (Class<? extends HasHeaders> headerKnob : headerHaverKnobClasses) {
+            for (Class<? extends HasHeaders> headerKnob : supportedClasses) {
                 HasHeaders hrk = message.getKnob(headerKnob);
                 if (hrk != null) {
                     sawHeaderHaver = true;

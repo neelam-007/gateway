@@ -92,6 +92,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         final InputStream requestStream;
         final ContentTypeHeader ctype;
         final Map<String, Object> reqJmsMsgProps;
+        final Map<String, String> reqJmsMsgHeaders;
         final String soapAction;
 
         AssertionStatus status = AssertionStatus.UNDEFINED;
@@ -150,6 +151,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                     msgProps.put(name, value);
                 }
                 reqJmsMsgProps = Collections.unmodifiableMap(msgProps);
+                reqJmsMsgHeaders = Collections.unmodifiableMap(JmsUtil.getJmsHeaders(jmsRequest));
 
                 // Gets the JMS message property to use as SOAPAction, if present.
                 String soapActionValue = null;
@@ -204,6 +206,21 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                     @Override
                     public long getServiceOid() {
                         return hardwiredserviceOidHolder[0];
+                    }
+
+                    @Override
+                    public String[] getHeaderValues(final String name) {
+                        final String headerValue = reqJmsMsgHeaders.get(name);
+                        if (headerValue != null) {
+                            return new String[]{headerValue};
+                        } else {
+                            return new String[0];
+                        }
+                    }
+
+                    @Override
+                    public String[] getHeaderNames() {
+                        return reqJmsMsgHeaders.keySet().toArray(new String[reqJmsMsgHeaders.size()]);
                     }
                 });
 
