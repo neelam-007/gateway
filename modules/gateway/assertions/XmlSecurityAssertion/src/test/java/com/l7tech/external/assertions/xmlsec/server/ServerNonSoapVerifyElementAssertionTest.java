@@ -51,6 +51,18 @@ public class ServerNonSoapVerifyElementAssertionTest {
             "<ds:KeyInfo><ds:X509Data><ds:X509Certificate>" + SIGNER_CERT + "</ds:X509Certificate>" +
             "</ds:X509Data></ds:KeyInfo></ds:Signature></bar><blat/></foo>";
 
+    static final String SIGNED_X509SubjectName =
+            "<foo><bar Id=\"bar-1-3511c4c29ab6a196290a5f79a61417a6\"><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">" +
+                    "<ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>" +
+                    "<ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><ds:Reference URI=\"#bar-1-3511c4c29ab6a196290a5f79a61417a6\">" +
+                    "<ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/>" +
+                    "<ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/>" +
+                    "<ds:DigestValue>VU0equBu1QkCdTyzf6Dx6dulVxM=</ds:DigestValue></ds:Reference></ds:SignedInfo>" +
+                    "<ds:SignatureValue>" + SIGNATURE_VALUE + "</ds:SignatureValue>" +
+                    "<ds:KeyInfo><ds:X509Data><ds:X509SubjectName>CN=data.l7tech.com</ds:X509SubjectName>" +
+                    "</ds:X509Data></ds:KeyInfo></ds:Signature></bar><blat/></foo>";
+
+
     static final String SIGNED_WITH_CUSTOM_ID_GLOBAL_ATTR =
             "<foo xmlns:pfx=\"urn:other\"><bar pfx0:customId=\"bar-1-e284b01f7aa88d1dd1cb8ad9318d6eda\" xmlns:pfx0=\"urn:blatch\"><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationM" +
             "ethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/><ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><ds:Reference URI=\"#bar-1-e284b01f7aa88d1dd1cb8ad9318d6eda\"><ds:Transforms" +
@@ -144,6 +156,7 @@ public class ServerNonSoapVerifyElementAssertionTest {
     @BeforeClass
     public static void setupKeys() throws Exception {
         Security.addProvider(new BouncyCastleProvider()); // Needs to be BC, not RSA, because of that wacky Apache signing cert that isn't a named curve
+        Security.removeProvider("SunEC"); // [JDK7] SunEC also can't deal with the weird Apache cert
         beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("securityTokenResolver", NonSoapXmlSecurityTestUtils.makeSecurityTokenResolver());
             put("ssgKeyStoreManager", NonSoapXmlSecurityTestUtils.makeSsgKeyStoreManager());
@@ -310,6 +323,13 @@ public class ServerNonSoapVerifyElementAssertionTest {
         ass.setCustomIdAttrs(new FullQName[] { FullQName.valueOf("{urn:specialNs}customId") });
         AssertionStatus result = sass(ass).checkRequest(context(SIGNED_WITH_CUSTOM_ID_LOCAL_ATTR));
         assertEquals(AssertionStatus.BAD_REQUEST, result);
+    }
+
+    @Test
+    @BugNumber(11441)
+    public void testVerifyX509SubjectName() throws Exception {
+        verifyAndCheck(ass(), SIGNED_X509SubjectName, true, CertUtils.decodeFromPEM(SIGNER_CERT, false),
+                "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", SIGNATURE_VALUE);
     }
 
     void verifyAndCheck(NonSoapVerifyElementAssertion ass, String signedXml,

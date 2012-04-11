@@ -317,6 +317,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         Element x509CertEl = DomUtils.findOnlyOneChildElementByName(x509Data, SoapConstants.DIGSIG_URI, "X509Certificate");
         Element x509SkiEl = DomUtils.findOnlyOneChildElementByName(x509Data, SoapConstants.DIGSIG_URI, "X509SKI");
         Element x509IssuerSerialEl = DomUtils.findOnlyOneChildElementByName(x509Data, SoapConstants.DIGSIG_URI, "X509IssuerSerial");
+        Element x509SubjectNameEl = DomUtils.findOnlyOneChildElementByName(x509Data, SoapConstants.DIGSIG_URI, "X509SubjectName");
         if (x509CertEl != null) {
             String certBase64 = DomUtils.getTextValue(x509CertEl);
             byte[] certBytes = CertUtils.decodeCertBytesFromPEM(certBase64, false);
@@ -340,6 +341,10 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
             final String serialVal = DomUtils.getTextValue(serialEl);
             if (serialVal.length() == 0) throw new MissingRequiredElementException("X509SerialNumber was empty");
             return securityTokenResolver.lookupByIssuerAndSerial(new X500Principal(issuerVal), new BigInteger(serialVal));
+        } else if (x509SubjectNameEl != null) {
+            final String subjectName = DomUtils.getTextValue(x509SubjectNameEl);
+            if (subjectName.length() == 0) throw new MissingRequiredElementException("X509SubjectName was empty");
+            return securityTokenResolver.lookupByKeyName(subjectName);
         } else {
             throw new KeyInfoElement.UnsupportedKeyInfoFormatException("KeyInfo X509Data was not in a supported format");
         }
