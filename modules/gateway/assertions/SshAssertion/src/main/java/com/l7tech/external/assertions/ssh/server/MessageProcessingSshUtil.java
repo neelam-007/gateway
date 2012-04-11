@@ -59,6 +59,7 @@ public class MessageProcessingSshUtil {
      * @param messageInputStream The stream for reading message content
      * @param file The file being transfered
      * @param path The path for the file transfer
+     * @param fileMetadata The file metadata.
      * @return The PolicyEnforcementContext
      * @throws IOException If the content type for the connector is invalid or there is an error reading the message
      */
