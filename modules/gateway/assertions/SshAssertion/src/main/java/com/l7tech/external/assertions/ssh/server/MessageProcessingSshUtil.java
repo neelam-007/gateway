@@ -67,7 +67,8 @@ public class MessageProcessingSshUtil {
                                                                         final StashManagerFactory stashManagerFactory,
                                                                         final InputStream messageInputStream,
                                                                         final String file,
-                                                                        final String path ) throws IOException {
+                                                                        final String path,
+                                                                        final FileMetadata fileMetadata) throws IOException {
         final Message request = new Message();
         final PolicyEnforcementContext context = createPolicyEnforcementContext( request, null );
         final long requestSizeLimit = connector.getLongProperty( PROP_REQUEST_SIZE_LIMIT, getMaxBytes());
@@ -103,7 +104,7 @@ public class MessageProcessingSshUtil {
                         file,
                         path,
                         publicKeyAuthentication,
-                        passwordAuthentication, null );
+                        passwordAuthentication, fileMetadata );
         request.attachKnob( knob, SshKnob.class, UriKnob.class, TcpKnob.class );
 
         final long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L);

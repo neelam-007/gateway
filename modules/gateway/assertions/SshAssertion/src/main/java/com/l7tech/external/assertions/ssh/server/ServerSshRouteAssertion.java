@@ -255,7 +255,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 } else {
                     final SshKnob sshKnob = request.getKnob(SshKnob.class);
                     SshKnob.FileMetadata fileMetadata = null;
-                    if(sshKnob != null){
+                    if(assertion.isPreserveFileMetadata() && sshKnob != null){
                         fileMetadata = sshKnob.getFileMetadata();
                     }
                     sshClient.upload( mimeKnob.getEntireMessageBodyAsInputStream(), directory, filename, fileMetadata );

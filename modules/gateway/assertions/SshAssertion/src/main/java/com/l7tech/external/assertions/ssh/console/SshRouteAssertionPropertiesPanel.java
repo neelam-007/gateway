@@ -11,13 +11,11 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import static com.l7tech.objectmodel.imp.PersistentEntityUtil.oid;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.optional;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,6 +23,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
+
+import static com.l7tech.objectmodel.imp.PersistentEntityUtil.oid;
+import static com.l7tech.util.Option.optional;
 
 public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCancelSupport<SshRouteAssertion> {
     private static final ResourceBundle resources = ResourceBundle.getBundle( SshRouteAssertionPropertiesPanel.class.getName());
@@ -60,6 +61,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private JLabel userNameLabel;
     private SecurePasswordComboBox privateKeyField;
     private JPanel responseLimitHolderPanel;
+    private JCheckBox preserveFileMetadataCheckBox;
+    private JRadioButton SFTPRadioButton;
     private ByteLimitPanel responseLimitPanel;
     private InputValidator validators;
     private AbstractButton[] secHdrButtons = { wssIgnoreButton, wssCleanupButton, wssRemoveButton, null };
@@ -81,6 +84,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
 
     @Override
     protected void initComponents() {
+        SCPRadioButton.addActionListener(enableDisableListener);
+        SFTPRadioButton.addActionListener(enableDisableListener);
         passwordRadioButton.addActionListener(enableDisableListener);
         privateKeyRadioButton.addActionListener(enableDisableListener);
         validateServerSHostCheckBox.addActionListener(enableDisableListener);
@@ -264,6 +269,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         wssIgnoreButton.setEnabled(!isDownloadFrom);
         wssCleanupButton.setEnabled(!isDownloadFrom);
         wssRemoveButton.setEnabled(!isDownloadFrom);
+        preserveFileMetadataCheckBox.setEnabled(uploadToRadioButton.isSelected() && SFTPRadioButton.isSelected());
 
         // authentication tab
         boolean isSpecifyUserCredentials = specifyUserCredentialsRadioButton.isSelected();
@@ -282,6 +288,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
      */
     @Override
     public void setData(SshRouteAssertion assertion) {
+        preserveFileMetadataCheckBox.setSelected(assertion.isPreserveFileMetadata());
         messageSource.setModel(buildMessageSourceComboBoxModel(assertion));
         messageSource.setSelectedItem(new MessageTargetableSupport(assertion.getRequestTarget()));
         messageTarget.setModel( buildMessageTargetComboBoxModel(false) );
@@ -365,7 +372,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         }
 
         // populate SSH settings
-
+        assertion.setPreserveFileMetadata(preserveFileMetadataCheckBox.isSelected());
         assertion.setHost(hostField.getText().trim());
         assertion.setPort(portNumberTextField.getText().trim());
         assertion.setDirectory(directoryTextField.getText());

@@ -52,6 +52,9 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     private boolean isCredentialsSourceSpecified;   // login credentials specified?  if not, assume pass through
     private boolean isDownloadCopyMethod;   // download copy method?  if not, assume upload
     private String responseByteLimit;
+
+    private boolean isPreserveFileMetadata;
+
     @NotNull
     private MessageTargetableSupport requestTarget = new MessageTargetableSupport(TargetMessageType.REQUEST, false);
     @NotNull
@@ -303,5 +306,13 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
 
     public void setResponseByteLimit(String responseByteLimit) {
         this.responseByteLimit = responseByteLimit;
+    }
+
+    public boolean isPreserveFileMetadata() {
+        return isPreserveFileMetadata;
+    }
+
+    public void setPreserveFileMetadata(final boolean preserveFileMetadata) {
+        isPreserveFileMetadata = preserveFileMetadata;
     }
 }

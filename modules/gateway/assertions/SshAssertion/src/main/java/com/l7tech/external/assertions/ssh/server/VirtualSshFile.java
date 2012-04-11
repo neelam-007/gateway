@@ -20,7 +20,13 @@ public class VirtualSshFile implements SshFile {
     private String fileName;
     private boolean file;
     private PipedOutputStream pipedOutputStream;
+    private PipedInputStream pipedInputStream;
+
     private Future<AssertionStatus> messageProcessStatus;
+
+    private int permission = -1;
+    private long accessTime = System.currentTimeMillis();
+
 
     /**
      * Constructor, internal do not use directly.
@@ -360,5 +366,29 @@ public class VirtualSshFile implements SshFile {
     }
     public void setMessageProcessStatus(Future<AssertionStatus> messageProcessStatus) {
         this.messageProcessStatus = messageProcessStatus;
+    }
+
+    public int getPermission() {
+        return permission;
+    }
+
+    public void setPermission(final int permission) {
+        this.permission = permission;
+    }
+
+    public long getAccessTime() {
+        return accessTime;
+    }
+
+    public void setAccessTime(final long accessTime) {
+        this.accessTime = accessTime;
+    }
+
+    public PipedInputStream getPipedInputStream() {
+        return pipedInputStream;
+    }
+
+    public void setPipedInputStream(final PipedInputStream pipedInputStream) {
+        this.pipedInputStream = pipedInputStream;
     }
 }

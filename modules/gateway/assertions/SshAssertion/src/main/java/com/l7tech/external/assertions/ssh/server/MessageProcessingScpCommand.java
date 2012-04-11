@@ -4,6 +4,7 @@ import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.log.HybridDiagnosticContext;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.message.SshKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
@@ -100,8 +101,7 @@ class MessageProcessingScpCommand extends ScpCommand implements SessionAware {
                     new EmptyInputStream() :
                     new TruncatingInputStream(in, length);
             ack();
-
-            sendFileToMessageProcessor( connector, absolutePath, name, fileInput );
+            sendFileToMessageProcessor( connector, absolutePath, name, fileInput, null );
             ack();
             readAck(false);
         } finally {
@@ -126,11 +126,12 @@ class MessageProcessingScpCommand extends ScpCommand implements SessionAware {
     private boolean sendFileToMessageProcessor( final SsgConnector connector,
                                                 final String path,
                                                 final String file,
-                                                final InputStream inputStream ) throws IOException {
+                                                final InputStream inputStream,
+                                                final SshKnob.FileMetadata metadata) throws IOException {
         boolean success = false;
 
         final PolicyEnforcementContext context =
-                buildPolicyExecutionContext( connector, session, stashManagerFactory, inputStream, file, path );
+                buildPolicyExecutionContext( connector, session, stashManagerFactory, inputStream, file, path, metadata );
 
         try {
             String faultXml = null;

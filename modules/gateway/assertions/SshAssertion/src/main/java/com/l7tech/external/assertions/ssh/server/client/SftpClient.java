@@ -43,7 +43,7 @@ public class SftpClient implements SshClient {
 
     public void upload(InputStream in, String remoteDir, String remoteFile, SshKnob.FileMetadata fileMetadata) throws IOException{
         upload(in, remoteDir, remoteFile);
-        if(fileMetadata != null){
+        if(fileMetadata != null && fileMetadata.getPermission() >= 0){
             sftpClient.setFilePermissions(remoteFile, fileMetadata.getPermission());
         }
     }
