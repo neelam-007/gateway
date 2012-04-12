@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.SetsVariables;
@@ -29,6 +30,7 @@ public class AssertionInfoDialog extends JDialog {
         displayVariablesSet(assertion);
         pack();
         setLocationRelativeTo(parent);
+        Utilities.setEscKeyStrokeDisposes(this);
     }
 
     private static final String NOT_AVAILABLE = "N/A";
