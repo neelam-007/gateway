@@ -3,6 +3,9 @@
  */
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.console.action.EditPolicyAction;
+import com.l7tech.console.tree.EntityWithPolicyNode;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.policy.Policy;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
@@ -19,6 +22,9 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.IOException;
@@ -58,14 +64,14 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
     @Override
     public String getName(final boolean decorate) {
         if(!decorate) return assertion.meta().get(AssertionMetadata.PALETTE_NODE_NAME).toString();
-        
+
         Policy policy = getPolicy();
         StringBuilder sb = new StringBuilder(assertion.meta().get(AssertionMetadata.PALETTE_NODE_NAME).toString()+": ");
         if (policy == null) {
             if ( permissionDenied ) {
                 sb.append("Permission Denied");
             } else if (circularImport) {
-                sb.append("Circular Import");                
+                sb.append("Circular Import");
             } else {
                 sb.append("Deleted");
             }
@@ -148,6 +154,24 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
             }
         }
         return policy;
+    }
+
+    @Override
+    public Action[] getActions() {
+        final List<Action> actions = new ArrayList<Action>();
+        final Policy policy = getPolicy();
+        if (policy != null) {
+            final RootNode rootNode = TopComponents.getInstance().getRootNode();
+            final AbstractTreeNode retrievedNode = rootNode.getNodeForEntity(policy.getOid());
+            if (retrievedNode instanceof EntityWithPolicyNode) {
+                final EntityWithPolicyNode entityNode = (EntityWithPolicyNode) retrievedNode;
+                // allow user to edit the included policy
+                final EditPolicyAction editAction = new EditPolicyAction(entityNode);
+                actions.add(editAction);
+            }
+        }
+        actions.addAll(Arrays.asList(super.getActions()));
+        return actions.toArray(new Action[actions.size()]);
     }
 
     private boolean isParentPolicy(final String policyGuid, final String policyName) {
