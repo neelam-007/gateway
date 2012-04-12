@@ -1080,10 +1080,18 @@ public class AssertionMessages extends Messages {
     public static final M SAMLP_ATTRIBUTE_QUERY_UNEXPECTED_DECRYPT_RESULTS = m(9503, Level.INFO, "Unexpected results after decrypting encrypted name identifier: {0}");
     public static final M SAMLP_ATTRIBUTE_QUERY_NO_DECRYPTION = m(9504, Level.FINE, "EncryptedID element found but not decrypted. Context variables related to Subject will have no values" );
 
-    public static final Messages.M CERT_LOOKUP_NAME = m(9550, Level.FINE, "Looking up certificate for name ''{0}''.");
-    public static final Messages.M CERT_LOOKUP_NOTFOUND = m(9551, Level.WARNING, "Certificate not found for name ''{0}''." );
-    public static final Messages.M CERT_LOOKUP_MULTIPLE = m(9552, Level.WARNING, "Multiple certificates found for name ''{0}''." );
-    public static final Messages.M CERT_LOOKUP_ERROR = m(9553, Level.WARNING, "Error looking up certificate ''{0}''." );
+    @Deprecated
+    public static final Messages.M _UNUSED_CERT_LOOKUP_NAME = m(9550, Level.FINE, "Looking up certificate for name ''{0}''.");
+    @Deprecated
+    public static final Messages.M _UNUSED_CERT_LOOKUP_NOTFOUND = m(9551, Level.WARNING, "Certificate not found for name ''{0}''." );
+    @Deprecated
+    public static final Messages.M _UNUSED_CERT_LOOKUP_MULTIPLE = m(9552, Level.WARNING, "Multiple certificates found for name ''{0}''." );
+    @Deprecated
+    public static final Messages.M _UNUSED_CERT_LOOKUP_ERROR = m(9553, Level.WARNING, "Error looking up certificate ''{0}''." );
+    public static final Messages.M CERT_ANY_LOOKUP_NAME = m(9554, Level.FINE, "Looking up certificate for {0} ''{1}''.");
+    public static final Messages.M CERT_ANY_LOOKUP_NOTFOUND = m(9555, Level.WARNING, "Certificate not found for {0} ''{1}''." );
+    public static final Messages.M CERT_ANY_LOOKUP_MULTIPLE = m(9556, Level.WARNING, "Multiple certificates found for {0} ''{1}''." );
+    public static final Messages.M CERT_ANY_LOOKUP_ERROR = m(9557, Level.WARNING, "Error looking up certificate for {0} ''{1}'': {2}." );
 
     public static final M SAMLP_REQUEST_BUILDER_INVALID_URI = m(9580, Level.WARNING, "Invalid URI value found for {0}. Resolved value: ''{1}''. Reason: ''{2}''." );
     public static final M SAMLP_REQUEST_BUILDER_FAILED_TO_BUILD = m(9581, Level.WARNING, "Failed to build SAML Protocol Request: {0}" );

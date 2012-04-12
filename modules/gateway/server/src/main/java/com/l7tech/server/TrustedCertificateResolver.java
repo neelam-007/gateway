@@ -4,6 +4,7 @@ import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.cert.X509Entity;
 import com.l7tech.security.token.KerberosSigningSecurityToken;
@@ -27,6 +28,7 @@ import java.math.BigInteger;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -118,12 +120,17 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, PostSt
 
     @Override
     public X509Certificate lookupByKeyName(String keyName) {
-        // TODO Implement this using a lookup by cert DN if we decide to bother supporting this feature here
+        try {
+            Collection<TrustedCert> got = trustedCertManager.findBySubjectDn(keyName);
+            if (got != null && !got.isEmpty()) return got.iterator().next().getCertificate();
 
-        SignerInfo si = lookupPrivateKeyByKeyName(keyName);
-        if (si != null) return si.getCertificateChain()[0];
+            SignerInfo si = lookupPrivateKeyByKeyName(keyName);
+            if (si != null) return si.getCertificateChain()[0];
 
-        return null;
+            return null;
+        } catch (FindException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
