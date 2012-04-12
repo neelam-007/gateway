@@ -254,11 +254,13 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     future.get();
                 } else {
                     final SshKnob sshKnob = request.getKnob(SshKnob.class);
-                    SshKnob.FileMetadata fileMetadata = null;
                     if(assertion.isPreserveFileMetadata() && sshKnob != null){
-                        fileMetadata = sshKnob.getFileMetadata();
+                        sshClient.upload( mimeKnob.getEntireMessageBodyAsInputStream(), directory, filename, sshKnob.getFileMetadata() );
                     }
-                    sshClient.upload( mimeKnob.getEntireMessageBodyAsInputStream(), directory, filename, fileMetadata );
+                    else {
+                        sshClient.upload( mimeKnob.getEntireMessageBodyAsInputStream(), directory, filename );
+                    }
+
                 }
             } catch (NoSuchPartException e) {
                 logAndAudit(SSH_ROUTING_ERROR,
