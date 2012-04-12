@@ -898,8 +898,8 @@ public class DialogDisplayer {
      * @param initialValue the initial selection value
      * @param result callback which will be invoked later with the user's input when the dialog is closed
      */
-    public static void showInputDialog(Component parent, Object mess, String title, int messType, Icon icon,
-                                         Object[] values, Object initialValue, final InputListener result)
+    public static void showInputDialog(Component parent, Object mess, String title, int messType, @Nullable Icon icon,
+                                         @Nullable Object[] values, @Nullable Object initialValue, final InputListener result)
     {
         final JOptionPane pane = new JOptionPane(mess, messType, JOptionPane.OK_CANCEL_OPTION, icon, null, null);
         pane.setWantsInput(true);

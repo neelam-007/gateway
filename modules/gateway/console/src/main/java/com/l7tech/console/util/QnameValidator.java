@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.xmlsec.console;
+package com.l7tech.console.util;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.util.DomUtils;

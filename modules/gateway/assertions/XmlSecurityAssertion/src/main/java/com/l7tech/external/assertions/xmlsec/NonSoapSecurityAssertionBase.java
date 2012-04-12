@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.VariableUseSupport.VariablesSetSupport;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -70,7 +71,7 @@ public abstract class NonSoapSecurityAssertionBase extends XpathBasedAssertion i
     }
 
     @Override
-    public XpathExpression createDefaultXpathExpression(boolean soapPolicy, SoapVersion soapVersion) {
+    public XpathExpression createDefaultXpathExpression(boolean soapPolicy, @Nullable SoapVersion soapVersion) {
         return new XpathExpression(getDefaultXpathExpressionString(), getDefaultNamespaceMap());
     }
 

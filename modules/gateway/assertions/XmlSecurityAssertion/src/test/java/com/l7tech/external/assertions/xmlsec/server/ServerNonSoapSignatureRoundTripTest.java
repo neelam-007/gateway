@@ -25,6 +25,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.HashMap;
@@ -141,7 +142,7 @@ public class ServerNonSoapSignatureRoundTripTest {
         assertEquals(1, signatureValues.length);
     }
 
-    PolicyEnforcementContext verify(String signedXml, AssertionStatus expectedAssertionResult) throws InvalidXpathException, IOException, PolicyAssertionException, ParseException {
+    PolicyEnforcementContext verify(String signedXml, AssertionStatus expectedAssertionResult) throws InvalidXpathException, IOException, PolicyAssertionException, ParseException, CertificateException {
         NonSoapVerifyElementAssertion ass = new NonSoapVerifyElementAssertion();
         ass.setXpathExpression(new XpathExpression("//*[local-name()='Signature']"));
         ass.setTarget(TargetMessageType.REQUEST);

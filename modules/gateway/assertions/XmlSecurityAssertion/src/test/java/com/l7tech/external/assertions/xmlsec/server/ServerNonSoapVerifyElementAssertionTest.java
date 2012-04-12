@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.security.XmlElementVerifier;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.FullQName;
@@ -16,6 +17,7 @@ import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
@@ -24,6 +26,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.security.Security;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.HashMap;
@@ -61,6 +64,16 @@ public class ServerNonSoapVerifyElementAssertionTest {
                     "<ds:SignatureValue>" + SIGNATURE_VALUE + "</ds:SignatureValue>" +
                     "<ds:KeyInfo><ds:X509Data><ds:X509SubjectName>CN=data.l7tech.com</ds:X509SubjectName>" +
                     "</ds:X509Data></ds:KeyInfo></ds:Signature></bar><blat/></foo>";
+
+    static final String SIGNED_NoKeyInfo =
+            "<foo><bar Id=\"bar-1-3511c4c29ab6a196290a5f79a61417a6\"><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">" +
+                    "<ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>" +
+                    "<ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><ds:Reference URI=\"#bar-1-3511c4c29ab6a196290a5f79a61417a6\">" +
+                    "<ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/>" +
+                    "<ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/>" +
+                    "<ds:DigestValue>VU0equBu1QkCdTyzf6Dx6dulVxM=</ds:DigestValue></ds:Reference></ds:SignedInfo>" +
+                    "<ds:SignatureValue>" + SIGNATURE_VALUE + "</ds:SignatureValue>" +
+                    "</ds:Signature></bar><blat/></foo>";
 
 
     static final String SIGNED_WITH_CUSTOM_ID_GLOBAL_ATTR =
@@ -139,18 +152,6 @@ public class ServerNonSoapVerifyElementAssertionTest {
             "</ds:Signature></RootElement>\n" +
             "<!-- Comment after -->";
 
-    public static final String APACHE_SIGNER_CERT =
-            "MIICEjCCAbegAwIBAgIGARJQ/UmbMAsGByqGSM49BAEFADBQMSEwHwYDVQQDExhYTUwgRUNEU0Eg\n" +
-            "U2lnbmF0dXJlIFRlc3QxFjAUBgoJkiaJk/IsZAEZEwZhcGFjaGUxEzARBgoJkiaJk/IsZAEZEwNv\n" +
-            "cmcwHhcNMDcwNTAzMDgxMDE1WhcNMTEwNTAzMDgxMDE1WjBQMSEwHwYDVQQDExhYTUwgRUNEU0Eg\n" +
-            "U2lnbmF0dXJlIFRlc3QxFjAUBgoJkiaJk/IsZAEZEwZhcGFjaGUxEzARBgoJkiaJk/IsZAEZEwNv\n" +
-            "cmcwgbQwgY0GByqGSM49AgEwgYECAQEwLAYHKoZIzj0BAQIhAP//////////////////////////\n" +
-            "//////////////2XMCcEIQD////////////////////////////////////////9lAQCAKYEAgMB\n" +
-            "AiEA/////////////////////2xhEHCZWtEARYQbCbdhuJMDIgADZubz40WiQ+v/nrjhfizYmEIl\n" +
-            "tKIr/n7hwGwpG3CDEk2jIDAeMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgGmMAsGByqGSM49\n" +
-            "BAEFAANIADBFAiEA63Pq7/YfDDrnbCxXVX20T3dn77iL8dvC1Cb24Al9VFkCIHUeymf/N+H60OQL\n" +
-            "v9Wg/X8Cbp2am42qjQvaKtb4+BFk";
-
     private static BeanFactory beanFactory;
 
     @BeforeClass
@@ -192,7 +193,7 @@ public class ServerNonSoapVerifyElementAssertionTest {
     public void testVerifyApacheSignedEcdsa() throws Exception {
         SyspropUtil.setProperty( "com.l7tech.security.xml.dsig.permittedTransformAlgorithms", "http://www.w3.org/2000/09/xmldsig#enveloped-signature,http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments" );
         try {
-            ServerNonSoapVerifyElementAssertion.CERT_PARSE_BC_FALLBACK = true;
+            XmlElementVerifier.CERT_PARSE_BC_FALLBACK = true;
             verifyAndCheck(ass(), APACHE_SAMPLE_SIGNED_XML, false, null,
                     "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1", null);
         } finally {
@@ -332,11 +333,48 @@ public class ServerNonSoapVerifyElementAssertionTest {
                 "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", SIGNATURE_VALUE);
     }
 
+    @Test
+    @BugNumber(11441)
+    public void testVerifyWithNoKeyInfoAndCertFromContextVariableAsX509Certificate() throws Exception {
+        final X509Certificate signingCert = CertUtils.decodeFromPEM(SIGNER_CERT, false);
+
+        final NonSoapVerifyElementAssertion ass = ass();
+        ass.setVerifyCertificateVariableName("certvar");
+
+        final PolicyEnforcementContext context = context(SIGNED_NoKeyInfo);
+        context.setVariable("certvar", signingCert);
+
+        verifyAndCheck(ass, context, true, signingCert,
+                "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", SIGNATURE_VALUE);
+    }
+
+    @Test
+    @BugNumber(11441)
+    public void testVerifyWithNoKeyInfoAndCertFromContextVariableAsPemString() throws Exception {
+        final X509Certificate signingCert = CertUtils.decodeFromPEM(SIGNER_CERT, false);
+
+        final NonSoapVerifyElementAssertion ass = ass();
+        ass.setVerifyCertificateVariableName("certvar");
+
+        final PolicyEnforcementContext context = context(SIGNED_NoKeyInfo);
+        context.setVariable("certvar", SIGNER_CERT);
+
+        verifyAndCheck(ass, context, true, signingCert,
+                "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", SIGNATURE_VALUE);
+    }
+
     void verifyAndCheck(NonSoapVerifyElementAssertion ass, String signedXml,
-                        boolean signedElementIsBar, X509Certificate expectedSigningCert,
-                        String expectedDigestMethod, String expectedSignatureMethod, String expectedSignatureValue) throws Exception
+                        boolean signedElementIsBar, @Nullable X509Certificate expectedSigningCert,
+                        String expectedDigestMethod, String expectedSignatureMethod, @Nullable String expectedSignatureValue) throws Exception
     {
-        PolicyEnforcementContext context = context(signedXml);
+        verifyAndCheck(ass, context(signedXml), signedElementIsBar, expectedSigningCert, expectedDigestMethod, expectedSignatureMethod, expectedSignatureValue);
+    }
+
+    private void verifyAndCheck(NonSoapVerifyElementAssertion ass, PolicyEnforcementContext context,
+                                boolean signedElementIsBar, @Nullable X509Certificate expectedSigningCert,
+                                String expectedDigestMethod, String expectedSignatureMethod, String expectedSignatureValue)
+            throws Exception
+    {
         AssertionStatus result = sass(ass).checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
 
@@ -381,7 +419,7 @@ public class ServerNonSoapVerifyElementAssertionTest {
         assertEquals(SoapConstants.DIGSIG_URI, sigElement.getNamespaceURI());
     }
 
-    private static ServerNonSoapVerifyElementAssertion sass(NonSoapVerifyElementAssertion ass) throws InvalidXpathException, ParseException {
+    private static ServerNonSoapVerifyElementAssertion sass(NonSoapVerifyElementAssertion ass) throws InvalidXpathException, ParseException, CertificateException {
         return new ServerNonSoapVerifyElementAssertion(ass, beanFactory);
     }
 

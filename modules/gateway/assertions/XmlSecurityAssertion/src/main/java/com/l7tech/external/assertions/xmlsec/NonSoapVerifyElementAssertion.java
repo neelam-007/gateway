@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.xmlsec;
 
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -9,16 +8,13 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.ElementSelectingXpathBasedAssertionValidator;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.security.xml.XmlElementVerifierConfig;
 import com.l7tech.util.FullQName;
-
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 /**
  * Immediately verify one or more signed Elements in a non-SOAP XML message.
  */
-public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase implements SetsVariables, HasVariablePrefix, UsesEntities {
+public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase implements UsesVariables, SetsVariables, HasVariablePrefix, UsesEntities {
     private static final String META_INITIALIZED = NonSoapVerifyElementAssertion.class.getName() + ".metadataInitialized";
     public static final String VAR_ELEMENTS_VERIFIED = "elementsVerified";
     public static final String VAR_SIGNATURE_METHOD_URIS = "signatureMethodUris";
@@ -27,23 +23,8 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
     public static final String VAR_SIGNATURE_VALUES = "signatureValues";
     public static final String VAR_SIGNATURE_ELEMENTS = "signatureElements";
 
-    public static final Set<FullQName> DEFAULT_ID_ATTRS = Collections.unmodifiableSet(new LinkedHashSet<FullQName>() {{
-        add(new FullQName("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd", null, "Id"));
-        add(new FullQName("http://schemas.xmlsoap.org/ws/2002/07/utility", null, "Id"));
-        add(new FullQName("http://schemas.xmlsoap.org/ws/2003/06/utility", null, "Id"));
-        add(new FullQName("http://schemas.xmlsoap.org/ws/2003/06/utility", null, "Id"));
-        add(new FullQName("urn:oasis:names:tc:SAML:1.0:assertion", "local", "AssertionID"));
-        add(new FullQName("urn:oasis:names:tc:SAML:2.0:assertion", "local", "ID"));
-        add(new FullQName(null, null, "Id"));
-        add(new FullQName(null, null, "id"));
-        add(new FullQName(null, null, "ID"));
-    }});
-
     protected String variablePrefix = "";
-    private String verifyCertificateName;
-    private long verifyCertificateOid;
-    private boolean ignoreKeyInfo;
-    private FullQName[] customIdAttrs;
+    private XmlElementVerifierConfig config = new XmlElementVerifierConfig();
 
     public NonSoapVerifyElementAssertion() {
         super(TargetMessageType.REQUEST, false);
@@ -51,11 +32,11 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
     }
 
     public boolean isIgnoreKeyInfo() {
-        return ignoreKeyInfo;
+        return config.isIgnoreKeyInfo();
     }
 
     public void setIgnoreKeyInfo(boolean ignoreKeyInfo) {
-        this.ignoreKeyInfo = ignoreKeyInfo;
+        config.setIgnoreKeyInfo(ignoreKeyInfo);
     }
 
     @Override
@@ -80,27 +61,40 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
     }
 
     public String getVerifyCertificateName() {
-        return verifyCertificateName;
+        return config.getVerifyCertificateName();
     }
 
     public void setVerifyCertificateName(String verifyCertificateName) {
-        this.verifyCertificateName = verifyCertificateName;
+        config.setVerifyCertificateName(verifyCertificateName);
     }
 
     public long getVerifyCertificateOid() {
-        return verifyCertificateOid;
+        return config.getVerifyCertificateOid();
     }
 
     public void setVerifyCertificateOid(long verifyCertificateOid) {
-        this.verifyCertificateOid = verifyCertificateOid;
+        config.setVerifyCertificateOid(verifyCertificateOid);
     }
 
     public FullQName[] getCustomIdAttrs() {
-        return customIdAttrs;
+        return config.getCustomIdAttrs();
     }
 
     public void setCustomIdAttrs(FullQName[] customIdAttrs) {
-        this.customIdAttrs = customIdAttrs;
+        config.setCustomIdAttrs(customIdAttrs);
+    }
+
+    public String getVerifyCertificateVariableName() {
+        return config.getVerifyCertificateVariableName();
+    }
+
+    public void setVerifyCertificateVariableName(String verifyCertificateVariableName) {
+        config.setVerifyCertificateVariableName(verifyCertificateVariableName);
+    }
+
+    @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withVariables(config.getVariablesUsed());
     }
 
     @Override
@@ -170,21 +164,21 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
-        EntityHeader[] headers = new EntityHeader[0];
-
-        if (verifyCertificateOid > 0) {
-            headers = new EntityHeader[] {new EntityHeader(verifyCertificateOid, EntityType.TRUSTED_CERT, null, null)};
-        }
-
-        return headers;
+        return config.getEntitiesUsed();
     }
 
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
-        if( oldEntityHeader.getType() == EntityType.TRUSTED_CERT &&
-            newEntityHeader.getType() == EntityType.TRUSTED_CERT &&
-            verifyCertificateOid == oldEntityHeader.getOid()) {
-            verifyCertificateOid = newEntityHeader.getOid();
-        }
+        config.replaceEntity(oldEntityHeader, newEntityHeader);
+    }
+
+    public XmlElementVerifierConfig config() {
+        return this.config;
+    }
+
+    public void config(XmlElementVerifierConfig config) {
+        if (config == null)
+            throw new NullPointerException("config must not be null");
+        this.config = config;
     }
 }

@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.xmlsec.console;
 
 import com.l7tech.console.panels.TargetVariablePanel;
+import com.l7tech.console.util.QnameValidator;
 import com.l7tech.external.assertions.xmlsec.NonSoapSignElementAssertion;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
@@ -9,6 +10,8 @@ import com.l7tech.util.ArrayUtils;
 
 import javax.swing.*;
 import java.awt.*;
+
+import static com.l7tech.external.assertions.xmlsec.NonSoapSignElementAssertion.SignatureLocation;
 
 public class NonSoapSignElementAssertionPropertiesDialog extends NonSoapSecurityAssertionDialog<NonSoapSignElementAssertion> {
     private JPanel contentPane;
@@ -35,7 +38,7 @@ public class NonSoapSignElementAssertionPropertiesDialog extends NonSoapSecurity
     }
 
     private JPanel createExtraPanel() {
-        signatureLocationComboBox.setModel(new DefaultComboBoxModel(NonSoapSignElementAssertion.SignatureLocation.values()));
+        signatureLocationComboBox.setModel(new DefaultComboBoxModel(SignatureLocation.values()));
 
         RunOnChangeListener enableOrDisableListener = new RunOnChangeListener() {
             @Override
@@ -120,7 +123,7 @@ public class NonSoapSignElementAssertionPropertiesDialog extends NonSoapSecurity
 
         String qname = useSpecificIdAttrButton.isSelected() ? validQname(idAttributeNameField.getText()) : null;
         ass.setCustomIdAttributeQname(qname);
-        ass.setSignatureLocation((NonSoapSignElementAssertion.SignatureLocation) signatureLocationComboBox.getSelectedItem());
+        ass.setSignatureLocation((SignatureLocation) signatureLocationComboBox.getSelectedItem());
         final boolean detached = rbCreateDetached.isSelected();
         final String detachedVar = detachedVariableField.getVariable();
         if (detached && detachedVar.trim().length() < 1)
@@ -133,11 +136,11 @@ public class NonSoapSignElementAssertionPropertiesDialog extends NonSoapSecurity
         return ass;
     }
 
-    private static Object[] prependDefault(Object[] things) {
+    private static String[] prependDefault(String[] things) {
         return ArrayUtils.unshift(things, DEFAULT);
     }
 
-    private static void setSelectedItemOrDefaultIfNull(JComboBox comboBox, Object objOrUnchanged) {
+    private static void setSelectedItemOrDefaultIfNull(JComboBox comboBox, String objOrUnchanged) {
         if (null == objOrUnchanged) {
             comboBox.setSelectedItem(DEFAULT);
         } else {
