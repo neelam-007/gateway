@@ -57,8 +57,9 @@ import static com.l7tech.util.JdkLoggerConfigurator.debugState;
  * MQ native listener module (aka boot process).
  */
 public class MqNativeModule extends ActiveTransportModule implements ApplicationListener {
+    static final int DEFAULT_MESSAGE_MAX_BYTES = 2621440;
+
     private static final Logger logger = Logger.getLogger(MqNativeModule.class.getName());
-    private static final int DEFAULT_MESSAGE_MAX_BYTES = 2621440;
     private static final Set<String> SUPPORTED_TYPES = caseInsensitiveSet( ACTIVE_CONNECTOR_TYPE_MQ_NATIVE );
     private static final String PROP_ENABLE_POOLING = "com.l7tech.external.assertions.mqnative.server.enablePooling";
     private static final String PROP_SOCKET_CONNECT_TIMEOUT = "com.l7tech.external.assertions.mqnative.server.socketConnectTimeout";
@@ -352,14 +353,13 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream, requestSizeLimit);
 
             // Gets the MQ message property to use as SOAPAction, if present.
-            String soapActionValue = null;
+            final String soapActionValue = null;
             final String soapActionProp = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_INBOUND_SOAP_ACTION );
             if (connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_SOAP_ACTION_USED ) && !StringUtils.isEmpty(soapActionProp)) {
                 // get SOAP action from custom MQ property -- TBD
             }
-            final String soapAction = soapActionValue;
 
-            request.attachKnob(MqNativeKnob.class, MqNativeUtils.buildMqNativeKnob( soapAction, mqHeader ));
+            request.attachKnob(MqNativeKnob.class, MqNativeUtils.buildMqNativeKnob( soapActionValue, mqHeader ));
 
             final Long hardwiredServiceOid = connector.getHardwiredServiceOid();
             if ( hardwiredServiceOid != null ) {
@@ -490,7 +490,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         }
     }
 
-    private boolean sendResponse( final MQMessage requestMessage,
+    boolean sendResponse( final MQMessage requestMessage,
                                   final MQMessage responseMessage,
                                   final SsgActiveConnector connector,
                                   final MqNativeClient mqNativeClient ) {
@@ -560,9 +560,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 } catch ( MqNativeConfigException e ) {
                     success = false;
                     logger.log( Level.WARNING, "Error sending MQ response: " + getMessage(e), ExceptionUtils.getDebugException(e) );
-                } catch (RuntimeException rte) {
-                    success = false;
-                    throw rte;
                 }
                 break;
             default:
@@ -615,5 +612,21 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         }
         return posted;
     }
-}
 
+    void setMessageProcessor(final MessageProcessor messageProcessor) {
+        this.messageProcessor = messageProcessor;
+
+    }
+
+    void setServerConfig(final ServerConfig serverConfig){
+        this.serverConfig = serverConfig;
+    }
+
+    void setStashManagerFactory(final StashManagerFactory stashManagerFactory){
+        this.stashManagerFactory = stashManagerFactory;
+    }
+
+    void setMessageProcessingEventChannel(final ApplicationEventPublisher messageProcessingEventChannel){
+        this.messageProcessingEventChannel = messageProcessingEventChannel;
+    }
+}

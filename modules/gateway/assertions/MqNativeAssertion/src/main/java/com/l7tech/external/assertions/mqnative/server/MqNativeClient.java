@@ -29,11 +29,11 @@ class MqNativeClient implements Closeable {
         void notifyConnectionError( String message );
     }
 
-    private final String queueManagerName;
-    private final NullaryThrows<Hashtable, MqNativeConfigException> queueManagerProperties;
-    private final String queueName;
-    private final Option<String> replyQueueName;
-    private Option<ClientBag> clientBag = none();
+    final String queueManagerName;
+    final NullaryThrows<Hashtable, MqNativeConfigException> queueManagerProperties;
+    final String queueName;
+    final Option<String> replyQueueName;
+    Option<ClientBag> clientBag = none();
     private final MqNativeConnectionListener connectionListener;
 
     public MqNativeClient( @NotNull final String queueManagerName,
@@ -119,7 +119,11 @@ class MqNativeClient implements Closeable {
         } ) );
     }
 
-    public static final class ClientBag implements Closeable {
+    protected void setClientBag(Option<ClientBag> clientBag) {
+        this.clientBag = clientBag;
+    }
+
+    public static class ClientBag implements Closeable {
         private final MQQueueManager queueManager;
         private final MQQueue targetQueue;
         private final MQQueue specifiedReplyQueue;
