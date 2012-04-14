@@ -110,10 +110,6 @@ public class ReportGenerator {
             reportParams.put(REPORT_DATA_SOURCE, psds);
             jasperPrint = JasperFillManager.fillReport(handle.getJasperReport(), reportParams, psds);
         } catch (JRException jre) {
-            if (ExceptionUtils.causedBy(jre.getCause(), UtilityConstraintException.class)) {
-                Throwable t = ExceptionUtils.getCauseIfCausedBy(jre, UtilityConstraintException.class);
-                throw new ReportGenerationException("Error filling report: " + t.getMessage(), t);
-            }
             throw new ReportGenerationException("Error filling report.", jre);
         } finally {
             if (psds != null) psds.close();
@@ -226,7 +222,7 @@ public class ReportGenerator {
     private static final Map<ReportApi.ReportType, ReportTemplate> reportTemplates;
 
     static {
-        SyspropUtil.setProperty( "jasper.reports.compiler.class", GatewayJavaReportCompiler.class.getName() );
+        SyspropUtil.setProperty("jasper.reports.compiler.class", GatewayJavaReportCompiler.class.getName());
         GatewayJavaReportCompiler.registerClass(Utilities.class);
         GatewayJavaReportCompiler.registerClass(Utilities.UNIT_OF_TIME.class);
         GatewayJavaReportCompiler.registerClass(UsageSummaryAndSubReportHelper.class);
@@ -234,7 +230,6 @@ public class ReportGenerator {
         GatewayJavaReportCompiler.registerClass(PerformanceSummaryChartCustomizer.class);
         GatewayJavaReportCompiler.registerClass(UsageSummaryAndSubReportHelper.class);
         GatewayJavaReportCompiler.registerClass(UsageReportHelper.class);
-        GatewayJavaReportCompiler.registerClass(UtilityConstraintException.class);
         GatewayJavaReportCompiler.registerClass(PreparedStatementDataSource.class);
 
         final Map<ReportApi.ReportType, ReportTemplate> templates = new HashMap<ReportApi.ReportType, ReportTemplate>();
@@ -303,13 +298,15 @@ public class ReportGenerator {
         Long startTimeInPast;
         Long endTimeInPast;
 
+        final Utilities.UNIT_OF_TIME relUnitOfTime;
         if (isRelative) {
             int numRelativeTimeUnits = (Integer) reportParams.get(ReportApi.ReportParameters.RELATIVE_NUM_OF_TIME_UNITS);
-            Utilities.UNIT_OF_TIME relUnitOfTime = Utilities.getUnitFromString(reportParams.get(ReportApi.ReportParameters.RELATIVE_TIME_UNIT).toString());
+            relUnitOfTime = Utilities.getUnitFromString(reportParams.get(ReportApi.ReportParameters.RELATIVE_TIME_UNIT).toString());
             reportParams.put(ReportApi.ReportParameters.RELATIVE_TIME_UNIT, relUnitOfTime);
             startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, relUnitOfTime, timeZone);
             endTimeInPast = Utilities.getMillisForEndTimePeriod(relUnitOfTime, timeZone);
         } else {
+            relUnitOfTime = null;
             String absoluteStartTime = (String) reportParams.get(ReportApi.ReportParameters.ABSOLUTE_START_TIME);
             String absoluteEndTime = (String) reportParams.get(ReportApi.ReportParameters.ABSOLUTE_END_TIME);
             try {
@@ -327,7 +324,7 @@ public class ReportGenerator {
 
         Map<String, Set<String>> serivceIdsToOp = (Map<String, Set<String>>) reportParams.get(ReportApi.ReportParameters.SERVICE_ID_TO_OPERATIONS_MAP);
 
-        int resolution = Utilities.getSummaryResolutionFromTimePeriod(30, startTimeInPast, endTimeInPast);
+        int resolution = Utilities.getSummaryResolutionFromTimePeriod(startTimeInPast, endTimeInPast, timeZone, isRelative, relUnitOfTime);
 
         boolean isContextMapping = Boolean.valueOf(reportParams.get(ReportApi.ReportParameters.IS_CONTEXT_MAPPING).toString());
         boolean isDetail = Boolean.valueOf(reportParams.get(ReportApi.ReportParameters.IS_DETAIL).toString());

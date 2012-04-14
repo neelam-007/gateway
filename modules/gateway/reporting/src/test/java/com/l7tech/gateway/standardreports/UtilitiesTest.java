@@ -1526,21 +1526,39 @@ public class UtilitiesTest {
      */
     @Test
     public void testGetSummaryResolutionFromTimePeriod() throws ParseException {
+        String timeZone = "Canada/Pacific";
         Calendar cal = Calendar.getInstance();
         long startTime = cal.getTimeInMillis();
-        cal.add(Calendar.HOUR_OF_DAY, 6);
-        long endTime = cal.getTimeInMillis();
-        int resolution = Utilities.getSummaryResolutionFromTimePeriod(24, startTime, endTime);
+
+        //time not important - if relative and hour then resolution must be 1
+        int resolution = Utilities.getSummaryResolutionFromTimePeriod(startTime, startTime+ 1, timeZone, true, Utilities.UNIT_OF_TIME.HOUR);
         Assert.assertTrue(resolution == 1);
 
-        cal.add(Calendar.DAY_OF_MONTH, -40);
+        // resolution of 1 required when hour is not 00:00 for start time
+        cal.set(Calendar.HOUR_OF_DAY, 2);
+        resolution = Utilities.getSummaryResolutionFromTimePeriod(cal.getTimeInMillis(), cal.getTimeInMillis() + 1, timeZone, false, null);
+        Assert.assertTrue(resolution == 1);
+
+        // resolution of 1 required when end time is not 00:00
+        cal.set(Calendar.HOUR_OF_DAY, 0);
         startTime = cal.getTimeInMillis();
-        resolution = Utilities.getSummaryResolutionFromTimePeriod(24, startTime, endTime);
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        long endTime = cal.getTimeInMillis();
+        resolution = Utilities.getSummaryResolutionFromTimePeriod(startTime, endTime, timeZone, false, null);
+        Assert.assertTrue(resolution == 1);
+
+        // resolution of 2 when hour is 00:00 for start time not relative
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        startTime = cal.getTimeInMillis();
+        cal.roll(Calendar.DAY_OF_MONTH, true);
+        endTime = cal.getTimeInMillis();
+
+        resolution = Utilities.getSummaryResolutionFromTimePeriod(startTime, endTime, timeZone, false, null);
         Assert.assertTrue(resolution == 2);
 
         boolean exception = false;
         try {
-            Utilities.getSummaryResolutionFromTimePeriod(24, endTime, startTime);
+            Utilities.getSummaryResolutionFromTimePeriod(endTime, startTime, timeZone, false, null);
         } catch (IllegalArgumentException iae) {
             exception = true;
         }
@@ -1552,39 +1570,27 @@ public class UtilitiesTest {
      */
     @Test
     public void testGetIntervalResolutionFromTimePeriod() throws ParseException {
+        String timeZone = "Canada/Pacific";
         Calendar cal = Calendar.getInstance();
         long startTime = cal.getTimeInMillis();
         cal.add(Calendar.HOUR_OF_DAY, 6);
         long endTime = cal.getTimeInMillis();
-        int resolution = Utilities.getIntervalResolutionFromTimePeriod(Utilities.UNIT_OF_TIME.HOUR, 24, startTime, endTime);
-        Assert.assertTrue(resolution == 1);
+        // Hourly always required for an hourly interval
+        int resolution = Utilities.getIntervalResolutionFromTimePeriod(Utilities.UNIT_OF_TIME.HOUR, startTime, endTime, timeZone, false, null);
+        Assert.assertEquals(1, resolution);
 
         cal.add(Calendar.DAY_OF_MONTH, -40);
         startTime = cal.getTimeInMillis();
 
-        resolution = Utilities.getIntervalResolutionFromTimePeriod(Utilities.UNIT_OF_TIME.HOUR, 24, startTime, endTime);
-        Assert.assertTrue(resolution == 1);
+        resolution = Utilities.getIntervalResolutionFromTimePeriod(Utilities.UNIT_OF_TIME.HOUR, startTime, endTime, timeZone, true, Utilities.UNIT_OF_TIME.DAY);
+        Assert.assertEquals(1, resolution);
 
-        resolution = Utilities.getIntervalResolutionFromTimePeriod(Utilities.UNIT_OF_TIME.DAY, 24, startTime, endTime);
-        Assert.assertTrue(resolution == 2);
+        resolution = Utilities.getIntervalResolutionFromTimePeriod(Utilities.UNIT_OF_TIME.DAY, startTime, endTime, timeZone, true, Utilities.UNIT_OF_TIME.DAY);
+        Assert.assertEquals(2, resolution);
 
-        //test that a time period to far in the past fails for hourly interval
         boolean exception = false;
         try {
-
-            long oldStartTime = cal.getTimeInMillis();
-            cal.add(Calendar.DAY_OF_MONTH, 2);
-            long oldEndTime = cal.getTimeInMillis();
-
-            Utilities.getIntervalResolutionFromTimePeriod(Utilities.UNIT_OF_TIME.HOUR, 24, oldStartTime, oldEndTime);
-        } catch (UtilityConstraintException e) {
-            exception = true;
-        }
-        Assert.assertTrue(exception);
-
-        exception = false;
-        try {
-            Utilities.getSummaryResolutionFromTimePeriod(24, endTime, startTime);
+            Utilities.getSummaryResolutionFromTimePeriod(endTime, startTime, timeZone, false, null);
         } catch (IllegalArgumentException iae) {
             exception = true;
         }

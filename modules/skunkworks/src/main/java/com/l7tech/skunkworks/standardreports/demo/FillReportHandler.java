@@ -42,7 +42,6 @@ public class FillReportHandler extends AbstractHandler {
     private final static String INTERVAL_NUM_OF_TIME_UNITS = "INTERVAL_NUM_OF_TIME_UNITS";
     private final static String SELECTED_MAPPING_KEYS = "SELECTED_MAPPING_KEYS";
     private static final String REPORT_RAN_BY = "REPORT_RAN_BY";
-    private static final String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
     private static final String IS_CONTEXT_MAPPING = "IS_CONTEXT_MAPPING";
     private static final String MAPPING_KEYS = "MAPPING_KEYS";
     private static final String IS_DETAIL = "IS_DETAIL";
@@ -152,8 +151,6 @@ public class FillReportHandler extends AbstractHandler {
             reportProps.put(INTERVAL_NUM_OF_TIME_UNITS, num);
         }
         reportProps.put("IS_ABSOLUTE", false);
-
-        reportProps.put(HOURLY_MAX_RETENTION_NUM_DAYS, 31);
 
         reportProps.put(SERVICE_NAME_TO_ID_MAP, serviceIdMap);
 

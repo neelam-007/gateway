@@ -76,7 +76,6 @@ public class ReportApp {
     private static final String DB_PASSWORD = "DB_PASSWORD";
 
     //Non report params, just used in ReportApp
-    private static final String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
     private static final String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
     private static final String REPORT_SCRIPTLET = "REPORT_SCRIPTLET";
     private static final String SUB_INTERVAL_SUB_REPORT = "SUB_INTERVAL_SUB_REPORT";
@@ -231,7 +230,7 @@ public class ReportApp {
         boolean isDetail = Boolean.valueOf(parameters.get(IS_DETAIL).toString());
         Object scriplet = parameters.get(REPORT_SCRIPTLET);
 
-        int resolution = Utilities.getSummaryResolutionFromTimePeriod(30, startTimeInPast, endTimeInPast);
+        int resolution = Utilities.getSummaryResolutionFromTimePeriod(startTimeInPast, endTimeInPast, timeZone, false, null);
 
         boolean isContextMapping = Boolean.valueOf(parameters.get(IS_CONTEXT_MAPPING).toString());
 
@@ -995,8 +994,6 @@ public class ReportApp {
         parameters.put(IS_ABSOLUTE, b);
         parameters.put(ABSOLUTE_START_TIME, prop.getProperty(ABSOLUTE_START_TIME));
         parameters.put(ABSOLUTE_END_TIME, prop.getProperty(ABSOLUTE_END_TIME));
-
-        parameters.put(HOURLY_MAX_RETENTION_NUM_DAYS, new Integer(prop.getProperty(HOURLY_MAX_RETENTION_NUM_DAYS)));
 
         List<String> operations = loadListFromProperties(OPERATIONS, prop);
 

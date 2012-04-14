@@ -58,9 +58,6 @@
     <parameter name="SERVICE_ID_TO_OPERATIONS_MAP" isForPrompting="false" class="java.util.Map">
         <defaultValueExpression><![CDATA[new HashMap()]]></defaultValueExpression>
     </parameter>
-    <parameter name="HOURLY_MAX_RETENTION_NUM_DAYS" isForPrompting="false" class="java.lang.Integer">
-        <defaultValueExpression><![CDATA[new Integer(1)]]></defaultValueExpression>
-    </parameter>
     <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
     <parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean"/>
     <parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
@@ -101,7 +98,7 @@
     </parameter>
     <parameter name="resolution" isForPrompting="false" class="java.lang.Integer">
         <defaultValueExpression>
-            <![CDATA[Utilities.getSummaryResolutionFromTimePeriod($P{HOURLY_MAX_RETENTION_NUM_DAYS}, $P{startTimeMilli}, $P{endTimeMilli} )]]></defaultValueExpression>
+            <![CDATA[Utilities.getSummaryResolutionFromTimePeriod($P{startTimeMilli}, $P{endTimeMilli}, $P{SPECIFIC_TIME_ZONE}, $P{IS_RELATIVE}, $P{RELATIVE_TIME_UNIT} )]]></defaultValueExpression>
     </parameter>
     <parameter name="serviceIdDisplayText" isForPrompting="false" class="java.lang.String">
         <defaultValueExpression><![CDATA[Utilities.getServiceAndIdDisplayString($P{SERVICE_ID_TO_OPERATIONS_MAP},

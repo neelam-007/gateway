@@ -17,9 +17,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.awt.*;
 
-import com.l7tech.util.TextUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.SqlUtils;
+import com.l7tech.util.*;
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 
@@ -181,80 +179,81 @@ public class Utilities {
     }
 
     /**
-     * Get the resolution to use in summary queries.<br>
-     * If the difference between the startTimeMilli and endTimeMilli > hourRetentionPeriod * num milli seconds in a day,
-     * then the daily bin resolution is used, otherwise hourly is used.
-     * Note this should not be used directly by interval reports as its possible that its not possible at all to fulfil
-     * the report with the selections made. See getIntervalResolutionFromTimePeriod, which can default back to calling
-     * this method, once it's checked it's ok to do so. <br>
+     * Get the resolution to use in queries. Hourly is returned when ever an Hourly resolution is required. Otherwise
+     * daily is returned.
      *
-     * @param startTimeMilli      start of time period, in milliseconds, since epoch
-     * @param endTimeMilli        end of time period, in milliseconds, since epoch
-     * @param hourRetentionPeriod SSG's current hourly bin max retention policy value, number of days hourly data is
-     *                            kept for
-     * @return Integer the resolution to use 1 for hourly or 2 for daily
-     * @throws IllegalArgumentException if start time is >= end time
+     * Hourly resolution is required when either:
+     * <ul>
+     *     <li>Time is relative with HOUR as its unit</li>
+     *     <li>Time does not start at the beginning of day or end of day.</li>
+     * </ul>
+     *
+     * So hourly is required when ever we cannot safely use daily bins. Any fraction of a day requires hourly bins.
+     *
+     * Do not call from interval reports. Call {@link #getIntervalResolutionFromTimePeriod(com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME, Long, Long, String, boolean, com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME)} instead
+     *
+     * @param startTimeMilli start of time period, in milliseconds, since epoch
+     * @param endTimeMilli   end of time period, in milliseconds, since epoch
+     * @param timeZone       which timezone the epoch timeMillilSeconds parameter should be converted into
+     * @param isRelative true if the reports configuration uses a relative time
+     * @param timeUnit time unit if isRelative is true, can be null otherwise
+     * @return resolution value. Either 1 for hourly or 2 for daily.
      */
-    public static Integer getSummaryResolutionFromTimePeriod(Integer hourRetentionPeriod, Long startTimeMilli, Long endTimeMilli) {
+    public static Integer getSummaryResolutionFromTimePeriod(final Long startTimeMilli,
+                                                             final Long endTimeMilli,
+                                                             final String timeZone,
+                                                             Boolean isRelative,
+                                                             UNIT_OF_TIME timeUnit) {
+        validateStartBeforeEndTime(startTimeMilli, endTimeMilli);
 
-        if (startTimeMilli >= endTimeMilli) throw new IllegalArgumentException("Start time must be before end time");
-
-        long duration = endTimeMilli - startTimeMilli;
-        long dayMillis = 86400000L;//day milli seconds
-        long maxHourRenentionMilli = dayMillis * hourRetentionPeriod;
-        if (duration > maxHourRenentionMilli) {
-            return 2;
-        } else {
+        // Hourly unit of time - then must use HOURLY
+        if (isRelative && timeUnit == UNIT_OF_TIME.HOUR) {
             return 1;
+        } else if (!isRelative) {
+            // If is relative and not hourly then guaranteed to not be fractional (fractional means not a full day).
+            // Fractional time requires HOURLY resolution
+            Calendar calendar = Calendar.getInstance(getTimeZone(timeZone));
+            calendar.setTimeInMillis(startTimeMilli);
+            final int startHour = calendar.get(Calendar.HOUR_OF_DAY);
+
+            calendar.setTimeInMillis(endTimeMilli);
+            final int endHour = calendar.get(Calendar.HOUR_OF_DAY);
+
+            if (startHour != 0 || endHour != 0) {
+                return 1;
+            }
         }
+
+        final boolean forceHourly = ConfigFactory.getBooleanProperty("com.l7tech.gateway.standardreports.forcehourlyresolution", false);
+        return (forceHourly)? 1: 2;
     }
 
     /**
      * Get the resolution to use in interval queries.       <br>
-     * This method delegates to getSummaryResolutionFromTimePeriod after checking if the relativeTimeUnit is
-     * UNIT_OF_TIME.HOUR
-     * <br>
-     * If the end of the time period is before the oldest hourly metric bin value in the database, an UtilityConstraintException
-     * is thrown, as the report is guaranteed to have no output. If the time period overlaps with the start of the hourly
-     * metric bins, then no exception will be thrown, as providing the resolution 1 allows for the possibility of data
-     * being found.
+     * This method delegates to {@link #getSummaryResolutionFromTimePeriod(Long, Long, String, Boolean, com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME)}
+     * after checking if the relativeTimeUnit is UNIT_OF_TIME.HOUR
      *
-     * @param intervalTimeUnit    What interval is required. HOUR, DAY, WEEK or MONTH
-     * @param hourRetentionPeriod SSG's current hourly bin max retention policy value, number of days hourly data is
-     *                            kept for
-     * @param startTimeMilli      start of time period, in milliseconds, since epoch
-     * @param endTimeMilli        end of time period, in milliseconds, since epoch
+     * @param intervalTimeUnit What interval is required. HOUR, DAY, WEEK or MONTH
+     * @param startTimeMilli   start of time period, in milliseconds, since epoch
+     * @param endTimeMilli     end of time period, in milliseconds, since epoch
+     * @param timeZone         which timezone the epoch timeMillilSeconds parameter should be converted into
      * @return Integer 1 for hourly metric bin or 2 for daily metric bin. If UNIT_OF_TIME was hour, then the return
      *         value can only ever be 1.
-     * @throws UtilityConstraintException if the intervalUnitOfTime is HOUR, and based on the value for hourRetentionPeriod
-     *                                    it is not possible to use the hourly metric bin in an interval report, as the report would be guaranteed to
-     *                                    have no data. This exception is app specific so it can be tested for and allows for more information to be
-     *                                    sent to the user. This condition cannot easily be tested for in the UI, to do so requires the cluster property
-     *                                    for every cluster in the report.
-     * @throws IllegalArgumentException   if the start time >= end time
+     * @throws IllegalArgumentException if the start time >= end time
      */
-    public static Integer getIntervalResolutionFromTimePeriod(UNIT_OF_TIME intervalTimeUnit, Integer hourRetentionPeriod,
-                                                              Long startTimeMilli, Long endTimeMilli)
-            throws UtilityConstraintException {
+    public static Integer getIntervalResolutionFromTimePeriod(UNIT_OF_TIME intervalTimeUnit,
+                                                              Long startTimeMilli,
+                                                              Long endTimeMilli,
+                                                              final String timeZone,
+                                                              Boolean isRelative,
+                                                              UNIT_OF_TIME relativeTimeUnit) {
         validateStartBeforeEndTime(startTimeMilli, endTimeMilli);
 
         if (intervalTimeUnit == UNIT_OF_TIME.HOUR) {
-            //If the interval is in hours, then we have to use the hourly bin
-            long dayMillis = 86400000L;//day milli seconds
-            long maxHourRenentionMilli = dayMillis * hourRetentionPeriod;
-
-            Calendar cal = Calendar.getInstance();//timezone irrevelant for this calculation
-            long currentTime = cal.getTimeInMillis();
-            long firstHourlyMetricBin = currentTime - maxHourRenentionMilli;
-
-            if (endTimeMilli < firstHourlyMetricBin) {
-                throw new UtilityConstraintException("Invalid report selection. Report cannot be ran as the end of the time period" +
-                        " is before the first hourly metric data in the database.");
-            }
             return 1;
         }
 
-        return getSummaryResolutionFromTimePeriod(hourRetentionPeriod, startTimeMilli, endTimeMilli);
+        return getSummaryResolutionFromTimePeriod(startTimeMilli, endTimeMilli, timeZone, isRelative, relativeTimeUnit);
     }
 
     /**
