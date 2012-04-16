@@ -375,10 +375,11 @@ public class RuntimeDocUtilities {
 
         //add a text field for each column
         for (int i = 0; i < numMappingValues; i++) {
+            final String columnHeading = Utilities.truncateUsageGroupHeading(listMappingValues.get(i));
             jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SERVICE_HEADER, xPos, yPos,
                     DATA_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
                     "textField-serviceHeader-" + (i + 1),
-                    listMappingValues.get(i), TOP_LEFT_BOTTOM_CENTER_BROWN,
+                    columnHeading, TOP_LEFT_BOTTOM_CENTER_BROWN,
                     true, false, false, true);
             xPos += DATA_COLUMN_WIDTH;
         }
@@ -614,10 +615,11 @@ public class RuntimeDocUtilities {
 
         //add a text field for each column
         for (int i = 0; i < numMappingValues; i++) {
+            final String columnHeading = Utilities.truncateUsageGroupHeading(listMappingValues.get(i));
             jasperDoc.addTextFieldToElement(JasperDocument.ElementName.CONSTANT_HEADER, xPos, yPos,
                     DATA_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
                     "textField-constantHeader-" + (i + 1),
-                    listMappingValues.get(i), TOP_LEFT_BOTTOM_CENTER_BROWN,
+                    columnHeading, TOP_LEFT_BOTTOM_CENTER_BROWN,
                     false, false, false, true);
             xPos += DATA_COLUMN_WIDTH;
         }
@@ -835,7 +837,7 @@ public class RuntimeDocUtilities {
 
         boolean first = true;
         if (!authUser.equals(Utilities.SQL_PLACE_HOLDER)) {
-            sb.append(TextUtils.truncStringMiddleExact(authUser, Utilities.USAGE_HEADING_VALUE_MAX_SIZE));
+            sb.append(authUser);
             first = false;
         }
 
@@ -844,8 +846,9 @@ public class RuntimeDocUtilities {
                 if (!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append("\n");
             }
             first = false;
-            if (!s.equals(Utilities.SQL_PLACE_HOLDER))
-                sb.append(TextUtils.truncStringMiddleExact(s, Utilities.USAGE_HEADING_VALUE_MAX_SIZE));
+            if (!s.equals(Utilities.SQL_PLACE_HOLDER)) {
+                sb.append(s);
+            }
         }
 
         return sb.toString();

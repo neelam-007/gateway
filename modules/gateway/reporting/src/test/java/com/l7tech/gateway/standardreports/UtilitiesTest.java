@@ -1706,5 +1706,18 @@ public class UtilitiesTest {
         Assert.assertEquals("expectedValue is: " + expected + " actual value was " + actual, expected, actual);
 
     }
+
+    @Test
+    public void testTruncateUsageGroupHeading() throws Exception {
+        String input = "";
+        String output = Utilities.truncateUsageGroupHeading(input);
+        Assert.assertNotNull(output);
+
+        input = "User1\nValue1 which is a long value\nValue2 which is also a long value";
+        output = Utilities.truncateUsageGroupHeading(input);
+        System.out.println(output);
+        Assert.assertEquals("User1\nValue1 wh...ng value\nValue2 wh...ng value", output);
+
+    }
 }
 

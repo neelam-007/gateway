@@ -2745,5 +2745,13 @@ public class Utilities {
         return colours;
     }
 
+    public static String truncateUsageGroupHeading(String valuesToTruncate) {
+        final String[] split = valuesToTruncate.split("\n");
+        final Collection<String> stringsToTrunc = new ArrayList<String>();
+        for (String s : split) {
+            stringsToTrunc.add(TextUtils.truncStringMiddleExact(s, Utilities.USAGE_HEADING_VALUE_MAX_SIZE));
+        }
+        return TextUtils.join("\n", stringsToTrunc).toString();
+    }
 }
 
