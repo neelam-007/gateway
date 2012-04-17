@@ -446,6 +446,9 @@ public class WssDecoratorImpl implements WssDecorator {
                 case ISSUER_SERIAL: {
                     senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(senderMessageSigningCert, KeyInfoDetails.makeIssuerSerial(senderMessageSigningCert, true));
                     break; }
+                case STR_THUMBPRINT: {
+                    senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(senderMessageSigningCert, KeyInfoDetails.makeThumbprintSha1(senderMessageSigningCert));
+                    break; }
                 default:
                     throw new DecoratorException("Unsupported KeyInfoInclusionType: " + c.dreq.getKeyInfoInclusionType());
             }
@@ -1543,6 +1546,8 @@ public class WssDecoratorImpl implements WssDecorator {
             keyInfo = KeyInfoDetails.makeUriReferenceRaw( "#" + getOrCreateWsuId( c, bstElement, null ), SoapUtil.VALUETYPE_X509 );
         } else if ( recipientKeyReferenceType==KeyInfoInclusionType.KEY_NAME ) {
             keyInfo = KeyInfoDetails.makeKeyName( recipientCertificate, true );
+        } else if ( recipientKeyReferenceType==KeyInfoInclusionType.STR_THUMBPRINT ) {
+            keyInfo = KeyInfoDetails.makeThumbprintSha1(recipientCertificate);
         } else {
             throw new DecoratorException("Unsupported encryptio KeyInfoInclusionType: " + recipientKeyReferenceType);
         }

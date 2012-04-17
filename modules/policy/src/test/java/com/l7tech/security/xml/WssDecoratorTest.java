@@ -658,7 +658,7 @@ public class WssDecoratorTest {
 
     @Test
     public void testEncryptionReferenceTypes() throws Exception {
-        final Collection<KeyInfoInclusionType> keyReferenceTypes = EnumSet.of( CERT, STR_SKI, ISSUER_SERIAL, KEY_NAME );
+        final Collection<KeyInfoInclusionType> keyReferenceTypes = EnumSet.of( CERT, STR_SKI, ISSUER_SERIAL, KEY_NAME, STR_THUMBPRINT );
         final Functions.BinaryVoid<KeyInfoInclusionType,Document> verifier = new Functions.BinaryVoid<KeyInfoInclusionType,Document>(){
             @Override
             public void call( final KeyInfoInclusionType expectedKeyInfoInclusionType, final Document document ) {
@@ -693,6 +693,48 @@ public class WssDecoratorTest {
             public void call( final KeyInfoInclusionType keyInfoInclusionType ) throws Exception {
                 final TestDocument testDocument = getEncryptionOnlyTestDocument();
                 testDocument.req.setEncryptionKeyInfoInclusionType( keyInfoInclusionType );
+                runTest( testDocument, Functions.partial( verifier, keyInfoInclusionType ) );
+            }
+        } );
+    }
+
+    @Test
+    public void testSignatureReferenceTypes() throws Exception {
+        final Collection<KeyInfoInclusionType> keyReferenceTypes = EnumSet.of( CERT, STR_SKI, ISSUER_SERIAL, STR_THUMBPRINT ); // KEY_NAME not supported for signature
+        final Functions.BinaryVoid<KeyInfoInclusionType,Document> verifier = new Functions.BinaryVoid<KeyInfoInclusionType,Document>(){
+            @Override
+            public void call( final KeyInfoInclusionType expectedKeyInfoInclusionType, final Document document ) {
+                try {
+                    final Element header = SoapUtil.getSecurityElementForL7( document );
+                    assertNotNull( "No security header found", header );
+
+                    final Element signatureElement = DomUtils.findExactlyOneChildElementByName( header, SoapUtil.DIGSIG_URI, SoapUtil.SIGNATURE_EL_NAME );
+                    final Element keyInfoElement = DomUtils.findOnlyOneChildElementByName( signatureElement, SoapUtil.DIGSIG_URI, SoapUtil.KINFO_EL_NAME );
+
+                    final IdAttributeConfig idConfig = IdAttributeConfig.fromString( "{http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd}Id" );
+                    final Map<String,Element> identifierMap = DomUtils.getElementByIdMap( document, idConfig );
+
+                    final X509Certificate signingCert = TestDocuments.getEttkClientCertificate();
+                    final ContextualSecurityTokenResolver resolver = new ContextualSecurityTokenResolver.Support.DelegatingContextualSecurityTokenResolver(
+                            new SimpleSecurityTokenResolver( signingCert )){
+                        @Override
+                        public X509Certificate lookupByIdentifier( final String identifier ) {
+                            assertTrue(  "BST element present", identifierMap.keySet().contains( identifier ) );
+                            return signingCert;
+                        }
+                    };
+                    final KeyInfoElement element = KeyInfoElement.parse( keyInfoElement, resolver, EnumSet.allOf(KeyInfoInclusionType.class) );
+                    assertEquals( "Reference type", expectedKeyInfoInclusionType, element.getKeyInfoInclusionType() );
+                } catch ( Exception e ) {
+                    throw ExceptionUtils.wrap( e );
+                }
+            }
+        };
+        CollectionUtils.foreach( keyReferenceTypes, false, new Functions.UnaryVoidThrows<KeyInfoInclusionType,Exception>() {
+            @Override
+            public void call( final KeyInfoInclusionType keyInfoInclusionType ) throws Exception {
+                final TestDocument testDocument = getSigningOnlyTestDocument();
+                testDocument.req.setKeyInfoInclusionType( keyInfoInclusionType );
                 runTest( testDocument, Functions.partial( verifier, keyInfoInclusionType ) );
             }
         } );

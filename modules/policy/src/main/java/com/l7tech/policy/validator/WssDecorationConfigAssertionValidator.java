@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
+import com.l7tech.security.xml.KeyReference;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,9 +74,17 @@ public class WssDecorationConfigAssertionValidator implements AssertionValidator
 
                 // Check for the same key reference types (BST, Issuer/Serial, etc)
                 if ( (wdc1.getKeyReference() != null && wdc2.getKeyReference() != null) &&
-                     (!wdc1.getKeyReference().equals(wdc2.getKeyReference()))) {
-                    String message = "Multiple signing assertions present with different \"Key Reference/Certificate Inclusion\" selections. The same \"Key Reference/Certificate Inclusion\" type should be used for these assertions.";
-                    result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, message, null));
+                     (!wdc1.getKeyReference().equals(wdc2.getKeyReference())))
+                {
+                    String finalVal = assertion.getOrdinal() > pathAssertion.getOrdinal() ? wdc2.getKeyReference() : wdc1.getKeyReference();
+                    if (KeyReference.THUMBPRINT_SHA1.getName().equals(finalVal)) {
+                        // Assertions other than WSS Config don't currently expose this option,
+                        // so this isn't an error as long as the bottommost assertion is the one calling for THUMBPRINT_SHA1.
+                        // It will be executed last and so will override any previous setting.
+                    } else {
+                        String message = "Multiple signing assertions present with different \"Key Reference/Certificate Inclusion\" selections. The same \"Key Reference/Certificate Inclusion\" type should be used for these assertions.";
+                        result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, message, null));
+                    }
                 }
 
                 // Check for the same token protection settings

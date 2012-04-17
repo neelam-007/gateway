@@ -1,5 +1,6 @@
 package com.l7tech.security.xml;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.NamespaceFactory;
@@ -9,6 +10,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -110,6 +112,18 @@ public abstract class KeyInfoDetails {
      */
     public static KeyInfoDetails makeIssuerSerial(X509Certificate certificate, boolean includeStr) {
         return new IssuerSerialKeyInfoDetails(certificate, includeStr);
+    }
+
+    /**
+     * Prepare to create a new KeyInfo element using KeyInfo/SecurityTokenReference/KeyIdentifier whose value is a certificate ThumbprintSHA1 in Base-64.
+     *
+     * @param recipientCertificate the recipient certificate to examine.
+     * @return a new KeyInfoDetails instance, ready to create the requested KeyInfo element.  Never null.
+     * @throws CertificateEncodingException if the certificate could not be encoded in order to calculate its ThumbprintSHA1.
+     */
+    public static KeyInfoDetails makeThumbprintSha1(X509Certificate recipientCertificate) throws CertificateEncodingException {
+        String thumb = CertUtils.getThumbprintSHA1(recipientCertificate);
+        return new KeyIdentifierKeyInfoDetails(thumb, SoapConstants.VALUETYPE_X509_THUMB_SHA1, true);
     }
 
     /**

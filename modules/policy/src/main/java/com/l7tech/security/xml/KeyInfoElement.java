@@ -136,7 +136,8 @@ public class KeyInfoElement implements ParsedElement {
                     keyInfoInclusionType = KeyInfoInclusionType.KEY_NAME;
                 }
 
-                if (cert == null) throw new SAXException("KeyInfo SecurityTokenReference did not match any X.509 certificate known to this recipient");
+                if (cert == null)
+                    throw new SAXException("KeyInfo SecurityTokenReference did not match any X.509 certificate known to this recipient");
             } else {
                 // Finally try the rare but appropriate KeyInfo/X509Data
                 final Element x509Data = DomUtils.findOnlyOneChildElementByName(keyinfo, SoapConstants.DIGSIG_URI, "X509Data");

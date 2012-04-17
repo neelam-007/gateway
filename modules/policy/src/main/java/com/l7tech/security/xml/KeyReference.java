@@ -16,9 +16,10 @@ public final class KeyReference implements Serializable {
     public static final KeyReference SKI = new KeyReference(index++, "SubjectKeyIdentifier");
     public static final KeyReference ISSUER_SERIAL = new KeyReference(index++, "IssuerSerial");
     public static final KeyReference KEY_NAME = new KeyReference(index++, "KeyName");
+    public static final KeyReference THUMBPRINT_SHA1 = new KeyReference(index++, "ThumbprintSHA1");
 
     // for readResolve
-    private static final KeyReference[] REFERENCES = {BST, SKI, ISSUER_SERIAL, KEY_NAME};
+    private static final KeyReference[] REFERENCES = {BST, SKI, ISSUER_SERIAL, KEY_NAME, THUMBPRINT_SHA1};
 
     private int val;
     private final String name;
@@ -49,6 +50,8 @@ public final class KeyReference implements Serializable {
             return ISSUER_SERIAL;
         } else if (name.equals(KEY_NAME.getName())) {
             return KEY_NAME;
+        } else if (name.equals(THUMBPRINT_SHA1.getName())) {
+            return THUMBPRINT_SHA1;
         }
         throw new IllegalArgumentException("No such KeyReference: " + name);
     }
