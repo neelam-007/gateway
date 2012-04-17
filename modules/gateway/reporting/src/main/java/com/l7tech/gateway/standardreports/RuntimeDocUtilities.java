@@ -303,8 +303,7 @@ public class RuntimeDocUtilities {
         //see the jrxml files which have two charts defined.
 
         Utilities.checkMappingQueryParams(keysToFilters, false, false);
-        Collection<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
-                true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
+        Collection<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets);
         LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
 
         addPerfChartXmlMapping(jasperDoc, groupToLegendDisplayStringMap);
@@ -465,8 +464,7 @@ public class RuntimeDocUtilities {
         jasperDoc.addIntElement(JasperDocument.ElementName.LEFT_MARGIN, LEFT_MARGIN_WIDTH);
         jasperDoc.addIntElement(JasperDocument.ElementName.RIGHT_MARGIN, LEFT_MARGIN_WIDTH);
 
-        Collection<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
-                true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
+        Collection<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets);
 
         LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
         addChartXMLToDocument(jasperDoc, groupToLegendDisplayStringMap, USAGE_CHART_STATIC_WIDTH, 595);
@@ -562,8 +560,7 @@ public class RuntimeDocUtilities {
         //usage queires do not use isDetail to determine validity of parameters, it's not considered a key for usage reports
         Utilities.checkMappingQueryParams(keysToFilters, false, true);
 
-        Collection<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
-                true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
+        Collection<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets);
 
         /*
         * distinctMappingValues The set of distinct mapping values, which were determined earlier based on
@@ -782,16 +779,10 @@ public class RuntimeDocUtilities {
      * @param distinctMappingSets  represents the runtime report meta data, which are the distinct set of mapping values
      *                             that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
      *                             followed by 5 mapping values
-     * @param truncateValues       if true truncation will be appplied to keys and values
-     * @param truncateKeyMaxSize   if truncateValues is true, then this is the maximum size of a key after truncation
-     * @param truncateValueMaxSize if truncateValues is true, then this is the maximum size of a value after truncation
      * @return a Collection with a string representing each distint group of values from distinctMappingSets
      */
     public static Collection<String> getMappingLegendValues(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
-                                                               LinkedHashSet<List<String>> distinctMappingSets,
-                                                               boolean truncateValues,
-                                                               Integer truncateKeyMaxSize,
-                                                               Integer truncateValueMaxSize) {
+                                                            LinkedHashSet<List<String>> distinctMappingSets) {
         Collection<String> mappingValues = new ArrayList<String>();
 
         for (List<String> set : distinctMappingSets) {
@@ -812,7 +803,7 @@ public class RuntimeDocUtilities {
                 mappingStringsArray[i] = Utilities.SQL_PLACE_HOLDER;
             }
             String mappingValue = Utilities.getMappingValueDisplayString(keysToFilters,
-                    authUser, mappingStringsArray, false, null, truncateValues, truncateKeyMaxSize, truncateValueMaxSize);
+                    authUser, mappingStringsArray, false, null);
             mappingValues.add(mappingValue);
         }
 

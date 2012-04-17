@@ -129,7 +129,6 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
 ? "All Available"
 : $P{serviceIdDisplayText}]]></defaultValueExpression>
     </parameter>
-    <parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
     <parameter name="PRINT_CHART" isForPrompting="false" class="java.lang.Boolean"/>
     <parameter name="SUB_REPORT_HELPER" isForPrompting="false"
                class="com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper"/>

@@ -430,7 +430,7 @@ public class ReportApp {
         summaryAndSubReportHelper.setKeyToColumnMap(keyToColumnName);
         parameters.put(SUB_REPORT_HELPER, summaryAndSubReportHelper);
 
-        Collection<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null, null);
+        Collection<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
         LinkedHashMap<Integer, String> groupIndexToGroup = Utilities.getGroupIndexToGroupString(mappingValuesLegend.size());
         helper.setIndexToGroupMap(groupIndexToGroup);
 
@@ -580,7 +580,7 @@ public class ReportApp {
         Document transformDoc = null;
         if (isContextMapping && isUsingKeys) {
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sqlAndParamsPair);
-            Collection<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null, null);
+            Collection<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
@@ -700,7 +700,7 @@ public class ReportApp {
 
         if (isContextMapping && isUsingKeys) {
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sqlAndParamsPair);
-            Collection<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null, null);
+            Collection<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
@@ -810,7 +810,7 @@ public class ReportApp {
         LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sqlAndParamsPair);
         LinkedHashMap<String, String> keyToColumnName = RuntimeDocUtilities.getKeyToColumnValues(distinctMappingSets);
         helper.setKeyToColumnMap(keyToColumnName);
-        Collection<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null, null);
+        Collection<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
         LinkedHashMap<Integer, String> groupIndexToGroup = Utilities.getGroupIndexToGroupString(mappingValuesLegend.size());
         helper.setIndexToGroupMap(groupIndexToGroup);
 

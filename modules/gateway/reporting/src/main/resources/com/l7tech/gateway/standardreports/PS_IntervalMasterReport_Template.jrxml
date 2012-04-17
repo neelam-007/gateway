@@ -703,7 +703,7 @@ $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
                         </textElement>
                         <textFieldExpression class="java.lang.String"><![CDATA[Utilities.getMappingValueDisplayString(
 $P{KEYS_TO_LIST_FILTER_PAIRS}, $F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE)+"<br>"]]></textFieldExpression>
+$F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ")+"<br>"]]></textFieldExpression>
                     </textField>
                 </frame>
             </band>

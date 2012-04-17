@@ -363,7 +363,7 @@ public class ReportGenerator {
         if (isContextMapping && isUsingKeys) {
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sqlAndParamsPair);
             reportParams.put(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS, distinctMappingSets);
-            Collection<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null, null);
+            Collection<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
@@ -412,7 +412,9 @@ public class ReportGenerator {
             reportParams.put(ReportApi.ReportParameters.MAPPING_GROUP_TO_DISPLAY_STRING, groupToDisplayString);
         }
 
-        reportParams.put(ReportApi.ReportParameters.DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
+        if (reportType == ReportApi.ReportType.PERFORMANCE_SUMMARY || reportType == ReportApi.ReportType.PERFORMANCE_INTERVAL) {
+            reportParams.put(ReportApi.ReportParameters.DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
+        }
 
         //add required report scriptlets
         if (reportType == ReportApi.ReportType.PERFORMANCE_SUMMARY) {

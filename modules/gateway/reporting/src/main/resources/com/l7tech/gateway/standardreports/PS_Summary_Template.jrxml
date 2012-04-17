@@ -1398,7 +1398,7 @@ new Double((new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMP
                         <textFieldExpression class="java.lang.String"><![CDATA[($P{IS_USING_KEYS}.booleanValue())?
 Utilities.getMappingValueDisplayString(
 $P{KEYS_TO_LIST_FILTER_PAIRS}, $F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE)+"<br>"
+$F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ")+"<br>"
 :
 "Service Operation Summary"]]></textFieldExpression>
                     </textField>

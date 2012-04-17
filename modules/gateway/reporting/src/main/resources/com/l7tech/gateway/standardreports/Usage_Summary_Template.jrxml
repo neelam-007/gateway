@@ -110,7 +110,6 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
 ? "All Available"
 : $P{serviceIdDisplayText}]]></defaultValueExpression>
     </parameter>
-    <parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
     <parameter name="PRINT_CHART" isForPrompting="false" class="java.lang.Boolean"/>
 
     <parameter name="sqlQueryAndParam" isForPrompting="false" class="com.l7tech.util.Pair">

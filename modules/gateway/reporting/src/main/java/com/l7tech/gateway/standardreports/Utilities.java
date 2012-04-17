@@ -2267,7 +2267,7 @@ public class Utilities {
                                                          LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
                                                          String[] keyValues) {
 
-        String displayString = getMappingValueDisplayString(keysToFilters, authUser, keyValues, false, null, false, null, null);
+        String displayString = getMappingValueDisplayString(keysToFilters, authUser, keyValues, false, null);
         if (!displayStringToMappingGroup.containsKey(displayString)) throw new IllegalArgumentException("Group for " +
                 "display string not found: " + displayString);
 
@@ -2449,6 +2449,7 @@ public class Utilities {
      * This function is used to create a unique key string by which to identify a set of mapping values and also to
      * display the mapping values to the user in report output. As a result a prefix can be added for display purposes.
      *
+     *
      * @param keysToFilters        a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
      *                             represent it's constraints. All keys should have at least one FilterPair supplied. If no constraint was added for a
      *                             key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
@@ -2460,9 +2461,6 @@ public class Utilities {
      * @param includePreFix        true if the supplied prefix should be at the start of the returned string
      * @param prefix               stirng to include at the start of the returned string. If includePreFix is true, it cannot be
      *                             null or the empty string
-     * @param truncateValues       should the return string be truncated? If trur truncateMaxSize cannot be null or < -1
-     * @param truncateKeyMaxSize   maximum size any string representing a key can be
-     * @param truncateValueMaxSize maximum size any string representing a value can be
      * @return a string representing all the supplied parameters
      * @throws IllegalArgumentException if the length of keyValues is less than the size of keys, or if truncateValues is
      *                                  true and truncateMaxSize is null or < -1
@@ -2473,10 +2471,7 @@ public class Utilities {
                                                       String authUser,
                                                       String[] keyValues,
                                                       boolean includePreFix,
-                                                      String prefix,
-                                                      boolean truncateValues,
-                                                      Integer truncateKeyMaxSize,
-                                                      Integer truncateValueMaxSize) {
+                                                      String prefix) {
         if (keysToFilters == null) throw new NullPointerException("keysToFilters cannot be null");
 
         if (authUser == null || authUser.equals(""))
@@ -2503,9 +2498,18 @@ public class Utilities {
                         "cannot be null or the empty string");
         }
 
+        final boolean truncateValues = ConfigFactory.getBooleanProperty("com.l7tech.gateway.standardreports.truncate_mappings", false);
+        int truncateKeyMaxSize = ConfigFactory.getIntProperty("com.l7tech.gateway.standardreports.mapping_key_max_size", 100);
+        int truncateValueMaxSize = ConfigFactory.getIntProperty("com.l7tech.gateway.standardreports.mapping_value_max_size", 20);
+
         if (truncateValues) {
-            if (truncateValueMaxSize == null || truncateValueMaxSize < 1) {
-                throw new IllegalArgumentException("If truncateValues is true, truncateValueMaxSize must be non null and > 1");
+            if (truncateKeyMaxSize < 10) {
+                logger.warning("Minimum size for system property com.l7tech.gateway.standardreports.mapping_key_max_size is 10. Using value of 10.");
+                truncateKeyMaxSize = 10;
+            }
+            if (truncateValueMaxSize < 10) {
+                logger.warning("Minimum size for system property com.l7tech.gateway.standardreports.mapping_value_max_size is 10. Using value of 10.");
+                truncateValueMaxSize = 10;
             }
         }
 
