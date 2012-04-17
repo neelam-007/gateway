@@ -11,22 +11,18 @@ import com.l7tech.policy.wsp.*;
 import com.l7tech.util.ComparisonOperator;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Processes the value resulting from the evaluation of an expression through any number of {@link Predicate}s.
- *
+ * <p/>
  * If the use of a {@link DataTypePredicate} is desired, it must come first in the {@link #predicates} array.
+ * <p/>
+ * Context variables are supported in {@link #leftValue} at runtime using ${var} syntax.
  *
- * Context variables are supported in {@link #leftValue} at runtime using ${var} syntax.  
- *  
  * @see com.l7tech.server.message.PolicyEnforcementContext#getVariable(String)
  * @see com.l7tech.server.message.PolicyEnforcementContext#setVariable(String, Object)
  */
@@ -46,14 +42,14 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         final List<String> values = new ArrayList<String>();
-        values.add( leftValue );
-        for ( final Predicate predicate : predicates) {
-            if ( predicate instanceof BinaryPredicate ) {
+        values.add(leftValue);
+        for (final Predicate predicate : predicates) {
+            if (predicate instanceof BinaryPredicate) {
                 BinaryPredicate bp = (BinaryPredicate) predicate;
-                values.add( bp.getRightValue() );
+                values.add(bp.getRightValue());
             }
         }
-        return Syntax.getReferencedNames( values.toArray( new String[values.size()] ) );
+        return Syntax.getReferencedNames(values.toArray(new String[values.size()]));
     }
 
     public ComparisonAssertion() {
@@ -90,69 +86,85 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         return multivaluedComparison;
     }
 
-    public void setMultivaluedComparison( final MultivaluedComparison multivaluedComparison ) {
-        this.multivaluedComparison = multivaluedComparison==null ?
+    public void setMultivaluedComparison(final MultivaluedComparison multivaluedComparison) {
+        this.multivaluedComparison = multivaluedComparison == null ?
                 MultivaluedComparison.ALL :
                 multivaluedComparison;
     }
 
     private boolean check() {
         if (predicates == null || predicates.length == 0) {
-            predicates = new Predicate[] { new BinaryPredicate() };
+            predicates = new Predicate[]{new BinaryPredicate()};
             return true;
         } else
             return predicates.length == 1 && predicates[0] instanceof BinaryPredicate;
     }
 
     private BinaryPredicate compat() {
-        return ((BinaryPredicate)predicates[0]);
+        return ((BinaryPredicate) predicates[0]);
     }
 
-    /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    /**
+     * @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}
+     */
     @Deprecated
     public String getExpression2() {
         if (check()) return compat().getRightValue();
         return null;
     }
 
-    /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    /**
+     * @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}
+     */
     @Deprecated
     public void setExpression2(String expression2) {
         if (check()) compat().setRightValue(expression2);
     }
 
-    /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    /**
+     * @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}
+     */
     @Deprecated
     public ComparisonOperator getOperator() {
         if (check()) return compat().getOperator();
         return null;
     }
 
-    /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    /**
+     * @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}
+     */
     @Deprecated
     public void setOperator(ComparisonOperator operator) {
         if (check()) compat().setOperator(operator);
     }
 
-    /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    /**
+     * @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}
+     */
     @Deprecated
     public boolean isNegate() {
         return check() && compat().isNegated();
     }
 
-    /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    /**
+     * @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}
+     */
     @Deprecated
     public void setNegate(boolean negate) {
         if (check()) compat().setNegated(negate);
     }
 
-    /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    /**
+     * @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}
+     */
     @Deprecated
     public boolean isCaseSensitive() {
         return check() && compat().isCaseSensitive();
     }
 
-    /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    /**
+     * @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}
+     */
     @Deprecated
     public void setCaseSensitive(boolean caseSensitive) {
         if (check()) compat().setCaseSensitive(caseSensitive);
@@ -160,30 +172,37 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
 
     private final static String baseName = "Compare Expression";
 
-    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ComparisonAssertion>(){
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ComparisonAssertion>() {
         @Override
-        public String getAssertionName( final ComparisonAssertion assertion, final boolean decorate) {
-            if(!decorate) return baseName;
+        public String getAssertionName(final ComparisonAssertion assertion, final boolean decorate) {
+            if (!decorate) return baseName;
 
             StringBuilder name = new StringBuilder(baseName).append(": ");
             name.append(assertion.getExpression1()).append(" ");
 
-            Predicate [] predicatesLocal = assertion.getPredicates();
+            Predicate[] predicatesLocal = assertion.getPredicates();
             for (int i = 0; i < predicatesLocal.length; i++) {
                 Predicate pred = predicatesLocal[i];
                 name.append(pred.toString());
 
-                if (i == predicatesLocal.length-2)
+                if (i == predicatesLocal.length - 2)
                     name.append(" and ");
-                else if (i < predicatesLocal.length-1)
+                else if (i < predicatesLocal.length - 1)
                     name.append(", ");
             }
 
+            name.append("; ");
+            name.append(resources.getString("multivaluedComparison.label"));
+            name.append(" ");
+            String labelKey = "multivaluedComparison." + assertion.getMultivaluedComparison().name() + ".text";
+            name.append(resources.getString(labelKey));
+
+
             return name.toString();
-            
+
         }
     };
-    
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -191,9 +210,9 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
             return meta;
 
         // Request to appear in "misc" ("Service Availability") palette folder
-        meta.put(PALETTE_FOLDERS, new String[] { "policyLogic" });
+        meta.put(PALETTE_FOLDERS, new String[]{"policyLogic"});
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
-        
+
         meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "Evaluate an expression against a series of rules during the runtime processing of a policy.");
 
@@ -213,17 +232,17 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         meta.put(WSP_EXTERNAL_NAME, "ComparisonAssertion");
 
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
-            new Java5EnumTypeMapping(ComparisonOperator.class, "operator"),
-            new Java5EnumTypeMapping(MultivaluedComparison.class, "multivaluedComparison"),
-            new ArrayTypeMapping(new Predicate[0], "predicates"),
-            new AbstractClassTypeMapping(Predicate.class, "predicate"),
-            new BeanTypeMapping(BinaryPredicate.class, "binary"),
-            new BeanTypeMapping(CardinalityPredicate.class, "cardinality"),
-            new BeanTypeMapping(StringLengthPredicate.class, "stringLength"),
-            new BeanTypeMapping(RegexPredicate.class, "regex"),
-            new BeanTypeMapping(DataTypePredicate.class, "dataType"),
-            new WspEnumTypeMapping(DataType.class, "type"),
-            new BeanTypeMapping(EmptyPredicate.class, "empty")
+                new Java5EnumTypeMapping(ComparisonOperator.class, "operator"),
+                new Java5EnumTypeMapping(MultivaluedComparison.class, "multivaluedComparison"),
+                new ArrayTypeMapping(new Predicate[0], "predicates"),
+                new AbstractClassTypeMapping(Predicate.class, "predicate"),
+                new BeanTypeMapping(BinaryPredicate.class, "binary"),
+                new BeanTypeMapping(CardinalityPredicate.class, "cardinality"),
+                new BeanTypeMapping(StringLengthPredicate.class, "stringLength"),
+                new BeanTypeMapping(RegexPredicate.class, "regex"),
+                new BeanTypeMapping(DataTypePredicate.class, "dataType"),
+                new WspEnumTypeMapping(DataType.class, "type"),
+                new BeanTypeMapping(EmptyPredicate.class, "empty")
         )));
 
         meta.put(WSP_COMPATIBILITY_MAPPINGS, new HashMap<String, TypeMapping>() {{
@@ -231,13 +250,13 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         }});
 
         meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.comparison.server.ServerComparisonAssertion");
-        
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 
     @Override
-    public ComparisonAssertion clone()  {
+    public ComparisonAssertion clone() {
         ComparisonAssertion clone = (ComparisonAssertion) super.clone();
         try {
             //we have an array of predicates which need to be manually cloned, clone each predicates
