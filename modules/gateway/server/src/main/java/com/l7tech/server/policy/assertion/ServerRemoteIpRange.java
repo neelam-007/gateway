@@ -41,7 +41,8 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
         
         String remoteAddress;
         // get remote address
-        if (assertion.getIpSourceContextVariable() == null) {
+        final String ipSourceContextVariable = assertion.getIpSourceContextVariable();
+        if (ipSourceContextVariable == null) {
             TcpKnob tcp = context.getRequest().getKnob(TcpKnob.class);
             if (tcp == null) {
                 logAndAudit(AssertionMessages.IP_NOT_TCP);
@@ -50,12 +51,12 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
             remoteAddress = tcp.getRemoteAddress();
         } else {
             try {
-                Object tmp = context.getVariable(assertion.getIpSourceContextVariable());
-                if (tmp == null) throw new NoSuchVariableException("could not resolve " + assertion.getIpSourceContextVariable());
+                Object tmp = context.getVariable(ipSourceContextVariable);
+                if (tmp == null) throw new NoSuchVariableException(ipSourceContextVariable, "could not resolve " + ipSourceContextVariable);
                 remoteAddress = InetAddressUtil.getHostAndPort(tmp.toString(), null).left;
             } catch (NoSuchVariableException e) {
                 logger.log(Level.WARNING, "Remote ip from context variable unavailable. Possible policy error", ExceptionUtils.getDebugException(e));
-                logAndAudit(AssertionMessages.IP_ADDRESS_UNAVAILABLE, assertion.getIpSourceContextVariable());
+                logAndAudit(AssertionMessages.IP_ADDRESS_UNAVAILABLE, ipSourceContextVariable);
                 return AssertionStatus.SERVER_ERROR;
             }
         }

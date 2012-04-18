@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -7,7 +8,9 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Regex;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.message.ContextVariableBackedMessageUtils;
 import com.l7tech.server.message.ContextVariableKnob;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -17,8 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -180,11 +182,52 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
                         : context.getRequest();
             }
 
-            return context.getTargetMessage(assertion, true);
+            return TargetMessageType.OTHER.equals(assertion.getTarget())
+                    ? createBackwardCompatibleContextVariableBackedMessage(context)
+                    : context.getTargetMessage(assertion, true);
+
         } catch (NoSuchVariableException e) {
             logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
         }
+    }
+
+    private Message createBackwardCompatibleContextVariableBackedMessage(PolicyEnforcementContext context) throws NoSuchVariableException {
+        // Bug #12148 - For compatibility with pre-Fangtooth, detect a multivalued target message value and convert it into AbstractCollection.toString() format
+        // TODO in the future we should make it possible to disable this behavior, since it is really pretty terrible, and only desirable if someone has accidentally written a policy to rely on it
+        final String variableName = assertion.getOtherTargetMessageVariable();
+        if (variableName == null)
+            throw new IllegalArgumentException("Target is OTHER but no variable name was set");
+
+        final Object value = context.getVariable(variableName);
+        if (value == null)
+            throw new NoSuchVariableException(variableName, "Target is OTHER but variable value is null");
+
+        if (value instanceof Message)
+            return (Message) value;
+
+        final String stringVal;
+        if (value instanceof CharSequence) {
+            // The common case, no special behavior required
+            stringVal = value.toString();
+        } else if (value instanceof AbstractCollection) {
+            // Pre-Fangtooth we'd match against a Message containing "[foo, bar, baz]" if targeted at a multivalued variable containing an AbstractCollection
+            stringVal = value.toString();
+        } else if (value instanceof Collection) {
+            // Make sure hand-rolled Collections that don't inherit from AbstractCollection still use its output format
+            //noinspection unchecked
+            stringVal = new ArrayList((Collection)value).toString();
+        } else if (value instanceof Object[]) {
+            // We'll make arrays behave like Lists did pre-Fangtooth, in case an assertion changes its output from array to a list in the future
+            Object[] objects = (Object[]) value;
+            stringVal = Arrays.asList(objects).toString();
+        } else {
+            // For maximum backward compat with pre-Fangtooth behavior, we'll just call toString() for other types
+            // even though this is extremely unlikely to accomplish anything useful in most cases
+            stringVal = value.toString();
+        }
+
+        return ContextVariableBackedMessageUtils.createContextVariableBackedMessage(context, variableName, ContentTypeHeader.TEXT_DEFAULT, stringVal);
     }
 
     private AssertionStatus doMatch(PolicyEnforcementContext context, Matcher matcher) {

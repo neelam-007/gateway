@@ -24,11 +24,8 @@ import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyMetadata;
-import static com.l7tech.server.policy.variable.BuildVersionContext.BUILD_VERSION_CONTEXT;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
-import static com.l7tech.util.ExceptionUtils.getDebugException;
-import static com.l7tech.util.ExceptionUtils.getMessage;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TextUtils;
 
@@ -46,6 +43,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.l7tech.server.policy.variable.BuildVersionContext.BUILD_VERSION_CONTEXT;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
 
 public class ServerVariables {
     private static final Logger logger = Logger.getLogger(ServerVariables.class.getName());
@@ -99,7 +100,7 @@ public class ServerVariables {
             SettableVariable sv = (SettableVariable) var;
             sv.set(name, value, context);
         } else if (var == null) {
-            throw new NoSuchVariableException(name);
+            throw new NoSuchVariableException(name, "The variable \"" + name + "\" could not be found.");
         } else {
             throw new VariableNotSettableException(name);
         }
@@ -108,7 +109,7 @@ public class ServerVariables {
     public static Object get(String name, PolicyEnforcementContext context) throws NoSuchVariableException {
         Variable var = getVariable(name, context);
 
-        if (var == null) throw new NoSuchVariableException(name);
+        if (var == null) throw new NoSuchVariableException(name, "The variable \"" + name + "\" could not be found.");
 
         return var.get(name, context);
     }

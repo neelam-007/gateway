@@ -23,6 +23,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.server.util.TestingHttpClientFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,10 +36,7 @@ import org.springframework.mock.web.MockServletContext;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -61,6 +59,123 @@ public class ServerJSONSchemaAssertionTest {
         PolicyEnforcementContext pec = getContext(jsonInstance, true, null, ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMessageTarget_Array_validFirst() throws Exception {
+        // Should FAIL because non-singleton multivalue cannot be converted to Message, even though first value is valid
+        doTestMessageTarget(AssertionStatus.FAILED, new String[]{jsonInstance, "blarg", "blah"});
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMessageTarget_Array_validAll() throws Exception {
+        // Should FAIL because non-singleton multivalue cannot be converted to Message, even though all values are valid
+        doTestMessageTarget(AssertionStatus.FAILED, new String[]{jsonInstance, jsonInstance});
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMessageTarget_Array_validOnly() throws Exception {
+        // Should PASS because singleton-CharSequence multivalue CAN be converted to a Message
+        doTestMessageTarget(AssertionStatus.NONE, new Object[] { asCharSeq(jsonInstance) });
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMessageTarget_Array_validEmpty() throws Exception {
+        // Should FAIL because empty multivalue cannot be converted to Message
+        doTestMessageTarget(AssertionStatus.FAILED, new String[]{});
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMessageTarget_List_validFirst() throws Exception {
+        // Should FAIL because non-singleton multivalue cannot be converted to Message, even though first value is valid
+        doTestMessageTarget(AssertionStatus.FAILED, Arrays.asList(jsonInstance, "blarg", "blah"));
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMessageTarget_List_validAll() throws Exception {
+        // Should FAIL because non-singleton multivalue cannot be converted to Message, even though all values are valid
+        doTestMessageTarget(AssertionStatus.FAILED, Arrays.asList(jsonInstance, jsonInstance));
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMessageTarget_List_validOnly() throws Exception {
+        // Should PASS because singleton-CharSequence multivalue CAN be converted to a Message
+        doTestMessageTarget(AssertionStatus.NONE, Arrays.asList(asCharSeq(jsonInstance)));
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMessageTarget_List_validEmpty() throws Exception {
+        // Should FAIL because empty multivalue cannot be converted to Message
+        doTestMessageTarget(AssertionStatus.FAILED, Collections.emptyList());
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMessageTarget_ListOfArrayOfList_validOnly() throws Exception {
+        // Should PASS because nested-singleton-CharSequence multivalue CAN be converted to a Message
+        final List<CharSequence> list = Arrays.asList(asCharSeq(jsonInstance));
+        final Object[] arrayOfList = {list};
+        final List<Object> listOfArrayOfList = Arrays.asList(arrayOfList);
+        doTestMessageTarget(AssertionStatus.NONE, listOfArrayOfList);
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMessageTarget_UnknownClass() throws Exception {
+        // Should FAIL because value of some random class CANNOT be converted to Message (even if it happens to have overridden toString() to produce valid data)
+        doTestMessageTarget(AssertionStatus.FAILED, new Object() {
+            @Override
+            public String toString() {
+                return jsonInstance;
+            }
+        });
+    }
+
+    private void doTestMessageTarget(AssertionStatus expectedStatus, Object targetValue) throws Exception {
+        JSONSchemaAssertion assertion = new JSONSchemaAssertion();
+        assertion.setResourceInfo(new StaticResourceInfo(jsonSchema));
+        assertion.setTarget(TargetMessageType.OTHER);
+        assertion.setOtherTargetMessageVariable("targetvar");
+        final GenericApplicationContext context = buildContext();
+        ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        pec.setVariable("targetvar", targetValue);
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
+        Assert.assertEquals(expectedStatus, assertionStatus);
+    }
+
+    // Wrap any CharSequence type in a wrapper that prevents downcasting it below CharSequence itself,
+    // to verify that all using code will work with any old CharSequence (not just String or whatever).
+    private static CharSequence asCharSeq(final CharSequence in) {
+        return new CharSequence() {
+            @Override
+            public int length() {
+                return in.length();
+            }
+
+            @Override
+            public char charAt(int index) {
+                return in.charAt(index);
+            }
+
+            @Override
+            public CharSequence subSequence(int start, int end) {
+                return in.subSequence(start, end);
+            }
+
+            @Override
+            public String toString() {
+                return in.toString();
+            }
+        };
     }
 
     @Test

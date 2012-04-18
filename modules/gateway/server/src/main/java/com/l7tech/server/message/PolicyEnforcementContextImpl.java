@@ -4,9 +4,6 @@
 package com.l7tech.server.message;
 
 import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.mime.ByteArrayStashManager;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
@@ -29,7 +26,6 @@ import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ServerVariables;
-import com.l7tech.util.ClassUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import com.l7tech.wsdl.Wsdl;
@@ -41,12 +37,8 @@ import org.xml.sax.SAXException;
 import javax.wsdl.Binding;
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.charset.UnsupportedCharsetException;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -372,7 +364,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
             value = variables.get(name);
         }
 
-        if (value == null) throw new NoSuchVariableException(name);
+        if (value == null) throw new NoSuchVariableException(name, "The variable \"" + name + "\" could not be found.");
 
         return value;
     }
@@ -396,7 +388,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
                 outName = mname;
                 value = variables.get(mname);
             } else {
-                throw new NoSuchVariableException(inName);
+                throw new NoSuchVariableException(inName, "The variable \"" + inName + "\" could not be found.");
             }
         }
 
@@ -609,7 +601,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
 
         if ( message == null ) {
             if ( varName == null ) {
-                throw new NoSuchVariableException("<NULL>");
+                throw new NoSuchVariableException("<NULL>", "Target variable name is null.");
             }
 
             Object currentVariable = null;
@@ -652,20 +644,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
                 if (variableName == null)
                     throw new IllegalArgumentException("Target is OTHER but no variable name was set");
 
-                final Object value = getVariable(variableName);
-
-                if (value == null)
-                    throw new NoSuchVariableException(variableName, "Variable value is null");
-
-                if (value instanceof Message)
-                    return (Message) value;
-
-                if (!allowNonMessageVar)
-                    throw new NoSuchVariableException(variableName,
-                            MessageFormat.format("Request message source (\"{0}\") is a context variable of the wrong type (expected=Message, actual={1}).",
-                                    variableName, ClassUtils.getClassName(value.getClass())));
-
-                return createContextVariableBackedMessage(variableName, value.toString());
+                return ContextVariableBackedMessageUtils.getTargetMessage(this, variableName, allowNonMessageVar);
 
             default:
                 throw new IllegalArgumentException("Unsupported message target: " + targetable.getTarget());
@@ -684,43 +663,6 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Override
     public void setResponseWss11( final boolean wss11 ) {
         this.responseWss11 = wss11;
-    }
-
-    private Message createContextVariableBackedMessage(final String variableName, String initialValue) {
-        Message mess = new Message();
-        final ContentTypeHeader ctype = ContentTypeHeader.TEXT_DEFAULT;
-        try {
-            final ContextVariableKnob cvk = new ContextVariableKnob(variableName);
-
-            StashManager sm = new ByteArrayStashManager() {
-                @Override
-                public void stash(int ordinal, byte[] in, int offset, int length) {
-                    super.stash(ordinal, in, offset, length);
-                    if (ordinal != 0) // Probably won't happen but you never knob 
-                        return;
-
-                    // Write back the modified context variable
-                    try {
-                        Charset encoding = ctype.getEncoding();
-                        if (cvk.getOverrideEncoding() != null)
-                            encoding = cvk.getOverrideEncoding();
-                        final String val = new String(in, offset, length, encoding);
-                        if (!val.equals(getVariable(variableName)))
-                            setVariable(variableName, val);
-                    } catch (UnsupportedCharsetException e) {
-                        throw new RuntimeException(e); // can't happen
-                    } catch (NoSuchVariableException e) {
-                        throw new RuntimeException(e); // Normally not possible
-                    }
-                }
-            };
-
-            mess.initialize(sm, ctype, new ByteArrayInputStream(initialValue.getBytes(ctype.getEncoding())));
-            mess.attachKnob(ContextVariableKnob.class, cvk);
-            return mess;
-        } catch (IOException e) {
-            throw new RuntimeException(e); // can't happen
-        }
     }
 
     @Override

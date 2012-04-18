@@ -75,6 +75,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
      *                         of the body content, regardless of whether or not the body is multipart.
      *                         If a MimeBody is successfully created, it takes ownership of the mainInputStream.
      *                         If the MimeBody constructor throws a checked exception, this StashManager will already have been closed.
+     * @param firstPartMaxBytes maximum number of bytes to read into first MIME part before throwing IOException, or 0 for unlimited.
      * @throws IOException if the mainInputStream cannot be read or a multipart message is not in valid MIME format
      */
     public MimeBody(StashManager stashManager,

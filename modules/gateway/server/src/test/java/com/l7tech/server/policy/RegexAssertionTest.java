@@ -39,6 +39,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -622,6 +623,139 @@ public class RegexAssertionTest {
         context.setVariable("pat", "mumble");
         expect(AssertionStatus.NONE, regex, context);
     }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_Array_matchLast() throws Exception {
+        doMultivaluedTest(AssertionStatus.NONE, new String[] { "foo", "bar", "blah" });
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_Array_matchAny_Compat() throws Exception {
+        // Ensure array behavior is compatible with pre-Fangtooth behavior on lists:
+        //   multivalued value should generate a target in the format of
+        //   java.util.AbstractCollection.toString(), and try to match against that
+        // Pre-Fangtooth, the target would actually be something like "[Ljava.lang.String;@22911fb5" in
+        // this situation; however, for Fangtooth, we changed arrays to behave the same way as collections.
+
+        final Regex regex = regex("^" + Pattern.quote("[foo, bar, blah]") + "$");
+        regex.setAutoTarget(false);
+        regex.setTarget(TargetMessageType.OTHER);
+        regex.setOtherTargetMessageVariable("targetmess");
+
+        PolicyEnforcementContext context = context(PHRASE_FOO, PHRASE_ORLY);
+        context.setVariable("targetmess", new String[] { "foo", "bar", "blah" });
+
+        expect(AssertionStatus.NONE, regex, context);
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_Array_matchFirst() throws Exception {
+        doMultivaluedTest(AssertionStatus.NONE, new String[] { "blah", "bar", "asdf" });
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_Array_matchOnly() throws Exception {
+        doMultivaluedTest(AssertionStatus.NONE, new String[] { "blah" });
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_Array_unmatchOnly() throws Exception {
+        doMultivaluedTest(AssertionStatus.FALSIFIED, new String[] { "qwer" });
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_Array_matchEmpty() throws Exception {
+        doMultivaluedTest(AssertionStatus.FALSIFIED, new String[] { });
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_Array_matchAll() throws Exception {
+        doMultivaluedTest(AssertionStatus.NONE, new String[] { "blah", "barblah", "blahasdf" });
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_Array_matchNone() throws Exception {
+        doMultivaluedTest(AssertionStatus.FALSIFIED, new String[] { "asdf", "qwer", "zxcv" });
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_List_matchLast() throws Exception {
+        doMultivaluedTest(AssertionStatus.NONE, Arrays.asList("foo", "bar", "blah"));
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_List_matchAny_Compat() throws Exception {
+        // Ensure compatibility with pre-Fangtooth behavior -- multivalued value should generate a target in the format of
+        // java.util.AbstractCollection.toString(), and try to match against that
+        final Regex regex = regex("^" + Pattern.quote("[foo, bar, blah]") + "$"); // Require literal match of "[foo, bar, blah]" anchored over entire target
+        regex.setAutoTarget(false);
+        regex.setTarget(TargetMessageType.OTHER);
+        regex.setOtherTargetMessageVariable("targetmess");
+
+        PolicyEnforcementContext context = context(PHRASE_FOO, PHRASE_ORLY);
+        context.setVariable("targetmess", Arrays.asList("foo", "bar", "blah"));
+
+        expect(AssertionStatus.NONE, regex, context);
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_List_matchFirst() throws Exception {
+        doMultivaluedTest(AssertionStatus.NONE, Arrays.asList("blah", "bar", "qwef"));
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_List_matchOnly() throws Exception {
+        doMultivaluedTest(AssertionStatus.NONE, Arrays.asList("blah"));
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_List_unmatchOnly() throws Exception {
+        doMultivaluedTest(AssertionStatus.FALSIFIED, Arrays.asList("qwer"));
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_List_matchEmpty() throws Exception {
+        doMultivaluedTest(AssertionStatus.FALSIFIED, Collections.emptyList());
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_List_matchAll() throws Exception {
+        doMultivaluedTest(AssertionStatus.NONE, Arrays.asList("blah", "barblah", "blahqwef"));
+    }
+
+    @Test
+    @BugNumber(12148)
+    public void testMultivaluedContextVariable_List_matchNone() throws Exception {
+        doMultivaluedTest(AssertionStatus.FALSIFIED, Arrays.asList("qwer", "sdgfb", "asdf"));
+    }
+
+    private void doMultivaluedTest(AssertionStatus expectedStatus, Object targetValue) throws IOException, PolicyAssertionException {
+        final Regex regex = regex("blah");
+        regex.setAutoTarget(false);
+        regex.setTarget(TargetMessageType.OTHER);
+        regex.setOtherTargetMessageVariable("targetmess");
+
+        PolicyEnforcementContext context = context(PHRASE_FOO, PHRASE_ORLY);
+        context.setVariable("targetmess", targetValue);
+
+        expect(expectedStatus, regex, context);
+    }
+
 
     @Test
     public void testFindAll() throws Exception {

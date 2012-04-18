@@ -6,6 +6,7 @@ package com.l7tech.message;
 
 import com.l7tech.common.mime.*;
 import com.l7tech.util.CausedIOException;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +22,17 @@ class MimeFacet extends MessageFacet {
         mimeBody = null;
     }
 
-    public MimeFacet(Message message, StashManager stash, ContentTypeHeader ctype, InputStream bodyStream, long firstPartMaxBytes)
+    /**
+     * Create a new MimeFacet for the specified message.
+     *
+     * @param message the Message that will own this facet.  Required.
+     * @param stash a stash manager to use to store message parts for later retrieval.  Required.
+     * @param ctype content type of main body.  Required.
+     * @param bodyStream InputStream from which to read MIME body.  Required.
+     * @param firstPartMaxBytes Maximum number of bytes to read from input stream for first MIME part, or 0 for unlimited.
+     * @throws IOException if the mainInputStream cannot be read or a multipart message is not in valid MIME format
+     */
+    public MimeFacet(@NotNull Message message, @NotNull StashManager stash, @NotNull ContentTypeHeader ctype, @NotNull InputStream bodyStream, long firstPartMaxBytes)
             throws IOException
     {
         super(message, null); // Null because this will normally be the last aspect

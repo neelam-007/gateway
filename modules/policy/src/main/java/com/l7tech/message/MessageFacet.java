@@ -6,6 +6,9 @@
 
 package com.l7tech.message;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents a feature or aspect of a Message.  For example, its MIME part, or XML tree, or HTTP headers.
  */
@@ -17,8 +20,7 @@ abstract class MessageFacet {
      * @param message the Message that owns this aspect
      * @param delegate the delegate to chain to or null if there isn't one.  Can't be changed after creation.
      */
-    MessageFacet(Message message, MessageFacet delegate) {
-        if (message == null) throw new NullPointerException();
+    MessageFacet(@NotNull Message message, @Nullable MessageFacet delegate) {
         this.message = message;
         this.delegate = delegate;
     }
