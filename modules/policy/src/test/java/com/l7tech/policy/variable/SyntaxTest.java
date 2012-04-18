@@ -14,14 +14,15 @@ public class SyntaxTest {
 
     @Test
     public void testGetReferencedNamesWithIndex() throws SAXException {
-        final String varName = "${IDS[0]} ${TEST} ${IDS[1]}";
+        final String varName = "${IDS[0]} ${TEST} ${IDS[1]} ${ blah }";
         final String [] referencedNames = Syntax.getReferencedNamesIndexedVarsNotOmitted(varName);
 
-        Assert.assertEquals("Three values expected", 3, referencedNames.length);
+        Assert.assertEquals("Three values expected", 4, referencedNames.length);
 
         Assert.assertEquals("Correct referenced name found", "IDS[0]", referencedNames[0]);
         Assert.assertEquals("Correct referenced name found", "TEST", referencedNames[1]);
         Assert.assertEquals("Correct referenced name found", "IDS[1]", referencedNames[2]);
+        Assert.assertEquals("Correct referenced name found", "blah", referencedNames[3]);
     }
     
     @Test

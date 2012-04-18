@@ -90,6 +90,19 @@ public class ExpandVariablesTest {
     }
 
     @Test
+    public void testSingleVariableExpandExtraWhitespace() throws Exception {
+        Map<String, String> variables = new HashMap<String, String>();
+        String value = "value_variable1";
+        variables.put("var1", value);
+
+        String inputMessage = "Blah message blah ${ var1 }";
+        String expectedOutputMessage = "Blah message blah value_variable1";
+        String processedMessage = ExpandVariables.process(inputMessage, variables, audit);
+        assertTrue( processedMessage.contains( value ) );
+        assertEquals(processedMessage, expectedOutputMessage);
+    }
+
+    @Test
     public void testMultipleVariableExpand() throws Exception {
         Map<String, String> variables = new HashMap<String, String>();
         String value1 = "value_variable1";
