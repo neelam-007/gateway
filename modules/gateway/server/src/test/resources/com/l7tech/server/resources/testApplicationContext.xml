@@ -48,6 +48,7 @@
     <bean id="folderCache" class="com.l7tech.server.folder.FolderCacheImpl">
         <constructor-arg index="0" ref="folderManager"/>
     </bean>
+    <bean id="ldapIdentityProvider" class="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl" scope="prototype"/>
 
     <!-- service cache -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCacheStub" depends-on="wsdlStrategyServiceDocumentsInitializer">

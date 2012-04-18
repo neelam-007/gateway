@@ -1,0 +1,5 @@
+<project name="layer7-ntlm" default="compile">
+    <property name="module.package.root" value="com/l7tech/ntlm"/>
+    <import file="../../etc/build/build-common.xml"/>
+</project>
+

@@ -5,7 +5,6 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
-import junit.framework.TestCase;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -15,13 +14,16 @@ import java.util.Date;
 import java.util.Hashtable;
 
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
 
 /**
  * Developer tests to perform various MQ Native tasks against a live MQ server.
  * That is, these tests depend on a running MQ server.  Recommend running these tests manually as a troubleshooting tool.
  */
 @Ignore("Developer tests")
-public class MqNativeDeveloperTest extends TestCase {
+public class MqNativeDeveloperTest {
 
     @Ignore("Developer test")
     @Test

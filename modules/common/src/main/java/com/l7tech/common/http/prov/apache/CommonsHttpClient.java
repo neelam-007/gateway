@@ -14,6 +14,7 @@ import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.URI;
+import org.apache.commons.httpclient.auth.AuthPolicy;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.*;
@@ -80,6 +81,14 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         DefaultHttpParams.setHttpParamsFactory(new CachingHttpParamsFactory(new DefaultHttpParamsFactory()));
 
         HttpParams defaultParams = DefaultHttpParams.getDefaultParams();
+        ////////////////////////////////////////////////////////////////////////////////////////
+        //Register NTLMv2 scheme
+        AuthPolicy.registerAuthScheme(Ntlm2AuthScheme.NTLM, Ntlm2AuthScheme.class);
+        ArrayList schemes = new ArrayList();
+        schemes.add(Ntlm2AuthScheme.NTLM);
+        //schemes.addAll((Collection) params.getParameter(AuthPolicy.AUTH_SCHEME_PRIORITY));
+        defaultParams.setParameter(AuthPolicy.AUTH_SCHEME_PRIORITY, schemes);
+        ////////////////////////////////////////////////////////////////////////////////////////
         if ( ConfigFactory.getProperty( PROP_HTTP_EXPECT_CONTINUE ) != null) {
             defaultParams.setBooleanParameter( "http.protocol.expect-continue", ConfigFactory.getBooleanProperty( PROP_HTTP_EXPECT_CONTINUE, false ) );
         }
