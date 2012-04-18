@@ -137,6 +137,20 @@ public final class Message implements Closeable {
         invalidateCachedKnobs();
         initialized = true;
     }
+
+
+    /**
+     * Initialize, or re-initialize, a Message with a MIME facet attached to the specified InputStream.
+     * <p>
+     * With the exception of {@link HttpRequestKnob} and {@link HttpResponseKnob}s, which will be preserved in new facets,
+     * any previously existing facets of this Message will be lost and replaced with a single MIME facet.
+     *
+     * @param sm  the StashManager to use for stashing MIME parts temporarily.  Must not be null.
+     * @param outerContentType  the content type of the body InputStream.  Must not be null.
+     * @param body an InputStream positioned at the first byte of body content for this Message.
+     * @throws IOException if there is a problem reading the initial boundary from a multipart/related body, or
+     *                     if the message is multipart/related but contains no initial boundary.
+     */
     public void initialize( final StashManager sm,
                             final ContentTypeHeader outerContentType,
                             final InputStream body )
@@ -160,6 +174,16 @@ public final class Message implements Closeable {
     {
         initialize( body, ContentTypeHeader.XML_DEFAULT, maxBytes );
     }
+
+    /**
+     * Initialize, or re-initialize, a Message with a memory-based MIME facet and an XML facet initialized with
+     * the specified Document.
+     * <p>
+     * With the exception of {@link HttpRequestKnob} and {@link HttpResponseKnob}s, which will be preserved in new facets,
+     * any previously existing facets of this Message will be lost and replaced with a single MIME facet.
+     *
+     * @param body the Document to replace this Message's current content
+     */
     public void initialize(Document body)
     {
         initialize( body, ContentTypeHeader.XML_DEFAULT,0);
@@ -197,6 +221,17 @@ public final class Message implements Closeable {
             throw new RuntimeException(e); // can't happen, the content type is set to xml
         }
     }
+
+    /**
+     * Initialize, or re-initialize, a Message with a memory-based MIME facet and an XML facet initialized with
+     * the specified Document.
+     * <p>
+     * With the exception of {@link HttpRequestKnob} and {@link HttpResponseKnob}s, which will be preserved in new facets,
+     * any previously existing facets of this Message will be lost and replaced with a single MIME facet.
+     *
+     * @param body the Document to replace this Message's current content
+     * @param contentTypeHeader the XML content type to use
+     */
     public void initialize(Document body, ContentTypeHeader contentTypeHeader)
     {
         initialize(body, contentTypeHeader, 0);
@@ -226,6 +261,15 @@ public final class Message implements Closeable {
             throw new RuntimeException(e); // can't happen, it's a byte array input stream
         }
     }
+
+    /**
+     * Initialize, or re-initialize, a Message with a memory-based MIME facet containing the specified body
+     * bytes.
+     *
+     * @param contentType  the MIME content type.  Required.
+     * @param bodyBytes the body bytes.  May be empty but must not be null.
+     * @throws IOException if contentType is multipart, but the body does not contain the boundary or contains no parts
+     */
     public void initialize(ContentTypeHeader contentType, byte[] bodyBytes) throws IOException {
         initialize(contentType,bodyBytes,0);
     }
