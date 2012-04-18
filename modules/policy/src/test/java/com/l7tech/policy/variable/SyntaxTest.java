@@ -3,18 +3,21 @@
  */
 package com.l7tech.policy.variable;
 
+import com.l7tech.test.BugNumber;
 import org.junit.Assert;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
 
 public class SyntaxTest {
 
     @Test
     public void testGetReferencedNamesWithIndex() throws SAXException {
-        final String varName = "${IDS[0]} ${TEST} ${IDS[1]} ${ blah }";
+        final String varName = "${IDS[0]} ${TEST} ${IDS[1]} ${ blah[8] }";
         final String [] referencedNames = Syntax.getReferencedNamesIndexedVarsNotOmitted(varName);
 
         Assert.assertEquals("Three values expected", 4, referencedNames.length);
@@ -22,7 +25,7 @@ public class SyntaxTest {
         Assert.assertEquals("Correct referenced name found", "IDS[0]", referencedNames[0]);
         Assert.assertEquals("Correct referenced name found", "TEST", referencedNames[1]);
         Assert.assertEquals("Correct referenced name found", "IDS[1]", referencedNames[2]);
-        Assert.assertEquals("Correct referenced name found", "blah", referencedNames[3]);
+        Assert.assertEquals("Correct referenced name found", "blah[8]", referencedNames[3]);
     }
     
     @Test
@@ -57,6 +60,22 @@ public class SyntaxTest {
         Assert.assertEquals("Correct referenced name found", "IDS", referencedNames[0]);
         Assert.assertEquals("Correct referenced name found", "TEST", referencedNames[1]);
         Assert.assertEquals("Correct referenced name found", "IDS", referencedNames[2]);
+    }
+
+    @Test
+    @BugNumber(12158)
+    public void testGetReferencedNames3d_withWhitespace() throws SAXException {
+        final String varName = "${  IDS     [0] [0][0] } ${   TEST } ${  IDS    [1] }";
+        final String [] referencedNames = Syntax.getReferencedNames(varName);
+
+        assertEquals("Three values expected", 3, referencedNames.length);
+
+        // TODO fix these if we change the behavior as part of Bug #12158 fix
+        assertEquals("Correct referenced name found (current [questionable?] behavior is to keep whitespace before first array index)",
+                "IDS     ", referencedNames[0]);
+        assertEquals("Correct referenced name found", "TEST", referencedNames[1]);
+        assertEquals("Correct referenced name found (current [questionable?] behavior is to keep whitespace before first array index)",
+                "IDS    ", referencedNames[2]);
     }
 
     /**
