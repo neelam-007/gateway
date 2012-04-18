@@ -190,7 +190,7 @@ public class Utilities {
      *
      * So hourly is required when ever we cannot safely use daily bins. Any fraction of a day requires hourly bins.
      *
-     * Do not call from interval reports. Call {@link #getIntervalResolutionFromTimePeriod(com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME, Long, Long, String, boolean, com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME)} instead
+     * Do not call from interval reports. Call {@link #getIntervalResolutionFromTimePeriod(com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME, Long, Long, String, Boolean, com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME)} instead
      *
      * @param startTimeMilli start of time period, in milliseconds, since epoch
      * @param endTimeMilli   end of time period, in milliseconds, since epoch
@@ -757,7 +757,10 @@ public class Utilities {
         }
         addUsageDistinctMappingOrder(sb);
 
-        logger.log(Level.FINER, "getDistinctMappingQuery: " + sb.toString());
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "getDistinctMappingQuery: " + logCompleteSql(sb.toString(), queryParams));
+        }
+
         return new Pair<String, List<Object>>(sb.toString(), queryParams);
     }
 
@@ -845,7 +848,10 @@ public class Utilities {
 
         sb.append(" ORDER BY SERVICE_ID, SERVICE_OPERATION_VALUE");
 
-        logger.log(Level.FINER, "getUsageMasterIntervalQuery: " + sb.toString());
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "getUsageMasterIntervalQuery: " + logCompleteSql(sb.toString(), queryParams));
+        }
+
         return new Pair<String, List<Object>>(sb.toString(), queryParams);
     }
 
@@ -954,7 +960,10 @@ public class Utilities {
         //----SECTION M----
         addUsageMappingOrder(sb);
 
-        logger.log(Level.FINER, "getUsageQuery: " + sb.toString());
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "getUsageQuery: " + logCompleteSql(sb.toString(), queryParams));
+        }
+
         return new Pair<String, List<Object>>(sb.toString(), queryParams);
     }
 
@@ -1382,7 +1391,10 @@ public class Utilities {
         //----SECTION M----
         addMappingOrder(sb);
 
-        logger.log(Level.FINER, "getPerformanceStatisticsMappingQuery: " + sb.toString());
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "getPerformanceStatisticsMappingQuery: " + logCompleteSql(sb.toString(), queryParams));
+        }
+
         return new Pair<String, List<Object>>(sb.toString(), queryParams);
     }
 
@@ -1627,7 +1639,10 @@ public class Utilities {
             sb.append(" GROUP BY p.objectid ");
         }
 
-        logger.log(Level.FINER, "getNoMappingQuery: " + sb.toString());
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "getNoMappingQuery: " + logCompleteSql(sb.toString(), queryParams));
+        }
+
         return new Pair<String, List<Object>>(sb.toString(), queryParams);
     }
 
