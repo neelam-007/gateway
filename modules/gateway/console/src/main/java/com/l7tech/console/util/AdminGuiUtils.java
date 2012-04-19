@@ -24,7 +24,7 @@ public class AdminGuiUtils {
      * Get the result of an asynchronous administrative method.
      *
      * <p>A cancel dialog will be shown for the operation after a short
-     * delay.</p>
+     * delay.  Clicking the cancel dialog will cancel the related job</p>
      *
      * @param admin The async API
      * @param parent The parent window for any dialogs
@@ -71,6 +71,12 @@ public class AdminGuiUtils {
             }
         };
 
-        return Utilities.doWithDelayedCancelDialog(callable, cancelDialog, 500L);
+
+        try{
+            return Utilities.doWithDelayedCancelDialog(callable, cancelDialog, 500L);
+        }catch (InterruptedException e){
+            admin.cancelJob(jobId, true);
+            throw e;
+        }
     }
 }
