@@ -453,7 +453,6 @@ public interface ReportApi {
         //keeping here so they are known
         public static final String TEMPLATE_FILE_ABSOLUTE = "TEMPLATE_FILE_ABSOLUTE";
         public static final String SUBREPORT_DIRECTORY = "SUBREPORT_DIRECTORY";
-        public static final String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
         public static final String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
         public static final String REPORT_SCRIPTLET = "REPORT_SCRIPTLET";
         public static final String DISPLAY_STRING_TO_MAPPING_GROUP = "DISPLAY_STRING_TO_MAPPING_GROUP";
