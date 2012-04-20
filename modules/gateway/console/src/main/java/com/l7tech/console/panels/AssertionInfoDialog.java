@@ -25,6 +25,7 @@ public class AssertionInfoDialog extends JDialog {
         setContentPane(contentPanel);
         nameLabel.setText(assertion.meta().get(AssertionMetadata.SHORT_NAME).toString());
         descriptionTextPane.setText(assertion.meta().get(AssertionMetadata.DESCRIPTION).toString());
+        descriptionTextPane.setCaretPosition(0);
         descriptionScrollPane.setBorder(BorderFactory.createEmptyBorder());
         displayVariablesUsed(assertion);
         displayVariablesSet(assertion);
