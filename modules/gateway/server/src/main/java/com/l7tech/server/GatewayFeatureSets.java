@@ -640,6 +640,10 @@ public class GatewayFeatureSets {
         fsr("set:JsonTransformation:Assertions", "The necessary assertions to enable JSON transformation functionality",
             mass("assertion:JsonTransformation"));
 
+        GatewayFeatureSet generateHashAssertion =
+                fsr("set:GenerateHashAssertion:Assertions", "The necessary assertions to enable the Generate Hash functionality",
+                        mass("assertion:GenerateHash"));
+        
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -767,7 +771,8 @@ public class GatewayFeatureSets {
             fs(esmAssertions),
             fs(wssp),
             fs(icapAntivirusScannerAssertions),
-            fs(jsonTransformationAssertion));
+            fs(jsonTransformationAssertion),
+            fs(generateHashAssertion));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
             "Same features as Gateway for now.",

@@ -1114,5 +1114,10 @@ public class AssertionMessages extends Messages {
     public static final Messages.M MQ_ROUTING_RESPONSE_SIZE_LIMIT_ERROR     = m(9625, Level.WARNING, "Ignoring invalid response size limit: {0}");
     public static final Messages.M MQ_ROUTING_RESPONSE_SIZE_LIMIT           = m(9626, Level.FINER, "Using response size limit {0} (bytes)");
 
+    public static final Messages.M GENERATE_HASH_VARIABLE_NOT_SET     = m(9635, Level.WARNING, "''{0}'' is not set.");
+    public static final Messages.M GENERATE_HASH_UNSUPPORTED_ALGORITHM     = m(9636, Level.WARNING, "Unsupported Algorithm: ''{0}''");
+    public static final Messages.M GENERATE_HASH_INVALID_KEY     = m(9637, Level.WARNING, "Invalid key: ''{0}''");
+    public static final Messages.M GENERATE_HASH_ERROR     = m(9638, Level.WARNING, "Error generating hash signature.");
+
     // Highest ID reserved for AssertionMessages = 99999
 }
