@@ -1,0 +1,3 @@
+<project name="GenerateHashAssertion" default="compile">
+    <import file="../assertion-build.xml"/>
+</project>
