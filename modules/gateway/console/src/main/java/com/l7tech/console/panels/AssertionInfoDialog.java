@@ -86,7 +86,9 @@ public class AssertionInfoDialog extends JDialog {
                     for (int i = 0; i < variablesSet.length; i++) {
                         final VariableMetadata var = variablesSet[i];
                         data[i][0] = var.getName();
-                        data[i][1] = var.getType().getShortName();
+                        if (var.getType() != null) {
+                            data[i][1] = var.getType().getShortName();
+                        }
                         data[i][2] = var.isMultivalued() ? YES : NO;
                     }
                     setsVariablesTable.setModel(new UneditableTableModel(data, new String[]{NAME, TYPE, MULTIVALUED}));
