@@ -237,8 +237,7 @@ public class GatewayFeatureSets {
         GatewayFeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",
             "Enables features that are only present during development, and that will be moved or renamed before shipping.",
-            srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"),
-            ass(MapValueAssertion.class));
+            srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"));
 
         GatewayFeatureSet wssp =
         fsr("set:wssp", "WS-SecurityPolicy assertion",
@@ -511,7 +510,8 @@ public class GatewayFeatureSets {
             ass(ExportVariablesAssertion.class),
             mass("assertion:EchoRouting"),
             mass("assertion:HardcodedResponse"),
-            mass("assertion:UUIDGenerator"));
+            mass("assertion:UUIDGenerator"),
+            ass(MapValueAssertion.class));
 
         GatewayFeatureSet threatIps =
         fsr("set:Threats:IPS", "SecureSpan XML IPS threat protection",
