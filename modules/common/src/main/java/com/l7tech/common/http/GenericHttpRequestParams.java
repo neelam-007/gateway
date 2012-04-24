@@ -1,12 +1,16 @@
 package com.l7tech.common.http;
 
 import com.l7tech.common.mime.ContentTypeHeader;
+import org.jetbrains.annotations.NotNull;
 
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSocketFactory;
 import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Bean that provides information about a pending HTTP request. 
@@ -41,6 +45,7 @@ public class GenericHttpRequestParams {
     private String proxyHost;
     private int proxyPort;
     private PasswordAuthentication proxyAuthentication;
+    private boolean forceIncludeRequestBody;
     // NOTE: Add any new fields to the copy constructor
 
     /**
@@ -541,5 +546,30 @@ public class GenericHttpRequestParams {
      */
     public GenericHttpRequestParams resolve( final URL url ) {
         return this;
+    }
+
+    /**
+     * Check whether the request should attempt to include a request body even if the method is one
+     * that normally would not include a request body (eg, DELETE).
+     *
+     * @return true if we want to forcibly include a body with this request.
+     */
+    public boolean isForceIncludeRequestBody() {
+        return forceIncludeRequestBody;
+    }
+
+    public void setForceIncludeRequestBody(boolean forceIncludeRequestBody) {
+        this.forceIncludeRequestBody = forceIncludeRequestBody;
+    }
+
+    /**
+     * Check if the specified method should include a request body, given the current parameters.
+     *
+     * @param method the method to examine.  Required.
+     * @return true if the method normally supports a request body, or if the current parameters are configured
+     *          to force including a request body and the method allows this to be forced.
+     */
+    public boolean needsRequestBody(@NotNull HttpMethod method) {
+        return method.needsRequestBody() || (isForceIncludeRequestBody() && method.canForceIncludeRequestBody());
     }
 }

@@ -317,7 +317,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if ( assertion.getMaxRetries() >= 0 ) {
                 routedRequestParams.setMaxRetries( assertion.getMaxRetries() );
             }
-            
+            routedRequestParams.setForceIncludeRequestBody(assertion.isForceIncludeRequestBody());
+
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
             handleProcessedSecurityHeader(requestMessage);
 
@@ -460,7 +461,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             logAndAudit(AssertionMessages.HTTPROUTE_UNEXPECTED_METHOD, "null");
             return HttpMethod.POST;
         }
-        if (requestMethod.isFollowRedirects())
+        if (requestMethod.isFollowRedirects() && !assertion.isForceIncludeRequestBody())
             routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
         return requestMethod;
     }
@@ -513,7 +514,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             final HttpMethod method = methodFromRequest(context, routedRequestParams);
 
             // dont add content-type for get and deletes
-            if (method.needsRequestBody()) {
+            if (routedRequestParams.needsRequestBody(method)) {
                 final String requestContentType = reqMime == null ? "application/octet-stream" : reqMime.getOuterContentType().getFullValue();
                 routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, requestContentType));
             }
@@ -574,8 +575,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     routedRequest.addParameter(p.name, p.value);
                 }
             } else {
-                // only include payload if the method is POST or PUT
-                if (method.needsRequestBody()) {
+                // only include payload if the method requires one (PUT or POST, or something else but with forced-body-inclusion turned on)
+                if (routedRequestParams.needsRequestBody(method)) {
                     if (routedRequest instanceof RerunnableHttpRequest) {
                         RerunnableHttpRequest rerunnableHttpRequest = (RerunnableHttpRequest) routedRequest;
                         rerunnableHttpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
@@ -640,7 +641,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 });
             }
 
-            boolean readOk = readResponse(context, routedResponse, routedResponseDestination, method == HttpMethod.HEAD, maxBytes);
+            boolean readOk = readResponse(context, routedResponse, routedResponseDestination, maxBytes);
             long latencyTimerEnd = System.currentTimeMillis();
             if (readOk) {
                 long latency = latencyTimerEnd - latencyTimerStart;
@@ -770,16 +771,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     /**
      * Read the routing response and copy into the destination message object.
      *
+     *
      * @param context           the policy enforcement context
      * @param routedResponse    response from back end
      * @param destination       the destination message object to copy <code>routedResponse</code> into
-     * @param wasHeadMethod     true if the HTTP method used for the request was "HEAD"
      * @return <code>false</code> if error reading <code>routedResponse</code> or it is an error response
      */
     private boolean readResponse(final PolicyEnforcementContext context,
                                  final GenericHttpResponse routedResponse,
                                  final Message destination,
-                                 final boolean wasHeadMethod,
                                  final long responseMaxSize) {
         boolean responseOk = true;
         try {

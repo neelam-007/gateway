@@ -28,7 +28,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
     }
 
     @Override
-    public GenericHttpRequest createRequest(final HttpMethod method, GenericHttpRequestParams params)
+    public GenericHttpRequest createRequest(final HttpMethod method, final GenericHttpRequestParams params)
             throws GenericHttpException
     {
         if ( params.isGzipEncode() ) {
@@ -59,7 +59,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                     throw new GenericHttpException("HttpURLConnection was using SSL but was not an HttpsURLConnection");
             }
 
-            if (method.needsRequestBody())
+            if (params.needsRequestBody(method))
                 conn.setDoOutput(true);
             conn.setAllowUserInteraction(false);
             conn.setUseCaches(false);
@@ -93,7 +93,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
 
                 @Override
                 public void setInputStream(InputStream bodyInputStream) {
-                    if (!method.needsRequestBody())
+                    if (!params.needsRequestBody(method))
                         throw new UnsupportedOperationException("bodyInputStream not needed for request method: " + method);
                     if (completedRequest)
                         throw new IllegalStateException("This HTTP request is already closed");

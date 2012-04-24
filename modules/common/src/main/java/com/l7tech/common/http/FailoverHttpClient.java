@@ -132,7 +132,7 @@ public class FailoverHttpClient implements GenericHttpClient {
                     params.setTargetUrl(new URL(u.getProtocol(), host, u.getPort(), u.getFile()));
                     request = client.createRequest(method, params);
 
-                    if (method.needsRequestBody()) {
+                    if (params.needsRequestBody(method)) {
                         if (paramList != null && paramList.size() > 0) {
                             for (String[] strings : paramList) {
                                 request.addParameter(strings[0], strings[1]);

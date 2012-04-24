@@ -153,6 +153,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JButton trustedServerCertsButton;
     private JComboBox tlsVersionComboBox;
     private ByteLimitPanel byteLimitPanel;
+    private JCheckBox forceIncludeRequestBodyCheckBox;
 
     private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
@@ -823,6 +824,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         assertion.setUseKeepAlives(useKeepalivesCheckBox.isSelected());
 
+        assertion.setForceIncludeRequestBody(forceIncludeRequestBodyCheckBox.isSelected());
+
         final boolean proxy = rbProxySpecified.isSelected();
         if (proxy) {
             assertion.setProxyHost(proxyHostField.getText());
@@ -968,6 +971,10 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         updateRequestMethodComboBoxEnableState();
 
         useKeepalivesCheckBox.setSelected(assertion.isUseKeepAlives());
+
+        forceIncludeRequestBodyCheckBox.setSelected(assertion.isForceIncludeRequestBody());
+        if (bra)
+            forceIncludeRequestBodyCheckBox.setEnabled(false);
 
         String host = assertion.getProxyHost();
         if (host == null || host.trim().length() < 1) {

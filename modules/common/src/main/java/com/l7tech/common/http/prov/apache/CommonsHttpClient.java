@@ -3,8 +3,6 @@ package com.l7tech.common.http.prov.apache;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpMethod;
-import static com.l7tech.common.http.prov.apache.DelegatingScopedProtocolSocketFactory.wrapWithScope;
-import static com.l7tech.common.http.prov.apache.DelegatingScopedSecureProtocolSocketFactory.wrapSecureWithScope;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.common.io.SocketWrapper;
 import com.l7tech.common.io.UnsupportedTlsVersionsException;
@@ -40,6 +38,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
+
+import static com.l7tech.common.http.prov.apache.DelegatingScopedProtocolSocketFactory.wrapWithScope;
+import static com.l7tech.common.http.prov.apache.DelegatingScopedSecureProtocolSocketFactory.wrapSecureWithScope;
 
 /**
  * GenericHttpClient driver for the Apache Commons HTTP client.
@@ -273,26 +274,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
         final HttpState state = getHttpState(client, params);
 
-        org.apache.commons.httpclient.HttpMethod clientMethod;
-        Constructor<? extends org.apache.commons.httpclient.HttpMethod> apacheMethodCtor = apacheMethodMap.get(method);
-        if (apacheMethodCtor != null) {
-            try {
-                // NOTE: Use the FILE part of the url here (path + query string), if we use the full URL then
-                //       we end up with the default socket factory for the protocol
-                clientMethod = apacheMethodCtor.newInstance(encodePathAndQuery(targetUrl.getFile()));
-            } catch (InstantiationException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
-                final Throwable cause = e.getTargetException();
-                clientMethod = new ExceptionMethod(cause instanceof Exception ? (Exception)cause : e);
-            }
-        } else {
-            // TODO support arbitrary HTTP methods, perhaps borrowing POST's semantics for them, or having configurable semantics
-            throw new IllegalStateException("Method " + method + " not supported");
-        }
-        final org.apache.commons.httpclient.HttpMethod httpMethod = clientMethod;
+        final org.apache.commons.httpclient.HttpMethod httpMethod = getClientMethod(method, params, targetUrl);
 
         configureParameters( clientParams, state, httpMethod, params );
 
@@ -315,7 +297,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         }
 
         if ( params.isGzipEncode() ) {
-            httpMethod.addRequestHeader( HttpConstants.HEADER_CONTENT_ENCODING, "gzip" );       
+            httpMethod.addRequestHeader( HttpConstants.HEADER_CONTENT_ENCODING, "gzip" );
         }
 
         final ContentTypeHeader rct = params.getContentType();
@@ -338,7 +320,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     throw new IllegalStateException("Request entity already set!");
                 requestEntitySet = true;
 
-                final EntityEnclosingMethod entityEnclosingMethod = (EntityEnclosingMethod)method;
+                final EntityEnclosingMethod entityEnclosingMethod = (EntityEnclosingMethod) method;
                 entityEnclosingMethod.setRequestEntity(
                         new CompressableRequestEntity(rct, contentLen, params.isGzipEncode(), bodyInputStream) );
             }
@@ -350,7 +332,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     throw new IllegalStateException("the http method object is not yet assigned");
                 }
                 if (method instanceof PostMethod) {
-                    PostMethod post = (PostMethod)method;
+                    PostMethod post = (PostMethod) method;
                     post.addParameter(paramName, paramValue);
                 } else {
                     logger.warning("addParam is called but the internal method is not post : " +
@@ -371,7 +353,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     throw new IllegalStateException("Request entity already set!");
                 requestEntitySet = true;
 
-                final EntityEnclosingMethod entityEnclosingMethod = (EntityEnclosingMethod)method;
+                final EntityEnclosingMethod entityEnclosingMethod = (EntityEnclosingMethod) method;
                 entityEnclosingMethod.setRequestEntity(
                         new CompressableRequestEntity(rct, contentLen, params.isGzipEncode(), inputStreamFactory) );
             }
@@ -482,6 +464,42 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 return targetBuilder.toString();
             }
         };
+    }
+
+    private org.apache.commons.httpclient.HttpMethod getClientMethod(final HttpMethod method, GenericHttpRequestParams params, URL targetUrl) {
+        if (params.isForceIncludeRequestBody() && params.needsRequestBody(method) &&
+                    (!HttpMethod.POST.equals(method) && !HttpMethod.PUT.equals(method)))
+        {
+            // This is a method like GET, DELETE, or HEAD that would not normally be transmitted with a request body, but
+            // that is being forced to include one anyway. We will force use of PostMethod (with overridden verb) for this request (Bug #12168)
+            return new PostMethod(encodePathAndQuery(targetUrl.getFile())) {
+                @Override
+                public String getName() {
+                    return method.getProtocolName();
+                }
+            };
+        }
+
+        org.apache.commons.httpclient.HttpMethod clientMethod;
+        Constructor<? extends org.apache.commons.httpclient.HttpMethod> apacheMethodCtor = apacheMethodMap.get(method);
+        if (apacheMethodCtor != null) {
+            try {
+                // NOTE: Use the FILE part of the url here (path + query string), if we use the full URL then
+                //       we end up with the default socket factory for the protocol
+                clientMethod = apacheMethodCtor.newInstance(encodePathAndQuery(targetUrl.getFile()));
+            } catch (InstantiationException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                final Throwable cause = e.getTargetException();
+                clientMethod = new ExceptionMethod(cause instanceof Exception ? (Exception)cause : e);
+            }
+        } else {
+            // TODO support arbitrary HTTP methods, perhaps borrowing POST's semantics for them, or having configurable semantics
+            throw new IllegalStateException("Method " + method + " not supported");
+        }
+        return clientMethod;
     }
 
     private void checkUrl( final URL targetUrl ) throws GenericHttpException {

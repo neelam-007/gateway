@@ -10,7 +10,7 @@ public enum HttpMethod {
     PUT(true, false),
     DELETE(false, true),
     HEAD(false, true),
-    OPTIONS(false, false), // According to RFC 2616 an OPTIONS request may include a body, but the commons OptionsMethod does not extend EntityEnclosingMethod so we'll ingore that possibility for now.
+    OPTIONS(false, false), // According to RFC 2616 an OPTIONS request may include a body
     /**
      * Other methods are possible, but enums aren't extensible.
      */
@@ -30,5 +30,15 @@ public enum HttpMethod {
 
     public boolean isFollowRedirects() {
         return followRedirects;
+    }
+
+    public String getProtocolName() {
+        // OTHER is currently the only enum value whose enum name isn't the same as its valid protocol name
+        return OTHER == this ? "POST" : name();
+    }
+
+    public boolean canForceIncludeRequestBody() {
+        // TODO The "TRACE" method is the only one explicitly forbidden by the spec from including a body with the request
+        return true; // except for when TRACE method is eventually supported
     }
 }

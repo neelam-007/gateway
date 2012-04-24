@@ -117,6 +117,8 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     protected Long[] tlsTrustedCertOids;
     protected String[] tlsTrustedCertNames;
 
+    private boolean forceIncludeRequestBody = false;
+
     // TODO WARNING
     // TODO WARNING
     // TODO WARNING : If you add properties, update the copyFrom method
@@ -550,6 +552,22 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     public void setTlsCipherSuites(String tlsCipherSuites) {
         this.tlsCipherSuites = tlsCipherSuites;
+    }
+
+    /**
+     * @return true if an entity body should be included with the request even if the HTTP method is one
+     *          that would normally not include one (GET, HEAD, DELETE, etc).
+     */
+    public boolean isForceIncludeRequestBody() {
+        return forceIncludeRequestBody;
+    }
+
+    /**
+     * @param forceIncludeRequestBody true if an entity body should be included with the request even if the HTTP method
+     *                                is one that would normally not include one (GET, HEAD, DELETE, etc).
+     */
+    public void setForceIncludeRequestBody(boolean forceIncludeRequestBody) {
+        this.forceIncludeRequestBody = forceIncludeRequestBody;
     }
 
     @Override
