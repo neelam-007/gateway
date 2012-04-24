@@ -1119,5 +1119,9 @@ public class AssertionMessages extends Messages {
     public static final Messages.M GENERATE_HASH_INVALID_KEY     = m(9637, Level.WARNING, "Invalid key: ''{0}''");
     public static final Messages.M GENERATE_HASH_ERROR     = m(9638, Level.WARNING, "Error generating hash signature.");
 
+    public static final Messages.M EVALUATE_JSON_PATH_INVALID_JSON     = m(9645, Level.WARNING, "Source is not a valid JSON object.");
+    public static final Messages.M EVALUATE_JSON_PATH_INVALID_EXPRESSION     = m(9646, Level.WARNING, "Invalid JSONPath expression: ''{0}''");
+    public static final Messages.M EVALUATE_JSON_PATH_INVALID_EVALUATOR     = m(9647, Level.WARNING, "Invalid evaluator: ''{0}''");
+    public static final Messages.M EVALUATE_JSON_PATH_ERROR     = m(9648, Level.WARNING, "Error occurred evaluating JSON Path: ''{0}''");
     // Highest ID reserved for AssertionMessages = 99999
 }
