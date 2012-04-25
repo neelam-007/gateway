@@ -4,15 +4,12 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 
 import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Arrays;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -103,10 +100,14 @@ public class KerberosTicketRepository {
 
             // need to check that
             if (cred.hasValidTgTicket()) {
+                Set<Object> privCreds = new LinkedHashSet<Object>();
+                privCreds.add(cred.tgTicket);
+                privCreds.add(cred.privateKey);
                 return new Subject(false,
                         Collections.singleton(new KerberosPrincipal(cred.principal)),
                         Collections.EMPTY_SET,
-                        Collections.singleton(cred.tgTicket));
+                        Collections.unmodifiableSet(privCreds));
+                        //Collections.singleton(cred.tgTicket));
 
             } else {
                 // toss cached credentials
@@ -126,9 +127,9 @@ public class KerberosTicketRepository {
      * @param loginCtx the loginContext associated with the ticket
      * @param svcTicket the service ticket created based on the creds
      */
-    public void add(Key key, KerberosTicket tgTicket, LoginContext loginCtx, KerberosServiceTicket svcTicket) {
+    public void add(Key key, KerberosTicket tgTicket, KerberosKey privKey, LoginContext loginCtx, KerberosServiceTicket svcTicket) {
         // create a new cache value
-        CachedCredential oldCred = _map.put( key, new CachedCredential(tgTicket, loginCtx, svcTicket.getServicePrincipalName(), kerberosTicketLifetime) );
+        CachedCredential oldCred = _map.put( key, new CachedCredential(tgTicket, privKey, loginCtx, svcTicket.getServicePrincipalName(), kerberosTicketLifetime) );
         if ( oldCred != null ) {
             oldCred.discard();
         }
@@ -151,6 +152,7 @@ public class KerberosTicketRepository {
         // parse out the kerberos ticket from the subject
         Iterator<?> it = subject.getPrivateCredentials().iterator();
         KerberosTicket tgTicket = null;
+        KerberosKey privKey = null;
         for (;it.hasNext();) {
             // only extract the TGT
             Object val = it.next();
@@ -158,12 +160,15 @@ public class KerberosTicketRepository {
                     KerberosTicket.class.cast(val).getServer().getName().contains("krbtgt")) {
 
                 tgTicket = (KerberosTicket) val;
-                break;
+               // break;
+            }
+            else if(val instanceof KerberosKey) {
+                privKey = (KerberosKey) val;
             }
         }
 
         if (tgTicket != null)
-            this.add(key, tgTicket, loginCtx, svcTicket);
+            this.add(key, tgTicket, privKey, loginCtx, svcTicket);
         else
             logger.log(Level.FINE, "Could not extract KerberosTicket for caching ({0})", svcTicket.getServicePrincipalName());
     }
@@ -309,15 +314,18 @@ public class KerberosTicketRepository {
 
         private final String principal;
         private volatile KerberosTicket tgTicket;
+        private volatile KerberosKey    privateKey;
         private volatile LoginContext loginContext;
         private volatile long lastAccessTime;
         private volatile long expires;
 
         private CachedCredential( final KerberosTicket tgTicket,
+                                  final KerberosKey privateKey,
                                   final LoginContext loginCtx,
                                   final String principal,
                                   final Long kerberosTicketLifetime) {
             this.tgTicket = tgTicket;
+            this.privateKey = privateKey;
             this.loginContext = loginCtx;
             this.lastAccessTime = System.currentTimeMillis();
             this.principal = principal;
@@ -350,6 +358,7 @@ public class KerberosTicketRepository {
         void discard() {
 
             tgTicket = null;
+            privateKey = null;
             try {
                 if (loginContext != null)
                     loginContext.logout();

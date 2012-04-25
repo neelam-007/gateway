@@ -32,6 +32,7 @@ import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.server.util.IdentityBindingHttpClientFactory;
 import com.l7tech.util.*;
+import org.jaaslounge.decoding.kerberos.KerberosEncData;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -59,6 +60,7 @@ import java.util.zip.GZIPInputStream;
 public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingAssertion<HttpRoutingAssertion> {
     public static final String USER_AGENT = HttpConstants.HEADER_USER_AGENT;
     public static final String HOST = HttpConstants.HEADER_HOST;
+    public static final String KERBEROS_DATA = "kerberos.data";
 
     private final Config config;
     private final SignerInfo senderVouchesSignerInfo;
@@ -385,18 +387,22 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
 
+            KerberosEncData kerberosAuthorizationInfo = null;
             // Outbound Kerberos support (for Windows Integrated Auth only)
             if (assertion.isKrbDelegatedAuthentication()) {
                 // extract creds from request & get service ticket
-                addKerberosServiceTicketToRequestParam(
-                        getDelegatedKerberosTicket(context, url.getHost()), routedRequestParams);
-
+                KerberosServiceTicket delegatedKerberosTicket = getDelegatedKerberosTicket(context, url.getHost());
+                //set kerberos authorization info
+                kerberosAuthorizationInfo = delegatedKerberosTicket.getEncData();
+                addKerberosServiceTicketToRequestParam(delegatedKerberosTicket , routedRequestParams);
             } else if (assertion.isKrbUseGatewayKeytab()) {
                 // obtain a service ticket using the gateway's keytab
                 KerberosRoutingClient client = new KerberosRoutingClient();
                 String svcPrincipal = KerberosClient.getServicePrincipalName(url.getProtocol(), url.getHost());
-                addKerberosServiceTicketToRequestParam(
-                        client.getKerberosServiceTicket(svcPrincipal, true), routedRequestParams);
+                KerberosServiceTicket kerberosTicket = client.getKerberosServiceTicket(svcPrincipal, true);
+                //set kerberos authorization info
+                kerberosAuthorizationInfo = kerberosTicket.getEncData();
+                addKerberosServiceTicketToRequestParam(kerberosTicket , routedRequestParams);
 
             } else if (assertion.getKrbConfiguredAccount() != null) {
                 // obtain a service ticket using the configured account in the assertion
@@ -404,9 +410,16 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 String krbAccount = ExpandVariables.process(assertion.getKrbConfiguredAccount(), vars, getAudit());
                 String krbPass = assertion.getKrbConfiguredPassword();
                 krbPass = krbPass == null ? null : ExpandVariables.process(krbPass, vars, getAudit());
-                addKerberosServiceTicketToRequestParam(
-                        client.getKerberosServiceTicket(url, krbAccount, krbPass),
-                        routedRequestParams);
+                KerberosServiceTicket kerberosTicket = client.getKerberosServiceTicket(url, krbAccount, krbPass);
+                //set kerberos authorization info
+                kerberosAuthorizationInfo = kerberosTicket.getEncData();
+                addKerberosServiceTicketToRequestParam(kerberosTicket, routedRequestParams);
+
+            }
+
+            //now set Kerberos authorization as an environment variable so it can be consumed later
+            if(kerberosAuthorizationInfo != null){
+                context.setVariable(KERBEROS_DATA, kerberosAuthorizationInfo);
             }
 
             return reallyTryUrl(context, requestMessage, routedRequestParams, url, true, vars);

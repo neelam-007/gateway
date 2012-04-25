@@ -20,9 +20,13 @@ import com.l7tech.policy.variable.DataType;
  */
 public class HttpNegotiate extends HttpCredentialSourceAssertion implements SetsVariables {
 
+    public static final String KERBEROS_REALM = "kerberos.realm";
+    public static final String KERBEROS_DATA = "kerberos.data";
+
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
-            new VariableMetadata("kerberos.realm", false, false, "kerberos.realm", false, DataType.STRING),
+            new VariableMetadata(KERBEROS_REALM, false, false, KERBEROS_REALM, false, DataType.STRING),
+            new VariableMetadata(KERBEROS_DATA, false, false, KERBEROS_DATA, false, DataType.BINARY)
         };
     }
 

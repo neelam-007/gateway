@@ -3,9 +3,11 @@ package com.l7tech.server.security.kerberos;
 import com.l7tech.kerberos.*;
 import com.l7tech.util.HexUtils;
 import org.ietf.jgss.*;
+import org.jaaslounge.decoding.kerberos.KerberosEncData;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.*;
+import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
@@ -52,10 +54,12 @@ public class KerberosRoutingClient extends KerberosClient {
                     ticketCache.generateKey(servicePrincipalName, KerberosTicketRepository.KeyType.DELEGATED, kerberosServiceTicket.getClientPrincipalName(), null);
 
             final KerberosTicket creds = kerberosServiceTicket.getDelegatedKerberosTicket();
+
             if (creds == null) {
                 logger.finer("Kerberos Ticket (base64): " + HexUtils.encodeBase64(kerberosServiceTicket.getGSSAPReqTicket().toByteArray(), true));
                 throw new KerberosException("Credentials for delegation not found");
             }
+
 
             try {
                 final Oid kerberos5Oid = getKerberos5Oid();
@@ -85,11 +89,22 @@ public class KerberosRoutingClient extends KerberosClient {
                             KerberosTicket ticket = getTicket(delegationSubject.getPrivateCredentials(), serviceName, manager);
 
                             KerberosGSSAPReqTicket apReq = new KerberosGSSAPReqTicket(bytes);
+
+                            KerberosEncData krbEncData = null;
+                            try {
+                                //get keys
+                                KerberosKey[] keys = getKeys(delegationSubject.getPrivateCredentials());
+                                krbEncData = getKerberosAuthorizationData(keys, apReq);
+
+                            } catch (IllegalStateException e) {
+                                //ignore if no keys present
+                            }
+
                             return new KerberosServiceTicket(ticket.getClient().getName(),
                                                              servicePrincipalName,
                                                              ticket.getSessionKey().getEncoded(),
                                                              System.currentTimeMillis() + (context.getLifetime() * 1000L),
-                                                             apReq);
+                                                             apReq,null,krbEncData);
                         }
                         finally {
                             if(context!=null) context.dispose();
@@ -105,7 +120,7 @@ public class KerberosRoutingClient extends KerberosClient {
 
             // create a new cache entry
             if (ticket != null)
-                ticketCache.add(ticketCacheKey, creds, null, ticket);
+                ticketCache.add(ticketCacheKey, creds, null,  null, ticket);
 
         }
         catch(GSSException gsse) {
@@ -185,11 +200,22 @@ public class KerberosRoutingClient extends KerberosClient {
                         KerberosTicket ticket = getTicket(krbSubject.getPrivateCredentials(), serviceName, manager);
 
                         KerberosGSSAPReqTicket apReq = new KerberosGSSAPReqTicket(bytes);
+
+                        KerberosEncData krbEncData = null;
+                        try {
+                            //get keys
+                            KerberosKey[] keys = getKeys(krbSubject.getPrivateCredentials());
+                            krbEncData = getKerberosAuthorizationData(keys, apReq);
+
+                        } catch (IllegalStateException e) {
+                            //ignore if no keys present
+                        }
+
                         return new KerberosServiceTicket(ticket.getClient().getName(),
                                                          accountName,
                                                          ticket.getSessionKey().getEncoded(),
                                                          System.currentTimeMillis() + (context.getLifetime() * 1000L),
-                                                         apReq);
+                                                         apReq, null, krbEncData);
                     }
                     finally {
                         if(context!=null) context.dispose();

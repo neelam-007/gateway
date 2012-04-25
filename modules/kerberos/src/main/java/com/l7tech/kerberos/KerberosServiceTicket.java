@@ -1,5 +1,7 @@
 package com.l7tech.kerberos;
 
+import org.jaaslounge.decoding.kerberos.KerberosEncData;
+
 import javax.security.auth.kerberos.KerberosTicket;
 
 /**
@@ -37,12 +39,27 @@ public final class KerberosServiceTicket {
      * @param delegatedKerberosTicket the delegated ticket (may be null)
      */
     public KerberosServiceTicket(String client, String service, byte[] key, long expiry, KerberosGSSAPReqTicket ticket, KerberosTicket delegatedKerberosTicket) {
+        this(client, service, key, expiry, ticket, delegatedKerberosTicket, null);
+    }
+
+
+        /**
+     * Create a new KerberosServiceTicket
+     *
+     * @param client the client principal name
+     * @param service the service principal name
+     * @param key the sub or session key
+     * @param ticket the ticket bytes
+     * @param delegatedKerberosTicket the delegated ticket (may be null)
+     */
+    public KerberosServiceTicket(String client, String service, byte[] key, long expiry, KerberosGSSAPReqTicket ticket, KerberosTicket delegatedKerberosTicket, KerberosEncData encData) {
         clientPrincipalName = client;
         servicePrincipalName = service;
         sessionOrSubKey = key;
         expires = expiry;
         gssApReqTicket = ticket;
         this.delegatedKerberosTicket = delegatedKerberosTicket;
+        this.encData = encData;
     }
 
     /**
@@ -104,6 +121,10 @@ public final class KerberosServiceTicket {
         return delegatedKerberosTicket;
     }
 
+    public KerberosEncData getEncData() {
+        return encData;
+    }
+
     /**
      * Create a string representation of this ticket.
      */
@@ -112,11 +133,11 @@ public final class KerberosServiceTicket {
     }
 
     //- PRIVATE
-
     private final String clientPrincipalName;
     private final String servicePrincipalName;
     private final byte[] sessionOrSubKey;
     private final long expires;
     private final KerberosGSSAPReqTicket gssApReqTicket;
     private final KerberosTicket delegatedKerberosTicket;
+    private final KerberosEncData encData;
 }

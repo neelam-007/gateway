@@ -20,6 +20,8 @@ import com.l7tech.server.security.kerberos.KerberosSessionContextManager;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.Config;
+
+import org.jaaslounge.decoding.kerberos.KerberosEncData;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -106,9 +108,9 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
         if ( kerberosToken != null ) { // process token
             KerberosServiceTicket kerberosServiceTicket = kerberosToken.getServiceTicket();
             assert kerberosServiceTicket!=null;
-            LoginCredentials loginCreds = LoginCredentials.makeLoginCredentials( kerberosToken, assertion.getClass() );
+            LoginCredentials loginCreds = LoginCredentials.makeLoginCredentials(kerberosToken, assertion.getClass());
             context.getAuthenticationContext(context.getRequest()).addCredentials(loginCreds);
-            context.setVariable("kerberos.realm", extractRealm(kerberosServiceTicket.getClientPrincipalName()));
+            context.setVariable(RequestWssKerberos.KERBEROS_REALM, extractRealm(kerberosServiceTicket.getClientPrincipalName()));
 
             logAndAudit( AssertionMessages.REQUEST_WSS_KERBEROS_GOT_TICKET, kerberosServiceTicket.getClientPrincipalName() );
 
@@ -126,6 +128,11 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
                     //can't happen since duplicate tickets are detected by kerberos.
                     logger.log(Level.SEVERE, "Duplicate session key error when creating kerberos session.", dse);
                 }
+            }
+            //get Kerberos Authorization Data from the ticket and set appropriate context variables so they can be used later
+            KerberosEncData encData = kerberosServiceTicket.getEncData();
+            if(null != encData){
+                context.setVariable(RequestWssKerberos.KERBEROS_DATA, encData);
             }
 
             // Set up response to be able to sign and encrypt using a reference to this ticket
@@ -163,7 +170,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
             }
         });
     }
-    
+
     private String extractRealm( final String principal ) {
         String realm = "";
 

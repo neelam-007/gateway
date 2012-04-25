@@ -13,5 +13,7 @@
     </publications>
     <dependencies>
         <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
+        <!--<dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/>-->
+	    <dependency org="org.jaaslounge" name="jaaslounge-decoding" rev="0.1.3" force="true" conf="core"/>
     </dependencies>
 </ivy-module>

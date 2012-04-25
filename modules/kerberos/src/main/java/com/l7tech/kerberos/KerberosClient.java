@@ -30,6 +30,12 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
+import org.jaaslounge.decoding.DecodingException;
+import org.jaaslounge.decoding.kerberos.KerberosAuthData;
+import org.jaaslounge.decoding.kerberos.KerberosEncData;
+import org.jaaslounge.decoding.kerberos.KerberosPacAuthData;
+import org.jaaslounge.decoding.kerberos.KerberosToken;
+import org.jaaslounge.decoding.pac.PacLogonInfo;
 import sun.security.krb5.*;
 import com.l7tech.util.ExceptionUtils;
 
@@ -202,11 +208,21 @@ public class KerberosClient {
                         KerberosTicket ticket = getTicket(krbSubject.getPrivateCredentials(), serviceName, manager);
 
                         KerberosGSSAPReqTicket apReq = new KerberosGSSAPReqTicket(bytes);
+
+                        KerberosEncData krbEncData = null;
+                        try {
+                            //get keys
+                            KerberosKey[] keys = getKeys(krbSubject.getPrivateCredentials());
+                            krbEncData = getKerberosAuthorizationData(keys, apReq);
+                        } catch (IllegalStateException e) {
+                          //ignore if no keys present
+                        }
+
                         return new KerberosServiceTicket(ticket.getClient().getName(),
                                                          servicePrincipalName,
                                                          ticket.getSessionKey().getEncoded(),
                                                          System.currentTimeMillis() + (context.getLifetime() * 1000L),
-                                                         apReq);
+                                                         apReq, null, krbEncData);
                     }
                     finally {
                         if(context!=null) context.dispose();
@@ -247,8 +263,8 @@ public class KerberosClient {
     }
 
     /**
-     * Used to get a ticket in acceptance of a session.  Also extracts the delegated creds to build a
- 	 * service ticket that can later be used for delegation during HTTP routing.
+     * Used to get a ticket in acceptance of a session. Tries to extract Kerberos authorization data if the ticket contains them.
+     * Also extracts the delegated creds to build a service ticket that can later be used for delegation during HTTP routing.
      *
      * @return the ticket
      * @throws KerberosException on error
@@ -285,7 +301,9 @@ public class KerberosClient {
                         KerberosKey[] keys = getKeys(kerberosSubject.getPrivateCredentials());
                         KrbApReq apReq = buildKrbApReq( apReqBytes, keys, clientAddress );
                         validateServerPrincipal(kerberosSubject.getPrincipals(), new KerberosPrincipal(apReq.getCreds().getServer().getName()) );
-
+                        //extract additional Kerberos Data from the ticket such as PAC Logon Info, PAC Signature, etc.  as per
+                        // Utilizing the Windows 2000 Authorization Data in Kerberos Tickets for  Access Control to Resources http://msdn.microsoft.com/en-us/library/aa302203.aspx
+                        KerberosEncData krbEncData = getKerberosAuthorizationData(keys, gssAPReqTicket);
                         // Extract the delegated kerberos ticket if one exists
                         EncryptionKey sessionKey = apReq.getCreds().getSessionKey();
                         KerberosTicket delegatedKerberosTicket = extractDelegatedServiceTicket(apReq.getChecksum(), sessionKey);
@@ -304,7 +322,7 @@ public class KerberosClient {
                                                          keyBytes,
                                                          apReq.getCreds().getEndTime().getTime(),
                                                          gssAPReqTicket,
-                                                         delegatedKerberosTicket);
+                                                         delegatedKerberosTicket, krbEncData);
                     }
                     finally {
                         if(scontext!=null) scontext.dispose();
@@ -338,6 +356,25 @@ public class KerberosClient {
         }
 
         return ticket;
+    }
+
+
+    /**
+     * extract additional Kerberos Data from the ticket such as PAC Logon Info, PAC Signature, etc.  as per
+     * Utilizing the Windows 2000 Authorization Data in Kerberos Tickets for  Access Control to Resources http://msdn.microsoft.com/en-us/library/aa302203.aspx
+     * @param keys  - kerberos keys
+     * @param gssAPReqTicket - Kerberos authentication ticket
+     * @return
+     */
+    protected KerberosEncData getKerberosAuthorizationData(KerberosKey[] keys, KerberosGSSAPReqTicket gssAPReqTicket) {
+        KerberosEncData krbEncData = null;
+        try {
+            KerberosToken krbToken = new KerberosToken(gssAPReqTicket.toByteArray(), keys);
+            krbEncData = krbToken.getTicket().getEncData(); //extract Kerberos Encripted Data
+        } catch (DecodingException e) {
+            //Not all tokens include authorization information that jaaslounge-decode library can extract
+        }
+        return krbEncData;
     }
 
     /**
@@ -697,7 +734,7 @@ public class KerberosClient {
  	 * @return Array of one or more private keys found in the credentials
  	 * @throws IllegalStateException if the private key cannot be found
      */
-    private static KerberosKey[] getKeys(Set creds) throws IllegalStateException {
+    protected static KerberosKey[] getKeys(Set creds) throws IllegalStateException {
         List<KerberosKey> keys = new ArrayList<KerberosKey>();
 
         for( Object o : creds ) {

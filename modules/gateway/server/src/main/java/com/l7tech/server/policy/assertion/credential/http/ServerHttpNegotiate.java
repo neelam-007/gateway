@@ -46,7 +46,10 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
             LoginCredentials creds = context.getDefaultAuthenticationContext().getLastCredentials();
             if ( creds != null && creds.getPayload() instanceof KerberosServiceTicket) {
                 KerberosServiceTicket ticket = (KerberosServiceTicket) creds.getPayload();
-                context.setVariable( "kerberos.realm", extractRealm(ticket.getClientPrincipalName()) );        
+                context.setVariable( HttpNegotiate.KERBEROS_REALM, extractRealm(ticket.getClientPrincipalName()) );
+                if(null != ticket.getEncData()) {
+                    context.setVariable(HttpNegotiate.KERBEROS_DATA, ticket.getEncData());
+                }
             }
         }
 
@@ -114,7 +117,7 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
             logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
             return null;
         }
-
+        //TODO: check if NTLM protocol is present
         byte[] token = HexUtils.decodeBase64( base64, true );
         KerberosGSSAPReqTicket ticket = new KerberosGSSAPReqTicket(token);
 
