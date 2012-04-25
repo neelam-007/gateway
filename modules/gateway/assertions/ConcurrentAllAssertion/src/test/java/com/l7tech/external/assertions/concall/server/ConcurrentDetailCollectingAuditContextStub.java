@@ -2,8 +2,8 @@ package com.l7tech.external.assertions.concall.server;
 
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditDetailEvent.AuditDetailWithInfo;
-import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextStub;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -15,20 +15,15 @@ import java.util.logging.Logger;
 /**
  * A thread-safe audit context that will record details on different threads.
  * <p/>
- * This only implements enough of the AuditContext interface to be useful as a mock for ServerConcurrentAllAssertion.
+ * This only implements enough of the AuditContext interface to be useful as a mock for ServerConcurrentAllAssertionTest.
  * It is not (currently) expected to be useful for other tests.
  */
-public class ConcurrentDetailCollectingAuditContext implements AuditContext {
-    private static final Logger logger = Logger.getLogger(ConcurrentDetailCollectingAuditContext.class.getName());
+class ConcurrentDetailCollectingAuditContextStub extends AuditContextStub implements AuditContext {
+    private static final Logger logger = Logger.getLogger(ConcurrentDetailCollectingAuditContextStub.class.getName());
 
     boolean logDetails = false;
 
     ConcurrentMap<Long, List<AuditDetail>> detailsByThreadId = new ConcurrentHashMap<Long, List<AuditDetail>>();
-
-    @Override
-    public void setCurrentRecord(AuditRecord record) {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public void addDetail(AuditDetail detail, Object source) {
@@ -66,41 +61,12 @@ public class ConcurrentDetailCollectingAuditContext implements AuditContext {
     }
 
     @Override
-    public boolean isUpdate() {
-        throw new UnsupportedOperationException("no mock for isUpdate()");
-    }
-
-    @Override
-    public void setUpdate(boolean update) {
-        throw new UnsupportedOperationException("no mock for setUpdate()");
-    }
-
-    @Override
     public Set getHints() {
         throw new UnsupportedOperationException("no mock for getHints()");
     }
 
-    @Override
-    public void flush() {
-        throw new UnsupportedOperationException("no mock for flush()");
-    }
-
-    @Override
-    public void clear() {
-        detailsByThreadId.remove(Thread.currentThread().getId());
-    }
-
     public void clearAll() {
         detailsByThreadId.clear();
-    }
-
-    public List<AuditDetail> getOtherThreadDetails() {
-        List<AuditDetail> ret = new ArrayList<AuditDetail>();
-        for (Map.Entry<Long, List<AuditDetail>> entry : detailsByThreadId.entrySet()) {
-            if (Thread.currentThread().getId() != entry.getKey())
-                ret.addAll(entry.getValue());
-        }
-        return ret;
     }
 
     public List<AuditDetail> getCurrentThreadDetails() {
@@ -118,11 +84,6 @@ public class ConcurrentDetailCollectingAuditContext implements AuditContext {
         Map<Object, List<AuditDetail>> ret = new HashMap<Object, List<AuditDetail>>();
         ret.put(this, list);
         return ret;
-    }
-
-    @Override
-    public String[] getContextVariablesUsed() {
-        throw new UnsupportedOperationException("no mock for getContextVariablesUsed()");
     }
 
     @Override

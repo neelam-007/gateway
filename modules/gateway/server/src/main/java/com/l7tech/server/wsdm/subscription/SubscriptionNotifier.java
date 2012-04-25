@@ -5,10 +5,9 @@ package com.l7tech.server.wsdm.subscription;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.io.ByteLimitInputStream;
-import com.l7tech.server.ServerConfigParams;
-import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.ServiceMessages;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
@@ -21,7 +20,9 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -57,6 +58,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -123,7 +125,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
 
     private final ExecutorService threadPool = Executors.newSingleThreadExecutor();
 
-    private AuditContext auditContext;
+    private AuditContextFactory auditContextFactory;
 
     public SubscriptionNotifier(final String clusterNodeId) {
         this.clusterNodeId = clusterNodeId;
@@ -346,7 +348,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
     @Override
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
         this.auditor = new Auditor(this, applicationContext, logger);
-        this.auditContext = applicationContext.getBean("auditContext", AuditContext.class);
+        this.auditContextFactory = applicationContext.getBean("auditContextFactory", AuditContextFactory.class);
     }
 
     public class ServiceStatusNotificationContext {
@@ -438,71 +440,83 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         });
     }
 
-    private void sendNotification(String notificationUrl, String message, String policyGuid) {
+    private void sendNotification(final String notificationUrl, final String message, final String policyGuid) throws IOException {
         if ( logger.isLoggable( Level.FINEST) ) {
             logger.log(Level.FINEST, "Sending notification {0} to {1}", new String[]{message, notificationUrl});
         }
 
-        PolicyEnforcementContext context = null;
-        AssertionStatus status = AssertionStatus.SERVER_ERROR;
+        final PolicyEnforcementContext[] context = { null };
+        final AssertionStatus[] status = { AssertionStatus.SERVER_ERROR };
+
         try {
-            final Message request = new Message(XmlUtil.stringAsDocument(message));
-            request.attachHttpRequestKnob(new HttpRequestKnobAdapter(null));
-            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, false);
-            context.setAuditLevel(Level.INFO);
+            auditContextFactory.doWithNewAuditContext(new Callable<Void>() {
+                  @Override
+                  public Void call() throws Exception {
+                      final Message request = new Message(XmlUtil.stringAsDocument(message));
+                      request.attachHttpRequestKnob(new HttpRequestKnobAdapter(null));
+                      context[0] = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, false);
+                      context[0].setAuditLevel(Level.INFO);
 
-            // Use fake service
-            final PublishedService svc = new PublishedService();
-            svc.setName("ESM Notification Service [Internal]");
-            svc.setSoap(true);
-            context.setService(svc);
+                      // Use fake service
+                      final PublishedService svc = new PublishedService();
+                      svc.setName("ESM Notification Service [Internal]");
+                      svc.setSoap(true);
+                      context[0].setService(svc);
 
-            auditor.logAndAudit(ServiceMessages.ESM_NOTIFY_NOTIFICATION, notificationUrl);
+                      auditor.logAndAudit(ServiceMessages.ESM_NOTIFY_NOTIFICATION, notificationUrl);
 
-            URL urltarget = null;
-            try {
-                urltarget = new URL(notificationUrl);
-            } catch (MalformedURLException e) {
-                auditor.logAndAudit(ServiceMessages.ESM_NOTIFY_INVALID_URL, notificationUrl );
-            }
+                      URL urltarget = null;
+                      try {
+                          urltarget = new URL(notificationUrl);
+                      } catch (MalformedURLException e) {
+                          auditor.logAndAudit(ServiceMessages.ESM_NOTIFY_INVALID_URL, notificationUrl );
+                      }
 
-            if ( urltarget != null ) {
-                if ( policyGuid == null ) {
-                    auditor.logAndAudit(ServiceMessages.ESM_NOTIFY_NO_POLICY, notificationUrl );
-                    if ( sendDefaultNotification( context, urltarget, message ) ) {
-                        status = AssertionStatus.NONE;
-                    } else {
-                        status = AssertionStatus.FALSIFIED;
-                    }
-                } else {
-                    ServerPolicyHandle sph = null;
-                    try {
-                        sph = policyCache.getServerPolicy( policyGuid );
-                        if ( sph == null ) {
-                            auditor.logAndAudit(ServiceMessages.ESM_NOTIFY_INVALID_POLICY, notificationUrl, policyGuid );
-                            status = AssertionStatus.FAILED;
-                        } else {
-                            context.setVariable("esmNotificationUrl", notificationUrl);
-                            try {
-                                status = sph.checkRequest(context);
-                            } catch (PolicyAssertionException e) {
-                                auditor.logAndAudit(ServiceMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                                        new String[]{"ESM Notification Error: " + ExceptionUtils.getMessage(e)},
-                                        e );
-                            } catch (IOException e) {
-                                auditor.logAndAudit(ServiceMessages.ESM_NOTIFY_IO_ERROR,
-                                        new String[]{notificationUrl, policyGuid, ExceptionUtils.getMessage(e)},
-                                        ExceptionUtils.getDebugException(e) );
-                            }
-                        }
-                    } finally {
-                        ResourceUtils.closeQuietly( sph );
-                    }
+                      if ( urltarget != null ) {
+                          if ( policyGuid == null ) {
+                              auditor.logAndAudit(ServiceMessages.ESM_NOTIFY_NO_POLICY, notificationUrl );
+                              if ( sendDefaultNotification( context[0], urltarget, message ) ) {
+                                  status[0] = AssertionStatus.NONE;
+                              } else {
+                                  status[0] = AssertionStatus.FALSIFIED;
+                              }
+                          } else {
+                              ServerPolicyHandle sph = null;
+                              try {
+                                  sph = policyCache.getServerPolicy( policyGuid );
+                                  if ( sph == null ) {
+                                      auditor.logAndAudit(ServiceMessages.ESM_NOTIFY_INVALID_POLICY, notificationUrl, policyGuid );
+                                      status[0] = AssertionStatus.FAILED;
+                                  } else {
+                                      context[0].setVariable("esmNotificationUrl", notificationUrl);
+                                      try {
+                                          status[0] = sph.checkRequest(context[0]);
+                                      } catch (PolicyAssertionException e) {
+                                          auditor.logAndAudit(ServiceMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                                                                     new String[]{"ESM Notification Error: " + ExceptionUtils.getMessage(e)},
+                                                                     e );
+                                      } catch (IOException e) {
+                                          auditor.logAndAudit(ServiceMessages.ESM_NOTIFY_IO_ERROR,
+                                                                     new String[]{notificationUrl, policyGuid, ExceptionUtils.getMessage(e)},
+                                                                     ExceptionUtils.getDebugException(e) );
+                                      }
+                                  }
+                              } finally {
+                                  ResourceUtils.closeQuietly( sph );
+                              }
+                          }
+                      }
+                      return null;
+                  }
+            }, new Functions.Nullary<com.l7tech.gateway.common.audit.AuditRecord>() {
+                @Override
+                public AuditRecord call() {
+                    return auditFactory.makeEvent(context[0], status[0]);
                 }
-            }
+            });
+        } catch (Exception e) {
+            throw new IOException(e);
         } finally {
-            auditContext.setCurrentRecord(auditFactory.makeEvent(context, status));
-            auditContext.flush();
             ResourceUtils.closeQuietly( context );
         }
     }

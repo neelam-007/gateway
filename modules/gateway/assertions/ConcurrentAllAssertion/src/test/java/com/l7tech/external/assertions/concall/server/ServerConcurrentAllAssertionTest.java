@@ -10,16 +10,13 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
-import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.InvalidPolicyException;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyHeader;
-import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.TestLicenseManager;
+import com.l7tech.server.audit.AuditContextFactoryStub;
 import com.l7tech.server.audit.AuditDetailProcessingAuditListener;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.folder.FolderCacheStub;
@@ -57,7 +54,7 @@ public class ServerConcurrentAllAssertionTest {
     static ServerPolicyFactory serverPolicyFactory;
     static DefaultListableBeanFactory beanFactory;
     static GenericApplicationContext applicationContext;
-    static ConcurrentDetailCollectingAuditContext auditContext;
+    static ConcurrentDetailCollectingAuditContextStub auditContext;
     static PolicyCache policyCache;
 
 
@@ -68,8 +65,9 @@ public class ServerConcurrentAllAssertionTest {
         assertionRegistry.registerAssertion(ConcurrentAllAssertion.class);
         assertionRegistry.registerAssertion(DelayedCopyVariableAssertion.class);
         serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(),new MockInjector());
-        auditContext = new ConcurrentDetailCollectingAuditContext();
+        auditContext = new ConcurrentDetailCollectingAuditContextStub();
         auditContext.logDetails = true;
+        AuditContextFactoryStub.setCurrent(auditContext);
         policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager(),new MockInjector()), new FolderCacheStub()) {
             {
                 PolicyManagerStub policyManager = new PolicyManagerStub( new Policy[0] );
@@ -105,13 +103,12 @@ public class ServerConcurrentAllAssertionTest {
         beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("serverConfig", new MockConfig( new Properties() ));
             put("policyFactory", serverPolicyFactory);
-            put("auditContext", auditContext);
             put("policyCache", policyCache);
             put("auditFactory", LoggingAudit.factory());
         }});
         applicationContext = new GenericApplicationContext(beanFactory);
         serverPolicyFactory.setApplicationContext(applicationContext);
-        applicationContext.addApplicationListener(new AuditDetailProcessingAuditListener(auditContext));
+        applicationContext.addApplicationListener(new AuditDetailProcessingAuditListener());
         applicationContext.refresh();
 
 

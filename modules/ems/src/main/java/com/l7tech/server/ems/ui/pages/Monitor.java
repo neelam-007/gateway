@@ -10,7 +10,7 @@ import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.ems.EsmConfigParams;
 import com.l7tech.server.ems.EsmMessages;
@@ -26,10 +26,10 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.WebRequest;
-import javax.inject.Inject;
-import javax.inject.Named;
 import org.mortbay.util.ajax.JSON;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -74,8 +74,8 @@ public class Monitor extends EsmStandardWebPage {
     private MonitoringService monitoringService;
 
     @Inject
-    @Named("auditContext")
-    private AuditContext auditContext;
+    @Named("auditContextFactory")
+    private AuditContextFactory auditContextFactory;
 
     private boolean isReadOnly;
     private Map<String, String> userProperties = Collections.emptyMap();
@@ -1153,7 +1153,7 @@ public class Monitor extends EsmStandardWebPage {
      * @param oldMap: the old cluster-property-format map of setup settings.
      * @param newMap: the new cluster-property-format map of setup settings.
      */
-    private void auditSystemMonitoringSetupChange(Map<String, Object> oldMap, Map<String, Object> newMap) {
+    private void auditSystemMonitoringSetupChange(final Map<String, Object> oldMap, final Map<String, Object> newMap) {
         AuditRecord auditRecord = new SystemAuditRecord(
             Level.INFO,
             "",
@@ -1167,6 +1167,7 @@ public class Monitor extends EsmStandardWebPage {
             ""
         );
 
+        Collection<AuditDetail> details = new ArrayList<AuditDetail>();
         for (String key: newMap.keySet()) {
             Object newVal = newMap.get(key);
             Object oldVal = oldMap.get(key);
@@ -1199,12 +1200,11 @@ public class Monitor extends EsmStandardWebPage {
                     }
                 }
 
-                auditContext.addDetail(new AuditDetail(EsmMessages.CHANGE_SYSTEM_MONITORING_SETUP_MESSAGE, new String[] {key, newVal.toString(), unit}), this);
+                details.add(new AuditDetail(EsmMessages.CHANGE_SYSTEM_MONITORING_SETUP_MESSAGE, key, newVal.toString(), unit));
             }
         }
 
-        auditContext.setCurrentRecord(auditRecord);
-        auditContext.flush();
+        auditContextFactory.emitAuditRecordWithDetails(auditRecord, false, this, details);
     }
 
     /**
@@ -1212,7 +1212,7 @@ public class Monitor extends EsmStandardWebPage {
      * @param name: the name of the notification rule
      * @param changingAction: the action applied on the notification, such as create, update, or delete.
      */
-    private void auditSystemNotificationChange(String name, String changingAction) {
+    private void auditSystemNotificationChange(final String name, final String changingAction) {
         AuditRecord auditRecord = new SystemAuditRecord(
             Level.INFO,
             "",
@@ -1226,9 +1226,8 @@ public class Monitor extends EsmStandardWebPage {
             ""
         );
 
-        auditContext.addDetail(new AuditDetail(EsmMessages.CHANGE_NOTIFICATION_SETUP_MESSAGE, new String[] {name, changingAction}), this);
-        auditContext.setCurrentRecord(auditRecord);
-        auditContext.flush();
+        auditContextFactory.emitAuditRecordWithDetails(auditRecord, false, this,
+                                                              Collections.singletonList(new AuditDetail(EsmMessages.CHANGE_NOTIFICATION_SETUP_MESSAGE, name, changingAction)));
     }
 
     /**
@@ -1238,7 +1237,7 @@ public class Monitor extends EsmStandardWebPage {
      * @param ipAddress: the IP Address associated with the entity
      * @param auditDetailList: the list of AuditDetail objects for entity property setup changes.
      */
-    private void auditEntityPropertySetupChange(boolean isSsgNode, String entityGuid, String ipAddress, List<AuditDetail> auditDetailList) {
+    private void auditEntityPropertySetupChange(boolean isSsgNode, String entityGuid, String ipAddress, final List<AuditDetail> auditDetailList) {
         AuditRecord auditRecord = new SystemAuditRecord(
             Level.INFO,
             isSsgNode? entityGuid : "",
@@ -1251,11 +1250,8 @@ public class Monitor extends EsmStandardWebPage {
             "Entity Property Setup Change",
             isSsgNode? ipAddress : ""
         );
-        for (AuditDetail auditDetail: auditDetailList) {
-            auditContext.addDetail(auditDetail, this);
-        }
-        auditContext.setCurrentRecord(auditRecord);
-        auditContext.flush();
+
+        auditContextFactory.emitAuditRecordWithDetails(auditRecord, false, this, auditDetailList);
     }
 
     /**
@@ -1385,9 +1381,8 @@ public class Monitor extends EsmStandardWebPage {
                         "Property Alert State Change",
                         ""
                     );
-                    auditContext.addDetail(auditDetail, this);
-                    auditContext.setCurrentRecord(auditRecord);
-                    auditContext.flush();
+                    auditContextFactory.emitAuditRecordWithDetails(auditRecord, false, this,
+                                                                          Collections.singletonList(auditDetail));
                 }
             }
         }

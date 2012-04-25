@@ -30,12 +30,12 @@ import java.util.logging.Logger;
  */
 public class AdminAuditListener extends ApplicationObjectSupport implements ApplicationListener {
     private final String nodeId;
-    private final AuditContext auditContext;
     private static final String SERVICE_DISABLED = "disabled";
+    private final AuditContextFactory auditContextFactory;
 
-    public AdminAuditListener(String nodeId, AuditContext auditContext) {
+    public AdminAuditListener(String nodeId, AuditContextFactory auditContextFactory) {
         this.nodeId = nodeId;
-        this.auditContext = auditContext;
+        this.auditContextFactory = auditContextFactory;
 
         Map<Class<? extends PersistenceEvent>, Level> levels = new HashMap<Class<? extends PersistenceEvent>, Level>();
         levels.put(Deleted.class, Level.WARNING);
@@ -74,8 +74,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         }
 
         if (event instanceof AdminEvent || event instanceof LogonEvent) {
-            auditContext.setCurrentRecord(makeAuditRecord(event));
-            auditContext.flush();
+            auditContextFactory.emitAuditRecord(makeAuditRecord(event));
         }
     }
 

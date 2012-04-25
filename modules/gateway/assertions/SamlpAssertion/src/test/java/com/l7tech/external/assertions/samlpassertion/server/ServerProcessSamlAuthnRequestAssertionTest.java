@@ -9,19 +9,14 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
-import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
-
-import static org.junit.Assert.*;
-
 import com.l7tech.util.Charsets;
 import org.junit.Test;
-
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.support.GenericApplicationContext;
@@ -30,6 +25,8 @@ import org.springframework.mock.web.MockServletContext;
 
 import java.io.IOException;
 import java.util.HashMap;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests for Process SAML AuthnRequest assertion
@@ -311,7 +308,6 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
 
     private ServerProcessSamlAuthnRequestAssertion buildServerAssertion( final ProcessSamlAuthnRequestAssertion assertion ) throws ServerPolicyException {
         final SimpleSingletonBeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
-            put("auditContext", new AuditContextStub());
             put("securityTokenResolver", new SimpleSecurityTokenResolver());
         }});
 

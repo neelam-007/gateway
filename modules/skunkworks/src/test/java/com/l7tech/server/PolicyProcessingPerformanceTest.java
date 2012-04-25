@@ -4,9 +4,6 @@ import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpHeader;
-import com.l7tech.security.prov.JceProvider;
-import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -14,21 +11,19 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.MockGenericHttpClient;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.OpaqueSecurityToken;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.service.ServiceCacheStub;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.TestingHttpClientFactory;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -55,7 +50,6 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     private static final String POLICY_RES_PATH = "policy/resources/";
 
     private static MessageProcessor messageProcessor = null;
-    private static AuditContext auditContext = null;
     private static SoapFaultManager soapFaultManager = null;
     private static TestingHttpClientFactory testingHttpClientFactory = null;
     private static InboundSecureConversationContextManager inboundSecureConversationContextManager = null;
@@ -148,7 +142,6 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
 
         messageProcessor = applicationContext.getBean("messageProcessor", MessageProcessor.class);
-        auditContext = applicationContext.getBean("auditContext", AuditContext.class);
         soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
         testingHttpClientFactory = applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
         inboundSecureConversationContextManager = applicationContext.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
@@ -167,8 +160,6 @@ public class PolicyProcessingPerformanceTest extends TestCase {
 
         ServiceCacheStub cache = applicationContext.getBean("serviceCache", ServiceCacheStub.class);
         cache.initializeServiceCache();
-
-        auditContext.flush(); // ensure clear
 
         REQUEST_general = new String(loadResource("REQUEST_general.xml"));
         REQUEST_xpathcreds_success = new String(loadResource("REQUEST_xpathcreds_success.xml"));
@@ -587,16 +578,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
                 }
             }
         } finally {
-            try {
-                auditContext.flush();
-            }
-            catch(Exception e) {
-                logger.log(Level.WARNING, "Unexpected exception when flushing audit data.", e);
-            }
-            finally {
-                context.close();
-            }
-
+            context.close();
             assertEquals("Policy status", expectedStatus, status.getNumeric());
         }
     }

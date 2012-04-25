@@ -11,17 +11,15 @@ import org.springframework.context.ApplicationListener;
  * is not in use.</p>
  */
 public class AuditDetailProcessingAuditListener implements ApplicationListener {
-    private final AuditContext auditContext;
 
-    public AuditDetailProcessingAuditListener( final AuditContext auditContext ) {
-        this.auditContext = auditContext;
+    public AuditDetailProcessingAuditListener() {
     }
 
     @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
         if ( event instanceof AuditDetailEvent ) {
             AuditDetailEvent auditDetailEvent = (AuditDetailEvent) event;
-            auditContext.addDetail(auditDetailEvent.getDetailWithInfo());
+            AuditContextFactory.getCurrent().addDetail(auditDetailEvent.getDetailWithInfo());
         }
     }
 }

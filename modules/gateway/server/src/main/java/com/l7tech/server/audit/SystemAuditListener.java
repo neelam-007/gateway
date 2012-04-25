@@ -3,23 +3,24 @@ package com.l7tech.server.audit;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.server.event.system.*;
-import static com.l7tech.util.CollectionUtils.join;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.Ordered;
 
 import java.util.logging.Level;
 
+import static com.l7tech.util.CollectionUtils.join;
+
 /**
  * @author alex
  */
 public class SystemAuditListener implements ApplicationListener, Ordered {
     private final String nodeId;
-    private AuditContext auditContext;
+    private final AuditContextFactory auditContextFactory;
 
-    public SystemAuditListener(String nodeId, AuditContext auditContext) {
+    public SystemAuditListener(String nodeId, AuditContextFactory auditContextFactory) {
         this.nodeId = nodeId;
-        this.auditContext = auditContext;
+        this.auditContextFactory = auditContextFactory;
     }
 
     @Override
@@ -28,11 +29,12 @@ public class SystemAuditListener implements ApplicationListener, Ordered {
             final SystemEvent se = (SystemEvent)event;
 
             final SystemAuditRecord record;
+            boolean update = false;
             if (event instanceof AuditPurgeEvent) {
                 AuditPurgeEvent ape = (AuditPurgeEvent)event;
                 if (ape.isUpdate()) {
                     record = ape.getSystemAuditRecord();
-                    auditContext.setUpdate(true);
+                    update = true;
                 } else {
                     record = createSystemAuditRecord(se);
                     ape.setSystemAuditRecord(record);
@@ -40,16 +42,14 @@ public class SystemAuditListener implements ApplicationListener, Ordered {
             } else {
                 if ( event instanceof AuditAwareSystemEvent ) {
                     final AuditAwareSystemEvent aase = (AuditAwareSystemEvent) event;
-                    if ( !aase.shouldBeAudited( join( auditContext.getDetails().values() ) ) ) {
+                    if ( !aase.shouldBeAudited( join(AuditContextFactory.getCurrent().getDetails().values()) ) ) {
                         return;
                     }
                 }
                 record = createSystemAuditRecord(se);
             }
 
-            auditContext.setCurrentRecord(record);
-            auditContext.flush();
-            auditContext.setUpdate(false);
+            auditContextFactory.emitAuditRecord(record, update);
         }
     }
 

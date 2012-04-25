@@ -9,6 +9,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceStatistics;
@@ -25,8 +26,10 @@ import com.l7tech.security.xml.UnexpectedKeyInfoException;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.processor.*;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextFactory;
+import com.l7tech.server.audit.AuditLogFormatter;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.MessageReceived;
 import com.l7tech.server.log.TrafficLogger;
@@ -44,7 +47,6 @@ import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.server.trace.TracePolicyEvaluator;
 import com.l7tech.server.util.EventChannel;
-import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
@@ -69,6 +71,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TimerTask;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -95,10 +98,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final SecurityContextFinder securityContextFinder;
     private final LicenseManager licenseManager;
     private final ServiceMetricsServices serviceMetricsServices;
-    private final AuditContext auditContext;
+    private final AuditContextFactory auditContextFactory;
+    private final MessageSummaryAuditFactory messageSummaryAuditFactory;
     private final Config config;
     private final TrafficLogger trafficLogger;
-    private SoapFaultManager soapFaultManager;
     private final ArrayList<TrafficMonitor> trafficMonitors = new ArrayList<TrafficMonitor>();
     private final AtomicReference<WssSettings> wssSettingsReference = new AtomicReference<WssSettings>();
     private final ApplicationEventPublisher messageProcessingEventChannel;
@@ -114,10 +117,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
      * @param securityTokenResolver the security token resolver to use
      * @param licenseManager the SSG's Licence Manager
      * @param metricsServices the SSG's ServiceMetricsManager
-     * @param auditContext    audit context for message processing
+     * @param auditContextFactory   factory for producing audit context for message processing
+     * @param messageSummaryAuditFactory factory for producing message summary audit records after each request
      * @param config          config provider
      * @param trafficLogger   traffic logger
-     * @param soapFaultManager  soap fault manager
      * @param messageProcessingEventChannel   channel on which to publish the message processed event (for auditing)
      * @throws IllegalArgumentException if any of the arguments is null
      */
@@ -128,10 +131,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                              final SecurityContextFinder securityContextFinder,
                              final LicenseManager licenseManager,
                              final ServiceMetricsServices metricsServices,
-                             final AuditContext auditContext,
+                             final AuditContextFactory auditContextFactory,
+                             final MessageSummaryAuditFactory messageSummaryAuditFactory,
                              final Config config,
                              final TrafficLogger trafficLogger,
-                             final SoapFaultManager soapFaultManager,
                              ApplicationEventPublisher messageProcessingEventChannel )
       throws IllegalArgumentException {
         if (sc == null) throw new IllegalArgumentException("Service Cache is required");
@@ -139,10 +142,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (wssd == null) throw new IllegalArgumentException("Wss Decorator is required");
         if (licenseManager == null) throw new IllegalArgumentException("License Manager is required");
         if (metricsServices == null) throw new IllegalArgumentException("Service Metrics Manager is required");
-        if (auditContext == null) throw new IllegalArgumentException("Audit Context is required");
+        if (auditContextFactory == null) throw new IllegalArgumentException("auditContextFactory is required");
         if (config == null) throw new IllegalArgumentException("Server Config is required");
         if (trafficLogger == null) throw new IllegalArgumentException("Traffic Logger is required");
-        if (soapFaultManager == null) throw new IllegalArgumentException("SoapFaultManager is required");
         if (messageProcessingEventChannel == null) messageProcessingEventChannel = new EventChannel();
         this.serviceCache = sc;
         this.policyCache = pc;
@@ -151,10 +153,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.securityContextFinder = securityContextFinder;
         this.licenseManager = licenseManager;
         this.serviceMetricsServices = metricsServices;
-        this.auditContext = auditContext;
+        this.auditContextFactory = auditContextFactory;
+        this.messageSummaryAuditFactory = messageSummaryAuditFactory;
         this.config = config;
         this.trafficLogger = trafficLogger;
-        this.soapFaultManager = soapFaultManager;
         this.messageProcessingEventChannel = messageProcessingEventChannel;
         initSettings(SETTINGS_RECHECK_MILLIS);
     }
@@ -204,14 +206,50 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     public AssertionStatus processMessage(final PolicyEnforcementContext context)
         throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException
     {
-        flushAuditContextOnClose(context);
-
-        AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
-            status = reallyProcessMessage(context);
-            return status;
-        } finally {
-            doRequestPostProcessing(context, status);
+            final AssertionStatus status[] = { AssertionStatus.UNDEFINED };
+            return auditContextFactory.doWithNewAuditContext(new Callable<AssertionStatus>() {
+                 @Override
+                 public AssertionStatus call() throws Exception {
+                     try {
+                         status[0] = reallyProcessMessage(context);
+                         return status[0];
+                     } finally {
+                         doRequestPostProcessing(context, status[0]);
+
+                         /*
+                         * 5.0 Audit Request Id
+                         * need to extract the required context variables from PEC used in the audit logging
+                         */
+                         String[] ctxVariables = AuditLogFormatter.getContextVariablesUsed();
+                         if (ctxVariables != null && ctxVariables.length > 0) {
+                             AuditContextFactory.getCurrent().setContextVariables(context.getVariableMap(ctxVariables, auditor));
+                         }
+                     }
+                 }
+             }, new Functions.Nullary<com.l7tech.gateway.common.audit.AuditRecord>() {
+                 @Override
+                 public AuditRecord call() {
+                     return messageSummaryAuditFactory.makeEvent(context, status[0]);
+                 }
+            });
+        } catch (IOException e) {
+            throw e;
+        } catch (PolicyAssertionException e) {
+            throw e;
+        } catch (PolicyVersionException e) {
+            throw e;
+        } catch (LicenseException e) {
+            throw e;
+        } catch (MethodNotAllowedException e) {
+            throw e;
+        } catch (MessageProcessingSuspendedException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            // Shouldn't be possible
+            throw new RuntimeException(e);
         }
     }
 
@@ -263,7 +301,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         // Check auditing hints, position here since our "success" may be a back end service fault
         if(isAuditHintingEnabled()) {
             if(!context.isAuditSaveRequest() || !context.isAuditSaveResponse()) {
-                Set auditingHints = auditContext.getHints();
+                Set auditingHints = AuditContextFactory.getCurrent().getHints();
                 if(auditingHints.contains(HINT_SAVE_REQUEST)) context.setAuditSaveRequest(true);
                 if(auditingHints.contains(HINT_SAVE_RESPONSE)) context.setAuditSaveResponse(true);
             }
@@ -1135,32 +1173,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 logger.log(Level.WARNING, "Unable to extract message ID from request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
-    }
-
-    /**
-     * Configure the specified PEC to flush the audit context when it is closed.
-     *
-     * @param context the PEC that should take ownership of the thread-local audit context for the remainder of the life of the PEC.  Required.
-     */
-    private void flushAuditContextOnClose(final PolicyEnforcementContext context) {
-        context.runOnCloseFirst(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    /*
-                     * 5.0 Audit Request Id
-                     * need to extract the required context variables from PEC used in the audit logging
-                     */
-                    String[] ctxVariables = auditContext.getContextVariablesUsed();
-                    if (ctxVariables != null && ctxVariables.length > 0) {
-                        auditContext.setContextVariables(context.getVariableMap(ctxVariables, auditor));
-                    }
-                    auditContext.flush();
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Unexpected exception when flushing audit data: " + ExceptionUtils.getMessage(e), e);
-                }
-            }
-        });
     }
 
     /**

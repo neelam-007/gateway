@@ -1,16 +1,10 @@
 package com.l7tech.server;
 
-import static com.l7tech.common.TestDocuments.getWssInteropAliceCert;
 import com.l7tech.common.http.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.AuditDetail;
-import com.l7tech.gateway.common.audit.AuditRecord;
-import com.l7tech.gateway.common.audit.LoggingAudit;
-import com.l7tech.gateway.common.audit.MessageProcessingMessages;
-import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.UserBean;
@@ -25,8 +19,8 @@ import com.l7tech.security.token.SignatureConfirmation;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.audit.AuditContextStubInt;
+import com.l7tech.server.audit.AuditContextFactory;
+import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -45,12 +39,10 @@ import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
-import static com.l7tech.util.Functions.map;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.tarari.GlobalTarariContext;
-import static java.util.Collections.singletonMap;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -76,6 +68,9 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.common.TestDocuments.getWssInteropAliceCert;
+import static com.l7tech.util.Functions.map;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.*;
 
 /**
@@ -87,7 +82,6 @@ public class PolicyProcessingTest {
 
     private static PolicyCache policyCache = null;
     private static MessageProcessor messageProcessor = null;
-    private static AuditContext auditContext = null;
     private static SoapFaultManager soapFaultManager = null;
     private static TestingHttpClientFactory testingHttpClientFactory = null;
     private static InboundSecureConversationContextManager inboundSecureConversationContextManager = null;
@@ -179,7 +173,6 @@ public class PolicyProcessingTest {
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
         policyCache = applicationContext.getBean("policyCache", PolicyCache.class);
         messageProcessor = applicationContext.getBean("messageProcessor", MessageProcessor.class);
-        auditContext = applicationContext.getBean("auditContext", AuditContext.class);
         soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
         testingHttpClientFactory = applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
         inboundSecureConversationContextManager = applicationContext.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
@@ -191,8 +184,6 @@ public class PolicyProcessingTest {
         buildUsers();
 
         createSecureConversationSession(); // session used in testing
-
-        auditContext.flush(); // ensure clear
     }
 
     private long getServiceOid( String resolutionUri ) {
@@ -1326,9 +1317,10 @@ public class PolicyProcessingTest {
     @Test
     public void testSignatureNoToken() throws Exception {
         String requestMessage = new String(loadResource("REQUEST_signed.xml"));
-        processMessage("/signaturenotoken", requestMessage, "10.0.0.1", 600, null, null );
+        Result result = processMessage("/signaturenotoken", requestMessage, "10.0.0.1", 600, null, null );
 
-        final AuditRecord ar = ((AuditContextStubInt)auditContext).getLastRecord();
+        final AuditRecord ar = AuditContextStub.getGlobalLastRecord();
+        assertTrue("audit details shall be present", !ar.getDetails().isEmpty());
         final List<Integer> detailIds = map( ar.getDetails(),
                 Functions.<Integer, AuditDetail>propertyTransform( AuditDetail.class, "messageId" ) );
         assertTrue("Saw expected audit", detailIds.contains( MessageProcessingMessages.WSS_NO_SIGNING_TOKEN.getId() ));
@@ -1441,7 +1433,7 @@ public class PolicyProcessingTest {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         final String requestMessage = new String(loadResource("REQUEST_general.xml"));
-        processMessage("/addtimestamp", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+        Result result = processMessage("/addtimestamp", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
             @Override
             public void call(final PolicyEnforcementContext context) {
                 assertEquals("Number of assertion results", 3, context.getAssertionResults().size());
@@ -1449,7 +1441,7 @@ public class PolicyProcessingTest {
         });
 
         // Check auditing from global policies
-        final AuditRecord ar = ((AuditContextStubInt)auditContext).getLastRecord();
+        final AuditRecord ar = AuditContextStub.getGlobalLastRecord();
         final Collection<AuditDetail> details = ar.getDetails();
         int globalIndex = 1;
         for( final AuditDetail detail : details ) {
@@ -1459,7 +1451,7 @@ public class PolicyProcessingTest {
                 fail("Global policy evaluated multiple times");
             }
         }
-        assertTrue("Found global policy audit details", globalIndex==7);
+        assertEquals("Found global policy audit details", Integer.valueOf(globalIndex), Integer.valueOf(7));
 
         for ( final String pid : pids ) {
             policyCache.unregisterGlobalPolicy( pid );
@@ -1556,9 +1548,10 @@ public class PolicyProcessingTest {
                                    final Pair<String,String> extraHeader,
                                    final Map<String,?> variables,
                                    final Functions.UnaryVoid<PolicyEnforcementContext> validationCallback ) throws IOException {
+
         MockServletContext servletContext = new MockServletContext();
-        MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
-        MockHttpServletResponse hresponse = new MockHttpServletResponse();
+        final MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
+        final MockHttpServletResponse hresponse = new MockHttpServletResponse();
 
         hrequest.setMethod("POST");
         if ( message.indexOf("Content-ID: ") < 0 ) {
@@ -1698,19 +1691,10 @@ public class PolicyProcessingTest {
                 }
             }
         } finally {
-            auditContext.setCurrentRecord( new MessageSummaryAuditRecord() );
             try {
-                auditContext.flush();
-            }
-            catch(Exception e) {
-                logger.log(Level.WARNING, "Unexpected exception when flushing audit data.", e);
-            }
-            finally {
-                try {
-                    if (validationCallback!=null) validationCallback.call( context );
-                } finally {
-                    context.close();
-                }
+                if (validationCallback!=null) validationCallback.call( context );
+            } finally {
+                context.close();
             }
 
             for ( PolicyEnforcementContext.AssertionResult result : context.getAssertionResults() ) {
@@ -1809,15 +1793,7 @@ public class PolicyProcessingTest {
                 }
             }
         } finally {
-            try {
-                auditContext.flush();
-            }
-            catch(Exception e) {
-                logger.log(Level.WARNING, "Unexpected exception when flushing audit data.", e);
-            }
-            finally {
-                context.close();
-            }
+            context.close();
 
             assertEquals("Policy status", expectedStatus, status.getNumeric());
         }

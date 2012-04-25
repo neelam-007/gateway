@@ -18,7 +18,6 @@ import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.TestStashManagerFactory;
-import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
@@ -583,7 +582,6 @@ public class ServerJSONSchemaAssertionTest {
             put("serverConfig", ServerConfig.getInstance());
             put("httpClientFactory", testFactory);
             put("stashManagerFactory", TestStashManagerFactory.getInstance());
-            put("auditContext", new AuditContextStub());
         }});
 
         GenericApplicationContext context  = new GenericApplicationContext(beanFactory);

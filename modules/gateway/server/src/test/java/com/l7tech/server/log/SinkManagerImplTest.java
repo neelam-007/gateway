@@ -3,21 +3,21 @@ package com.l7tech.server.log;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.cluster.ClusterContextFactory;
-import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterInfoManagerImpl;
 import com.l7tech.server.log.syslog.SyslogManager;
 import com.l7tech.server.security.rbac.RoleManagerImpl;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.SoapFaultManager;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 
 import java.util.ArrayList;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Test case(s) for SinkManagerImpl class.  Currently on configured to test Syslog sinks which requires
@@ -47,7 +47,7 @@ public class SinkManagerImplTest {
             _sinkMgr = new SinkManagerImpl(_config,
                                            new SyslogManager(),
                                            new TrafficLogger(_config,
-                                           new SoapFaultManager(_config, new AuditContextStub(), null)),
+                                           new SoapFaultManager(_config, null)),
                                            new ApplicationEventProxy(),
                                            new ClusterInfoManagerImpl(null),
                                            new ClusterContextFactory(null,null,null),

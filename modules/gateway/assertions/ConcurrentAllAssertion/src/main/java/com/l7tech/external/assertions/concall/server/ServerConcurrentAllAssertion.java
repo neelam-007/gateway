@@ -15,6 +15,7 @@ import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
@@ -188,15 +189,18 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
                 @Override
                 public KidResult call() throws Exception {
                     try {
-                        // Configure the thread-local audit context to buffer detail messages
-                        AuditContext auditContext = beanFactory.getBean("auditContext", AuditContext.class);
-                        auditContext.clear();
+                        return AuditContextFactory.doWithCustomAuditContext(new DetailCollectingAuditContext(), new Callable<KidResult>() {
+                            @Override
+                            public KidResult call() throws Exception {
+                                // Configure the thread-local audit context to buffer detail messages
+                                AuditContext auditContext = AuditContextFactory.getCurrent();
 
-                        AssertionStatus status = doCall();
+                                AssertionStatus status = doCall();
 
-                        Map<Object, List<AuditDetail>> details = auditContext.getDetails();
-                        auditContext.clear();
-                        return new KidResult(status, details);
+                                Map<Object, List<AuditDetail>> details = auditContext.getDetails();
+                                return new KidResult(status, details);
+                            }
+                        });
 
                     } catch (Throwable t) {
                         Map<Object, List<AuditDetail>> fakeDetails = new HashMap<Object, List<AuditDetail>>();
@@ -262,7 +266,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     }
 
     private void importAuditDetails(Map<Object, List<AuditDetail>> details) {
-        AuditContext auditContext = beanFactory.getBean("auditContext", AuditContext.class);
+        AuditContext auditContext = AuditContextFactory.getCurrent();
         if (details != null) for (Map.Entry<Object, List<AuditDetail>> objectListEntry : details.entrySet()) {
             Object source = objectListEntry.getKey();
             List<AuditDetail> detailList = objectListEntry.getValue();

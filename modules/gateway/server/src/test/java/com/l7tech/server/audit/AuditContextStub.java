@@ -20,8 +20,7 @@ public class AuditContextStub implements AuditContextStubInt {
         details = new HashMap<Object,List<AuditDetail>>();
     }
 
-    @Override
-    public void setCurrentRecord(AuditRecord record) {
+    void setCurrentRecord(AuditRecord record) {
         this.record = record;
     }
 
@@ -43,20 +42,10 @@ public class AuditContextStub implements AuditContextStubInt {
     }
 
     @Override
-    public boolean isUpdate() {
-        return false;
-    }
-
-    @Override
-    public void setUpdate(boolean update) {
-    }
-
-    @Override
     public Set<AuditDetailMessage.Hint> getHints() {
         return Collections.emptySet();
     }
 
-    @Override
     public void flush() {
         if (record != null) {
             List<AuditDetail> detailList = new ArrayList<AuditDetail>();
@@ -77,12 +66,12 @@ public class AuditContextStub implements AuditContextStubInt {
 
             record.setDetails( new LinkedHashSet<AuditDetail>(detailList) );
             lastRecord = record;
+            globalLastRecord = record;
         }
 
         clear();
     }
 
-    @Override
     public void clear() {
         record = null;
         ordinal = 0;
@@ -99,9 +88,8 @@ public class AuditContextStub implements AuditContextStubInt {
         return lastRecord;
     }
 
-    @Override
-    public String[] getContextVariablesUsed() {
-        return new String[0];
+    public static AuditRecord getGlobalLastRecord() {
+        return globalLastRecord;
     }
 
     @Override
@@ -111,6 +99,7 @@ public class AuditContextStub implements AuditContextStubInt {
 
     //- PRIVATE
 
+    private static AuditRecord globalLastRecord;
     private AuditRecord lastRecord;
     private AuditRecord record;
     private int ordinal = 0;

@@ -6,7 +6,7 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.ems.EsmMessages;
 import com.l7tech.server.ems.enterprise.SsgCluster;
@@ -99,12 +99,12 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
         template.execute( new TransactionCallbackWithoutResult() {
             @Override
             protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
-                AuditContext auditContext = applicationContext.getBean("auditContext", AuditContext.class);
+                AuditContextFactory auditContextFactory = applicationContext.getBean("auditContextFactory", AuditContextFactory.class);
                 try {
                     ProcessControllerContext nodeContext = gatewayContextFactory.createProcessControllerContext(node);
                     long timeBeforeQuery = System.currentTimeMillis();
                     List<NotificationAttempt> attempts = nodeContext.getMonitoringApi().getRecentNotificationAttempts(node.getNotificationAuditTime());
-                    long timeOfMostRecentNotification = auditNotificationAttempts(node, auditContext, attempts);
+                    long timeOfMostRecentNotification = auditNotificationAttempts(node, auditContextFactory, attempts);
                     node.setNotificationAuditTime(timeOfMostRecentNotification > 0 ? timeOfMostRecentNotification + 1 : timeBeforeQuery);
                     ssgNodeManager.update(node);
                 } catch (GatewayException e) {
@@ -120,7 +120,7 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
         });
     }
 
-    private long auditNotificationAttempts(SsgNode node, AuditContext auditContext, List<NotificationAttempt> attempts) {
+    private long auditNotificationAttempts(SsgNode node, AuditContextFactory auditContextFactory, List<NotificationAttempt> attempts) {
         long mostRecentTime = 0;
 
         if (attempts == null || attempts.isEmpty())
@@ -130,14 +130,14 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
             long time = attempt.getTimestamp();
             if (time > mostRecentTime)
                 mostRecentTime = time;
-            auditNotificationAttempt(node, auditContext, attempt);
+            auditNotificationAttempt(node, auditContextFactory, attempt);
         }
 
         lastAttempts.put(node.getGuid(), attempts);
         return mostRecentTime;
     }
 
-    private void auditNotificationAttempt(SsgNode node, AuditContext auditContext, NotificationAttempt attempt) {
+    private void auditNotificationAttempt(SsgNode node, AuditContextFactory auditContextFactory, NotificationAttempt attempt) {
         List<NotificationAttempt> attempts = lastAttempts.get(node.getGuid());
         if (attempts != null && !attempts.isEmpty()) {
             for (NotificationAttempt na: attempts) {
@@ -148,34 +148,34 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
         }
 
         SsgCluster cluster = node.getSsgCluster();
-        addSingleDetail(auditContext, EsmMessages.CLUSTER_NAME, cluster.getName());
-        addSingleDetail(auditContext, EsmMessages.CLUSTER_GUID, cluster.getGuid());
-        addSingleDetail(auditContext, EsmMessages.NODE_NAME, node.getName());
-        addSingleDetail(auditContext, EsmMessages.NODE_GUID, node.getGuid());
-        addSingleDetail(auditContext, EsmMessages.NODE_IP, node.getIpAddress());
-        addSingleDetail(auditContext, EsmMessages.NOTIFICATION_MESSAGE, attempt.getMessage());
-        addSingleDetail(auditContext, EsmMessages.NOTIFICATION_TIME, new Date(attempt.getTimestamp()).toString());
-        addSingleDetail(auditContext, EsmMessages.NOTIFICATION_STATUS, attempt.getStatus().name());
+        List<AuditDetail> details = new ArrayList<AuditDetail>();
+        addSingleDetail(details, EsmMessages.CLUSTER_NAME, cluster.getName());
+        addSingleDetail(details, EsmMessages.CLUSTER_GUID, cluster.getGuid());
+        addSingleDetail(details, EsmMessages.NODE_NAME, node.getName());
+        addSingleDetail(details, EsmMessages.NODE_GUID, node.getGuid());
+        addSingleDetail(details, EsmMessages.NODE_IP, node.getIpAddress());
+        addSingleDetail(details, EsmMessages.NOTIFICATION_MESSAGE, attempt.getMessage());
+        addSingleDetail(details, EsmMessages.NOTIFICATION_TIME, new Date(attempt.getTimestamp()).toString());
+        addSingleDetail(details, EsmMessages.NOTIFICATION_STATUS, attempt.getStatus().name());
 
         final String nodeId = node.getGuid();
         final Level level = attempt.getStatus().equals(NotificationAttempt.StatusType.FAILED)? Level.WARNING : Level.INFO;
         final String shortMessage = "Node " + node.getIpAddress() + (level.equals(Level.WARNING)? " failed to send":" has sent") + " a notification";
-        auditContext.setCurrentRecord(new SystemAuditRecord(level,
-                nodeId,
-                Component.ENTERPRISE_MANAGER,
-                shortMessage,
-                true,
-                0,
-                null,
-                null,
-                "Notification Sent",
-                node.getIpAddress()));
-
-        auditContext.flush();
+        final SystemAuditRecord record = new SystemAuditRecord(level,
+                                                                 nodeId,
+                                                                 Component.ENTERPRISE_MANAGER,
+                                                                 shortMessage,
+                                                                 true,
+                                                                 0,
+                                                                 null,
+                                                                 null,
+                                                                 "Notification Sent",
+                                                                 node.getIpAddress());
+        auditContextFactory.emitAuditRecordWithDetails(record, false, this, details);
     }
 
-    private void addSingleDetail(AuditContext context, AuditDetailMessage msg, String arg) {
-        context.addDetail(new AuditDetail(msg, arg == null ? "<none>" : arg), this);
+    private void addSingleDetail(List<AuditDetail> details, AuditDetailMessage msg, String arg) {
+        details.add(new AuditDetail(msg, arg == null ? "<none>" : arg));
     }
 
     @Override

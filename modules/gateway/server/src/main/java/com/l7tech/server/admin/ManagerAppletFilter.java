@@ -1,26 +1,19 @@
 package com.l7tech.server.admin;
 
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gateway.common.admin.AdminLoginResult;
-import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.identity.CredentialExpiredPasswordDetailsException;
-import com.l7tech.util.IOUtils;
-import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.gateway.common.audit.ServiceMessages;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.identity.*;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ClassUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.LoginRequireClientCertificateException;
+import com.l7tech.objectmodel.InvalidPasswordException;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -28,44 +21,38 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
+import com.l7tech.security.token.OpaqueSecurityToken;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.system.AdminAppletEvent;
 import com.l7tech.server.message.AuthenticationContext;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
-import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.transport.http.HttpTransportModule;
-import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.InvalidPasswordException;
-import com.l7tech.security.token.OpaqueSecurityToken;
-import com.l7tech.util.TextUtils;
+import com.l7tech.util.*;
 import org.springframework.beans.BeansException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
 
-import javax.security.auth.login.LoginException;
 import javax.security.auth.login.AccountLockedException;
+import javax.security.auth.login.LoginException;
 import javax.servlet.*;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.net.URL;
 import java.security.AccessControlException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Authentication filter for the Manager applet servlet (and serving the manager applet jarfiles).
@@ -100,7 +87,6 @@ public class ManagerAppletFilter implements Filter {
     private AdminSessionManager adminSessionManager;
     private AdminLogin adminLogin;
     private AdminLoginHelper adminLoginHelper;
-    private AuditContext auditContext;
 
     private ServerAssertion dogfoodPolicy;
     private Document fakeDoc;
@@ -129,7 +115,6 @@ public class ManagerAppletFilter implements Filter {
         adminSessionManager = getBean("adminSessionManager", AdminSessionManager.class);
         adminLogin = getBean("adminLogin", AdminLogin.class);
         adminLoginHelper = getBean("adminLoginHelper", AdminLoginHelper.class);
-        auditContext = getBean("auditContext", AuditContext.class);
 
         //CompositeAssertion dogfood = new AllAssertion();
         CompositeAssertion dogfood = new OneOrMoreAssertion();
@@ -270,7 +255,6 @@ public class ManagerAppletFilter implements Filter {
                                              user.getProviderId(),
                                              getName(user),
                                              user.getId()));
-                auditContext.flush();
             } finally {
                 if (context != null) context.close();
             }

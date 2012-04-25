@@ -11,6 +11,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.core.Ordered;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -18,7 +19,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.server.ServerConfigParams.*;
-import org.springframework.core.Ordered;
 
 /**
  * Check the status of Audit Cluster Properties such as audit sink properties ("audit.sink.alwaysSaveInternal" and "audit.sink.policy.guid",
@@ -230,11 +230,11 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, P
                 level = Level.parse(levelName);
             } catch (IllegalArgumentException e) {
                 logger.warning("Invalid admin threshold value '" + levelName + "'. Will use default " +
-                    AuditContext.DEFAULT_ADMIN_THRESHOLD.getName() + " instead.");
+                    DefaultAuditThresholds.DEFAULT_ADMIN_THRESHOLD.getName() + " instead.");
             }
         }
         if (level == null) {
-            level = AuditContext.DEFAULT_ADMIN_THRESHOLD;
+            level = DefaultAuditThresholds.DEFAULT_ADMIN_THRESHOLD;
         }
         return level;
     }

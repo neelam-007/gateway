@@ -2,7 +2,6 @@ package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditDetailEvent.AuditDetailWithInfo;
-import com.l7tech.gateway.common.audit.AuditRecord;
 
 import java.util.Collections;
 import java.util.List;
@@ -14,10 +13,6 @@ import java.util.Set;
  */
 public class NullAuditContext implements AuditContext {
     @Override
-    public void setCurrentRecord(AuditRecord record) {
-    }
-
-    @Override
     public void addDetail(AuditDetail detail, Object source) {
     }
 
@@ -26,35 +21,13 @@ public class NullAuditContext implements AuditContext {
     }
 
     @Override
-    public boolean isUpdate() {
-        return false;
-    }
-
-    @Override
-    public void setUpdate(boolean update) {
-    }
-
-    @Override
     public Set getHints() {
         return Collections.emptySet();
     }
 
     @Override
-    public void flush() {
-    }
-
-    @Override
-    public void clear() {
-    }
-
-    @Override
     public Map<Object, List<AuditDetail>> getDetails() {
         return Collections.emptyMap();
-    }
-
-    @Override
-    public String[] getContextVariablesUsed() {
-        return new String[0];
     }
 
     @Override

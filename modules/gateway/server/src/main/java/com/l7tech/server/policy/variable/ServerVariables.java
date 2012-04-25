@@ -18,7 +18,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.variable.*;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
@@ -61,7 +61,6 @@ public class ServerVariables {
     private static ClusterPropertyCache clusterPropertyCache;
     private static SecurePasswordManager securePasswordManager;
     private static ClusterInfoManager clusterInfoManager;
-    private static AuditContext auditContext;
 
     static Variable getVariable(String name, PolicyEnforcementContext targetContext) {
         final String lname = name.toLowerCase();
@@ -763,12 +762,6 @@ public class ServerVariables {
         securePasswordManager = spm;
     }
 
-    public static void setAuditContext(final AuditContext auditContext) {
-        if (ServerVariables.auditContext == null) {
-            ServerVariables.auditContext = auditContext;
-        }
-    }
-
     static {
         for (Variable var : VARS) {
             List<String> names = new ArrayList<String>();
@@ -928,7 +921,7 @@ public class ServerVariables {
                 AuditSinkPolicyEnforcementContext sinkctx = (AuditSinkPolicyEnforcementContext) context;
                 return sinkctx.getAuditRecord();
             } else {
-                return new AuditSelector.AuditHolder(auditContext);
+                return new AuditSelector.AuditHolder(AuditContextFactory.getCurrent());
             }
         }
     }

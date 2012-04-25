@@ -54,11 +54,13 @@ public class AuditContextImpl implements AuditContext {
      * @param auditFilterPolicyManager may be null
      * @param nodeId should not be null
      */
-    public AuditContextImpl( final Config config,
+    AuditContextImpl( final Config config,
                              final SimpleAuditRecordManager auditRecordManager,
                              final AuditPolicyEvaluator auditPolicyEvaluator,
                              final AuditFilterPolicyManager auditFilterPolicyManager,
-                             final String nodeId ) {
+                             final String nodeId,
+                             final DefaultKey defaultKey,
+                             final AuditLogListener auditLogListener) {
         if ( config == null) {
             throw new IllegalArgumentException("Server Config is required");
         }
@@ -70,13 +72,16 @@ public class AuditContextImpl implements AuditContext {
         this.auditPolicyEvaluator = auditPolicyEvaluator;
         this.auditFilterPolicyManager = auditFilterPolicyManager;
         this.nodeId = nodeId;
+        this.keystore = defaultKey;
+        this.listener = auditLogListener;
     }
 
     /**
-     * Sets the current {@link AuditRecord} for this context.
+     * Sets the current {@link com.l7tech.gateway.common.audit.AuditRecord} for this context.
+     *
+     * @param record the record to set
      */
-    @Override
-    public void setCurrentRecord(AuditRecord record) {
+    void setCurrentRecord(AuditRecord record) {
         if (record == null) throw new NullPointerException();
         if (currentRecord != null) {
             throw new IllegalStateException("Only one audit record can be active at one time (existing is '"+currentRecord.getMessage()+"', new is '"+record.getMessage()+"')");
@@ -106,22 +111,13 @@ public class AuditContextImpl implements AuditContext {
         }
     }
 
-    @Override
-    public boolean isUpdate() {
-        return update;
-    }
-
-    @Override
+    /**
+     * Sets whether the current record is an update to a previous audit record.
+     *
+     * @param update    true if updating; false if creating
+     */
     public void setUpdate(boolean update) {
         this.update = update;
-    }
-
-    public void setKeystore(final DefaultKey keystore) {
-        this.keystore = keystore;
-    }
-
-    public void setAuditLogListener(final AuditLogListener listener) {
-        this.listener = listener;
     }
 
     private List<AuditDetailWithInfo> getDetailList(Object source) {
@@ -153,8 +149,14 @@ public class AuditContextImpl implements AuditContext {
         return Collections.unmodifiableSet(hints);
     }
 
-    @Override
-    public void flush() {
+    /**
+     * Flushes the current {@link AuditRecord} and any associated
+     * {@link AuditDetail} records to the database or audit sink policy.
+     * <p>
+     * The context can be reused once this operation has completed.
+     * </p>
+     */
+    void flush() {
         if (currentRecord == null) {
             if (!details.isEmpty()) {
                 logger.warning("flush() called with AuditDetails but no AuditRecord");
@@ -289,8 +291,11 @@ public class AuditContextImpl implements AuditContext {
         }
     }
 
-    @Override
-    public void clear() {
+    /**
+     * Clears the current {@link AuditRecord} and any associated {@link AuditDetail}
+     * records but without saving to the database or audit sink policy.
+     */
+    void clear() {
         currentRecord = null;
         currentAdminThreshold = null;
         currentSystemClientThreshold = null;
@@ -422,14 +427,6 @@ public class AuditContextImpl implements AuditContext {
     }
 
     /**
-     * @see com.l7tech.server.audit.AuditContext#getContextVariablesUsed()
-     */
-    @Override
-    public String[] getContextVariablesUsed() {
-        return AuditLogFormatter.getContextVariablesUsed();
-    }
-
-    /**
      * @see com.l7tech.server.audit.AuditContext#setContextVariables(java.util.Map)
      */
     @Override
@@ -473,11 +470,11 @@ public class AuditContextImpl implements AuditContext {
                     output = getLevel(msgLevel);
                 } catch(IllegalArgumentException e) {
                     logger.warning("Invalid message threshold value '" + msgLevel + "'. Will use default " +
-                                   DEFAULT_MESSAGE_THRESHOLD.getName() + " instead.");
+                                   DefaultAuditThresholds.DEFAULT_MESSAGE_THRESHOLD.getName() + " instead.");
                 }
             }
             if (output == null) {
-                output = DEFAULT_MESSAGE_THRESHOLD;
+                output = DefaultAuditThresholds.DEFAULT_MESSAGE_THRESHOLD;
             }
             currentMessageThreshold = output;
         }
@@ -493,11 +490,11 @@ public class AuditContextImpl implements AuditContext {
                     output = getLevel(msgLevel);
                 } catch(IllegalArgumentException e) {
                     logger.warning("Invalid associated logs threshold value '" + msgLevel + "'. Will use default " +
-                                   DEFAULT_ASSOCIATED_LOGS_THRESHOLD.getName() + " instead.");
+                                   DefaultAuditThresholds.DEFAULT_ASSOCIATED_LOGS_THRESHOLD.getName() + " instead.");
                 }
             }
             if (output == null) {
-                output = DEFAULT_ASSOCIATED_LOGS_THRESHOLD;
+                output = DefaultAuditThresholds.DEFAULT_ASSOCIATED_LOGS_THRESHOLD;
             }
             currentAssociatedLogsThreshold = output;
         }
@@ -512,7 +509,7 @@ public class AuditContextImpl implements AuditContext {
                 configValue = Boolean.valueOf(configStr.trim());
             }
             if (configValue == null) {
-                configValue = DEFAULT_USE_ASSOCIATED_LOGS_THRESHOLD;
+                configValue = DefaultAuditThresholds.DEFAULT_USE_ASSOCIATED_LOGS_THRESHOLD;
             }
             currentUseAssociatedLogsThreshold = configValue;
         }
@@ -528,11 +525,11 @@ public class AuditContextImpl implements AuditContext {
                     output = getLevel(msgLevel);
                 } catch (IllegalArgumentException e) {
                     logger.warning("Invalid admin threshold value '" + msgLevel + "'. Will use default " +
-                                   DEFAULT_ADMIN_THRESHOLD.getName() + " instead.");
+                                   DefaultAuditThresholds.DEFAULT_ADMIN_THRESHOLD.getName() + " instead.");
                 }
             }
             if (output == null) {
-                output = DEFAULT_ADMIN_THRESHOLD;
+                output = DefaultAuditThresholds.DEFAULT_ADMIN_THRESHOLD;
             }
             currentAdminThreshold = output;
         }
@@ -548,11 +545,11 @@ public class AuditContextImpl implements AuditContext {
                     output = getLevel(msgLevel);
                 } catch(IllegalArgumentException e) {
                     logger.warning("Invalid system client threshold value '" + msgLevel + "'. Will use default " +
-                                   DEFAULT_SYSTEM_CLIENT_THRESHOLD.getName() + " instead.");
+                                   DefaultAuditThresholds.DEFAULT_SYSTEM_CLIENT_THRESHOLD.getName() + " instead.");
                 }
             }
             if (output == null) {
-                output = DEFAULT_SYSTEM_CLIENT_THRESHOLD;
+                output = DefaultAuditThresholds.DEFAULT_SYSTEM_CLIENT_THRESHOLD;
             }
             currentSystemClientThreshold = output;
         }
@@ -615,8 +612,8 @@ public class AuditContextImpl implements AuditContext {
     private final String nodeId;
     private AuditPolicyEvaluator auditPolicyEvaluator;
     private final AuditFilterPolicyManager auditFilterPolicyManager;
-    private DefaultKey keystore;
-    private AuditLogListener listener;
+    private final DefaultKey keystore;
+    private final AuditLogListener listener;
     private Map<String, Object> logFormatContextVariables;
 
     private Level currentMessageThreshold;

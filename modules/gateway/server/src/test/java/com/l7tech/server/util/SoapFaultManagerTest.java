@@ -23,6 +23,7 @@ import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.processor.MockProcessorResult;
 import com.l7tech.server.TestDefaultKey;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextFactoryStub;
 import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -36,6 +37,7 @@ import com.l7tech.util.NameValuePair;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -786,13 +788,14 @@ public class SoapFaultManagerTest {
     }
 
     private SoapFaultManager buildSoapFaultManager( final boolean sign, final String keyAlias, final AuditContext auditContext ) throws Exception {
+        AuditContextFactoryStub.setCurrent((AuditContextStub) auditContext);
         Properties props = new Properties();
         props.setProperty( "defaultfaultlevel", "2" );
         props.setProperty( "defaultfaultsign", Boolean.toString(sign) );
         if ( keyAlias != null ) {
             props.setProperty( "defaultfaultkeyalias", keyAlias );
         }
-        SoapFaultManager sfm = new SoapFaultManager(new MockConfig(props), auditContext==null ? new AuditContextStub() : auditContext);
+        SoapFaultManager sfm = new SoapFaultManager(new MockConfig(props));
         sfm.setBeanFactory( new SimpleSingletonBeanFactory( new HashMap<String,Object>(){{
             put( "ssgKeyStoreManager", new SsgKeyStoreManagerStub(new SsgKeyFinderStub( Arrays.asList(getAliceKey()))) );
             put( "defaultKey", new TestDefaultKey( getBobKey() ) );

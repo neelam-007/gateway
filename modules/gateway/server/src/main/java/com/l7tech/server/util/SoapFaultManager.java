@@ -3,7 +3,6 @@ package com.l7tech.server.util;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
-import static com.l7tech.common.mime.ContentTypeHeader.TEXT_DEFAULT;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.Message;
@@ -25,13 +24,13 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
-import static com.l7tech.util.Option.optional;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
@@ -61,6 +60,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.common.mime.ContentTypeHeader.TEXT_DEFAULT;
+import static com.l7tech.util.Option.optional;
+
 /**
  * Server side SoapFaultLevel utils.
  * <p/>
@@ -75,12 +77,10 @@ public class SoapFaultManager implements ApplicationContextAware {
     //- PUBLIC
 
     public SoapFaultManager( final Config config,
-                             final AuditContext auditContext,
                              Timer timer) {
         if (timer == null) timer = new Timer("Soap fault manager refresh", true);
         this.config = config;
         this.checker = timer;
-        this.auditContext = auditContext;
     }
 
     /**
@@ -278,10 +278,9 @@ public class SoapFaultManager implements ApplicationContextAware {
     /**
      * For tests only
      */
-    SoapFaultManager( Config config, AuditContext auditContext ) {
+    SoapFaultManager( Config config ) {
         this.config = config;
         this.checker = null;
-        this.auditContext = auditContext;
     }
 
     void setBeanFactory( BeanFactory context ) throws BeansException {
@@ -330,7 +329,6 @@ public class SoapFaultManager implements ApplicationContextAware {
     private long lastParsedFromSettings;
     private SoapFaultLevel fromSettings;
     private Audit auditor;
-    private final AuditContext auditContext;
     private ClusterPropertyManager clusterPropertiesManager;
     private BeanFactory context;
     private final HashMap<Integer, String> cachedOverrideAuditMessages = new HashMap<Integer, String>();
@@ -712,6 +710,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                                                                 final String faultString,
                                                                 final String statusTextOverride,
                                                                 final boolean includeSuccesses) {
+        final AuditContext auditContext = AuditContextFactory.getCurrent();
         String output = null;
         final boolean useSoap12 = isSoap12(pec);
         try {

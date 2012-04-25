@@ -9,7 +9,9 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -33,7 +35,7 @@ import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.event.system.PolicyServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -62,6 +64,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 
@@ -88,21 +91,23 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     private static final String DUMMY_ID_PROVIDER_OID = Long.toString(Long.MAX_VALUE); // Dummy ID provider OID for NOPASS headers
 
-    private AuditContext auditContext;
+    private AuditContextFactory auditContextFactory;
     private SoapFaultManager soapFaultManager;
     private byte[] serverCertificate;
     private PolicyPathBuilder policyPathBuilder;
     private PolicyCache policyCache;
     private SecureRandom secureRandom;
+    private String nodeId;
 
     @Override
     public void init(ServletConfig servletConfig) throws ServletException {
         super.init(servletConfig);
         try {
             ApplicationContext applicationContext = getApplicationContext();
-            auditContext = applicationContext.getBean("auditContext", AuditContext.class);
+            auditContextFactory = applicationContext.getBean("auditContextFactory", AuditContextFactory.class);
             soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
             DefaultKey ku = applicationContext.getBean("defaultKey", DefaultKey.class);
+            nodeId = applicationContext.getBean("clusterNodeId", String.class);
             serverCertificate = ku.getSslInfo().getCertificate().getEncoded();
             PolicyPathBuilderFactory pathBuilderFactory = applicationContext.getBean("policyPathBuilderFactory",PolicyPathBuilderFactory.class);
             policyPathBuilder = pathBuilderFactory.makePathBuilder();
@@ -131,7 +136,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
      * Soapy policy downloads
      */
     @Override
-    protected void doPost(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
+    protected void doPost(final HttpServletRequest servletRequest, final HttpServletResponse servletResponse)
       throws ServletException, IOException {
         PolicyEnforcementContext context = null;
         try {
@@ -148,64 +153,72 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                                Message.getMaxBytes());
             request.attachHttpRequestKnob(new HttpServletRequestKnob(servletRequest));
 
-            Message response = new Message();
+            final Message response = new Message();
             response.attachHttpResponseKnob(new HttpServletResponseKnob(servletResponse));
 
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
-            boolean success = false;
+            final boolean[] success = {false};
 
-            try {
-                // pass over to the service
-                PolicyService service = getPolicyService();
-
-                try {
-                    boolean allowDisabled = systemAllowsDisabledServiceDownloads(servletRequest);
-                    service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(true, allowDisabled, false));
-                }
-                catch (IllegalStateException ise) { // throw by policy getter on policy not found
-                    sendExceptionFault(context, ise, servletResponse);
-                }
-
-                // Ensure headers are written (e.g. invalid client cert header)
-                HttpServletResponseKnob httpServletResponseKnob = (HttpServletResponseKnob) response.getHttpResponseKnob();
-                httpServletResponseKnob.beginResponse();
-                if ( httpServletResponseKnob.getStatus() == 0 ) {
-                    servletResponse.setStatus(HttpConstants.STATUS_OK);
-                }
-
-                if (context.getPolicyResult() != AssertionStatus.NONE) {
-                    returnFault(context, servletResponse);
-                } else {
-                    Document responseDoc;
+            final PolicyEnforcementContext finalContext = context;
+            final SystemAuditRecord record = new SystemAuditRecord(Level.INFO, nodeId, Component.GW_POLICY_SERVICE, "Policy request", false, -1, null, null, "GET", servletRequest.getRemoteAddr());
+            auditContextFactory.doWithNewAuditContext(record, new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
                     try {
-                        responseDoc = response.getXmlKnob().getDocumentReadOnly();
-                    } catch (SAXException e) {
-                        sendExceptionFault(context, e, servletResponse);
-                        return;
-                    }  catch (IllegalStateException e) {
-                        sendExceptionFault(context, e, servletResponse);
-                        return;
+                        // pass over to the service
+                        PolicyService service = getPolicyService();
+
+                        try {
+                            boolean allowDisabled = systemAllowsDisabledServiceDownloads(servletRequest);
+                            service.respondToPolicyDownloadRequest(finalContext, true, normalPolicyGetter(true, allowDisabled, false));
+                        }
+                        catch (IllegalStateException ise) { // throw by policy getter on policy not found
+                            sendExceptionFault(finalContext, ise, servletResponse);
+                        }
+
+                        // Ensure headers are written (e.g. invalid client cert header)
+                        HttpServletResponseKnob httpServletResponseKnob = (HttpServletResponseKnob) response.getHttpResponseKnob();
+                        httpServletResponseKnob.beginResponse();
+                        if ( httpServletResponseKnob.getStatus() == 0 ) {
+                            servletResponse.setStatus(HttpConstants.STATUS_OK);
+                        }
+
+                        if (finalContext.getPolicyResult() != AssertionStatus.NONE) {
+                            returnFault(finalContext, servletResponse);
+                        } else {
+                            Document responseDoc;
+                            try {
+                                responseDoc = response.getXmlKnob().getDocumentReadOnly();
+                            } catch (SAXException e) {
+                                sendExceptionFault(finalContext, e, servletResponse);
+                                return null;
+                            }  catch (IllegalStateException e) {
+                                sendExceptionFault(finalContext, e, servletResponse);
+                                return null;
+                            }
+                            outputPolicyDoc(servletResponse, responseDoc);
+                            success[0] = true;
+                        }
                     }
-                    outputPolicyDoc(servletResponse, responseDoc);
-                    success = true;
+                    finally {
+                        try {
+                            String message = success[0] ? "Policy Service: Success" : "Policy Service: Failed";
+                            User user = getUser(finalContext);
+                            getApplicationContext().publishEvent(new PolicyServiceEvent(this, Level.INFO, servletRequest.getRemoteAddr(), message, user.getProviderId(), getName(user), user.getId()));
+                        }
+                        catch(Exception e) {
+                            logger.log(Level.WARNING, "Error publishing event", e);
+                        }
+                    }
+                    return null;
                 }
-            }
-            finally {
-                try {
-                    String message = success ? "Policy Service: Success" : "Policy Service: Failed";
-                    User user = getUser(context);
-                    getApplicationContext().publishEvent(new PolicyServiceEvent(this, Level.INFO, servletRequest.getRemoteAddr(), message, user.getProviderId(), getName(user), user.getId()));
-                }
-                catch(Exception e) {
-                    logger.log(Level.WARNING, "Error publishing event", e);
-                }
-            }
+            });
+
         } catch (Exception e) { // this is to avoid letting the servlet engine returning ugly html error pages.
             logger.log(Level.SEVERE, "Unexpected exception:", e);
             sendExceptionFault(context, e, servletResponse);
         }
         finally {
-            auditContext.flush();
             ResourceUtils.closeQuietly(context);
         }
     }

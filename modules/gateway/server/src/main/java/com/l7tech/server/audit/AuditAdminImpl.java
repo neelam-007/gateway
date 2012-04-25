@@ -1,6 +1,5 @@
 package com.l7tech.server.audit;
 
-import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -35,7 +34,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -375,12 +373,12 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
 
     @Override
     public Level serverMessageAuditThreshold() {
-        return getAuditLevel( ServerConfigParams.PARAM_AUDIT_MESSAGE_THRESHOLD, "message", AuditContext.DEFAULT_MESSAGE_THRESHOLD);
+        return getAuditLevel( ServerConfigParams.PARAM_AUDIT_MESSAGE_THRESHOLD, "message", DefaultAuditThresholds.DEFAULT_MESSAGE_THRESHOLD);
     }
 
     @Override
     public Level serverDetailAuditThreshold() {
-        return getAuditLevel( ServerConfigParams.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD, "detail", AuditContext.DEFAULT_ASSOCIATED_LOGS_THRESHOLD);
+        return getAuditLevel( ServerConfigParams.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD, "detail", DefaultAuditThresholds.DEFAULT_ASSOCIATED_LOGS_THRESHOLD);
     }
 
     private Level getAuditLevel(String serverConfigParam, String which, Level defaultLevel) {

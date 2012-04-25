@@ -205,18 +205,9 @@
     </bean>
 
 
-    <bean id="auditContext" class="org.springframework.aop.framework.ProxyFactoryBean">
-        <property name="proxyInterfaces" value="com.l7tech.server.audit.AuditContextStubInt"/>
-        <property name="targetSource">
-            <ref local="auditContextTargetSource"/>
-        </property>
-    </bean>
-
-    <bean id="auditContextTarget" class="com.l7tech.server.audit.AuditContextStub" scope="prototype">
-    </bean>
-
-    <bean id="auditContextTargetSource" class="org.springframework.aop.target.ThreadLocalTargetSource">
-        <property name="targetBeanName" value="auditContextTarget"/>
+    <bean id="auditContextFactory" class="com.l7tech.server.audit.AuditContextFactoryStub">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" value="testNodeId"/>
     </bean>
 
     <bean id="auditFactory" class="com.l7tech.server.audit.Auditor$DefaultAuditorFactory">
@@ -232,8 +223,7 @@
 
     <bean id="messageProcessingAuditListener" class="com.l7tech.server.audit.MessageProcessingAuditListener">
         <constructor-arg index="0" ref="messageSummaryAuditFactory"/>
-        <constructor-arg index="1" ref="auditContext"/>
-        <constructor-arg index="2" ref="messageProcessingEventChannel"/>
+        <constructor-arg index="1" ref="messageProcessingEventChannel"/>
     </bean>
 
     <bean id="securityTokenResolver" class="com.l7tech.security.xml.SimpleSecurityTokenResolver">
@@ -246,8 +236,7 @@
     
     <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager">
         <constructor-arg index="0" ref="serverConfig"/>
-        <constructor-arg index="1" ref="auditContext"/>
-        <constructor-arg index="2" >
+        <constructor-arg index="1" >
             <null/>
         </constructor-arg>
     </bean>
@@ -316,15 +305,6 @@
     <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManagerStub"/>
 
     <bean id="jmsConnectionManager" class="com.l7tech.server.transport.jms.JmsConnectionManagerStub"/>
-
-    <!-- Jms2 -->
-    <!--<bean id="jmsRequestHandler" class="com.l7tech.server.transport.jms2.JmsRequestHandlerImpl" lazy-init="true">-->
-        <!--<property name="messageProcessor" ref="messageProcessor"/>-->
-        <!--<property name="auditContext" ref="auditContext"/>-->
-        <!--<property name="soapFaultManager" ref="soapFaultManager"/>-->
-        <!--<property name="clusterPropertyManager" ref="clusterPropertyManager"/>-->
-        <!--<property name="stashManagerFactory" ref="stashManagerFactory"/>-->
-    <!--</bean>-->
 
     <bean id="jmsThreadPool" class="com.l7tech.server.util.ThreadPoolBean">
         <constructor-arg index="0"  ref="serverConfig" />

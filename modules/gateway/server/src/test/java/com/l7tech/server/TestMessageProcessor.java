@@ -1,11 +1,13 @@
 package com.l7tech.server;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
-import com.l7tech.server.audit.AuditContextStub;
+import com.l7tech.security.xml.decorator.WssDecorator;
+import com.l7tech.server.audit.AuditContextFactoryStub;
+import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyCache;
@@ -13,9 +15,6 @@ import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceMetricsServicesImpl;
-import com.l7tech.server.util.ManagedTimer;
-import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.common.TestDocuments;
 import com.l7tech.util.ConfigFactory;
 
 import java.io.IOException;
@@ -49,10 +48,10 @@ public class TestMessageProcessor extends MessageProcessor {
                 sccm, 
                 new TestLicenseManager(),
                 new ServiceMetricsServicesImpl("yo"),
-                new AuditContextStub(),
+                new AuditContextFactoryStub(ConfigFactory.getCachedConfig(), "testnode"),
+                new MessageSummaryAuditFactory("testnode"),
                 ConfigFactory.getCachedConfig(),
                 new TrafficLogger(ConfigFactory.getCachedConfig(), null),
-                new SoapFaultManager(ConfigFactory.getCachedConfig(), new AuditContextStub(), new ManagedTimer("Soap fault manager refresh")),
                 null);
     }
 

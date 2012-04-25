@@ -21,22 +21,6 @@
         </property>
     </bean>
 
-    <bean id="auditContext" class="org.springframework.aop.framework.ProxyFactoryBean">
-        <property name="proxyInterfaces"><value>com.l7tech.server.audit.AuditContextStubInt</value></property>
-        <property name="targetSource">
-            <ref local="auditContextTargetSource"/>
-        </property>
-    </bean>
-
-    <bean id="auditContextTarget" class="com.l7tech.server.audit.AuditContextStub" singleton="false">
-    </bean>
-
-    <bean id="auditContextTargetSource" class="org.springframework.aop.target.ThreadLocalTargetSource">
-        <property name="targetBeanName">
-            <value>auditContextTarget</value>
-        </property>
-    </bean>
-
     <bean id="clusterPropertyManager" class="com.l7tech.server.MockClusterPropertyManager"/>
 
     <bean id="clusterInfoManager" class="com.l7tech.server.ClusterInfoManagerStub"/>

@@ -19,7 +19,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.xml.processor.BadSecurityContextException;
 import com.l7tech.security.xml.processor.ProcessorException;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -61,7 +60,6 @@ import java.util.logging.Logger;
 public class TokenServiceServlet extends HttpServlet {
     private WebApplicationContext applicationContext;
     private TokenService tokenService;
-    private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
     private StashManagerFactory stashManagerFactory;
 
@@ -74,7 +72,6 @@ public class TokenServiceServlet extends HttpServlet {
         }
         try {
             tokenService = applicationContext.getBean("tokenService", TokenService.class);
-            auditContext = applicationContext.getBean("auditContext", AuditContext.class);
             soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
             stashManagerFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
         }
@@ -191,15 +188,7 @@ public class TokenServiceServlet extends HttpServlet {
             logger.log(Level.SEVERE, msg, e);
             sendExceptionFault(context, e, res);
         } finally {
-            try {
-                //note that the system audit record is already written at this point
-                //this just ensures that we log a warning if any details are left in
-                //the context
-                auditContext.flush();
-            }
-            finally {
-                context.close();
-            }
+            context.close();
         }
     }
 

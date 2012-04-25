@@ -293,34 +293,33 @@
         <property name="config" ref="serverConfig"/>
     </bean>
 
-    <bean id="auditContext" class="com.l7tech.server.audit.ThreadLocalAuditContext">
-        <property name="targetId" value="auditContextImpl"/>
+    <bean id="auditContextFactory" class="com.l7tech.server.audit.AuditContextFactory">
+        <constructor-arg index="0" ref="auditLogListener"/>
     </bean>
 
-    <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" scope="prototype">
+    <bean id="activateAuditContextFactory" class="com.l7tech.server.audit.AuditContextFactoryActivator">
         <constructor-arg index="0" ref="serverConfig"/>
-        <constructor-arg index="1" ref="auditRecordManager"/>
-        <constructor-arg index="2"><null/></constructor-arg>
-        <constructor-arg index="3"><null/></constructor-arg>
-        <constructor-arg index="4" ref="esmId"/>
-        <property name="keystore" ref="defaultKey"/>
-        <property name="auditLogListener" ref="auditLogListener"/>
+        <constructor-arg index="1" ref="auditContextFactory"/>
+        <constructor-arg index="2" ref="auditRecordManager"/>
+        <constructor-arg index="3" ref="esmId"/>
+        <constructor-arg index="4" ref="defaultKey"/>
+        <constructor-arg index="5"><null/></constructor-arg>
+        <constructor-arg index="6"><null/></constructor-arg>
     </bean>
 
     <bean id="auditLogListener" class="com.l7tech.server.log.LoggingAuditLogListener"/>
 
     <bean id="auditDetailProcessingAuditListener" class="com.l7tech.server.audit.AuditDetailProcessingAuditListener">
-        <constructor-arg ref="auditContext"/>
     </bean>
 
     <bean id="adminAuditListener" class="com.l7tech.server.audit.AdminAuditListener" depends-on="serverConfig">
         <constructor-arg value="#{serverConfig.getProperty('em.server.id',null)}"/>
-        <constructor-arg ref="auditContext"/>
+        <constructor-arg ref="auditContextFactory"/>
     </bean>
 
     <bean id="systemAuditListener" class="com.l7tech.server.audit.SystemAuditListener" depends-on="serverConfig">
         <constructor-arg value="#{serverConfig.getProperty('em.server.id',null)}"/>
-        <constructor-arg ref="auditContext"/>
+        <constructor-arg ref="auditContextFactory"/>
     </bean>
 
     <!-- Abstract "parent" of any bean that needs access to sessionFactory and transactionManager -->

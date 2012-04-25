@@ -3,6 +3,7 @@ package com.l7tech.server.identity.cert;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
@@ -13,7 +14,7 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.util.ManagedTimer;
@@ -257,7 +258,7 @@ public class TrustedCertManagerImp
         @Override
         protected void doRun() {
             final long nowUTC = System.currentTimeMillis();
-            final AuditContext auditContext = (AuditContext)spring.getBean("auditContext");
+            final AuditContextFactory auditContextFactory = spring.getBean("auditContextFactory", AuditContextFactory.class);
             final ClusterNodeInfo nodeInfo = clusterInfoManager.getSelfNodeInf();
 
             // These are retrieved here on every (infrequent) run so that the frequencies can change at runtime
@@ -315,14 +316,21 @@ public class TrustedCertManagerImp
             }
 
             final boolean alwaysAudit = !warnings.isEmpty();
-            auditContext.setCurrentRecord(new SystemAuditRecord(level, nodeInfo.getNodeIdentifier(), Component.GW_TRUST_STORE, "One or more trusted certificates has expired or is expiring soon", alwaysAudit, -1, null, null, "Checking", nodeInfo.getAddress()));
-            try {
-                for (CertExpiryWarningDetail warning : warnings) {
-                    auditor.logAndAudit(warning.detail, warning.oidStr, warning.subjectDnStr, warning.howLongStr);
+            final Level finalLevel = level;
+
+            AuditRecord record = new SystemAuditRecord(finalLevel,
+                                                      nodeInfo.getNodeIdentifier(),
+                                                      Component.GW_TRUST_STORE,
+                                                      "One or more trusted certificates has expired or is expiring soon",
+                                                      alwaysAudit, -1, null, null, "Checking", nodeInfo.getAddress());
+            auditContextFactory.doWithNewAuditContext(record, new Runnable() {
+                @Override
+                public void run() {
+                    for (CertExpiryWarningDetail warning : warnings) {
+                        auditor.logAndAudit(warning.detail, warning.oidStr, warning.subjectDnStr, warning.howLongStr);
+                    }
                 }
-            } finally {
-                auditContext.flush();
-            }
+            });
         }
     }
 

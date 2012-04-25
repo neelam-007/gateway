@@ -124,16 +124,6 @@
         </property>
     </bean>
 
-    <bean id="configureServerVariablesAuditContext"
-          class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
-        <property name="staticMethod" value="com.l7tech.server.policy.variable.ServerVariables.setAuditContext"/>
-        <property name="arguments">
-            <list>
-                <ref local="auditContext"/>
-            </list>
-        </property>
-    </bean>
-
     <bean id="originalRequestUpdator" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="staticMethod" value="com.l7tech.message.Message.setDefaultEnableOriginalDocument"/>
         <property name="arguments">
@@ -1343,10 +1333,10 @@
         <constructor-arg ref="securityContextFinder"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="serviceMetricsServices"/>
-        <constructor-arg ref="auditContext"/>
+        <constructor-arg ref="auditContextFactory"/>
+        <constructor-arg ref="messageSummaryAuditFactory"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="trafficLogger"/>
-        <constructor-arg ref="soapFaultManager"/>
         <constructor-arg ref="messageProcessingEventChannel"/>
     </bean>
     <!-- server side policy service -->
@@ -1368,26 +1358,18 @@
         <constructor-arg ref="inboundSecureConversationContextManager"/>
     </bean>
 
-    <bean id="auditContext" class="com.l7tech.server.audit.ImplementationSwitchingAuditContext">
-        <constructor-arg index="0" ref="memoryBufferingAuditContext"/>
-        <constructor-arg index="1" ref="threadLocalAuditContext"/>
+    <bean id="auditContextFactory" class="com.l7tech.server.audit.AuditContextFactory">
+        <constructor-arg ref="auditLogListener"/>
     </bean>
 
-    <bean id="memoryBufferingAuditContext" class="com.l7tech.server.audit.MemoryBufferingAuditContext">
-    </bean>
-
-    <bean id="threadLocalAuditContext" class="com.l7tech.server.audit.ThreadLocalAuditContext">
-        <property name="targetId" value="auditContextImpl"/>
-    </bean>
-
-    <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" scope="prototype">
-        <constructor-arg ref="serverConfig"/>
-        <constructor-arg ref="defaultAuditRecordManager"/>
-        <constructor-arg ref="auditPolicyEvaluator"/>
-        <constructor-arg ref="auditFilterPolicyManager"/>
-        <constructor-arg ref="clusterNodeId"/>
-        <property name="keystore" ref="defaultKey"/>
-        <property name="auditLogListener" ref="auditLogListener"/>
+    <bean id="activateServerAuditContextFactory" class="com.l7tech.server.audit.AuditContextFactoryActivator" depends-on="cryptoInit">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="auditContextFactory"/>
+        <constructor-arg index="2" ref="auditRecordManager"/>
+        <constructor-arg index="3" ref="clusterNodeId"/>
+        <constructor-arg index="4" ref="defaultKey"/>
+        <constructor-arg index="5" ref="auditPolicyEvaluator"/>
+        <constructor-arg index="6" ref="auditFilterPolicyManager"/>
     </bean>
 
     <!-- server side Status Update Manager -->
@@ -1425,18 +1407,17 @@
 
     <bean id="messageProcessingAuditListener" class="com.l7tech.server.audit.MessageProcessingAuditListener">
         <constructor-arg index="0" ref="messageSummaryAuditFactory"/>
-        <constructor-arg index="1" ref="auditContext"/>
-        <constructor-arg index="2" ref="messageProcessingEventChannel"/>
+        <constructor-arg index="1" ref="messageProcessingEventChannel"/>
     </bean>
 
     <bean id="adminAuditListener" class="com.l7tech.server.audit.AdminAuditListener">
         <constructor-arg ref="clusterNodeId"/>
-        <constructor-arg ref="auditContext"/>
+        <constructor-arg ref="auditContextFactory"/>
     </bean>
 
     <bean id="systemAuditListener" class="com.l7tech.server.audit.SystemAuditListener">
         <constructor-arg ref="clusterNodeId"/>
-        <constructor-arg ref="auditContext"/>
+        <constructor-arg ref="auditContextFactory"/>
     </bean>
 
     <bean id="schemaConfiguration" class="com.l7tech.server.communityschemas.SchemaConfiguration"
@@ -1630,8 +1611,7 @@
 
     <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager" depends-on="clusterPropertyManager">
         <constructor-arg index="0" ref="serverConfig"/>
-        <constructor-arg index="1" ref="auditContext"/>
-        <constructor-arg index="2">
+        <constructor-arg index="1">
             <bean class="com.l7tech.server.util.ManagedTimer">
                 <constructor-arg value="Soap fault manager refresh"/>
             </bean>
@@ -2358,11 +2338,6 @@
     <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration"/>
 
     <bean id="entityManagementContextProvider" class="com.l7tech.server.EntityManagementContextProvider"/>
-
-    <bean id="switchAuditContextImplementations" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean" depends-on="defaultAuditRecordManager defaultKey">
-        <property name="targetObject" ref="auditContext"/>
-        <property name="targetMethod" value="switchImplementations"/>
-    </bean>
 
     <!-- export beans to JMX -->
     <context:mbean-export/>
