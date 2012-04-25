@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -297,9 +298,17 @@ public class PathValidator {
         // check encoding is supported (should that not be checked by the dialog?)
         if (a.getEncoding() != null &&
             a.getEncoding().length() > 0 &&
-            !Charset.isSupported(a.getEncoding())) {
+            !charsetIsSupported(a.getEncoding())) {
             result.addWarning(new PolicyValidatorResult.Warning(a,
                     MessageFormat.format(bundle.getString("unsupported.encoding"), a.getEncoding()), null));
+        }
+    }
+
+    private static boolean charsetIsSupported(String charsetName) {
+        try {
+            return Charset.isSupported(charsetName);
+        } catch (IllegalCharsetNameException e) {
+            return false;
         }
     }
 
