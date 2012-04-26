@@ -55,7 +55,7 @@ public class AuditContextImpl implements AuditContext {
      * @param nodeId should not be null
      */
     AuditContextImpl( final Config config,
-                             final SimpleAuditRecordManager auditRecordManager,
+                             final AuditRecordManager auditRecordManager,
                              final AuditPolicyEvaluator auditPolicyEvaluator,
                              final AuditFilterPolicyManager auditFilterPolicyManager,
                              final String nodeId,
@@ -608,7 +608,7 @@ public class AuditContextImpl implements AuditContext {
     private static final String OUR_IP = InetAddressUtil.getLocalHost().getHostAddress();
 
     private final Config config;
-    private final SimpleAuditRecordManager auditRecordManager;
+    private final AuditRecordManager auditRecordManager;
     private final String nodeId;
     private AuditPolicyEvaluator auditPolicyEvaluator;
     private final AuditFilterPolicyManager auditFilterPolicyManager;

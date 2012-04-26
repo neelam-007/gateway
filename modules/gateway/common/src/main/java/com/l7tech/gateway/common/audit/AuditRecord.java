@@ -5,7 +5,6 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.TextUtils;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -417,7 +416,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         return signature;
     }
 
-    public void setSignature( @Nullable String signature) {
+    public void setSignature(String signature) {
         this.signature = signature;
     }
 

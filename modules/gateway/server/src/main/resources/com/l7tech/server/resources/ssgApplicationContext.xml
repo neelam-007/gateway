@@ -471,11 +471,6 @@
                                 <value>db.replicationErrorAuditInterval</value>
                             </list>
                         </entry>
-                        <entry key="defaultAuditRecordManager">
-                            <list>
-                                <value>audit.external.name</value>
-                            </list>
-                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -1253,12 +1248,6 @@
     <!-- server side audit record manager -->
     <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl" parent="hibernateBean">
         <property name="serverConfig" ref="serverConfig"/>
-    </bean>
-
-    <bean id="defaultAuditRecordManager" class="com.l7tech.server.audit.DefaultSimpleAuditRecordManager">
-        <constructor-arg index="0" ref="serverConfig"/>
-        <constructor-arg index="1" ref="auditRecordManager"/>
-        <constructor-arg index="2" ref="entityManagementContextProvider"/>
     </bean>
 
     <!-- server side audit download manager -->

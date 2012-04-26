@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.server.EntityManagerStub;
+import com.l7tech.util.Config;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -18,6 +19,11 @@ import java.util.Map;
  * @version Feb 17, 2005
  */
 public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord,AuditRecordHeader> implements AuditRecordManager {
+
+    @Override
+    public Config getAuditValidatedConfig() {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public Map<Long, byte[]> getDigestForAuditRecords(Collection<Long> auditRecordIds) throws FindException {

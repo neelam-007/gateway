@@ -22,7 +22,7 @@ public class AuditContextFactory {
 
     private final AuditLogListener listener;
     private Config config;
-    private SimpleAuditRecordManager auditRecordManager;
+    private AuditRecordManager auditRecordManager;
     private String nodeId;
     private AuditPolicyEvaluator auditPolicyEvaluator;
     private AuditFilterPolicyManager auditFilterPolicyManager;
@@ -43,7 +43,7 @@ public class AuditContextFactory {
      * Until then, details records are (immediately) sent to the log sinks, and no records can be saved to the database.
      */
     void activateServerAuditing(Config config,
-                                SimpleAuditRecordManager auditRecordManager,
+                                AuditRecordManager auditRecordManager,
                                 String nodeId,
                                 AuditPolicyEvaluator auditPolicyEvaluator,
                                 AuditFilterPolicyManager auditFilterPolicyManager,
