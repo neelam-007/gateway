@@ -69,7 +69,7 @@ public class KerberosTicketRepository {
     /**
      * Hidden default constructor.
      */
-    private KerberosTicketRepository() {
+    protected KerberosTicketRepository() {
         super();
         _map = new ConcurrentHashMap<Key, CachedCredential>();
     }
@@ -102,7 +102,7 @@ public class KerberosTicketRepository {
             if (cred.hasValidTgTicket()) {
                 Set<Object> privCreds = new LinkedHashSet<Object>();
                 privCreds.add(cred.tgTicket);
-                privCreds.add(cred.privateKey);
+                privCreds.addAll(cred.privateKeys);
                 return new Subject(false,
                         Collections.singleton(new KerberosPrincipal(cred.principal)),
                         Collections.EMPTY_SET,
@@ -127,9 +127,9 @@ public class KerberosTicketRepository {
      * @param loginCtx the loginContext associated with the ticket
      * @param svcTicket the service ticket created based on the creds
      */
-    public void add(Key key, KerberosTicket tgTicket, KerberosKey privKey, LoginContext loginCtx, KerberosServiceTicket svcTicket) {
+    public void add(Key key, KerberosTicket tgTicket, List<KerberosKey> privKeys, LoginContext loginCtx, KerberosServiceTicket svcTicket) {
         // create a new cache value
-        CachedCredential oldCred = _map.put( key, new CachedCredential(tgTicket, privKey, loginCtx, svcTicket.getServicePrincipalName(), kerberosTicketLifetime) );
+        CachedCredential oldCred = _map.put( key, new CachedCredential(tgTicket, privKeys, loginCtx, svcTicket.getServicePrincipalName(), kerberosTicketLifetime) );
         if ( oldCred != null ) {
             oldCred.discard();
         }
@@ -152,7 +152,7 @@ public class KerberosTicketRepository {
         // parse out the kerberos ticket from the subject
         Iterator<?> it = subject.getPrivateCredentials().iterator();
         KerberosTicket tgTicket = null;
-        KerberosKey privKey = null;
+        List<KerberosKey> privKeys = new ArrayList<KerberosKey>();
         for (;it.hasNext();) {
             // only extract the TGT
             Object val = it.next();
@@ -163,12 +163,12 @@ public class KerberosTicketRepository {
                // break;
             }
             else if(val instanceof KerberosKey) {
-                privKey = (KerberosKey) val;
+                privKeys.add((KerberosKey)val);
             }
         }
 
         if (tgTicket != null)
-            this.add(key, tgTicket, privKey, loginCtx, svcTicket);
+            this.add(key, tgTicket, privKeys, loginCtx, svcTicket);
         else
             logger.log(Level.FINE, "Could not extract KerberosTicket for caching ({0})", svcTicket.getServicePrincipalName());
     }
@@ -314,18 +314,18 @@ public class KerberosTicketRepository {
 
         private final String principal;
         private volatile KerberosTicket tgTicket;
-        private volatile KerberosKey    privateKey;
+        private volatile List<KerberosKey>    privateKeys;
         private volatile LoginContext loginContext;
         private volatile long lastAccessTime;
         private volatile long expires;
 
         private CachedCredential( final KerberosTicket tgTicket,
-                                  final KerberosKey privateKey,
+                                  final List<KerberosKey> privateKeys,
                                   final LoginContext loginCtx,
                                   final String principal,
                                   final Long kerberosTicketLifetime) {
             this.tgTicket = tgTicket;
-            this.privateKey = privateKey;
+            this.privateKeys = privateKeys;
             this.loginContext = loginCtx;
             this.lastAccessTime = System.currentTimeMillis();
             this.principal = principal;
@@ -358,7 +358,7 @@ public class KerberosTicketRepository {
         void discard() {
 
             tgTicket = null;
-            privateKey = null;
+            privateKeys = null;
             try {
                 if (loginContext != null)
                     loginContext.logout();
