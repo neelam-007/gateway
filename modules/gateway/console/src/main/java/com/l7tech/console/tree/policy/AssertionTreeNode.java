@@ -354,6 +354,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             if (parent instanceof CompositeAssertionTreeNode) {
                 ca = (CompositeAssertionTreeNode) parent;
             } else {
+                list.add(new AssertionInfoAction(assertion));
                 if (isDescendantOfInclude(true)) return list.toArray(new Action[list.size()]);
                 throw new IllegalStateException("Assertion parent is neither an Include nor a Composite");
             }
