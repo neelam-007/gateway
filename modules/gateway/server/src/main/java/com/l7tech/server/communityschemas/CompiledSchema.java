@@ -482,9 +482,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     }
 
     private void setLastUsedTime(long time) {
-        synchronized (this) {
-            lastUsedTime.set(time);
-        }
+        lastUsedTime.set(time);
 
         for ( final SchemaHandle handle : dependencies.values() ) {
             final CompiledSchema schema = handle.getTarget();
@@ -493,7 +491,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         }
     }
 
-    synchronized long getLastUsedTime() {
+    long getLastUsedTime() {
         return lastUsedTime.get();
     }
 
