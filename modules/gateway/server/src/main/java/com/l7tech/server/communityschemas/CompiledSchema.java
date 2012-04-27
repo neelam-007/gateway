@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,7 +68,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     private boolean loaded = false;  // true while (and only while) this schema is loaded on the hardware
     private boolean loadedAsInclude = false;  // true while (and only while) this schema is loaded on the hardware as an include
 
-    private long lastUsedTime = createdTime;
+    private final AtomicLong lastUsedTime = new AtomicLong(createdTime);
 
     CompiledSchema( final String targetNamespace,
                     final String systemId,
@@ -231,7 +232,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         if (! validationTarget.isAttemptHardware() || schemaHandler == null || tk == null || tmc == null)
             tryHardware = false;
 
-        setLastUsedTime();
+        setLastUsedTime(System.currentTimeMillis());
 
         final Lock readLock = manager.getReadLock();
         readLock.lock();
@@ -463,12 +464,6 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         return tnsGen;
     }
 
-    // Overridden to open up access to the community schemas package, specifically SchemaManagerImpl
-    @Override
-    protected boolean isClosed() {
-        return super.isClosed();
-    }
-
     @Override
     protected void doClose() {
         // Close dependencies
@@ -486,20 +481,20 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         return new SchemaHandle(this);
     }
 
-    private void setLastUsedTime() {
+    private void setLastUsedTime(long time) {
         synchronized (this) {
-            lastUsedTime = System.currentTimeMillis();
+            lastUsedTime.set(time);
         }
 
         for ( final SchemaHandle handle : dependencies.values() ) {
             final CompiledSchema schema = handle.getTarget();
             if (schema == null || schema.isClosed()) continue;
-            schema.setLastUsedTime();
+            schema.setLastUsedTime(time);
         }
     }
 
     synchronized long getLastUsedTime() {
-        return lastUsedTime;
+        return lastUsedTime.get();
     }
 
     long getCreatedTime() {

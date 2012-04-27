@@ -5,6 +5,8 @@
 
 package com.l7tech.server.util;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Utility superclass that maintains a closed flag and ensures that only the first call to close() will result
  * in a dispatch to doClose().
@@ -21,17 +23,15 @@ package com.l7tech.server.util;
  * Note that you do NOT need a finalize method just because you keep a reference to an object that has its own.
  */
 public abstract class AbstractCloseable {
-    private boolean closed = false;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    protected synchronized boolean isClosed() {
-        return closed;
+    public final boolean isClosed() {
+        return closed.get();
     }
 
     /** Sets the {@link #closed} flag and returns the old value. */
-    private synchronized boolean setClosed() {
-        boolean old = closed;
-        closed = true;
-        return old;
+    private boolean setClosed() {
+        return closed.getAndSet(true);
     }
 
     /**
