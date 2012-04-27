@@ -6,12 +6,7 @@ import com.l7tech.message.Message;
 import com.l7tech.message.TarariKnob;
 import com.l7tech.message.ValidationTarget;
 import com.l7tech.server.util.AbstractReferenceCounted;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.*;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.TarariMessageContext;
@@ -30,6 +25,9 @@ import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
@@ -42,6 +40,11 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
 
     private static final boolean checkSoapBodyPayloadElements = ConfigFactory.getBooleanProperty( "com.l7tech.server.schema.checkSoapBodyPayloadElements", true );
     private static final boolean checkTarariIncompatibleImport = ConfigFactory.getBooleanProperty( "com.l7tech.server.schema.checkTarariIncompatibleImport", true );
+
+    private static final AtomicBoolean needMarkUsedPass = new AtomicBoolean(true);
+    private static final ConcurrentMap<WeakReference<CompiledSchema>, Object> schemasToMarkAsUsed = new ConcurrentHashMap<WeakReference<CompiledSchema>, Object>();
+
+    private final WeakReference<CompiledSchema> schemaRef = new WeakReference<CompiledSchema>(this);
 
     private final String targetNamespace; // could be null
     private final String[] payloadElementNames;
@@ -232,7 +235,8 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         if (! validationTarget.isAttemptHardware() || schemaHandler == null || tk == null || tmc == null)
             tryHardware = false;
 
-        setLastUsedTime(System.currentTimeMillis());
+        schemasToMarkAsUsed.put(schemaRef, Boolean.TRUE);
+        needMarkUsedPass.set(true);
 
         final Lock readLock = manager.getReadLock();
         readLock.lock();
@@ -501,5 +505,45 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
 
     String getSchemaSourceResolverId() {
         return schemaSourceResolverId;
+    }
+
+    static {
+        final String threadName = "Schema Usage Time Marker Thread";
+        Thread thread = new Thread(threadName) {
+            @Override
+            public void run() {
+                try {
+                    runUsageTimeMarkerThread();
+                } catch (InterruptedException e) {
+                    logger.info(threadName + " interrupted, exiting");
+                } catch (Throwable t) {
+                    logger.log(Level.SEVERE, "Uncaught exception in " + threadName + ": " + ExceptionUtils.getMessage(t), t);
+                }
+            }
+
+            private void runUsageTimeMarkerThread() throws InterruptedException {
+                //noinspection InfiniteLoopStatement
+                for (;;) {
+                    Thread.sleep(4057);
+                    maybeMarkUsage();
+                }
+            }
+
+            private void maybeMarkUsage() {
+                while (needMarkUsedPass.getAndSet(false)) {
+                    Iterator<WeakReference<CompiledSchema>> sit = schemasToMarkAsUsed.keySet().iterator();
+                    while (sit.hasNext()) {
+                        WeakReference<CompiledSchema> reference = sit.next();
+                        sit.remove();
+
+                        CompiledSchema target = reference.get();
+                        if (target != null && !target.isClosed())
+                            target.setLastUsedTime(System.currentTimeMillis());
+                    }
+                }
+            }
+        };
+        thread.setDaemon(true);
+        thread.start();
     }
 }
