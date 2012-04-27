@@ -326,7 +326,8 @@ class EntityPropertiesHelper {
             "templateName",
             "typeVal",
             "userMappings",
-            "version"
+            "version",
+            "ntlmAuthenticationProviderProperties"
         ) )
         .put( BindOnlyLdapIdentityProviderConfig.class, list(
             "adminEnabled",

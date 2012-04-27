@@ -10,6 +10,8 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.ntlm.netlogon.NetLogon;
+import com.l7tech.ntlm.protocol.AuthenticationManagerException;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
@@ -758,6 +760,18 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
     private SecureRandom getSecureRandom() {
         return secureRandom;
+    }
+
+
+    @Override
+    public void testNtlmConfig(Map<String, String> props) throws InvalidIdProviderCfgException {
+        NetLogon testNetlogon = new NetLogon(props);
+        try {
+            testNetlogon.connect();
+        } catch (AuthenticationManagerException ame) {
+            logger.log(Level.WARNING, "Failed to connect to Netlogon service" + ame.getMessage());
+            throw new InvalidIdProviderCfgException("Invalid NTLM configuration", ame);
+        }
     }
 
     @Override

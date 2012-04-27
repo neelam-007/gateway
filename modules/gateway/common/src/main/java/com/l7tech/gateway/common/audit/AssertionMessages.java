@@ -95,6 +95,12 @@ public class AssertionMessages extends Messages {
     public static final M HTTPCLIENTCERT_NO_CERT = m(4113, Level.INFO, "No Client Certificate was present in the request.");
     public static final M HTTPCLIENTCERT_FOUND = m(4114, Level.INFO, "Found client certificate for {0}");
     public static final M HTTPCOOKIE_FOUND_EMPTY = m(4115, Level.WARNING, "Ignoring empty cookie with the name: {0}");
+    //ServerNtlmAuthentication
+    public static final M NTLM_AUTHENTICATION_FAILED = m(4120, Level.WARNING, "Authentication failed: {0}");
+    public static final M NTLM_AUTHENTICATION_MISSING_ACCOUNT_INFO = m(4121, Level.WARNING, "Account Info is missing");
+    public static final M NTLM_AUTHENTICATION_CONNECTION_EXPIRED = m(4122, Level.FINE, "Connection {0} expired. Authentication is required") ;
+    public static final M NTLM_AUTHENTICATION_IDLE_TIMEOUT_EXPIRED = m(4123, Level.FINE, "Idle timeout for connection {0} expired. Authentication is required") ;
+    public static final M NTLM_AUTHENTICATION_MISSING_AUTHORIZATION_ATTRIBUTE = m(4124, Level.WARNING, "Attribute {0} from Account Info is missing");
 
     // ServerResolveServiceAssertion, service resolution
     public static final Messages.M RESOLVE_SERVICE_ALREADY_RESOLVED = m(4150, Level.INFO, "Service resolution has already been performed for this request");

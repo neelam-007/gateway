@@ -217,6 +217,10 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
+    public void testNtlmConfig(Map<String, String> props) throws InvalidIdProviderCfgException {
+    }
+
+    @Override
     public Set<IdentityHeader> getGroupHeaders(long providerId, String userId) throws FindException {
         final StubDataStore store = StubDataStore.defaultStore();
         Set<GroupMembership> memberships = store.getGroupMemberships();

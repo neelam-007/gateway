@@ -2,8 +2,10 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.util.NameValuePair;
 import com.l7tech.util.TimeUnit;
 import org.hibernate.annotations.Proxy;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.DiscriminatorValue;
@@ -469,6 +471,29 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
         setProperty(USER_LOOKUP_BY_CERT_MODE, mode == null ? UserLookupByCertMode.LOGIN.toString() : mode.toString());
     }
 
+   @Transient
+   public List<NameValuePair> getNtlmAuthenticationProviderProperties() {
+       TreeMap<String, String> props = getProperty(NTLM_AUTHENTICATION_PROVIDER_PROPERTIES);
+       
+       if(props != null){
+            List<NameValuePair> propList = new ArrayList<NameValuePair>(props.size());
+           for(Map.Entry<String, String> entry : props.entrySet()){
+               NameValuePair pair = new NameValuePair(entry.getKey(), entry.getValue());
+               propList.add(pair);
+           }
+          return propList;
+       }
+       return Collections.emptyList();
+   }
+    
+    public void  setNtlmAuthenticationProviderProperties(@NotNull final List<NameValuePair> propList) {
+        TreeMap<String, String> props = new TreeMap<String, String>();
+        for(NameValuePair pair : propList){
+           props.put(pair.getKey(), pair.getValue()); 
+        }
+        setProperty(NTLM_AUTHENTICATION_PROVIDER_PROPERTIES, props);
+    }
+
     public enum UserCertificateUseType {
         @XmlEnumValue("None") NONE,
         @XmlEnumValue("Index") INDEX,
@@ -499,4 +524,5 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
     private static final String GROUP_CACHE_MAX_AGE_UNIT = "groupCacheMaxAgeUnit";
     private static final String GROUP_MAX_NESTING = "groupMaxNesting";
     private static final String GROUP_MEMBERSHIP_CASE_INSENSITIVE = "groupMembershipCaseInsensitive";
+    private static final String NTLM_AUTHENTICATION_PROVIDER_PROPERTIES = "ntlmProviderProperties";
 }

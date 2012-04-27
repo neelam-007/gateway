@@ -35,6 +35,31 @@
     -->
     <bean id="testIdentityProviderFactory" class="com.l7tech.server.identity.TestIdentityProvider$Factory"/>
 
+    <!-- LDAP IdentityProvider, UserManager and GroupManager factories -->
+    <bean id="ldapIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
+        <constructor-arg value="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl"/>
+        <constructor-arg value="ldapIdentityProvider"/>
+    </bean>
+    <bean id="ldapRuntimeConfig" class="com.l7tech.server.identity.ldap.LdapRuntimeConfig">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+    <bean id="ldapIdentityProvider" class="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl" scope="prototype">
+        <property name="clientCertManager" ref="clientCertManager"/>
+        <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
+        <property name="certificateAuthenticator" ref="certificateAuthenticator"/>
+        <property name="userManager">
+            <bean class="com.l7tech.server.identity.ldap.LdapUserManagerImpl" scope="prototype">
+                <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
+            </bean>
+        </property>
+        <property name="groupManager">
+            <bean class="com.l7tech.server.identity.ldap.LdapGroupManagerImpl" scope="prototype">
+                <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
+            </bean>
+        </property>
+        <property name="configManager" ref="identityProviderConfigManager"/>
+    </bean>
+
     <!--  test service admin -->
     <bean id="serviceAdmin" class="com.l7tech.server.service.ServiceAdminStub">
         <property name="policyValidator" ref="defaultPolicyValidator"/>
@@ -48,7 +73,6 @@
     <bean id="folderCache" class="com.l7tech.server.folder.FolderCacheImpl">
         <constructor-arg index="0" ref="folderManager"/>
     </bean>
-    <bean id="ldapIdentityProvider" class="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl" scope="prototype"/>
 
     <!-- service cache -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCacheStub" depends-on="wsdlStrategyServiceDocumentsInitializer">
@@ -232,6 +256,11 @@
     </bean>
 
     <bean id="licenseManager" class="com.l7tech.server.TestLicenseManager">
+    </bean>
+
+    <bean id="certificateAuthenticator" class="com.l7tech.server.identity.cert.CertificateAuthenticator">
+        <constructor-arg ref="clientCertManager"/>
+        <constructor-arg ref="certValidationProcessor"/>
     </bean>
     
     <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager">

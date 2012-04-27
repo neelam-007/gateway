@@ -144,6 +144,18 @@ public final class LoginCredentials implements Disposable {
                     credentialSource,
                     hdt.getRealm(),
                     hdt.getParams() );
+          } else if ( securityToken instanceof NtlmToken ) {
+            NtlmToken ntlmt = (NtlmToken) securityToken;
+            loginCredentials = new LoginCredentials(
+                    null,
+                    ntlmt.getNtlmData().toCharArray(),
+                    CredentialFormat.NTLMTOKEN,
+                    securityToken,
+                    isTokenPresent,
+                    supportingSecurityTokens,
+                    credentialSource,
+                    ntlmt.getRealm(),
+                    ntlmt.getParams() );
          } else if ( securityToken instanceof KerberosSecurityToken ) {
             KerberosSecurityToken kst = (KerberosSecurityToken) securityToken;
             loginCredentials = new LoginCredentials(
@@ -430,6 +442,8 @@ public final class LoginCredentials implements Disposable {
                 securityTokenType = SecurityTokenType.WSS_KERBEROS_BST;
             } else if (format == CredentialFormat.SSHTOKEN) {
                 securityTokenType = SecurityTokenType.SSH_CREDENTIAL;
+            } else if (format == CredentialFormat.NTLMTOKEN) {
+                securityTokenType = SecurityTokenType.HTTP_NTLM;
             } else {
                 securityTokenType = SecurityTokenType.UNKNOWN;
             }

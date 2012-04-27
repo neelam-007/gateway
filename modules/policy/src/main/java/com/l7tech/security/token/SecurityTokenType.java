@@ -137,6 +137,9 @@ public class SecurityTokenType implements Serializable {
     public static final SecurityTokenType X509_ISSUER_SERIAL =
                 new SecurityTokenType(n++, "X509 Issuer Serial", "X.509", null, null, null, X509SigningSecurityToken.class);
 
+    public static final SecurityTokenType HTTP_NTLM =
+            new SecurityTokenType(n++, "NTLM Credentials", "Password", null, null, null, NtlmToken.class);
+
     public static final SecurityTokenType SSH_CREDENTIAL =
             new SecurityTokenType(n++, "SSH Credentials", "SSH", null, null, null, SshSecurityToken.class);
 
@@ -161,6 +164,7 @@ public class SecurityTokenType implements Serializable {
         HTTP_KERBEROS,
         FTP_CREDENTIAL,
         X509_ISSUER_SERIAL,
+        HTTP_NTLM,
         SSH_CREDENTIAL
     };
 

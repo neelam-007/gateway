@@ -41,7 +41,8 @@ public class SecurityTokenTypeTest {
         assertEquals( "Security token number " + 13, HTTP_KERBEROS, getByNum(13) );
         assertEquals( "Security token number " + 14, FTP_CREDENTIAL, getByNum(14) );
         assertEquals( "Security token number " + 15, X509_ISSUER_SERIAL, getByNum(15) );
-        assertEquals( "Security token number " + 16, SSH_CREDENTIAL, getByNum(16) );
+        assertEquals("Security token number " + 16, HTTP_NTLM, getByNum(16));
+        assertEquals( "Security token number " + 17, SSH_CREDENTIAL, getByNum(17) );
         //TODO Add new tokens here
     }
 }

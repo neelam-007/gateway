@@ -405,6 +405,8 @@ public interface IdentityAdmin {
      */
     void testIdProviderConfig(IdentityProviderConfig cfg, String testUsername, char[] testPassword)
             throws InvalidIdProviderCfgException;
+    
+    void testNtlmConfig(Map<String, String> props) throws InvalidIdProviderCfgException;
 
     /**
      * Get the specified {@link User}'s set of group membership {@link IdentityHeader}s.

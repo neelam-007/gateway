@@ -50,6 +50,10 @@ public class CredentialFormat {
     * The credentials are an SSH public/private key pair
     */
     public static final CredentialFormat SSHTOKEN = new CredentialFormat("SSH Token");
+    /**
+     * The credentials are a NTLM data
+     */
+    public static final CredentialFormat NTLMTOKEN = new CredentialFormat("NTLM Token");
 
     public String toString() {
         return "<CredentialFormat name='" + _name + "'/>";
