@@ -60,7 +60,6 @@ import java.util.zip.GZIPInputStream;
 public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingAssertion<HttpRoutingAssertion> {
     public static final String USER_AGENT = HttpConstants.HEADER_USER_AGENT;
     public static final String HOST = HttpConstants.HEADER_HOST;
-    public static final String KERBEROS_DATA = "kerberos.data";
 
     private final Config config;
     private final SignerInfo senderVouchesSignerInfo;
@@ -419,7 +418,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             //now set Kerberos authorization as an environment variable so it can be consumed later
             if(kerberosAuthorizationInfo != null){
-                context.setVariable(KERBEROS_DATA, kerberosAuthorizationInfo);
+                context.setVariable(HttpRoutingAssertion.KERBEROS_DATA, kerberosAuthorizationInfo);
             }
 
             return reallyTryUrl(context, requestMessage, routedRequestParams, url, true, vars);

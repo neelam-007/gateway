@@ -26,7 +26,7 @@ public class HttpNegotiate extends HttpCredentialSourceAssertion implements Sets
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
             new VariableMetadata(KERBEROS_REALM, false, false, KERBEROS_REALM, false, DataType.STRING),
-            new VariableMetadata(KERBEROS_DATA, false, false, KERBEROS_DATA, false, DataType.BINARY)
+            new VariableMetadata(KERBEROS_DATA, false, false, null, false, DataType.UNKNOWN)
         };
     }
 

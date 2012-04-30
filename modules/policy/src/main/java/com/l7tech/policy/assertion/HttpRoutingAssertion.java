@@ -53,7 +53,8 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     public static final String VAR_HTTP_ROUTING_URL_SUFFIX_FRAGMENT = "fragment";
     public static final String PROP_SSL_SESSION_TIMEOUT = HttpRoutingAssertion.class.getName() + ".sslSessionTimeoutSeconds";
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
-
+    public static final String KERBEROS_DATA = "kerberos.data";
+    
     private static final String META_INITIALIZED = HttpRoutingAssertion.class.getName() + ".metadataInitialized";
 
     @Deprecated 
@@ -607,6 +608,10 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         vars.add(new VariableMetadata(VAR_HTTP_ROUTING_URL, false, false, VAR_HTTP_ROUTING_URL, false));
         if (responseMsgDest != null) {
             vars.add(new VariableMetadata(responseMsgDest, false, false, responseMsgDest, true, DataType.MESSAGE));
+        }
+        if(krbUseGatewayKeytab || krbDelegatedAuthentication || krbConfiguredAccount != null ) {
+            // kerberos data may be set
+            vars.add(new VariableMetadata(KERBEROS_DATA, false, false, null, false, DataType.UNKNOWN));
         }
         return vars.toArray(new VariableMetadata[vars.size()]);
     }
