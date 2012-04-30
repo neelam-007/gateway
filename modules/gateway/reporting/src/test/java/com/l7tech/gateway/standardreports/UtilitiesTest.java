@@ -1566,7 +1566,7 @@ public class UtilitiesTest {
         // resolution of 2 when hour is 00:00 for start time not relative
         cal.set(Calendar.HOUR_OF_DAY, 0);
         startTime = cal.getTimeInMillis();
-        cal.roll(Calendar.DAY_OF_MONTH, true);
+        cal.add(Calendar.DAY_OF_MONTH, 1);
         endTime = cal.getTimeInMillis();
 
         resolution = Utilities.getSummaryResolutionFromTimePeriod(startTime, endTime, timeZone, false, null);
