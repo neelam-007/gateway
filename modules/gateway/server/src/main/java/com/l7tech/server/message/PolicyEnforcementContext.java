@@ -213,7 +213,7 @@ public interface PolicyEnforcementContext extends Closeable {
      *
      * @param names variables to retrieve
      * @param auditor for any audit messages
-     * @return map of variable name to value. Never null.
+     * @return a new mutable map of case-insensitive variable name to value. Never null.
      */
     Map<String, Object> getVariableMap(String[] names, Audit auditor);
 
