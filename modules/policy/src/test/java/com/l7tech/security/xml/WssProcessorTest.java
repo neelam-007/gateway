@@ -1218,6 +1218,66 @@ public class WssProcessorTest {
     }
 
     @Test
+    @BugNumber(9298)
+    public void testPkiPathBinarySecurityToken() throws Exception {
+        Document d = TestDocuments.getTestDocument("com/l7tech/policy/resources/bug_9298_signed_with_pkipath.xml");
+        TestDocument td = new TestDocument("testPkiPathBinarySecurityToken", d, null, null, null, null, null);
+        doTest(td, new WssProcessorImpl(), new Functions.UnaryVoid<com.l7tech.security.xml.processor.ProcessorResult>() {
+            @Override
+            public void call(ProcessorResult pr) {
+                SignedElement[] signed = pr.getElementsThatWereSigned();
+                assertNotNull(signed);
+                assertTrue(signed.length > 0);
+
+                SignedElement elm = signed[0];
+                assertNotNull(elm);
+
+                SigningSecurityToken tok = elm.getSigningSecurityToken();
+                assertNotNull(tok);
+                assertTrue(tok.isPossessionProved());
+
+                if (!(tok instanceof X509SigningSecurityToken)) {
+                    fail("must be reported as an X.509 token");
+                }
+
+                X509Certificate cert = ((X509SigningSecurityToken) tok).getMessageSigningCertificate();
+                assertNotNull(cert);
+                assertEquals("CN=andygray", cert.getSubjectDN().toString());
+            }
+        });
+    }
+
+    @Test
+    @BugNumber(9298)
+    public void testSignedWithCertEmbeddedInKeyIdentifier() throws Exception {
+        Document d = TestDocuments.getTestDocument("com/l7tech/policy/resources/bug_9298_signed_with_cert_keyid.xml");
+        TestDocument td = new TestDocument("testSignedWithCertEmbeddedInKeyIdentifier", d, null, null, null, null, null);
+        doTest(td, new WssProcessorImpl(), new Functions.UnaryVoid<com.l7tech.security.xml.processor.ProcessorResult>() {
+            @Override
+            public void call(ProcessorResult pr) {
+                SignedElement[] signed = pr.getElementsThatWereSigned();
+                assertNotNull(signed);
+                assertTrue(signed.length > 0);
+
+                SignedElement elm = signed[0];
+                assertNotNull(elm);
+
+                SigningSecurityToken tok = elm.getSigningSecurityToken();
+                assertNotNull(tok);
+                assertTrue(tok.isPossessionProved());
+
+                if (!(tok instanceof X509SigningSecurityToken)) {
+                    fail("must be reported as an X.509 token");
+                }
+
+                X509Certificate cert = ((X509SigningSecurityToken) tok).getMessageSigningCertificate();
+                assertNotNull(cert);
+                assertEquals("CN=andygray", cert.getSubjectDN().toString());
+            }
+        });
+    }
+
+    @Test
     public void testWcfTrace() throws Exception {
         // Load private keys we'll need to process the trace messages
         SignerInfo[] privateKeys = TestKeysLoader.loadPrivateKeys(TestDocuments.DIR + "wcf_unum/", ".p12", "password".toCharArray(),

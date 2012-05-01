@@ -35,15 +35,14 @@ import org.xml.sax.SAXException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.x500.X500Principal;
 import javax.xml.parsers.ParserConfigurationException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.*;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
+import java.security.cert.Certificate;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.*;
@@ -1561,13 +1560,49 @@ public class WssProcessorImpl implements WssProcessor {
         String encodingType = binarySecurityTokenElement.getAttribute("EncodingType");
 
         // todo use proper qname comparator rather than this hacky suffix check
-        if (!valueType.endsWith("X509v3") && !valueType.endsWith("GSS_Kerberosv5_AP_REQ")) {
+        final Functions.BinaryVoidThrows<byte[], String, CertificateException> valueProcessor;
+        if (valueType.endsWith("X509v3")) {
+            // X509
+            valueProcessor = new Functions.BinaryVoidThrows<byte[], String, CertificateException>() {
+                @Override
+                public void call(byte[] decodedValue, String wsuId) throws CertificateException {
+                    recordCertFromBst(binarySecurityTokenElement, decodedValue, wsuId);
+                }
+            };
+        } else if (valueType.endsWith("#GSS_Kerberosv5_AP_REQ")) {
+            // Kerberos
+            valueProcessor = new Functions.BinaryVoidThrows<byte[], java.lang.String, java.security.cert.CertificateException>() {
+                @Override
+                public void call(byte[] decodedValue, String wsuId) throws CertificateException {
+                    recordKerberosFromBst(binarySecurityTokenElement, decodedValue, wsuId);
+                }
+            };
+        } else if (valueType.endsWith("#X509PKIPathv1")) {
+            // PkiPath object
+            valueProcessor = new Functions.BinaryVoidThrows<byte[], String, CertificateException>() {
+                @Override
+                public void call(byte[] decodedValue, String wsuId) throws CertificateException {
+                    // create the x509 binary cert based on it
+                    recordCertPathFromBst(binarySecurityTokenElement, decodedValue, wsuId, "PkiPath");
+                }
+            };
+        } else if (valueType.endsWith("#PKCS7")) {
+            // Cert list from degenerate PCKS#7 with no signature
+            valueProcessor = new Functions.BinaryVoidThrows<byte[], String, CertificateException>() {
+                @Override
+                public void call(byte[] decodedValue, String wsuId) throws CertificateException {
+                    // create the x509 binary cert based on it
+                    recordCertPathFromBst(binarySecurityTokenElement, decodedValue, wsuId, "PKCS7");
+                }
+            };
+        } else {
             if (permitUnknownBinarySecurityTokens) {
                 return; // ignore this token
             } else {
                 throw new ProcessorValidationException("BinarySecurityToken has unsupported ValueType " + valueType);
             }
         }
+
         if (encodingType != null && encodingType.length() > 0 && !encodingType.endsWith("Base64Binary"))
             throw new ProcessorException("BinarySecurityToken has unsupported EncodingType " + encodingType);
 
@@ -1582,36 +1617,55 @@ public class WssProcessorImpl implements WssProcessor {
         decodedValue = HexUtils.decodeBase64(value, true);
 
         final String wsuId = DomUtils.getElementIdValue(binarySecurityTokenElement, idAttributeConfig);
-        if(valueType.endsWith("X509v3")) {
-            // create the x509 binary cert based on it
-            X509Certificate referencedCert = CertUtils.decodeCert(decodedValue);
 
-            // remember this cert
-            if (wsuId == null) {
-                logger.warning("This BinarySecurityToken does not have a recognized wsu:Id and may not be " +
-                               "referenced properly by a subsequent signature.");
-            }
-            XmlSecurityToken rememberedSecToken = new X509BinarySecurityTokenImpl(referencedCert,
-                                                                                  binarySecurityTokenElement);
-            securityTokens.add(rememberedSecToken);
-            x509TokensById.put(wsuId, rememberedSecToken);
+        valueProcessor.call(decodedValue, wsuId);
+    }
+
+    private void recordKerberosFromBst(Element binarySecurityTokenElement, byte[] decodedValue, String wsuId) {
+        try {
+            securityTokens.add(new KerberosSigningSecurityTokenImpl(new KerberosGSSAPReqTicket(decodedValue),
+                                                                           getClientInetAddress(message),
+                                                                           wsuId,
+                                                                           binarySecurityTokenElement));
         }
-        else {
-            try {
-                securityTokens.add(new KerberosSigningSecurityTokenImpl(new KerberosGSSAPReqTicket(decodedValue),
-                                                                 getClientInetAddress(message),
-                                                                 wsuId,
-                                                                 binarySecurityTokenElement));
+        catch(GeneralSecurityException gse) {
+            if(ExceptionUtils.causedBy(gse, KerberosConfigException.class)) {
+                logger.info("Request contained Kerberos BinarySecurityToken but Kerberos is not configured.");
             }
-            catch(GeneralSecurityException gse) {
-                if(ExceptionUtils.causedBy(gse, KerberosConfigException.class)) {
-                    logger.info("Request contained Kerberos BinarySecurityToken but Kerberos is not configured.");
-                }
-                else {
-                    logger.log(Level.WARNING, "Request contained Kerberos BinarySecurityToken that could not be processed.", gse);
-                }
+            else {
+                logger.log(Level.WARNING, "Request contained Kerberos BinarySecurityToken that could not be processed.", gse);
             }
         }
+    }
+
+    private void recordCertFromBst(Element binarySecurityTokenElement, byte[] decodedValue, String wsuId) throws CertificateException {
+        // create the x509 binary cert based on it
+        X509Certificate referencedCert = CertUtils.decodeCert(decodedValue);
+
+        // remember this cert
+        if (wsuId == null)
+            logger.fine("This BinarySecurityToken does not have a recognized wsu:Id and may not be referenced properly by a subsequent signature.");
+        XmlSecurityToken rememberedSecToken = new X509BinarySecurityTokenImpl(referencedCert, binarySecurityTokenElement);
+        securityTokens.add(rememberedSecToken);
+        x509TokensById.put(wsuId, rememberedSecToken);
+    }
+
+    private void recordCertPathFromBst(Element binarySecurityTokenElement, byte[] decodedValue, String wsuId, String certPathFormat) throws CertificateException {
+        CertPath certPath = CertUtils.getFactory().generateCertPath(new ByteArrayInputStream(decodedValue), certPathFormat);
+        List<? extends Certificate> certs = certPath.getCertificates();
+        if (certs.isEmpty()) {
+            logger.info(certPathFormat + " BinarySecurityToken contains an empty cert path");
+            return;
+        }
+        final Certificate cert = certs.get(0);
+        if (!(cert instanceof X509Certificate)) {
+            logger.info(certPathFormat + " BinarySecurityToken contains a non-X.509 subject certificate");
+            return;
+        }
+        X509Certificate x509Cert = (X509Certificate) cert;
+        XmlSecurityToken rememberedSecToken = new X509BinarySecurityTokenImpl(x509Cert, binarySecurityTokenElement);
+        securityTokens.add(rememberedSecToken);
+        x509TokensById.put(wsuId, rememberedSecToken);
     }
 
     // TODO centralize this KeyInfo processing into the KeyInfoElement class somehow

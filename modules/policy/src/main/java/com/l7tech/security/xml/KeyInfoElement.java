@@ -321,8 +321,27 @@ public class KeyInfoElement implements ParsedElement {
     public static X509Certificate decodeEmbeddedCert(Element keyInfo) throws InvalidDocumentFormatException, CertificateException {
         // Check for X509Data
         Element x509DataEle = DomUtils.findOnlyOneChildElementByName(keyInfo, SoapConstants.DIGSIG_URI, "X509Data");
-        if (x509DataEle == null)
-            return null;
+        if (x509DataEle == null) {
+            // Check for KeyIdentifier of X509v3 (Bug #9298) optionally wrapped in a SecurityTokenReference
+            Element strEle = DomUtils.findOnlyOneChildElementByName(keyInfo, SoapConstants.SECURITY_URIS_ARRAY, SoapConstants.SECURITYTOKENREFERENCE_EL_NAME);
+            Element keyIdEle = DomUtils.findOnlyOneChildElementByName(strEle != null ? strEle : keyInfo, SoapConstants.SECURITY_URIS_ARRAY, SoapConstants.KEYIDENTIFIER_EL_NAME);
+            if (keyIdEle == null)
+                return null;
+
+            String encodingType = keyIdEle.getAttribute("EncodingType");
+            if (encodingType.trim().length() > 0 && !encodingType.endsWith(SoapConstants.ENCODINGTYPE_BASE64BINARY_SUFFIX))
+                return null;
+
+            String valueType = keyIdEle.getAttribute("ValueType");
+            if (!valueType.endsWith(SoapConstants.VALUETYPE_X509_SUFFIX))
+                return null;
+
+            try {
+                return CertUtils.decodeFromPEM(DomUtils.getTextValue(keyIdEle), false);
+            } catch (IOException e) {
+                throw new CertificateException("Invalid Base-64 encoded KeyIdentifier certificate");
+            }
+        }
 
         Element x509CertEle = DomUtils.findOnlyOneChildElementByName(x509DataEle, SoapConstants.DIGSIG_URI, "X509Certificate");
         if (x509CertEle == null) {

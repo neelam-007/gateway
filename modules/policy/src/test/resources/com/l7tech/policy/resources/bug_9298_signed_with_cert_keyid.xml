@@ -1,0 +1,30 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">
+   <soapenv:Header><wsse:Security soapenv:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"><ds:Signature Id="Signature-211" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-212">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>tgodbi5a+kehifTJja8VPG/uKqE=</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>
+raJuxdhgH9WpDGlbgU8mz3aLcSnkAAricV2uo+EeiGh+lhfYls7+Rbpfb3hdGqfjJ6Zz8tL+tEdM
+AQSn9WanUjEHDl7MAUEJfXbh9aPVhx0GXh3R+9WkQphsqCTLmWLKaYiHDFJsIgtCoul3kgRlgttW
+7veHiJFhOgSzFAe+G4H8a0C9LQvTTbeXeessFr4TUzdZM/cO3A4ib3Nw1uRYRGBy6Ys9XP691hCD
+6aeEgIwBOr5u8kHF3iBuhib/qQul/kR+cuM7zgHg1sTj/Tfyoco2f/SCzZvIPt71eJngCO1efHRk
+x9uJuZGpXsB0Nq1pTyc6eDoW7KTyuIZ132gR+Q==
+</ds:SignatureValue>
+<ds:KeyInfo Id="KeyId-286AC0C5F0B36776B81288237535598329">
+<wsse:SecurityTokenReference wsu:Id="STRId-286AC0C5F0B36776B81288237535598330" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"><wsse:KeyIdentifier EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3">MIIC6zCCAdOgAwIBAgIJAM+PSEqncJabMA0GCSqGSIb3DQEBDAUAMBMxETAPBgNVBAMTCGFuZHlncmF5MB4XDTEwMTAwNjE1MzIxM1oXDTE1MTAwNTE1MzIxM1owEzERMA8GA1UEAxMIYW5keWdyYXkwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDA8ZZUjqnAVXyBvXjRqiEQFts7XCV5XIB1kWKxU42fN7bbuz7Wz1y3/8nflGh1u//5JvU1jxgnBVLcQKEb0EbTWV98ZVNpNI0dAar7Gysc74cWGOS0Q7JWo0QJ6WhZ7pN4yn3xWuaLr8mU5xb5jijmk+MTDb5ZhcKMZBS3OLw5P0lzC2Y3ylJ8/ybDbIIS4eR6DoUhwd6YE8lzdi3vVOjHS9gDlyJztE1cRm4qWUEMeMS3ViMF2ZC3gWhZuEO//g+L0TJeAh0hWXUQlkDJBqpYJYiXTTLbHiplXyGqbHIlPCL3DMNh0JujrrAkPCM4QKah/kjNMxTRMlO6GOo3fcWbAgMBAAGjQjBAMB0GA1UdDgQWBBTj3S4ZrIZy+LTmzoBku5oxfNVPbTAfBgNVHSMEGDAWgBTj3S4ZrIZy+LTmzoBku5oxfNVPbTANBgkqhkiG9w0BAQwFAAOCAQEATKrgK2WXk4JLonLZIwkz7hjv0tvVY3KonImxg5ZAkqVyX9FplwCfylFZiLAeOX2Ia+onqqNWmltf13hh0aaDXeRu+N7MEF3odSNWsh/jo0VoYgzRBIeU5cMAe/PxsLMuXp/W2/mWWbnmQ1xNJtECk5muMZw0GaISTXdhTN26sZNIlw52fAzZAzdCLvUSNwSN+piUOtVxDVcPk5UAWp5idwFtJ2jcVhHI+/wJ/bgiwrwmDMzLYhOukMlYvooGU6gKfApdPOhSXVoJ+lgac2VcsphQWcn8KgzbHAbqQAM//0i0oWv0mkBlcsTKNvN9cy46WicmIxoDhHiLqVzjt24q+w==</wsse:KeyIdentifier></wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature></wsse:Security></soapenv:Header>
+   <soapenv:Body wsu:Id="id-212" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+      <ws:listProducts>
+         <ws:delay>1</ws:delay>
+      </ws:listProducts>
+   </soapenv:Body>
+</soapenv:Envelope>
