@@ -20,8 +20,10 @@ import java.util.HashMap;
  */
 public class Ntlm2AuthScheme implements AuthScheme{
     public static final String NTLM = "ntlm";
-    private static String LOCALHOST_NETBIOS_NAME;
 
+    private static String DEFAULT_FLAGS = null;
+
+    private static String LOCALHOST_NETBIOS_NAME;
     private NtlmAuthenticationClient client;
     private String ntlmchallenge = null;
 
@@ -46,12 +48,19 @@ public class Ntlm2AuthScheme implements AuthScheme{
 
     }
 
+    public static void setNegotiateFlags(String flags) {
+        Ntlm2AuthScheme.DEFAULT_FLAGS = flags;
+    }
+
 
     public Ntlm2AuthScheme() {
         super();
         HashMap<String, Object> props = new HashMap<String, Object>();
         if(LOCALHOST_NETBIOS_NAME != null){
             props.put("localhost.netbios.name", LOCALHOST_NETBIOS_NAME);
+        }
+        if(DEFAULT_FLAGS != null && DEFAULT_FLAGS.length() > 0){
+            props.put("flags", DEFAULT_FLAGS);
         }
         this.client = new NtlmAuthenticationClient(props);
     }

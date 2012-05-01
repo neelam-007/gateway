@@ -13,14 +13,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 
 /**
  * Copyright: Layer 7 Technologies, 2012
  * User: ymoiseyenko
  * Date: 2/27/12
  */
-public class NtlmAuthenticationProviderTest {
+public class NtlmAuthenticationServerTest {
 
     NtlmAuthenticationServer fixture;
     NtlmAuthenticationState state;
@@ -86,6 +85,7 @@ public class NtlmAuthenticationProviderTest {
         PasswordCredential creds = new PasswordCredential("user@l7tech.com" /*"L7TECH\\user"*/, "password".toCharArray());
 
         NtlmAuthenticationClient client = new NtlmAuthenticationClient(fixture);
+        //client.put("flags", "0xA0088005");
         byte[] token = new byte[0];
         try {
             while (!fixture.getNtlmAuthenticationState().isComplete()) {

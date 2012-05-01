@@ -138,10 +138,10 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
                         if (sessionKey == null) {
                             throw new AuthenticationManagerException("Can't sign the request if an NTLM sessionKey is null!");
                         }
-                        log.log(Level.INFO, "Extended Session Security key was sent to the client");
+                        log.log(Level.FINE, "Extended Session Security key was sent to the client");
                     }
 
-                    log.log(Level.INFO, "NTLM Client negotiated NTLMv2");
+                    log.log(Level.FINE, "NTLM Client negotiated NTLMv2");
 
                     serverChallenge = null;
                     state.setTargetInfo(null);

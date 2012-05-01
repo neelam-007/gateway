@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -13,6 +14,7 @@ import java.util.logging.Logger;
  */
 public abstract class NtlmAuthenticationProvider extends HashMap implements AuthenticationProvider {
     private static final Logger log = Logger.getLogger(NtlmAuthenticationProvider.class.getName());
+    private static final String HEX = "0x";
 
     protected static final int DEFAULT_NTLMSSP_FLAGS = //0x628882B7;//0b01100010100010001000001010110111
             NtlmConstants.NTLMSSP_NEGOTIATE_KEY_EXCH |
@@ -28,7 +30,6 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
                     NtlmConstants.NTLMSSP_NEGOTIATE_ALWAYS_SIGN |
                     NtlmConstants.NTLMSSP_NEGOTIATE_SEAL |
                     NtlmConstants.NTLMSSP_NEGOTIATE_SIGN;
-
 
 
     public enum State {
@@ -94,6 +95,17 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
 
     public NtlmAuthenticationProvider(Map properties) {
         super(properties);
+        if(properties.containsKey("flags")){
+            try {
+                String sflags = (String)properties.get("flags");
+                if(sflags.startsWith(HEX)) {
+                    sflags = sflags.substring(HEX.length());
+                }
+                state.setFlags(Integer.parseInt(sflags, 16));
+            } catch (NumberFormatException e) {
+                log.log(Level.WARNING, "Unable to parse Negotiate Flags");
+            }
+        }
     }
 
     public int getNtlmSspFlags(boolean setDefault) {

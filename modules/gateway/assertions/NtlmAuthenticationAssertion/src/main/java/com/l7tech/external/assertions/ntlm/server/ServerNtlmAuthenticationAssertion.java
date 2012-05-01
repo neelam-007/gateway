@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.ntlm.server;
 
 
 import com.l7tech.common.http.HttpConstants;
-import com.l7tech.console.util.AuditMessage;
 import com.l7tech.external.assertions.ntlm.NtlmAuthenticationAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
@@ -289,7 +288,7 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
             }
         } catch (AuthenticationManagerException e) {
             final String errMessage = "NTLM Authentication failed";
-            log.log(Level.SEVERE, errMessage + ": "  + e.getMessage());
+            log.log(Level.WARNING, errMessage + ": "  + e.getMessage());
             logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_FAILED, new String[]{errMessage}, e);
             throw new CredentialFinderException(errMessage, e, AssertionStatus.AUTH_FAILED);
         }
@@ -337,7 +336,7 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
             }
             long currentMills = System.currentTimeMillis();
             Long sessionTime = (Long)accountInfo.get("session.authenticate.time");
-            log.info("Checking session expiry...");
+            log.log(Level.FINE, "Checking session expiry...");
             if(maxConnectionDuration == 0 || sessionTime != null && currentMills - sessionTime < maxConnectionDuration * 1000) {
                 Long requestIdleTime = (Long)accountInfo.get("request.idle.time");
                 if(maxIdleTimeout == 0 || requestIdleTime != null && currentMills - requestIdleTime < maxIdleTimeout * 1000) {

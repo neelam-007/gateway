@@ -176,7 +176,7 @@ public class NetLogon extends HashMap implements AuthenticationAdapter{
         if(Arrays.equals(serverCredentials, netrServerAuthenticate2.serverCredential)) {
             this.sessionKey = sessionkey;
             handle = dcerpcHandle;
-            log.log(Level.INFO, "Session key: " + Hexdump.toHexString(this.sessionKey, 0, this.sessionKey.length));
+            log.log(Level.FINE, "Session key: " + Hexdump.toHexString(this.sessionKey, 0, this.sessionKey.length));
         }
         else {
             throw  new AuthenticationManagerException("NetrServerAuthenticate2 credential check failed");
@@ -189,7 +189,7 @@ public class NetLogon extends HashMap implements AuthenticationAdapter{
             try{
                 String serverName = handle.getServer();
                 handle.close();
-                log.log(Level.INFO, "disconnected from : " + serverName);
+                log.log(Level.FINE, "disconnected from : " + serverName);
             } catch (IOException ex) {
                 log.log(Level.SEVERE, "Unable to close DCE RPC handle", ex);
             } finally {
@@ -261,7 +261,7 @@ public class NetLogon extends HashMap implements AuthenticationAdapter{
         try {
             dcerpcHandle = DcerpcHandle.getHandle(endpoint, serviceAuth);
             dcerpcHandle.bind();
-            log.log(Level.INFO, "Bind to " + serverIp + " was successful");
+            log.log(Level.FINE, "Bind to " + serverIp + " was successful");
         } catch (IOException e) {
             log.log(Level.SEVERE, "Unable to bind to " + serverIp, e);
             throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_ERROR, "Unable to bind", e);

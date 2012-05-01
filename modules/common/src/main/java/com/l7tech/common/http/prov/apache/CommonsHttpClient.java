@@ -59,6 +59,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     public static final String PROP_DEFAULT_READ_TIMEOUT = CommonsHttpClient.class.getName() + ".defaultReadTimeout";
     public static final String PROP_CREDENTIAL_CHARSET = CommonsHttpClient.class.getName() + ".credentialCharset";
     public static final String PROP_GZIP_STREAMING_THRESHOLD = CommonsHttpClient.class.getName() + ".gzipStreamThreshold";
+    public static final String PROP_NTLM_DEFAULT_FLAGS = "commons.httpclient.ntlm.flags";
 
     public static final String DEFAULT_CREDENTIAL_CHARSET = "ISO-8859-1"; // see bugzilla #5729
     public static final int DEFAULT_CONNECT_TIMEOUT = ConfigFactory.getIntProperty( PROP_DEFAULT_CONNECT_TIMEOUT, 30000 );
@@ -84,6 +85,9 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         HttpParams defaultParams = DefaultHttpParams.getDefaultParams();
         ////////////////////////////////////////////////////////////////////////////////////////
         //Register NTLMv2 scheme
+        if(ConfigFactory.getProperty( PROP_NTLM_DEFAULT_FLAGS) != null) {
+            Ntlm2AuthScheme.setNegotiateFlags(ConfigFactory.getProperty( PROP_NTLM_DEFAULT_FLAGS));
+        }
         AuthPolicy.registerAuthScheme(Ntlm2AuthScheme.NTLM, Ntlm2AuthScheme.class);
         ArrayList schemes = new ArrayList();
         schemes.add(Ntlm2AuthScheme.NTLM);

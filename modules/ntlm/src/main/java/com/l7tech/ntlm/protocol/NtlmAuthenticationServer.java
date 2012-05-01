@@ -49,13 +49,16 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
         if(token == null || token.length <= 0) {
             throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_ERROR, "Invalid token");
         }
+        int flags = state.getFlags();
         log.log(Level.FINE, "Current State=" + state.getState().name());
         try {
             switch (state.getState()) {
                 case DEFAULT:
                     state.setState(State.CHALLENGE);
                 case CHALLENGE:
-                    int flags = DEFAULT_NTLMSSP_FLAGS;
+                    if(flags == 0){
+                        flags = DEFAULT_NTLMSSP_FLAGS;//set to default flags
+                    }
                     Type1Message negotiateMessage = new Type1Message(token);
 
                     flags &= negotiateMessage.getFlags();
@@ -85,7 +88,7 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
                     state.setFlags(flags);
                     state.setTargetInfo(challengeMessage.getTargetInformation()); //store target info
 
-                    log.log(Level.INFO, "NtlmAuthenticationServer: Negotiated NTLM flags: 0x" + Hexdump.toHexString(flags, 8));
+                    log.log(Level.FINE, "NtlmAuthenticationServer: Negotiated NTLM flags: 0x" + Hexdump.toHexString(flags, 8));
                     break;
                 case AUTHENTICATE:
                     Type3Message authenticateMessage = new Type3Message(token);
@@ -101,7 +104,7 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
                         throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_ACCOUNT_NOT_FOUND, "Invalid account name");
                     }
 
-                    log.log(Level.INFO, "NtlmAuthenticationServer: NTLM credentials: DomainName=" + authenticateMessage.getDomain() + " UserName=" + authenticateMessage.getUser() + " Workstation=" + authenticateMessage.getWorkstation());
+                    log.log(Level.FINE, "NtlmAuthenticationServer: NTLM credentials: DomainName=" + authenticateMessage.getDomain() + " UserName=" + authenticateMessage.getUser() + " Workstation=" + authenticateMessage.getWorkstation());
 
                     NtlmChallengeResponse ntlmChallengeResponse = new NtlmChallengeResponse(authenticateMessage.getDomain(), authenticateMessage.getUser(), state.getServerChallenge(), sessionNonce, getTargetInfo(), authenticateMessage.getLMResponse(), authenticateMessage.getNTResponse(), state.getFlags());
 
@@ -112,7 +115,7 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
 
                     if (((state.getFlags() & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY/*0x80000*/) != 0) && ((state.getFlags() & NtlmConstants.NTLMSSP_NEGOTIATE_SIGN/*0x10*/) != 0)) {
 
-                        log.log(Level.INFO, "NtlmAuthenticationServer: Generating NTLM2 Session Security keys");
+                        log.log(Level.FINE, "NtlmAuthenticationServer: Generating NTLM2 Session Security keys");
 
                         if (state.getSessionKey() == null) {
                             throw new AuthenticationManagerException("Cannot perform signing or sealing if an NTLMSSP sessionKey is not established");
@@ -136,15 +139,15 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
 
                             state.setSessionKey(masterKey);
                         }
-                        log.log(Level.INFO, "NTLMv2 Extended Session Security Key negotiated successfully");
+                        log.log(Level.FINE, "NTLMv2 Extended Session Security Key negotiated successfully");
                     } else {
-                        log.log(Level.INFO, "NTLMv2 Extended Session Security Key was not negotiated");
+                        log.log(Level.FINE, "NTLMv2 Extended Session Security Key was not negotiated");
                     }
 
                     if (authenticateMessage.getNTResponse().length > NTLM_V1_NT_RESPONSE_LENGTH) {
-                        log.log(Level.INFO, "Server negotiated NTLMv2");
+                        log.log(Level.FINE, "Server negotiated NTLMv2");
                     } else {
-                        log.log(Level.INFO, "Server negotiated NTLMv1");
+                        log.log(Level.FINE, "Server negotiated NTLMv1");
                     }
 
                     setAuthenticationComplete(state);
