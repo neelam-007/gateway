@@ -4,9 +4,9 @@ import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.jdbc.InvalidPropertyException;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.util.Background;
@@ -29,7 +29,6 @@ import static com.l7tech.server.event.AdminInfo.find;
 
 /**
  * The implementation of the interface JdbcAdmin to manage JDBC Connection Entities, JDBC Connection Pooling, and JDBC Querying.
- *
  */
 public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
     private JdbcConnectionManager jdbcConnectionManager;
@@ -38,9 +37,9 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
     private Config config;
 
     public JdbcAdminImpl(JdbcConnectionManager jdbcConnectionManager,
-                                   JdbcQueryingManager jdbcQueryingManager,
-                                   JdbcConnectionPoolManager jdbcConnectionPoolManager,
-                                   Config config ) {
+                         JdbcQueryingManager jdbcQueryingManager,
+                         JdbcConnectionPoolManager jdbcConnectionPoolManager,
+                         Config config) {
         this.jdbcConnectionManager = jdbcConnectionManager;
         this.jdbcQueryingManager = jdbcQueryingManager;
         this.jdbcConnectionPoolManager = jdbcConnectionPoolManager;
@@ -82,7 +81,7 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
     public List<String> getAllJdbcConnectionNames() throws FindException {
         List<JdbcConnection> connList = getAllJdbcConnections();
         List<String> nameList = new ArrayList<String>(connList.size());
-        for (JdbcConnection conn: connList) {
+        for (JdbcConnection conn : connList) {
             nameList.add(conn.getName());
         }
         return nameList;
@@ -120,7 +119,7 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
      */
     @Override
     public AsyncAdminMethods.JobId<String> testJdbcConnection(final JdbcConnection connection) {
-        final FutureTask<String> connectTask = new FutureTask<String>( find( false ).wrapCallable( new Callable<String>(){
+        final FutureTask<String> connectTask = new FutureTask<String>(find(false).wrapCallable(new Callable<String>() {
             @Override
             public String call() throws Exception {
 
@@ -139,7 +138,7 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
                 try {
                     conn = cpds.getConnection();
                 } catch (SQLException e) {
-                    return "invalid connection properties setting. \n"  + ExceptionUtils.getMessage(e);
+                    return "invalid connection properties setting. \n" + ExceptionUtils.getMessage(e);
                 } catch (Throwable e) {
                     return "unexpected error, " + e.getClass().getSimpleName() + " thrown";
                 } finally {
@@ -148,7 +147,7 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
                 }
                 return "";
             }
-        } ) );
+        }));
 
         Background.scheduleOneShot(new TimerTask() {
             @Override
@@ -157,24 +156,24 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
             }
         }, 0L);
 
-        return registerJob( connectTask, String.class );
+        return registerJob(connectTask, String.class);
     }
 
     /**
      * Test a JDBC query and see if it is a valid SQL statement.
      *
      * @param connectionName: the name of a JDBC Connection entity.
-     * @param query: a SQL query statement.
+     * @param query:          a SQL query statement.
      * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
      */
     @Override
     public AsyncAdminMethods.JobId<String> testJdbcQuery(final String connectionName, final String query) {
-        final FutureTask<String> queryTask = new FutureTask<String>( find( false ).wrapCallable( new Callable<String>(){
+        final FutureTask<String> queryTask = new FutureTask<String>(find(false).wrapCallable(new Callable<String>() {
             @Override
             public String call() throws Exception {
 
-                Object result = jdbcQueryingManager.performJdbcQuery(connectionName, query, 1, null);
-                return (result instanceof String)? (String)result : null;
+                Object result = jdbcQueryingManager.performJdbcQuery(connectionName, query, 1, new ArrayList<Object>());
+                return (result instanceof String) ? (String) result : null;
             }
         }));
 
@@ -185,7 +184,7 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
             }
         }, 0L);
 
-        return registerJob( queryTask, String.class );
+        return registerJob(queryTask, String.class);
     }
 
     /**
@@ -198,7 +197,7 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
     public List<String> getPropertyDefaultDriverClassList() {
         List<String> driverClassList = new ArrayList<String>();
 
-        String defaultList = config.getProperty( ServerConfigParams.PARAM_JDBC_CONNECTION_DEFAULT_DRIVERCLASS_LIST );
+        String defaultList = config.getProperty(ServerConfigParams.PARAM_JDBC_CONNECTION_DEFAULT_DRIVERCLASS_LIST);
         if (defaultList != null && !defaultList.isEmpty()) {
             StringTokenizer tokens = new StringTokenizer(defaultList, "\n");
             while (tokens.hasMoreTokens()) {
@@ -219,7 +218,7 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
      */
     @Override
     public int getPropertyDefaultMaxRecords() {
-        return config.getIntProperty( ServerConfigParams.PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT, ORIGINAL_MAX_RECORDS );
+        return config.getIntProperty(ServerConfigParams.PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT, ORIGINAL_MAX_RECORDS);
     }
 
     /**
@@ -230,7 +229,7 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
      */
     @Override
     public int getPropertyDefaultMinPoolSize() {
-        return config.getIntProperty( ServerConfigParams.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MINPOOLSIZE, ORIGINAL_C3P0_BASIC_POOL_CONFIG_MINPOOLSIZE );
+        return config.getIntProperty(ServerConfigParams.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MINPOOLSIZE, ORIGINAL_C3P0_BASIC_POOL_CONFIG_MINPOOLSIZE);
     }
 
     /**
@@ -241,6 +240,6 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
      */
     @Override
     public int getPropertyDefaultMaxPoolSize() {
-        return config.getIntProperty( ServerConfigParams.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE, ORIGINAL_C3P0_BASIC_POOL_CONFIG_MAXPOOLSIZE );
+        return config.getIntProperty(ServerConfigParams.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE, ORIGINAL_C3P0_BASIC_POOL_CONFIG_MAXPOOLSIZE);
     }
 }

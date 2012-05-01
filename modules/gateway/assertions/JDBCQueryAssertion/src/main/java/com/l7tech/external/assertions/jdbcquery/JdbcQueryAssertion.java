@@ -1,25 +1,29 @@
 package com.l7tech.external.assertions.jdbcquery;
 
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.wsp.*;
-import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.policy.wsp.MapTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.*;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  *
  */
 public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable, UsesVariables, SetsVariables {
     public static final String VARIABLE_COUNT = "queryresult.count";
+    public static final String VARIABLE_RESULTSET = ".resultSet";
+    public static final String MULTIPLE_RESULTSET_COUNT = "multipleResultSet.count";
     public static final String DEFAULT_VARIABLE_PREFIX = "jdbcQuery";
     public static final String ASSERTION_SHORT_NAME = "Perform JDBC Query";
 
@@ -35,11 +39,12 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
 
     private boolean allowMultiValuedVariables = false;
 
-    public JdbcQueryAssertion() {}
+    public JdbcQueryAssertion() {
+    }
 
     @Override
     public JdbcQueryAssertion clone() {
-        JdbcQueryAssertion copy = (JdbcQueryAssertion)super.clone();
+        JdbcQueryAssertion copy = (JdbcQueryAssertion) super.clone();
 
         copy.setConnectionName(connectionName);
         copy.setSqlQuery(sqlQuery);
@@ -135,7 +140,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         List<VariableMetadata> varMeta = new ArrayList<VariableMetadata>();
         varMeta.add(new VariableMetadata(variablePrefix + "." + VARIABLE_COUNT, false, false, null, false, DataType.INTEGER));
 
-        for (String key: namingMap.keySet()) {
+        for (String key : namingMap.keySet()) {
             String varName = namingMap.get(key);
             boolean multi_valued = !key.endsWith(VARIABLE_COUNT);
             varMeta.add(new VariableMetadata(variablePrefix + "." + varName, false, multi_valued, null, false, DataType.STRING));
@@ -171,7 +176,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<JdbcQueryAssertion>() {
             @Override
             public String getAssertionName(JdbcQueryAssertion assertion, boolean decorate) {
-                if (! decorate) return ASSERTION_SHORT_NAME;
+                if (!decorate) return ASSERTION_SHORT_NAME;
 
                 String queryName = assertion.getQueryName();
                 if (queryName == null || queryName.trim().isEmpty()) return ASSERTION_SHORT_NAME;
@@ -187,7 +192,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
-            new MapTypeMapping()
+                new MapTypeMapping()
         )));
 
         meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.jdbcquery.server.ServerJdbcQueryAssertion");
@@ -199,7 +204,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     private Map<String, String> copyMap(Map<String, String> sourceMap) {
 
         Map<String, String> destMap = new TreeMap<String, String>();
-        for (String key: sourceMap.keySet()) {
+        for (String key : sourceMap.keySet()) {
             destMap.put(key, sourceMap.get(key));
         }
         return destMap;
