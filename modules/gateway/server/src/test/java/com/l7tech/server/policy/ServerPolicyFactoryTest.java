@@ -1,6 +1,5 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.server.ApplicationContexts;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.*;
@@ -8,18 +7,19 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerUnknownAssertion;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Arrays;
+
+import static org.junit.Assert.*;
 
 /**
  * @author alex
@@ -35,10 +35,13 @@ public class ServerPolicyFactoryTest {
 
         ServerAssertion foo;
         Assertion[] everything = AllAssertions.GATEWAY_EVERYTHING;
-        for ( Assertion anEverything : everything ) {
-            foo = pfac.compilePolicy( anEverything, false );
-            if ( !( anEverything instanceof UnknownAssertion ) ) {
-                assertFalse( foo instanceof ServerUnknownAssertion );
+        for ( Assertion ass : everything ) {
+            ass = Assertion.filterOutDisabledAssertions(ass);
+            if (ass != null) {
+                foo = pfac.compilePolicy(ass, false );
+                if ( !( ass instanceof UnknownAssertion ) ) {
+                    assertFalse( foo instanceof ServerUnknownAssertion );
+                }
             }
         }
     }

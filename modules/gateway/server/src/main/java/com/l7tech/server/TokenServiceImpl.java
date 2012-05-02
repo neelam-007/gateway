@@ -384,6 +384,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
 
         base.addChild(root);
 
+        Assertion.filterOutDisabledAssertions(root);
         logger.fine("TokenService enforcing policy: " + base.toString());
         return base;
     }

@@ -37,11 +37,9 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
         try {
             for ( final Iterator<Assertion> i = composite.children(); i.hasNext(); ) {
                 final Assertion child = i.next();
-                if ( !child.isEnabled() ) continue;
-
                 final ServerAssertion sass = pf.compileSubtree(child);
-                if ( sass != null )
-                    result.add(sass);
+                assert sass != null;
+                result.add(sass);
             }
         } catch ( final Exception e ) {
             // Close partially created policy

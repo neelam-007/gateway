@@ -602,6 +602,7 @@ public class PolicyService extends ApplicationObjectSupport {
         if (allTargetIdentities.size() > 0)
             base.addChild(new OneOrMoreAssertion(allTargetIdentities));
         try {
+            Assertion.filterOutDisabledAssertions(base);
             return policyFactory.compilePolicy(base, false); // dogfood policy is allowed to use whatever assertions it wants, regardless of license
         } catch (LicenseException e) {
             throw new RuntimeException(e); // can't happen, we said no license enforcement

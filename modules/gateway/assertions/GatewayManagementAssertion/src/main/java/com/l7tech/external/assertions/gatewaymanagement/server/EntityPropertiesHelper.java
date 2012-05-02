@@ -400,7 +400,8 @@ class EntityPropertiesHelper {
             "id",
             "type",
             "version",
-            "name"
+            "name",
+            "visibility"
         ) )
         .put( PublishedService.class, list(
             "wsdlUrl",

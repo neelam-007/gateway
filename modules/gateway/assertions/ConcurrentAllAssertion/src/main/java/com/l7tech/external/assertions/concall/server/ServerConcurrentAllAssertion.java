@@ -10,7 +10,6 @@ import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
@@ -51,15 +50,13 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
 
     private final List<String[]> varsUsed;
     private final List<String[]> varsSet;
-    private final BeanFactory beanFactory;
     private final AuditFactory auditFactory;
 
     public ServerConcurrentAllAssertion(ConcurrentAllAssertion assertion, BeanFactory beanFactory) throws PolicyAssertionException, LicenseException {
         super(assertion, beanFactory);
-        this.beanFactory = beanFactory;
         this.auditFactory = beanFactory.getBean( "auditFactory", AuditFactory.class );
 
-        final List<Assertion> kids = getEnabledImmediateChildAssertions(assertion);
+        final List<Assertion> kids = assertion.getChildren();
         if (kids == null || kids.isEmpty()) {
             this.varsUsed = Collections.emptyList();
             this.varsSet = Collections.emptyList();
@@ -109,24 +106,6 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         }
     }
 
-    public List<ServerAssertion> getEnabledImmediateChildServerAssertions() {
-        List<ServerAssertion> ret = new ArrayList<ServerAssertion>();
-        for (ServerAssertion serverAssertion : getChildren()) {
-            if (serverAssertion.getAssertion().isEnabled())
-                ret.add(serverAssertion);
-        }
-        return ret;
-    }
-
-    public static List<Assertion> getEnabledImmediateChildAssertions(CompositeAssertion comp) {
-        List<Assertion> ret = new ArrayList<Assertion>();
-        for (Assertion assertion : comp.getChildren()) {
-            if (assertion.isEnabled() && !(assertion instanceof CommentAssertion))
-                ret.add(assertion);
-        }
-        return ret;
-    }
-
     private static class KidContext {
         final ServerAssertion serverAssertion;
         final PolicyEnforcementContext context;
@@ -143,7 +122,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // Build copies of the context
-        final List<ServerAssertion> kids = getEnabledImmediateChildServerAssertions();
+        final List<ServerAssertion> kids = getChildren();
         final List<KidContext> contexts = new ArrayList<KidContext>(kids.size());
         try {
             return doCheckRequest(kids, context, contexts);
@@ -233,7 +212,6 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         Iterator<String[]> varsSetIter = varsSet.iterator();
         for (KidContext kidContext : contexts) {
             final String[] varsSetByKid = varsSetIter.next();
-            assert kidContext.serverAssertion.getAssertion().isEnabled() && !(kidContext.serverAssertion.getAssertion() instanceof CommentAssertion);
 
             try {
                 kidContext.actualResult = kidContext.futureResult.get();
@@ -249,7 +227,6 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         AssertionStatus result = AssertionStatus.NONE;
         for (KidContext kidContext : contexts) {
             ServerAssertion kid = kidContext.serverAssertion;
-            assert kid.getAssertion().isEnabled() && !(kid.getAssertion() instanceof CommentAssertion);
 
             KidResult kidResult = kidContext.actualResult;
             result = kidResult.assertionStatus;
@@ -376,7 +353,6 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     private static List<String[]> getVariablesSetByChildren(List<Assertion> kids, PolicyCache policyCache) {
         List<String[]> setByKids = new ArrayList<String[]>(kids.size());
         for (Assertion kid : kids) {
-            assert kid.isEnabled() && !(kid instanceof CommentAssertion);
             Map<String, VariableMetadata> setvars = PolicyVariableUtils.getVariablesSetByDescendantsAndSelf(kid, makeVariableCollatingTranslator(policyCache));
             setByKids.add(setvars.keySet().toArray(new String[setvars.keySet().size()]));
         }
@@ -386,7 +362,6 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     private static List<String[]> getVariablesUsedByChildren(List<Assertion> kids, PolicyCache policyCache) {
         List<String[]> usedByKids = new ArrayList<String[]>(kids.size());
         for (Assertion kid : kids) {
-            assert kid.isEnabled() && !(kid instanceof CommentAssertion);
             String[] usedvars = PolicyVariableUtils.getVariablesUsedByDescendantsAndSelf(kid, makeVariableCollatingTranslator(policyCache));
             usedByKids.add(usedvars);
         }
@@ -404,7 +379,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         return new AssertionTranslator() {
             @Override
             public Assertion translate(Assertion sourceAssertion) throws PolicyAssertionException {
-                if (sourceAssertion == null || !sourceAssertion.isEnabled() || !(sourceAssertion instanceof Include) || policyCache == null) {
+                if (sourceAssertion == null || !(sourceAssertion instanceof Include) || policyCache == null) {
                     return sourceAssertion;
                 }
 

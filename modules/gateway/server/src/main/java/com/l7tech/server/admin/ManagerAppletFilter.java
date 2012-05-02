@@ -14,6 +14,7 @@ import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -123,6 +124,7 @@ public class ManagerAppletFilter implements Filter {
         fakeDoc = XmlUtil.createEmptyDocument("placeholder", "l7", "http://www.l7tech.com/ns/placeholder");
 
         try {
+            Assertion.filterOutDisabledAssertions(dogfood);
             dogfoodPolicy = serverPolicyFactory.compilePolicy(dogfood, false);
         } catch (ServerPolicyException e) {
             throw new ServletException("Configuration error; could not compile dogfood policy", e);

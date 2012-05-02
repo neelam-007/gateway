@@ -76,6 +76,9 @@ public class ServerPolicyFactory implements ApplicationContextAware {
      * @throws LicenseException if this policy subtree made use of an unlicensed assertion
      */
     public ServerAssertion compilePolicy(final Assertion genericAssertion, boolean licenseEnforcement) throws ServerPolicyException, LicenseException {
+        if (genericAssertion == null)
+            throw new ServerPolicyException(null, "Root policy assertion is null -- policy contains no enabled assertions?");
+
         if (licenseEnforcement) {
             // Scan for UnknownAssertion, and treat as license failure
             Iterator it = genericAssertion.preorderIterator();
@@ -120,11 +123,21 @@ public class ServerPolicyFactory implements ApplicationContextAware {
 
     /**
      * Compile the specified assertion tree, with license enforcement.
+     * @return the compiled assertion.  Never null.
      */
     private ServerAssertion doMakeServerAssertion(Assertion genericAssertion) throws ServerPolicyException, LicenseException {
+        if (genericAssertion == null)
+            throw new ServerPolicyException(null, "Generic assertion is null");
+
         try {
             if (isLicenseEnforcement() && !licenseManager.isAssertionEnabled(genericAssertion))
                 throw new LicenseException("The specified assertion is not supported on this Gateway: " + genericAssertion.getClass());
+
+            // Disabled assertions and comment assertions are expected to have been filtered out (eg, by the PolicyCache) before making it here
+            if (!genericAssertion.isEnabled())
+                throw new ServerPolicyException(genericAssertion, "Assertion cannot be compiled because it is disabled");
+            if (genericAssertion instanceof CommentAssertion)
+                throw new ServerPolicyException(genericAssertion, "Assertion cannot be compiled because it is a comment assertion");
 
             // Prevent Tarari assertions from being loaded on non-Tarari SSGs
             // TODO find an abstraction for this assertion censorship
@@ -136,8 +149,6 @@ public class ServerPolicyFactory implements ApplicationContextAware {
                     return serverAssertion;
                 }
             }
-
-            if (genericAssertion instanceof CommentAssertion || !genericAssertion.isEnabled()) return null;
 
             Class genericAssertionClass = genericAssertion.getClass();
             String productClassname = (String)genericAssertion.meta().get(AssertionMetadata.SERVER_ASSERTION_CLASSNAME);

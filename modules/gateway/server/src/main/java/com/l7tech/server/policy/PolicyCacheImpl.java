@@ -11,6 +11,7 @@ import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.PolicyCacheEvent;
@@ -27,7 +28,10 @@ import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.BeansException;
-import org.springframework.context.*;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -372,7 +376,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         if( policy.getOid() == Policy.DEFAULT_OID )
             throw new IllegalArgumentException( "Can't update a brand-new policy--it must be saved first" );
 
-        perhapsUpdateInternal(new Policy(policy, true));
+        perhapsUpdateInternal(new Policy(policy, cacheAssertionVisibility, true));
     }
 
     /**
@@ -470,7 +474,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
 
             // rebuild
             for( Policy policy : policyManager.findAll() ) {
-               findDependentPoliciesIfDirty( policy, null, new HashSet<Long>(), new HashMap<Long, Integer>(), events );
+                policy.setVisibility(cacheAssertionVisibility);
+                findDependentPoliciesIfDirty(policy, null, new HashSet<Long>(), new HashMap<Long, Integer>(), events);
             }
 
             // rebuild registered
@@ -530,7 +535,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                         if( policy == null ) {
                             notifyDelete( oid );
                         } else {
-                            notifyUpdate( new Policy(policy, true) );
+                            notifyUpdate( new Policy(policy, cacheAssertionVisibility, true) );
                         }
                     }
                 } catch( FindException fe ) {
@@ -562,7 +567,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                             if( policy == null ) {
                                 notifyDelete( version.getPolicyOid() );
                             } else {
-                                notifyUpdate( new Policy(policy, true) );
+                                notifyUpdate( new Policy(policy, cacheAssertionVisibility, true) );
                             }
                         }
                     }
@@ -665,6 +670,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
             throw new InvalidPolicyException( "Invalid policy with id " + policy.getOid() + ": " + ExceptionUtils.getMessage( ioe ), ioe );
         }
 
+        if (policy.getVisibility() != cacheAssertionVisibility) // sanity check
+            throw new InvalidPolicyException("Policy has not been screened for disabled assertions");
+
         // build server policy, create dummy if unlicensed        
         try {
             serverRootAssertion = policyFactory.compilePolicy( ass, true );
@@ -713,6 +721,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     private final Map<String, Long> guidToOidMap = new HashMap<String, Long>();
     private final ConcurrentMap<Pair<PolicyType,String>, Set<String>> policyTypeAndTagToGuidsMap = new ConcurrentHashMap<Pair<PolicyType,String>, Set<String>>();
     private final Map<String, RegisteredPolicy> guidToPolicyMap = new HashMap<String,RegisteredPolicy>();
+
+    private final WspReader.Visibility cacheAssertionVisibility = WspReader.Visibility.omitDisabled;
 
     private void notifyUpdate( final Policy policy ) {
           updateInternal( policy );
@@ -1076,7 +1086,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                         }
                         includedOid = includedPolicy.getOid();
                         descendentPolicies.add( includedOid);
-                        includedInfo = findDependentPolicies( new Policy(includedPolicy, true), thisPolicy, seenOids, dependentVersions, events );
+                        includedInfo = findDependentPolicies( new Policy(includedPolicy, cacheAssertionVisibility, true), thisPolicy, seenOids, dependentVersions, events );
                     } else {
                         includedOid = includedInfo.policyId;
                         descendentPolicies.add( includedOid );
@@ -1140,9 +1150,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                         return getFolderPath( thisPolicyId );
                     }
                 } );
-                pce = new PolicyCacheEntry( new Policy(thisPolicy, true), serverPolicy, null );
+                pce = new PolicyCacheEntry( new Policy(thisPolicy, cacheAssertionVisibility, true), serverPolicy, null );
             } else {
-                pce = new PolicyCacheEntry( new Policy(thisPolicy, true), usedInvalidPolicyId );
+                pce = new PolicyCacheEntry( new Policy(thisPolicy, cacheAssertionVisibility, true), usedInvalidPolicyId );
             }
 
             cacheReplace(pce);
@@ -1379,7 +1389,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                 }
 
                 if ( policy != null ) {
-                    updateInternal( new Policy(policy, true) );
+                    updateInternal( new Policy(policy, cacheAssertionVisibility, true) );
                 } else {
                     removeInternal( oid );
                 }
@@ -1584,17 +1594,16 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         RegisteredPolicy( final String name,
                           final PolicyType type,
                           final String tag,
-                          final String xml ){
+                          final String xml ) {
+            super(type, name, xml, false);
             if ( name==null || name.trim().isEmpty() ) throw new IllegalArgumentException("name is required.");
             if ( type==null ) throw new IllegalArgumentException("type is required.");
             if ( xml==null || xml.trim().isEmpty() ) throw new IllegalArgumentException("xml is required.");
 
-            setOid( registeredOidCounter.getAndDecrement() );
-            setGuid( UUID.randomUUID().toString() );
-            setName( name );
-            setType( type );
-            setInternalTag( tag );
-            setXml( xml );
+            setOid(registeredOidCounter.getAndDecrement());
+            setGuid(UUID.randomUUID().toString());
+            setInternalTag(tag);
+            setVisibility(WspReader.Visibility.omitDisabled);
             lock();
         }
     }

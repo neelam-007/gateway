@@ -11,13 +11,16 @@ import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import java.io.Flushable;
 import java.io.IOException;
 import java.text.MessageFormat;
@@ -33,6 +36,8 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 public class Policy extends NamedEntityImp implements Flushable, HasFolder {
     private static final Logger logger = Logger.getLogger(Policy.class.getName());
 
+    private static WspReader.Visibility defaultVisibility = WspReader.Visibility.includeDisabled;
+
     private String guid;
     private String xml;
     private PolicyType type;
@@ -43,7 +48,9 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
     private long versionOrdinal;   // Not persisted -- filled in by admin layer
     private boolean versionActive; // Not persisted -- filled in by admin layer
 
+    private transient WspReader.Visibility visibility; // transient since should depend on environment (authoring vs. production), not on the policy itself
     private transient Assertion assertion;
+
     private static final AllAssertion DISABLED_POLICY = new AllAssertion(Arrays.asList(new CommentAssertion("Policy disabled"), new FalseAssertion()));
     private static final String DISABLED_POLICY_XML = WspWriter.getPolicyXml(DISABLED_POLICY).trim();
 
@@ -66,19 +73,20 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
      * @param policy The policy to duplicate.
      */
     public Policy(final Policy policy) {
-        this(policy, false);
+        this(policy, null, false);
     }
 
     /**
-     * Create a copy of the given policy.
+     * Create a copy of the given policy, optionally overridding its visibility setting and/or locking it.
      *
      * <p>This will copy the identity of the orginal, if you don't want this
      * you will need to reset the id and version.</p>
      *
      * @param policy The policy to duplicate.
+     * @param visibility visibility setting to use for new policy, or null to use the setting from the copied policy.
      * @param lock true to create a read-only policy
      */
-    public Policy(final Policy policy, final boolean lock) {
+    public Policy(final Policy policy, @Nullable WspReader.Visibility visibility, final boolean lock) {
         super(policy);
         setSoap(policy.isSoap());
         setType(policy.getType());
@@ -88,6 +96,7 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
         setXml(policy.getXml());
         setGuid(policy.getGuid());
         setFolder(policy.getFolder());
+        setVisibility(visibility != null ? visibility : policy.getVisibility());
         if ( lock ) lock();
     }
 
@@ -104,7 +113,8 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
         }
 
         if (assertion == null) {
-            assertion = WspReader.getDefault().parsePermissively(xml, WspReader.INCLUDE_DISABLED);
+            WspReader.Visibility v = visibility != null ? visibility : defaultVisibility;
+            assertion = WspReader.getDefault().parsePermissively(xml, v);
             assertion.ownerPolicyOid(getOid());
             if (isLocked())
                 assertion.lock();
@@ -247,6 +257,34 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
     }
 
     /**
+     * Check whether the first call to {@link #getAssertion()} on this Policy instance will include disabled and
+     * comment assertions in the returned assertion tree.
+     *
+     * @return assertion visibility setting to use for subsequent policy XML parsing, or null to indicate that the then-default value ({@link #defaultVisibility}) will be used.
+     */
+    public WspReader.Visibility getVisibility() {
+        return visibility;
+    }
+
+    /**
+     * Set the visibility setting for subsequent calls to {@link #getAssertion()} that trigger policy XML to be parsed.
+     * This should normally be set before the first call to {@link #getAssertion()}.
+     * <p/>
+     * Changes to this value will not be serialized.
+     * <p/>
+     * Changing this setting has no effect once an assertion tree has already been produced unless a reparse
+     * is forced by a change to the policy XML.
+     *
+     * @param visibility assertion visibility setting to use for subsequent policy XML parsing, or null to indicate that the then-default value ({@link #defaultVisibility}) should be used.
+     */
+    @XmlTransient
+    @Transient
+    public void setVisibility(@Nullable WspReader.Visibility visibility) {
+        checkLocked();
+        this.visibility = visibility;
+    }
+
+    /**
      * When {@link #getType()} is {@link PolicyType#INTERNAL}, this field can be used
      * to distinguish between different types of internal policy.  Try to avoid stuffing too much data into the tag,
      * as it's limited in the database to 64 characters.
@@ -316,6 +354,27 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
         sb.append("type=\"").append(type).append("\" ");
         sb.append("name=\"").append(_name == null ? "" : _name).append("\"/>");
         return sb.toString();
+    }
+
+
+    /**
+     * Get the default visibility of disabled and comment assertions in the current environment.
+     *
+     * @return assertion visibility setting to use when parsing policy XML, if not specified for a particular Policy instance.
+     */
+    public static WspReader.Visibility getDefaultVisibility() {
+        return defaultVisibility;
+    }
+
+    /**
+     * Set the default visibility of disabled assertions and comment assertions in the current environment.
+     * <p/>
+     * The default is to include such assertions in the tree returned by {@link #getAssertion()}.
+     *
+     * @param visibility assertion visibility setting to use when parsing policy XML, if not specified for a particular Policy instance.  Required.
+     */
+    public static void setDefaultVisibility(@NotNull WspReader.Visibility visibility) {
+        defaultVisibility = visibility;
     }
 
     /**
