@@ -5,6 +5,7 @@ import jcifs.ntlmssp.Type2Message;
 import jcifs.ntlmssp.Type3Message;
 import jcifs.smb.NtlmPasswordAuthentication;
 import jcifs.util.HMACT64;
+import org.apache.commons.lang.StringUtils;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -43,7 +44,10 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
     @Override
     public byte[] requestAuthentication(byte[] token, PasswordCredential cred) throws AuthenticationManagerException {
         int flags = state.getFlags();
-        String workstation = (String)get("localhost.netbios.name");
+        String workstation =  cred.getHost();
+        if(StringUtils.isEmpty(workstation)){
+            workstation = (String)get("localhost.netbios.name");
+        }
         NtlmSecurityPrincipal principal = cred.getSecurityPrincipal();
         String name = principal.getName();
         String domainName = principal.getDomain();

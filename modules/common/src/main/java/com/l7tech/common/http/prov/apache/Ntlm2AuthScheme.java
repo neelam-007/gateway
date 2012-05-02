@@ -137,7 +137,7 @@ public class Ntlm2AuthScheme implements AuthScheme{
     private PasswordCredential convertCredentials(Credentials credentials) throws AuthenticationException, AuthenticationManagerException {
         if(credentials instanceof NTCredentials) {
             NTCredentials ntCredentials = (NTCredentials)credentials;
-            return new PasswordCredential(ntCredentials.getDomain(), ntCredentials.getUserName(), ntCredentials.getPassword().toCharArray());
+            return new PasswordCredential(ntCredentials.getHost(), ntCredentials.getDomain(), ntCredentials.getUserName(), ntCredentials.getPassword().toCharArray());
         }
         throw new AuthenticationException("Expected NTCredentials");
     }
