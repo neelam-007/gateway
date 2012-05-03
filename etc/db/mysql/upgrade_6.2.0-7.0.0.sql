@@ -12,7 +12,7 @@ SET FOREIGN_KEY_CHECKS=0;
 --
 -- Update the version
 --
-UPDATE ssg_version SET current_version = '6.3.0';
+UPDATE ssg_version SET current_version = '7.0.0';
 
 --
 -- Reenable FK at very end of script
