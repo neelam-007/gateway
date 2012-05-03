@@ -80,6 +80,10 @@ public class BuiltinVariables {
     public static final String ASSERTION_SUFFIX_NUMBER = "number";
     public static final String ASSERTION_SUFFIX_NUMBERSTR = "numberstr";
 
+    public static final String ASSERTION_LATENCY = PREFIX_ASSERTION + ".latency";
+    public static final String ASSERTION_LATENCY_MS = ASSERTION_LATENCY + ".ms";
+    public static final String ASSERTION_LATENCY_NS = ASSERTION_LATENCY + ".ns";
+
     public static boolean isSupported(String name) {
         return getMetadata(name) != null;
     }
@@ -164,6 +168,8 @@ public class BuiltinVariables {
 
             new VariableMetadata(PREFIX_ASSERTION + "." + ASSERTION_SUFFIX_NUMBER, false, true, null, false, DataType.INTEGER),
             new VariableMetadata(PREFIX_ASSERTION + "." + ASSERTION_SUFFIX_NUMBERSTR, false, false, null, false),
+            new VariableMetadata(ASSERTION_LATENCY_MS, false, false, null, false, DataType.INTEGER),
+            new VariableMetadata(ASSERTION_LATENCY_NS, false, false, null, false, DataType.INTEGER),
 
             new VariableMetadata(SSGNODE_NAME, false, false, null, false),
             new VariableMetadata(SSGNODE_ID, false, false, null, false),

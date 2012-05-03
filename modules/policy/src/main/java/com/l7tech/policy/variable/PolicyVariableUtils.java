@@ -320,5 +320,26 @@ public final class PolicyVariableUtils {
         return new String[0];
     }
 
+    /**
+     * Check to see if the assertion used any of the provided variables
+     *
+     * @param assertion The assertion to verify
+     * @param variableNames A list of provided variables to verify
+     * @return True when the assertion used the provided variable, otherwise False
+     */
+    public static boolean usesAnyVariable(final Assertion assertion, String... variableNames) {
+        if (assertion != null && assertion instanceof UsesVariables && variableNames != null) {
+            String[] used = getVariablesUsedNoThrow((UsesVariables) assertion);
+            for (String s : used) {
+                for(String variableName : variableNames) {
+                    if (s.equals(variableName)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     private PolicyVariableUtils() { }
 }

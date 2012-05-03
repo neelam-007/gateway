@@ -8,7 +8,6 @@ import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.jboss.util.collection.ArrayIterator;
 import org.springframework.beans.factory.BeanFactory;
 
@@ -16,7 +15,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Server side implementation of the ForEachLoopAssertion.
@@ -30,6 +28,15 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
     private final int iterationLimit;
     private final String iterationsVar;
     private final String hitLimitVar;
+    private final AssertionResultListener assertionResultListener = new AssertionResultListener() {
+        @Override
+        public boolean assertionFinished(PolicyEnforcementContext context, AssertionStatus result) {
+            if (result != AssertionStatus.NONE) {
+                return false;
+            }
+            return true;
+        }
+    };
 
     public ServerForEachLoopAssertion(ForEachLoopAssertion assertion, BeanFactory beanFactory) throws PolicyAssertionException, LicenseException {
         super(assertion, beanFactory);
@@ -40,27 +47,6 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
         this.currentValueVar = prefix + ".current";
         this.iterationsVar = prefix + ".iterations";
         this.hitLimitVar = prefix + ".exceededlimit";
-    }
-
-    private AssertionStatus executeChildren(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        final List<ServerAssertion> kids = getChildren();
-        AssertionStatus result;
-        for (ServerAssertion kid : kids) {
-            context.assertionStarting(kid);
-
-            try {
-                result = kid.checkRequest(context);
-            } catch (AssertionStatusException e) {
-                result = e.getAssertionStatus();
-            }
-
-            context.assertionFinished(kid, result);
-
-            if (result != AssertionStatus.NONE)
-                return result;
-        }
-
-        return AssertionStatus.NONE;
     }
 
     @Override
@@ -80,7 +66,7 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
             Object next = iterator.next();
             context.setVariable(currentValueVar, next);
             context.setVariable(iterationsVar, iterations);
-            AssertionStatus status = executeChildren(context);
+            AssertionStatus status = iterateChildren(context, assertionResultListener);
             if (!AssertionStatus.NONE.equals(status)) {
                 failed = true;
                 break;

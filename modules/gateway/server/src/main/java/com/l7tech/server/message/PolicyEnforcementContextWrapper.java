@@ -337,6 +337,16 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
+    public long getAssertionLatencyNanos() {
+        return delegate.getAssertionLatencyNanos();
+    }
+
+    @Override
+    public void setAssertionLatencyNanos(long latency) {
+        delegate.setAssertionLatencyNanos(latency);
+    }
+
+    @Override
     public URL getRoutedServiceUrl() {
         return delegate.getRoutedServiceUrl();
     }

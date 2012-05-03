@@ -39,6 +39,7 @@ import java.net.URL;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -505,6 +506,20 @@ public class ServerVariables {
                 Object get( final String name, final PolicyEnforcementContext context ) {
                     final Collection<Integer> assertionNumber = context.getAssertionNumber();
                     return TextUtils.join(".", assertionNumber).toString();
+                }
+            }),
+
+            new Variable(BuiltinVariables.ASSERTION_LATENCY_NS, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    return context.getAssertionLatencyNanos();
+                }
+            }),
+
+            new Variable(BuiltinVariables.ASSERTION_LATENCY_MS, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    return TimeUnit.NANOSECONDS.toMillis(context.getAssertionLatencyNanos());
                 }
             }),
 

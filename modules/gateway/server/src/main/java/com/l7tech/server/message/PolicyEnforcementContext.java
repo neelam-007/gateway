@@ -258,6 +258,18 @@ public interface PolicyEnforcementContext extends Closeable {
     long getStartTime();
 
     /**
+     * @return the duration (in nanosecond) of the assertion, the value will be overwritten after
+     * each assertion execution.
+     */
+    long getAssertionLatencyNanos();
+
+
+    /**
+     * Set the latency of the assertion
+     */
+    void setAssertionLatencyNanos(long latency);
+
+    /**
      * Gets the last URL to which the SSG <em>attempted</em> to send this request.
      *
      * @see #getRoutingStatus to find out whether the routing was successful.

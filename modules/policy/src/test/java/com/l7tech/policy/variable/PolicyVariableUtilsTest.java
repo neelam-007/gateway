@@ -120,4 +120,13 @@ public class PolicyVariableUtilsTest {
         assertFalse(varsUsed.contains("qwer"));
         assertFalse(varsUsed.contains("neverused"));
     }
+
+    @Test
+    public void testUseVariables() {
+        root = new SetVariableAssertion("variableTOSet", "${assertion.latency.ms}");
+        assertTrue(PolicyVariableUtils.usesAnyVariable(root, "assertion.latency.ms"));
+        assertFalse(PolicyVariableUtils.usesAnyVariable(root, "assertion.latency.ns"));
+        assertTrue(PolicyVariableUtils.usesAnyVariable(root, "assertion.latency.ns", "assertion.latency.ms"));
+        assertFalse(PolicyVariableUtils.usesAnyVariable(root, null));
+    }
 }

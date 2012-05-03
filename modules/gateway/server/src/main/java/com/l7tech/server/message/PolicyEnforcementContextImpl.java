@@ -48,6 +48,7 @@ import java.util.logging.Level;
  */
 class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationContext> implements PolicyEnforcementContext {
     private final long startTime = System.currentTimeMillis();
+    private long assertionLatencyNanos = 0;
     private long endTime;
     private final RequestId requestId;
     private ArrayList<String> incrementedCounters = new ArrayList<String>();
@@ -480,6 +481,16 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
         return startTime;
     }
 
+    @Override
+    public long getAssertionLatencyNanos() {
+        return assertionLatencyNanos;
+    }
+
+    @Override
+    public void setAssertionLatencyNanos(long assertionLatencyNanos) {
+        this.assertionLatencyNanos = assertionLatencyNanos;
+    }
+
     /**
      * Gets the last URL to which the SSG <em>attempted</em> to send this request.
      *
@@ -509,7 +520,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     /**
      * tells the SSG what the soap fault returned to a requestor should look like
      * when a policy evaluation fails. If not set by the policy, will return null.
-     * 
+     *
      * @return the fault level or null for default
      */
     @Override

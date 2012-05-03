@@ -1,16 +1,13 @@
 package com.l7tech.server.policy.assertion.composite;
 
+import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.assertion.AssertionStatusException;
-import com.l7tech.gateway.common.LicenseException;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.util.List;
 
 public final class ServerExactlyOneAssertion extends ServerCompositeAssertion<ExactlyOneAssertion> {
     public ServerExactlyOneAssertion( ExactlyOneAssertion data, ApplicationContext applicationContext ) throws PolicyAssertionException, LicenseException {
@@ -19,25 +16,19 @@ public final class ServerExactlyOneAssertion extends ServerCompositeAssertion<Ex
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        final List<ServerAssertion> kids = getChildren();
         AssertionStatus result;
-        int numSucceeded = 0;
-        for (ServerAssertion kid : kids) {
-            context.assertionStarting(kid);
-
-            try {
-                result = kid.checkRequest(context);
-            } catch (AssertionStatusException e) {
-                result = e.getAssertionStatus();
+        final int[] numSucceeded = {0};
+        result = iterateChildren(context, new AssertionResultListener() {
+            @Override
+            public boolean assertionFinished(PolicyEnforcementContext context, AssertionStatus result) {
+                if (result == AssertionStatus.NONE) {
+                    ++numSucceeded[0];
+                }
+                return true;  //To change body of implemented methods use File | Settings | File Templates.
             }
+        });
 
-            context.assertionFinished(kid, result);
-
-            if (result == AssertionStatus.NONE)
-                ++numSucceeded;
-        }
-
-        result = numSucceeded == 1 ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
+        result = numSucceeded[0] == 1 ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
 
         if (result != AssertionStatus.NONE)
             rollbackDeferredAssertions(context);
