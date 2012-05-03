@@ -10,7 +10,7 @@ Packager: Layer 7 Technologies, <support@layer7tech.com>
 Source0: ssg-appliance.tar.gz
 Source1: jdk.tar.gz
 BuildRoot: %{_builddir}/%{name}-%{version}
-Requires(pre): /usr/sbin/useradd /usr/sbin/groupadd /usr/bin/usermod
+Requires(pre): /usr/sbin/useradd /usr/sbin/groupadd /usr/sbin/usermod
 Requires(preun): /usr/sbin/userdel /usr/sbin/groupdel
 Requires: ssg >= %{version}
 Prefix: /opt/SecureSpan/Appliance
