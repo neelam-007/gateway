@@ -40,8 +40,8 @@
         <dependency org="org.mortbay.jetty" name="jetty-sslengine" rev="6.1.26" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-test" rev="3.0.5.RELEASE" force="true" conf="test"/>
         <dependency org="mysql" name="mysql-connector-java" rev="5.1.15" force="true" conf="core"/>
-        <dependency org="org.apache.cxf" name="cxf-rt-frontend-jaxws" rev="2.3.3" force="true" conf="core"/>
-        <dependency org="org.apache.cxf" name="cxf-rt-transports-http" rev="2.3.3" force="true" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-frontend-jaxws" rev="2.3.10" force="true" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-transports-http" rev="2.3.10" force="true" conf="core"/>
 
         <!-- For the ESM, we'll always use the FIPS version of RSA for the time being -->
         <dependency org="com.rsa" name="cryptojFIPS" rev="5.0" force="true" conf="core"/>
