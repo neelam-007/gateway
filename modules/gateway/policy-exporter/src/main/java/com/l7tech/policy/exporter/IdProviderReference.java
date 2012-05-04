@@ -17,6 +17,7 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
@@ -264,7 +265,7 @@ public class IdProviderReference extends ExternalReference {
      * return false if the localized assertion should be deleted from the tree
      */
     @Override
-    protected boolean localizeAssertion(Assertion assertionToLocalize) {
+    protected boolean localizeAssertion(final @Nullable Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof IdentityAssertion) {
                 IdentityAssertion idass = (IdentityAssertion)assertionToLocalize;

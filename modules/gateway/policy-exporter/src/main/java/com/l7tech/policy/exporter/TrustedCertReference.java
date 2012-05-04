@@ -1,15 +1,16 @@
 package com.l7tech.policy.exporter;
 
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.BridgeRoutingAssertion;
 import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.InvalidDocumentFormatException;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
@@ -144,7 +145,7 @@ public class TrustedCertReference extends ExternalReference {
     }
 
     @Override
-    protected boolean localizeAssertion(Assertion assertionToLocalize) {
+    protected boolean localizeAssertion(final @Nullable Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof BridgeRoutingAssertion) {
                 BridgeRoutingAssertion bra = (BridgeRoutingAssertion) assertionToLocalize;

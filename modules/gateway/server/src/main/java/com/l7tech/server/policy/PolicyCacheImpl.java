@@ -23,10 +23,12 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.PostStartupApplicationListener;
+import com.l7tech.util.EmptyIterator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -57,7 +59,7 @@ import static com.l7tech.util.ArrayUtils.box;
 import static com.l7tech.util.ArrayUtils.zipI;
 
 /**
- * Policy cache maintains ServerPolcies / Policies and their metadata.
+ * Policy cache maintains ServerPolicies / Policies and their metadata.
  *
  * <p>Caches the compiled {@link ServerAssertion} versions of {@link Policy}
  * objects, and maintains a dependency tree of policies and their
@@ -394,14 +396,15 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
             final Assertion thisRootAssertion;
             try {
                 thisRootAssertion = policy.getAssertion();
-
-                final Iterator assit = thisRootAssertion.preorderIterator();
-                while( assit.hasNext() ) {
-                    final Assertion ass = (Assertion) assit.next();
-                    if( ass instanceof Include ) {
-                        final Include include = (Include) ass;
-                        if ( policies.contains( include.getPolicyGuid() ) ) {
-                            throw new CircularPolicyException( policy, include.getPolicyGuid(), include.getPolicyName() );
+                if (thisRootAssertion != null) {
+                    final Iterator assIt = thisRootAssertion.preorderIterator();
+                    while( assIt.hasNext() ) {
+                        final Assertion ass = (Assertion) assIt.next();
+                        if( ass instanceof Include ) {
+                            final Include include = (Include) ass;
+                            if ( policies.contains( include.getPolicyGuid() ) ) {
+                                throw new CircularPolicyException( policy, include.getPolicyGuid(), include.getPolicyName() );
+                            }
                         }
                     }
                 }
@@ -673,6 +676,14 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         if (policy.getVisibility() != cacheAssertionVisibility) // sanity check
             throw new InvalidPolicyException("Policy has not been screened for disabled assertions");
 
+        if (ass == null) {
+            // Policy has no enabled assertions.  For policy enforcement purposes, we will treat it as though it were an empty All assertion
+            // and build a server policy that always succeeds without doing anything.  This will match previous behavior since
+            // ServerPolicyHandle.checkRequest() never checked whether the target root assertion was enabled and ServerAllAssertion would always
+            // succeed if it had no enabled children.
+            ass = new TrueAssertion();
+        }
+
         // build server policy, create dummy if unlicensed        
         try {
             serverRootAssertion = policyFactory.compilePolicy( ass, true );
@@ -743,9 +754,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
             if( pce != null ) {
                 final Set<Long> usedByOids = pce.usedBy;
                 for( Long aLong : usedByOids ) {
-                    PolicyCacheEntry userpce = cacheGet( aLong );
-                    if( userpce != null ) {
-                        policies.add( userpce.policy );
+                    PolicyCacheEntry userPce = cacheGet( aLong );
+                    if( userPce != null ) {
+                        policies.add( userPce.policy );
                     }
                 }
             }
@@ -970,7 +981,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     /**
      * Recursively invalidate the parents of the given policy.
      */
-    private void recursiveInvalidate( Policy policy, Long usedPolicyId, Set<Long> policiesToInvalidate, Set<Long> invalidated ) {
+    private void recursiveInvalidate( Policy policy, @Nullable Long usedPolicyId, Set<Long> policiesToInvalidate, Set<Long> invalidated ) {
         // invalidate the given policy
         Long policyId = policy.getOid();
         PolicyCacheEntry entry = cacheGet( policyId );
@@ -991,14 +1002,14 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     }
 
     /**
-     * Rebuild deps only if dirty.
+     * Rebuild dependencies only if dirty.
      *
      * Caller must hold lock.
      *
      * WARNING: This will not populate the params unless the policy is dirty!
      */
     private void findDependentPoliciesIfDirty( final Policy thisPolicy,
-                                               final Policy parentPolicy,
+                                               final @Nullable Policy parentPolicy,
                                                final Set<Long> seenOids,
                                                final Map<Long, Integer> dependentVersions,
                                                final List<PolicyCacheEvent> events ) {
@@ -1028,7 +1039,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      * //@throws FindException          if one of this policy's descendants could not be loaded
      */
     private PolicyCacheEntry findDependentPolicies( final Policy thisPolicy,
-                                                    final Policy parentPolicy,
+                                                    final @Nullable Policy parentPolicy,
                                                     final Set<Long> seenOids,
                                                     final Map<Long, Integer> dependentVersions,
                                                     final List<PolicyCacheEvent> events ) {
@@ -1057,7 +1068,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                 }
 
                 // process included policies
-                final Iterator assit = assertion.preorderIterator();
+                final Iterator assit = assertion != null ? assertion.preorderIterator() : new EmptyIterator();
                 while( assit.hasNext() ) {
                     final Assertion ass = (Assertion) assit.next();
                     if( !( ass instanceof Include ) ) continue;
@@ -1171,6 +1182,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     }
 
     private void auditInvalidPolicy( final Policy policy, final Exception exception, final boolean alwaysAuditException ) {
+        //noinspection ThrowableResultOfMethodCallIgnored
         logAndAudit( MessageProcessingMessages.POLICY_CACHE_INVALID,
                 new String[] { policy.getName(), policy.getId(), ExceptionUtils.getMessage( exception )},
                 alwaysAuditException ? exception : ExceptionUtils.getDebugException( exception ));
@@ -1233,7 +1245,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      *
      * Used policies must be in cache.
      */
-    private PolicyMetadata collectMetadata( final Policy policy, final Assertion rootAssertion, final Set<Long> usedPolicyOids ) throws FindException {
+    private PolicyMetadata collectMetadata( final Policy policy, final @Nullable Assertion rootAssertion, final Set<Long> usedPolicyOids ) throws FindException {
         // find policy revision
         long policyRevision = 0L;
         final PolicyVersionManager policyVersionManager = this.policyVersionManager;
@@ -1250,7 +1262,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         boolean multipartInPolicy = false;
         Set<String> allVarsUsed = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
         Map<String, VariableMetadata> allVarsSet = new TreeMap<String, VariableMetadata>(String.CASE_INSENSITIVE_ORDER);
-        Iterator i = rootAssertion.preorderIterator();
+        Iterator i = rootAssertion != null ? rootAssertion.preorderIterator() : new EmptyIterator();
         while( i.hasNext() ) {
             Assertion ass = (Assertion) i.next();
             if ( !ass.isEnabled() ) continue;
@@ -1526,7 +1538,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
          * @param usesPolicyId The id of the policy that this item depends on (may be null)
          */
         private PolicyCacheEntry( final Policy policy,
-                                  final Long usesPolicyId ) {
+                                  final @Nullable Long usesPolicyId ) {
             if ( policy == null ) throw new IllegalArgumentException("policy must not be null");
             this.policyId = policy.getOid();
             this.policy = policy;

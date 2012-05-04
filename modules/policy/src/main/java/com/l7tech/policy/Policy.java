@@ -36,7 +36,7 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 public class Policy extends NamedEntityImp implements Flushable, HasFolder {
     private static final Logger logger = Logger.getLogger(Policy.class.getName());
 
-    private static WspReader.Visibility defaultVisibility = WspReader.Visibility.includeDisabled;
+    private static WspReader.Visibility defaultVisibility = WspReader.INCLUDE_DISABLED;
 
     private String guid;
     private String xml;
@@ -106,7 +106,7 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
      * @return the {@link Assertion} at the root of the policy. May be null.
      * @throws IOException if the policy cannot be deserialized
      */
-    public synchronized Assertion getAssertion() throws IOException {
+    public synchronized @Nullable Assertion getAssertion() throws IOException {
         if (xml == null || xml.length() == 0) {
             logger.warning(MessageFormat.format("Policy #{0} ({1}) has an invalid or empty policy_xml field.  Using null policy.", _oid, _name));
             return FalseAssertion.getInstance();
@@ -115,9 +115,11 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
         if (assertion == null) {
             WspReader.Visibility v = visibility != null ? visibility : defaultVisibility;
             assertion = WspReader.getDefault().parsePermissively(xml, v);
-            assertion.ownerPolicyOid(getOid());
-            if (isLocked())
-                assertion.lock();
+            if (assertion != null) {
+                assertion.ownerPolicyOid(getOid());
+                if (isLocked())
+                    assertion.lock();
+            }
         }
 
         return assertion;

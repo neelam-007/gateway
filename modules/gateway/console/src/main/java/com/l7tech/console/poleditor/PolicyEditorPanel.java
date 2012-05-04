@@ -38,6 +38,7 @@ import com.l7tech.util.*;
 import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.xml.NamespaceMigratable;
 import com.l7tech.xml.soap.SoapVersion;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -1910,7 +1911,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return false;
     }
 
-    private void extractFragmentsFromAssertion(Assertion rootAssertion, HashMap<String, Policy> fragments) {
+    private void extractFragmentsFromAssertion(@Nullable Assertion rootAssertion, HashMap<String, Policy> fragments) {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compAssertion.children();it.hasNext();) {

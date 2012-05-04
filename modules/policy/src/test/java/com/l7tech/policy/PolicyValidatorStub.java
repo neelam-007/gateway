@@ -2,6 +2,7 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.validator.PolicyValidationContext;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,7 +15,7 @@ public class PolicyValidatorStub implements PolicyValidator {
     //- PUBLIC
 
     @Override
-    public PolicyValidatorResult validate( final Assertion assertion,
+    public PolicyValidatorResult validate( final @Nullable Assertion assertion,
                                            final PolicyValidationContext pvc,
                                            final AssertionLicense assertionLicense) throws InterruptedException {
         final PolicyValidatorResult result = new PolicyValidatorResult();
@@ -33,7 +34,7 @@ public class PolicyValidatorStub implements PolicyValidator {
     @Override
     public void checkForCircularIncludes( final String policyId,
                                           final String policyName,
-                                          final Assertion rootAssertion,
+                                          final @Nullable Assertion rootAssertion,
                                           final PolicyValidatorResult r ) {
     }
 

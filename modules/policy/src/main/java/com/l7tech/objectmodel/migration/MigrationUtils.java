@@ -1,14 +1,16 @@
 package com.l7tech.objectmodel.migration;
 
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ExternalEntityHeader;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.util.EmptyIterator;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -183,10 +185,13 @@ public class MigrationUtils {
 
         Assertion rootAssertion;
         try {
-            rootAssertion = policy.getAssertion();
+            rootAssertion = WspReader.getDefault().parsePermissively(policy.getXml(), WspReader.INCLUDE_DISABLED);
         } catch (Exception e) {
             throw new PropertyResolverException("Error getting root assertion from policy.", e);
         }
+        if (rootAssertion == null)
+            throw new PropertyResolverException("Error getting root assertion from policy: policy contains no assertions");
+        rootAssertion.ownerPolicyOid(policy.getOid());
 
         Assertion assertion = rootAssertion;
         Iterator iter = assertion.preorderIterator();
@@ -194,7 +199,7 @@ public class MigrationUtils {
             assertion = (Assertion) iter.next();
         }
 
-        if (!(assertion.getOrdinal() == targetOrdinal))
+        if (assertion != null && !(assertion.getOrdinal() == targetOrdinal))
             throw new PropertyResolverException("Assertion with ordinal " + targetOrdinal + " not found in poilcy.");
 
         return assertion;

@@ -5,6 +5,7 @@ import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.validator.PolicyValidationContext;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -21,7 +22,7 @@ public class CompositePolicyValidator implements PolicyValidator {
     }
 
     @Override
-    public PolicyValidatorResult validate( final Assertion assertion,
+    public PolicyValidatorResult validate( final @Nullable Assertion assertion,
                                            final PolicyValidationContext pvc,
                                            final AssertionLicense assertionLicense ) throws InterruptedException {
         final PolicyValidatorResult result = new PolicyValidatorResult();
@@ -45,7 +46,7 @@ public class CompositePolicyValidator implements PolicyValidator {
     @Override
     public void checkForCircularIncludes( final String policyId,
                                           final String policyName,
-                                          final Assertion rootAssertion,
+                                          final @Nullable Assertion rootAssertion,
                                           final PolicyValidatorResult r ) {
         // we'll assume one circular include check is as good as another.
         if ( !validators.isEmpty() ) {

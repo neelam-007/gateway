@@ -1,16 +1,17 @@
 package com.l7tech.policy.exporter;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.Text;
-import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PrivateKeyable;
-import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.DomUtils;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.util.InvalidDocumentFormatException;
+import org.jetbrains.annotations.Nullable;
+import org.w3c.dom.Element;
+import org.w3c.dom.Text;
 
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author ghuang
@@ -191,7 +192,7 @@ public class PrivateKeyReference extends ExternalReference {
     }
 
     @Override
-    protected boolean localizeAssertion(Assertion assertionToLocalize) {
+    protected boolean localizeAssertion(final @Nullable Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE){
             if (assertionToLocalize instanceof PrivateKeyable) {
                 PrivateKeyable keyable = (PrivateKeyable)assertionToLocalize;

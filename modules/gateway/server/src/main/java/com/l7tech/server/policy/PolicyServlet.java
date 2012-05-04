@@ -237,6 +237,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                         throw new IllegalStateException("Service not found ("+serviceId+")"); // caught by us in doGet and doPost
 
                     final Assertion servicePolicy = new Policy(targetService.getPolicy()).getAssertion(); // copy policy since we may be modifying it (simplification, filters, etc)
+                    if (servicePolicy == null)
+                        return null;
                     final String servicePolicyVersion = policyCache.getUniquePolicyVersionIdentifer( targetService.getPolicy().getOid() );
 
                     return new PolicyService.ServiceInfo() {

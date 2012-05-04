@@ -1,18 +1,25 @@
 package com.l7tech.server.migration;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.Policy;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.ExternalEntityHeader;
-import com.l7tech.objectmodel.migration.*;
+import com.l7tech.objectmodel.migration.MigrationDependency;
+import com.l7tech.objectmodel.migration.MigrationUtils;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.objectmodel.migration.PropertyResolverException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.server.EntityHeaderUtils;
-import com.l7tech.gateway.common.service.PublishedService;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Extracts the dependencies and mappings from a Policy object belonging to a service,
@@ -108,7 +115,9 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
         // The policy XML will be updated from the root assertion prior to being stored
     }
 
-    private void getHeadersRecursive(ExternalEntityHeader source, Assertion assertion, Map<ExternalEntityHeader, Set<MigrationDependency>> result, String topPropertyName) throws PropertyResolverException {
+    private void getHeadersRecursive(ExternalEntityHeader source, @Nullable Assertion assertion, Map<ExternalEntityHeader, Set<MigrationDependency>> result, String topPropertyName) throws PropertyResolverException {
+        if (assertion == null)
+            return;
 
         logger.log(Level.FINE, "Getting headers for assertion: " + assertion);
 

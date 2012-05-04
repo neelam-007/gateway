@@ -610,11 +610,11 @@ public abstract class Assertion implements Cloneable, Serializable {
     /**
      * Check if the given assertion has a child of the given type.  It will ignore disabled assertions.
      *
-     * @param in The assertion to check
+     * @param in The assertion to check.  If null, this method returns false.
      * @param assertionClass The type to find
      * @return true if the given assertion or one of its children is the correct type
      */
-    public static boolean contains(Assertion in, Class assertionClass) {
+    public static boolean contains(@Nullable Assertion in, Class assertionClass) {
         return contains(in, assertionClass, true);
     }
 
@@ -631,7 +631,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      * @return true if the given assertion or one of its children is the correct type and also is enabled if consierDisable
      *         is set to ture.
      */
-    public static boolean contains(Assertion in, Class assertionClass, boolean ignoreDisabledAssertion) {
+    public static boolean contains(@Nullable Assertion in, Class assertionClass, boolean ignoreDisabledAssertion) {
         return null != find(in, assertionClass, ignoreDisabledAssertion);
     }
 
@@ -647,8 +647,9 @@ public abstract class Assertion implements Cloneable, Serializable {
      *                                in part of the searching
      * @return the first matching assertion, which may be the assertion passed in, or null if no match.
      */
-    public static <T extends Assertion> T find(Assertion in, Class<T> assertionClass, boolean ignoreDisabledAssertion) {
+    public static <T extends Assertion> T find(@Nullable Assertion in, Class<T> assertionClass, boolean ignoreDisabledAssertion) {
         if (assertionClass.isInstance(in)) {
+            assert in != null;
             if (! ignoreDisabledAssertion || in.isEnabled())
                 return (T)in;
         } else if (in instanceof CompositeAssertion) {

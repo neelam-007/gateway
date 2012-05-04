@@ -6,12 +6,13 @@ package com.l7tech.policy.assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.EmptyIterator;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.io.IOException;
 
 /**
  * @author alex
@@ -41,7 +42,7 @@ public class NewPreorderIterator implements Iterator<Assertion> {
         if (translated instanceof CompositeAssertion) {
             comp = (CompositeAssertion) root;
         } else {
-            this.delegate = Arrays.asList(translated).iterator();
+            this.delegate = translated == null ? new EmptyIterator() : Arrays.asList(translated).iterator();
             return;
         }
         final List<Assertion> results = new ArrayList<Assertion>();
@@ -81,14 +82,16 @@ public class NewPreorderIterator implements Iterator<Assertion> {
             // Translate if necessary
             final Assertion translated = translator == null ? kid : translator.translate(kid);
 
-            // Re-parent
-            translated.setParent(root);
-            kids.set(i, translated);
+            if (translated != null) {
+                // Re-parent
+                translated.setParent(root);
+                kids.set(i, translated);
 
-            // Recurse
-            results.add(translated);
-            if (translated instanceof CompositeAssertion) {
-                collect((CompositeAssertion) translated, results);
+                // Recurse
+                results.add(translated);
+                if (translated instanceof CompositeAssertion) {
+                    collect((CompositeAssertion) translated, results);
+                }
             }
 
             if ( translator != null ) {

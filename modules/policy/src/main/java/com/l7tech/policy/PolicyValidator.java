@@ -2,6 +2,7 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.validator.PolicyValidationContext;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface for validation of policies.
@@ -17,21 +18,21 @@ public interface PolicyValidator {
 
     /**
      * Validates the specified assertion tree.
-     * @param assertion the assertion to validate. Required.
+     * @param assertion the assertion to validate. May be null, in which case no validation warnings or errors will be added.
      * @param pvc the context in which this assertion lives.  Required.
      * @param assertionLicense used to determine which assertions are currently available.  Required.
      * @return the validation result.  Never null.
      * @throws InterruptedException  if the thread is interrupted during validation
      */
-    PolicyValidatorResult validate( Assertion assertion, PolicyValidationContext pvc, AssertionLicense assertionLicense ) throws InterruptedException;
+    PolicyValidatorResult validate( @Nullable Assertion assertion, PolicyValidationContext pvc, AssertionLicense assertionLicense ) throws InterruptedException;
 
     /**
      * Scans the provided assertion tree looking for circular includes.
      *
      * @param policyId The identifier for the policy that the provided assertion is the root of
      * @param policyName The name of the policy that the provided assertion is the root of
-     * @param rootAssertion The root assertion to start scanning
+     * @param rootAssertion The root assertion to start scanning.  May be null.
      * @param r The results of the validation check
      */
-    void checkForCircularIncludes(String policyId, String policyName, Assertion rootAssertion, PolicyValidatorResult r);
+    void checkForCircularIncludes(String policyId, String policyName, @Nullable Assertion rootAssertion, PolicyValidatorResult r);
 }

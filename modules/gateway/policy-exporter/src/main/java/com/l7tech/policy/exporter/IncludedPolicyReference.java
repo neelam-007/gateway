@@ -1,27 +1,28 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.util.DomUtils;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyReference;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.PolicyConflictException;
-import org.w3c.dom.Element;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.DomUtils;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
 
-import java.io.StringReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Iterator;
-import java.util.HashMap;
-import java.util.UUID;
 
 /**
  * @author alex
@@ -171,7 +172,7 @@ public class IncludedPolicyReference extends ExternalReference {
      * @param rootAssertion The root assertion of the policy to update
      * @param nameGuidMap A map of policy OIDs. This is updated as this method is run.
      */
-    private void updateIncludeAssertionOids(Assertion rootAssertion, HashMap<String, String> nameGuidMap) {
+    private void updateIncludeAssertionOids(@Nullable Assertion rootAssertion, HashMap<String, String> nameGuidMap) {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compAssertion.children();it.hasNext();) {

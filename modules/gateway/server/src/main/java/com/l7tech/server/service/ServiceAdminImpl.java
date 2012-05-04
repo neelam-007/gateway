@@ -1,7 +1,5 @@
 package com.l7tech.server.service;
 
-import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
@@ -15,6 +13,8 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
@@ -26,6 +26,7 @@ import com.l7tech.server.uddi.UDDIHelper;
 import com.l7tech.server.uddi.UDDITemplateManager;
 import com.l7tech.uddi.*;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 
 import java.io.IOException;
@@ -200,7 +201,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         return validatePolicy(assertion, pvc);
     }
 
-    private JobId<PolicyValidatorResult> validatePolicy(final Assertion assertion, final PolicyValidationContext pvc) {
+    private JobId<PolicyValidatorResult> validatePolicy(final @Nullable Assertion assertion, final PolicyValidationContext pvc) {
         return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find(false).wrapCallable(new Callable<PolicyValidatorResult>() {
             @Override
             public PolicyValidatorResult call() throws Exception {
@@ -227,7 +228,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         return validatePolicy(assertion, pvc);
     }
 
-    private void addPoliciesToPolicyReferenceAssertions(Assertion rootAssertion, HashMap<String, Policy> fragments) throws IOException {
+    private void addPoliciesToPolicyReferenceAssertions(@Nullable Assertion rootAssertion, HashMap<String, Policy> fragments) throws IOException {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compAssertion.children();it.hasNext();) {

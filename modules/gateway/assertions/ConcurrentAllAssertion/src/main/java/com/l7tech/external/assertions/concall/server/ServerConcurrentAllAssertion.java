@@ -22,17 +22,15 @@ import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
-import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.BeanFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -378,7 +376,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     private static AssertionTranslator makeVariableCollatingTranslator(final PolicyCache policyCache) {
         return new AssertionTranslator() {
             @Override
-            public Assertion translate(Assertion sourceAssertion) throws PolicyAssertionException {
+            public Assertion translate(@Nullable Assertion sourceAssertion) throws PolicyAssertionException {
                 if (sourceAssertion == null || !(sourceAssertion instanceof Include) || policyCache == null) {
                     return sourceAssertion;
                 }
@@ -396,7 +394,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             }
 
             @Override
-            public void translationFinished(Assertion sourceAssertion) {
+            public void translationFinished(@Nullable Assertion sourceAssertion) {
             }
         };
     }

@@ -1,16 +1,17 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.UnknownAssertion;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.DomUtils;
-import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UnknownAssertion;
 
 import java.util.Collection;
-import java.util.regex.Pattern;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * A reference to a CustomAssertion type. This reference is exported alongside
@@ -130,7 +131,7 @@ public class CustomAssertionReference extends ExternalReference {
     }
 
     @Override
-    protected boolean localizeAssertion(Assertion assertionToLocalize) {
+    protected boolean localizeAssertion(@Nullable Assertion assertionToLocalize) {
         if (localizeType == LocalizeAction.IGNORE) return true;
         // we need to instruct deletion for assertions that refer to this
         if (assertionToLocalize instanceof CustomAssertionHolder) {

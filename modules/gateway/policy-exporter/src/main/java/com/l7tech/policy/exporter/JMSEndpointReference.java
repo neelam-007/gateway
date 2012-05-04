@@ -2,13 +2,14 @@ package com.l7tech.policy.exporter;
 
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.DomUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
@@ -320,7 +321,7 @@ public class JMSEndpointReference extends ExternalReference {
     }
 
     @Override
-    protected boolean localizeAssertion( final Assertion assertionToLocalize ) {
+    protected boolean localizeAssertion( final @Nullable Assertion assertionToLocalize ) {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsRoutingAssertion = (JmsRoutingAssertion) assertionToLocalize;

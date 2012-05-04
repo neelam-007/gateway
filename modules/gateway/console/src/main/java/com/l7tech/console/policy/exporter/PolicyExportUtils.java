@@ -17,6 +17,7 @@ import com.l7tech.policy.wsp.PolicyConflictException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ResourceUtils;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -25,7 +26,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -124,7 +127,7 @@ public class PolicyExportUtils {
 
     private static final Logger logger = Logger.getLogger( PolicyExportUtils.class.getName() );
 
-    private static void addPoliciesToPolicyReferenceAssertions( final Assertion rootAssertion,
+    private static void addPoliciesToPolicyReferenceAssertions( final @Nullable Assertion rootAssertion,
                                                                final HashMap<String, Policy> fragments ) throws IOException {
         if(rootAssertion instanceof CompositeAssertion ) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;

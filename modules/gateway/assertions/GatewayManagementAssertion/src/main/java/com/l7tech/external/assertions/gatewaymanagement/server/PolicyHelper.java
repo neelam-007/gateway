@@ -1,16 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.PolicyDetail;
-import com.l7tech.gateway.api.PolicyExportResult;
-import com.l7tech.gateway.api.PolicyImportResult;
-import com.l7tech.gateway.api.PolicyReferenceInstruction;
-import com.l7tech.gateway.api.impl.PolicyValidationContext;
-import com.l7tech.gateway.api.PolicyValidationResult;
-import com.l7tech.gateway.api.Resource;
-import com.l7tech.gateway.api.ResourceSet;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
+import com.l7tech.gateway.api.impl.PolicyValidationContext;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
@@ -22,38 +15,16 @@ import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.User;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityHeaderSet;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
-import com.l7tech.policy.AssertionLicense;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.identity.*;
+import com.l7tech.objectmodel.*;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyReference;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.exporter.ExternalReference;
-import com.l7tech.policy.exporter.ExternalReferenceErrorListener;
-import com.l7tech.policy.exporter.ExternalReferenceFinder;
-import com.l7tech.policy.exporter.GlobalResourceReference;
-import com.l7tech.policy.exporter.JdbcConnectionReference;
-import com.l7tech.policy.exporter.PolicyExporter;
-import com.l7tech.policy.exporter.PolicyImportCancelledException;
-import com.l7tech.policy.exporter.PolicyImporter;
+import com.l7tech.policy.exporter.*;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
@@ -72,11 +43,11 @@ import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
-import static com.l7tech.util.Option.optional;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.SAXException;
@@ -84,16 +55,10 @@ import org.xml.sax.SAXException;
 import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.security.KeyStoreException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.Option.optional;
 
 /**
  * Helper class for implementing policy import/export and validation.
@@ -252,7 +217,7 @@ public class PolicyHelper {
         SoapVersion soapVersion = soap ? getSoapVersion( policyValidationContext.getProperties() ) : null;
         final Map<String, ResourceSet> resourceSetMap = resourceHelper.getResourceSetMap( policyValidationContext.getResourceSets() );
         Wsdl wsdl = getWsdl( resourceHelper.getResources( resourceSetMap, ResourceHelper.WSDL_TAG, false, null ) );
-        Assertion assertion = getAssertion( resourceHelper.getResources( resourceSetMap, ResourceHelper.POLICY_TAG, false, null ));
+        @Nullable Assertion assertion = getAssertion( resourceHelper.getResources( resourceSetMap, ResourceHelper.POLICY_TAG, false, null ));
 
         // If the request does not specify a policy see if an existing policy can be resolved
         if ( assertion == null ) {
@@ -342,7 +307,7 @@ public class PolicyHelper {
      */
     public String validatePolicySyntax( final String policyXml ) throws ResourceFactory.InvalidResourceException {
         try {
-            final Assertion assertion = wspReader.parsePermissively( policyXml, WspReader.Visibility.includeDisabled );
+            final Assertion assertion = wspReader.parsePermissively( policyXml, WspReader.INCLUDE_DISABLED );
             if ( !(assertion instanceof AllAssertion) ) {
                 throw new ResourceFactory.InvalidResourceException( ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid policy");
             }
@@ -775,7 +740,7 @@ public class PolicyHelper {
         return child;
     }
 
-    private void addPoliciesToPolicyReferenceAssertions( final Assertion rootAssertion,
+    private void addPoliciesToPolicyReferenceAssertions( final @Nullable Assertion rootAssertion,
                                                          final Map<String, String> fragments ) throws IOException {
         if( rootAssertion instanceof CompositeAssertion ) {
             final CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;

@@ -8,6 +8,7 @@ import com.l7tech.policy.exporter.ExternalReference;
 import com.l7tech.policy.exporter.ExternalReferenceFinder;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.InvalidDocumentFormatException;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 
 import java.util.Collection;
@@ -174,7 +175,7 @@ public class MqNativeExternalReference extends ExternalReference {
     }
 
     @Override
-    protected boolean localizeAssertion(Assertion assertionToLocalize) {
+    protected boolean localizeAssertion(final @Nullable Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE){
             if (assertionToLocalize instanceof MqNativeRoutingAssertion) {
                 final MqNativeRoutingAssertion mqNativeRoutingAssertion = (MqNativeRoutingAssertion) assertionToLocalize;

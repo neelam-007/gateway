@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.wsdl.WsdlUtil;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
 import java.util.List;
@@ -43,7 +44,7 @@ public class DefaultPolicyValidator extends AbstractPolicyValidator {
     }
 
     @Override
-    public PolicyValidatorResult validate(Assertion assertion, PolicyValidationContext pvc, AssertionLicense assertionLicense) throws InterruptedException {
+    public PolicyValidatorResult validate(@Nullable Assertion assertion, PolicyValidationContext pvc, AssertionLicense assertionLicense) throws InterruptedException {
         PolicyValidatorResult r = super.validate(assertion, pvc, assertionLicense);
 
         if (pvc.isSoap() && Assertion.contains(assertion, XpathBasedAssertion.class, true) && WsdlUtil.isRPCWithNoSchema(pvc.getWsdl())) {

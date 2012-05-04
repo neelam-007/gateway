@@ -3,7 +3,6 @@
  */
 package com.l7tech.policy;
 
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionTranslator;
@@ -12,12 +11,14 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.text.MessageFormat;
-import java.util.Set;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * @author alex
@@ -56,7 +57,7 @@ public class IncludeAssertionDereferenceTranslator implements AssertionTranslato
     }
 
     @Override
-    public Assertion translate(Assertion sourceAssertion) throws PolicyAssertionException {
+    public Assertion translate(@Nullable Assertion sourceAssertion) throws PolicyAssertionException {
         if (!(sourceAssertion instanceof Include)) return sourceAssertion;
 
         Include include = (Include) sourceAssertion;
@@ -97,7 +98,7 @@ public class IncludeAssertionDereferenceTranslator implements AssertionTranslato
     }
 
     @Override
-    public void translationFinished(Assertion sourceAssertion) {
+    public void translationFinished(@Nullable Assertion sourceAssertion) {
         if (!(sourceAssertion instanceof Include)) return;
 
         policyGuids.remove(((Include)sourceAssertion).getPolicyGuid());
@@ -106,10 +107,10 @@ public class IncludeAssertionDereferenceTranslator implements AssertionTranslato
     /**
      * Recursively scans the Assertion tree looking for Include assertions. When an Include assertion is encountered
      * that contains a temporary policy object, that policy object is added to the provided HashMap.
-     * @param rootAssertion The root of the Assertion tree to scan
+     * @param rootAssertion The root of the Assertion tree to scan.  May be null.
      * @param policyFragments The HashMap to add the temporary policy objects to
      */
-    private void extractPolicyFragments(Assertion rootAssertion, HashMap<String, Policy> policyFragments) {
+    private void extractPolicyFragments(@Nullable Assertion rootAssertion, HashMap<String, Policy> policyFragments) {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compAssertion.children();it.hasNext();) {
@@ -127,10 +128,10 @@ public class IncludeAssertionDereferenceTranslator implements AssertionTranslato
     /**
      * Recursively scans the Assertion tree looking for Include assertions. When an Include assertion is encountered,
      * its temporary policy object is updated if the provided HashMap contained one for it.
-     * @param rootAssertion The root of the Assertion tree
+     * @param rootAssertion The root of the Assertion tree.  May be null.
      * @param policyFragments The Map of temporary policy objects, keyed by policy name
      */
-    private void setPolicyFragments(Assertion rootAssertion, HashMap<String, Policy> policyFragments) {
+    private void setPolicyFragments(@Nullable Assertion rootAssertion, HashMap<String, Policy> policyFragments) {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compAssertion.children();it.hasNext();) {

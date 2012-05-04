@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 
 import java.util.*;
@@ -85,7 +86,7 @@ public class PolicyUtilTest {
     Map<Assertion,Integer> translationFinishedCount = new HashMap<Assertion, Integer>();
     AssertionTranslator translator = new AssertionTranslator() {
         @Override
-        public Assertion translate(Assertion sourceAssertion) throws PolicyAssertionException {
+        public Assertion translate(@Nullable Assertion sourceAssertion) throws PolicyAssertionException {
             count(sourceAssertion, translateCount);
             if (sourceAssertion instanceof Include) {
                 Include include = (Include) sourceAssertion;
@@ -96,7 +97,7 @@ public class PolicyUtilTest {
         }
 
         @Override
-        public void translationFinished(Assertion sourceAssertion) {
+        public void translationFinished(@Nullable Assertion sourceAssertion) {
             count(sourceAssertion, translationFinishedCount);
         }
     };

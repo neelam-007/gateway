@@ -2,6 +2,7 @@ package com.l7tech.policy.wsp;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -9,8 +10,8 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Given a policy tree, emit an XML version of it.
@@ -105,7 +106,7 @@ public class WspWriter {
      * @param assertion  the assertion to serialize.  May be null, in which case the appropriate XML will be created to reflect this.
      * @throws InvalidPolicyTreeException if this policy cannot be serialized.
      */
-    public void setPolicy(Assertion assertion) {
+    public void setPolicy( @Nullable Assertion assertion) {
         try {
             document = createSkeleton();
             if (assertion != null) {
@@ -150,10 +151,10 @@ public class WspWriter {
     /**
      * Obtain the XML representation of the given policy tree, using the default policy format, and using UTF-8
      * as the character encoding format.
-     * @param assertion     the policy tree to examine
+     * @param assertion     the policy tree to examine.  May be null in which case policy XML will be generated which represents this.
      * @return              a string containing XML
      */
-    public static String getPolicyXml(Assertion assertion) {
+    public static String getPolicyXml(@Nullable Assertion assertion) {
         WspWriter writer = new WspWriter();
         writer.setPolicy(assertion);
         try {
@@ -168,7 +169,7 @@ public class WspWriter {
      *
      * @param assertion The policy to obtain
      */
-    public static Document getPolicyDocument( final Assertion assertion ) {
+    public static Document getPolicyDocument( final @Nullable Assertion assertion ) {
         final WspWriter writer = new WspWriter();
         writer.setPolicy( assertion );
         return writer.document;

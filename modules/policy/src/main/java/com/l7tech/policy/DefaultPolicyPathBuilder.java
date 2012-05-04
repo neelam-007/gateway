@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.*;
@@ -57,7 +58,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      * @return The assertion with inlined policy include fragments
      */
     @Override
-    public Assertion inlineIncludes(final Assertion assertion, final Set<String> includedPolicyGuids, final boolean inlineDisabled) throws  PolicyAssertionException, InterruptedException {
+    public Assertion inlineIncludes(final Assertion assertion, final @Nullable Set<String> includedPolicyGuids, final boolean inlineDisabled) throws  PolicyAssertionException, InterruptedException {
         final Assertion rootWithIncludes;
 
         if ( Assertion.contains(assertion, Include.class) ) {
@@ -105,11 +106,11 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      * were any PolicyAssertionException found, then it will accumuldate into a list then returned back to the caller
      * to decide what to do with the exceptions.
      *
-     * @param assertion The assertion to process for Include fragments
+     * @param assertion The assertion to process for Include fragments.  May be null.
      * @return  Returns a list of PolicyAssertionException, if any.  Will never return NULL.
      */
     @Override
-    public List<PolicyAssertionException> preProcessIncludeFragments(Assertion assertion) {
+    public List<PolicyAssertionException> preProcessIncludeFragments(@Nullable Assertion assertion) {
 
         //list of PolicyAssertionExceptions collected so far
         List<PolicyAssertionException> policyExceptions = new ArrayList<PolicyAssertionException>();

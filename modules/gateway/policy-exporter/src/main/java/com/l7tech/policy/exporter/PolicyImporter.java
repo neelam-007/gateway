@@ -1,10 +1,8 @@
 package com.l7tech.policy.exporter;
 
-import com.l7tech.gateway.common.export.ExternalReferenceFactory;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.policy.Policy;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -12,15 +10,18 @@ import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.EntityResolver;
 
 import java.io.IOException;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.*;
 
 /**
  * Imports a policy document and resolve references if necessary.
@@ -191,7 +192,7 @@ public class PolicyImporter {
         throw new InvalidPolicyStreamException("Document does not seem to include a policy.");
     }
 
-    private static boolean containsCircularReferences(Assertion rootAssertion, HashMap<String, Policy> fragments, HashSet<String> visitedGuids) throws IOException {
+    private static boolean containsCircularReferences(final @Nullable Assertion rootAssertion, HashMap<String, Policy> fragments, HashSet<String> visitedGuids) throws IOException {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compositeAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compositeAssertion.children();it.hasNext();) {
@@ -246,7 +247,7 @@ public class PolicyImporter {
         }
     }
 
-    private static boolean correctIncludeAssertions(Assertion rootAssertion, HashMap<Long, String> fragmentOidToNameMap) {
+    private static boolean correctIncludeAssertions(@Nullable Assertion rootAssertion, HashMap<Long, String> fragmentOidToNameMap) {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             boolean retVal = false;

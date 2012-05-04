@@ -15,6 +15,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.wsdl.WsdlEntityResolver;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -179,7 +180,7 @@ public class GlobalResourceReference extends ExternalReference {
     }
 
     @Override
-    protected boolean localizeAssertion( final Assertion assertionToLocalize ) {
+    protected boolean localizeAssertion( final @Nullable Assertion assertionToLocalize ) {
         if ( assertionToLocalize instanceof SchemaValidation ) {
             final SchemaValidation schemaVal = (SchemaValidation) assertionToLocalize;
             final AssertionResourceInfo schemaResource = schemaVal.getResourceInfo();
@@ -248,7 +249,7 @@ public class GlobalResourceReference extends ExternalReference {
 
     //- PACKAGE
 
-    static Collection<GlobalResourceReference> buildResourceEntryReferences( final ExternalReferenceFinder finder,
+    static Collection<GlobalResourceReference> buildResourceEntryReferences( final @Nullable ExternalReferenceFinder finder,
                                                                              final EntityResolver entityResolver,
                                                                              final UsesResourceInfo usesResourceInfo ) {
         final Collection<GlobalResourceReference> references = new ArrayList<GlobalResourceReference>();

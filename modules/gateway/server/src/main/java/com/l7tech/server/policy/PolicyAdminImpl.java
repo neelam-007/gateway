@@ -24,11 +24,9 @@ import com.l7tech.server.policy.export.PolicyExporterImporterManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.JaasUtils;
-import com.l7tech.util.BeanUtils;
-import com.l7tech.util.Config;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
-import com.l7tech.util.HexUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
@@ -39,7 +37,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.util.Functions.map;
-import com.l7tech.util.Pair;
 import static com.l7tech.util.Pair.pair;
 
 /**
@@ -298,7 +295,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
             savePolicyFragments(activateAsWell, fragments, fragmentNameGuidMap);
 
             if(fragmentNameGuidMap.size() > 0) {
-                Assertion rootAssertion = policy.getAssertion();
+                Assertion rootAssertion = WspReader.getDefault().parsePermissively(policy.getXml(), WspReader.INCLUDE_DISABLED);
                 policy.setXml(WspWriter.getPolicyXml(rootAssertion));
             }
 
@@ -436,7 +433,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
      * @param rootAssertion The root of the Assertion tree to scan
      * @param requiredPolicies The set to add required policy names to
      */
-    private void updatePolicyDependencyTree(Assertion rootAssertion, Set<String> requiredPolicies, HashMap<String, Policy> policies) {
+    private void updatePolicyDependencyTree(@Nullable Assertion rootAssertion, Set<String> requiredPolicies, HashMap<String, Policy> policies) {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compAssertion.children();it.hasNext();) {

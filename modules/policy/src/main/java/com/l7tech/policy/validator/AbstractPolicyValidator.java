@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.*;
@@ -44,7 +45,7 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
      * Validates the specified assertion tree.
      */
     @Override
-    public PolicyValidatorResult validate(final Assertion assertion, final PolicyValidationContext pvc, final AssertionLicense assertionLicense) throws InterruptedException {
+    public PolicyValidatorResult validate(final @Nullable Assertion assertion, final PolicyValidationContext pvc, final AssertionLicense assertionLicense) throws InterruptedException {
         try {
             return CurrentAssertionTranslator.doWithAssertionTranslator(getAssertionTranslator(), new Callable<PolicyValidatorResult>() {
                 @Override
@@ -61,8 +62,9 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
         }
     }
 
-    protected PolicyValidatorResult validateWithCurrentAssertionTranslator(Assertion assertion, PolicyValidationContext pvc, AssertionLicense assertionLicense) throws InterruptedException {
-        assertion.treeChanged();
+    protected PolicyValidatorResult validateWithCurrentAssertionTranslator(@Nullable Assertion assertion, PolicyValidationContext pvc, AssertionLicense assertionLicense) throws InterruptedException {
+        if (assertion != null)
+            assertion.treeChanged();
 
         //we'll pre-process for any include fragments errors, if there are errors then we'll return the list of errors
         //back to the GUI
@@ -122,7 +124,7 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
      * @param r The results of the validation check
      */
     @Override
-    public void checkForCircularIncludes(String policyId, String policyName, Assertion rootAssertion, PolicyValidatorResult r) {
+    public void checkForCircularIncludes(String policyId, String policyName, @Nullable Assertion rootAssertion, PolicyValidatorResult r) {
         Map<String,String> visitedPolicyIdentifiers = new HashMap<String,String>();
         visitedPolicyIdentifiers.put(policyId, policyName);
 
@@ -130,7 +132,7 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    private void checkAssertionForCircularIncludes(Assertion rootAssertion, Map<String,String> visitedPolicies, PolicyValidatorResult r) {
+    private void checkAssertionForCircularIncludes(@Nullable Assertion rootAssertion, Map<String,String> visitedPolicies, PolicyValidatorResult r) {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compositeAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compositeAssertion.children();it.hasNext();) {
@@ -182,7 +184,7 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
      * @param assertion The assertion to be used for the pre-processing.
      * @return  Returns a PolicyValidatorResult containing errors, if any.  Will not return NULL.
      */
-    private PolicyValidatorResult preProcessIncludeFragments(Assertion assertion) {
+    private PolicyValidatorResult preProcessIncludeFragments(@Nullable Assertion assertion) {
         PolicyValidatorResult policyValidatorResult = new PolicyValidatorResult();
 
         //reuse the build factory to help us scan the include fragments

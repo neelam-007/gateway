@@ -3,6 +3,7 @@ package com.l7tech.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.ConfigFactory;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Set;
@@ -41,7 +42,7 @@ public abstract class PolicyPathBuilder {
      * @oparam includeDisabled True to inline policies even for disabled include assertions
      * @return the modified assertion.
      */
-    public abstract Assertion inlineIncludes(Assertion assertion, Set<String> includedGuids, boolean includeDisabled) throws InterruptedException, PolicyAssertionException;
+    public abstract Assertion inlineIncludes(Assertion assertion, @Nullable Set<String> includedGuids, boolean includeDisabled) throws InterruptedException, PolicyAssertionException;
 
     /**
      * Generate the policy path result (policy assertion paths for
@@ -60,10 +61,10 @@ public abstract class PolicyPathBuilder {
      * were any PolicyAssertionException found, then it will accumuldate into a list then returned back to the caller
      * to decide what to do with the exceptions.
      *
-     * @param assertion The assertion to process for Include fragments
+     * @param assertion The assertion to process for Include fragments.  May be null.
      * @return  Returns a list of PolicyAssertionException, if any.  Will never return NULL.
      */
-    public abstract List<PolicyAssertionException> preProcessIncludeFragments( Assertion assertion );
+    public abstract List<PolicyAssertionException> preProcessIncludeFragments( @Nullable Assertion assertion );
 
     /**
      * Generate the policy path result (policy assertion paths for

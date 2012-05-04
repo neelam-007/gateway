@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.DomUtils;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.EntityResolver;
@@ -47,7 +48,7 @@ public class PolicyExporter {
         this.entityResolver = entityResolver;
     }
 
-    public Document exportToDocument(Assertion rootAssertion, Set<ExternalReferenceFactory> factories) throws IOException, SAXException {
+    public Document exportToDocument(@Nullable Assertion rootAssertion, Set<ExternalReferenceFactory> factories) throws IOException, SAXException {
         // do policy to xml
         final Document policyDoc = WspWriter.getPolicyDocument(rootAssertion);
         // go through each assertion and list external dependencies
@@ -82,7 +83,7 @@ public class PolicyExporter {
     /**
      * Recursively go through an assertion tree populating the references as necessary.
      */
-    private void traverseAssertionTreeForReferences(Assertion rootAssertion, Collection<ExternalReference> refs, Set<ExternalReferenceFactory> factories) {
+    private void traverseAssertionTreeForReferences(@Nullable Assertion rootAssertion, Collection<ExternalReference> refs, Set<ExternalReferenceFactory> factories) {
         if (rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion ca = (CompositeAssertion)rootAssertion;
             //noinspection unchecked
@@ -99,7 +100,7 @@ public class PolicyExporter {
      * Adds ExternalReference instances to refs collection in relation to the assertion
      * if applicable
      */
-    private void appendRelatedReferences( final Assertion assertion,
+    private void appendRelatedReferences( final @Nullable Assertion assertion,
                                           final Collection<ExternalReference> refs,
                                           final Set<ExternalReferenceFactory> factories) {
 

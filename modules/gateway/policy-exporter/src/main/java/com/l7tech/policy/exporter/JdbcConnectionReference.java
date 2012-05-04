@@ -1,18 +1,18 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JdbcConnectionable;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
-import com.l7tech.gateway.common.jdbc.JdbcConnection;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.DomUtils;
-
-import java.util.logging.Logger;
-
+import com.l7tech.util.InvalidDocumentFormatException;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
+
+import java.util.logging.Logger;
 
 /**
  * @author ghuang
@@ -160,7 +160,7 @@ public class JdbcConnectionReference extends ExternalReference {
     }
 
     @Override
-    protected boolean localizeAssertion(Assertion assertionToLocalize) {
+    protected boolean localizeAssertion(final @Nullable Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE){
             if (assertionToLocalize instanceof JdbcConnectionable) {
                 final JdbcConnectionable connable = (JdbcConnectionable)assertionToLocalize;

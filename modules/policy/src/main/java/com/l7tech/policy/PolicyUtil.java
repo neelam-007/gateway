@@ -153,7 +153,7 @@ public class PolicyUtil {
             if (assertionTranslator != null && kid instanceof Include) {
                 try {
                     Assertion translated = assertionTranslator.translate(kid);
-                    if (translated != kid && translated.isEnabled())
+                    if (translated != kid && translated != null && translated.isEnabled())
                         visitDescendantsAndSelf(translated, visitor, assertionTranslator);
                 } catch (PolicyAssertionException e) {
                     if (logger.isLoggable(Level.FINE))

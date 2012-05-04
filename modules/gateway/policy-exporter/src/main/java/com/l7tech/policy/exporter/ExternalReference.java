@@ -2,26 +2,17 @@ package com.l7tech.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
-import com.l7tech.util.ExceptionUtils;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.DomUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
-import org.w3c.dom.Text;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import org.jetbrains.annotations.Nullable;
+import org.w3c.dom.*;
 import org.xml.sax.EntityResolver;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * An external reference used by an exported policy.
@@ -193,9 +184,9 @@ public abstract class ExternalReference {
      * the assertion type passed does not relate to the reference, it will be left
      * untouched.
      * Returns false if the assertion should be deleted from the tree.
-     * @param assertionToLocalize will be fixed once this method returns.
+     * @param assertionToLocalize will be fixed once this method returns.  If null, this method will take no action.
      */
-    protected abstract boolean localizeAssertion(Assertion assertionToLocalize);
+    protected abstract boolean localizeAssertion(@Nullable Assertion assertionToLocalize);
 
     protected static String getParamFromEl(Element parent, String param) {
         NodeList nodeList = parent.getElementsByTagName(param);

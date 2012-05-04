@@ -1,20 +1,19 @@
 package com.l7tech.policy.exporter;
 
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.wsp.InvalidPolicyStreamException;
-import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.policy.wsp.PolicyConflictException;
-import com.l7tech.policy.Policy;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+import com.l7tech.policy.wsp.PolicyConflictException;
+import com.l7tech.policy.wsp.WspReader;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.xml.sax.EntityResolver;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.List;
 
 /**
  * This class takes a set of external references that were exported with a policy
@@ -101,7 +100,7 @@ class ExternalReferenceResolver {
     private final EntityResolver entityResolver;
     private Collection<ExternalReference> resolvedReferences = new ArrayList<ExternalReference>();
 
-    private boolean traverseAssertionTreeForLocalization(Assertion rootAssertion) {
+    private boolean traverseAssertionTreeForLocalization(@Nullable Assertion rootAssertion) {
         if (rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion ca = (CompositeAssertion)rootAssertion;
             List children = ca.getChildren();
@@ -242,8 +241,6 @@ class ExternalReferenceResolver {
                         }
                     }
                 }
-            } else {
-                throw new IllegalStateException("Invalid policy fragment, " + fragmtRef.getName());
             }
 
             hierarchyFragmtRefsMap.put(fragmtRef, childrenList);
@@ -260,7 +257,7 @@ class ExternalReferenceResolver {
      * @param assertion: If the assertion is a composite assertion, then all references associated with the composite assertion's children will be removed.
      *                   If it is a non-composite assertion, probably one reference associated with the non-compoiste assertion will be removed.
      */
-    private void removeRedundantReferences(Collection<ExternalReference> references, Assertion assertion) {
+    private void removeRedundantReferences(Collection<ExternalReference> references, @Nullable Assertion assertion) {
         if (assertion instanceof CompositeAssertion) {
             for (Assertion assn: ((CompositeAssertion)assertion).getChildren()) {
                 removeRedundantReferences(references, assn);
@@ -273,10 +270,10 @@ class ExternalReferenceResolver {
     /**
      * Find and remove redundant references associated with an assertion.
      *
-     * @param assertion: a non-composite assertion
+     * @param assertion: a non-composite assertion.  If null, this method does nothing.
      * @param references: the list of all references.
      */
-    private void findAndRemoveReference(Assertion assertion, Collection<ExternalReference> references) {
+    private void findAndRemoveReference(@Nullable Assertion assertion, Collection<ExternalReference> references) {
         if (references == null || references.isEmpty()) return;
 
         if (assertion instanceof IdentityAssertion) {
