@@ -104,7 +104,8 @@ public class NewLdapProviderAction extends NewProviderAction {
                 new LdapGroupMappingPanel(
                         new LdapUserMappingPanel(
                                 new LdapAdvancedConfigurationPanel(
-                                        new LdapCertificateSettingsPanel(null)))), typeSelectable);
+                                        new LdapNtlmConfigurationPanel(
+                                             new LdapCertificateSettingsPanel(null))))), typeSelectable);
     }
 
     private void edit( final LdapIdentityProviderConfig config,

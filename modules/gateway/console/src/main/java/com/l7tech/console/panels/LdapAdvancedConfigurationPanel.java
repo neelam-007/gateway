@@ -1,39 +1,31 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gui.NumberField;
-import com.l7tech.gui.SimpleTableModel;
-import com.l7tech.gui.util.TableUtil;
-import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.util.*;
+import com.l7tech.util.TimeUnit;
+import com.l7tech.util.ValidationUtils;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.console.util.SortedListModel;
 
 import javax.swing.*;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.text.NumberFormatter;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.text.DecimalFormat;
 import java.text.ParseException;
-import java.util.*;
+import java.util.ResourceBundle;
+import java.util.Collection;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.util.List;
 import java.util.logging.Logger;
 
 /**
  * Wizard step panel for LDAP Identity Provider advanced configuration.
  */
 public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
-    public static final String RES_NTLM_PROPERTY_TABLE_NAME_COL = "advancedConfiguration.ntlm.propertyTable.col.0";
-    public static final String RES_NTLM_PROPERTY_TABLE_VALUE_COL = "advancedConfiguration.ntlm.propertyTable.col.1";
 
     //- PUBLIC
 
@@ -139,19 +131,10 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
     private JComboBox hierarchyUnitcomboBox;
     private JCheckBox groupMembershipCaseInsensitive;
     private JFormattedTextField groupCacheHierarchyMaxAgeTextField;
-    private JTable ntlmPropertyTable;
-    private JCheckBox enableNtlmCheckBox;
-    private JButton addNtlmPropertyButton;
-    private JButton editNtlmPropertyButton;
-    private JButton removeNtlmPropertyButton;
-    private JButton testNetlogonConnectionButton;
     private TimeUnit oldTimeUnit;
     private boolean maxAgeGreater100Years = false;
 
-    private SimpleTableModel<NameValuePair> ntlmPropertiesTableModel;
-
-
-    private final Logger logger = Logger.getLogger(LdapAdvancedConfigurationPanel.class.getName());
+     private final Logger logger = Logger.getLogger(LdapAdvancedConfigurationPanel.class.getName());
     private void initComponents() {
         this.setLayout( new BorderLayout() );
         this.add( mainPanel, BorderLayout.CENTER );
@@ -262,81 +245,6 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
         retrieveSpecifiedAttributesRadioButton.setEnabled( !readOnly );
         retrieveSpecifiedAttributesRadioButton.addActionListener( enableDisableListener );
 
-        enableNtlmCheckBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableAndDisableComponents();
-            }
-        });
-
-        addNtlmPropertyButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                editNtlmProperty(null);
-            }
-        });
-        
-        editNtlmPropertyButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                final int viewRow = ntlmPropertyTable.getSelectedRow();
-                if(viewRow > -1) {
-                    editNtlmProperty(ntlmPropertiesTableModel.getRowObject(ntlmPropertyTable.convertRowIndexToModel(viewRow)));
-                }
-            }
-        });
-
-        removeNtlmPropertyButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                final int viewRow = ntlmPropertyTable.getSelectedRow();
-                if ( viewRow > -1 ) {
-                    ntlmPropertiesTableModel.removeRowAt(ntlmPropertyTable.convertRowIndexToModel(viewRow));
-                }
-            }
-        });
-        
-        
-        testNetlogonConnectionButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                List<NameValuePair> propertiesList  = ntlmPropertiesTableModel.getRows();
-                Map<String, String> props = new HashMap<String, String>();
-                for(NameValuePair pair : propertiesList) {
-                    props.put(pair.getKey(), pair.getValue());
-                }
-                try {
-                    getIdentityAdmin().testNtlmConfig(props);
-                    JOptionPane.showMessageDialog(getOwner(), "Connection to Netlogon service was successful");
-                } catch (InvalidIdProviderCfgException e1) {
-                    JOptionPane.showMessageDialog(getOwner(), "Failed to connect to Netlogon Service!\nPlease check NTLM properties", "Netlogon Connection Error", JOptionPane.ERROR_MESSAGE);
-                }
-
-            }
-        });
-
-
-        ntlmPropertiesTableModel = TableUtil.configureTable(
-                ntlmPropertyTable,
-                TableUtil.column(resources.getString(RES_NTLM_PROPERTY_TABLE_NAME_COL), 50, 100, 100000, property("key"), String.class),
-                TableUtil.column(resources.getString(RES_NTLM_PROPERTY_TABLE_VALUE_COL), 50, 100, 100000, property("value"), String.class)
-        );
-        ntlmPropertyTable.getSelectionModel().setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
-        ntlmPropertyTable.getTableHeader().setReorderingAllowed( false );
-        ntlmPropertyTable.getTableHeader().setReorderingAllowed(false);
-//        final TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>( ntlmPropertiesTableModel );
-//        sorter.setSortKeys( Arrays.asList( new RowSorter.SortKey(0, SortOrder.ASCENDING),  new RowSorter.SortKey(1, SortOrder.ASCENDING) ) );
-        ntlmPropertiesTableModel.addTableModelListener(new TableModelListener() {
-            @Override
-            public void tableChanged(TableModelEvent e) {
-                enableNtlmCheckBox.setSelected(ntlmPropertiesTableModel.getRowCount() > 0);
-                enableAndDisableComponents();
-            }
-        });
-//        ntlmPropertyTable.setRowSorter( sorter );
-        enableNtlmCheckBox.setSelected(ntlmPropertiesTableModel.getRowCount() > 0);
-
         enableAndDisableComponents();
     }
 
@@ -438,13 +346,6 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
         addButton.setEnabled( specifiedControlsEnabled );
         editButton.setEnabled( specifiedControlsEnabled && attributeSelected );
         removeButton.setEnabled( specifiedControlsEnabled && attributeSelected );
-
-        boolean ntlmEnabled = enableNtlmCheckBox.isSelected();
-        addNtlmPropertyButton.setEnabled(ntlmEnabled);
-        editNtlmPropertyButton.setEnabled(ntlmEnabled);
-        removeNtlmPropertyButton.setEnabled(ntlmEnabled);
-        ntlmPropertyTable.setEnabled(ntlmEnabled);
-        testNetlogonConnectionButton.setEnabled(ntlmEnabled);
     }
 
     private void readProviderConfig( final LdapIdentityProviderConfig config ) {
@@ -472,8 +373,6 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
             listModel.addAll( attributes );
         }
 
-        ntlmPropertiesTableModel.setRows(config.getNtlmAuthenticationProviderProperties());
-
         validateComponents();
     }
 
@@ -491,48 +390,6 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
             Collection<String> attributes = listModel.toList();
             config.setReturningAttributes( attributes.toArray(new String[attributes.size()]) );
         }
-        
-        //TODO: store ntlm properties
-        List<NameValuePair> ntlmProperties = ntlmPropertiesTableModel.getRows();
-        config.setNtlmAuthenticationProviderProperties(ntlmProperties);
     }
 
-    private void editNtlmProperty( final NameValuePair nameValuePair ) {
-        final SimplePropertyDialog dlg = nameValuePair == null ?
-                new SimplePropertyDialog(getOwner()) :
-                new SimplePropertyDialog(getOwner(), new Pair<String,String>( nameValuePair.getKey(), nameValuePair.getValue() ) );
-        dlg.pack();
-        Utilities.centerOnParentWindow(dlg);
-        DialogDisplayer.display(dlg, new Runnable() {
-            @Override
-            public void run() {
-                if ( dlg.isConfirmed() ) {
-                    final Pair<String, String> property = dlg.getData();
-                    for ( final NameValuePair pair : new ArrayList<NameValuePair>(ntlmPropertiesTableModel.getRows()) ) {
-                        if ( pair.getKey().equals(property.left) ) {
-                            ntlmPropertiesTableModel.removeRow( pair );
-                        }
-                    }
-                    if ( nameValuePair != null ) ntlmPropertiesTableModel.removeRow( nameValuePair );
-
-                    ntlmPropertiesTableModel.addRow( new NameValuePair( property.left, property.right ) );
-                }
-            }
-        });
-
-    }
-
-    private static Functions.Unary<String,NameValuePair> property(final String propName) {
-        return Functions.propertyTransform(NameValuePair.class, propName);
-    }
-
-    private IdentityAdmin getIdentityAdmin()
-            throws RuntimeException {
-        IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
-        if (admin == null) {
-            throw new RuntimeException("Could not find registered " + IdentityAdmin.class);
-        }
-
-        return admin;
-    }
 }

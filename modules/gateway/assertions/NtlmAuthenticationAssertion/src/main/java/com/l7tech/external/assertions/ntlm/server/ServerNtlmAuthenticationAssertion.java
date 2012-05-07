@@ -4,6 +4,7 @@ package com.l7tech.external.assertions.ntlm.server;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.external.assertions.ntlm.NtlmAuthenticationAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
@@ -24,6 +25,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpCredentialSource;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.NameValuePair;
 import com.l7tech.util.Pair;
@@ -223,14 +225,12 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
     private AuthenticationProvider getOrCreateAuthenticationProvider(Object connectionId) throws CredentialFinderException {
         AuthenticationProvider authenticationProvider = null;
         Pair<Object,AuthenticationProvider> pair = ntlmAuthenticationProviderThreadLocal.get();
-        if(pair == null) {
+        //in the existing implementation connection ID is tied to a processing thread this means, the connection id remains the same for the duration of a
+        //client connection. Once the connection ID changes the provider should be reset
+        if(pair == null || !connectionId.equals(pair.left)) {
             authenticationProvider = createAuthenticationProvider();
             Pair<Object,AuthenticationProvider> newPair = new Pair<Object, AuthenticationProvider>(connectionId, authenticationProvider);
             ntlmAuthenticationProviderThreadLocal.set(newPair);
-        }
-        else if(!connectionId.equals(pair.left))  {
-            log.log(Level.SEVERE, "Connection ID is not the same as stored one. Potential multi-threading problem. stored id=" + pair.left + " connection id=" + connectionId);
-            throw new IllegalArgumentException("Connection ID is not the same");
         }
         else {
             authenticationProvider = pair.right;
@@ -246,11 +246,15 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
 
             LdapIdentityProviderConfig providerConfig = ldapProvider.getConfig();
 
-            List<NameValuePair> propsList = providerConfig.getNtlmAuthenticationProviderProperties();
-
-            HashMap props = new HashMap();
-            for(NameValuePair pair : propsList) {
-                props.put(pair.getKey(),pair.getValue());
+            Map<String, String> props = new HashMap(providerConfig.getNtlmAuthenticationProviderProperties());
+            if(props.size() == 0 || !Boolean.TRUE.toString().equals(props.get("enabled"))) {
+                throw new FindException("NTLM Configuration is disabled");
+            }
+            
+            //find password property and replace it if password is stored as a secure password
+            if(props.containsKey("service.secure.password")) {
+                String pass = ServerVariables.expandPasswordOnlyVariable(new LoggingAudit(logger), props.get("service.secure.password"));
+                props.put("service.password", pass);
             }
 
             authenticationProvider = new NtlmAuthenticationServer(props, new NetLogon(props));

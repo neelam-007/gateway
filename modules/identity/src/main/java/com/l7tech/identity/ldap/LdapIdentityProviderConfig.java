@@ -472,25 +472,15 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
     }
 
    @Transient
-   public List<NameValuePair> getNtlmAuthenticationProviderProperties() {
+   public Map<String, String> getNtlmAuthenticationProviderProperties() {
        TreeMap<String, String> props = getProperty(NTLM_AUTHENTICATION_PROVIDER_PROPERTIES);
-       
        if(props != null){
-            List<NameValuePair> propList = new ArrayList<NameValuePair>(props.size());
-           for(Map.Entry<String, String> entry : props.entrySet()){
-               NameValuePair pair = new NameValuePair(entry.getKey(), entry.getValue());
-               propList.add(pair);
-           }
-          return propList;
+           return props;
        }
-       return Collections.emptyList();
+       return Collections.emptyMap();
    }
     
-    public void  setNtlmAuthenticationProviderProperties(@NotNull final List<NameValuePair> propList) {
-        TreeMap<String, String> props = new TreeMap<String, String>();
-        for(NameValuePair pair : propList){
-           props.put(pair.getKey(), pair.getValue()); 
-        }
+    public void  setNtlmAuthenticationProviderProperties(@NotNull final Map<String, String> props) {
         setProperty(NTLM_AUTHENTICATION_PROVIDER_PROPERTIES, props);
     }
 

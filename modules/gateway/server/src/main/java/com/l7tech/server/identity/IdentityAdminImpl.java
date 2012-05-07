@@ -3,6 +3,7 @@ package com.l7tech.server.identity;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.password.IncorrectPasswordException;
 import com.l7tech.common.password.PasswordHasher;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.identity.LogonInfo;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
@@ -25,6 +26,7 @@ import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.identity.internal.InternalUserPasswordManager;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.logon.LogonInfoManager;
+import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
@@ -765,7 +767,16 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
     @Override
     public void testNtlmConfig(Map<String, String> props) throws InvalidIdProviderCfgException {
-        NetLogon testNetlogon = new NetLogon(props);
+        Map<String, String> p = new HashMap<String, String>(props);
+        if(p.containsKey("service.secure.password")) {
+            try {
+                String plaintextPassword = ServerVariables.expandSinglePasswordOnlyVariable(new LoggingAudit(logger), p.get("service.secure.password"));
+                p.put("service.password", plaintextPassword);
+            } catch (FindException e) {
+                throw new InvalidIdProviderCfgException("Password is invalid", e);
+            }
+        }
+        NetLogon testNetlogon = new NetLogon(p);
         try {
             testNetlogon.connect();
         } catch (AuthenticationManagerException ame) {

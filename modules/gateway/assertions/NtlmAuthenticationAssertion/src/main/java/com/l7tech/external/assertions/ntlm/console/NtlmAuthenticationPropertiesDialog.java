@@ -16,6 +16,7 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -54,8 +55,9 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
                 for(EntityHeader entityHeader : identityAdmin.findAllIdentityProviderConfig()) {
                     IdentityProviderConfig cfg = identityAdmin.findIdentityProviderConfigByID(entityHeader.getOid());
                     if (IdentityProviderType.fromVal(cfg.getTypeVal()) == IdentityProviderType.LDAP) {
-                        LdapIdentityProviderConfig ldapConfig = (LdapIdentityProviderConfig)cfg;
-                        if(ldapConfig.getNtlmAuthenticationProviderProperties().size() > 0) {
+                        LdapIdentityProviderConfig ldapConfig = (LdapIdentityProviderConfig)cfg ;
+                        Map<String, String> props = ldapConfig.getNtlmAuthenticationProviderProperties();
+                        if(props.size() > 0 && Boolean.TRUE.toString().equals(props.get("enabled"))) {
                             model.addElement(new LdapServerEntry(entityHeader.getOid(), entityHeader.getName()));
                         }
                     }
