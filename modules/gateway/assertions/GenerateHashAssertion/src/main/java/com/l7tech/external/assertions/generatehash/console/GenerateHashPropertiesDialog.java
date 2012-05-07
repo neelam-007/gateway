@@ -41,7 +41,7 @@ public class GenerateHashPropertiesDialog extends AssertionPropertiesOkCancelSup
     public GenerateHashAssertion getData(GenerateHashAssertion assertion) throws ValidationException {
         assertion.setAlgorithm(algorithmComboBox.getSelectedItem().toString());
         assertion.setDataToSignText(dataToSign.getText());
-        assertion.setKeyText(keyTextField.getText());
+        assertion.setKeyText(keyTextField.isEnabled() ? keyTextField.getText() : null);
         assertion.setTargetOutputVariable(targetVariablePanel.getVariable());
         return assertion;
     }
@@ -61,6 +61,7 @@ public class GenerateHashPropertiesDialog extends AssertionPropertiesOkCancelSup
         final RunOnChangeListener algorithmComboBoxListener = new RunOnChangeListener(new Runnable() {
             public void run() {
                 enableOrDisablekeyTextField();
+                updateOkButtonEnableState();
             }
         });
 
