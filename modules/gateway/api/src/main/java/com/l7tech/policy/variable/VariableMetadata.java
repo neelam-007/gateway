@@ -19,13 +19,19 @@ public class VariableMetadata implements Serializable {
 
     private final String name;
     private final boolean prefixed;
-    private final boolean multivalued;
+    /**
+     * Null if whether the variable is multivalued is unknown.
+     */
+    private final Boolean multivalued;
     private final String canonicalName;
     private final boolean settable;
     private final DataType type;
     private final String replacedBy;
 
-    public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable, DataType type, String replacedBy)
+    /**
+     * @param multivalued true if multivalued, false if single valued, null if unknown.
+     */
+    public VariableMetadata(String name, boolean prefixed, Boolean multivalued, String canonicalName, boolean settable, DataType type, String replacedBy)
         throws VariableNameSyntaxException
     {
         assertNameIsValid(name,false);
@@ -38,17 +44,20 @@ public class VariableMetadata implements Serializable {
         this.replacedBy = replacedBy;
     }
 
-    public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable, DataType type)
+    /**
+     * @param multivalued true if multivalued, false if single valued, null if unknown.
+     */
+    public VariableMetadata(String name, boolean prefixed, Boolean multivalued, String canonicalName, boolean settable, DataType type)
         throws VariableNameSyntaxException {
         this(name, prefixed, multivalued, canonicalName, settable, type, null);
     }
 
-    public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable) {
+    public VariableMetadata(String name, boolean prefixed, Boolean multivalued, String canonicalName, boolean settable) {
         this(name, prefixed, multivalued, canonicalName, settable, DataType.STRING);
     }
 
     public VariableMetadata(String name) {
-        this(name, false, false, null, false);
+        this(name, false, Boolean.FALSE, null, false);
     }
 
     /**
@@ -77,7 +86,7 @@ public class VariableMetadata implements Serializable {
     /**
      * @return true if this variable returns multiple values, false otherwise.
      */
-    public boolean isMultivalued() {
+    public Boolean isMultivalued() {
         return multivalued;
     }
 

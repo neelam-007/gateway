@@ -38,6 +38,7 @@ public class AssertionInfoDialog extends JDialog {
     private static final String NAME = "Name";
     private static final String YES = "yes";
     private static final String NO = "no";
+    private static final String UNKNOWN = "unknown";
     private static final String TYPE = "Type";
     private static final String MULTIVALUED = "Multivalued";
     private static final Logger LOGGER = Logger.getLogger(AssertionInfoDialog.class.getName());
@@ -82,15 +83,7 @@ public class AssertionInfoDialog extends JDialog {
                 final SetsVariables setsVariables = (SetsVariables) assertion;
                 final VariableMetadata[] variablesSet = setsVariables.getVariablesSet();
                 if (variablesSet.length > 0) {
-                    final Object[][] data = new Object[variablesSet.length][3];
-                    for (int i = 0; i < variablesSet.length; i++) {
-                        final VariableMetadata var = variablesSet[i];
-                        data[i][0] = var.getName();
-                        if (var.getType() != null) {
-                            data[i][1] = var.getType().getShortName();
-                        }
-                        data[i][2] = var.isMultivalued() ? YES : NO;
-                    }
+                    final Object[][] data = getVariableTableData(variablesSet);
                     setsVariablesTable.setModel(new UneditableTableModel(data, new String[]{NAME, TYPE, MULTIVALUED}));
                     // want to be able to copy-paste context variables
                     setsVariablesTable.setCellSelectionEnabled(true);
@@ -108,6 +101,23 @@ public class AssertionInfoDialog extends JDialog {
         } else {
             disableSetsVariableTable();
         }
+    }
+
+    static Object[][] getVariableTableData(final VariableMetadata[] variablesSet) {
+        final Object[][] data = new Object[variablesSet.length][3];
+        for (int i = 0; i < variablesSet.length; i++) {
+            final VariableMetadata var = variablesSet[i];
+            data[i][0] = var.getName();
+            if (var.getType() != null) {
+                data[i][1] = var.getType().getShortName();
+            }
+            if (var.isMultivalued() == null) {
+                data[i][2] = UNKNOWN;
+            } else {
+                data[i][2] = var.isMultivalued() ? YES : NO;
+            }
+        }
+        return data;
     }
 
     /**
