@@ -147,7 +147,7 @@ public class GenerateHashAssertion extends Assertion implements UsesVariables, S
 
     @Override
     public String[] getVariablesUsed() {
-        final StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         sb.append(this.getKeyText());
         sb.append(" ").append(getDataToSignText());
         sb.append(" ").append(getTargetOutputVariable());
@@ -166,14 +166,14 @@ public class GenerateHashAssertion extends Assertion implements UsesVariables, S
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Generate Security Hash Assertion");
+        meta.put(AssertionMetadata.SHORT_NAME, "Generate Security Hash");
         meta.put(AssertionMetadata.LONG_NAME, "Generate a hash or keyed hash (HMAC) for non-binary data.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, 999);
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Generate Security Hash Assertion Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Generate Security Hash Properties");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

@@ -6,10 +6,7 @@ import com.l7tech.external.assertions.generatehash.GenerateHashAssertion;
 import com.l7tech.gui.util.RunOnChangeListener;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.ItemListener;
-import java.util.EventListener;
 
 /**
  * The dialog to present the configuration of the {@link GenerateHashAssertion} to the user.
@@ -21,6 +18,7 @@ public class GenerateHashPropertiesDialog extends AssertionPropertiesOkCancelSup
     private JComboBox algorithmComboBox;
     private TargetVariablePanel targetVariablePanel;
     private JTextArea dataToSign;
+    private JLabel warningLabel;
 
     /**
      * Construct a new dialog with the given owner.
@@ -51,26 +49,25 @@ public class GenerateHashPropertiesDialog extends AssertionPropertiesOkCancelSup
     @Override
     protected void initComponents() {
         super.initComponents();
-        final EventListener genericChangeListener = new RunOnChangeListener(new Runnable() {
+        final RunOnChangeListener genericChangeListener = new RunOnChangeListener(new Runnable() {
             public void run() {
-                enableOrDisableOkButton(true);
+                updateOkButtonEnableState();
             }
         });
-        keyTextField.getDocument().addDocumentListener((DocumentListener) genericChangeListener);
-        dataToSign.getDocument().addDocumentListener((DocumentListener) genericChangeListener);
+        keyTextField.getDocument().addDocumentListener(genericChangeListener);
+        dataToSign.getDocument().addDocumentListener(genericChangeListener);
+        targetVariablePanel.addChangeListener(genericChangeListener);
 
-        enableOrDisableOkButton(false);
-
-        final EventListener algorithmComboBoxListener = new RunOnChangeListener(new Runnable() {
+        final RunOnChangeListener algorithmComboBoxListener = new RunOnChangeListener(new Runnable() {
             public void run() {
-                enableOrDisableOkButton(true);
                 enableOrDisablekeyTextField();
             }
         });
+
         for(String item : GenerateHashAssertion.getSupportedAlgorithm()){
             algorithmComboBox.addItem(item);
         }
-        algorithmComboBox.addItemListener((ItemListener) algorithmComboBoxListener);
+        algorithmComboBox.addItemListener(algorithmComboBoxListener);
     }
 
     @Override
@@ -80,22 +77,24 @@ public class GenerateHashPropertiesDialog extends AssertionPropertiesOkCancelSup
 
     @Override
     protected void updateOkButtonEnableState() {
-       enableOrDisableOkButton(true);
-    }
-
-    private void enableOrDisablekeyTextField() {
-        this.keyTextField.setEnabled(isKeyFieldValueRequired());
-    }
-
-    private void enableOrDisableOkButton( boolean checkForKey) {
         boolean enabled =
                 isNonEmptyRequiredTextField(dataToSign.getText()) &&
                         targetVariablePanel.isEntryValid() &&
                         (algorithmComboBox.getSelectedItem() != null && !algorithmComboBox.getSelectedItem().toString().trim().isEmpty());
-        if (checkForKey && isKeyFieldValueRequired()) {
+        if (isKeyFieldValueRequired()) {
             enabled = enabled && isNonEmptyRequiredTextField(keyTextField.getText());
         }
         this.getOkButton().setEnabled(enabled);
+    }
+
+    private void enableOrDisablekeyTextField() {
+        boolean keyRequired = isKeyFieldValueRequired();
+        this.keyTextField.setEnabled(keyRequired);
+        String warningText = "";
+        if(!keyRequired){
+            warningText = "WARNING: the selected algorithm is a weak hashing algorithm.";
+        }
+        warningLabel.setText(warningText);
     }
 
     private boolean isKeyFieldValueRequired() {
