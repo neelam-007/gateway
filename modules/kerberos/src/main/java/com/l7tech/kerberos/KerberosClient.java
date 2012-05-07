@@ -1,5 +1,13 @@
 package com.l7tech.kerberos;
 
+import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.ExceptionUtils;
+import org.ietf.jgss.*;
+import org.jaaslounge.decoding.DecodingException;
+import org.jaaslounge.decoding.kerberos.KerberosEncData;
+import org.jaaslounge.decoding.kerberos.KerberosToken;
+import sun.security.krb5.*;
+
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -9,8 +17,11 @@ import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import java.net.URL;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
+import java.net.URL;
 import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -19,25 +30,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
-import com.l7tech.util.ConfigFactory;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.GSSName;
-import org.ietf.jgss.Oid;
-import org.jaaslounge.decoding.DecodingException;
-import org.jaaslounge.decoding.kerberos.KerberosAuthData;
-import org.jaaslounge.decoding.kerberos.KerberosEncData;
-import org.jaaslounge.decoding.kerberos.KerberosPacAuthData;
-import org.jaaslounge.decoding.kerberos.KerberosToken;
-import org.jaaslounge.decoding.pac.PacLogonInfo;
-import sun.security.krb5.*;
-import com.l7tech.util.ExceptionUtils;
 
 /**
  * Represents a client of the kerberos key distribution center.
@@ -141,6 +133,10 @@ public class KerberosClient {
         this.callbackHandler = handler;
     }
 
+    protected GSSManager getGSSManager() {
+        return GSSManager.getInstance();
+    }
+
     /**
      * Used to get a ticket for initialization of a session.
      *
@@ -188,7 +184,7 @@ public class KerberosClient {
                 @Override
                 public KerberosServiceTicket run() throws Exception {
                     Oid kerberos5Oid = getKerberos5Oid();
-                    GSSManager manager = GSSManager.getInstance();
+                    GSSManager manager = getGSSManager();
 
                     GSSCredential credential = null;
                     GSSContext context = null;
@@ -286,7 +282,7 @@ public class KerberosClient {
                 @Override
                 public KerberosServiceTicket run() throws Exception {
                     Oid kerberos5Oid = getKerberos5Oid();
-                    GSSManager manager = GSSManager.getInstance();
+                    GSSManager manager = getGSSManager();
                     GSSCredential scred = null;
                     GSSContext scontext = null;
                     try {
