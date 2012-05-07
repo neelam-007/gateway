@@ -3,12 +3,9 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.junit.Assert.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class AssertionInfoDialogTest {
     private VariableMetadata[] variablesSet;
 
