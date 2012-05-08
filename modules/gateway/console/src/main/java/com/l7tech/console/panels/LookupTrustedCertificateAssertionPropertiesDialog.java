@@ -68,15 +68,23 @@ public class LookupTrustedCertificateAssertionPropertiesDialog extends Assertion
     @Override
     public LookupTrustedCertificateAssertion getData( final LookupTrustedCertificateAssertion assertion ) throws ValidationException {
         assertion.setLookupType(getSelectedLookupType());
-        assertion.setTrustedCertificateName(trustedCertificateNameTextField.getText().trim());
-        assertion.setCertThumbprintSha1(certThumbprintField.getText());
-        assertion.setCertSubjectKeyIdentifier(certSkiField.getText());
-        assertion.setCertSubjectDn(certSubjectDnField.getText());
-        assertion.setCertIssuerDn(certIssuerField.getText());
-        assertion.setCertSerialNumber( certSerialField.getText() );
+        assertion.setTrustedCertificateName( enabt(trustedCertificateNameTextField) );
+        assertion.setCertThumbprintSha1( enab(certThumbprintField) );
+        assertion.setCertSubjectKeyIdentifier( enab(certSkiField) );
+        assertion.setCertSubjectDn( enab(certSubjectDnField) );
+        assertion.setCertIssuerDn( enab(certIssuerField) );
+        assertion.setCertSerialNumber( enab(certSerialField) );
         assertion.setAllowMultipleCertificates(!failMultipleCertificatesCheckBox.isSelected());
         assertion.setVariableName(targetVariablePanel.getVariable());
         return assertion;
+    }
+
+    private String enab(JTextComponent jc) {
+        return jc.isEnabled() ? jc.getText() : null;
+    }
+
+    private String enabt(JTextComponent jc) {
+        return jc.isEnabled() ? jc.getText().trim() : null;
     }
 
     private LookupType getSelectedLookupType() {
