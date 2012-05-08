@@ -74,7 +74,7 @@ public class LookupTrustedCertificateAssertionPropertiesDialog extends Assertion
         assertion.setCertSubjectDn( enab(certSubjectDnField) );
         assertion.setCertIssuerDn( enab(certIssuerField) );
         assertion.setCertSerialNumber( enab(certSerialField) );
-        assertion.setAllowMultipleCertificates(!failMultipleCertificatesCheckBox.isSelected());
+        assertion.setAllowMultipleCertificates((!failMultipleCertificatesCheckBox.isEnabled()) || (!failMultipleCertificatesCheckBox.isSelected()));
         assertion.setVariableName(targetVariablePanel.getVariable());
         return assertion;
     }
@@ -147,6 +147,7 @@ public class LookupTrustedCertificateAssertionPropertiesDialog extends Assertion
         certIssuerField.setEnabled(issuerSerial);
         certSerialField.setEnabled(issuerSerial);
 
+        failMultipleCertificatesCheckBox.setEnabled(lookUpTrustedCertificateRadioButton.isSelected());
 
         boolean enableOk = true;
 
