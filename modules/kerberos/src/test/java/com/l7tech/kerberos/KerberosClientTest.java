@@ -22,7 +22,6 @@ import static junit.framework.Assert.assertNotNull;
 /**
  * User: awitrisna
  */
-@Ignore("Ignore this test for now")
 public class KerberosClientTest {
 
     private static final String LOGIN_CONTEXT_OUT_KEYTAB = "com.l7tech.common.security.kerberos.outbound.keytab";

@@ -83,17 +83,11 @@ public class MockGSSContext implements GSSContext {
         AccessControlContext accessControlContext = AccessController.getContext();
         Subject subject = Subject.getSubject(accessControlContext);
         try {
-            subject.getPrivateCredentials().add(decode(TICKET));
+            subject.getPrivateCredentials().add(KerberosClientTest.decode(TICKET));
         } catch (Exception e) {
             throw new GSSException(GSSException.FAILURE);
         }
         return Base64.decodeBase64(SEC_CONTEXT);
-    }
-
-    public Object decode(String str) throws IOException, ClassNotFoundException {
-        byte[] data = Base64.decodeBase64(str);
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
-        return ois.readObject();
     }
 
     @Override
