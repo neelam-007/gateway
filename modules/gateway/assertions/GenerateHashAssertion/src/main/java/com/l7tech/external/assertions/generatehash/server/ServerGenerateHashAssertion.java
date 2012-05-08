@@ -39,25 +39,31 @@ public class ServerGenerateHashAssertion extends AbstractServerAssertion<Generat
         AssertionStatus returnStatus = AssertionStatus.NONE;
 
         final Map<String, Object> vars = Collections.unmodifiableMap(context.getVariableMap(assertion.getVariablesUsed(), getAudit()));
-
-        final String dataToSign = ExpandVariables.process(assertion.getDataToSignText(), vars, getAudit(), true);
-        final String algorithm = ExpandVariables.process(assertion.getAlgorithm(), vars, getAudit(), true);
-        final String variableName = ExpandVariables.process(assertion.getTargetOutputVariable(), vars, getAudit(), true);
-
-        if (dataToSign == null) {
+        if(ExpandVariables.isVariableReferencedNotFound(assertion.getDataToSignText(), vars, getAudit())){
             logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Data to Sign");
             returnStatus = AssertionStatus.FAILED;
         }
-        if (algorithm == null || algorithm.trim().isEmpty()) {
-            logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Algorithm");
-            returnStatus = AssertionStatus.FAILED;
-        }
-        if (variableName == null || variableName.trim().isEmpty()) {
-            logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Output Variable");
-            returnStatus = AssertionStatus.FAILED;
-        }
-        if (returnStatus == AssertionStatus.NONE) {
-            returnStatus = signData(context, algorithm, dataToSign, variableName);
+        else {
+            final String dataToSign = ExpandVariables.process(assertion.getDataToSignText(), vars, getAudit(), true);
+
+            final String algorithm = assertion.getAlgorithm();
+            final String variableName = assertion.getTargetOutputVariable();
+
+            if (dataToSign == null) {
+                logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Data to Sign");
+                returnStatus = AssertionStatus.FAILED;
+            }
+            if (algorithm == null || algorithm.trim().isEmpty()) {
+                logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Algorithm");
+                returnStatus = AssertionStatus.FAILED;
+            }
+            if (variableName == null || variableName.trim().isEmpty()) {
+                logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Output Variable");
+                returnStatus = AssertionStatus.FAILED;
+            }
+            if (returnStatus == AssertionStatus.NONE) {
+                returnStatus = signData(context, algorithm, dataToSign, variableName);
+            }
         }
         return returnStatus;
     }
@@ -80,12 +86,18 @@ public class ServerGenerateHashAssertion extends AbstractServerAssertion<Generat
             if (GenerateHashAssertion.HMAC_ALGORITHM.matcher(algorithm).matches()) {
                 // in this case we have to check to make sure a key exists as well
                 final Map<String, Object> vars = Collections.unmodifiableMap(context.getVariableMap(assertion.getVariablesUsed(), getAudit()));
-                final String key = ExpandVariables.process(assertion.getKeyText(), vars, getAudit(), true);
-                if (key == null || key.trim().isEmpty()) {
+                if(ExpandVariables.isVariableReferencedNotFound(assertion.getKeyText(), vars, getAudit())){
                     logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Key");
                     returnStatus = AssertionStatus.FAILED;
-                } else {
-                    output = generateHash(dataToSign, key, algorithm);
+                }
+                else {
+                    final String key = ExpandVariables.process(assertion.getKeyText(), vars, getAudit(), true);
+                    if (key == null || key.isEmpty()) {
+                        logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Key");
+                        returnStatus = AssertionStatus.FAILED;
+                    } else {
+                        output = generateHash(dataToSign, key, algorithm);
+                    }
                 }
             } else {
                 output = generateDigest(dataToSign, algorithm);
@@ -116,7 +128,7 @@ public class ServerGenerateHashAssertion extends AbstractServerAssertion<Generat
      * @throws InvalidKeyException      if the given key is invalid.
      */
     private String generateHash(@NotNull final String dataToSign, @NotNull final String key, @NotNull final String algorithm) throws NoSuchAlgorithmException, InvalidKeyException {
-        String toReturn = "";
+        String toReturn;
         try {
             final Mac messageAuthenticationCode = Mac.getInstance(algorithm);
             messageAuthenticationCode.init(new SecretKeySpec(key.getBytes(Charsets.UTF8), algorithm));

@@ -150,7 +150,6 @@ public class GenerateHashAssertion extends Assertion implements UsesVariables, S
         final StringBuilder sb = new StringBuilder();
         sb.append(this.getKeyText());
         sb.append(" ").append(getDataToSignText());
-        sb.append(" ").append(getTargetOutputVariable());
         return Syntax.getReferencedNames(sb.toString());
     }
 
