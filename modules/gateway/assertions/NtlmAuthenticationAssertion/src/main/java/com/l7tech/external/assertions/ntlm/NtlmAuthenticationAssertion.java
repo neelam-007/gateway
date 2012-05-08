@@ -36,6 +36,8 @@ public class NtlmAuthenticationAssertion extends HttpCredentialSourceAssertion i
     //
     private static final String META_INITIALIZED = NtlmAuthenticationAssertion.class.getName() + ".metadataInitialized";
 
+    public static final long DEFAULT_MAX_CONNECTION_DURATION = 0L;
+    public static final long DEFAULT_MAX_IDLE_TIMEOUT = 0L;
     public static final String DEFAULT_PREFIX = "ntlm";
     public static final String USER_LOGIN_NAME = "sAMAccountName";
     public static final String SID = "sid";
@@ -64,7 +66,7 @@ public class NtlmAuthenticationAssertion extends HttpCredentialSourceAssertion i
         //meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Require NTLM");
+        meta.put(AssertionMetadata.SHORT_NAME, "Require NTLM Authentication Credentials");
         meta.put(AssertionMetadata.LONG_NAME, "Requester must provide credentials using NTLM authentication method");
 
         // Add to palette folder(s)
@@ -83,7 +85,7 @@ public class NtlmAuthenticationAssertion extends HttpCredentialSourceAssertion i
         // that is, we want our required feature set to be "assertion:NtlmAuthentication" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ntlm.console.NtlmAuthenticationPropertiesDialog");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Require NTLM Assertion");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "NTLM Authentication Properties");
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
 
 

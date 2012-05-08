@@ -341,9 +341,9 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
             long currentMills = System.currentTimeMillis();
             Long sessionTime = (Long)accountInfo.get("session.authenticate.time");
             log.log(Level.FINE, "Checking session expiry...");
-            if(maxConnectionDuration == 0 || sessionTime != null && currentMills - sessionTime < maxConnectionDuration * 1000) {
+            if(maxConnectionDuration == NtlmAuthenticationAssertion.DEFAULT_MAX_CONNECTION_DURATION || sessionTime != null && currentMills - sessionTime < maxConnectionDuration * 1000) {
                 Long requestIdleTime = (Long)accountInfo.get("request.idle.time");
-                if(maxIdleTimeout == 0 || requestIdleTime != null && currentMills - requestIdleTime < maxIdleTimeout * 1000) {
+                if(maxIdleTimeout == NtlmAuthenticationAssertion.DEFAULT_MAX_IDLE_TIMEOUT || requestIdleTime != null && currentMills - requestIdleTime < maxIdleTimeout * 1000) {
                     return true;
                 }
                 else{

@@ -5,6 +5,7 @@ import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ntlm.NtlmAuthenticationAssertion;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
@@ -35,12 +36,14 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
     private JPanel propertyPanel;
     private TargetVariablePanel targetVariablePanel;
     private JComboBox ldapServerComboBox;
-    private final long defaultMaxConnectionDuration = 0;
-    private final long defaultMaxIdleTimeout = 0;
+    private final long defaultMaxConnectionDuration = NtlmAuthenticationAssertion.DEFAULT_MAX_CONNECTION_DURATION;
+    private final long defaultMaxIdleTimeout = NtlmAuthenticationAssertion.DEFAULT_MAX_IDLE_TIMEOUT;
+    private final InputValidator inputValidator;
 
 
     public NtlmAuthenticationPropertiesDialog(final Frame owner, final NtlmAuthenticationAssertion assertion) {
         super(NtlmAuthenticationAssertion.class, owner, assertion, true);
+        inputValidator = new InputValidator( this, getTitle() );
         initComponents();
     }
 
@@ -68,8 +71,8 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
             //TODO: capture this failure in the log
         }
 
-        maxDurationDefaultRadioButton.setSelected(true);//TODO: read property from assertion
-        maxIdleDefaultRadioButton.setSelected(true); //TODO: read property from assertion
+        maxDurationDefaultRadioButton.setSelected(true);
+        maxIdleDefaultRadioButton.setSelected(true);
         targetVariablePanel.setVariable(NtlmAuthenticationAssertion.DEFAULT_PREFIX);
         targetVariablePanel.addChangeListener(new ChangeListener(){
             @Override
@@ -92,7 +95,9 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
                 enableDisableComponents();
             }
         });
-        //--------------------------------------------
+        // the value entered must be from 0 to max integer 2^31-1
+        inputValidator.constrainTextFieldToNumberRange("Max Duration Custom", maxDurationSecondsTextField, 0L, Integer.MAX_VALUE, false);
+        inputValidator.constrainTextFieldToNumberRange("Max Idle Time", maxIdleSecondsTextField, 0L, Integer.MAX_VALUE, false);
     }
 
     private void enableDisableComponents() {
@@ -156,12 +161,12 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
             assertion.setLdapProviderOid(entry.getOid());
         }
 
-        return assertion;  //To change body of implemented methods use File | Settings | File Templates.
+        return assertion;
     }
 
     @Override
     protected JPanel createPropertyPanel() {
-        return propertyPanel;  //To change body of implemented methods use File | Settings | File Templates.
+        return propertyPanel;
     }
 
     private long getNumericValue(String str) {
