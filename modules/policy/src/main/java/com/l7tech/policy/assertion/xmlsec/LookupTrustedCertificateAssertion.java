@@ -17,7 +17,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import static com.l7tech.policy.assertion.VariableUseSupport.expressions;
 
 /**
- * Assertion for trusted certificate lookup
+ * Assertion for certificate lookup.
  */
 public class LookupTrustedCertificateAssertion extends Assertion implements SetsVariables, UsesVariables {
 
@@ -125,9 +125,9 @@ public class LookupTrustedCertificateAssertion extends Assertion implements Sets
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(SHORT_NAME, "Look Up Trusted Certificate");
+        meta.put(SHORT_NAME, "Look Up Certificate");
         meta.put(DESCRIPTION, "Look up certificates for later use in policy.  Can look up trusted certificates by cert name, or any cert by SKI, ThumbprintSHA1, Issuer/Serial, or DN.");
-        meta.put(PROPERTIES_ACTION_NAME, "Trusted Certificate Lookup Properties");
+        meta.put(PROPERTIES_ACTION_NAME, "Certificate Lookup Properties");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.LookupTrustedCertificateAssertionPropertiesDialog");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
