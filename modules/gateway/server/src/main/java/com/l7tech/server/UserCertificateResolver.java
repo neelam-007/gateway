@@ -61,7 +61,8 @@ public class UserCertificateResolver extends SecurityTokenResolverSupport implem
     public X509Certificate lookupByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
         try {
             List<? extends X509Entity> got = clientCertManager.findByIssuerAndSerial(issuer, serial);
-            if (got != null && got.size() > 1) return got.get(0).getCertificate();
+            if (got != null && got.size() >= 1)
+                return got.get(0).getCertificate();
 
             return null;
         } catch (FindException e) {
