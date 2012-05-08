@@ -59,7 +59,7 @@ public class ServerLookupTrustedCertificateAssertion extends AbstractServerAsser
 
             switch ( assertion.getLookupType() ) {
                 case CERT_ISSUER_SERIAL:
-                    X500Principal issuer = new X500Principal( ExpandVariables.process(assertion.getCertIssuerDn(), variableMap, getAudit()) );
+                    X500Principal issuer = parseX500Principal(ExpandVariables.process(assertion.getCertIssuerDn(), variableMap, getAudit()));
                     BigInteger serial = new BigInteger( ExpandVariables.process(assertion.getCertSerialNumber(), variableMap, getAudit()) );
                     logVal = issuer + "/" + serial;
                     logAndAudit( AssertionMessages.CERT_ANY_LOOKUP_NAME, lookupType.toString(), logVal );
@@ -73,7 +73,7 @@ public class ServerLookupTrustedCertificateAssertion extends AbstractServerAsser
                     break;
 
                 case CERT_SUBJECT_DN:
-                    logVal = new X500Principal( ExpandVariables.process( assertion.getCertSubjectDn(), variableMap, getAudit()) ).getName(X500Principal.CANONICAL);
+                    logVal = parseX500Principal(ExpandVariables.process(assertion.getCertSubjectDn(), variableMap, getAudit())).getName(X500Principal.CANONICAL);
                     logAndAudit( AssertionMessages.CERT_ANY_LOOKUP_NAME, lookupType.toString(), logVal );
                     certificates = optional( securityTokenResolver.lookupByKeyName(logVal) ).toList();
                     break;
@@ -114,6 +114,14 @@ public class ServerLookupTrustedCertificateAssertion extends AbstractServerAsser
         }
 
         return result;
+    }
+
+    private X500Principal parseX500Principal(String name) throws FindException {
+        try {
+            return new X500Principal(name);
+        } catch (IllegalArgumentException e) {
+            throw new FindException("Invalid DN: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     private static final Unary<X509Certificate,TrustedCert> certExtractor = new Unary<X509Certificate,TrustedCert>(){
