@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -458,6 +459,24 @@ public interface PolicyEnforcementContext extends Closeable {
      * @param attempted true when the MessageProcessor gets as far as calling checkRequest() for this context.
      */
     void setPolicyExecutionAttempted(boolean attempted);
+
+    /**
+     * Record an AuditContext that is/was associated with the processing of this PolicyEnforcementContext.
+     * <p/>
+     * Server assertions should not call this method.
+     *
+     * @param auditContext audit context to record, or null.
+     */
+    void setAuditContext(@Nullable AuditContext auditContext);
+
+    /**
+     * Get the AuditContext, if any, that is/was associated with the processing of this PolicyEnforcementContext.
+     * <p/>
+     * Server assertions should normally not attempt to use the audit context directly.
+     *
+     * @return audit context, or null.  May have already been flushed, if the MessageProcessor has already returned.
+     */
+    @Nullable AuditContext getAuditContext();
 
     /**
      * Add a task to the queue of tasks to perform in order when this context is closed.

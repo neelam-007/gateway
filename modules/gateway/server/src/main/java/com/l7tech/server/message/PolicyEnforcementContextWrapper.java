@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -20,6 +21,7 @@ import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Binding;
@@ -499,6 +501,16 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     @Override
     public void setPolicyExecutionAttempted( final boolean attempted ) {
         delegate.setPolicyExecutionAttempted( attempted );
+    }
+
+    @Override
+    public void setAuditContext(@Nullable AuditContext auditContext) {
+        delegate.setAuditContext(auditContext);
+    }
+
+    @Override
+    public AuditContext getAuditContext() {
+        return delegate.getAuditContext();
     }
 
     @Override

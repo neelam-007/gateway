@@ -26,10 +26,7 @@ import com.l7tech.security.xml.UnexpectedKeyInfoException;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.processor.*;
-import com.l7tech.server.audit.AuditContextFactory;
-import com.l7tech.server.audit.AuditLogFormatter;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.MessageSummaryAuditFactory;
+import com.l7tech.server.audit.*;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.MessageReceived;
 import com.l7tech.server.log.TrafficLogger;
@@ -211,6 +208,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             return auditContextFactory.doWithNewAuditContext(new Callable<AssertionStatus>() {
                  @Override
                  public AssertionStatus call() throws Exception {
+                     final AuditContext auditContext = AuditContextFactory.getCurrent();
+                     context.setAuditContext(auditContext);
                      try {
                          status[0] = reallyProcessMessage(context);
                          return status[0];
@@ -223,7 +222,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                          */
                          String[] ctxVariables = AuditLogFormatter.getContextVariablesUsed();
                          if (ctxVariables != null && ctxVariables.length > 0) {
-                             AuditContextFactory.getCurrent().setContextVariables(context.getVariableMap(ctxVariables, auditor));
+                             auditContext.setContextVariables(context.getVariableMap(ctxVariables, auditor));
                          }
                      }
                  }

@@ -710,7 +710,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                                                                 final String faultString,
                                                                 final String statusTextOverride,
                                                                 final boolean includeSuccesses) {
-        final AuditContext auditContext = AuditContextFactory.getCurrent();
+        final AuditContext auditContext = optional(pec.getAuditContext()).orSome(AuditContextFactory.getCurrent());
         String output = null;
         final boolean useSoap12 = isSoap12(pec);
         try {

@@ -59,8 +59,9 @@ public class AuditContextFactory {
     }
 
     /**
-     * @return the currently-active AuditContext for this thread. Never null, but may be a no-op AuditContext if nobody is currently listening.
+     * @return the currently-active AuditContext for this thread. Never null, but may be a no-op LogOnlyAuditContext if nobody is currently listening.
      */
+    @NotNull
     public static AuditContext getCurrent() {
         AuditContext context = currentAuditContext.get();
         if (context == null) {

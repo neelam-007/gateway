@@ -31,13 +31,13 @@ import com.l7tech.server.message.PolicyEnforcementContextWrapper;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.MockConfig;
 import com.l7tech.util.NameValuePair;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
-import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -613,6 +613,42 @@ public class SoapFaultManagerTest {
             }
            assertEquals( "Http Status", 500, faultInfo.getHttpStatus() );
            assertEquals( "SOAP 1.2 Content Type", ContentTypeHeader.SOAP_1_2_DEFAULT, faultInfo.getContentType() );
+    }
+
+
+    @Test
+    @BugNumber(12217)
+    public void testFullDetailFlushedAuditContext() throws Exception {
+        AuditContextStub stub = new AuditContextStub();
+        PolicyEnforcementContext context = getSoap11PEC(false);
+        SoapFaultManager sfm = buildSoapFaultManager(stub);
+        addAuditInfoExtraDetail(stub);
+        SoapFaultLevel level = new SoapFaultLevel();
+        level.setLevel(SoapFaultLevel.FULL_TRACE_FAULT);
+        level.setAlwaysReturnSoapFault(true);
+        context.setFaultlevel(level);
+
+        // Simulate audit context flush and pop from current context stack
+        context.setAuditContext(stub);
+        AuditContextFactoryStub.setCurrent(new AuditContextStub());
+
+        final SoapFaultManager.FaultResponse faultInfo = sfm.constructExceptionFault(constructException(), level, context);
+        String fault = faultInfo.getContent();
+        NodeList elements = getL7AddInfoNodeElements(fault);
+        assertTrue("contains l7:additionalInfo element", elements.getLength() > 0);
+        for(int i = 0;i < elements.getLength();i++) {
+            Element element = (Element)elements.item(i);
+            NodeList detailElements = element.getElementsByTagName("l7:detailMessage");
+            assertNotNull(detailElements);
+            assertTrue(detailElements.getLength() > 0);
+            for(int j = 0;j < detailElements.getLength();j++) {
+                Element detailElement = (Element)detailElements.item(j);
+                assertNotNull(detailElement);
+                assertTrue(detailElement.getAttribute("id").contains( "3017" ) || detailElement.getAttribute("id").contains( "3022" ) || detailElement.getAttribute("id").contains( "3025" ));
+            }
+
+        }
+        assertEquals( "Http Status", 500, faultInfo.getHttpStatus() );
     }
 
     /* Bug 9402 additional error detail for SOAP 1.1

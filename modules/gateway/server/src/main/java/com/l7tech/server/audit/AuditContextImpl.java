@@ -24,11 +24,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Holds the transient state of the audit system for the current thread.
+ * Holds the transient state of the audit system for the current operation on the current thread.
  *
- * Must be thread-local; not thread-safe in the slightest!  Note that AuditContext instances
- * are likely to be reused for many different messages through time on the same thread,
- * so users must always call {@link #flush()} when finished processing each message.
+ * Must be thread-local; not thread-safe in the slightest!
  * <p>
  * Call {@link #setCurrentRecord(com.l7tech.gateway.common.audit.AuditRecord)} to attach a single {@link AuditRecord} describing the SSG's current
  * operation to the context, and {@link AuditContext#addDetail(com.l7tech.gateway.common.audit.AuditDetail, Object)} to add zero or more {@link AuditDetail} records.
@@ -37,6 +35,9 @@ import java.util.logging.Logger;
  * added to the context will only be persisted to the database later, when {@link #flush} is called,
  * if their level meets or exceeds the corresponding threshold.  {@link SystemAuditRecord}s have no
  * minimum threshold; they are always persisted.
+ * <p/>
+ * This audit context implementation may not be reused once it has been flushed.  A new instance must be
+ * created for each operation.
  *
  * @see ServerConfig#getProperty(String)
  * @see ServerConfigParams#PARAM_AUDIT_ADMIN_THRESHOLD
@@ -82,6 +83,7 @@ public class AuditContextImpl implements AuditContext {
      * @param record the record to set
      */
     void setCurrentRecord(AuditRecord record) {
+        checkFlushed("setCurrentRecord");
         if (record == null) throw new NullPointerException();
         if (currentRecord != null) {
             throw new IllegalStateException("Only one audit record can be active at one time (existing is '"+currentRecord.getMessage()+"', new is '"+record.getMessage()+"')");
@@ -97,6 +99,7 @@ public class AuditContextImpl implements AuditContext {
 
     @Override
     public void addDetail( final AuditDetailWithInfo detailWithInfo ) {
+        checkFlushed("addDetail");
         if (detailWithInfo == null) throw new NullPointerException();
         final AuditDetail detail = detailWithInfo.getDetail();
 
@@ -117,6 +120,7 @@ public class AuditContextImpl implements AuditContext {
      * @param update    true if updating; false if creating
      */
     public void setUpdate(boolean update) {
+        checkFlushed("setUpdate");
         this.update = update;
     }
 
@@ -153,10 +157,16 @@ public class AuditContextImpl implements AuditContext {
      * Flushes the current {@link AuditRecord} and any associated
      * {@link AuditDetail} records to the database or audit sink policy.
      * <p>
-     * The context can be reused once this operation has completed.
+     * The context can not be flushed again once this operation has completed and should not be used to accumulate
+     * any new audit record or audit details.  The context contents can be inspected after it has been flushed, however.
      * </p>
      */
     void flush() {
+        if (flushed) {
+            throw new IllegalStateException("flush() called on already-flushed AuditContextImpl");
+        }
+        flushed = true;
+
         if (currentRecord == null) {
             if (!details.isEmpty()) {
                 logger.warning("flush() called with AuditDetails but no AuditRecord");
@@ -285,29 +295,7 @@ public class AuditContextImpl implements AuditContext {
             logger.log(Level.SEVERE, "Couldn't save audit records", e);
         } catch (UpdateException e) {
             logger.log(Level.SEVERE, "Couldn't update audit records", e);
-        } finally {
-            // Reinitialize in case this thread needs us again for a new request
-            clear();
         }
-    }
-
-    /**
-     * Clears the current {@link AuditRecord} and any associated {@link AuditDetail}
-     * records but without saving to the database or audit sink policy.
-     */
-    void clear() {
-        currentRecord = null;
-        currentAdminThreshold = null;
-        currentSystemClientThreshold = null;
-        currentAssociatedLogsThreshold = null;
-        currentUseAssociatedLogsThreshold = null;
-        currentMessageThreshold = null;
-        currentSignAuditSetting = null;
-        details.clear();
-        highestLevelYetSeen = Level.ALL;
-        ordinal = 0;
-        update = false;
-        //system = false;
     }
 
     private void outputRecord(final AuditRecord rec,
@@ -431,6 +419,7 @@ public class AuditContextImpl implements AuditContext {
      */
     @Override
     public void setContextVariables(Map<String, Object> variables) {
+        checkFlushed("setContextVariables");
         this.logFormatContextVariables = variables;
     }
 
@@ -602,6 +591,11 @@ public class AuditContextImpl implements AuditContext {
         return source;
     }
 
+    private void checkFlushed(String action) {
+        if (flushed)
+            throw new IllegalStateException("Unable to change audit context (" + action + ") - this context has already been flushed");
+    }
+
     private static final Logger logger = Logger.getLogger(AuditContextImpl.class.getName());
     private static final String CONFIG_AUDIT_SIGN = "auditSigningEnabled";
     private static final Boolean DEFAULT_AUDIT_SIGN = false;
@@ -628,6 +622,7 @@ public class AuditContextImpl implements AuditContext {
     private boolean update;
     private Level highestLevelYetSeen = Level.ALL;
     private volatile int ordinal = 0;
+    private boolean flushed = false;
 
     static final String MESSAGE_TOO_LARGE = "Message not audited, message size exceeds limit";
 

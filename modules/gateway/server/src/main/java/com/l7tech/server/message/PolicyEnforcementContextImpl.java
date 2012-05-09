@@ -21,6 +21,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.RequestIdGenerator;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
@@ -32,6 +33,7 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Binding;
@@ -84,6 +86,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private AssertionTraceListener traceListener = null;
     private PolicyMetadata policyMetadata = null;
     private PolicyMetadata servicePolicyMetadata = null;
+    private @Nullable AuditContext auditContext;
 
     protected PolicyEnforcementContextImpl(Message request, Message response) {
         super(request, response);
@@ -700,6 +703,17 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Override
     public void setPolicyExecutionAttempted(boolean policyTried) {
         this.policyExecutionAttempted = policyTried;
+    }
+
+    @Override
+    public void setAuditContext(@Nullable AuditContext auditContext) {
+        this.auditContext = auditContext;
+    }
+
+    @Override
+    @Nullable
+    public AuditContext getAuditContext() {
+        return auditContext;
     }
 
     /** @return true if the MessageProcessor got as far as calling checkRequest() for this context. */
