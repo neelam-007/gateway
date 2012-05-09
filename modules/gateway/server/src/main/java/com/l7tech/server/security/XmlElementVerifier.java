@@ -148,7 +148,7 @@ public class XmlElementVerifier {
 
         if (!validity.getCoreValidity()) {
             String infoMess = validity.getSignedInfoMessage();
-            if (!JdkLoggerConfigurator.debugState()) {
+            if (!JdkLoggerConfigurator.debugState() && infoMess != null) {
                 // Strip stack trace "helpfully" folded into the signed info message by XSS4J (Bug #12199)
                 infoMess = FAKE_STACK_TRACE_STRIPPER.matcher(infoMess).replaceFirst("");
             }
