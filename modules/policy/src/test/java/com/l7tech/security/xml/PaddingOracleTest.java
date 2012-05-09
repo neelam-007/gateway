@@ -33,7 +33,8 @@ public class PaddingOracleTest {
     private static final boolean log = ConfigFactory.getBooleanProperty( "com.l7tech.test.log", false );
 
     private static boolean SAVE_TIMING_DATA = SyspropUtil.getBoolean("com.l7tech.test.saveTimingData", false);
-    private static boolean SHOW_TIMING_HISTOGRAM = SyspropUtil.getBoolean("com.l7tech.test.showTimingHistogram", true);
+    private static boolean SHOW_TIMING_HISTOGRAM = SyspropUtil.getBoolean("com.l7tech.test.showTimingHistogram", false);
+    private static boolean RUN_FULL_TEST = SyspropUtil.getBoolean("com.l7tech.test.runFullPaddingOracleTest", false);
 
     private static final String SHORT_SOAP_MSG =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -83,7 +84,9 @@ public class PaddingOracleTest {
 
         Collection<Pair<Long,Integer>> times = new ArrayList<Pair<Long,Integer>>();
 
-        for (int i = 0; i < 2048; ++i) {
+        final int numIterations = RUN_FULL_TEST ? 4096 : 256;
+
+        for (int i = 0; i < numIterations; ++i) {
             // Create new encrypted key
             final Document stub = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
             encryptMessageForTarget(stub);
