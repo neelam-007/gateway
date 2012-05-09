@@ -36,36 +36,29 @@ public class ServerGenerateHashAssertion extends AbstractServerAssertion<Generat
 
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) {
-        AssertionStatus returnStatus = AssertionStatus.NONE;
-
         final Map<String, Object> vars = Collections.unmodifiableMap(context.getVariableMap(assertion.getVariablesUsed(), getAudit()));
-        if(ExpandVariables.isVariableReferencedNotFound(assertion.getDataToSignText(), vars, getAudit())){
+        if(ExpandVariables.isVariableReferencedNotFound(assertion.dataToSignText(), vars, getAudit())){
             logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Data to Sign");
-            returnStatus = AssertionStatus.FAILED;
+            return AssertionStatus.FAILED;
         }
-        else {
-            final String dataToSign = ExpandVariables.process(assertion.getDataToSignText(), vars, getAudit(), true);
 
-            final String algorithm = assertion.getAlgorithm();
-            final String variableName = assertion.getTargetOutputVariable();
+        final String dataToSign = ExpandVariables.process(assertion.dataToSignText(), vars, getAudit(), true);
+        final String algorithm = assertion.getAlgorithm();
+        final String variableName = assertion.getTargetOutputVariable();
 
-            if (dataToSign == null) {
-                logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Data to Sign");
-                returnStatus = AssertionStatus.FAILED;
-            }
-            if (algorithm == null || algorithm.trim().isEmpty()) {
-                logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Algorithm");
-                returnStatus = AssertionStatus.FAILED;
-            }
-            if (variableName == null || variableName.trim().isEmpty()) {
-                logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Output Variable");
-                returnStatus = AssertionStatus.FAILED;
-            }
-            if (returnStatus == AssertionStatus.NONE) {
-                returnStatus = signData(context, algorithm, dataToSign, variableName);
-            }
+        if (dataToSign == null) {
+            logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Data to Sign");
+            return AssertionStatus.FAILED;
         }
-        return returnStatus;
+        if (algorithm == null || algorithm.trim().isEmpty()) {
+            logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Algorithm");
+            return AssertionStatus.FAILED;
+        }
+        if (variableName == null || variableName.trim().isEmpty()) {
+            logAndAudit(AssertionMessages.GENERATE_HASH_VARIABLE_NOT_SET, "Output Variable");
+            return   AssertionStatus.FAILED;
+        }
+        return signData(context, algorithm, dataToSign, variableName);
     }
 
     /**

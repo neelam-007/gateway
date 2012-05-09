@@ -4,6 +4,8 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,8 +54,8 @@ public class GenerateHashAssertion extends Assertion implements UsesVariables, S
 
     private static final String META_INITIALIZED = GenerateHashAssertion.class.getName() + ".metadataInitialized";
 
+    private String base64Data;
     private String keyText;
-    private String dataToSignText;
     private String targetOutputVariable = DEFAULT_VARIABLE_NAME;
     private String algorithm = DEFAULT_ALGORITHM;
 
@@ -72,6 +74,8 @@ public class GenerateHashAssertion extends Assertion implements UsesVariables, S
         l.add("SHA-512");
         SUPPORTED_ALGORITHM = Collections.unmodifiableList(l);
     }
+
+    private LineBreak lineBreak;
 
     /**
      * 
@@ -117,8 +121,11 @@ public class GenerateHashAssertion extends Assertion implements UsesVariables, S
      * 
      * @return the non-binary data to sign.
      */
-    public String getDataToSignText() {
-        return dataToSignText;
+    public String dataToSignText() {
+        if(base64Data != null){
+            return new String(HexUtils.decodeBase64(base64Data, true), Charsets.UTF8);
+        }
+        return base64Data;
     }
 
     /**
@@ -126,7 +133,24 @@ public class GenerateHashAssertion extends Assertion implements UsesVariables, S
      * @param dataToSignText the non-binary data to sign.
      */
     public void setDataToSignText(final String dataToSignText) {
-        this.dataToSignText = dataToSignText;
+        if(dataToSignText != null){
+            setBase64Data(HexUtils.encodeBase64(HexUtils.encodeUtf8(dataToSignText), true));
+        }
+    }
+
+    /**
+     *
+     * @return the base 64 encoded data.
+     */
+    public String getBase64Data() {
+        return base64Data;
+    }
+
+    /**
+     * @param base64Data the base 64 encoded text data.
+     */
+    public void setBase64Data(final String base64Data) {
+        this.base64Data = base64Data;
     }
 
     /**
@@ -145,11 +169,27 @@ public class GenerateHashAssertion extends Assertion implements UsesVariables, S
         this.algorithm = algorithm;
     }
 
+    /**
+     *
+     * @return the line break character.
+     */
+    public LineBreak getLineBreak() {
+        return lineBreak;
+    }
+
+    /**
+     *
+     * @param lineBreak the line break character to use.
+     */
+    public void setLineBreak(final LineBreak lineBreak) {
+        this.lineBreak = lineBreak;
+    }
+
     @Override
     public String[] getVariablesUsed() {
         final StringBuilder sb = new StringBuilder();
         sb.append(this.getKeyText());
-        sb.append(" ").append(getDataToSignText());
+        sb.append(" ").append(dataToSignText());
         return Syntax.getReferencedNames(sb.toString());
     }
 
