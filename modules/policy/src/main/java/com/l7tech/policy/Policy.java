@@ -157,6 +157,7 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
 
     public synchronized void setXml(String xml) {
         checkLocked();
+        assert xml == null || xml.length() < 1 || xml.trim().length() < 1 || xml.trim().charAt(0) == xml.charAt(0);
         this.xml = xml;
         this.assertion = null;
     }
