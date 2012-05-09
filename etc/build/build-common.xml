@@ -510,6 +510,7 @@
                forkmode="once" 
                errorproperty="test.error"
                failureproperty="test.failure">
+            <jvmarg value="-ea"/>
             <jvmarg value="-XX:MaxPermSize=256m"/>
 
             <classpath>

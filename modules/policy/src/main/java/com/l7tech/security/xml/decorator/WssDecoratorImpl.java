@@ -378,8 +378,6 @@ public class WssDecoratorImpl implements WssDecorator {
             if (relocateEncryptedUsernameToken) {
                 Element encryptedUsernameToken = c.wholeElementPlaintextToEncryptedMap.get(usernameToken);
                 assert encryptedUsernameToken != null;
-                assert xencDesiredNextSibling != null;
-                assert xencDesiredNextSibling.getParentNode() != null;
                 securityHeader.removeChild(encryptedUsernameToken);
                 securityHeader.insertBefore(encryptedUsernameToken, xencDesiredNextSibling);
             }
