@@ -73,4 +73,12 @@ public interface AuthenticatingIdentityProvider<UT extends User, GT extends Grou
      * @return the certificate or null if not found.
      */
     X509Certificate findCertByThumbprintSHA1(final String thumbprintSHA1) throws FindException;
+
+    /**
+     * Lookup a certificate from this provider by its Subject DN.
+     *
+     * @param subjectDn the certificate subject's X500Principal.  Required.
+     * @return the certificate or null if not found.
+     */
+    X509Certificate findCertBySubjectDn( final X500Principal subjectDn ) throws FindException;
 }

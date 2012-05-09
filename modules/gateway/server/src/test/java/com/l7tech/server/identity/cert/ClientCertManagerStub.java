@@ -43,6 +43,11 @@ public class ClientCertManagerStub implements ClientCertManager {
         throw new RuntimeException("Not implemented");
     }
 
+    @Override
+    public List<CertEntryRow> findBySubjectDn(X500Principal subjectDn) throws FindException {
+        throw new RuntimeException("Not implemented");
+    }
+
     /**
      * retrieves existing cert for this user
      */

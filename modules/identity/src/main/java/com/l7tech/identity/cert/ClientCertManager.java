@@ -89,6 +89,8 @@ public interface ClientCertManager {
 
     List<CertEntryRow> findByIssuerAndSerial(X500Principal issuer, BigInteger serial) throws FindException;
 
+    List<CertEntryRow> findBySubjectDn(X500Principal subjectDn) throws FindException;
+
     /**
      * Get information on all existing keys.
      *

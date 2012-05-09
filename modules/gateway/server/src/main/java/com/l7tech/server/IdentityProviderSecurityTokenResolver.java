@@ -7,6 +7,7 @@ import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.security.auth.x500.X500Principal;
@@ -33,18 +34,30 @@ public class IdentityProviderSecurityTokenResolver extends SecurityTokenResolver
     }
 
     @Override
+    public X509Certificate lookupByKeyName(String keyName) {
+        final X500Principal dn;
+        try {
+            dn = new X500Principal(keyName);
+        } catch (IllegalArgumentException e) {
+            logger.log(Level.FINE, "keyName not a valid DN -- assuming no match");
+            return null;
+        }
+        return doLookup( null, null, null, null, dn);
+    }
+
+    @Override
     public X509Certificate lookupByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
-        return doLookup( issuer, serial, null, null );
+        return doLookup( issuer, serial, null, null, null );
     }
 
     @Override
     public X509Certificate lookupBySki( final String ski ) {
-        return doLookup( null, null, ski, null );
+        return doLookup( null, null, ski, null, null );
     }
 
     @Override
     public X509Certificate lookup( final String thumbprint ) {
-        return doLookup( null, null, null, thumbprint );
+        return doLookup( null, null, null, thumbprint, null );
     }
 
     @Override
@@ -101,7 +114,7 @@ public class IdentityProviderSecurityTokenResolver extends SecurityTokenResolver
         return authProvider;
     }
 
-    private X509Certificate doLookup( final X500Principal issuer, final BigInteger serial, final String ski, final String thumbprint ) {
+    private X509Certificate doLookup( @Nullable final X500Principal issuer, @Nullable final BigInteger serial, @Nullable final String ski, @Nullable final String thumbprint, @Nullable final X500Principal subject ) {
         X509Certificate certificate = null;
 
         for (Long providerOid : providers) {
@@ -114,6 +127,8 @@ public class IdentityProviderSecurityTokenResolver extends SecurityTokenResolver
                         certificate = provider.findCertBySki( ski );
                     } else if ( thumbprint != null ) {
                         certificate = provider.findCertByThumbprintSHA1( thumbprint );
+                    } else if ( subject != null ) {
+                        certificate = provider.findCertBySubjectDn( subject );
                     }
 
                     if ( certificate != null ) break;

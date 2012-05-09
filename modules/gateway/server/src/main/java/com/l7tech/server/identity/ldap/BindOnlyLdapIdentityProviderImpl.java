@@ -87,6 +87,11 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
     }
 
     @Override
+    public X509Certificate findCertBySubjectDn(X500Principal subjectDn) throws FindException {
+        return null;
+    }
+
+    @Override
     public void setIdentityProviderConfig(IdentityProviderConfig configuration) throws InvalidIdProviderCfgException {
         this.config = (BindOnlyLdapIdentityProviderConfig) configuration;
         userManager.configure(this);

@@ -115,6 +115,21 @@ class LdapCertificateCache implements Lifecycle {
         return lookedupCert;
     }
 
+    X509Certificate findCertBySubjectDn( final X500Principal subjectDn ) {
+        X509Certificate lookedupCert = null;
+
+        // look for presence of cert in index
+        CertIndex index = certIndexRef.get();
+        CertCacheKey certCacheKey = index.getCertCacheKeyByCanonicalSubjectDn( subjectDn.getName(X500Principal.CANONICAL) );
+
+        if ( certCacheKey != null ) {
+            final Pair<String, X509Certificate> result = getCertificateByKey(certCacheKey);
+            lookedupCert = result == null ? null : result.right;
+        }
+
+        return lookedupCert;
+    }
+
     String findUserDnByCert( final X509Certificate cert ) throws FindException, CertificateEncodingException {
         String userDn = null;
 
@@ -334,6 +349,7 @@ class LdapCertificateCache implements Lifecycle {
                 new HashMap<Pair<String, String>, CertCacheKey>(),
                 new HashMap<String, CertCacheKey>(),
                 new HashMap<String, CertCacheKey>(),
+                new HashMap<String, CertCacheKey>(),
                 false);
 
         try {
@@ -437,22 +453,32 @@ class LdapCertificateCache implements Lifecycle {
          */
         private final Map<String, CertCacheKey> certIndexByThumbprintSHA1;
 
+        /**
+         * This is a map which indexes the DN of LDAP entries for the entry's certificate Subject DN in RFC 2253 "CANONICAL" string format.
+         * Key: a string, Subject DN in X500Principal.CANONICAL format
+         * Value: the DN of the LDAP entry containing the certificate and the certificates thumbprint
+         */
+        private final Map<String, CertCacheKey> certIndexByCanonicalSubjectDn;
+
         private final boolean immutable;
 
         protected CertIndex() {
             this.certIndexByIssuerSerial = new ConcurrentHashMap<Pair<String, String>, CertCacheKey>();
             this.certIndexBySki = new ConcurrentHashMap<String, CertCacheKey>();
             this.certIndexByThumbprintSHA1 = new ConcurrentHashMap<String, CertCacheKey>();
+            this.certIndexByCanonicalSubjectDn = new ConcurrentHashMap<String, CertCacheKey>();
             this.immutable = false;
         }
 
         protected CertIndex( final Map<Pair<String, String>, CertCacheKey> certIndexByIssuerSerial,
                              final Map<String, CertCacheKey> certIndexBySki,
                              final Map<String, CertCacheKey> certIndexByThumbprintSHA1,
+                             final Map<String, CertCacheKey> certIndexByCanonicalSubjectDn,
                              final boolean immutable ) {
             this.certIndexByIssuerSerial = certIndexByIssuerSerial;
             this.certIndexBySki = certIndexBySki;
             this.certIndexByThumbprintSHA1 = certIndexByThumbprintSHA1;
+            this.certIndexByCanonicalSubjectDn = certIndexByCanonicalSubjectDn;
             this.immutable = immutable;
         }
 
@@ -467,6 +493,10 @@ class LdapCertificateCache implements Lifecycle {
 
         protected CertCacheKey getCertCacheKeyByThumbprintSHA1( final String thumbprintSHA1 ) {
             return certIndexByThumbprintSHA1.get(thumbprintSHA1);
+        }
+
+        protected CertCacheKey getCertCacheKeyByCanonicalSubjectDn( final String canonicalSubjectDn ) {
+            return certIndexByCanonicalSubjectDn.get(canonicalSubjectDn);
         }
 
         protected CertCacheKey addCertificateToIndexes( final String dn,
@@ -493,6 +523,10 @@ class LdapCertificateCache implements Lifecycle {
 
                 logger.finer("Indexing certificate by thumbprintSHA1 " + thumbprintSHA1 + " for " + dn);
                 certIndexByThumbprintSHA1.put(thumbprintSHA1, certCacheKey);
+
+                String canonicalSubjectDn = cert.getSubjectX500Principal().getName(X500Principal.CANONICAL);
+                logger.finer("Indexing certificate by canonicalSubjectDn " + canonicalSubjectDn + " for " + dn);
+                certIndexByCanonicalSubjectDn.put(canonicalSubjectDn, certCacheKey);
             }
 
             return certCacheKey;
@@ -515,6 +549,7 @@ class LdapCertificateCache implements Lifecycle {
                     Collections.unmodifiableMap(certIndexByIssuerSerial),
                     Collections.unmodifiableMap(certIndexBySki),
                     Collections.unmodifiableMap(certIndexByThumbprintSHA1),
+                    Collections.unmodifiableMap(certIndexByCanonicalSubjectDn),
                     true);
         }
 

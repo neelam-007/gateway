@@ -30,6 +30,8 @@ class MockClientCertManager( entries: Seq[CertEntryRow] ) extends ClientCertMana
 
   def findByThumbprint(thumbprint: String) = JavaConversions.seqAsJavaList(entries.filter(entry => thumbprint.equals(entry.getThumbprintSha1)))
 
+  def findBySubjectDn(subjectDn: X500Principal) = JavaConversions.seqAsJavaList(entries.filter(entry => subjectDn.getName.equals(entry.getSubjectDn)))
+
   def forbidCertReset(user: User) {}
 
   def getUserCert(user: User) = entries.find(entry => entry.getUserId.equals(user.getId) && entry.getProvider==user.getProviderId).map(_.getCertificate).orNull

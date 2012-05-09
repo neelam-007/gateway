@@ -285,6 +285,12 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     }
 
     @Override
+    @Transactional(readOnly=true)
+    public List<CertEntryRow> findBySubjectDn(X500Principal subjectDn) throws FindException {
+        return simpleQuery("subjectDn", CertUtils.getDN(subjectDn)); // TODO use only CANONICAL format for this lookup and in the DB
+    }
+
+    @Override
     public List<CertInfo> findAll() throws FindException {
         List<CertInfo> allCerts = new ArrayList<CertInfo>();
 

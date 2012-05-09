@@ -157,6 +157,11 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
     }
 
     @Override
+    public X509Certificate findCertBySubjectDn(X500Principal subjectDn) throws FindException {
+        return null;
+    }
+
+    @Override
     public IdentityProviderConfig getConfig() {
         return config;
     }

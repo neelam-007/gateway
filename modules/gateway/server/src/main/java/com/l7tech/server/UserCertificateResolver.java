@@ -3,8 +3,8 @@
  */
 package com.l7tech.server;
 
-import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.CertEntryRow;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.X509Entity;
 import com.l7tech.security.xml.SecurityTokenResolver;
@@ -12,7 +12,8 @@ import com.l7tech.security.xml.SecurityTokenResolver;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Looks up any user certificate known to the SSG by a variety of search criteria.
@@ -70,8 +71,29 @@ public class UserCertificateResolver extends SecurityTokenResolverSupport implem
         }
     }
 
+    @Override
+    public X509Certificate lookupByKeyName(String keyName) {
+        final X500Principal dn;
+        try {
+            dn = new X500Principal(keyName);
+        } catch (IllegalArgumentException e) {
+            logger.fine("keyName is not a valid X500Principal string -- assuming no match");
+            return null;
+        }
+
+        try {
+            List<? extends X509Entity> got = clientCertManager.findBySubjectDn(dn);
+            if (got != null && got.size() >= 1)
+                return got.get(0).getCertificate();
+
+            return null;
+        } catch (FindException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     //- PRIVATE
 
     private final ClientCertManager clientCertManager;
-    
+    private static final Logger logger = Logger.getLogger(UserCertificateResolver.class.getName());
 }

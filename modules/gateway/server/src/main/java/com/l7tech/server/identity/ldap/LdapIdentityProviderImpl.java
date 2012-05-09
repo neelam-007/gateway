@@ -411,6 +411,17 @@ public class LdapIdentityProviderImpl
         return lookedupCert;
     }
 
+    @Override
+    public X509Certificate findCertBySubjectDn( final X500Principal subjectDn ) throws FindException {
+        X509Certificate lookedupCert = null;
+
+        if ( certsAreEnabled() ) {
+            lookedupCert = ldapCertificateCache.findCertBySubjectDn( subjectDn );
+        }
+
+        return lookedupCert;
+    }
+
     private X509Certificate getCertificateBySki( final String ski ) {
         X509Certificate certificate = null;
 

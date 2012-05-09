@@ -103,6 +103,11 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
     }
 
     @Override
+    public X509Certificate findCertBySubjectDn(X500Principal subjectDn) throws FindException {
+        return processCertificateSearch( clientCertManager.findBySubjectDn(subjectDn) );
+    }
+
+    @Override
     public AuthenticationResult authenticate(LoginCredentials pc, boolean allowUserUpgrade) throws AuthenticationException {
         return authenticate(pc);
     }
