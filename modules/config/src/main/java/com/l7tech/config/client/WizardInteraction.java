@@ -11,7 +11,9 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,17 +46,15 @@ public class WizardInteraction extends ConfigurationInteraction {
         }
         println();
         String group = null;
-        String skipGroupId = null;
+        final Set<String> skipGroupIds = new HashSet<String>();
         Option[] options = optionSet.getOptions().toArray( new Option[optionSet.getOptions().size()] );
         for ( int i=0; i<options.length; i++ ) {
             Option option = options[i];
             currentIndex = i;
             
             // check if we are skipping options in the group
-            if ( skipGroupId != null && skipGroupId.equals( option.getGroup() ) ) {
+            if ( skipGroupIds.contains( option.getGroup() ) ) {
                 continue;
-            } else {
-                skipGroupId = null;
             }
             
             try {
@@ -63,6 +63,14 @@ public class WizardInteraction extends ConfigurationInteraction {
                     group = option.getGroup();
                     OptionGroup optionGroup = optionSet.getOptionGroup( option.getGroup()  );
                     if ( optionGroup != null ) {
+                        if ( !optionGroup.isRequired() && skipGroupIds.contains( optionGroup.getGroup() ) ) {
+                            // then the parent group was skipped so skip this one too
+                            skipGroupIds.add( optionGroup.getId() );
+                            continue;
+                        } else {
+                            skipGroupIds.remove( optionGroup.getId() );
+                        }
+
                         if ( optionGroup.getPrompt() != null ) {
                             println( optionGroup.getPrompt() );
                         }
@@ -73,9 +81,11 @@ public class WizardInteraction extends ConfigurationInteraction {
                             println();
 
                             if ( !promptConfirm( optionGroup.getDescription() + "?", false ) ) {
-                                skipGroupId = optionGroup.getId();
+                                skipGroupIds.add( optionGroup.getId() );
                                 previousOptions.push(i);
                                 continue;
+                            } else {
+                                skipGroupIds.remove( optionGroup.getId() );
                             }
                         }
                     } else {

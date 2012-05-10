@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.setup;
 
+import com.l7tech.server.util.DerbyDbHelper;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.springframework.core.io.Resource;
@@ -96,7 +97,7 @@ public class SchemaUpdaterImpl extends JdbcDaoSupport implements SchemaUpdater {
         Connection connection = null;
         try {
             connection = getConnection();
-            SetupManagerImpl.runScripts( connection, resources( scriptsBySchemaVersion, fromVersion, toVersion ), false );
+            DerbyDbHelper.runScripts( connection, resources( scriptsBySchemaVersion, fromVersion, toVersion ), false );
         } catch ( SQLException e ) {
             throw new SchemaUpgradeException("Error updating database schema '"+ ExceptionUtils.getMessage(e) +"'", e);
         } finally {

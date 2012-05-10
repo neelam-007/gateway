@@ -17,12 +17,13 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
 import org.apache.cxf.interceptor.InInterceptors;
 import org.apache.cxf.interceptor.OutFaultInterceptors;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.jws.WebService;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
@@ -86,12 +87,8 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         SoftwareVersion nodeVersion = versions.get(0);
 
         DatabaseConfig[] configs = getDatabaseConfigurations( nodeConfig );
-        DatabaseConfig databaseConfig = configs[0];
-        DatabaseConfig failoverDatabaseConfig = configs[1];
-
-        if ( databaseConfig == null ) {
-            throw new SaveException( "Database configuration is required." );
-        }
+        final Option<DatabaseConfig> databaseConfig = optional(configs[0]);
+        final Option<DatabaseConfig> failoverDatabaseConfig = optional(configs[1]);
 
         final PCNodeConfig node = new PCNodeConfig();
         node.setEnabled(enabled);
@@ -99,11 +96,11 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         node.setSoftwareVersion(nodeVersion);
         node.setHost(configService.getHost());
         node.setClusterHostname(clusterHostname);
-        node.getDatabases().add(databaseConfig);
-        node.getDatabases().add(failoverDatabaseConfig);
+        node.getDatabases().addAll(databaseConfig.toList());
+        node.getDatabases().addAll(failoverDatabaseConfig.toList());
 
         try {
-            String guid = NodeConfigurationManager.configureGatewayNode( newNodeName, enabled, clusterPassphrase, databaseConfig, failoverDatabaseConfig );
+            String guid = NodeConfigurationManager.configureGatewayNode( newNodeName, enabled, clusterPassphrase, true, databaseConfig, failoverDatabaseConfig );
             node.setGuid( guid );
         } catch (NodeConfigurationManager.NodeConfigurationException nce) {
             logger.log(Level.WARNING, "Error during node configuration '"+ExceptionUtils.getMessage(nce)+"'.", ExceptionUtils.getDebugException(nce) );
@@ -167,11 +164,11 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         } catch (SaveException se) {
             throw new UpdateException( se.getMessage() );
         }
-        DatabaseConfig databaseConfig = configs[0];
-        DatabaseConfig failoverDatabaseConfig = configs[1];
+        final Option<DatabaseConfig> databaseConfig = optional(configs[0]);
+        final Option<DatabaseConfig> failoverDatabaseConfig = optional(configs[1]);
 
         try {
-            NodeConfigurationManager.configureGatewayNode( nodeName, node.isEnabled(), clusterPassphrase, databaseConfig, failoverDatabaseConfig  );
+            NodeConfigurationManager.configureGatewayNode( nodeName, node.isEnabled(), clusterPassphrase, true, databaseConfig, failoverDatabaseConfig  );
         } catch (NodeConfigurationManager.NodeConfigurationException nce) {
             logger.log(Level.WARNING, "Error during node configuration '"+ExceptionUtils.getMessage(nce)+"'.", ExceptionUtils.getDebugException(nce) );
             throw new UpdateException( "Error during node configuration '"+ExceptionUtils.getMessage(nce)+"'");
@@ -257,7 +254,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     @Override
     public void createDatabase(String nodeName, DatabaseConfig dbconfig, Collection<String> dbHosts, String adminLogin, String adminPassword, String clusterHostname) throws DatabaseCreationException {
         try {
-            NodeConfigurationManager.createDatabase(nodeName, dbconfig, dbHosts, adminLogin, adminPassword, clusterHostname);
+            NodeConfigurationManager.createDatabase(nodeName, optional(dbconfig), dbHosts, adminLogin, adminPassword, clusterHostname);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Error creating database for '"+nodeName+"'.", e );
             throw new DatabaseCreationException(ExceptionUtils.getMessage(e));

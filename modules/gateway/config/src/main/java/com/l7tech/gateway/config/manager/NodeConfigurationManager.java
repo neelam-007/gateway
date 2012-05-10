@@ -1,33 +1,30 @@
 package com.l7tech.gateway.config.manager;
 
-import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.gateway.config.manager.db.ClusterPropertyUtil;
+import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.PCNodeConfig;
-import com.l7tech.util.BuildInfo;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.HexUtils;
+import com.l7tech.util.*;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.net.UnknownHostException;
 import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.SQLException;
+
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.some;
 
 /**
  * Manages configuration for a node.
@@ -102,8 +99,9 @@ public class NodeConfigurationManager {
     public static String configureGatewayNode( final String name,
                                                final Boolean enabled,
                                                final String clusterPassword,
-                                               final DatabaseConfig databaseConfig,
-                                               final DatabaseConfig database2ndConfig ) throws IOException, NodeConfigurationException {
+                                               final boolean updateDbConfig,
+                                               @NotNull final Option<DatabaseConfig> databaseConfig,
+                                               @NotNull final Option<DatabaseConfig> database2ndConfig ) throws IOException, NodeConfigurationException {
         String nodeid;
         String nodeName = name;
         if ( nodeName == null ) {
@@ -118,15 +116,15 @@ public class NodeConfigurationManager {
         }
 
         // Validate DB
-        if ( databaseConfig != null && databaseConfig.getNodePassword() != null ) {
-            if ( databaseConfig.getHost() == null ) throw new CausedIOException("Database host is required.");
-            if ( databaseConfig.getPort() == 0 ) throw new CausedIOException("Database port is required.");
-            if ( databaseConfig.getName() == null ) throw new CausedIOException("Database name is required.");
-            if ( databaseConfig.getNodeUsername() == null ) throw new CausedIOException("Database username is required.");
+        if ( updateDbConfig && databaseConfig.isSome() && databaseConfig.some().getNodePassword() != null ) {
+            if ( databaseConfig.some().getHost() == null ) throw new CausedIOException("Database host is required.");
+            if ( databaseConfig.some().getPort() == 0 ) throw new CausedIOException("Database port is required.");
+            if ( databaseConfig.some().getName() == null ) throw new CausedIOException("Database name is required.");
+            if ( databaseConfig.some().getNodeUsername() == null ) throw new CausedIOException("Database username is required.");
 
-            testDBConfig( databaseConfig );
+            testDBConfig( databaseConfig.some() );
 
-            String dbVersion = dbActions.checkDbVersion( databaseConfig );
+            String dbVersion = dbActions.checkDbVersion( databaseConfig.some() );
             if ( dbVersion != null && !dbVersion.equals(BuildInfo.getFormalProductVersion()) ) {
                 throw new NodeConfigurationException("Database version mismatch '"+dbVersion+"'.");
             } else if ( dbVersion == null ) {
@@ -159,7 +157,7 @@ public class NodeConfigurationManager {
             nodeid = props.getString(NODEPROPERTIES_ID);
         } else {
             // validate that we have enough settings to create a valid configuration
-            if ( clusterPassword == null || databaseConfig == null ) {
+            if ( clusterPassword == null || !updateDbConfig ) {
                 throw new NodeConfigurationException("Missing configuration parameters, cannot create new configuration for node '"+nodeName+"'.");
             }
 
@@ -168,29 +166,31 @@ public class NodeConfigurationManager {
         }
 
         MasterPasswordManager mpm = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(configDirectory, "omp.dat") ) );
-        String encDatabasePassword = databaseConfig==null || databaseConfig.getNodePassword()==null ? null : mpm.encryptPassword( databaseConfig.getNodePassword().toCharArray() );
+        String encDatabasePassword = !databaseConfig.isSome() || databaseConfig.some().getNodePassword()==null ? null : mpm.encryptPassword( databaseConfig.some().getNodePassword().toCharArray() );
         String encClusterPassword = clusterPassword==null ? null : mpm.encryptPassword( clusterPassword.toCharArray() );
 
         setPropertyIfNotNull( props, NODEPROPERTIES_ID, nodeid );
         setPropertyIfNotNull( props, NODEPROPERTIES_ENABLED, setEnabled );
         setPropertyIfNotNull( props, NODEPROPERTIES_CLUSTPROP, encClusterPassword );
-        if ( databaseConfig != null ) {
-            if ( databaseConfig.getNodePassword() != null ) {
-                setPropertyIfNotNull( props, "node.db.config.main.host", databaseConfig.getHost() );
-                setPropertyIfNotNull( props, "node.db.config.main.port", Integer.toString(databaseConfig.getPort()) );
-                setPropertyIfNotNull( props, "node.db.config.main.name", databaseConfig.getName() );
-                setPropertyIfNotNull( props, "node.db.config.main.user", databaseConfig.getNodeUsername() );
+        if ( updateDbConfig && databaseConfig.isSome() ) {
+            props.clearProperty("node.db.type");
+
+            if ( databaseConfig.some().getNodePassword() != null ) {
+                setPropertyIfNotNull( props, "node.db.config.main.host", databaseConfig.some().getHost() );
+                setPropertyIfNotNull( props, "node.db.config.main.port", Integer.toString(databaseConfig.some().getPort()) );
+                setPropertyIfNotNull( props, "node.db.config.main.name", databaseConfig.some().getName() );
+                setPropertyIfNotNull( props, "node.db.config.main.user", databaseConfig.some().getNodeUsername() );
                 setPropertyIfNotNull( props, "node.db.config.main.pass", encDatabasePassword );
             }
 
-            if ( database2ndConfig != null ) {
+            if ( database2ndConfig.isSome() ) {
                 props.setProperty(NODEPROPERTIES_DB_CLUSTYPE, "replicated" );
                 props.setProperty(NODEPROPERTIES_DB_CONFIGS, "main,failover");
                 props.setProperty("node.db.config.main.type", NodeConfig.ClusterType.REPL_MASTER);
                 props.setProperty("node.db.config.failover.inheritFrom", "main");
                 props.setProperty("node.db.config.failover.type", NodeConfig.ClusterType.REPL_SLAVE);
-                setPropertyIfNotNull( props, "node.db.config.failover.host", database2ndConfig.getHost() );
-                setPropertyIfNotNull( props, "node.db.config.failover.port", Integer.toString(database2ndConfig.getPort()) );
+                setPropertyIfNotNull( props, "node.db.config.failover.host", database2ndConfig.some().getHost() );
+                setPropertyIfNotNull( props, "node.db.config.failover.port", Integer.toString( database2ndConfig.some().getPort() ) );
             } else {
                 props.clearProperty(NODEPROPERTIES_DB_CLUSTYPE);
                 props.clearProperty(NODEPROPERTIES_DB_CONFIGS);
@@ -200,6 +200,8 @@ public class NodeConfigurationManager {
                 props.clearProperty("node.db.config.failover.port");
                 props.clearProperty("node.db.config.failover.type");
             }
+        } else if (updateDbConfig) {
+            props.setProperty( "node.db.type", "derby" );
         }
 
         FileOutputStream origFos = null;
@@ -225,14 +227,14 @@ public class NodeConfigurationManager {
      * @param databaseConfig The database to connect to to load the node identifier.
      */
     public static String loadOrCreateNodeIdentifier( final String nodeName,
-                                                     final DatabaseConfig databaseConfig,
+                                                     final Option<DatabaseConfig> databaseConfig,
                                                      final boolean allowDbFail ) throws IOException {
         String nodeid = null;
 
         // Check for existing GUID
-        if ( "default".equals( nodeName ) ) {
+        if ( "default".equals( nodeName ) && databaseConfig.isSome() ) {
             try {
-                nodeid = dbActions.getNodeIdForMac( databaseConfig, getMacAddresses() );
+                nodeid = dbActions.getNodeIdForMac( databaseConfig.some(), getMacAddresses() );
             } catch (SQLException e) {
                 if ( !allowDbFail )
                     throw new CausedIOException("Error checking for existing nodeid for this server.", e);
@@ -271,40 +273,51 @@ public class NodeConfigurationManager {
      * @param clusterHostname the external hostname for the cluster
      */
     public static void createDatabase( final String nodeName,
-                                       final DatabaseConfig databaseConfig,
+                                       final Option<DatabaseConfig> databaseConfig,
                                        final Collection<String> extraGrantHosts,
                                        final String adminLogin,
                                        final String adminPassword,
                                        final String clusterHostname )
         throws IOException {
-        final DatabaseConfig localConfig;
-        try {
-            // If the host is localhost then use that when connecting
-            if ( NetworkInterface.getByInetAddress(InetAddress.getByName(databaseConfig.getHost())) != null ) {
-                localConfig = new DatabaseConfig(databaseConfig);
-                localConfig.setHost("localhost");
-            } else {
-                localConfig = databaseConfig;
+        final Option<DatabaseConfig> localConfig;
+        if ( databaseConfig.isSome() ) {
+            try {
+                // If the host is localhost then use that when connecting
+                if ( NetworkInterface.getByInetAddress(InetAddress.getByName(databaseConfig.some().getHost())) != null ) {
+                    localConfig = some(new DatabaseConfig(databaseConfig.some()));
+                    localConfig.some().setHost( "localhost" );
+                } else {
+                    localConfig = databaseConfig;
+                }
+            } catch ( UnknownHostException uhe ) {
+                throw new CausedIOException("Could not resolve host '"+databaseConfig.some().getHost()+"'.");
             }
-        } catch ( UnknownHostException uhe ) {
-            throw new CausedIOException("Could not resolve host '"+databaseConfig.getHost()+"'.");
+        } else {
+            localConfig = none();
         }
 
-        Set<String> hosts = new HashSet<String>();
-        hosts.add( databaseConfig.getHost() );
-        if (extraGrantHosts != null) hosts.addAll(extraGrantHosts);
+        if ( databaseConfig.isSome() ) {
+            Set<String> hosts = new HashSet<String>();
+            hosts.add( databaseConfig.some().getHost() );
+            if (extraGrantHosts != null) hosts.addAll(extraGrantHosts);
 
-        String pathToSqlScript = MessageFormat.format( sqlPath, nodeName );
+            String pathToSqlScript = MessageFormat.format( sqlPath, nodeName );
 
-        DBActions.DBActionsResult res = dbActions.createDb(localConfig, hosts, new File(nodesDir,pathToSqlScript).getAbsolutePath(), false);
-        if ( res.getStatus() != DBActions.StatusType.SUCCESS ) {
-            throw new CausedIOException(MessageFormat.format("Cannot create database: ''{2}'' [code:{0}, {1}]",
-                    res.getStatus().getCode(), res.getStatus(), res.getErrorMessage() == null ? "" : res.getErrorMessage() ), res.getThrown());
-        }
+            DBActions.DBActionsResult res = dbActions.createDb(localConfig.some(), hosts, new File(nodesDir,pathToSqlScript).getAbsolutePath(), false);
+            if ( res.getStatus() != DBActions.StatusType.SUCCESS ) {
+                throw new CausedIOException(MessageFormat.format("Cannot create database: ''{2}'' [code:{0}, {1}]",
+                        res.getStatus().getCode(), res.getStatus(), res.getErrorMessage() == null ? "" : res.getErrorMessage() ), res.getThrown());
+            }
 
-        AccountReset.resetAccount(databaseConfig, adminLogin, adminPassword);
-        if ( clusterHostname != null ) {
-            ClusterPropertyUtil.addClusterProperty( dbActions, databaseConfig, CLUSTER_PROP_CLUSTERHOSTNAME, clusterHostname );
+            AccountReset.resetAccount(databaseConfig.some(), adminLogin, adminPassword);
+            if ( clusterHostname != null ) {
+                ClusterPropertyUtil.addClusterProperty( dbActions, databaseConfig.some(), CLUSTER_PROP_CLUSTERHOSTNAME, clusterHostname );
+            }
+        } else {
+            //TODO configure cluster hostname and administrator account for an embedded DB
+            // This could be done by dropping a file in "var" with the relvant info to be
+            // used/deleted by the Gateway on first run, else we could create the embedded
+            // DB here (though it seems good for the Gateway to manage the embedded DB itself)
         }
     }
 

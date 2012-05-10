@@ -5,13 +5,13 @@ import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.MessageProcessor;
-import static com.l7tech.server.ServerConfigParams.*;
 import com.l7tech.server.cluster.ClusterLock;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.AuditArchiverEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Config;
 import com.l7tech.util.ValidatedConfig;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -27,6 +27,8 @@ import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.ServerConfigParams.*;
 
 
 /**
@@ -45,6 +47,7 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
     private final PlatformTransactionManager transactionManager;
     private final AuditRecordManager recordManager;
     private final Audit auditor;
+    private final boolean enabled;
 
     private int shutdownThreshold;
     private int startThreshold;
@@ -63,27 +66,20 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
 
     private ArchiveReceiver archiveReceiver;
 
-    public AuditArchiver( final Config config,
-                          final ClusterPropertyManager cpm,
-                          final PlatformTransactionManager tm,
-                          final AuditRecordManager arm,
-                          final ArchiveReceiver ar,
-                          final AuditFactory auditorFactory ) throws FindException {
-        if (config == null)
-            throw new NullPointerException("ServerConfig parameter must not be null.");
-        if (cpm == null)
-            throw new NullPointerException("ClusterPropertyManager parameter must not be null.");
-        if (arm == null)
-            throw new NullPointerException("AuditRecordManager parameter must not be null.");
-        if (ar == null)
-            throw new NullPointerException("ArchiveReceiver parameter must not be null.");
-
+    public AuditArchiver( @NotNull final Config config,
+                          @NotNull final ClusterPropertyManager cpm,
+                          @NotNull final PlatformTransactionManager tm,
+                          @NotNull final AuditRecordManager arm,
+                          @NotNull final ArchiveReceiver ar,
+                          @NotNull final AuditFactory auditorFactory,
+                          final boolean enabled ) throws FindException {
         this.config = config;
         this.clusterPropertyManager = cpm;
         this.transactionManager = tm;
         this.recordManager = arm;
         this.archiveReceiver = ar;
         this.auditor = auditorFactory.newInstance(this, logger);
+        this.enabled = enabled;
 
         this.staleTimeout = this.config.getLongProperty(PARAM_AUDIT_ARCHIVER_STALE_TIMEOUT, 120L);
         lock = getNewLock();
@@ -99,7 +95,7 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
 
     @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
-        if ( event instanceof ContextStartedEvent ) {
+        if ( enabled && event instanceof ContextStartedEvent ) {
             reloadConfig();
             logger.info("Audit Archiver initialized.");
         }
@@ -356,13 +352,17 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        reloadConfig();
+        if ( enabled ) reloadConfig();
     }
 
     public void runNow() {
-        auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_IMMEDIATE_TRIGGER);
-        reschedule();
-        getApplicationContext().publishEvent(new AuditArchiverEvent(this));
+        if ( enabled ) {
+            auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_IMMEDIATE_TRIGGER);
+            reschedule();
+            getApplicationContext().publishEvent(new AuditArchiverEvent(this));
+        } else {
+            auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_ERROR, "Audit archiver disabled");
+        }
     }
 
     private class AuditArchiverTimerTask extends TimerTask {

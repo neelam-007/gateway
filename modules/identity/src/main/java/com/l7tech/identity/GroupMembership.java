@@ -9,14 +9,14 @@ import java.io.Serializable;
  */
 public abstract class GroupMembership implements PersistentEntity, Serializable {
     protected long thisGroupProviderOid;
-    protected String memberUserId;
+    protected long memberUserId;
 
     /**
      * The OID of the {@link Group} to which this membership pertains.
      *
      * Not the OID of the membership itself!
      */
-    public abstract String getThisGroupId();
+    public abstract long getThisGroupId();
 
     /**
      * The OID of the {@link Group} to which this membership pertains.
@@ -28,14 +28,14 @@ public abstract class GroupMembership implements PersistentEntity, Serializable 
     /**
      * The ID of the {@link User} who's a member of the group.  May be null.
      */
-    public String getMemberUserId() {
+    public long getMemberUserId() {
         return memberUserId;
     }
 
     /**
      * The ID of the {@link User} who's a member of the group.  May be null.
      */
-    public void setMemberUserId(String memberUserId) {
+    public void setMemberUserId(long memberUserId) {
         this.memberUserId = memberUserId;
     }
 
@@ -62,7 +62,7 @@ public abstract class GroupMembership implements PersistentEntity, Serializable 
         final GroupMembership that = (GroupMembership)o;
 
         if (thisGroupProviderOid != that.thisGroupProviderOid) return false;
-        if (memberUserId != null ? !memberUserId.equals(that.memberUserId) : that.memberUserId != null) return false;
+        if (memberUserId != that.memberUserId) return false;
 
         return true;
     }
@@ -70,7 +70,7 @@ public abstract class GroupMembership implements PersistentEntity, Serializable 
     public int hashCode() {
         int result = super.hashCode();
         result = 29 * result + (int)(thisGroupProviderOid ^ (thisGroupProviderOid >>> 32));
-        result = 29 * result + (memberUserId != null ? memberUserId.hashCode() : 0);
+        result = 29 * result + (int)(memberUserId ^ (memberUserId >>> 32));
         return result;
     }
 }

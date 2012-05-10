@@ -2,6 +2,7 @@ package com.l7tech.util;
 
 import java.io.*;
 import java.net.URL;
+import java.util.Properties;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -309,6 +310,27 @@ public class IOUtils {
         gzos.close();
         return baos.toByteArray();
     }
+
+    /**
+     * Load properties from a file.
+     *
+     * @param propsFile The file to load (required)
+     * @return The properties
+     * @throws FileNotFoundException If the file does not exist or cannot be opened for reading
+     * @throws IOException If an error occurs
+     */
+    public static Properties loadProperties( final File propsFile ) throws IOException {
+        final Properties properties;
+        InputStream inputStream = null;
+        try {
+            properties = new Properties();
+            properties.load( inputStream = new FileInputStream( propsFile ) );
+        } finally {
+            ResourceUtils.closeQuietly(inputStream);
+        }
+        return properties;
+    }
+
 
     /**
      * Read an entire block from the specified InputStream, if possible,

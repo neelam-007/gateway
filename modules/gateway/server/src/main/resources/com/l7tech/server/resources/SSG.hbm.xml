@@ -69,7 +69,7 @@
         <property name="guid" column="guid" type="string"/>
         <property name="name" column="name" type="string"/>
         <property name="type" column="policy_type" type="policy_type"/>
-        <property name="xml" column="xml" type="text"/>
+        <property name="xml" column="`xml`" type="text"/>
         <property name="soap" column="soap" type="boolean"/>
         <property name="internalTag" column="internal_tag" type="string" length="64"/>
 
@@ -87,7 +87,7 @@
         <property name="time" column="time" type="long"/>
         <property name="userProviderOid" column="user_provider_oid" type="long"/>
         <property name="userLogin" column="user_login" type="string"/>
-        <property name="xml" column="xml" type="text" lazy="true"/>
+        <property name="xml" column="`xml`" type="text" lazy="true"/>
         <property name="active" column="active" type="boolean"/>
     </class>
 

@@ -2,17 +2,10 @@ package com.l7tech.identity.internal;
 
 import com.l7tech.identity.GroupMembership;
 import com.l7tech.identity.IdentityProviderConfigManager;
-
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.Version;
-import javax.persistence.Id;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Transient;
-
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Proxy;
+
+import javax.persistence.*;
 
 /**
  * A row in a user-group intersect table.
@@ -65,15 +58,15 @@ public class InternalGroupMembership extends GroupMembership {
     }
 
     @Override
-    @Column(name="user_id", length=255)
-    public String getMemberUserId() {
+    @Column(name="user_id")
+    public long getMemberUserId() {
         return super.getMemberUserId();
     }
 
     @Override
     @Column(name="internal_group")
-    public String getThisGroupId() {
-        return Long.toString(thisGroupOid);
+    public long getThisGroupId() {
+        return thisGroupOid;
     }
 
     @Override
@@ -101,7 +94,7 @@ public class InternalGroupMembership extends GroupMembership {
         mem.thisGroupOid = internalGroupOid;
         mem.thisGroupProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
 
-        mem.memberUserId = Long.toString(internalUserOid);
+        mem.memberUserId = internalUserOid;
         mem.memberProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
 
         return mem;
@@ -113,7 +106,7 @@ public class InternalGroupMembership extends GroupMembership {
      * @param memberProviderOid the OID of the {@link com.l7tech.identity.IdentityProviderConfig} in which the member is defined
      * @param memberUserId the ID of the {@link com.l7tech.identity.User} being added to this group
      */
-    public static InternalGroupMembership newMetaUserMembership(long internalGroupOid, long memberProviderOid, String memberUserId) {
+    public static InternalGroupMembership newMetaUserMembership(long internalGroupOid, long memberProviderOid, long memberUserId) {
         InternalGroupMembership mem = new InternalGroupMembership();
 
         mem.thisGroupOid = internalGroupOid;
@@ -122,25 +115,6 @@ public class InternalGroupMembership extends GroupMembership {
         mem.memberProviderOid = memberProviderOid;
         mem.memberUserId = memberUserId;
         mem.memberSubgroupId = null;
-
-        return mem;
-    }
-
-    /**
-     * Constructs an internal group membership for a subgroup in an arbitrary identity provider.
-     * @param internalGroupOid the OID of the {@link InternalGroup} to which the membership belongs
-     * @param memberProviderOid the OID of the {@link com.l7tech.identity.IdentityProviderConfig} in which the member is defined
-     * @param memberSubgroupId the ID of the {@link com.l7tech.identity.Group} being added to this group
-     */
-    public static InternalGroupMembership newMetaSubgroupMembership(long internalGroupOid, long memberProviderOid, String memberSubgroupId) {
-        InternalGroupMembership mem = new InternalGroupMembership();
-
-        mem.thisGroupOid = internalGroupOid;
-        mem.thisGroupProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
-
-        mem.memberProviderOid = memberProviderOid;
-        mem.memberSubgroupId = memberSubgroupId;
-        mem.memberUserId = null;
 
         return mem;
     }

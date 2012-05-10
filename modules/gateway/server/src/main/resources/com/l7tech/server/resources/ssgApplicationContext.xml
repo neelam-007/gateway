@@ -1228,6 +1228,7 @@
         <constructor-arg index="3" ref="auditRecordManager"/>
         <constructor-arg index="4" ref="auditArchiveReceiver"/>
         <constructor-arg index="5" ref="auditFactory"/>
+        <constructor-arg index="6" value="#{'mysql'.equals(hibernateProperties['node.db.type'])}"/><!-- only enabled for a MySQL DB-->
     </bean>
 
     <bean id="auditArchiveReceiver" class="com.l7tech.server.audit.FtpArchiveReceiver">
@@ -1519,7 +1520,7 @@
 
     <bean id="clusterMaster" class="com.l7tech.server.cluster.ClusterMaster">
         <constructor-arg index="0" ref="transactionManager"/>
-        <constructor-arg index="1" ref="switchedDataSource"/>
+        <constructor-arg index="1" ref="hibernateDataSource"/>
         <constructor-arg index="2" ref="serverConfig"/>
         <constructor-arg index="3">
             <bean class="com.l7tech.server.util.ManagedTimer">

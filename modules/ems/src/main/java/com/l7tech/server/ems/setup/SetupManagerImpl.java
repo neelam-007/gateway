@@ -1,6 +1,5 @@
 package com.l7tech.server.ems.setup;
 
-import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -21,24 +20,13 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.security.keystore.*;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.core.io.Resource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.sql.DataSource;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StreamTokenizer;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.sql.Statement;
 import java.util.Collections;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -110,54 +98,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
            }
         } catch ( ObjectModelException ome ) {
             throw new SetupException( "Error saving session timeout.", ome );
-        }
-    }
-
-    /**
-     * Test the given datasource.
-     *
-     * <p>This will cause failure of the server if the database cannot be accessed.</p>
-     *
-     * <p>This test avoids an issue with Derby issuing SQL warnings when using the
-     * createdb connection option and the database already exists.</p>
-     *
-     * @param dataSource The datasource to test
-     */
-    public static void testDataSource( final DataSource dataSource,
-                                       final Config config,
-                                       final Resource[] createScripts,
-                                       final Resource[] updateScripts ) {
-        Connection connection = null;
-
-        boolean created = true;
-        try {
-            connection = dataSource.getConnection();
-            SQLWarning warning = connection.getWarnings();
-            while ( warning != null ) {
-                if ( "01J01".equals(warning.getSQLState()) ) {
-                    created = false;
-                } else {
-                    logger.log( Level.WARNING, "SQL Warning: " + warning.getErrorCode() + ", SQLState: " + warning.getSQLState() + ", Message: " + warning.getMessage());
-                }
-
-                warning = warning.getNextWarning();
-            }
-
-            if ( created ) {
-                runScripts( connection, createScripts, false );
-            } else if ( config.getBooleanProperty("em.server.db.updates", false) ) {
-                runScripts( connection, updateScripts, config.getBooleanProperty("em.server.db.updatesDeleted", true) );
-            }
-        } catch ( SQLException se ) {
-            throw new RuntimeException( "Could not connect to database.", se );
-        } finally {
-            ResourceUtils.closeQuietly(connection);
-        }
-
-        if ( created ) {
-            logger.config( "Created new database." );
-        } else {
-            logger.config( "Using existing database." );
         }
     }
 
@@ -266,72 +206,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             });
         } finally {
             AuditContextUtils.setSystem( wasSystem );
-        }
-    }
-
-    //- PACKAGE
-
-    static void runScripts( final Connection connection,
-                            final Resource[] scripts,
-                            final boolean deleteOnComplete ) throws SQLException {
-        for ( Resource scriptResource : scripts ) {
-            if ( !scriptResource.exists() ) continue;
-
-            StreamTokenizer tokenizer;
-            try {
-                logger.config("Running DB script '"+scriptResource.getDescription()+"'.");
-                tokenizer = new StreamTokenizer( new InputStreamReader(scriptResource.getInputStream(), Charsets.UTF8) );
-                tokenizer.eolIsSignificant(false);
-                for ( int i='0'; i<='9'; i++) tokenizer.ordinaryChar( i );
-                tokenizer.commentChar('-');
-                tokenizer.quoteChar('\'');
-                tokenizer.wordChars(16, 31);
-                tokenizer.wordChars(33, 44);
-                tokenizer.wordChars(46,126);
-
-                int token;
-                StringBuilder builder = new StringBuilder();
-                while( (token = tokenizer.nextToken()) != StreamTokenizer.TT_EOF ) {
-                    if ( token == StreamTokenizer.TT_WORD ) {
-                        if ( builder.length() > 0 ) {
-                            builder.append( " " );
-                        }
-                        builder.append( tokenizer.sval );
-                        if ( tokenizer.sval.endsWith(";") ) {
-                            builder.setLength( builder.length()-1 );
-                            String sql = builder.toString();
-                            builder.setLength( 0 );
-
-                            Statement statement = null;
-                            try {
-                                statement = connection.createStatement();
-                                if ( logger.isLoggable( Level.FINE ) ) {
-                                    logger.log( Level.FINE, "Running statement: " + sql );
-                                }
-                                statement.executeUpdate( sql );
-
-                                SQLWarning warning = statement.getWarnings();
-                                while ( warning != null ) {
-                                    logger.warning( "SQL Warning "+warning.getSQLState()+" ("+warning.getErrorCode()+"): " + warning.getMessage() );
-                                    warning = warning.getNextWarning();
-                                }
-                            } finally {
-                                ResourceUtils.closeQuietly( statement );
-                            }
-                        }
-                    }
-                }
-
-                if ( deleteOnComplete && scriptResource.getFile()!=null ) {
-                    if ( scriptResource.getFile().delete() ) {
-                        logger.info( "Deleted DB script '"+scriptResource.getDescription()+"'." );
-                    } else {
-                        logger.warning( "Deletion failed for DB script '"+scriptResource.getDescription()+"'." );
-                    }
-                }
-            } catch (IOException ioe) {
-                logger.log( Level.WARNING, "Error processing DB script.", ioe );
-            }
         }
     }
 

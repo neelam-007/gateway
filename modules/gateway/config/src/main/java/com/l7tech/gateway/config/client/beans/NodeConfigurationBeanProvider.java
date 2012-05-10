@@ -10,15 +10,19 @@ import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
-
 import com.l7tech.server.management.config.node.NodeConfig.ClusterType;
 import com.l7tech.util.InetAddressUtil;
+import com.l7tech.util.Option;
 
 import javax.xml.ws.WebServiceException;
-import java.util.*;
-import java.util.logging.Level;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.logging.Level;
+
+import static com.l7tech.util.Option.optional;
 
 /**
  * ConfigurationBeanProvider for process controller / node configuration.
@@ -55,15 +59,15 @@ public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProvider
                 config.setClusterPassphrase((String)getOption("cluster.pass", configuration));
                 fromBeans( config, configuration );
 
-                DatabaseConfig databaseConfig = config.getDatabase(DatabaseType.NODE_ALL, ClusterType.STANDALONE, ClusterType.REPL_MASTER);
+                final Option<DatabaseConfig> databaseConfig = optional( config.getDatabase( DatabaseType.NODE_ALL, ClusterType.STANDALONE, ClusterType.REPL_MASTER ) );
                 String adminLogin = (String) getOption("admin.user", configuration);
                 String adminPassphrase = (String)getOption("admin.pass", configuration);
 
                 boolean createdb =
                         config.getClusterHostname() != null &&
                         config.getClusterHostname().trim().length() > 0 &&
-                        databaseConfig != null &&
-                        databaseConfig.getDatabaseAdminUsername()!=null &&
+                        (!databaseConfig.isSome() ||
+                         databaseConfig.some().getDatabaseAdminUsername()!=null) &&
                         adminLogin != null &&
                         adminLogin.trim().length() > 0 &&
                         adminPassphrase != null &&
@@ -74,7 +78,7 @@ public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProvider
                     for ( DatabaseConfig dbConfig : config.getDatabases() ) {
                         hosts.add( dbConfig.getHost() );
                     }
-                    managementService.createDatabase( config.getName(), databaseConfig, hosts,  adminLogin, adminPassphrase, config.getClusterHostname() );
+                    managementService.createDatabase( config.getName(), databaseConfig.toNull(), hosts,  adminLogin, adminPassphrase, config.getClusterHostname() );
                 }
 
                 managementService.createNode( config );
@@ -288,7 +292,9 @@ public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProvider
             }
         }
 
-        config.getDatabases().add( databaseConfig );
+        if ( databaseConfig.getHost() != null && !databaseConfig.getHost().isEmpty() ) {
+            config.getDatabases().add( databaseConfig );
+        }
         if ( addFailoverConfig ) {
             databaseConfig.setClusterType(NodeConfig.ClusterType.REPL_MASTER);
             failoverConfig.setClusterType(NodeConfig.ClusterType.REPL_SLAVE);

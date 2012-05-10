@@ -1,5 +1,6 @@
 package com.l7tech.gateway.config.client.beans;
 
+import com.l7tech.gateway.config.manager.NodeConfigurationManager.NodeConfigurationException;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
@@ -16,6 +17,9 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.optional;
 import com.l7tech.util.ResourceUtils;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
@@ -185,13 +189,14 @@ public class NodeManagementApiFactory {
 
             @Override
             public void createDatabase( final String nodeName,
-                                        final DatabaseConfig dbconfig,
+                                        final DatabaseConfig databaseConfig,
                                         final Collection<String> dbHosts,
                                         final String adminLogin,
                                         final String adminPassword,
                                         final String clusterHostname ) throws DatabaseCreationException {
-                DBActions dbActions = new DBActions();
-                String dbVersion = dbActions.checkDbVersion( dbconfig );
+                final Option<DatabaseConfig> dbConfig = optional(databaseConfig);
+                final DBActions dbActions = new DBActions();
+                final String dbVersion = dbConfig.isSome() ? dbActions.checkDbVersion( dbConfig.some() ) : "Unknown";
                 if ( dbVersion == null ) {
                     throw new DatabaseCreationException("Unable to create database, there is an existing incompatible database.");
                 } else if ( BuildInfo.getFormalProductVersion().equals(dbVersion) ) {
@@ -199,7 +204,7 @@ public class NodeManagementApiFactory {
                 } else if ( "Unknown".equals(dbVersion) ) {
                     // create new db
                     try {
-                        NodeConfigurationManager.createDatabase(nodeName, dbconfig, dbHosts, adminLogin, adminPassword, clusterHostname);
+                        NodeConfigurationManager.createDatabase(nodeName, dbConfig, dbHosts, adminLogin, adminPassword, clusterHostname);
                     } catch (IOException e) {
                         throw new DatabaseCreationException("Unable to create database", e);
                     }
@@ -212,17 +217,7 @@ public class NodeManagementApiFactory {
             public NodeConfig createNode( final NodeConfig node) throws SaveException {
                 if ( doGetNode(node.getName()) == null ) {
                     try {
-                        DatabaseConfig firstDb = node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE );
-                        DatabaseConfig secondDb = null;
-                        if (firstDb == null) {
-                            //this isn't a standalone db config
-                            firstDb = node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.REPL_MASTER);
-                            if (firstDb == null) {
-                                throw new SaveException("A database node must be either standalone or a replication member");
-                            }
-                            secondDb = node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.REPL_SLAVE);
-                        }
-                        NodeConfigurationManager.configureGatewayNode( node.getName(), true, node.getClusterPassphrase(), firstDb, secondDb);
+                        configureNode( node );
                     } catch ( NodeConfigurationManager.NodeConfigurationException nce ) {
                         throw new SaveException( ExceptionUtils.getMessage(nce), nce );
                     } catch ( IOException ioe ) {
@@ -239,17 +234,7 @@ public class NodeManagementApiFactory {
             public void updateNode(final NodeConfig node) throws UpdateException, RestartRequiredException {
                 if ( doGetNode(node.getName()) != null ) {
                     try {
-                        DatabaseConfig firstDb = node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE );
-                        DatabaseConfig secondDb = null;
-                        if (firstDb == null) {
-                            //this isn't a standalone db config
-                            firstDb = node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.REPL_MASTER);
-                            if (firstDb == null) {
-                                throw new UpdateException("A database node must be either standalone or a replication member");
-                            }
-                            secondDb = node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.REPL_SLAVE);
-                        }
-                        NodeConfigurationManager.configureGatewayNode( node.getName(), true, node.getClusterPassphrase(), firstDb, secondDb );
+                        configureNode( node );
                     } catch ( NodeConfigurationManager.NodeConfigurationException nce ) {
                         throw new UpdateException( ExceptionUtils.getMessage(nce), nce );
                     } catch ( IOException ioe ) {
@@ -271,6 +256,17 @@ public class NodeManagementApiFactory {
                 }
 
                 return config;
+            }
+
+            private void configureNode( final NodeConfig node ) throws IOException, NodeConfigurationException {
+                Option<DatabaseConfig> firstDb = optional( node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE ) );
+                Option<DatabaseConfig> secondDb = none();
+                if (!firstDb.isSome()) {
+                    //this isn't a standalone db config
+                    firstDb = optional( node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.REPL_MASTER) );
+                    secondDb = optional( node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.REPL_SLAVE) );
+                }
+                NodeConfigurationManager.configureGatewayNode( node.getName(), true, node.getClusterPassphrase(), true, firstDb, secondDb);
             }
 
             // unsupported operations

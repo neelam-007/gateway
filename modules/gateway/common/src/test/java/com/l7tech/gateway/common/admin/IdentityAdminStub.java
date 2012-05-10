@@ -118,7 +118,7 @@ public class IdentityAdminStub implements IdentityAdmin {
             // Clear existing memberships
             for (Iterator i = store.getGroupMemberships().iterator(); i.hasNext();) {
                 GroupMembership gm = (GroupMembership)i.next();
-                if (pu.getId().equals(gm.getMemberUserId())) i.remove();
+                if (Long.valueOf(pu.getId()).equals(gm.getMemberUserId())) i.remove();
             }
 
             // Set new memberships
@@ -226,8 +226,8 @@ public class IdentityAdminStub implements IdentityAdmin {
         Set<GroupMembership> memberships = store.getGroupMemberships();
         Set<IdentityHeader> results = new HashSet<IdentityHeader>();
         for (GroupMembership gm : memberships) {
-            if (userId.equals(gm.getMemberUserId())) {
-                Group g = store.getGroups().get(gm.getThisGroupId());
+            if (userId.equals(String.valueOf(gm.getMemberUserId()))) {
+                Group g = store.getGroups().get(String.valueOf(gm.getThisGroupId()));
                 results.add(fromGroup(g));
             }
         }
@@ -240,8 +240,8 @@ public class IdentityAdminStub implements IdentityAdmin {
         Set<GroupMembership> memberships = store.getGroupMemberships();
         Set<IdentityHeader> results = new HashSet<IdentityHeader>();
         for (GroupMembership gm : memberships) {
-            if (groupId.equals(gm.getThisGroupId())) {
-                User u = store.getUsers().get(gm.getMemberUserId());
+            if (groupId.equals(String.valueOf(gm.getThisGroupId()))) {
+                User u = store.getUsers().get(String.valueOf(gm.getMemberUserId()));
                 results.add(fromUser(u));
             }
         }

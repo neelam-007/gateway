@@ -51,6 +51,10 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
             "com.mysql.jdbc.exceptions.jdbc4.MySQLTransientConnectionException",
             "com.mysql.jdbc.exceptions.jdbc4.MySQLTransientException",
 
+            // derby exceptions
+            // TODO add other Derby exceptions
+            "org.apache.derby.impl.jdbc.EmbedSQLException",
+
             // Luna v4 exceptions
             "com.chrysalisits.crypto.LunaCryptokiException",
             "com.chrysalisits.crypto.LunaException",

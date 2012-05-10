@@ -5,16 +5,10 @@ package com.l7tech.identity.fed;
 
 import com.l7tech.identity.GroupMembership;
 import com.l7tech.objectmodel.PersistentEntity;
-
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.Transient;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import java.io.Serializable;
-
 import org.hibernate.annotations.Proxy;
+
+import javax.persistence.*;
+import java.io.Serializable;
 
 /**
  * 
@@ -34,7 +28,7 @@ public class FederatedGroupMembership extends GroupMembership {
     {
         this.thisGroupProviderOid = providerOid;
         this.thisGroupOid = groupOid;
-        this.memberUserId = Long.toString(userOid);
+        this.memberUserId = userOid;
     }
 
     /**
@@ -55,14 +49,14 @@ public class FederatedGroupMembership extends GroupMembership {
     @Override
     @Id
     @Column(name="fed_user_oid",nullable=false)
-    public String getMemberUserId() {
+    public long getMemberUserId() {
         return super.getMemberUserId();
     }
 
     @Id
     @Column(name="fed_group_oid",nullable=false)
-    public String getThisGroupId() {
-        return Long.toString(thisGroupOid);
+    public long getThisGroupId() {
+        return thisGroupOid;
     }
 
     public void setThisGroupId(String thisGroupId) throws NumberFormatException {
@@ -111,14 +105,14 @@ public class FederatedGroupMembership extends GroupMembership {
 
         if (thisGroupOid != that.thisGroupOid) return false;
         if (thisGroupProviderOid != that.thisGroupProviderOid) return false;
-        return !(memberUserId != null ? !memberUserId.equals(that.memberUserId) : that.memberUserId != null);
+        return !(memberUserId != that.memberUserId);
     }
 
     public int hashCode() {
         int result = super.hashCode();
         result = 29 * result + (int)(thisGroupOid ^ (thisGroupOid >>> 32));
         result = 29 * result + (int)(thisGroupProviderOid ^ (thisGroupProviderOid >>> 32));
-        result = 29 * result + (memberUserId != null ? memberUserId.hashCode() : 0);
+        result = 29 * result + (int)(memberUserId ^ (memberUserId >>> 32));
         return result;
     }
 

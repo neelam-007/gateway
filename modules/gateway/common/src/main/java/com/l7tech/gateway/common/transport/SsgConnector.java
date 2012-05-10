@@ -581,7 +581,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     @JoinTable(name="connector_property",
                joinColumns=@JoinColumn(name="connector_oid", referencedColumnName="objectid"))
     @MapKeyColumn(name="name",length=128)
-    @Column(name="value", nullable=false, length=Integer.MAX_VALUE)
+    @Column(name="value", nullable=false, length=32672)
     protected Map<String,String> getProperties() {
         //noinspection ReturnOfCollectionOrArrayField
         return properties;

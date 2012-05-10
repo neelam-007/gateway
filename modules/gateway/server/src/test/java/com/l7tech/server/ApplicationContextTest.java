@@ -7,7 +7,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.BeanUtils;
-import static com.l7tech.util.CollectionUtils.set;
 import com.l7tech.util.Functions;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,6 +32,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import static com.l7tech.util.CollectionUtils.set;
+
 /**
  * Basic test for spring application context.
  *
@@ -43,6 +44,7 @@ public class ApplicationContextTest  {
     private static final String[] CONTEXTS = {
         "com/l7tech/server/resources/adminContext.xml",
         "com/l7tech/server/resources/dataAccessContext.xml",
+        "com/l7tech/server/resources/standardDbContext.xml",
         "com/l7tech/server/resources/ssgApplicationContext.xml" ,
         "com/l7tech/server/resources/admin-servlet.xml"
     };

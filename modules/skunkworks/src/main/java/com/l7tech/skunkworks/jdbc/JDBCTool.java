@@ -2,13 +2,17 @@ package com.l7tech.skunkworks.jdbc;
 
 import com.ddtek.jdbc.extensions.ExtEmbeddedConnection;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import javax.swing.table.TableModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
+import java.io.File;
+import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.ArrayList;
@@ -41,6 +45,7 @@ public class JDBCTool {
     private JButton updateButton;
     private JLabel statusLabel;
     private static final String[] JDBC_DRIVER_NAMES = { "com.mysql.jdbc.Driver", "org.apache.derby.jdbc.EmbeddedDriver","com.l7tech.jdbc.sqlserver.SQLServerDriver"};
+    private static final String deployDirectory;
 
     static {
         for ( String jdbcDriverClass : JDBC_DRIVER_NAMES ) {
@@ -50,6 +55,17 @@ public class JDBCTool {
                 logger.info("JDBC driver not available '"+jdbcDriverClass+"'.");        
             }
         }
+        String deployDir = "build/deploy";
+        try {
+            final File file = new File(new File(SyspropUtil.getString( "user.home", "" )), "build.properties");
+            if ( file.canRead() ) {
+                final Properties properties = IOUtils.loadProperties( file );
+                deployDir = properties.getProperty( "dev.deploy.dir", deployDir );
+            }
+        } catch ( IOException e ) {
+            e.printStackTrace();
+        }
+        deployDirectory = deployDir;
     }
 
 
@@ -61,21 +77,19 @@ public class JDBCTool {
     }
 
     public JDBCTool() {
-        jdbcUrlTextField.setText("jdbc:mysql://localhost/ssg");
-     jdbcUrlTextField.setText("jdbc:l7tech:sqlserver://127.0.0.1:57710;databaseName=test");
-
+        jdbcUrlTextField.setText("jdbc:derby:"+deployDirectory+"/Gateway/node/default/var/db/ssgdb");
         queryButton.addActionListener( new ActionListener() {
             public void actionPerformed( final ActionEvent actionEvent ) {
                 runQuery();
             }
-        });
+        } );
         updateButton.addActionListener( new ActionListener() {
             public void actionPerformed( final ActionEvent actionEvent ) {
                 runUpdate();
             }
         });
 
-        JFrame frame = new JFrame("JDBC Tool v0.1");
+        JFrame frame = new JFrame("JDBC Tool v0.2");
         frame.setContentPane(mainPanel);
         frame.pack();
         Utilities.centerOnScreen(frame);

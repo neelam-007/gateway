@@ -21,6 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gateway.config.backuprestore.ImportExportUtilities.UtilityResult.Status.*;
+import static com.l7tech.util.Option.some;
 
 /**
  * <p>
@@ -794,7 +795,7 @@ public final class Importer{
             //we are creating a new node.properties so generate a new node.id
             try {
                 final String nodeId = NodeConfigurationManager.loadOrCreateNodeIdentifier("default",
-                        new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, gwUser, gwPass), true);
+                        some(new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, gwUser, gwPass)), true);
                 returnConfig.setProperty("node.id", nodeId );
                 final String msg = ((isMigrate)?"Migrate":"Restore") + " host does not contain node.properties. " +
                         "Created a new node.id";

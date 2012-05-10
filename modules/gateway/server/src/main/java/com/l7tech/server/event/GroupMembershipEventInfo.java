@@ -21,12 +21,12 @@ public class GroupMembershipEventInfo {
             IdentityProviderFactory ipf = (IdentityProviderFactory)springContext.getBean("identityProviderFactory");
             IdentityProvider provider = ipf.getProvider(providerOid);
             if (provider != null) {
-                g = provider.getGroupManager().findByPrimaryKey(gm.getThisGroupId());
-                u = provider.getUserManager().findByPrimaryKey(gm.getMemberUserId());
+                g = provider.getGroupManager().findByPrimaryKey(Long.toString(gm.getThisGroupId()));
+                u = provider.getUserManager().findByPrimaryKey(Long.toString(gm.getMemberUserId()));
             }
 
-            if (g == null) g = new AnonymousGroupReference(gm.getThisGroupId(), gm.getThisGroupProviderOid(), null);
-            if (u == null) u = new AnonymousUserReference(gm.getMemberUserId(), gm.getThisGroupProviderOid(), null);
+            if (g == null) g = new AnonymousGroupReference(Long.toString(gm.getThisGroupId()), gm.getThisGroupProviderOid(), null);
+            if (u == null) u = new AnonymousUserReference(Long.toString(gm.getMemberUserId()), gm.getThisGroupProviderOid(), null);
             this.group = g;
             String name = u.getName();
             if (name == null) {

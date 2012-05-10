@@ -41,6 +41,7 @@
 
     <!-- Configures data source based on hibernateProperties -->
     <bean class="org.springframework.beans.factory.config.PropertyOverrideConfigurer">
+        <property name="ignoreInvalidKeys" value="true"/>
         <property name="properties" value="#{ hibernateProperties.?[key.startsWith('c3p0')] }"/>
     </bean>
 
@@ -66,46 +67,6 @@
           class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="staticMethod" value="com.l7tech.server.util.StandardConnectionCustomizer.setAutoCommit"/>
         <property name="arguments" value="${hibernate.connection.autocommit}"/>
-    </bean>
-    
-    <!-- General purpose pooled data source -->
-    <bean id="c3p0DataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
-        <constructor-arg value="c3p0DataSource"/> <!-- Name used for identification only, does not affect configuration -->
-    </bean>
-
-    <!-- Lazy proxy for general purpose pooled data source -->
-    <bean id="lazyDataSource" class="org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy">
-        <constructor-arg ref="c3p0DataSource"/>
-    </bean>
-
-    <!-- Administrative pooled data source, smaller pool, shorter timeouts -->
-    <bean id="c3p0AdminDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
-        <constructor-arg value="c3p0AdminDataSource"/> <!-- Name used for identification only, does not affect configuration configuration-->
-    </bean>
-
-    <!-- Data source that can be switched for different pooling strategies -->
-    <bean id="switchedDataSource" class="com.l7tech.server.util.UserSwitchedRoutingDataSource">
-        <property name="defaultTargetDataSource" ref="lazyDataSource"/>
-        <property name="targetDataSources">
-            <map>
-                <entry key="default"><ref local="lazyDataSource"/></entry>
-                <entry key="admin"><ref local="c3p0AdminDataSource"/></entry>
-            </map>
-        </property>
-    </bean>
-
-    <!-- Direct unpooled datasource for the primary database -->
-    <bean id="primaryDbDataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-        <constructor-arg index="0" value="#{hibernateProperties['l7.database.main.url']}"/>
-        <constructor-arg index="1" value="#{hibernateProperties['hibernate.connection.username']}"/>
-        <constructor-arg index="2" value="#{hibernateProperties['hibernate.connection.password']}"/>
-    </bean>
-
-    <!-- Direct unpooled datasource for the secondary database -->
-    <bean id="secondaryDbDataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-        <constructor-arg index="0" value="#{hibernateProperties['l7.database.failover.url']}"/>
-        <constructor-arg index="1" value="#{hibernateProperties['hibernate.connection.username']}"/>
-        <constructor-arg index="2" value="#{hibernateProperties['hibernate.connection.password']}"/>
     </bean>
 
     <!--
@@ -205,7 +166,7 @@
                 <value>com.l7tech.gateway.common.esmtrust.TrustedEsmUser</value>
             </list>
         </property>
-        <property name="dataSource" ref="switchedDataSource"/>
+        <property name="dataSource" ref="hibernateDataSource"/>
         <property name="hibernateProperties" ref="hibernateProperties"/>
         <property name="entityInterceptor" ref="persistenceEventInterceptor"/>
     </bean>

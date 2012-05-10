@@ -2,38 +2,38 @@ package com.l7tech.server.boot;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.server.ServerConfigParams;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.JceUtil;
-import com.l7tech.util.StrongCryptoNotAvailableException;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.log.JdkLogConfig;
 import com.l7tech.server.util.FirewallUtils;
-import com.l7tech.util.BuildInfo;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import com.mchange.v2.c3p0.C3P0Registry;
 import com.mchange.v2.c3p0.PooledDataSource;
 import com.mchange.v2.c3p0.impl.PoolBackedDataSourceBase;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.Security;
 import java.sql.SQLException;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import static java.util.logging.Level.*;
+import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.Pair.pair;
+import static java.util.logging.Level.*;
 
 /**
  * Object that represents a complete, running Gateway instance.
@@ -46,6 +46,7 @@ public class GatewayBoot {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicBoolean destroyRequested = new AtomicBoolean(false);
 
+    private Properties nodeProperties;
     private ClassPathXmlApplicationContext applicationContext;
     private ShutdownWatcher shutdowner;
 
@@ -142,8 +143,9 @@ public class GatewayBoot {
         try {
             final long startTime = System.currentTimeMillis();
             ServerConfig.getInstance().getLocalDirectoryProperty( ServerConfigParams.PARAM_LOG_DIRECTORY, true);
+            loadNodeProperties();
             FirewallUtils.initializeFirewall();
-            spawnDbWarner();
+            dbInit();
             createApplicationContext();
             String ipAddress = startBootProcess();
             startListeners(ipAddress);
@@ -195,7 +197,7 @@ public class GatewayBoot {
 
         preFlightCheck();
         start();
-        addShutdownHook( shutdownlatch, exitLatch );
+        addShutdownHook(shutdownlatch, exitLatch);
         waitForShutdown( shutdownlatch );
         try {
             destroy();
@@ -204,8 +206,25 @@ public class GatewayBoot {
         }
     }
 
-    // Launch a background thread that warns if no DB connections appear within a reasonable period of time (Bug #4271)
-    private void spawnDbWarner() {
+    private void loadNodeProperties() throws LifecycleException {
+        final File configDir = ServerConfig.getInstance().getLocalDirectoryProperty( ServerConfigParams.PARAM_CONFIG_DIRECTORY, false );
+        try {
+            nodeProperties = IOUtils.loadProperties( new File( configDir, "node.properties" ) );
+        } catch ( IOException e ) {
+            throw new LifecycleException( "Error accessing node properties", e );
+        }
+    }
+
+    private void dbInit() {
+        // derby init
+        if ( SyspropUtil.getProperty( "derby.system.home" ) == null ) {
+            //TODO management for the Derby DB log file (rotation, viewing via ssgconfig, etc)
+            final File varDir = ServerConfig.getInstance().getLocalDirectoryProperty( ServerConfigParams.PARAM_VAR_DIRECTORY, true );
+            final File dbDir = new File( varDir, "db" );
+            System.setProperty("derby.system.home", dbDir.getAbsolutePath() );
+        }
+
+        // Launch a background thread that warns if no DB connections appear within a reasonable period of time (Bug #4271)
         if ( ConfigFactory.getBooleanProperty(SYSPROP_STARTUPCHECKS, true) ) {
             Thread dbcheck = new Thread("Database Check") {
                 @Override
@@ -214,9 +233,12 @@ public class GatewayBoot {
                         Thread.sleep(DB_CHECK_DELAY * 1000L);
                         if (destroyRequested.get())
                             return;
-                        int connections = getNumDbConnections();
-                        if (connections >= 1) {
-                            logger.log( FINE, "Database check: " + connections + " database connections open after " + DB_CHECK_DELAY + " seconds");
+                        final Pair<Integer,Integer> poolsAndConnections = getNumDbConnections();
+                        if ( poolsAndConnections.left==0 ) {
+                            logger.log(Level.FINE, "Database pooling not in use, or is not initialized after " + DB_CHECK_DELAY + " seconds");
+                            return;
+                        } else if ( poolsAndConnections.right >= 1 ) {
+                            logger.log(Level.FINE, "Database check: " + poolsAndConnections.right + " database connections open after " + DB_CHECK_DELAY + " seconds");
                             return;
                         }
 
@@ -231,7 +253,7 @@ public class GatewayBoot {
         }
     }
 
-    private static int getNumDbConnections() throws SQLException {
+    private static Pair<Integer,Integer> getNumDbConnections() throws SQLException {
         int connections = 0;
         //noinspection unchecked
         Set<PooledDataSource> pools = C3P0Registry.getPooledDataSources();
@@ -245,14 +267,21 @@ public class GatewayBoot {
                 connections += pool.getNumConnectionsAllUsers();
             }
         }
-        return connections;
+        return pair(pools.size(), connections);
     }
 
     private void createApplicationContext() {
         final boolean allowCircularDependencies = ConfigFactory.getBooleanProperty( SYSPROP_ALLOW_CIRCULARITY, false );
         final long startTime = System.currentTimeMillis();
+        final String dbType = nodeProperties.getProperty("node.db.type", "mysql");
+        logger.info("Database type: " + dbType);
+        final boolean useMysql = "mysql".equals(dbType);
+        Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
         applicationContext = new ClassPathXmlApplicationContext(new String[]{
                 "com/l7tech/server/resources/dataAccessContext.xml",
+                useMysql ?
+                        "com/l7tech/server/resources/standardDbContext.xml" :
+                        "com/l7tech/server/resources/embeddedDbContext.xml",
                 "com/l7tech/server/resources/ssgApplicationContext.xml",
                 "com/l7tech/server/resources/adminContext.xml",
                 "com/l7tech/server/resources/cxfSupportContext.xml",

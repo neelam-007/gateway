@@ -14,6 +14,7 @@ public class OptionGroup {
     private String id; // unique id
     private Boolean required = true; // is this group required
     private Boolean deletable = true; // is this group deletable (if not required)
+    private String group; // The group for this option group
     private String prompt; // wizard step prompt
     private String description; // property description
 
@@ -43,6 +44,15 @@ public class OptionGroup {
 
     public void setDeletable(Boolean deletable) {
         this.deletable = deletable;
+    }
+
+    @XmlAttribute
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup( final String group ) {
+        this.group = group;
     }
 
     @XmlElement(required=true)

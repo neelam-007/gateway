@@ -40,7 +40,7 @@
    <bean id="createDB"
           class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="staticMethod"
-                  value="com.l7tech.server.ems.setup.SetupManagerImpl.testDataSource"/>
+                  value="com.l7tech.server.util.DerbyDbHelper.testDataSource"/>
         <property name="arguments">
             <list>
                 <ref local="creationDataSource"/>
@@ -123,7 +123,7 @@
         </property>
         <property name="hibernateProperties">
             <props>
-                <prop key="hibernate.dialect">com.l7tech.server.ems.util.ExtendedDerbyDialect</prop>
+                <prop key="hibernate.dialect">com.l7tech.server.util.ExtendedDerbyDialect</prop>
                 <prop key="hibernate.validator.apply_to_ddl">false</prop>
                 <prop key="javax.persistence.validation.group.pre-persist"> </prop>
                 <prop key="javax.persistence.validation.group.pre-update"> </prop>
@@ -134,7 +134,7 @@
         <property name="schemaUpdate" value="true"/>
     </bean>
 
-    <bean id="schemaExport" class="com.l7tech.server.ems.EsmDbSchemaExport" init-method="init" depends-on="sessionFactory">
+    <bean id="schemaExport" class="com.l7tech.server.util.DbSchemaExport" init-method="init" depends-on="sessionFactory">
         <constructor-arg index="0">
            <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
                 <property name="targetObject" ref="&amp;sessionFactory"/>

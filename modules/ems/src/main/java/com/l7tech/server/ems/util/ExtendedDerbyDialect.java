@@ -10,10 +10,9 @@ import org.hibernate.dialect.DerbyDialect;
 public class ExtendedDerbyDialect extends DerbyDialect {
     @Override
     public String getQuerySequencesString() {
-        if ( supportsSequences() ) {
+        String ret = super.getQuerySequencesString();
+        if ( ret == null && supportsSequences() )
             return "select sequencename from sys.syssequences";
-        } else {
-            return null;
-        }
+        return null;
     }
 }

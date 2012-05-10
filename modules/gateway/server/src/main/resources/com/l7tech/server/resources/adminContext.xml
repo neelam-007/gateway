@@ -215,17 +215,6 @@
         <property name="order" value="5003"/>
     </bean>
 
-    <!-- Bean to switch db pools for admin vs other uses -->
-    <bean id="adminConnectionPoolSelectorInterceptor"
-          class="com.l7tech.server.util.UserSwitchedRoutingDataSourceSelector">
-        <constructor-arg value="admin"/>
-    </bean>
-    <bean id="adminConnectionPoolSelectorAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
-        <property name="pointcut" ref="adminPointcut"/>
-        <property name="advice" ref="adminConnectionPoolSelectorInterceptor"/>
-        <property name="order" value="10000"/>
-    </bean>
-
     <!-- admin login helper for "internal" authentications -->
     <bean id="adminLoginHelper" class="com.l7tech.server.admin.AdminLoginHelper">
         <constructor-arg ref="adminSessionManager"/>

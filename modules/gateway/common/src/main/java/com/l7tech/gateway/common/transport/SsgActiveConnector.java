@@ -149,7 +149,7 @@ public class SsgActiveConnector extends NamedEntityImp {
     @JoinTable(name="active_connector_property",
                joinColumns=@JoinColumn(name="connector_oid", referencedColumnName="objectid"))
     @MapKeyColumn(name="name",length=128)
-    @Column(name="value", nullable=false, length=65535)
+    @Column(name="value", nullable=false, length=32672)
     protected Map<String,String> getProperties() {
         //noinspection ReturnOfCollectionOrArrayField
         return properties;
