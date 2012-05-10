@@ -686,6 +686,7 @@ public class GatewayFeatureSets {
             fs(customDs),
             fs(uddiNotificationAssertions),
             fs(esmAssertions),
+            fs(generateHashAssertion),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -730,7 +731,8 @@ public class GatewayFeatureSets {
             fs(customFw),
             fs(esmAssertions),
             fs(samlpSsoAssertions),
-            fs(samlpInboundAssertions));
+            fs(samlpInboundAssertions),
+            fs(generateHashAssertion));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
             "Same features as XML Firewall for now.",
@@ -815,7 +817,8 @@ public class GatewayFeatureSets {
             fs(mtomEncodeAssertions),
             fs(mtomValidateAssertions),
             fs(esmAssertions),
-            fs(uiFw));
+            fs(uiFw),
+            fs(generateHashAssertion));
 
         GatewayFeatureSet profileApi =
         fsp("set:Profile:Api", "Layer 7 API Proxy",
