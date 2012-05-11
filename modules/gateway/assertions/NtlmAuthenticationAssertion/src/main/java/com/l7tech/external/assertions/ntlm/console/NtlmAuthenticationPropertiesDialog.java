@@ -36,6 +36,8 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
     private JPanel propertyPanel;
     private TargetVariablePanel targetVariablePanel;
     private JComboBox ldapServerComboBox;
+    private JLabel ldapIdentityProviderLabel;
+    private JLabel variablePrefixLabel;
     private final long defaultMaxConnectionDuration = NtlmAuthenticationAssertion.DEFAULT_MAX_CONNECTION_DURATION;
     private final long defaultMaxIdleTimeout = NtlmAuthenticationAssertion.DEFAULT_MAX_IDLE_TIMEOUT;
     private final InputValidator inputValidator;

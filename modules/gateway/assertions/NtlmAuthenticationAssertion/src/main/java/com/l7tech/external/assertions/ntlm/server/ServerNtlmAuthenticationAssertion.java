@@ -146,7 +146,7 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
             }
             if(userAccountInfo.containsKey("primaryGroupSid")){
                 SID primaryGroupSID = (SID) userAccountInfo.get("primaryGroupSid");
-                context.setVariable(variablePrefix + ".sid", primaryGroupSID.toDisplayString());
+                context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.SID, primaryGroupSID.toDisplayString());
             }
             if(userAccountInfo.containsKey(NtlmAuthenticationAssertion.ACCOUNT_FLAGS)) {
                 context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_FLAGS, userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_FLAGS));

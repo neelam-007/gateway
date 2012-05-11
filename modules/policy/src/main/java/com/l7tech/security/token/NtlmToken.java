@@ -1,13 +1,15 @@
 package com.l7tech.security.token;
 
+import jcifs.smb.SID;
+import org.jaaslounge.decoding.DecodingException;
+import org.jaaslounge.decoding.pac.PacSid;
+
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
- * User: ymoiseyenko
- * Date: 11/25/11
- * Time: 2:52 PM
- * To change this template use File | Settings | File Templates.
+ * Security token that represents NTLM authenticated user session
+ *
+ * @author ymoiseyenko
  */
 public class NtlmToken implements SecurityToken{
 
@@ -39,4 +41,37 @@ public class NtlmToken implements SecurityToken{
     public Map<String, Object> getParams() {
         return params;
     }
+
+    /**
+     * gets login name from the token
+     * @return authenticated user account name
+     */
+    public String getLogin() {
+        String login = null;
+        if(params != null) {
+            Map<String, Object> accountInfo = (Map<String, Object>)params.get("account.info");
+            if(accountInfo != null) {
+                login = (String)accountInfo.get("sAMAccountName");
+            }
+        }
+        return login;
+    }
+    
+    public String getUserSid() {
+        String userSid = null;
+        if(params != null) {
+            Map<String, Object> accountInfo = (Map<String, Object>)params.get("account.info");
+            if(accountInfo != null) {
+                SID sid = (SID)accountInfo.get("userSid");
+                byte[] binarySid=SID.toByteArray(sid);
+                try {
+                    userSid = (new PacSid(binarySid)).toString();
+                } catch (DecodingException e) {
+                   //just swallow
+                }
+            }
+        }
+        return userSid;
+    }
+
 }

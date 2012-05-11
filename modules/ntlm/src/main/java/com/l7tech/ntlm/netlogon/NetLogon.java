@@ -110,7 +110,7 @@ public class NetLogon extends HashMap implements AuthenticationAdapter{
 
         connect(serverName, hostname, serviceName, servicePassword);
 
-        //TODO: perform validation
+        //validate user account
         int timestamp = (int) (System.currentTimeMillis() / 1000L);
         Encdec.enc_uint32le(Encdec.dec_uint32le(clientCredentials, 0) + timestamp, clientCredentials, 0);
         byte[] cred = computeNetlogonCredential(clientCredentials, sessionKey);
@@ -124,7 +124,7 @@ public class NetLogon extends HashMap implements AuthenticationAdapter{
             sendNetrLogonSamLogon(serverName, hostname, authenticator, returnAuthenticator, networkInfo, validationSamInfo2);
             //compute credentials and check them against return authenticator credentials
             Encdec.enc_uint32le(Encdec.dec_uint32le(clientCredentials, 0) + 1, clientCredentials, 0);
-            cred = computeNetlogonCredential(this.clientCredentials, this.sessionKey);
+            cred = computeNetlogonCredential(clientCredentials, sessionKey);
 
             if (!Arrays.equals(cred, returnAuthenticator.credential)) {
                 throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_INVALID_CREDENTIALS, "invalid user credentials");
@@ -132,7 +132,7 @@ public class NetLogon extends HashMap implements AuthenticationAdapter{
             //update user account info such as user sids, domain home directory, etc.
             updateUserAccountInfo(acct, validationSamInfo2);
             //set session key
-            response.setSessionKey(this.sessionKey);
+            response.setSessionKey(sessionKey);
         } catch (IOException e) {
             throw  new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_ERROR, "DCP RPC call failed: " + e.getMessage());
         }
@@ -140,7 +140,7 @@ public class NetLogon extends HashMap implements AuthenticationAdapter{
             disconnect();//release the handle
         }
 
-        return this.sessionKey;
+        return sessionKey;
     }
 
     public void connect() throws AuthenticationManagerException {
@@ -338,6 +338,7 @@ public class NetLogon extends HashMap implements AuthenticationAdapter{
         acct.put("sidGroups", groups);
 
         acct.put("sAMAccountName", new UnicodeString(samInfo2.effectiveName, false).toString());
+        acct.put("userSid", new SID(domainSid, samInfo2.userId));
         acct.put("primaryGroupSid", new SID(domainSid, samInfo2.primaryGroupId));
         acct.put("userAccountFlags", "0x" + Hexdump.toHexString(samInfo2.accountFlags, 8));
         acct.put("session.key", sessionKey);

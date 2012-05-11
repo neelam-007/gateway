@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
+import com.l7tech.security.token.NtlmToken;
 import com.l7tech.server.Lifecycle;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfigParams;
@@ -176,6 +177,8 @@ public class LdapIdentityProviderImpl
             return DigestAuthenticator.authenticateDigestCredentials(pc, realUser);
         } else if (format  == CredentialFormat.KERBEROSTICKET) {
             return new AuthenticationResult( realUser, pc.getSecurityTokens() );
+        } else if (format == CredentialFormat.NTLMTOKEN) {
+            return new AuthenticationResult( realUser, pc.getSecurityToken());
         } else if (format == CredentialFormat.SESSIONTOKEN) {
             return sessionAuthenticator.authenticateSessionCredentials( pc, realUser );
         } else {
@@ -217,19 +220,8 @@ public class LdapIdentityProviderImpl
 
         if (pc.getFormat() == CredentialFormat.KERBEROSTICKET) {
             KerberosServiceTicket ticket = (KerberosServiceTicket) pc.getPayload();
-
-            Collection<IdentityHeader> headers;
-            headers = search(ticket);
-            if (headers.size() > 1) {
-                throw new FindException("Found multiple LDAP users for kerberos principal '" + ticket.getClientPrincipalName() + "'.");
-            }
-            else if (!headers.isEmpty()){
-                for (IdentityHeader header : headers) {
-                    if (header.getType() == EntityType.USER) {
-                        user = userManager.findByPrimaryKey(header.getStrId());
-                    }
-                }
-            }
+            user = findLdapUser(search(ticket), "Found multiple LDAP users for kerberos principal '" + ticket.getClientPrincipalName() + "'.");
+            
         } else if (pc.getFormat() == CredentialFormat.SESSIONTOKEN) {
             final String id = sessionAuthenticator.getUserId( pc );
             if ( id!=null ) {
@@ -242,12 +234,34 @@ public class LdapIdentityProviderImpl
             } catch (CertificateEncodingException e) {
                 throw new FindException("Invalid user certificate: " + ExceptionUtils.getMessage(e), e);
             }
+        } else if (pc.getFormat() == CredentialFormat.NTLMTOKEN) {
+            NtlmToken token = (NtlmToken)pc.getSecurityToken();
+            user = findLdapUser(search(token), "Found multiple LDAP users for one NTLM token'" + token.getLogin() + "'.");
         } else if ( pc.getLogin() != null ) {
             user = userManager.findByLogin(pc.getLogin());
         }
 
         return user;
     }
+
+    private LdapUser findLdapUser(Collection<IdentityHeader> headers, String errmsg) throws FindException {
+        LdapUser user = null;
+        
+        if(headers != null) {
+            if (headers.size() > 1) {
+                throw new FindException(errmsg);
+            }
+            else if (!headers.isEmpty()){
+                for (IdentityHeader header : headers) {
+                    if (header.getType() == EntityType.USER) {
+                        user = userManager.findByPrimaryKey(header.getStrId());
+                    }
+                }
+            }
+        }
+        return user;
+    }
+
 
     private AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc, LdapUser realUser) throws BadCredentialsException {
         // basic authentication
@@ -362,6 +376,12 @@ public class LdapIdentityProviderImpl
 
         String filter = makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]), true);
 
+        return doSearch(filter);
+    }
+
+    private Collection<IdentityHeader> search(final NtlmToken token) throws FindException {
+        //get search by objectSid in LDAP
+        String filter = "(objectSid=" + token.getUserSid() + ")";
         return doSearch(filter);
     }
 
