@@ -16,7 +16,7 @@
         <dependency name="layer7-test" rev="latest.integration" conf="test"/>
 
         <dependency org="org.apache.derby" name="derby" rev="10.7.1.1" force="true" conf="core"/>
-        <dependency org="commons-configuration" name="commons-configuration" rev="1.6" force="true" conf="core">
+        <dependency org="commons-configuration" name="commons-configuration" rev="1.8" force="true" conf="core">
             <exclude org="commons-digester" module="commons-digester" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
             <exclude org="commons-jxpath" module="commons-jxpath" name="*" type="*" ext="*" conf="" matcher="exact"/>

@@ -31,7 +31,7 @@
                      matcher="exact"/>
         </dependency>
         <dependency org="org.apache.wicket" name="wicket-extensions" rev="1.4.5" force="true" conf="core"/>
-        <dependency org="commons-io" name="commons-io" rev="2.0.1" force="true" conf="core"/>
+        <dependency org="commons-io" name="commons-io" rev="2.3" force="true" conf="core"/>
         <dependency org="org.hibernate" name="hibernate-core" rev="3.6.1.Final" force="true" conf="core"/>
         <dependency org="org.javassist" name="javassist" rev="3.14.0-GA" force="true" conf="core"/>
         <dependency org="org.apache.derby" name="derby" rev="10.7.1.1" force="true" conf="core"/>

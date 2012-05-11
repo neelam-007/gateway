@@ -1606,7 +1606,7 @@
         <pack-mac jarfile="${build.dir}/managerapplet/lib/bcprov-unsigned-jdk16-1.46.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/browser-launcher-1.0rc4.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/certj-3.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-codec-1.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-codec-1.6.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-collections-3.2.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-httpclient-3.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-lang-2.6.jar"/>

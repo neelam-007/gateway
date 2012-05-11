@@ -53,7 +53,7 @@
 		<dependency org="org.eclipse.persistence" name="org.eclipse.persistence.antlr" rev="1.0.1" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="org.hibernate" name="hibernate-core" rev="3.3.1.GA" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="org.hibernate" name="hibernate-cglib-repack" rev="2.1_3" force="true" conf="test->runtime(*),master(*)"/>
-		<dependency org="cglib" name="cglib-nodep" rev="2.2" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="cglib" name="cglib-nodep" rev="2.2.2" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.5.10" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="log4j" name="log4j" rev="1.2.15" force="true" conf="test->runtime(*),master(*)">
 			<exclude org="javax.mail" module="mail" name="*" type="*" ext="*" conf="" matcher="exact"/>
@@ -76,7 +76,7 @@
 		<dependency org="org.springframework" name="spring-web" rev="3.0.5.RELEASE" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="org.aspectj" name="aspectjweaver" rev="1.6.12" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="commons-dbcp" name="commons-dbcp" rev="1.2.2" force="true" conf="test->runtime(*),master(*)"/>
-		<dependency org="commons-pool" name="commons-pool" rev="1.5.3" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="commons-pool" name="commons-pool" rev="1.6" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="org.easymock" name="easymock" rev="2.5.1" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="hsqldb" name="hsqldb" rev="1.8.0.7" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="junit" name="junit" rev="4.7" force="true" conf="test->runtime(*),master(*)"/>

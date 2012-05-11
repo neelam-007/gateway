@@ -54,7 +54,7 @@
 		<dependency org="javax.xml.ws" name="jaxws-api" rev="2.1-1" force="true" conf="optional->compile(*),master(*)">
 			<exclude org="javax.jws" module="jsr181" name="*" type="*" ext="*" conf="" matcher="exact"/>
 		</dependency>
-		<dependency org="cglib" name="cglib-nodep" rev="2.2" force="true" conf="optional->compile(*),master(*)"/>
+        <dependency org="cglib" name="cglib-nodep" rev="2.2.2" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="aopalliance" name="aopalliance" rev="1.0" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="org.aspectj" name="aspectjweaver" rev="1.6.12" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="org.beanshell" name="bsh" rev="2.0b4" force="true" conf="optional->compile(*),master(*)"/>
@@ -70,7 +70,7 @@
 		<dependency org="org.springframework" name="spring-asm" rev="3.0.5.RELEASE" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.geronimo.specs" name="geronimo-jta_1.1_spec" rev="1.1" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="javax.xml" name="jaxrpc-api" rev="1.1" force="true" conf="test->runtime(*),master(*)"/>
-		<dependency org="commons-pool" name="commons-pool" rev="1.5.3" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="commons-pool" name="commons-pool" rev="1.6" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="commons-dbcp" name="commons-dbcp" rev="1.2.2" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="log4j" name="log4j" rev="1.2.15" force="true" conf="test->runtime(*),master(*)">
 			<exclude org="javax.mail" module="mail" name="*" type="*" ext="*" conf="" matcher="exact"/>

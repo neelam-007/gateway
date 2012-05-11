@@ -12,7 +12,7 @@
         <artifact name="IpmAssertion" type="aar" ext="aar" conf="master"/>
     </publications>
     <dependencies>
-        <dependency org="commons-pool" name="commons-pool" rev="1.5.4" force="true" conf="core">
+        <dependency org="commons-pool" name="commons-pool" rev="1.6" force="true" conf="core">
             <exclude org="xml-apis" module="xml-apis" name="*" type="*" ext="*" conf="" matcher="exact"/>
             <exclude org="commons-beanutils" module="commons-beanutils-core" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
