@@ -65,9 +65,18 @@ public class AuditContextFactory {
     public static AuditContext getCurrent() {
         AuditContext context = currentAuditContext.get();
         if (context == null) {
-            context = new LogOnlyAuditContext(globalAuditLogListener.get());
+            context = createLogOnlyAuditContext();
         }
         return context;
+    }
+
+    /**
+     * Create a new audit context that only does logging to the configured log sinks.
+     *
+     * @return a new LogOnlyAuditContext.  Never null.
+     */
+    public static LogOnlyAuditContext createLogOnlyAuditContext() {
+        return new LogOnlyAuditContext(globalAuditLogListener.get());
     }
 
     /**
@@ -222,7 +231,7 @@ public class AuditContextFactory {
      */
     protected AuditContext newContext() {
         if (!readyToCreateActiveContexts)
-            return new LogOnlyAuditContext(globalAuditLogListener.get());
+            return createLogOnlyAuditContext();
         return new AuditContextImpl(config, auditRecordManager, auditPolicyEvaluator, auditFilterPolicyManager, nodeId, keystore, listener);
     }
 }

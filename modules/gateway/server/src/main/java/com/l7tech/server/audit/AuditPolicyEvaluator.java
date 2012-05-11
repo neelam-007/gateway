@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationEvent;
 
 import java.io.IOException;
 import java.util.Queue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -56,9 +57,26 @@ public class AuditPolicyEvaluator implements PostStartupApplicationListener {
      *
      * @param auditRecord  the audit record to give to the sink policy to export.  Required.
      * @param originalContext  the auditRecord is a message summary audit record, the not-yet-closed PolicyEnforcementContext from message processing.  May be null.
-     * @return
+     * @return the assertion status from running the policy, or SERVER_ERROR if there was an error, or NONE if a system record was buffered for later off-boxing once the subsystem initializes.
      */
-    public AssertionStatus outputRecordToPolicyAuditSink(final AuditRecord auditRecord, PolicyEnforcementContext originalContext) {
+    public AssertionStatus outputRecordToPolicyAuditSink(final AuditRecord auditRecord, final PolicyEnforcementContext originalContext) {
+        try {
+            // Make sure a logging-only audit context is active while running the audit sink policy, so we don't
+            // try to add details to the record that is currently being flushed via this very policy
+            return AuditContextFactory.doWithCustomAuditContext(AuditContextFactory.createLogOnlyAuditContext(), new Callable<AssertionStatus>() {
+                @Override
+                public AssertionStatus call() throws Exception {
+                    return doOutputRecordToPolicyAuditSink(auditRecord, originalContext);
+                }
+            });
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to execute audit sink policy: " + ExceptionUtils.getMessage(e), e);
+            return AssertionStatus.SERVER_ERROR;
+        }
+    }
+
+
+    private AssertionStatus doOutputRecordToPolicyAuditSink(final AuditRecord auditRecord, PolicyEnforcementContext originalContext) {
         PolicyEnforcementContext context = null;
         ServerPolicyHandle sph = null;
         try {
@@ -112,9 +130,6 @@ public class AuditPolicyEvaluator implements PostStartupApplicationListener {
             return AssertionStatus.SERVER_ERROR;
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to execute audit sink policy: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            return AssertionStatus.SERVER_ERROR;
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed to execute audit sink policy: " + ExceptionUtils.getMessage(e), e);
             return AssertionStatus.SERVER_ERROR;
         } finally {
             ResourceUtils.closeQuietly(sph);
