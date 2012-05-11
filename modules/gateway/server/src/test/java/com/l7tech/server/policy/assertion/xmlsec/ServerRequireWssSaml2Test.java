@@ -326,6 +326,34 @@ public class ServerRequireWssSaml2Test {
         assertEquals(AssertionStatus.NONE, result);
     }
 
+    /**
+     * Note: this bug did not affect SAML 2.0, however this test validates the current behavior.
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(10741)
+    public void testDefaultValueForNameFormat() throws Exception {
+        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        requireWssSaml.setVersion(2);
+        requireWssSaml.setCheckAssertionValidity(false);
+        requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
+
+        requireWssSaml.setRequireHolderOfKeyWithMessageSignature(false);
+        requireWssSaml.setRequireSenderVouchesWithMessageSignature(false);
+        requireWssSaml.setNoSubjectConfirmation(true);
+
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        requireWssSaml.setAttributeStatement(samlAttributeStatement);
+
+        Message request = ServerRequireWssSamlTest.getDecoratedMessage(new SamlAssertionV2(XmlUtil.stringAsDocument(SAML_V2_NO_NAME_FORMAT).getDocumentElement(), null));
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
+
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+        AssertionStatus result = serverRequireWssSaml.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+    }
+
     private AssertionStatus verifyExpiration(String issueInstant, String notBefore, String notOnOrAfter, boolean checkAssertionValidity, int maxExpiryTime) throws Exception {
         // Create doc
         Document samlAssertionDoc = XmlUtil.stringToDocument(buildSamlDocWithDynamicTime(issueInstant, notBefore, notOnOrAfter));
@@ -427,4 +455,17 @@ public class ServerRequireWssSaml2Test {
             "                </saml2:AuthnStatement>\n" +
             "            </saml2:Assertion>";
 
+    private static final String SAML_V2_NO_NAME_FORMAT = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-7a98417e26056ecc00cd3cd3af54ce12\"\n" +
+            "                 IssueInstant=\"2012-05-11T18:05:55.865Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">\n" +
+            "    <saml2:Issuer>irishman2.l7tech.local</saml2:Issuer>\n" +
+            "    <saml2:Subject>\n" +
+            "        <saml2:NameID NameQualifier=\"\"/>\n" +
+            "    </saml2:Subject>\n" +
+            "    <saml2:Conditions NotBefore=\"2012-05-11T18:03:55.865Z\" NotOnOrAfter=\"2012-05-11T18:10:55.866Z\"/>\n" +
+            "    <saml2:AttributeStatement>\n" +
+            "        <saml2:Attribute Name=\"one\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified\">\n" +
+            "            <saml2:AttributeValue>one</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "    </saml2:AttributeStatement>\n" +
+            "</saml2:Assertion>";
 }

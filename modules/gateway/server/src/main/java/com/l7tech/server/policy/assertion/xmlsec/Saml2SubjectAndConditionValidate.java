@@ -55,9 +55,11 @@ class Saml2SubjectAndConditionValidate {
         // name formats are the same for v1 and v2 so no mapping required
         boolean nameFormatMatch = false;
         String[] nameFormats = requestWssSaml.getNameFormats();
-        String presentedNameFormat = null;
+        final String presentedNameFormat = (nameIdentifierType != null && nameIdentifierType.getFormat() != null)?
+                nameIdentifierType.getFormat():
+                SamlConstants.NAMEIDENTIFIER_UNSPECIFIED;
+
         if (nameIdentifierType != null) {
-            presentedNameFormat = nameIdentifierType.getFormat();
             if (nameFormats != null) {
                 for (String nameFormat : nameFormats) {
                     if (nameFormat.equals(presentedNameFormat)) {
@@ -72,9 +74,7 @@ class Saml2SubjectAndConditionValidate {
                 }
             }
         }
-        if (presentedNameFormat == null) {
-            presentedNameFormat = "";
-        }
+
         if (!nameFormatMatch) {
             SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("Name Format does not match presented/required {0}/{1}", null, presentedNameFormat, Arrays.asList(nameFormats));
             validationResults.add(result);

@@ -277,6 +277,31 @@ public class ServerRequireWssSamlTest {
         assertEquals(AssertionStatus.NONE, result);
     }
 
+    @Test
+    @BugNumber(10741)
+    public void testDefaultValueForNameFormat() throws Exception {
+        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        requireWssSaml.setVersion(1);
+        requireWssSaml.setCheckAssertionValidity(false);
+        requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml11Uri()}); //unspecified
+
+        requireWssSaml.setRequireHolderOfKeyWithMessageSignature(false);
+        requireWssSaml.setRequireSenderVouchesWithMessageSignature(false);
+        requireWssSaml.setNoSubjectConfirmation(true);
+
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        requireWssSaml.setAttributeStatement(samlAttributeStatement);
+
+        final SamlAssertionV1 samlAssertionV11 = new SamlAssertionV1(XmlUtil.stringAsDocument(SAML_V1_NO_NAME_FORMAT).getDocumentElement(), null);
+        Message request = getDecoratedMessage(samlAssertionV11);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
+
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+        AssertionStatus result = serverRequireWssSaml.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+    }
+
     static Message getDecoratedMessage(SamlAssertion samlAssertion) throws SAXException, InvalidDocumentFormatException, IOException, GeneralSecurityException, DecoratorException {
         Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV));
         WssDecoratorImpl dec = new WssDecoratorImpl();
@@ -328,4 +353,18 @@ public class ServerRequireWssSamlTest {
             "                    <saml:SubjectLocality IPAddress=\"10.7.48.207\"/>\n" +
             "                </saml:AuthenticationStatement>\n" +
             "            </saml:Assertion>";
+
+    private static final String SAML_V1_NO_NAME_FORMAT = "<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" MinorVersion=\"1\" MajorVersion=\"1\"\n" +
+            "                AssertionID=\"SamlAssertion-ed95286e69d85530b85cbcd5ee56166c\" Issuer=\"irishman2.l7tech.local\"\n" +
+            "                IssueInstant=\"2012-05-11T17:55:02.061Z\">\n" +
+            "    <saml:Conditions NotBefore=\"2012-05-11T17:53:02.061Z\" NotOnOrAfter=\"2012-05-11T18:00:02.061Z\"/>\n" +
+            "    <saml:AttributeStatement>\n" +
+            "        <saml:Subject>\n" +
+            "            <saml:NameIdentifier NameQualifier=\"\"/>\n" +
+            "        </saml:Subject>\n" +
+            "        <saml:Attribute AttributeName=\"one\" AttributeNamespace=\"\">\n" +
+            "            <saml:AttributeValue>one</saml:AttributeValue>\n" +
+            "        </saml:Attribute>\n" +
+            "    </saml:AttributeStatement>\n" +
+            "</saml:Assertion>";
 }

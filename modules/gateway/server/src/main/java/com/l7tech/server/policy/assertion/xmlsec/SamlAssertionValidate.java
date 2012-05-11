@@ -526,26 +526,23 @@ public class SamlAssertionValidate {
         }
         String[] nameFormats = filterNameFormats(requestWssSaml.getNameFormats());
         boolean nameFormatMatch = false;
-        String presentedNameFormat = null;
+        final String presentedNameFormat = (nameIdentifierType != null && nameIdentifierType.getFormat() != null)?
+                nameIdentifierType.getFormat():
+                SamlConstants.NAMEIDENTIFIER_UNSPECIFIED;
         if (nameIdentifierType != null) {
-            presentedNameFormat = nameIdentifierType.getFormat();
-            if (presentedNameFormat != null) {
-                for (String nameFormat : nameFormats) {
-                    if (nameFormat.equals(presentedNameFormat)) {
-                        nameFormatMatch = true;
-                        logger.fine("Matched Name Format " + nameFormat);
-                        break;
-                    } else if (nameFormat.equals(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED)) {
-                        nameFormatMatch = true;
-                        logger.fine("Matched Name Format " + nameFormat);
-                        break;
-                    }
+            for (String nameFormat : nameFormats) {
+                if (nameFormat.equals(presentedNameFormat)) {
+                    nameFormatMatch = true;
+                    logger.fine("Matched Name Format " + nameFormat);
+                    break;
+                } else if (nameFormat.equals(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED)) {
+                    nameFormatMatch = true;
+                    logger.fine("Matched Name Format " + nameFormat);
+                    break;
                 }
             }
         }
-        if (presentedNameFormat == null) {
-            presentedNameFormat = "";
-        }
+
         if (!nameFormatMatch) {
             Error result = new Error("Name Format does not match presented/required {0}/{1}",
                                      null,
