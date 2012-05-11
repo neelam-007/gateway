@@ -643,7 +643,12 @@ public class GatewayFeatureSets {
         GatewayFeatureSet generateHashAssertion =
                 fsr("set:GenerateHashAssertion:Assertions", "The necessary assertions to enable the Generate Hash functionality",
                         mass("assertion:GenerateHash"));
-        
+
+        GatewayFeatureSet evaluateJsonPathExpression =
+                fsr("set:EvaluateJsonPathExpressionAssertion:Assertions", "The necessary assertions to enable the Evaluate Json Path Expression functionality",
+                        mass("assertion:EvaluateJsonPathExpression"));
+
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -687,6 +692,7 @@ public class GatewayFeatureSets {
             fs(uddiNotificationAssertions),
             fs(esmAssertions),
             fs(generateHashAssertion),
+            fs(evaluateJsonPathExpression),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -705,6 +711,7 @@ public class GatewayFeatureSets {
             fs(moduleLoader),
             fs(uddiNotificationAssertions),
             fs(esmAssertions),
+            fs(evaluateJsonPathExpression),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -732,7 +739,8 @@ public class GatewayFeatureSets {
             fs(esmAssertions),
             fs(samlpSsoAssertions),
             fs(samlpInboundAssertions),
-            fs(generateHashAssertion));
+            fs(generateHashAssertion),
+            fs(evaluateJsonPathExpression));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
             "Same features as XML Firewall for now.",
@@ -774,7 +782,8 @@ public class GatewayFeatureSets {
             fs(wssp),
             fs(icapAntivirusScannerAssertions),
             fs(jsonTransformationAssertion),
-            fs(generateHashAssertion));
+            fs(generateHashAssertion),
+            fs(evaluateJsonPathExpression));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
             "Same features as Gateway for now.",
@@ -818,7 +827,8 @@ public class GatewayFeatureSets {
             fs(mtomValidateAssertions),
             fs(esmAssertions),
             fs(uiFw),
-            fs(generateHashAssertion));
+            fs(generateHashAssertion),
+            fs(evaluateJsonPathExpression));
 
         GatewayFeatureSet profileApi =
         fsp("set:Profile:Api", "Layer 7 API Proxy",

@@ -236,4 +236,36 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             Assert.fail("Test JsonPath failed: " + e.getMessage());
         }
     }
+
+    @Test
+    public void testInvalidJson(){
+        try {
+            EvaluateJsonPathExpressionAssertion assertion = new EvaluateJsonPathExpressionAssertion();
+            assertion.setTarget(TargetMessageType.REQUEST);
+            final Message request = new Message();
+            request.initialize(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream("<foo>bar</foo>".getBytes()));
+
+            Message response = new Message();
+            response.initialize(XmlUtil.stringAsDocument("<response />"));
+            PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+            ServerEvaluateJsonPathExpressionAssertion serverAssertion = new ServerEvaluateJsonPathExpressionAssertion(assertion);
+
+            assertion.setEvaluator("JsonPath");
+            assertion.setExpression("$.foo");
+            final AssertionStatus status = serverAssertion.checkRequest(pec);
+            Assert.assertEquals(AssertionStatus.FAILED, status);
+            try {
+                //check results - these vars shouldn't exist
+                pec.getVariable("jsonPath.found");
+                pec.getVariable("jsonPath.count");
+                pec.getVariable("jsonPath.result");
+                pec.getVariable("jsonPath.results");
+                Assert.fail("Should have failed with NoSuchVariableException!");
+            } catch (NoSuchVariableException e) {
+
+            }
+        } catch (Exception e) {
+            Assert.fail("Error initializing test");
+        }
+    }
 }

@@ -86,9 +86,10 @@ public class EvaluateJsonPathExpressionPropertiesDialog extends AssertionPropert
         targetVariablePrefix.addChangeListener(buttonStateUpdateListener);
         textFieldExpression.getDocument().addDocumentListener(buttonStateUpdateListener);
         testInputArea.getDocument().addDocumentListener(buttonStateUpdateListener);
-        for(String s : EvaluateJsonPathExpressionAssertion.getSupportedEvaluator()){
-            cbEvaluator.addItem(s);
+        for(JsonPathEvaluator s : EvaluateJsonPathExpressionAssertion.getSupportedEvaluator()){
+            cbEvaluator.addItem(s.name());
         }
+        cbEvaluator.setEnabled(cbEvaluator.getItemCount() > 1);
         testButton.addActionListener( new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {

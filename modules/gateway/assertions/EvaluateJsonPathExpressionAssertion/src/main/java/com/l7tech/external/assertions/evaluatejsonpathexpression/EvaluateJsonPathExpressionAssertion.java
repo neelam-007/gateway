@@ -6,10 +6,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * <p>
@@ -34,14 +31,7 @@ public class EvaluateJsonPathExpressionAssertion extends MessageTargetableAssert
     private static final String[] AVAILABLE_SUFFIXES = new String[]{
             SUFFIX_FOUND, SUFFIX_COUNT, SUFFIX_RESULT, SUFFIX_RESULTS
     };
-    
-    private static final List<String> SUPPORTED_EVALUATOR;
-    static {
-        List<String> l = new ArrayList<String>();
-        l.add("JsonPath");
-        SUPPORTED_EVALUATOR = Collections.unmodifiableList(l);
-    }
-    
+
     private String evaluator = DEFAULT_EVALUATOR;
     private String expression;
     private String variablePrefix = VARIABLE_PREFIX;
@@ -59,7 +49,7 @@ public class EvaluateJsonPathExpressionAssertion extends MessageTargetableAssert
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
             @Override
@@ -136,8 +126,8 @@ public class EvaluateJsonPathExpressionAssertion extends MessageTargetableAssert
      *
      * @return a list of supported evaluators.
      */
-    public static List<String> getSupportedEvaluator(){
-        return SUPPORTED_EVALUATOR;
+    public static List<JsonPathEvaluator> getSupportedEvaluator(){
+        return Arrays.asList(JsonPathEvaluator.values());
     }
 
     @Override
