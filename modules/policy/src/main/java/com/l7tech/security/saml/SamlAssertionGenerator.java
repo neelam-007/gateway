@@ -42,7 +42,6 @@ public class SamlAssertionGenerator {
 
     static final TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
     private static final String DEFAULT_PREFIX = "SamlAssertion";
-    private static final SecureRandom random = new SecureRandom();
     private final SignerInfo assertionSigner;
     private final SamlVersionAssertionGenerator sag1;
     private final SamlVersionAssertionGenerator sag2;
@@ -319,7 +318,7 @@ public class SamlAssertionGenerator {
 
     public static String generateAssertionId(@Nullable String prefix) {
         byte[] disambig = new byte[16];
-        random.nextBytes(disambig);
+        RandomUtil.nextBytes(disambig);
         return (prefix != null ? prefix : DEFAULT_PREFIX) + "-" + HexUtils.hexDump(disambig);
     }
 
