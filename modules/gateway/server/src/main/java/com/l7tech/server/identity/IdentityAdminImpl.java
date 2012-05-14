@@ -768,12 +768,15 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     @Override
     public void testNtlmConfig(Map<String, String> props) throws InvalidIdProviderCfgException {
         Map<String, String> p = new HashMap<String, String>(props);
-        if(p.containsKey("service.secure.password")) {
+        if(p.containsKey("service.passwordOid")) {
             try {
-                String plaintextPassword = ServerVariables.expandSinglePasswordOnlyVariable(new LoggingAudit(logger), p.get("service.secure.password"));
+                long oid = Long.parseLong(p.get("service.passwordOid"));
+                String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), oid);
                 p.put("service.password", plaintextPassword);
             } catch (FindException e) {
                 throw new InvalidIdProviderCfgException("Password is invalid", e);
+            } catch(NumberFormatException ne){
+                throw new InvalidIdProviderCfgException("Password is invalid", ne);
             }
         }
         NetLogon testNetlogon = new NetLogon(p);

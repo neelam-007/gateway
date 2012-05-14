@@ -1,8 +1,8 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.*;
 import com.l7tech.identity.InvalidIdProviderCfgException;
@@ -12,9 +12,6 @@ import com.l7tech.util.NameValuePair;
 import com.l7tech.util.Pair;
 
 import javax.swing.*;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
-import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -43,17 +40,16 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
     private JTextField hostDnsTextField;
     private JTextField serverNameTextField;
     private JTextField serviceAccountTextField;
-    private JPasswordField passwordField;
     private JButton addNtlmPropertyButton;
     private JButton deleteNtlmPropertyButton;
     private JButton editNtlmPropertyButton;
     private JButton testNetlogonConnectionButton;
     private JTable ntlmPropertyTable;
     private JTextField hostNetbiosTextField;
-    private JCheckBox showPasswordCheckBox;
-    private JLabel plaintextPasswordWarningLabel;
+    private JComboBox passwordComboBox;
+    private JButton manageSecurePasswordsButton;
 
-    private InputValidator inputValidator;
+    private boolean isValid = false;
 
     private SimpleTableModel<NameValuePair> ntlmPropertiesTableModel;
 
@@ -128,8 +124,14 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
         if(props.containsKey("service.account")) {
             serviceAccountTextField.setText(props.remove("service.account"));
         }
-        if(props.containsKey("service.secure.password")) {
-            passwordField.setText(props.remove("service.secure.password"));
+        if(props.containsKey("service.passwordOid")) {
+            SecurePasswordComboBox securePasswordComboBox = (SecurePasswordComboBox)passwordComboBox;
+            try {
+                long oid = Long.parseLong(props.remove("service.passwordOid"));
+                securePasswordComboBox.setSelectedSecurePassword(oid);
+            } catch (NumberFormatException e) {
+                //TODO: display error
+            }
         }
         if(props.containsKey("domain.dns.name")) {
             domainDnsTextField.setText(props.remove("domain.dns.name"));
@@ -174,7 +176,11 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
         props.put("enabled", Boolean.toString(enableNtlmCheckBox.isSelected()));
         props.put("server.dns.name", serverNameTextField.getText());
         props.put("service.account", serviceAccountTextField.getText());
-        props.put("service.secure.password", new String(passwordField.getPassword()));
+        SecurePassword securePassword = ((SecurePasswordComboBox) passwordComboBox).getSelectedSecurePassword();
+        if(securePassword != null) {
+            Long  passwordOid = securePassword.getOidAsLong();
+            props.put("service.passwordOid", passwordOid.toString());
+        }
         props.put("domain.dns.name", domainDnsTextField.getText());
         props.put("domain.netbios.name", domainNetbiosTextField.getText());
         props.put("localhost.dns.name", hostDnsTextField.getText());
@@ -188,30 +194,51 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
         config.setNtlmAuthenticationProviderProperties(props);    
     }
 
-
     private void initComponents() {
         this.setLayout( new BorderLayout() );
         this.add( mainPanel, BorderLayout.CENTER );
 
-        inputValidator = new InputValidator(this, resources.getString(RES_STEP_TITLE));
-        // Password field must not be empty
-        inputValidator.constrainTextFieldToBeNonEmpty("Password", passwordField, new InputValidator.ComponentValidationRule(passwordField) {
+        RunOnChangeListener validationListener = new RunOnChangeListener(new Runnable() {
             @Override
-            public String getValidationError() {
-                if( passwordField.getPassword().length==0 ) {
-                    return resources.getString(RES_SERVICE_PASSWORD_EMPTY);
+            public void run() {
+                if( isValid != canAdvance()) {
+                    isValid = canAdvance();
+                    notifyListeners();
                 }
-
-                return null;
             }
         });
-        inputValidator.validateWhenDocumentChanges(passwordField);
-        PasswordGuiUtils.configureOptionalSecurePasswordField(passwordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
-        
+
+        RunOnChangeListener serviceAccountEmptyListener = new RunOnChangeListener(new Runnable(){
+            @Override
+            public void run() {
+                if(!serviceAccountTextField.getText().isEmpty()) {
+                    passwordComboBox.setEnabled(true);
+                    manageSecurePasswordsButton.setEnabled(true);
+                }
+                else{
+                    passwordComboBox.setEnabled(false);
+                    manageSecurePasswordsButton.setEnabled(false);
+                }
+            }
+        });
+
+        serverNameTextField.getDocument().addDocumentListener(validationListener);
+        serviceAccountTextField.getDocument().addDocumentListener(validationListener);
+        serviceAccountTextField.getDocument().addDocumentListener(serviceAccountEmptyListener);
+        domainNetbiosTextField.getDocument().addDocumentListener(validationListener);
+        hostNetbiosTextField.getDocument().addDocumentListener(validationListener);
+
         enableNtlmCheckBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 enableAndDisableComponents();
+            }
+        });
+
+        manageSecurePasswordsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doManagePasswords();
             }
         });
 
@@ -248,7 +275,11 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
                 Map<String, String> props = new HashMap<String, String>();
                 props.put("server.dns.name", serverNameTextField.getText());
                 props.put("service.account", serviceAccountTextField.getText());
-                props.put("service.secure.password", new String(passwordField.getPassword()));
+                SecurePassword securePassword = ((SecurePasswordComboBox) passwordComboBox).getSelectedSecurePassword();
+                if(securePassword != null) {
+                    Long  passwordOid = securePassword.getOidAsLong();
+                    props.put("service.passwordOid", passwordOid.toString());
+                }
                 props.put("domain.dns.name", domainDnsTextField.getText());
                 props.put("domain.netbios.name", domainNetbiosTextField.getText());
                 props.put("localhost.dns.name", hostDnsTextField.getText());
@@ -286,12 +317,20 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
         hostNetbiosTextField.setEnabled(isEnabled);
         serverNameTextField.setEnabled(isEnabled);
         serviceAccountTextField.setEnabled(isEnabled);
-        passwordField.setEnabled(isEnabled);
+        if(!serviceAccountTextField.getText().isEmpty()) {
+            passwordComboBox.setEnabled(isEnabled);
+            manageSecurePasswordsButton.setEnabled(isEnabled);
+        }
+        else{
+            passwordComboBox.setEnabled(false);
+            manageSecurePasswordsButton.setEnabled(false);
+        }
         addNtlmPropertyButton.setEnabled(isEnabled);
         editNtlmPropertyButton.setEnabled(isEnabled);
         deleteNtlmPropertyButton.setEnabled(isEnabled);
         ntlmPropertyTable.setEnabled(isEnabled);
         testNetlogonConnectionButton.setEnabled(isEnabled);
+        notifyListeners();
     }
 
     private void editNtlmProperty( final NameValuePair nameValuePair ) {
@@ -332,4 +371,28 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
         return admin;
     }
 
+    private void doManagePasswords() {
+        final SecurePasswordComboBox passwordComboBox = (SecurePasswordComboBox)this.passwordComboBox;
+        final SecurePassword password = passwordComboBox.getSelectedSecurePassword();
+
+        final SecurePasswordManagerWindow securePasswordManagerWindow = new SecurePasswordManagerWindow(getOwner());
+
+        securePasswordManagerWindow.pack();
+        Utilities.centerOnParentWindow(securePasswordManagerWindow);
+        DialogDisplayer.display(securePasswordManagerWindow, new Runnable() {
+            @Override
+            public void run() {
+                passwordComboBox.reloadPasswordList();
+
+                if ( password != null ) {
+                    password.getName();
+                    passwordComboBox.setSelectedSecurePassword( password.getOid() );
+                }
+            }
+        });
+    }
+
+    private void createUIComponents() {
+        passwordComboBox = new SecurePasswordComboBox();
+    }
 }

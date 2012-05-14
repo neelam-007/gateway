@@ -252,9 +252,16 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
             }
             
             //find password property and replace it if password is stored as a secure password
-            if(props.containsKey("service.secure.password")) {
-                String pass = ServerVariables.expandPasswordOnlyVariable(new LoggingAudit(logger), props.get("service.secure.password"));
-                props.put("service.password", pass);
+            if(props.containsKey("service.passwordOid")) {
+                try {
+                    long oid = Long.parseLong(props.get("service.passwordOid"));
+                    String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), oid);
+                    props.put("service.password", plaintextPassword);
+                } catch (FindException e) {
+                    throw new CredentialFinderException("Password is invalid", e);
+                } catch(NumberFormatException ne){
+                    throw new CredentialFinderException("Password is invalid", ne);
+                }
             }
 
             authenticationProvider = new NtlmAuthenticationServer(props, new NetLogon(props));

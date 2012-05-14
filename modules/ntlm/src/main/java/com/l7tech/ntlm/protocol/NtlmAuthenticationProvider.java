@@ -38,8 +38,7 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
         CHALLENGE(2),
         AUTHENTICATE(3),
         COMPLETE(4),
-        FAILED(5),
-        DISPOSED(255);
+        FAILED(5);
 
         int val;
 
@@ -57,31 +56,6 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
             return DEFAULT;
         }
 
-    }
-
-    protected enum PropertyType {
-        INVALID(-1),
-        NULL(0),
-        BYTEARRAY(1),
-        STRING(2),
-        SID(3),
-        MAP(4);
-
-        int value;
-
-        private PropertyType(int val) {
-            value = val;
-        }
-
-        public static PropertyType toPropertyType(int val) {
-            PropertyType[] types = PropertyType.values();
-            for (PropertyType type : types) {
-                if (type.value == val) {
-                    return type;
-                }
-            }
-            return INVALID;
-        }
     }
 
     static final long MILLISECONDS_BETWEEN_1970_AND_1601 = 11644473600000L;
@@ -142,7 +116,19 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
     protected byte[] getTargetInfo() throws AuthenticationManagerException {
 
         if ((state.getTargetInfo() == null) || (state.getTargetInfo().length == 0)) {
-            Av_Pair targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbDomainName, (String) get("domain.netbios.name"), new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) get("localhost.netbios.name"), new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsDomainName, (String) get("domain.dns.name"), new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsComputerName, (String) get("localhost.dns.name"), new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null)))));
+            Av_Pair targetInfoList =  new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null);
+            if(containsKey("localhost.dns.name")) {
+                targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsComputerName, (String) get("localhost.dns.name"), targetInfoList);
+            }
+            if(containsKey("domain.dns.name")) {
+                targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsDomainName, (String) get("domain.dns.name"), targetInfoList);
+            }
+            if(containsKey("localhost.netbios.name")) {
+                targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) get("localhost.netbios.name"), targetInfoList);
+            }
+            if(containsKey("domain.netbios.name")) {
+                targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbDomainName, (String) get("domain.netbios.name"), targetInfoList);
+            }
             if (containsKey("tree.dns.name")) {
                 targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsTreeName, (String) get("tree.dns.name"), targetInfoList);
             }

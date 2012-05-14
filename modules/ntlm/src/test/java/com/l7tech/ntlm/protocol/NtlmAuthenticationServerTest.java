@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Copyright: Layer 7 Technologies, 2012
@@ -40,6 +42,41 @@ public class NtlmAuthenticationServerTest {
     @After
     public void tearDown() throws Exception {
 
+    }
+
+
+    @Test
+    public void shouldReturnFullTargetInfo() throws Exception {
+        Av_Pair expectedTargetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbDomainName, (String) fixture.get("domain.netbios.name"),
+                new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) fixture.get("localhost.netbios.name"),
+                        new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsDomainName, (String) fixture.get("domain.dns.name"),
+                                new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsComputerName, (String) fixture.get("localhost.dns.name"),
+                                        new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null)))));
+
+
+
+        assertArrayEquals(expectedTargetInfoList.toByteArray(0), fixture.getTargetInfo());
+    }
+
+    @Test
+    public void shouldReturnLocalhostOnlyTargetInfo() throws  Exception{
+        Av_Pair expectedTargetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) fixture.get("localhost.netbios.name"),  new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null));
+        fixture.remove("domain.netbios.name");
+        fixture.remove("domain.dns.name");
+        fixture.remove("localhost.dns.name");
+        assertTrue(fixture.size() == 3);
+        assertArrayEquals(expectedTargetInfoList.toByteArray(0), fixture.getTargetInfo());
+    }
+    
+    @Test
+    public void shouldReturnEmptyTargetInfo() throws Exception {
+        Av_Pair expectedTargetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null);
+        fixture.remove("domain.netbios.name");
+        fixture.remove("domain.dns.name");
+        fixture.remove("localhost.dns.name");
+        fixture.remove("localhost.netbios.name");
+        assertTrue(fixture.size() == 2);
+        assertArrayEquals(expectedTargetInfoList.toByteArray(0), fixture.getTargetInfo());
     }
 
     @Test

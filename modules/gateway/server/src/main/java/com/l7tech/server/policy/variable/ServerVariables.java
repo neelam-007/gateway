@@ -1225,6 +1225,38 @@ public class ServerVariables {
         }
     }
 
+    public static String getSecurePasswordByOid(Audit audit, long oid) throws FindException {
+
+
+        if (securePasswordManager == null) {
+            // Probably running test code or something
+            audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Password-only context variable expression cannot be expanded because a secure password manager is not available; assuming literal password");
+            return null;
+        }
+
+        SecurePassword secpass = securePasswordManager.findByPrimaryKey(oid);
+        if (secpass == null) {
+            audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Oid: " + oid + " referred to a nonexistent secure password; using empty string as password"); // avoid logging possible password material
+            return "";
+        }
+        try {
+            char[] plaintext = getPlaintextPassword(secpass);
+            if (plaintext == null) {
+                audit.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Oid: " + oid + " referred to a secure password with an empty password; using empty string as password");
+                return "";
+            } else {
+                return new String(plaintext);
+            }
+        } catch (ParseException e) {
+            // avoid chaining parse exception in case it contains password material, as callers are quite likely to just dump it into the log if we do
+            // to allow debugging we will log it if debug exceptions are enabled and the log level for this class is elevated
+            final String msg = "Oid: " + oid + " referred to secure password that could not be decrypted";
+            //noinspection ThrowableResultOfMethodCallIgnored
+            logger.log(Level.FINER, msg, getDebugException( e ));
+            throw new FindException(msg);
+        }
+    }
+
     static SecurePassword findSecurePasswordByName(String secpassName) throws FindException {
         return securePasswordManager.findByUniqueName(secpassName);
     }

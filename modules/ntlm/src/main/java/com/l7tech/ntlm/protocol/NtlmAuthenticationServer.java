@@ -71,16 +71,30 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
                     flags &= NtlmConstants.NTLMSSP_NEGOTIATE_OEM_MASK;//-3;
 
                     flags |= NtlmConstants.NTLMSSP_NEGOTIATE_VERSION;//33554432;/The data for this field is provided in hte version field of the message
-                    flags |= NtlmConstants.NTLMSSP_TARGET_TYPE_DOMAIN;//65536; TargetName must be domain name
+                    String targetName = null;
+                    if(StringUtils.isNotEmpty((String)get("domain.netbios.name"))) {
+                        flags |= NtlmConstants.NTLMSSP_TARGET_TYPE_DOMAIN;//65536; TargetName must be domain name
+                        targetName = (String)get("domain.netbios.name");
+                    }
+                    else if (StringUtils.isNotEmpty((String)get("localhost.netbios.name"))) {
+                        flags |= NtlmConstants.NTLMSSP_TARGET_TYPE_SERVER;//131072; TargetName must be server
+                        targetName = (String)get("localhost.netbios.name");
+                    }
+
                     if ((flags & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY/*0x80000*/) != 0) { //if NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY is set
                         flags |= NtlmConstants.NTLMSSP_NEGOTIATE_TARGET_INFO;//8388608;
                     }
 
                     Type2Message challengeMessage = new Type2Message();
-                    challengeMessage.setTarget((String) get("domain.netbios.name"));
+                    //set the target name
+                    if(targetName != null) {
+                        challengeMessage.setTarget(targetName);
+                    }
                     challengeMessage.setFlags(flags);
                     challengeMessage.setChallenge(state.getServerChallenge());
-                    challengeMessage.setTargetInformation(getTargetInfo());
+                    if((flags & NtlmConstants.NTLMSSP_REQUEST_TARGET) != 0) {
+                        challengeMessage.setTargetInformation(getTargetInfo());
+                    }
                     token = challengeMessage.toByteArray();
 
                     //set NtlmAuthenticationState
