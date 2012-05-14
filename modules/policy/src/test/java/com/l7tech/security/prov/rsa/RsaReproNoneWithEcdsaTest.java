@@ -4,8 +4,9 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import sun.misc.BASE64Decoder;
 
 import java.security.KeyFactory;
@@ -15,6 +16,9 @@ import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -132,7 +136,8 @@ public class RsaReproNoneWithEcdsaTest {
     }
 
     private static PublicKey toBc(PublicKey in) throws Exception {
-        assertEquals("X509", in.getFormat());
+        String format = in.getFormat();
+        assertTrue("X509".equals(format) || "X.509".equals(format));
         return KeyFactory.getInstance(in.getAlgorithm(), new BouncyCastleProvider()).generatePublic(new X509EncodedKeySpec(in.getEncoded()));
     }
 

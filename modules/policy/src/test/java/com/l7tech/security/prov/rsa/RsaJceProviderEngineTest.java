@@ -8,8 +8,9 @@ import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.test.FixedSecureRandom;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import sun.misc.BASE64Decoder;
 
 import java.security.*;
@@ -17,6 +18,8 @@ import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -28,7 +31,7 @@ public class RsaJceProviderEngineTest {
     private static final byte[] UNPADDED_20_BYTES = new byte[] { 29,-32,-40,21,-108,66,-111,87,90,6,-126,-127,113,-3,43,-25,-103,-96,15,45 };
 
     // Same hash output as above, but padded by hand to 48 bytes (384 bits) to match size of P-384 curve used by private key
-    private static final byte[] PADDED_48_BYTES = new byte[] { 
+    private static final byte[] PADDED_48_BYTES = new byte[] {
             29,-32,-40,21,-108,66,-111,87,90,6,-126,-127,113,-3,43,-25,-103,-96,15,45,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -50,7 +53,7 @@ public class RsaJceProviderEngineTest {
         PrivateKey testPrivateKey = gen.right;
         assertEquals("PKCS#8", testPrivateKey.getFormat());
         testPrivateKeyBytes = testPrivateKey.getEncoded();
-        assertEquals("X509", testCert.getPublicKey().getFormat());
+        assertTrue("X509".equals(testCert.getPublicKey().getFormat()) || "X.509".equals(testCert.getPublicKey().getFormat()));
         testPublicKeyBytes = testCert.getPublicKey().getEncoded();
     }
 
