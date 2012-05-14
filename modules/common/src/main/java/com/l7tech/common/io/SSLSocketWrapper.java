@@ -7,6 +7,7 @@ import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -327,7 +328,28 @@ public class SSLSocketWrapper extends SSLSocket {
         delegate.setSSLParameters( sslParameters );
     }
 
+    //@Override
+    public SSLSession getHandshakeSession() {
+        if (METHOD_GET_HANDSHAKE_SESSION == null)
+            throw new UnsupportedOperationException("Method SSLSocket.getHandshakeSession() not available in the current environment");
+        try {
+            return (SSLSession) METHOD_GET_HANDSHAKE_SESSION.invoke(delegate);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     //- PRIVATE
 
     private final SSLSocket delegate;
+    private static final Method METHOD_GET_HANDSHAKE_SESSION;
+    static {
+        Method ghs = null;
+        try {
+            ghs = SSLSocket.class.getMethod("getHandshakeSession");
+        } catch (Exception e) {
+            // Ok, do without -- probably running under Java 6
+        }
+        METHOD_GET_HANDSHAKE_SESSION = ghs;
+    }
 }
