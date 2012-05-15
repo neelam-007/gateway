@@ -17,6 +17,7 @@ import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
@@ -49,6 +50,11 @@ public class ServerNonSoapSignatureRoundTripTest {
             put("ssgKeyStoreManager", NonSoapXmlSecurityTestUtils.makeSsgKeyStoreManager());
             put("trustedCertCache", NonSoapXmlSecurityTestUtils.makeTrustedCertCache());
         }});
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() throws Exception {
+        SyspropUtil.clearProperty("com.l7tech.security.xml.decorator.digsig.messagedigest");
     }
 
     @Test

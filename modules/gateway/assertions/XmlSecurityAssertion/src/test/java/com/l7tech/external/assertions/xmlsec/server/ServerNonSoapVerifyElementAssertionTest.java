@@ -18,6 +18,7 @@ import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jetbrains.annotations.Nullable;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
@@ -163,6 +164,11 @@ public class ServerNonSoapVerifyElementAssertionTest {
             put("ssgKeyStoreManager", NonSoapXmlSecurityTestUtils.makeSsgKeyStoreManager());
             put("trustedCertCache", NonSoapXmlSecurityTestUtils.makeTrustedCertCache());
         }});
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() throws Exception {
+        SyspropUtil.clearProperty("com.l7tech.security.xml.dsig.permittedTransformAlgorithms");
     }
 
     @Test
