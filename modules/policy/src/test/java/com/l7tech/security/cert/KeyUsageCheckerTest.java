@@ -6,7 +6,6 @@ import com.l7tech.util.FileUtils;
 import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jce.X509KeyUsage;
-import static org.junit.Assert.*;
 import org.junit.*;
 import org.xml.sax.SAXException;
 
@@ -16,6 +15,8 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -60,9 +61,23 @@ public class KeyUsageCheckerTest {
 
     @Before
     public void beforeTest() {
+        cleanupSystemProperties();
+    }
+
+    @After
+    public void afterTest() {
+        cleanupSystemProperties();
+    }
+
+    @AfterClass
+    public static void afterAllTests() {
+        cleanupSystemProperties();
+    }
+
+    private static void cleanupSystemProperties() {
         SyspropUtil.clearProperty( KeyUsageChecker.PROPERTY_POLICY_FILE );
         SyspropUtil.clearProperty( KeyUsageChecker.PROPERTY_POLICY_XML );
-        SyspropUtil.clearProperty( KeyUsageChecker.PROPERTY_ENFORCEMENT_MODE );
+        SyspropUtil.clearProperty(KeyUsageChecker.PROPERTY_ENFORCEMENT_MODE);
     }
 
     @Test
