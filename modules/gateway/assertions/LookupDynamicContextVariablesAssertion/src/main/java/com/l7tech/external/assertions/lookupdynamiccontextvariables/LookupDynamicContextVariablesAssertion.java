@@ -70,9 +70,9 @@ public class LookupDynamicContextVariablesAssertion extends Assertion implements
         meta.put(AssertionMetadata.LONG_NAME, "Looks up a value dynamically from a context variable (which may be composed of multiple variables) and places the results in another context variable.");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Dynamic Context Variables Lookup Properties");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/.gif");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/.gif");
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
