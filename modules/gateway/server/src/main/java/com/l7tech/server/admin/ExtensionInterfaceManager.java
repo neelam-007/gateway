@@ -3,13 +3,14 @@ package com.l7tech.server.admin;
 import com.l7tech.policy.assertion.ExtensionInterfaceBinding;
 import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
+import com.l7tech.server.util.UnsupportedExceptionsThrowsAdvice;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Option;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.aop.PointcutAdvisor;
 import org.springframework.aop.framework.ReflectiveMethodInvocation;
 import org.springframework.context.ApplicationEvent;
@@ -17,6 +18,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
 
+import javax.inject.Inject;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
@@ -36,6 +38,10 @@ public class ExtensionInterfaceManager implements PostStartupApplicationListener
     private final @Nullable PointcutAdvisor rbacAdvisor;
     private final @Nullable MethodInterceptor rbacAdvice;
     private final @Nullable MethodInterceptor transactionInterceptor;
+
+    @Inject
+    @Nullable
+    private UnsupportedExceptionsThrowsAdvice unsupportedExceptionsThrowsAdvice;
 
     /**
      * Create an extension interface manager bean.
@@ -144,6 +150,19 @@ public class ExtensionInterfaceManager implements PostStartupApplicationListener
                     interceptors.add(rbacAdvice);
                 if (transactionInterceptor != null)
                     interceptors.add(transactionInterceptor);
+                if (unsupportedExceptionsThrowsAdvice != null) {
+                    interceptors.add(new MethodInterceptor() {
+                        @Override
+                        public Object invoke(MethodInvocation methodInvocation) throws Throwable {
+                            try {
+                                return methodInvocation.proceed();
+                            } catch (Throwable t) {
+                                unsupportedExceptionsThrowsAdvice.afterThrowing(t);
+                                throw t;
+                            }
+                        }
+                    });
+                }
 
                 MethodInvocation invocation = new ReflectiveMethodInvocation(null, implHolder.getWrappedImpl(), method, arguments, interfaceClass, interceptors) {};
 
