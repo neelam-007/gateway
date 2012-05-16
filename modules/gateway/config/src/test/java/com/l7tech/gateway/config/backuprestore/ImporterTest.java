@@ -8,10 +8,7 @@ import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.SyspropUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,6 +43,15 @@ public class ImporterTest {
         }
         SyspropUtil.clearProperty( "com.l7tech.util.buildVersion" );
         SyspropUtil.clearProperty( "com.l7tech.gateway.config.backuprestore.checkversion" );
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.util.buildVersion",
+            "com.l7tech.gateway.config.backuprestore.checkversion",
+            "com.l7tech.config.backuprestore.osrootdir"
+        );
     }
 
     /**

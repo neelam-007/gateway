@@ -1,18 +1,27 @@
 package com.l7tech.common.io.failover;
 
 import com.l7tech.util.SyspropUtil;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.Set;
+
+import static org.junit.Assert.*;
 
 /**
  * Test case for {@link FailoverStrategy} implementations.
  */
 public class FailoverStrategyTest {
-    static {
+    @BeforeClass
+    public static void prepareRetryMillis() {
         SyspropUtil.setProperty( "com.l7tech.common.io.failover.robin.retryMillis", "200" );
+    }
+
+    @AfterClass
+    public static void cleanupRetryMillis() {
+        SyspropUtil.clearProperties("com.l7tech.common.io.failover.robin.retryMillis");
     }
 
     public static final String SA = "a";

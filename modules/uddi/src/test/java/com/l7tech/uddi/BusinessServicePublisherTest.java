@@ -1,12 +1,13 @@
 package com.l7tech.uddi;
 
-import com.l7tech.util.SyspropUtil;
-import org.junit.Test;
-import org.junit.Assert;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.uddi.guddiv3.*;
-import com.l7tech.util.Pair;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.wsdl.Wsdl;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Test;
 
 import javax.xml.bind.JAXB;
 import java.io.File;
@@ -17,6 +18,14 @@ import java.util.*;
  * @author darmstrong
  */
 public class BusinessServicePublisherTest {
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName",
+            "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName"
+        );
+    }
 
     /**
      * Test that the business service publisher will report that the correct number of services were published and

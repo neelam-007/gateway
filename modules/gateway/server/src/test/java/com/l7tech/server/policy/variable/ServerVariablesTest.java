@@ -45,8 +45,8 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.BuildInfo;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
@@ -73,6 +73,13 @@ public class ServerVariablesTest {
     private static final String JSON_MESSAGE = "{\"result\":\"success\"}";
     private static final String AUDITED_REQUEST_XML = "<auditRecordRequestXml/>";
     private static final String AUDITED_RESPONSE_XML = "<auditRecordResponseXml/>";
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT
+        );
+    }
 
     @Test
     public void testBasicServiceContextVariables() throws Exception {

@@ -1,25 +1,24 @@
 package com.l7tech.gateway.config.backuprestore;
 
+import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.FileUtils;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
 import org.junit.*;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.Map;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.zip.ZipInputStream;
+import java.util.Map;
 import java.util.zip.ZipEntry;
-import java.net.URL;
-
-import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
-import com.l7tech.util.FileUtils;
-import com.l7tech.util.ResourceUtils;
+import java.util.zip.ZipInputStream;
 
 /**
  * Tests everything in the Backup interface except for any database related backup
@@ -61,6 +60,16 @@ public class ExporterTest {
         FileUtils.deleteDir(imageFileToCreate.getParentFile());
         SyspropUtil.clearProperty( "com.l7tech.util.buildVersion" );
         SyspropUtil.clearProperty( "com.l7tech.gateway.config.backuprestore.checkversion" );
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.util.buildVersion",
+            "com.l7tech.gateway.config.backuprestore.checkversion",
+            "com.l7tech.gateway.config.backuprestore.setpostfiveo",
+            Exporter.NO_UNIQUE_IMAGE_SYSTEM_PROP
+        );
     }
 
     /**

@@ -1,15 +1,15 @@
 package com.l7tech.gateway.config.manager;
 
-import com.l7tech.util.SyspropUtil;
-import org.junit.Test;
-import org.junit.Assert;
-
-import java.util.Properties;
-import java.io.StringReader;
-
-import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
+import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.util.SyspropUtil;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.io.StringReader;
+import java.util.Properties;
 
 /**
  * 
@@ -18,6 +18,13 @@ public class NodeConfigurationManagerTest {
 
     {
         SyspropUtil.setProperty( "com.l7tech.util.buildVersion", "4.7.0" );
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.util.buildVersion"
+        );
     }
 
     @Test

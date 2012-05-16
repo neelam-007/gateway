@@ -1,49 +1,49 @@
 package com.l7tech.server.admin;
 
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ExternalEntityHeader;
+import com.l7tech.server.management.api.node.GatewayApi;
+import com.l7tech.server.management.api.node.MigrationApi;
+import com.l7tech.server.management.api.node.ReportApi;
+import com.l7tech.server.management.migration.bundle.MigratedItem;
+import com.l7tech.server.management.migration.bundle.MigrationBundle;
+import com.l7tech.server.management.migration.bundle.MigrationMetadata;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
-import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.apache.cxf.transport.ConduitInitiatorManager;
-import org.apache.cxf.transport.DestinationFactoryManager;
-import org.apache.cxf.transport.local.LocalTransportFactory;
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
 import org.apache.cxf.binding.soap.SoapMessage;
 import org.apache.cxf.binding.soap.interceptor.AbstractSoapInterceptor;
-import org.apache.cxf.phase.Phase;
-import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.endpoint.Client;
-import org.apache.cxf.service.model.BindingOperationInfo;
-import org.apache.cxf.service.model.BindingInfo;
-import org.apache.cxf.jaxws.JaxWsServerFactoryBean;
+import org.apache.cxf.endpoint.Server;
+import org.apache.cxf.interceptor.Fault;
+import org.apache.cxf.interceptor.Interceptor;
+import org.apache.cxf.interceptor.LoggingInInterceptor;
+import org.apache.cxf.interceptor.LoggingOutInterceptor;
 import org.apache.cxf.jaxws.JaxWsClientFactoryBean;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
-import org.apache.cxf.interceptor.LoggingOutInterceptor;
-import org.apache.cxf.interceptor.Interceptor;
-import org.apache.cxf.interceptor.Fault;
-import org.apache.cxf.interceptor.LoggingInInterceptor;
+import org.apache.cxf.jaxws.JaxWsServerFactoryBean;
+import org.apache.cxf.phase.Phase;
+import org.apache.cxf.service.model.BindingInfo;
+import org.apache.cxf.service.model.BindingOperationInfo;
+import org.apache.cxf.transport.ConduitInitiatorManager;
+import org.apache.cxf.transport.DestinationFactoryManager;
+import org.apache.cxf.transport.local.LocalTransportFactory;
+import org.junit.*;
 import org.w3c.dom.Node;
-import com.l7tech.server.management.api.node.GatewayApi;
-import com.l7tech.server.management.api.node.MigrationApi;
-import com.l7tech.server.management.api.node.ReportApi;
-import com.l7tech.server.management.migration.bundle.MigrationMetadata;
-import com.l7tech.server.management.migration.bundle.MigrationBundle;
-import com.l7tech.server.management.migration.bundle.MigratedItem;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.ExternalEntityHeader;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.gateway.common.service.PublishedService;
 
-import javax.xml.soap.SOAPMessage;
-import javax.xml.soap.MessageFactory;
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.soap.MessageFactory;
+import javax.xml.soap.SOAPMessage;
 import javax.xml.stream.XMLStreamException;
-import java.util.*;
-import java.io.*;
+import javax.xml.stream.XMLStreamWriter;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * Tests for ESM APIs with 1.0 format messages.
@@ -80,6 +80,13 @@ public class EsmApiTest {
         extension.registerConduitInitiator("http://schemas.xmlsoap.org/wsdl/soap/http", localTransport);
         extension.registerConduitInitiator("http://schemas.xmlsoap.org/soap/http", localTransport);
         extension.registerConduitInitiator("http://cxf.apache.org/bindings/xformat", localTransport);        
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "org.apache.cxf.nofastinfoset"
+        );
     }
 
     @Ignore("Test for developer use to capture request messages.")

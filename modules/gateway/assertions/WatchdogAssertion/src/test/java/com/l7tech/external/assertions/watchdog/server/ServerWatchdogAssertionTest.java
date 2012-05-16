@@ -5,6 +5,7 @@ import com.l7tech.message.Message;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.SyspropUtil;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import static org.junit.Assert.fail;
@@ -13,6 +14,14 @@ import static org.junit.Assert.fail;
  * Test the WatchdogAssertion.
  */
 public class ServerWatchdogAssertionTest {
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.watchdog.interruptRequest",
+            "com.l7tech.watchdog.logStackTrace"
+        );
+    }
+
     @Test
     public void testWatchdogExpiry() throws Exception {
         SyspropUtil.setProperty("com.l7tech.watchdog.interruptRequest", "true");

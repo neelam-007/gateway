@@ -6,23 +6,23 @@
 
 package com.l7tech.server.audit;
 
+import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.IOUtils;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.TestDocuments;
-
 import org.hibernate.Session;
-import org.w3c.dom.Document;
+import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.Assert;
+import org.w3c.dom.Document;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.zip.ZipFile;
 
 /**
@@ -32,6 +32,13 @@ public class AuditExporterTest {
     private static final String url = "jdbc:mysql://localhost/ssg";
     private static final String username = "gateway";
     private static final String password = "7layer";
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "jdbc.drivers"
+        );
+    }
 
     @Test
     public void testQuoteMeta() throws Exception {

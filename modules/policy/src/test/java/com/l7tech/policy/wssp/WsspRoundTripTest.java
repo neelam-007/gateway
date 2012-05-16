@@ -9,6 +9,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.Wsdl;
 import org.apache.ws.policy.Policy;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -31,6 +32,14 @@ public class WsspRoundTripTest {
     static {
         SyspropUtil.setProperty( "com.l7tech.policy.wssp.useNewWsspNs", "false" );
         SyspropUtil.setProperty( "com.l7tech.policy.wssp.useNewWspNs", "false" );
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.policy.wssp.useNewWsspNs",
+            "com.l7tech.policy.wssp.useNewWspNs"
+        );
     }
 
     @Test

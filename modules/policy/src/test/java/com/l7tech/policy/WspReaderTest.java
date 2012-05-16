@@ -20,6 +20,7 @@ import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
 import com.l7tech.xml.xpath.XpathExpression;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
@@ -56,7 +57,14 @@ public class WspReaderTest {
     static {
         SyspropUtil.setProperty( "com.l7tech.policy.wsp.checkAccessors", "true" );
     }
-    
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.policy.wsp.checkAccessors"
+        );
+    }
+
     @Test
     public void testParseWsp() throws Exception {
         InputStream wspStream = cl.getResourceAsStream(SIMPLE_POLICY);

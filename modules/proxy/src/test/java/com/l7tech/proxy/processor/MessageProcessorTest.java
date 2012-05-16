@@ -9,24 +9,22 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.proxy.datamodel.Policy;
-import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
-import com.l7tech.proxy.datamodel.PolicyManagerStub;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgManagerStub;
+import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.test.BugNumber;
-
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.SyspropUtil;
-import static org.junit.Assert.*;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Unit tests for proxy message processor.
@@ -37,6 +35,13 @@ public class MessageProcessorTest {
     public static void init() throws IOException {
         final File file = FileUtils.createTempDirectory( "l7tech-MessageProcessorTest-", null, null, true );
         SyspropUtil.setProperty( "com.l7tech.proxy.configDir", file.getAbsolutePath() );
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.proxy.configDir"
+        );
     }
 
     @Test

@@ -10,17 +10,7 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
-import com.l7tech.policy.assertion.xmlsec.WssSignElement;
-import com.l7tech.policy.assertion.xmlsec.WssReplayProtection;
-import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
-import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
-import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
-import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
-import com.l7tech.policy.assertion.xmlsec.AddWssSecurityToken;
+import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.security.cert.TestCertificateGenerator;
@@ -32,7 +22,7 @@ import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
 import com.l7tech.wsdl.MimePartInfo;
 import com.l7tech.xml.xpath.XpathExpression;
-import static org.junit.Assert.*;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.ls.LSInput;
@@ -50,6 +40,8 @@ import java.net.URL;
 import java.util.*;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.*;
+
 /**
  * Test serializing policy tree to XML.
  */
@@ -66,6 +58,13 @@ public class WspWriterTest {
     static {
         SyspropUtil.setProperty( "com.l7tech.policy.wsp.checkAccessors", "true" );
         AssertionRegistry.installEnhancedMetadataDefaults();
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.policy.wsp.checkAccessors"
+        );
     }
 
     private String fixLines(String input) {

@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.util.SyspropUtil;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -22,6 +23,14 @@ public class ServiceMetricsManagerTest {
         SyspropUtil.setProperty( "com.l7tech.console.suppressVersionCheck", "true" );
         ApplicationContext springContext = ApplicationContexts.getProdApplicationContext();
         metricsManager = springContext.getBean("serviceMetricsManager", ServiceMetricsManager.class);
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.server.home",
+            "com.l7tech.console.suppressVersionCheck"
+        );
     }
 
     @Test

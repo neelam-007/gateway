@@ -22,22 +22,22 @@ import com.l7tech.policy.assertion.xmlsec.WssSignElement;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.util.PolicyServiceClient;
-import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestDefaultKey;
 import com.l7tech.server.identity.TestIdentityProvider;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.MockConfig;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.xpath.XpathExpression;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -47,6 +47,9 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Properties;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Unit tests for PolicyService.
@@ -85,6 +88,13 @@ public class PolicyServiceTest {
         johnSmith.setUniqueIdentifier("112313418");
         johnSmith.setProviderId(TestIdentityProvider.PROVIDER_ID);
         TestIdentityProvider.addUser(johnSmith, "John Smith", TESTUSER_PASSWD.toCharArray(), "C=US, ST=California, L=Cupertino, O=IBM, OU=Java Technology Center, CN=John Smith");
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.server.policy.policyServiceFullSecurityChecks"
+        );
     }
 
     private PolicyEnforcementContext getPolicyRequestContext( final LoginCredentials loginCredentials ) throws GeneralSecurityException, IOException {

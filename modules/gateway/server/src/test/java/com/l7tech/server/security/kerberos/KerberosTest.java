@@ -1,22 +1,15 @@
 package com.l7tech.server.security.kerberos;
 
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
+import com.l7tech.kerberos.KerberosClient;
+import com.l7tech.kerberos.KerberosConfigConstants;
+import com.l7tech.util.SyspropUtil;
+import org.junit.*;
+
 import javax.security.auth.Subject;
+import javax.security.auth.callback.*;
 import javax.security.auth.login.LoginContext;
 import java.io.IOException;
 import java.util.Set;
-
-import com.l7tech.kerberos.KerberosConfigConstants;
-import com.l7tech.kerberos.KerberosClient;
-import com.l7tech.util.SyspropUtil;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.Assert;
 
 /**
  * User: vchan
@@ -45,6 +38,17 @@ public class KerberosTest implements KerberosConfigConstants {
 
         if (krbClient == null)
             krbClient = new KerberosClient();
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "java.security.krb5.realm",
+            "java.security.krb5.kdc",
+            SYSPROP_SSG_HOME,
+            SYSPROP_LOGINCFG_PATH,
+            SYSPROP_KRB5CFG_PATH
+        );
     }
 
     /* testing...

@@ -3,10 +3,7 @@ package com.l7tech.gateway.config.manager.db;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.SyspropUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -51,6 +48,13 @@ public class DBActionsTest {
             Assert.assertEquals(DBActions.StatusType.SUCCESS, result);
             DBalreadyCreated = true;
         }
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.server.home"
+        );
     }
 
     @Test

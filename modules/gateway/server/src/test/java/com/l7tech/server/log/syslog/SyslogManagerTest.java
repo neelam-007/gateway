@@ -2,12 +2,6 @@ package com.l7tech.server.log.syslog;
 
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.core.IsEqual.equalTo;
-import org.hamcrest.core.IsNot;
-import org.junit.Test;
-import static org.junit.Assert.*;
-
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
@@ -15,6 +9,8 @@ import org.apache.mina.common.ThreadModel;
 import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
+import org.junit.AfterClass;
+import org.junit.Test;
 
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
@@ -28,6 +24,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.*;
+
 /**
  * JUnit test for syslog manager
  *
@@ -37,6 +37,13 @@ public class SyslogManagerTest {
 
     public static final String REGEX_STANDARD = "<([1-9][0-9]{0,2})>([A-Za-z]{3} [ 1-9][0-9] [0-9]{2}:[0-9]{2}:[0-9]{2}) ([a-zA-Z\\-_0-9]{1,1024}) ([a-zA-Z0-9\\-_]{1,1024})\\[([0-9]{1,10})\\]: ([a-zA-Z0-9 ]{0,10000})[\\n]{0,1}";
     public static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            SyslogManagerTest.class.getPackage().getName() + ".maxLength"
+        );
+    }
 
     /**
      * Full client/server test for message format

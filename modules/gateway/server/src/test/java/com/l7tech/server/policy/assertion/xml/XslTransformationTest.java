@@ -83,6 +83,13 @@ public class XslTransformationTest {
         SyspropUtil.setProperty("com.l7tech.xml.xslt.useSaxon", "false");
     }
 
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.xml.xslt.useSaxon"
+        );
+    }
+
     @Test
     public void testServerAssertion() throws Exception {
         XslTransformation ass = new XslTransformation();

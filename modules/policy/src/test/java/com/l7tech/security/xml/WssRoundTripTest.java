@@ -19,6 +19,7 @@ import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.DomCompiledXpath;
 import com.l7tech.xml.xpath.XpathExpression;
+import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -48,6 +49,14 @@ public class WssRoundTripTest {
     static {
         SyspropUtil.setProperty(WssDecoratorImpl.PROPERTY_SUPPRESS_NANOSECONDS, "true");
         SyspropUtil.setProperty(SoapUtil.PROPERTY_DISCLOSE_ELEMENT_NAME_IN_WSU_ID, "true");
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            WssDecoratorImpl.PROPERTY_SUPPRESS_NANOSECONDS,
+            SoapUtil.PROPERTY_DISCLOSE_ELEMENT_NAME_IN_WSU_ID
+        );
     }
 
     private static class NamedTestDocument {

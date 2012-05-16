@@ -4,6 +4,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -60,6 +61,14 @@ public class RsaReproNoneWithEcdsaTest {
         SyspropUtil.setProperty( "com.l7tech.common.security.jceProviderEngine", rsaEngineClass );
         JceProvider.init();
         assertEquals(rsaEngineClass, JceProvider.getEngineClass());
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.common.security.jceProviderEngine",
+            "com.l7tech.common.security.jceProviderEngineName"
+        );
     }
 
     @Test

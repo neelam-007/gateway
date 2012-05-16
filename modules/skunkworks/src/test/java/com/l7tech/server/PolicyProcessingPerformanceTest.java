@@ -134,6 +134,11 @@ public class PolicyProcessingPerformanceTest extends TestCase {
 
              @Override
              protected void tearDown() throws Exception {
+                 SyspropUtil.clearProperties(
+                     "com.l7tech.security.prov.rsa.libpath.nonfips",
+                     "com.l7tech.server.serviceResolution.strictSoap",
+                     "javax.xml.transform.TransformerFactory"
+                 );
              }
          };
     }

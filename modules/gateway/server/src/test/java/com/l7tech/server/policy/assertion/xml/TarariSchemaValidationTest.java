@@ -8,8 +8,9 @@ import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContextImpl;
 import com.tarari.xml.rax.schema.SchemaLoader;
 import com.tarari.xml.rax.schema.SchemaResolver;
-import org.junit.Ignore;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -36,6 +37,13 @@ public class TarariSchemaValidationTest {
         if (context != null) {
             context.compileAllXpaths();
         }
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.common.xml.tarari.enable"
+        );
     }
 
     @Test

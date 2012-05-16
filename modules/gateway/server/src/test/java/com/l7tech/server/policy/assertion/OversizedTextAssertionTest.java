@@ -5,22 +5,23 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.message.Message;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.server.MockServletApi;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.ServerPolicyFactory;
-import com.l7tech.policy.assertion.OversizedTextAssertion;
-import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.OversizedTextAssertion;
+import com.l7tech.server.MockServletApi;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.util.SyspropUtil;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test for OversizedTextAssertion bean.
@@ -33,6 +34,13 @@ public class OversizedTextAssertionTest {
     public void setUp() throws Exception {
         // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
         SyspropUtil.setProperty( "javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl" );
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "javax.xml.transform.TransformerFactory"
+        );
     }
 
     @Test

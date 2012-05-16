@@ -6,19 +6,20 @@
 
 package com.l7tech.security.prov;
 
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
+import com.l7tech.security.keys.AesKey;
 import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
+import com.l7tech.security.xml.WssDecoratorTest;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
-import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.xml.WssDecoratorTest;
-import com.l7tech.security.keys.AesKey;
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.IOUtils;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -47,6 +48,14 @@ public class JceProviderTest {
 
     public static final String USAGE = "Usage: JceProviderTest (phaos|bc|rsa|ncipher|entrust|ibm) scale dir keypass storepass [storetype] [concurrency]";
     private static final boolean LOAD_CSR_FROM_DISK = false;
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.common.security.jceProviderEngine",
+            "com.l7tech.common.security.jceProviderEngineName"
+        );
+    }
 
     @Test
     public void testJceProviderMappings() {

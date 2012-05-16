@@ -2,6 +2,7 @@ package com.l7tech.common.password;
 
 import com.l7tech.util.Charsets;
 import com.l7tech.util.SyspropUtil;
+import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -18,6 +19,11 @@ public class Sha512CryptPasswordHasherTest {
     SecureRandom secureRandom = new SecureRandom();
     PasswordHasher hasher = new Sha512CryptPasswordHasher(Sha512CryptPasswordHasher.DEFAULT_MESSAGE_DIGEST_FACTORY, secureRandom);
     byte[] pass = "blah".getBytes(Charsets.UTF8);
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(Sha512CryptPasswordHasher.PROP_DEFAULT_ROUNDS);
+    }
 
     @Test
     public void testHashPassword() throws Exception {

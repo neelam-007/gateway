@@ -29,6 +29,7 @@ import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathResultIterator;
 import junit.framework.Assert;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
@@ -76,6 +77,13 @@ public class ServerSamlpResponseBuilderAssertionTest {
         v1Unmarshaller = JaxbUtil.getUnmarshallerV1();
 
         v2Unmarshaller = JaxbUtil.getUnmarshallerV2();
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.external.assertions.samlpassertion.validateSSOProfile"
+        );
     }
 
     /**

@@ -1,15 +1,28 @@
 package com.l7tech.util;
 
 import com.l7tech.util.ConfigFactory.DefaultConfig;
-import static org.junit.Assert.*;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * JUnit tests for ConfigFactory
  */
 public class ConfigFactoryTest {
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.util.ConfigFactoryTest.prop1",
+            "com.l7tech.util.ConfigFactoryTest.int1",
+            "com.example.prop1",
+            "com.l7tech.util.ConfigFactoryTest.prop"
+        );
+    }
 
     /**
      * Test access of system properties without mappings.

@@ -4,13 +4,17 @@ import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -27,6 +31,14 @@ public class BouncyCastleJceProviderEngineTest {
 
         // TODO uncomment and reenable test as soon as there is a way to force a test suite to run in a new JVM
         //assertEquals(bcEngineClass, JceProvider.getEngineClass());
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.common.security.jceProviderEngine",
+            "com.l7tech.common.security.jceProviderEngineName"
+        );
     }
 
     @Ignore("Currently no way to run this test in its own JVM, so it ends up using the RSA JceProvider instead.")

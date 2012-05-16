@@ -6,14 +6,13 @@
  */
 package com.l7tech.skunkworks.backuprestore;
 
-import com.l7tech.util.SyspropUtil;
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.After;
-import org.junit.Assert;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import com.l7tech.gateway.config.backuprestore.*;
+import com.l7tech.gateway.config.backuprestore.ImportExportUtilities;
+import com.l7tech.gateway.config.backuprestore.Importer;
+import com.l7tech.gateway.config.backuprestore.MigrateToRestoreConvertor;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.SyspropUtil;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.junit.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +55,16 @@ public class ImporterTestsOffline {
 
         SyspropUtil.clearProperty( "com.l7tech.util.buildVersion" );
         SyspropUtil.clearProperty( "com.l7tech.gateway.config.backuprestore.checkversion" );
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.util.buildVersion",
+            "com.l7tech.gateway.config.backuprestore.checkversion",
+            "com.l7tech.config.backuprestore.mycnfdir",
+            "com.l7tech.config.backup.localDbOnly"
+        );
     }
 
     @Test

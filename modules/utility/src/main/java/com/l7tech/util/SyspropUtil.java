@@ -118,4 +118,10 @@ public class SyspropUtil {
             }
         });
     }
+
+    public static void clearProperties(final String... names) {
+        for (String name : names) {
+            clearProperty(name);
+        }
+    }
 }

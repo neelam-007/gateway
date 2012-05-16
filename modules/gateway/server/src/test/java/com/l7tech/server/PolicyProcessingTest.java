@@ -19,7 +19,6 @@ import com.l7tech.security.token.SignatureConfirmation;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProvider;
@@ -43,10 +42,7 @@ import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.tarari.GlobalTarariContext;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -184,6 +180,15 @@ public class PolicyProcessingTest {
         buildUsers();
 
         createSecureConversationSession(); // session used in testing
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.security.prov.rsa.libpath.nonfips",
+            "com.l7tech.server.serviceResolution.strictSoap",
+            "javax.xml.transform.TransformerFactory"
+        );
     }
 
     private long getServiceOid( String resolutionUri ) {

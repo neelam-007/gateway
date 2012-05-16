@@ -1,28 +1,32 @@
 package com.l7tech.server.saml;
 
-import com.l7tech.gateway.common.audit.TestAudit;
-import com.l7tech.security.token.SigningSecurityToken;
-import com.l7tech.test.BugNumber;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.xml.saml.SamlAssertion;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.processor.MockProcessorResult;
-import com.l7tech.security.token.XmlSecurityToken;
-import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.server.policy.assertion.xmlsec.SamlAssertionValidate;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
-import org.w3c.dom.Document;
-import org.junit.Test;
+import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.security.token.SigningSecurityToken;
+import com.l7tech.security.token.XmlSecurityToken;
+import com.l7tech.security.xml.processor.MockProcessorResult;
+import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.server.policy.assertion.xmlsec.SamlAssertionValidate;
+import com.l7tech.test.BugNumber;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.xml.saml.SamlAssertion;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.Test;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import static org.junit.Assert.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-import java.util.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Saml 2.0 assertion validation tests.
@@ -51,6 +55,13 @@ public class Saml2ValidationTest {
         samlValidationCommon = new SamlValidationCommon(requireWssSaml);
     }
 
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.server.saml.validate.notBeforeOffsetMin",
+            "com.l7tech.server.saml.validate.notOnOrAfterOffsetMin"
+        );
+    }
 
     /**
      * TEST that the assertion expiry time is validated.

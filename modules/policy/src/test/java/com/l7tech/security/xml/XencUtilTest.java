@@ -14,10 +14,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -54,6 +51,14 @@ public class XencUtilTest {
         uncustomizeClassProperties(XencUtil.class);
         uncustomizeClassProperties(XencKeyBlacklist.class);
         ConfigFactory.clearCachedConfig();
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.common.security.jceProviderEngine",
+            "com.l7tech.common.security.jceProviderEngineName"
+        );
     }
 
     private static void uncustomizeClassProperties(Class c) throws IllegalAccessException {

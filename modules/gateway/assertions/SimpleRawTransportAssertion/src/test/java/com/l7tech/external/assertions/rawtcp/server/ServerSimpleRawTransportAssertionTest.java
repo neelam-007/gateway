@@ -15,6 +15,7 @@ import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.SyspropUtil;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -22,9 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Test the SimpleRawTransportAssertion.
@@ -35,6 +34,13 @@ public class ServerSimpleRawTransportAssertionTest {
     public static void setup() {
         AssertionRegistry.installEnhancedMetadataDefaults();
         SyspropUtil.setProperty( "com.l7tech.logging.debug", "true" );
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.logging.debug"
+        );
     }
 
     @Test

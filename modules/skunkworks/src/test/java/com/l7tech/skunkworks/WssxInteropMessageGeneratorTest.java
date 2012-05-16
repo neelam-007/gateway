@@ -22,6 +22,13 @@ public class WssxInteropMessageGeneratorTest {
         JceProvider.init();
     }
 
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.security.prov.rsa.libpath.nonfips"
+        );
+    }
+
     @Test
     public void test_2113_UsernameTokenRequest() throws Exception {
         WssxInteropMessageGenerator gen = new WssxInteropMessageGenerator();

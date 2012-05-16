@@ -1,22 +1,24 @@
 package com.l7tech.uddi;
 
-import com.l7tech.util.SyspropUtil;
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.Assert;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.util.Pair;
-import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE;
-import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_BINDING;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.wsdl.Wsdl;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
-import javax.xml.bind.JAXB;
 import javax.wsdl.WSDLException;
-import java.util.*;
-import java.util.logging.LogManager;
-import java.io.InputStream;
+import javax.xml.bind.JAXB;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
+import java.util.logging.LogManager;
+
+import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_BINDING;
+import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE;
 
 /**
  * @author darmstrong
@@ -43,6 +45,13 @@ public class UDDIUtilitiesTest {
         serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
         referencedModels = serviceToDependentModels.get(0).right;
         singleService = serviceToDependentModels.get(0).left;
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.uddi.UDDIUtilities.fallBackOnFirstImplentingWsdlPort"
+        );
     }
 
     /**

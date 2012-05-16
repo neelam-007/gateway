@@ -1,20 +1,19 @@
 package com.l7tech.gateway.config.backuprestore;
 
+import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.SyspropUtil;
-import org.junit.Test;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.After;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Collections;
-
-import com.l7tech.server.management.config.node.DatabaseConfig;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Tests the ImportExportUtilitiesTest utility functions.
@@ -30,7 +29,7 @@ public class ImportExportUtilitiesTest {
 
     @After
     public void tearDown(){
-        SyspropUtil.clearProperty( "com.l7tech.util.buildVersion" );
+        SyspropUtil.clearProperties( "com.l7tech.util.buildVersion", ImportExportUtilities.BASE_DIR_PROPERTY );
     }
 
     /**

@@ -3,15 +3,15 @@ package com.l7tech.gateway.config.manager.db;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.SsgConnector.Endpoint;
 import com.l7tech.util.SyspropUtil;
+import org.junit.AfterClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.util.EnumSet;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.logging.Logger;
-
-import org.junit.Test;
-import org.junit.Ignore;
 
 /**
  *
@@ -22,6 +22,13 @@ public class SsgConnectorSqlTest {
     private static final String url = "jdbc:mysql://localhost/ssg";
     private static final String username = "gateway";
     private static final String password = "7layer";
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "jdbc.drivers"
+        );
+    }
 
     @Test
     @Ignore("This is a developer test, requires local db.")

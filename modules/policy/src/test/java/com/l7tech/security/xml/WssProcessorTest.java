@@ -29,10 +29,7 @@ import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathUtil;
 import org.jcp.xml.dsig.internal.dom.DOMReference;
 import org.jcp.xml.dsig.internal.dom.DOMSubTreeData;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -180,6 +177,13 @@ public class WssProcessorTest {
         SyspropUtil.clearProperty(XencUtil.PROP_DECRYPTION_ALWAYS_SUCCEEDS);
         SyspropUtil.clearProperty(XencUtil.PROP_ENCRYPT_EMPTY_ELEMENTS);
         ConfigFactory.clearCachedConfig();
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            XencUtil.PROP_DECRYPTION_ALWAYS_SUCCEEDS
+        );
     }
 
     @Test

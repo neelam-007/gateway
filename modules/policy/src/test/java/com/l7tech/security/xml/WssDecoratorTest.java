@@ -35,6 +35,7 @@ import com.l7tech.xml.xpath.DomCompiledXpath;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathResult;
 import junit.framework.Assert;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -74,6 +75,15 @@ public class WssDecoratorTest {
     public static void beforeClass() {
         JceProvider.init();
         SyspropUtil.setProperty(SoapUtil.PROPERTY_DISCLOSE_ELEMENT_NAME_IN_WSU_ID, "true");
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            SoapUtil.PROPERTY_DISCLOSE_ELEMENT_NAME_IN_WSU_ID,
+            SoapUtil.PROPERTY_MUSTUNDERSTAND,
+            SoapUtil.PROPERTY_DISCLOSE_ELEMENT_NAME_IN_WSU_ID
+        );
     }
 
     public static class Context {

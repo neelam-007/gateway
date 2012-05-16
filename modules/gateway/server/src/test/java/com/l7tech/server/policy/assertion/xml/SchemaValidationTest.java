@@ -1,30 +1,31 @@
 package com.l7tech.server.policy.assertion.xml;
 
-import com.l7tech.gateway.common.audit.LoggingAudit;
-import com.l7tech.message.ValidationTarget;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.wsdl.WsdlSchemaAnalizer;
-import com.l7tech.util.IOUtils;
+import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.TestDocuments;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.xml.TarariLoader;
-import com.l7tech.xml.tarari.GlobalTarariContextImpl;
+import com.l7tech.gateway.common.audit.LoggingAudit;
+import com.l7tech.message.Message;
+import com.l7tech.message.ValidationTarget;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.communityschemas.SchemaHandle;
 import com.l7tech.server.communityschemas.SchemaManager;
 import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.TestStashManagerFactory;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.wsdl.WsdlSchemaAnalizer;
+import com.l7tech.xml.TarariLoader;
+import com.l7tech.xml.tarari.GlobalTarariContextImpl;
 import com.tarari.xml.rax.schema.SchemaLoader;
 import com.tarari.xml.rax.schema.SchemaResolver;
+import org.junit.*;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -33,10 +34,6 @@ import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-import org.junit.Before;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.Ignore;
 
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -71,6 +68,13 @@ public class SchemaValidationTest {
             context.compileAllXpaths();
         }
         testApplicationContext = ApplicationContexts.getTestApplicationContext();
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.common.xml.tarari.enable"
+        );
     }
 
     @Test

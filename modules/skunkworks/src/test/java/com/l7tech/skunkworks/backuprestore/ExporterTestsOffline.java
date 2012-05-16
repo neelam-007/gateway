@@ -19,6 +19,7 @@ import com.l7tech.util.FileUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.SyspropUtil;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,6 +49,13 @@ public class ExporterTestsOffline {
                 FileUtils.deleteDir(tmpSecureSpanHome);
             }
         }
+    }
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties(
+            "com.l7tech.util.buildVersion"
+        );
     }
 
     /**

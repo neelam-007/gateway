@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.gateway;
 
 import com.l7tech.util.SyspropUtil;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.Ignore;
 import com.l7tech.server.management.api.node.GatewayApi;
@@ -11,6 +12,11 @@ import com.l7tech.test.BugNumber;
  */
 public class GatewayApiTest {
 
+
+    @AfterClass
+    public static void cleanupSystemProperties() {
+        SyspropUtil.clearProperties("org.apache.cxf.nofastinfoset");
+    }
 
     /**
      * Test to reproduce bugs 6008, 6159.
