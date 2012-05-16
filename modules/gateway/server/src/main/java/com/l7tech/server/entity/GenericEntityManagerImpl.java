@@ -382,11 +382,31 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         if (!isRegistered(entityClass))
             throw new FindException(regmsg(entityClass));
 
-        GenericEntity ret = findByUniqueName(name);
+        GenericEntity ret = doFindByUniqueName(entityClass.getName(), name);
         if (ret == null)
             return null;
 
         return entityClass.isInstance(ret) ? entityClass.cast(ret) : asConcreteEntity(ret, entityClass);
+    }
+
+    private GenericEntity doFindByUniqueName(final @NotNull String entityClassname, final String name) throws FindException {
+        if (name == null) throw new NullPointerException();
+        if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
+
+        try {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<GenericEntity>() {
+                @Override
+                public GenericEntity doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Criteria criteria = session.createCriteria(getImpClass());
+                    addFindByNameCriteria(criteria);
+                    criteria.add(Restrictions.eq(F_NAME, name));
+                    criteria.add(Restrictions.eq(F_CLASSNAME, entityClassname));
+                    return (GenericEntity)criteria.uniqueResult();
+                }
+            });
+        } catch (HibernateException e) {
+            throw new FindException("Couldn't find unique entity", e);
+        }
     }
 
     @Override
