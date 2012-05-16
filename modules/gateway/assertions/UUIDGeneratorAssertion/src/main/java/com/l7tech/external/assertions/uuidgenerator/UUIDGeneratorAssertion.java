@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.uuidgenerator;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
@@ -58,28 +57,8 @@ public class UUIDGeneratorAssertion extends Assertion implements UsesVariables, 
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        VariableMetadata[] variables;
-        if (targetVariable == null) {
-            variables = new VariableMetadata[0];
-        } else {
-            try {
-                final Integer quantityInt = Integer.parseInt(quantity);
-                if (quantityInt == 1) {
-                    // single valued
-                    variables = new VariableMetadata[]{new VariableMetadata(targetVariable, false, false, null, false, DataType.STRING)};
-                } else if (quantityInt > 1) {
-                    // multivalued
-                    variables = new VariableMetadata[]{new VariableMetadata(targetVariable, false, true, null, false, DataType.STRING)};
-                } else {
-                    // invalid
-                    variables = new VariableMetadata[0];
-                }
-            } catch (final NumberFormatException e) {
-                // probably a context variable so we do not know if it is multivalued at this time
-                variables = new VariableMetadata[]{new VariableMetadata(targetVariable, false, null, null, false, DataType.STRING)};
-            }
-        }
-        return variables;
+        if (targetVariable == null) return new VariableMetadata[0];
+        return new VariableMetadata[]{new VariableMetadata(targetVariable)};
     }
 
     //
