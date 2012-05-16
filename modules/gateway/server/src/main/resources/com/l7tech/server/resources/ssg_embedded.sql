@@ -1487,10 +1487,10 @@ create table generic_entity (
   objectid bigint not null,
   version integer,
   name varchar(255),
-  description varchar(4096),
+  description clob(8388607),
   classname varchar(255) not null,
   enabled smallint default 1,
-  value_xml varchar(4096),
+  value_xml clob(8388607),
   primary key (objectid),
   unique (classname, name)
 );
