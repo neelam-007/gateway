@@ -30,14 +30,16 @@ public class GenerateHashPropertiesDialog extends AssertionPropertiesOkCancelSup
      * @param owner the dialog's owner.
      */
     public GenerateHashPropertiesDialog(final Window owner) {
-        super(GenerateHashAssertion.class, owner, "Generate Security Hash Assertion", true);
+        super(GenerateHashAssertion.class, owner, "Generate Security Hash Properties", true);
         initComponents();
     }
 
     @Override
     public void setData(GenerateHashAssertion assertion) {
         keyTextField.setText(assertion.getKeyText());
+        keyTextField.setCaretPosition(0);
         dataToSign.setText(TextUtils.convertLineBreaks(assertion.dataToSignText(), LineBreak.LF.getCharacters()));
+        dataToSign.setCaretPosition(0);
         algorithmComboBox.setSelectedItem(assertion.getAlgorithm());
         targetVariablePanel.setVariable(assertion.getTargetOutputVariable());
         LineBreak lineBreak = assertion.getLineBreak();
