@@ -108,19 +108,19 @@ public class NetLogon extends HashMap implements AuthenticationAdapter{
         String serviceName = (String)get("service.account", "");
         String servicePassword = (String)get("service.password", "");
 
-        connect(serverName, hostname, serviceName, servicePassword);
-
-        //validate user account
-        int timestamp = (int) (System.currentTimeMillis() / 1000L);
-        Encdec.enc_uint32le(Encdec.dec_uint32le(clientCredentials, 0) + timestamp, clientCredentials, 0);
-        byte[] cred = computeNetlogonCredential(clientCredentials, sessionKey);
-
-        NetlogonAuthenticator authenticator = new NetlogonAuthenticator(cred, timestamp);
-        NetlogonAuthenticator returnAuthenticator = new NetlogonAuthenticator(new byte[8], 0);
-        NetlogonNetworkInfo networkInfo = createNetlogonNetworkInfo(response, challenge);
-        NetlogonValidationSamInfo2 validationSamInfo2 = new NetlogonValidationSamInfo2();
-
         try {
+            connect(serverName, hostname, serviceName, servicePassword);
+
+            //validate user account
+            int timestamp = (int) (System.currentTimeMillis() / 1000L);
+            Encdec.enc_uint32le(Encdec.dec_uint32le(clientCredentials, 0) + timestamp, clientCredentials, 0);
+            byte[] cred = computeNetlogonCredential(clientCredentials, sessionKey);
+
+            NetlogonAuthenticator authenticator = new NetlogonAuthenticator(cred, timestamp);
+            NetlogonAuthenticator returnAuthenticator = new NetlogonAuthenticator(new byte[8], 0);
+            NetlogonNetworkInfo networkInfo = createNetlogonNetworkInfo(response, challenge);
+            NetlogonValidationSamInfo2 validationSamInfo2 = new NetlogonValidationSamInfo2();
+
             sendNetrLogonSamLogon(serverName, hostname, authenticator, returnAuthenticator, networkInfo, validationSamInfo2);
             //compute credentials and check them against return authenticator credentials
             Encdec.enc_uint32le(Encdec.dec_uint32le(clientCredentials, 0) + 1, clientCredentials, 0);
@@ -153,15 +153,13 @@ public class NetLogon extends HashMap implements AuthenticationAdapter{
     }
 
     protected void connect(String serverName, String hostname, String serviceName, String servicePassword) throws AuthenticationManagerException {
-        DcerpcHandle dcerpcHandle = null;
-
-        dcerpcHandle = bind(serverName, serviceName, servicePassword);
+        handle = bind(serverName, serviceName, servicePassword);
 
         byte[] clientChallenge = new byte[8];
         byte[] serverChallenge = new byte[8];
         random.nextBytes(clientChallenge);
 
-        NetrServerReqChallenge netrServerReqChallenge = sendNetrServerReqChallenge(serverName, hostname, dcerpcHandle, clientChallenge, serverChallenge);
+        NetrServerReqChallenge netrServerReqChallenge = sendNetrServerReqChallenge(serverName, hostname, handle, clientChallenge, serverChallenge);
 
         byte[] nTOWFv1 = NtlmPasswordAuthentication.nTOWFv1(servicePassword);
         byte[] sessionkey = computeSessionKey(nTOWFv1, clientChallenge, netrServerReqChallenge.serverChallenge);
@@ -169,13 +167,12 @@ public class NetLogon extends HashMap implements AuthenticationAdapter{
         clientCredentials = computeNetlogonCredential(clientChallenge, sessionkey);
         serverCredentials = computeNetlogonCredential(netrServerReqChallenge.serverChallenge, sessionkey);
 
-        NetrServerAuthenticate2 netrServerAuthenticate2 = sendNetrServerAuthenticate2(serverName, hostname, serviceName, dcerpcHandle);
+        NetrServerAuthenticate2 netrServerAuthenticate2 = sendNetrServerAuthenticate2(serverName, hostname, serviceName, handle);
 
         log.log(Level.FINE, "Calculated credentials: " + Hexdump.toHexString(serverCredentials, 0, serverCredentials.length) + " Server credentials: " + Hexdump.toHexString(netrServerAuthenticate2.serverCredential, 0, netrServerAuthenticate2.serverCredential.length));
 
         if(Arrays.equals(serverCredentials, netrServerAuthenticate2.serverCredential)) {
             this.sessionKey = sessionkey;
-            handle = dcerpcHandle;
             log.log(Level.FINE, "Session key: " + Hexdump.toHexString(this.sessionKey, 0, this.sessionKey.length));
         }
         else {
@@ -263,7 +260,7 @@ public class NetLogon extends HashMap implements AuthenticationAdapter{
             dcerpcHandle.bind();
             log.log(Level.FINE, "Bind to " + serverIp + " was successful");
         } catch (IOException e) {
-            log.log(Level.SEVERE, "Unable to bind to " + serverIp, e);
+            log.log(Level.SEVERE, "Unable to bind to " + serverIp);
             throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_ERROR, "Unable to bind", e);
         }
         return dcerpcHandle;

@@ -783,8 +783,11 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         try {
             testNetlogon.connect();
         } catch (AuthenticationManagerException ame) {
-            logger.log(Level.WARNING, "Failed to connect to Netlogon service" + ame.getMessage());
+            logger.log(Level.FINE, "Failed to connect to Netlogon service" + ame.getMessage());
             throw new InvalidIdProviderCfgException("Invalid NTLM configuration", ame);
+        }
+        finally {
+            testNetlogon.disconnect();
         }
     }
 

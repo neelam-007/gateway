@@ -26,6 +26,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpCredentialSource;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.NameValuePair;
 import com.l7tech.util.Pair;
@@ -138,7 +139,9 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
         HashMap userAccountInfo = (HashMap) securityToken.getParams().get("account.info");
         if (userAccountInfo != null) {
             if(userAccountInfo.containsKey(NtlmAuthenticationAssertion.USER_LOGIN_NAME)) {
-                context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.USER_LOGIN_NAME, userAccountInfo.get(NtlmAuthenticationAssertion.USER_LOGIN_NAME));
+                final String userLoginName = (String)userAccountInfo.get(NtlmAuthenticationAssertion.USER_LOGIN_NAME);
+                context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.USER_LOGIN_NAME, userLoginName);
+                logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_USER_AUTHENTICATED, userLoginName);
             }
             else {
                 logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_MISSING_AUTHORIZATION_ATTRIBUTE, NtlmAuthenticationAssertion.USER_LOGIN_NAME);
@@ -174,7 +177,6 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
                 }
                 context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_SIDS, sidGroups.toArray(new String[0]));
             }
-            
         }
         else {
             logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_MISSING_ACCOUNT_INFO);
@@ -182,7 +184,6 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
         }
     }
 
- 
 
     @Override
     protected LoginCredentials findCredentials(Message request, Map<String, String> authParams)
@@ -267,7 +268,8 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
             authenticationProvider = new NtlmAuthenticationServer(props, new NetLogon(props));
         } catch (FindException e) {
             final String errorMsg = "Unable to create NtlmAuthenticationServer instance";
-            logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_FAILED, new String[]{errorMsg} , e);
+            log.log(Level.FINE, errorMsg, e);
+            logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_FAILED, new String[]{errorMsg}, ExceptionUtils.getDebugException(e));
             throw new CredentialFinderException(errorMsg, e, AssertionStatus.FAILED);
         }
         return authenticationProvider;
@@ -299,8 +301,8 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
             }
         } catch (AuthenticationManagerException e) {
             final String errMessage = "NTLM Authentication failed";
-            log.log(Level.WARNING, errMessage + ": "  + e.getMessage());
-            logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_FAILED, new String[]{errMessage}, e);
+            log.log(Level.FINE, errMessage + ": "  + e.getMessage());
+            logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_FAILED, new String[]{errMessage}, ExceptionUtils.getDebugException(e));
             throw new CredentialFinderException(errMessage, e, AssertionStatus.AUTH_FAILED);
         }
         finally {
@@ -323,7 +325,6 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
                 throw new CredentialFinderException("NTLM account info cannot be null!", AssertionStatus.FAILED);
             }
             ntlmData = HexUtils.encodeBase64(authenticationProvider.getNtlmAuthenticationState().getSessionKey(), true);
-            //params.put(NtlmAuthenticationAssertion.USER_LOGIN_NAME, accountInfo.get("sAMAccountName"));
 
             long currentMills = System.currentTimeMillis();
             if(!accountInfo.containsKey("session.authenticate.time")) {

@@ -11,12 +11,16 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 /**
  * Copyright: Layer 7 Technologies, 2012
@@ -28,6 +32,7 @@ public class NetLogonTest {
     NetLogon fixture = null;
     Map<String, String> properties = NtlmTestConstants.config;
 
+
     @Before
     public void setUp() throws Exception {
         fixture = new NetLogon(properties);
@@ -35,7 +40,7 @@ public class NetLogonTest {
 
     @After
     public void tearDown() throws Exception {
-        fixture.disconnect();
+        //fixture.disconnect();
     }
 
     @Test
@@ -45,6 +50,48 @@ public class NetLogonTest {
 
     @Test
     public void testValidate() throws Exception {
+        NtlmChallengeResponse response = getTestChallengeResponse();
+
+        byte[] challenge = generateTestServerChallenge(response);
+        Map acctInfo = new HashMap();
+        fixture.validate(response, challenge, acctInfo);
+        assertTrue(acctInfo.size() > 0);
+        assertEquals(NtlmTestConstants.USER, acctInfo.get("sAMAccountName"));
+        assertTrue(fixture.handle == null);
+
+    }
+
+    @Test
+    public void shouldReleaseHandleWhenFailed() throws Exception {
+        fixture.remove("localhost.netbios.name");
+
+        NtlmChallengeResponse response = getTestChallengeResponse();
+
+        byte[] challenge = generateTestServerChallenge(response);
+        try{
+            fixture.validate(response, challenge, new HashMap());
+        }catch (Exception ex){}
+
+        assertTrue(fixture.handle == null);
+
+    }
+
+    private byte[] generateTestServerChallenge(NtlmChallengeResponse response) throws AuthenticationManagerException {
+        byte[] challenge = response.getChallenge();
+
+        if (((response.getFlags() & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY /*0x80000*/) != 0) && (response.getNtResponse().length == NtlmAuthenticationServer.NTLM_V1_NT_RESPONSE_LENGTH)) {
+            try {
+                MessageDigest md5 = MessageDigest.getInstance("MD5");
+                md5.update(response.getSessionNonce());
+                challenge = md5.digest();
+            } catch (GeneralSecurityException e) {
+                throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_ERROR, "Failed to compute NTLMv2 server challenge", e);
+            }
+        }
+        return challenge;
+    }
+
+    private NtlmChallengeResponse getTestChallengeResponse() throws IOException {
         Type1Message type1Message = NtlmClient.generateType1Msg(NtlmTestConstants.DOMAIN, NtlmTestConstants.WORKSTATION);
         SecureRandom random = new SecureRandom();
         byte[] serverChallenge = new byte[8];
@@ -60,23 +107,8 @@ public class NetLogonTest {
         System.arraycopy(serverChallenge, 0, sessionNonce, 0, 8);
         System.arraycopy(type3Message.getLMResponse(), 0, sessionNonce, 8, type3Message.getLMResponse().length < 8 ? 0 : 8);
 
-        NtlmChallengeResponse response = new NtlmChallengeResponse(type3Message.getDomain(), type3Message.getUser(),
+        return new NtlmChallengeResponse(type3Message.getDomain(), type3Message.getUser(),
                 serverChallenge, sessionNonce, getTargetInformation(), type3Message.getLMResponse(), type3Message.getNTResponse(), type3Message.getFlags());
-
-        byte[] challenge = response.getChallenge();
-
-        if (((response.getFlags() & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY /*0x80000*/) != 0) && (response.getNtResponse().length == NtlmAuthenticationServer.NTLM_V1_NT_RESPONSE_LENGTH)) {
-            try {
-                MessageDigest md5 = MessageDigest.getInstance("MD5");
-                md5.update(response.getSessionNonce());
-                challenge = md5.digest();
-            } catch (GeneralSecurityException e) {
-                throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_ERROR, "Failed to compute NTLMv2 server challenge", e);
-            }
-        }
-
-        fixture.validate(response, challenge, new HashMap());
-
     }
 
     public byte[] getTargetInformation() throws UnsupportedEncodingException {

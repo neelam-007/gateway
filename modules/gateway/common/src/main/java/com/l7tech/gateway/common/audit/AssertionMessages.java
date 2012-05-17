@@ -101,6 +101,7 @@ public class AssertionMessages extends Messages {
     public static final M NTLM_AUTHENTICATION_CONNECTION_EXPIRED = m(4122, Level.FINE, "Connection {0} expired. Authentication is required") ;
     public static final M NTLM_AUTHENTICATION_IDLE_TIMEOUT_EXPIRED = m(4123, Level.FINE, "Idle timeout for connection {0} expired. Authentication is required") ;
     public static final M NTLM_AUTHENTICATION_MISSING_AUTHORIZATION_ATTRIBUTE = m(4124, Level.WARNING, "Attribute {0} from Account Info is missing");
+    public static final M NTLM_AUTHENTICATION_USER_AUTHENTICATED = m(4125, Level.INFO, "Authenticated NTLM user: {0}");
 
     // ServerResolveServiceAssertion, service resolution
     public static final Messages.M RESOLVE_SERVICE_ALREADY_RESOLVED = m(4150, Level.INFO, "Service resolution has already been performed for this request");
