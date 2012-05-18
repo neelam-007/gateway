@@ -93,7 +93,7 @@
 		<override org="commons-logging" module="commons-logging" matcher="exact" rev="1.1.1"/>
 		<override org="com.sun.xml.bind" module="jaxb-impl" matcher="exact" rev="2.1.13"/>
 		<override org="com.sun.xml.bind" module="jaxb-xjc" matcher="exact" rev="2.1.13"/>
-		<override org="com.sun.xml.fastinfoset" module="FastInfoset" matcher="exact" rev="1.2.7"/>
+		<override org="com.sun.xml.fastinfoset" module="FastInfoset" matcher="exact" rev="1.2.11"/>
 		<override org="com.sun.xml.messaging.saaj" module="saaj-impl" matcher="exact" rev="1.3.3"/>
 		<override org="com.sun.xml.parsers" module="jaxp-ri" matcher="exact" rev="1.4.2"/>
 		<override org="httpunit" module="httpunit" matcher="exact" rev="1.6.2"/>
@@ -137,8 +137,8 @@
 		<override org="org.codehaus.woodstox" module="wstx-asl" matcher="exact" rev="3.2.9"/>
 		<override org="org.easymock" module="easymockclassextension" matcher="exact" rev="2.4"/>
 		<override org="org.mortbay.jetty" module="jetty" matcher="exact" rev="6.1.26"/>
-		<override org="org.slf4j" module="slf4j-api" matcher="exact" rev="1.6.1"/>
-		<override org="org.slf4j" module="slf4j-jdk14" matcher="exact" rev="1.6.1"/>
+		<override org="org.slf4j" module="slf4j-api" matcher="exact" rev="1.6.4"/>
+		<override org="org.slf4j" module="slf4j-jdk14" matcher="exact" rev="1.6.4"/>
 		<override org="org.springframework" module="spring-beans" matcher="exact" rev="2.5.6"/>
 		<override org="org.springframework" module="spring-context" matcher="exact" rev="2.5.6"/>
 		<override org="org.springframework" module="spring-core" matcher="exact" rev="2.5.6"/>

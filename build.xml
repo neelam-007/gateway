@@ -1599,7 +1599,7 @@
         <!--
           The build will fail if any of these JARS are missing.
         -->
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/annotations-10.5.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/annotations-11.1.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/antlr-2.7.7-l7p1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/aopalliance-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/apache-harmony-asn1-0.1.jar"/>
@@ -1612,20 +1612,20 @@
         <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-lang-2.6.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/concurrent-1.3.4.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/dom4j-1.6.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/forms_rt-10.0.2.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/hibernate-core-3.6.1.Final.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/jackson-core-asl-1.7.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/jackson-mapper-asl-1.7.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/forms_rt-11.1.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/hibernate-core-3.6.9.Final.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/jackson-core-asl-1.9.7.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/jackson-mapper-asl-1.9.7.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/jaxb-api-2.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/jaxb-impl-2.1.13.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/jaxen-1.1.3.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/jaxen-1.1.4.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/jaxws-api-2.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/jaxws-rt-2.1.7.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/jcalendar-1.3.3.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/jcl-over-slf4j-1.6.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/jcommon-1.0.16.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/jdom-1.1.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/jfreechart-1.0.13.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/jcalendar-1.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/jcl-over-slf4j-1.6.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/jcommon-1.0.17.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/jdom-1.1.3.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/jfreechart-1.0.14.jar"/>
         <!--
           Skip signed JAR
         -->
@@ -1633,7 +1633,7 @@
         <pack-mac jarfile="${build.dir}/managerapplet/lib/json-schema-validator-0.0.1-SNAPSHOT.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/kunststoff-2.0.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/layer7-uddi-lib-1.1.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/log4j-over-slf4j-1.6.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/log4j-over-slf4j-1.6.4.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/looks-1.1.3.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/mail-1.4.4.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/nekohtml-1.9.14.jar"/>
@@ -1643,8 +1643,8 @@
         <pack-mac jarfile="${build.dir}/managerapplet/lib/saaj-impl-1.3.3.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/servlet-api-2.5.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/sftp-8.8.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/slf4j-api-1.6.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/slf4j-jdk14-1.6.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/slf4j-api-1.6.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/slf4j-jdk14-1.6.4.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-aop-3.0.5.RELEASE.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-asm-3.0.5.RELEASE.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-beans-3.0.5.RELEASE.jar"/>

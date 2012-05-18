@@ -20,10 +20,10 @@
         <dependency name="layer7-gateway-server" rev="latest.integration" conf="core->default; test->default,test"/>
 
         <dependency org="bouncycastle" name="bcpg-jdk16" rev="1.46" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="slf4j-api" rev="1.6.1" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.1" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.1" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.1" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-api" rev="1.6.4" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.4" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.4" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.4" force="true" conf="core"/>
         <dependency org="org.apache.wicket" name="wicket" rev="1.4.5" force="true" conf="core"/>
         <dependency org="org.apache.wicket" name="wicket-ioc" rev="1.4.5" force="true" conf="core"/>
         <dependency org="org.apache.wicket" name="wicket-spring" rev="1.4.5" force="true" conf="core">
@@ -32,8 +32,8 @@
         </dependency>
         <dependency org="org.apache.wicket" name="wicket-extensions" rev="1.4.5" force="true" conf="core"/>
         <dependency org="commons-io" name="commons-io" rev="2.3" force="true" conf="core"/>
-        <dependency org="org.hibernate" name="hibernate-core" rev="3.6.1.Final" force="true" conf="core"/>
-        <dependency org="org.javassist" name="javassist" rev="3.14.0-GA" force="true" conf="core"/>
+        <dependency org="org.hibernate" name="hibernate-core" rev="3.6.9.Final" force="true" conf="core"/>
+        <dependency org="org.javassist" name="javassist" rev="3.16.1-GA" force="true" conf="core"/>
         <dependency org="org.apache.derby" name="derby" rev="10.7.1.1" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty" rev="6.1.26" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.26" force="true" conf="core"/>
@@ -59,6 +59,6 @@
 
         <override org="antlr" module="antlr" matcher="exact" rev="2.7.7-l7p1"/>
 
-        <conflict org="org.slf4j" module="slf4j-api" rev="1.6.1"/>
+        <conflict org="org.slf4j" module="slf4j-api" rev="1.6.4"/>
     </dependencies>
 </ivy-module>

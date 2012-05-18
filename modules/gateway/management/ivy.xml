@@ -20,7 +20,7 @@
         <dependency org="asm" name="asm" rev="3.3.1" force="true" conf="core"/>
 
         <!-- Hibernate annotations used on beans that we use, so we need the hibernate JAR to compile -->
-        <dependency org="org.hibernate" name="hibernate-core" rev="3.6.1.Final" force="true" conf="compile->master"/>
+        <dependency org="org.hibernate" name="hibernate-core" rev="3.6.9.Final" force="true" conf="compile->master"/>
         <dependency org="org.springframework" name="spring-jdbc" rev="3.0.5.RELEASE" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-orm" rev="3.0.5.RELEASE" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-context-support" rev="3.0.5.RELEASE" force="true" conf="core"/>

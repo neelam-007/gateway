@@ -18,8 +18,8 @@
 
     <path id="jrc.classpath">
         <file file="${lib}/repository/jasperreports/jasperreports-3.1.2-p1.jar"/>
-        <file file="${lib}/repository/jfree/jcommon-1.0.0.jar"/>
-        <file file="${lib}/repository/jfree/jfreechart-1.0.2.jar"/>
+        <file file="${lib}/repository/jfree/jcommon-1.0.7.jar"/>
+        <file file="${lib}/repository/jfree/jfreechart-1.0.14.jar"/>
         <fileset dir="${lib}/repository/org.apache.tomcat">
             <include name="*.jar"/>
         </fileset>

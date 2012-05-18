@@ -58,7 +58,7 @@
         <dependency org="cglib" name="cglib-nodep" rev="2.2.2" force="true" conf="core"/>
         <dependency org="c3p0" name="c3p0" rev="0.9.1.2" force="true" conf="core"/>
         <dependency org="org.apache.derby" name="derby" rev="10.7.1.1" force="true" conf="core"/>
-        <dependency org="org.hibernate" name="hibernate-core" rev="3.6.1.Final" force="true" conf="core"/>
+        <dependency org="org.hibernate" name="hibernate-core" rev="3.6.9.Final" force="true" conf="core"/>
         <dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.2.0.Final" force="true" conf="core"/>
         <dependency org="org.hibernate" name="hibernate-validator" rev="4.1.0.Final" force="true" conf="core">
             <exclude org="org.slf4j" module="slf4j-api" name="*" type="*" ext="*" conf=""
@@ -66,16 +66,16 @@
         </dependency>        
         <dependency org="jasperreports" name="jasperreports" rev="3.1.2-p1" force="true" conf="core"/>
         <dependency org="javax.inject" name="javax.inject" rev="1" force="true" conf="core"/>
-        <dependency org="org.javassist" name="javassist" rev="3.14.0-GA" force="true" conf="core"/>
-        <dependency org="jboss" name="jboss-j2ee" rev="4.0.3" force="true" conf="core"/>
+        <dependency org="org.javassist" name="javassist" rev="3.16.1-GA" force="true" conf="core"/>
+        <dependency org="jboss" name="jboss-j2ee" rev="4.0.5.GA" force="true" conf="core"/>
         <dependency org="org.jboss.cache" name="jbosscache-core" rev="3.2.5.GA" force="true" conf="core"/>
         <dependency org="org.apache.mina" name="mina-core" rev="1.1.7" force="true" conf="core"/>
         <dependency org="org.apache.mina" name="mina-filter-ssl" rev="1.1.7" force="true" conf="core"/>
         <dependency org="mysql" name="mysql-connector-java" rev="5.1.15" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="slf4j-api" rev="1.6.1" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.1" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.1" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.1" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-api" rev="1.6.4" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.4" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.4" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-jdbc" rev="3.0.5.RELEASE" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-orm" rev="3.0.5.RELEASE" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-context-support" rev="3.0.5.RELEASE" force="true" conf="core"/>
@@ -122,7 +122,7 @@
         <exclude org="org.apache.cxf" module="cxf-rt-transports-http-jetty" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
 
-        <conflict org="org.slf4j" module="slf4j-api" rev="1.6.1"/>
+        <conflict org="org.slf4j" module="slf4j-api" rev="1.6.4"/>
         <conflict org="wsdl4j" module="wsdl4j" rev="1.6.2-l7p3"/>
     </dependencies>
 </ivy-module>
