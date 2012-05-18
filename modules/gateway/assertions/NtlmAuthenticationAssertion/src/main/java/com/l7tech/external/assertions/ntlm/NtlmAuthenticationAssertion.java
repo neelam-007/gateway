@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.ntlm;
 
 import com.l7tech.external.assertions.ntlm.console.NtlmAuthenticationPropertiesDialog;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -20,7 +22,7 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 /**
  * 
  */
-public class NtlmAuthenticationAssertion extends HttpCredentialSourceAssertion implements UsesVariables, SetsVariables {
+public class NtlmAuthenticationAssertion extends HttpCredentialSourceAssertion implements UsesEntities, UsesVariables, SetsVariables {
     protected static final Logger logger = Logger.getLogger(NtlmAuthenticationAssertion.class.getName());
 
     private long maxConnectionDuration;
@@ -150,5 +152,18 @@ public class NtlmAuthenticationAssertion extends HttpCredentialSourceAssertion i
     }
 
 
+    @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.ASSERTION)
+    public EntityHeader[] getEntitiesUsed() {
+        return new EntityHeader[] { new EntityHeader(Long.toString(ldapProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null) };
+    }
 
+    @Override
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if(oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) && oldEntityHeader.getOid() == ldapProviderOid &&
+                newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG))
+        {
+            ldapProviderOid = newEntityHeader.getOid();
+        }
+    }
 }
