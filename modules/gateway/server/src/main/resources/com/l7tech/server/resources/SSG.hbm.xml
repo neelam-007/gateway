@@ -133,7 +133,7 @@
         <property name="name" type="string"/>
         <property name="operationName" column="operation_name" type="string"/>
         <property name="serviceOid" column="published_service_oid" type="long"/>
-        <property name="xml" column="xml" type="text"/>
+        <property name="xml" column="`xml`" type="text"/>
     </class>
 
     <class name="com.l7tech.gateway.common.service.MetricsBin" table="service_metrics">
