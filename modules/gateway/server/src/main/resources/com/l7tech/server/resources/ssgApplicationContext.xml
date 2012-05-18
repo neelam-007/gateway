@@ -1555,10 +1555,6 @@
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
-    <bean id="serviceMetricsServices" class="com.l7tech.server.service.ServiceMetricsServicesImpl" depends-on="ssgBoot">
-        <constructor-arg ref="clusterNodeId"/>
-    </bean>
-
     <bean id="entityVersionCheckerTimer" class="com.l7tech.server.util.ManagedTimer">
         <constructor-arg value="EntityVersionChecker"/>
     </bean>
