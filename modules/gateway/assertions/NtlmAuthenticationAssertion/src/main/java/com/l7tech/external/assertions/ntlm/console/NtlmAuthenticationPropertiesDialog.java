@@ -6,6 +6,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ntlm.NtlmAuthenticationAssertion;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
@@ -17,6 +18,7 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.util.Map;
 
 /**
@@ -97,9 +99,15 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
                 enableDisableComponents();
             }
         });
+
+
+
+        inputValidator.ensureComboBoxSelection(ldapIdentityProviderLabel.getText(), ldapServerComboBox);
         // the value entered must be from 0 to max integer 2^31-1
         inputValidator.constrainTextFieldToNumberRange("Max Duration Custom", maxDurationSecondsTextField, 0L, Integer.MAX_VALUE, false);
         inputValidator.constrainTextFieldToNumberRange("Max Idle Time", maxIdleSecondsTextField, 0L, Integer.MAX_VALUE, false);
+        inputValidator.attachToButton( getOkButton(), super.createOkAction() );
+
     }
 
     private void enableDisableComponents() {
@@ -164,6 +172,12 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
         }
 
         return assertion;
+    }
+
+    @Override
+    protected ActionListener createOkAction() {
+        // returns a no-op action so we can add our own Ok listener
+        return new RunOnChangeListener();
     }
 
     @Override
