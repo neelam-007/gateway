@@ -9,7 +9,6 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
@@ -20,7 +19,6 @@ import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.XmlElementVerifierConfig;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.server.identity.cert.TrustedCertCache;
-import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.soap.SoapUtil;
@@ -234,8 +232,7 @@ public class XmlElementVerifier {
                 if ( trustedCertificate != null ) {
                     selectedCert = trustedCertificate.getCertificate();
                 } else {
-                    audit.logAndAudit(AssertionMessages.WSSECURITY_RECIP_NO_CERT, description);
-                    throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+                    throw new CertificateException("Could not find trusted certificate " + description);
                 }
             } else if ( certName != null ) {
                 description = "name " + certName;
@@ -254,13 +251,11 @@ public class XmlElementVerifier {
                 if ( certificate != null || expiredCertificate != null ) {
                     selectedCert = certificate!=null ? certificate : expiredCertificate;
                 } else {
-                    audit.logAndAudit(AssertionMessages.WSSECURITY_RECIP_NO_CERT, description);
-                    throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+                    throw new CertificateException("Could not find trusted certificate " + description);
                 }
             }
         } catch ( FindException e ) {
-            audit.logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_ERROR, description);
-            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+            throw new CertificateException("Error when finding trusted certificate: " + description + ": " + ExceptionUtils.getMessage(e), e);
         }
 
         return selectedCert;

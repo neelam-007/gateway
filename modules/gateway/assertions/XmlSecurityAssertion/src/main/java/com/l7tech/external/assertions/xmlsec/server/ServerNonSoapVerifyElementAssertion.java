@@ -31,7 +31,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
     private static final int COL_VALIDATED_SIGNATURE_VALUES = 4;
     private static final int COL_SIGNATURE_ELEMENT = 5;
 
-    private final XmlElementVerifier verifier;
+    private final Either<CertificateException, XmlElementVerifier> verifier;
     private final IdAttributeConfig idAttributeConfig;
     private final String[] varsUsed;
 
@@ -44,7 +44,13 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         Collection<FullQName> ids = idAttrsArray == null || idAttrsArray.length < 1 ? XmlElementVerifierConfig.DEFAULT_ID_ATTRS : Arrays.asList(idAttrsArray);
 
         this.idAttributeConfig = IdAttributeConfig.makeIdAttributeConfig(ids);
-        this.verifier = new XmlElementVerifier(assertion.config(), securityTokenResolver, trustedCertCache, getAudit(), logger);
+        Either<CertificateException, XmlElementVerifier> verifier = null;
+        try {
+            verifier = Either.right(new XmlElementVerifier(assertion.config(), securityTokenResolver, trustedCertCache, getAudit(), logger));
+        } catch (CertificateException e) {
+            verifier = Either.left(e);
+        }
+        this.verifier = verifier;
         this.varsUsed = assertion.getVariablesUsed();
     }
 
@@ -62,6 +68,9 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
 
     @Override
     protected AssertionStatus processAffectedElements(PolicyEnforcementContext context, Message message, Document doc, List<Element> affectedElements) throws Exception {
+        if (verifier.isLeft())
+            throw verifier.left();
+
         List<Object[]> infos = new ArrayList<Object[]>();
 
         Map<String, Element> elementsById = DomUtils.getElementByIdMap(doc, idAttributeConfig);
@@ -70,7 +79,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         Map<String, Object> variableMap = context.getVariableMap(varsUsed, getAudit());
 
         for (Element sigElement : affectedElements) {
-            List<Object[]> results = verifier.verifySignature(sigElement, elementsById, variableMap);
+            List<Object[]> results = verifier.right().verifySignature(sigElement, elementsById, variableMap);
             infos.addAll(results);
         }
 
