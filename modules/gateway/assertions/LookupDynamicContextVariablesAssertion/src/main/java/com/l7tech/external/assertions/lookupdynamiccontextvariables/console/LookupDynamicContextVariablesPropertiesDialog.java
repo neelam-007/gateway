@@ -34,6 +34,7 @@ public class LookupDynamicContextVariablesPropertiesDialog extends AssertionProp
         sourceVariable.setText(assertion.getSourceVariable());
         sourceVariable.setCaretPosition(0);
         targetVariablePanel.setVariable(assertion.getTargetOutputVariable());
+        targetVariablePanel.setAssertion(assertion, getPreviousAssertion());
     }
 
     @Override
