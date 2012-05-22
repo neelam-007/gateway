@@ -1,9 +1,6 @@
 package com.l7tech.external.assertions.lookupdynamiccontextvariables;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 
@@ -17,6 +14,8 @@ public class LookupDynamicContextVariablesAssertion extends Assertion implements
     private static final String DEFAULT_OUTPUT_VARIABLE = "lookup.result";
 
     private static final String META_INITIALIZED = LookupDynamicContextVariablesAssertion.class.getName() + ".metadataInitialized";
+
+    private static final String BASE_NAME = "Look Up Context Variable";
 
     private String sourceVariable;
     private String targetOutputVariable = DEFAULT_OUTPUT_VARIABLE;
@@ -66,9 +65,9 @@ public class LookupDynamicContextVariablesAssertion extends Assertion implements
             return meta;
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Look Up Dynamic Context Variables");
-        meta.put(AssertionMetadata.LONG_NAME, "Looks up a value dynamically from a context variable (which may be composed of multiple variables) and places the results in another context variable.");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Dynamic Context Variables Lookup Properties");
+        meta.put(AssertionMetadata.SHORT_NAME, BASE_NAME);
+        meta.put(AssertionMetadata.LONG_NAME, "Looks up the value of a context variable and stores the value in another context variable. The name of the lookup variable can be specified using static text combined with other context variables.");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Lookup Context Variable Properties");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
