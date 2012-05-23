@@ -59,6 +59,7 @@ public class LookupDynamicContextVariablesAssertion extends Assertion implements
         };
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -73,6 +74,16 @@ public class LookupDynamicContextVariablesAssertion extends Assertion implements
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<LookupDynamicContextVariablesAssertion>() {
+            @Override
+            public String getAssertionName(final LookupDynamicContextVariablesAssertion assertion, final boolean decorate) {
+                if(!decorate) return BASE_NAME;
+                final String decoration = BASE_NAME + ": find " + assertion.getSourceVariable() + "; output value to ${" + assertion.getTargetOutputVariable() + "}";
+                return AssertionUtils.decorateName(assertion, decoration);
+            }
+        });
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
