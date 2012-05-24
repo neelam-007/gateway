@@ -55,10 +55,15 @@ public class TestAudit implements Audit, AuditHaver, Iterable<String> {
     }
 
     public boolean isAuditPresent( final AuditDetailMessage message ) {
+        return isAuditPresent( message, false );
+    }
+
+    public boolean isAuditPresent( final AuditDetailMessage message, final boolean mustIncludeStack ) {
         return matchAudit( new Functions.Unary<Boolean, Triple<AuditDetailMessage, String[], Throwable>>() {
             @Override
             public Boolean call( final Triple<AuditDetailMessage, String[], Throwable> auditDetailMessageThrowableTriple ) {
-                return auditDetailMessageThrowableTriple.left.getId() == message.getId();
+                return auditDetailMessageThrowableTriple.left.getId() == message.getId() &&
+                        (!mustIncludeStack || auditDetailMessageThrowableTriple.right != null);
             }
         } );
     }

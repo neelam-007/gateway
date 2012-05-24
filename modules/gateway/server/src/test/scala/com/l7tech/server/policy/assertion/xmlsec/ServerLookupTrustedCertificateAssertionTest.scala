@@ -150,8 +150,18 @@ class ServerLookupTrustedCertificateAssertionTest extends SpecificationWithJUnit
       ass.setCertSerialNumber("234324 234")
 
       sass.checkRequest(pec) must be equalTo FAILED
+                                                   8
+      audit.isAuditPresent(CERT_ANY_LOOKUP_ERROR) must beTrue
+    }
+
+    // @BugNumber 12386
+    "not audit a stack trace by default if a FindException occurs" in new DefaultScope {
+      cache.findByName("alice") throws new FindException("fail", new RuntimeException("cause"));
+
+      sass.checkRequest(pec) must be equalTo FAILED
 
       audit.isAuditPresent(CERT_ANY_LOOKUP_ERROR) must beTrue
+      audit.isAuditPresent(CERT_ANY_LOOKUP_ERROR, true) must beFalse
     }
   }
 

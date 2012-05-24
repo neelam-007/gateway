@@ -109,7 +109,7 @@ public class ServerLookupTrustedCertificateAssertion extends AbstractServerAsser
                     }
             }
         } catch ( FindException e ) {
-            logAndAudit( AssertionMessages.CERT_ANY_LOOKUP_ERROR, new String[]{lookupType.toString(), logVal, ExceptionUtils.getMessage( e )}, e );
+            logAndAudit( AssertionMessages.CERT_ANY_LOOKUP_ERROR, new String[]{lookupType.toString(), logVal, ExceptionUtils.getMessage( e )}, ExceptionUtils.getDebugException(e) );
             result = AssertionStatus.FAILED;
         }
 
