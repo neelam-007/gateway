@@ -93,7 +93,6 @@ public class XmlElementVerifierConfigPanel extends ValidatedPanel<XmlElementVeri
         Utilities.enableGrayOnDisabled(addIdAttrButton);
         Utilities.enableGrayOnDisabled(removeIdAttrButton);
         Utilities.enableGrayOnDisabled(customIdAttrList);
-        Utilities.enableGrayOnDisabled(certVariableNameField);
 
         customIdAttrListModel = new DefaultListModel();
         customIdAttrList.setModel(customIdAttrListModel);
