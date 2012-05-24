@@ -60,7 +60,7 @@ public class ServerLookupTrustedCertificateAssertion extends AbstractServerAsser
             switch ( assertion.getLookupType() ) {
                 case CERT_ISSUER_SERIAL:
                     X500Principal issuer = parseX500Principal(ExpandVariables.process(assertion.getCertIssuerDn(), variableMap, getAudit()));
-                    BigInteger serial = new BigInteger( ExpandVariables.process(assertion.getCertSerialNumber(), variableMap, getAudit()) );
+                    BigInteger serial = parseCertSerial( ExpandVariables.process(assertion.getCertSerialNumber(), variableMap, getAudit()) );
                     logVal = issuer + "/" + serial;
                     logAndAudit( AssertionMessages.CERT_ANY_LOOKUP_NAME, lookupType.toString(), logVal );
                     certificates = optional( securityTokenResolver.lookupByIssuerAndSerial(issuer, serial) ).toList();
@@ -121,6 +121,14 @@ public class ServerLookupTrustedCertificateAssertion extends AbstractServerAsser
             return new X500Principal(name);
         } catch (IllegalArgumentException e) {
             throw new FindException("Invalid DN: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    private BigInteger parseCertSerial(String num) throws FindException {
+        try {
+            return new BigInteger(num);
+        } catch (NumberFormatException e) {
+            throw new FindException("Invalid certificate serial number: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

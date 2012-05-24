@@ -142,6 +142,17 @@ class ServerLookupTrustedCertificateAssertionTest extends SpecificationWithJUnit
 
       audit.isAuditPresent(CERT_ANY_LOOKUP_ERROR) must beTrue
     }
+
+    // @BugNumber(12384)
+    "fail cleanly if given malformed cert serial number" in new DefaultScope {
+      ass.setLookupType(CERT_ISSUER_SERIAL)
+      ass.setCertIssuerDn("cn=blah")
+      ass.setCertSerialNumber("234324 234")
+
+      sass.checkRequest(pec) must be equalTo FAILED
+
+      audit.isAuditPresent(CERT_ANY_LOOKUP_ERROR) must beTrue
+    }
   }
 
   trait DefaultScope extends Scope {
