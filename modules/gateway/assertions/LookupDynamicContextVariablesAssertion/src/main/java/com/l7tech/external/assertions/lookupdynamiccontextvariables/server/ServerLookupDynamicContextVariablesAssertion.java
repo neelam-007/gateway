@@ -4,11 +4,11 @@ import com.l7tech.external.assertions.lookupdynamiccontextvariables.LookupDynami
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -24,30 +24,30 @@ public class ServerLookupDynamicContextVariablesAssertion extends AbstractServer
 
     @Override
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) {
-        String sourceVariable = assertion.getSourceVariable();
-        if(sourceVariable == null || sourceVariable.isEmpty()){
+        final String sourceVariable = assertion.getSourceVariable();
+        if(sourceVariable == null || sourceVariable.trim().isEmpty()){
             logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_MISSING_SOURCE);
             return AssertionStatus.FAILED;
         }
-        final String[] referencedNames = Syntax.getReferencedNames(sourceVariable);
-
-        for(String s : referencedNames){
-            final Map<String, Object> vars = Collections.unmodifiableMap(context.getVariableMap(new String[]{s}, getAudit()));
-            if(vars.get(s) == null){
-                logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_NOT_FOUND, s);
-                return AssertionStatus.FAILED;
-            }
-            final String resolved = ExpandVariables.process(Syntax.getVariableExpression(s), vars, getAudit(), true);
-            sourceVariable = sourceVariable.replaceAll(Syntax.REGEX_PREFIX + s + Syntax.REGEX_SUFFIX, resolved);
-        }
-
-        final Map<String, Object> vars = Collections.unmodifiableMap(context.getVariableMap(new String[]{sourceVariable}, getAudit()));
-        if(vars.get(sourceVariable) == null){
-            logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_NOT_FOUND, sourceVariable);
+        final String targetVariable = assertion.getTargetOutputVariable();
+        if(targetVariable == null || targetVariable.trim().isEmpty()){
+            logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_MISSING_TARGET);
             return AssertionStatus.FAILED;
         }
-        final String result = ExpandVariables.process(Syntax.getVariableExpression(sourceVariable), vars, getAudit(), true);
-        context.setVariable(assertion.getTargetOutputVariable(), result);
+        try{
+            //lookup the variable name
+            final Map<String, Object> lookup = context.getVariableMap(Syntax.getReferencedNames(sourceVariable), getAudit());
+            final String process = ExpandVariables.process(sourceVariable, lookup, getAudit());
+
+            //retrieve the variable
+            final Map<String, Object> actual = context.getVariableMap(new String[]{process}, getAudit());
+            final Object o = ExpandVariables.processSingleVariableAsObject(Syntax.getVariableExpression(process), actual, getAudit());
+            context.setVariable(targetVariable, o);
+        }
+        catch(VariableNameSyntaxException e){
+            logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_INVALID_SYNTAX , e.getMessage());
+            return AssertionStatus.FAILED;
+        }
         return AssertionStatus.NONE;
     }
 

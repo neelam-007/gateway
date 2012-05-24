@@ -39,6 +39,7 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
     public void testValidSource(){
         try {
             assertion.setSourceVariable("${sugar}.${foo}");
+            assertion.setTargetOutputVariable("targetOutput");
             AssertionStatus actual = serverAssertion.checkRequest(pec);
             Assert.assertEquals("goodness", pec.getVariable(assertion.getTargetOutputVariable()));
             Assert.assertEquals(AssertionStatus.NONE, actual);
@@ -51,8 +52,9 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
     public void testInvalidSource(){
         try {
             assertion.setSourceVariable("${sugar}.${foo22222}");
+            assertion.setTargetOutputVariable("targetOutput");
             AssertionStatus actual = serverAssertion.checkRequest(pec);
-            Assert.assertEquals(AssertionStatus.FAILED, actual);
+            Assert.assertEquals(AssertionStatus.NONE, actual);
             Assert.assertNull(pec.getVariable(assertion.getTargetOutputVariable()));
             Assert.fail(assertion.getTargetOutputVariable() + " should NOT exist!");
         } catch (Exception e) {
@@ -64,13 +66,43 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
     public void testInvalidSourceEntry(){
         try {
             assertion.setSourceVariable("${sugar}.${foo22222");
+            assertion.setTargetOutputVariable("targetOutput");
             AssertionStatus actual = serverAssertion.checkRequest(pec);
-            Assert.assertEquals(AssertionStatus.FAILED, actual);
+            Assert.assertEquals(AssertionStatus.NONE, actual);
             Assert.assertNull(pec.getVariable(assertion.getTargetOutputVariable()));
             Assert.fail(assertion.getTargetOutputVariable() + " should NOT exist!");
         } catch (Exception e) {
 
         }
+    }
+
+    @Test
+    public void testArraySubscriptExpression(){
+        try {
+            pec.setVariable("output", new String[]{"one", "two", "three"});
+            pec.setVariable("two", "Looked up value");
+            assertion.setSourceVariable("${output[1]}");
+            assertion.setTargetOutputVariable("targetOutput");
+            AssertionStatus actual = serverAssertion.checkRequest(pec);
+            Assert.assertEquals(AssertionStatus.NONE, actual);
+            Assert.assertEquals("Looked up value", pec.getVariable(assertion.getTargetOutputVariable()));
+        } catch (Exception e) {
+            Assert.fail("testExpression() failed: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testMissingSourceVariable(){
+        assertion.setSourceVariable(null);
+        AssertionStatus actual = serverAssertion.checkRequest(pec);
+        Assert.assertEquals(AssertionStatus.FAILED, actual);
+    }
+
+    @Test
+    public void testMissingTargetVariable(){
+        assertion.setTargetOutputVariable(null);
+        AssertionStatus actual = serverAssertion.checkRequest(pec);
+        Assert.assertEquals(AssertionStatus.FAILED, actual);
     }
 }
 
