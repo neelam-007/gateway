@@ -78,13 +78,14 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
         maxDurationDefaultRadioButton.setSelected(true);
         maxIdleDefaultRadioButton.setSelected(true);
         targetVariablePanel.setVariable(NtlmAuthenticationAssertion.DEFAULT_PREFIX);
+        targetVariablePanel.setDefaultVariableOrPrefix(NtlmAuthenticationAssertion.DEFAULT_PREFIX);
         targetVariablePanel.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {
                 enableDisableComponents();
             }
         });
-        targetVariablePanel.setAcceptEmpty(true);
+        targetVariablePanel.setAcceptEmpty(false);
 
         maxIdleCustomRadioButton.addChangeListener(new ChangeListener() {
             @Override
@@ -113,6 +114,7 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
     private void enableDisableComponents() {
         maxDurationSecondsTextField.setEnabled(maxDurationCustomRadioButton.isSelected());
         maxIdleSecondsTextField.setEnabled(maxIdleCustomRadioButton.isSelected());
+        getOkButton().setEnabled(targetVariablePanel.isEntryValid());
     }
 
     @Override
@@ -136,14 +138,23 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
            maxIdleSecondsTextField.setText(String.valueOf(maxIdleTimeout));
        }
 
-        long ldapProviderOid = assertion.getLdapProviderOid();
-        for(int i = 0;i < ldapServerComboBox.getItemCount();i++) {
-            LdapServerEntry entry = (LdapServerEntry) ldapServerComboBox.getItemAt(i);
-            if(entry.getOid() == ldapProviderOid) {
-                ldapServerComboBox.setSelectedIndex(i);
-                break;
-            }
-        }
+
+       long ldapProviderOid = assertion.getLdapProviderOid();
+       if(ldapProviderOid != -1) {
+           ldapServerComboBox.setSelectedIndex(-1);
+
+           for(int i = 0;i < ldapServerComboBox.getItemCount();i++) {
+                LdapServerEntry entry = (LdapServerEntry) ldapServerComboBox.getItemAt(i);
+                if(entry.getOid() == ldapProviderOid) {
+                    ldapServerComboBox.setSelectedIndex(i);
+                    break;
+                }
+           }
+
+           if(ldapServerComboBox.getSelectedIndex() < 0) {
+                ldapServerComboBox.getModel().setSelectedItem(new LdapServerEntry(assertion.getLdapProviderOid(), assertion.getLdapProviderName()));
+           }
+       }
 
     }
 
@@ -169,6 +180,7 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
         LdapServerEntry entry = (LdapServerEntry) ldapServerComboBox.getSelectedItem();
         if(entry != null) {
             assertion.setLdapProviderOid(entry.getOid());
+            assertion.setLdapProviderName(entry.getName());
         }
 
         return assertion;
@@ -211,12 +223,16 @@ public class NtlmAuthenticationPropertiesDialog extends AssertionPropertiesOkCan
             this.name = name;
         }
 
-        public String toString() {
+        public String getName() {
             return name;
         }
 
         public long getOid() {
             return oid;
+        }
+
+        public String toString() {
+            return name;
         }
     }
 }

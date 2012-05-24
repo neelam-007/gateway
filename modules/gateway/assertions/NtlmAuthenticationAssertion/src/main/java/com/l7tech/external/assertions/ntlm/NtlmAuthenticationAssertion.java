@@ -31,7 +31,9 @@ public class NtlmAuthenticationAssertion extends HttpCredentialSourceAssertion i
 
     private String variablePrefix;
 
-    private long ldapProviderOid;
+    private long ldapProviderOid = -1;
+
+    private String ldapProviderName = null;
 
     //
     // Metadata
@@ -50,9 +52,7 @@ public class NtlmAuthenticationAssertion extends HttpCredentialSourceAssertion i
     public static final String ACCOUNT_HOME_DIR ="homeDirectory";
     public static final String ACCOUNT_DIR_DRIVE = "homeDirectoryDrive";
     public static final String ACCOUNT_SIDS = "sidGroups";
-
     public static final String NTLM = "NTLM";
-
 
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -107,7 +107,6 @@ public class NtlmAuthenticationAssertion extends HttpCredentialSourceAssertion i
         return maxConnectionDuration;
     }
 
-
     public void setMaxConnectionDuration(long maxConnectionDuration) {
         this.maxConnectionDuration = maxConnectionDuration;
     }
@@ -120,13 +119,20 @@ public class NtlmAuthenticationAssertion extends HttpCredentialSourceAssertion i
         this.variablePrefix = variablePrefix;
     }
 
-
     public long getLdapProviderOid() {
         return ldapProviderOid;
     }
 
     public void setLdapProviderOid(long ldapProviderOid) {
         this.ldapProviderOid = ldapProviderOid;
+    }
+
+    public String getLdapProviderName() {
+        return ldapProviderName;
+    }
+
+    public void setLdapProviderName(String ldapProviderName) {
+        this.ldapProviderName = ldapProviderName;
     }
 
 
@@ -155,7 +161,7 @@ public class NtlmAuthenticationAssertion extends HttpCredentialSourceAssertion i
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
-        return new EntityHeader[] { new EntityHeader(Long.toString(ldapProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null) };
+        return new EntityHeader[] { new EntityHeader(Long.toString(ldapProviderOid), EntityType.ID_PROVIDER_CONFIG, ldapProviderName, null) };
     }
 
     @Override
@@ -164,6 +170,7 @@ public class NtlmAuthenticationAssertion extends HttpCredentialSourceAssertion i
                 newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG))
         {
             ldapProviderOid = newEntityHeader.getOid();
+            ldapProviderName = newEntityHeader.getName();
         }
     }
 }

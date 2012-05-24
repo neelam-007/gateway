@@ -71,6 +71,8 @@ public class ServerNtlmAuthenticationAssertionTest {
         assertion.setVariablePrefix("protocol");
         assertion.setMaxConnectionIdleTime(0);
         assertion.setMaxConnectionDuration(0);
+        assertion.setLdapProviderOid(0);
+        assertion.setLdapProviderName("TEST LDAP PROVIDER");
         //Setup Context
         requestMsg = new Message();
         httpRequestKnob = getHttpRequestKnob();

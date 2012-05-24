@@ -28,7 +28,6 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.NameValuePair;
 import com.l7tech.util.Pair;
 import jcifs.smb.SID;
 import org.springframework.context.ApplicationContext;
@@ -244,12 +243,14 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
         AuthenticationProvider authenticationProvider;
         try {
             LdapIdentityProvider ldapProvider = (LdapIdentityProvider)identityProviderFactory.getProvider(assertion.getLdapProviderOid());
-
+            if(ldapProvider == null) {
+                throw new FindException("Identity Provider with oid=" + String.valueOf(assertion.getLdapProviderOid()) + " does not exist");
+            }
             LdapIdentityProviderConfig providerConfig = ldapProvider.getConfig();
 
             Map<String, String> props = new HashMap(providerConfig.getNtlmAuthenticationProviderProperties());
             if(props.size() == 0 || !Boolean.TRUE.toString().equals(props.get("enabled"))) {
-                throw new FindException("NTLM Configuration is disabled");
+                throw new FindException("NTLM Configuration is disabled or missing");
             }
             
             //find password property and replace it if password is stored as a secure password
@@ -259,18 +260,20 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
                     String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), oid);
                     props.put("service.password", plaintextPassword);
                 } catch (FindException e) {
-                    throw new CredentialFinderException("Password is invalid", e);
+                    throw new CredentialFinderException("Password is invalid");
                 } catch(NumberFormatException ne){
-                    throw new CredentialFinderException("Password is invalid", ne);
+                    throw new CredentialFinderException("Password is invalid");
                 }
             }
 
             authenticationProvider = new NtlmAuthenticationServer(props, new NetLogon(props));
         } catch (FindException e) {
-            final String errorMsg = "Unable to create NtlmAuthenticationServer instance";
-            log.log(Level.FINE, errorMsg, e);
-            logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_FAILED, new String[]{errorMsg}, ExceptionUtils.getDebugException(e));
-            throw new CredentialFinderException(errorMsg, e, AssertionStatus.FAILED);
+            final String errorMsg = "Unable to find the Identity Provider instance";
+            if(log.isLoggable(Level.FINE)){
+                log.log(Level.FINE, errorMsg, e);
+            }
+            logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_IDENTITY_PROVIDER_CONFIG_FAILURE, new String[]{errorMsg}, ExceptionUtils.getDebugException(e));
+            throw new CredentialFinderException(errorMsg);
         }
         return authenticationProvider;
     }
@@ -338,7 +341,7 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
         return securityToken;
     }
 
-    protected boolean checkConnectionTimeouts(NtlmToken securityToken, Object connectionId) {
+    protected boolean checkConnectionTimeouts(final NtlmToken securityToken, final Object connectionId) {
         long maxConnectionDuration = assertion.getMaxConnectionDuration();
         long maxIdleTimeout =  assertion.getMaxConnectionIdleTime();
         if(securityToken != null) {
@@ -355,12 +358,12 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
                     return true;
                 }
                 else{
-                    logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_IDLE_TIMEOUT_EXPIRED, (String)connectionId);
+                    logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_IDLE_TIMEOUT_EXPIRED, connectionId.toString());
                     log.log(Level.FINE, "Connection idle timeout expired for connection " + connectionId);
                 }
             }
             else {
-                logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_CONNECTION_EXPIRED, (String)connectionId);
+                logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_CONNECTION_EXPIRED, connectionId.toString());
                 log.log(Level.FINE, "Connection " + connectionId + " has expired!");
             }
         }
