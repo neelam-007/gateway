@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.objectmodel.FindException;
@@ -60,7 +61,7 @@ public class ServerLookupTrustedCertificateAssertion extends AbstractServerAsser
             switch ( assertion.getLookupType() ) {
                 case CERT_ISSUER_SERIAL:
                     X500Principal issuer = parseX500Principal(ExpandVariables.process(assertion.getCertIssuerDn(), variableMap, getAudit()));
-                    BigInteger serial = parseCertSerial( ExpandVariables.process(assertion.getCertSerialNumber(), variableMap, getAudit()) );
+                    BigInteger serial = parseCertSerial(ExpandVariables.process(assertion.getCertSerialNumber(), variableMap, getAudit()));
                     logVal = issuer + "/" + serial;
                     logAndAudit( AssertionMessages.CERT_ANY_LOOKUP_NAME, lookupType.toString(), logVal );
                     certificates = optional( securityTokenResolver.lookupByIssuerAndSerial(issuer, serial) ).toList();
@@ -73,7 +74,7 @@ public class ServerLookupTrustedCertificateAssertion extends AbstractServerAsser
                     break;
 
                 case CERT_SUBJECT_DN:
-                    logVal = parseX500Principal(ExpandVariables.process(assertion.getCertSubjectDn(), variableMap, getAudit())).getName(X500Principal.CANONICAL);
+                    logVal = CertUtils.getDN(parseX500Principal(ExpandVariables.process(assertion.getCertSubjectDn(), variableMap, getAudit())));
                     logAndAudit( AssertionMessages.CERT_ANY_LOOKUP_NAME, lookupType.toString(), logVal );
                     certificates = optional( securityTokenResolver.lookupByKeyName(logVal) ).toList();
                     break;

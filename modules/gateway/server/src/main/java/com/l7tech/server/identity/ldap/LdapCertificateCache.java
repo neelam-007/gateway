@@ -120,7 +120,7 @@ class LdapCertificateCache implements Lifecycle {
 
         // look for presence of cert in index
         CertIndex index = certIndexRef.get();
-        CertCacheKey certCacheKey = index.getCertCacheKeyByCanonicalSubjectDn( subjectDn.getName(X500Principal.CANONICAL) );
+        CertCacheKey certCacheKey = index.getCertCacheKeyByCanonicalSubjectDn( CertUtils.getDN(subjectDn) );
 
         if ( certCacheKey != null ) {
             final Pair<String, X509Certificate> result = getCertificateByKey(certCacheKey);
@@ -524,7 +524,7 @@ class LdapCertificateCache implements Lifecycle {
                 logger.finer("Indexing certificate by thumbprintSHA1 " + thumbprintSHA1 + " for " + dn);
                 certIndexByThumbprintSHA1.put(thumbprintSHA1, certCacheKey);
 
-                String canonicalSubjectDn = cert.getSubjectX500Principal().getName(X500Principal.CANONICAL);
+                String canonicalSubjectDn = CertUtils.getSubjectDN(cert);
                 logger.finer("Indexing certificate by canonicalSubjectDn " + canonicalSubjectDn + " for " + dn);
                 certIndexByCanonicalSubjectDn.put(canonicalSubjectDn, certCacheKey);
             }
