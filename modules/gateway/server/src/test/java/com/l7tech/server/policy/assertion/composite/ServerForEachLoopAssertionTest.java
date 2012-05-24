@@ -5,6 +5,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.FalseAssertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -18,21 +19,31 @@ import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.test.BugNumber;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.w3c.dom.Document;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for ForEachLoopAssertion.
  */
+@RunWith(MockitoJUnitRunner.class)
 public class ServerForEachLoopAssertionTest {
+    @Mock
+    PolicyEnforcementContext mockPec;
+
     Document doc1 = XmlUtil.stringAsDocument("<doc1/>");
     Document doc2 = XmlUtil.stringAsDocument("<doc2/>");
     Document doc3 = XmlUtil.stringAsDocument("<doc3/>");
@@ -162,6 +173,19 @@ public class ServerForEachLoopAssertionTest {
         assertNoSuchVariable("i.exceededlimit");
     }
 
+    @Test
+    @BugNumber(12309)
+    public void testNullContextVariableValue() throws Exception {
+        ass.setLoopVariableName("nullvalue");
+        ass.setVariablePrefix("i");
+        checkRequest(AssertionStatus.NONE, sass(), mockPec);
+        verify(mockPec, times(1)).getVariable("nullvalue");
+        verify(mockPec, never()).setVariable(eq("i.current"), anyObject());
+        verify(mockPec, times(1)).setVariable("i.iterations", 0);
+        verify(mockPec, times(2)).setVariable("i.exceededlimit", false);
+        verifyNoMoreInteractions(mockPec);
+    }
+
     private void assertNoSuchVariable(String var) {
         try {
             context.getVariable(var);
@@ -176,9 +200,13 @@ public class ServerForEachLoopAssertionTest {
     }
 
     private void checkRequest(AssertionStatus expected) throws Exception {
+        checkRequest(expected, sass(), context());
+    }
+
+    private void checkRequest(AssertionStatus expected, ServerForEachLoopAssertion sass, PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         AssertionStatus result;
         try {
-            result = sass().checkRequest(context());
+            result = sass.checkRequest(context);
         } catch (AssertionStatusException e) {
             result = e.getAssertionStatus();
         }

@@ -87,6 +87,12 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
             logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, multivaluedVar);
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
+
+        if (multivaluedObj == null) {
+            // Treat as empty collection for iteration purposes (Bug #12309)
+            return Collections.emptyList();
+        }
+
         return multivaluedObj;
     }
 
