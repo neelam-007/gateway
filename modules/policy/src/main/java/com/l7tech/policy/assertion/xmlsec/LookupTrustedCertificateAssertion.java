@@ -9,12 +9,14 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.util.Functions;
 
 import java.util.Arrays;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import static com.l7tech.policy.assertion.VariableUseSupport.expressions;
+import static com.l7tech.util.Option.optional;
 
 /**
  * Assertion for certificate lookup.
@@ -121,7 +123,7 @@ public class LookupTrustedCertificateAssertion extends Assertion implements Sets
 
     @Override
     public AssertionMetadata meta() {
-        DefaultAssertionMetadata meta = defaultMeta();
+        final DefaultAssertionMetadata meta = defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
@@ -136,15 +138,70 @@ public class LookupTrustedCertificateAssertion extends Assertion implements Sets
                 new Java5EnumTypeMapping(LookupType.class, "security")
         )));
 
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<LookupTrustedCertificateAssertion>() {
+            @Override
+            public String getAssertionName(final LookupTrustedCertificateAssertion assertion, final boolean decorate) {
+                final String displayName = meta.getString(AssertionMetadata.SHORT_NAME);
+                if (!decorate)
+                    return displayName;
+
+                StringBuilder sb = new StringBuilder("Look Up ");
+                final LookupType lookupType = optional(assertion.getLookupType()).orSome(LookupType.TRUSTED_CERT_NAME);
+                sb.append(lookupType.getWhat());
+                sb.append(" by ");
+                sb.append(lookupType.getHow());
+                sb.append(": ");
+                sb.append(lookupType.getParamExtractor().call(assertion));
+
+                return AssertionUtils.decorateName(assertion, sb);
+            }
+        });
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 
     public static enum LookupType {
-        TRUSTED_CERT_NAME,
-        CERT_SKI,
-        CERT_THUMBPRINT_SHA1,
-        CERT_ISSUER_SERIAL,
-        CERT_SUBJECT_DN,
+        TRUSTED_CERT_NAME("Trusted Certificate", "Name", forField("trustedCertificateName")),
+        CERT_SKI("Certificate", "Subject Key ID", forField("certSubjectKeyIdentifier")),
+        CERT_THUMBPRINT_SHA1("Certificate", "ThumbprintSHA1", forField("certThumbprintSha1")),
+        CERT_ISSUER_SERIAL("Certificate", "Issuer DN/Serial Number", forIssuerSerialFields()),
+        CERT_SUBJECT_DN("Certificate", "Subject DN", forField("certSubjectDn")),
+        ;
+
+        private LookupType(String what, String how, Functions.Unary<String, LookupTrustedCertificateAssertion> paramExtractor) {
+            this.paramExtractor = paramExtractor;
+            this.how = how;
+            this.what = what;
+        }
+
+        private final String what;
+        private final String how;
+        private final Functions.Unary<String, LookupTrustedCertificateAssertion> paramExtractor;
+
+        public String getWhat() {
+            return what;
+        }
+
+        public String getHow() {
+            return how;
+        }
+
+        public Functions.Unary<String, LookupTrustedCertificateAssertion> getParamExtractor() {
+            return paramExtractor;
+        }
+
+        private static Functions.Unary<String, LookupTrustedCertificateAssertion> forField(String field) {
+            return Functions.propertyTransform(LookupTrustedCertificateAssertion.class, field);
+        }
+
+        private static Functions.Unary<String, LookupTrustedCertificateAssertion> forIssuerSerialFields() {
+            return new Functions.Unary<String, LookupTrustedCertificateAssertion>() {
+                @Override
+                public String call(LookupTrustedCertificateAssertion ass) {
+                    return ass.getCertIssuerDn() + "/" + ass.getCertSerialNumber();
+                }
+            };
+        }
     }
 }
