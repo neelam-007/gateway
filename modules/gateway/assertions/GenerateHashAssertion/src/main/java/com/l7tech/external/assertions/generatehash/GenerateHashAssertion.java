@@ -7,9 +7,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -19,10 +17,10 @@ import java.util.regex.Pattern;
  * <p>
  * This assertion supports the following keyed hash algorithm;
  * <ul>
- *     <li>HmacSHA1</li>
- *     <li>HmacSHA256</li>
- *     <li>HmacSHA384</li>
- *     <li>HmacSHA512</li>     
+ *     <li>HMAC-SHA1</li>
+ *     <li>HMAC-SHA256</li>
+ *     <li>HMAC-SHA384</li>
+ *     <li>HMAC-SHA512</li>
  * </ul>
  * and the following hash algorithm;
  * <ul>
@@ -45,12 +43,12 @@ public class GenerateHashAssertion extends Assertion implements UsesVariables, S
     /**
      * The pattern to determine if an alogorithm is an HMAC algorithm or not.
      */
-    public static final Pattern HMAC_ALGORITHM = Pattern.compile("(?i)Hmac.*");
+    public static final Pattern HMAC_ALGORITHM = Pattern.compile("(?i)HMAC.*");
 
     /**
      * The default algorithm.
      */
-    public static final String DEFAULT_ALGORITHM = "HmacSHA1";
+    public static final String DEFAULT_ALGORITHM = "HMAC-SHA1";
 
     private static final String META_INITIALIZED = GenerateHashAssertion.class.getName() + ".metadataInitialized";
 
@@ -59,29 +57,29 @@ public class GenerateHashAssertion extends Assertion implements UsesVariables, S
     private String targetOutputVariable = DEFAULT_VARIABLE_NAME;
     private String algorithm = DEFAULT_ALGORITHM;
 
-    private static final List<String> SUPPORTED_ALGORITHM;
+    private static final Map<String, String> SUPPORTED_ALGORITHM;
     
-    static {       
-        List<String> l = new ArrayList<String>();
-        l.add("HmacSHA1");
-        l.add("HmacSHA256");
-        l.add("HmacSHA384");
-        l.add("HmacSHA512");
-        l.add("MD5");
-        l.add("SHA-1");
-        l.add("SHA-256");
-        l.add("SHA-384");
-        l.add("SHA-512");
-        SUPPORTED_ALGORITHM = Collections.unmodifiableList(l);
+    static {
+        Map<String, String> m = new LinkedHashMap<String, String>();
+        m.put("HMAC-SHA1", "HmacSHA1");
+        m.put("HMAC-SHA256", "HmacSHA256");
+        m.put("HMAC-SHA384", "HmacSHA384");
+        m.put("HMAC-SHA512", "HmacSHA512");
+        m.put("MD5", "MD5");
+        m.put("SHA-1", "SHA-1");
+        m.put("SHA-256", "SHA-256");
+        m.put("SHA-384", "SHA-384");
+        m.put("SHA-512", "SHA-512");
+        SUPPORTED_ALGORITHM = Collections.unmodifiableMap(m);
     }
 
     private LineBreak lineBreak;
 
     /**
      * 
-     * @return a list of supported algorithms.
+     * @return a map of supported algorithms.
      */
-    public static List<String> getSupportedAlgorithm(){
+    public static Map<String, String> getSupportedAlgorithm(){
         return SUPPORTED_ALGORITHM;
     }
 

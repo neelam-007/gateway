@@ -43,7 +43,7 @@ public class ServerGenerateHashAssertion extends AbstractServerAssertion<Generat
         }
 
         final String dataToSign = ExpandVariables.process(assertion.dataToSignText(), vars, getAudit(), true);
-        final String algorithm = assertion.getAlgorithm();
+        final String algorithm = GenerateHashAssertion.getSupportedAlgorithm().get(assertion.getAlgorithm());
         final String variableName = assertion.getTargetOutputVariable();
 
         if (dataToSign == null) {

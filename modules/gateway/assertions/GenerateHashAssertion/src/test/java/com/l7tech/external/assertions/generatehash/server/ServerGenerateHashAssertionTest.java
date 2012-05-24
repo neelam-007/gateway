@@ -40,10 +40,10 @@ public class ServerGenerateHashAssertionTest {
     private static final Map<String, String> HMAC_TEST_DATA;
     static {
         Map<String, String> m = new HashMap<String, String>();
-        m.put("HmacSHA1", "RMCoOsTpDl/a8TMyufhEj6ZAgmY=");
-        m.put("HmacSHA256", "Nk+RBtl7k9/4tpYIkuR0iIIhPYKq553npC9RW+FqDfk=");
-        m.put("HmacSHA384", "SWba2s8fj6C4OcYjCcT7yIhFqwIc8eVZUEaxBFCDztY7gbAmuNEXE4EhotMshp1V");
-        m.put("HmacSHA512", "7AP4/Qlj3H9ZPWjOkF3v4neKdug894/v7PUh0pzE8u/liPJBioLnizXnHWn7nF9rDGWGS2yocp1HUdoLf2l9Mg==");
+        m.put("HMAC-SHA1", "RMCoOsTpDl/a8TMyufhEj6ZAgmY=");
+        m.put("HMAC-SHA256", "Nk+RBtl7k9/4tpYIkuR0iIIhPYKq553npC9RW+FqDfk=");
+        m.put("HMAC-SHA384", "SWba2s8fj6C4OcYjCcT7yIhFqwIc8eVZUEaxBFCDztY7gbAmuNEXE4EhotMshp1V");
+        m.put("HMAC-SHA512", "7AP4/Qlj3H9ZPWjOkF3v4neKdug894/v7PUh0pzE8u/liPJBioLnizXnHWn7nF9rDGWGS2yocp1HUdoLf2l9Mg==");
         HMAC_TEST_DATA = Collections.unmodifiableMap(m);
     }
 

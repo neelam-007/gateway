@@ -93,7 +93,7 @@ public class GenerateHashPropertiesDialog extends AssertionPropertiesOkCancelSup
             }
         });
 
-        for(String item : GenerateHashAssertion.getSupportedAlgorithm()){
+        for(String item : GenerateHashAssertion.getSupportedAlgorithm().keySet()){
             algorithmComboBox.addItem(item);
         }
         algorithmComboBox.addItemListener(algorithmComboBoxListener);
