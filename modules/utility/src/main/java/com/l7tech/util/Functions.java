@@ -825,6 +825,7 @@ public final class Functions {
      * @param clazz     the class whose instances are to be transformed (ie, Component).  Required
      * @param property  the property the transform should produce (ie, "width").  Required.
      * @return a Unary that, when passed an instance of the class, will return the corresponding property.
+     * @throws IllegalArgumentException if the specified class cannot be introspected, or does not have a property with the specified name.
      */
     public static <OUT,IN> Unary<OUT,IN> propertyTransform(Class<IN> clazz, String property) {
         try {
