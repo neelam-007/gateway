@@ -43,7 +43,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * Utility class that can verify a signed XML element, using an XmlElementVerifierConfig.
@@ -80,8 +79,6 @@ public class XmlElementVerifier {
             throw new RuntimeException(e);
         }
     }
-
-    private static final Pattern FAKE_STACK_TRACE_STRIPPER = Pattern.compile("\\r\\n\\tat .*", Pattern.DOTALL);
 
     /**
      * Verify a ds:Signature using the current config and return a table summarizing the results.
@@ -145,17 +142,7 @@ public class XmlElementVerifier {
         Validity validity = DsigUtil.verify(sigContext, sigElement, signingKey);
 
         if (!validity.getCoreValidity()) {
-            String infoMess = validity.getSignedInfoMessage();
-            if (!JdkLoggerConfigurator.debugState() && infoMess != null) {
-                // Strip stack trace "helpfully" folded into the signed info message by XSS4J (Bug #12199)
-                infoMess = FAKE_STACK_TRACE_STRIPPER.matcher(infoMess).replaceFirst("");
-            }
-            StringBuilder msg = new StringBuilder("Signature not valid. " + infoMess);
-            for (int i = 0; i < validity.getNumberOfReferences(); i++) {
-                msg.append("\n\tElement ").append(validity.getReferenceURI(i)).append(": ").append(validity.getReferenceMessage(i));
-            }
-            logger.warning(msg.toString());
-            throw new InvalidDocumentSignatureException(msg.toString());
+            throw new InvalidDocumentSignatureException(DsigUtil.getInvalidSignatureMessage(validity));
         }
 
         // Save the SignatureValue

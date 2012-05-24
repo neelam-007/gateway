@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.xmlsec.server;
 
+import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.xmlsec.NonSoapVerifyElementAssertion;
@@ -367,6 +368,21 @@ public class ServerNonSoapVerifyElementAssertionTest {
 
         verifyAndCheck(ass, context, true, signingCert,
                 "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", SIGNATURE_VALUE);
+    }
+
+    @Test
+    @BugNumber(12199)
+    public void testVerifyWithNoKeyInfoAndCertFromContextVariableWithWrongKeySize() throws Exception {
+        final X509Certificate signingCert = TestKeys.getCert(TestKeys.RSA_1536_CERT_X509_B64);
+
+        final NonSoapVerifyElementAssertion ass = ass();
+        ass.setVerifyCertificateVariableName("certvar");
+
+        final PolicyEnforcementContext context = context(SIGNED_NoKeyInfo);
+        context.setVariable("certvar", signingCert);
+
+        AssertionStatus result = sass(ass).checkRequest(context);
+        assertEquals(AssertionStatus.BAD_REQUEST, result);
     }
 
     void verifyAndCheck(NonSoapVerifyElementAssertion ass, String signedXml,

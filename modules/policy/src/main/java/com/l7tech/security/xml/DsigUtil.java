@@ -14,10 +14,7 @@ import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.SoapConstants;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +37,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static com.l7tech.security.xml.SupportedDigestMethods.*;
 
@@ -434,13 +432,7 @@ public class DsigUtil {
         Validity validity = DsigUtil.verify(sigContext, sigElement, signingKey);
 
         if (!validity.getCoreValidity()) {
-            StringBuffer msg = new StringBuffer("Signature not valid. " + validity.getSignedInfoMessage());
-            for (int i = 0; i < validity.getNumberOfReferences(); i++)
-                msg.append("\n\tElement ")
-                   .append(validity.getReferenceURI(i))
-                   .append(": ")
-                   .append(validity.getReferenceMessage(i));
-            throw new SignatureException(msg.toString());
+            throw new SignatureException(getInvalidSignatureMessage(validity));
         }
 
         // Make sure the root element was covered by signature
@@ -462,6 +454,31 @@ public class DsigUtil {
 
         // Success.  Signature looks good.
         return signingCert;
+    }
+
+    private static final Pattern FAKE_STACK_TRACE_STRIPPER = Pattern.compile("$\\s+^\\tat .*", Pattern.DOTALL | Pattern.MULTILINE);
+
+    /**
+     * Make an error message for an XSS4J signature validation failure that does not embed a full stack trace
+     * into the error message text unless exception debug mode is enabled.
+     *
+     * @param validity a Validity that returns false from getCoreValidity().  Required.
+     * @return an error message that will not include the expanded stack trace unless exception debug mode is on.  Never null.
+     */
+    public static String getInvalidSignatureMessage(@NotNull Validity validity) {
+        String infoMess = validity.getSignedInfoMessage();
+        if (!JdkLoggerConfigurator.debugState() && infoMess != null) {
+            // Strip stack trace "helpfully" folded into the signed info message by XSS4J (Bug #12199)
+            infoMess = FAKE_STACK_TRACE_STRIPPER.matcher(infoMess).replaceAll("");
+        }
+
+        StringBuilder msg = new StringBuilder("Signature not valid. " + infoMess);
+        for (int i = 0; i < validity.getNumberOfReferences(); i++)
+            msg.append("\n\tElement ")
+               .append(validity.getReferenceURI(i))
+               .append(": ")
+               .append(validity.getReferenceMessage(i));
+        return msg.toString();
     }
 
     /**
