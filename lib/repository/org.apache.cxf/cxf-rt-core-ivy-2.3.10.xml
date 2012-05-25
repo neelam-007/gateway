@@ -110,7 +110,7 @@
         <override org="org.apache.maven" module="maven-core" matcher="exact" rev="2.0.4"/>
         <override org="org.apache.maven" module="maven-plugin-api" matcher="exact" rev="2.0.4"/>
         <override org="org.apache.maven" module="maven-project" matcher="exact" rev="2.0.4"/>
-        <override org="org.apache.neethi" module="neethi" matcher="exact" rev="2.0.4"/>
+        <override org="org.apache.neethi" module="neethi" matcher="exact" rev="2.0.5"/>
         <override org="org.apache.servicemix.specs" module="org.apache.servicemix.specs.jbi-api-1.0" matcher="exact"
                   rev="1.3.0"/>
         <override org="org.apache.velocity" module="velocity" matcher="exact" rev="1.6.4"/>

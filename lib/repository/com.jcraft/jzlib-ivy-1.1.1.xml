@@ -2,9 +2,9 @@
 <ivy-module version="2.0">
 	<info organisation="com.jcraft"
 		module="jzlib"
-		revision="1.1.0"
+		revision="1.1.1"
 		status="release"
-		publication="20111026154213"
+		publication="20120523150810"
 		default="true"
 	/>
 	<configurations>

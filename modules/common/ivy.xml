@@ -23,7 +23,7 @@
             <exclude org="junit" module="junit" name="*" type="*" ext="*" conf="" matcher="exact"/>
         </dependency>
         <dependency org="commons-lang" name="commons-lang" rev="2.6" force="true" conf="core"/>
-        <dependency org="javax.mail" name="mail" rev="1.4.4" force="true" conf="core"/>
+        <dependency org="javax.mail" name="mail" rev="1.4.5" force="true" conf="core"/>
         <dependency org="javax.servlet" name="servlet-api" rev="2.5" force="true" conf="core"/>
         <dependency org="com.whirlycott" name="whirlycache" rev="1.0.1" force="true" conf="core"/>
         <dependency org="xalan" name="xalan" rev="2.7.1" force="true" conf="core"/>

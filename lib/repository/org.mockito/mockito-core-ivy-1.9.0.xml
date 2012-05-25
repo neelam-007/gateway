@@ -2,9 +2,9 @@
 <ivy-module version="2.0">
 	<info organisation="org.mockito"
 		module="mockito-core"
-		revision="1.9.0-rc1"
+		revision="1.9.0"
 		status="release"
-		publication="20111014155852"
+		publication="20120524124957"
 		default="true"
 	/>
 	<configurations>
