@@ -41,6 +41,7 @@ public class MapValueAssertionPropertiesDialog extends AssertionPropertiesOkCanc
         outputVariableField.setVariable(assertion.getOutputVar());
         NameValuePair[] mappings = assertion.getMappings();        
         mappingsTableModel.setRows(new ArrayList<NameValuePair>(mappings == null ? Collections.<NameValuePair>emptyList() : Arrays.asList(mappings)));
+        outputVariableField.setAssertion(assertion, getPreviousAssertion());
     }
 
     @Override
