@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MapValueAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Either;
@@ -72,7 +73,7 @@ public class ServerMapValueAssertion extends AbstractServerAssertion<MapValueAss
 
                 String result = ExpandVariables.process(mapping.outputTemplate, variableMap, getAudit());
                 
-                context.setVariable(assertion.getOutputVar(), result);
+                setVariable(context, assertion.getOutputVar(), result);
                 getAudit().logAndAudit(AssertionMessages.MAP_VALUE_PATTERN_MATCHED, pattern.toString());
                 return AssertionStatus.NONE;
             }
@@ -81,6 +82,15 @@ public class ServerMapValueAssertion extends AbstractServerAssertion<MapValueAss
 
         getAudit().logAndAudit(AssertionMessages.MAP_VALUE_NO_PATTERNS_MATCHED);
         return AssertionStatus.FAILED;
+    }
+
+    private void setVariable(PolicyEnforcementContext context, String variable, Object value) throws AssertionStatusException {
+        try {
+            context.setVariable(variable, value);
+        } catch (VariableNotSettableException e) {
+            logAndAudit(AssertionMessages.VARIABLE_NOTSET, e.getVariable());
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e);
+        }
     }
 
     private static final class MapValueMapping {

@@ -6,13 +6,13 @@ import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import com.l7tech.message.Message
-import com.l7tech.server.message.PolicyEnforcementContextFactory
-import com.l7tech.util.NameValuePair
 import com.l7tech.policy.assertion.AssertionStatus._
-import com.l7tech.policy.assertion.MapValueAssertion
-import com.l7tech.policy.variable.NoSuchVariableException
 import com.l7tech.server.ApplicationContexts._
 import com.l7tech.gateway.common.audit.TestAudit
+import com.l7tech.server.message.{PolicyEnforcementContext, PolicyEnforcementContextFactory}
+import com.l7tech.policy.variable.{VariableNotSettableException, NoSuchVariableException}
+import com.l7tech.util.{CollectionUtils, NameValuePair}
+import com.l7tech.policy.assertion.{AssertionStatus, MapValueAssertion}
 
 /**
  * Unit test for ServerMapValueAssertion.
@@ -107,6 +107,19 @@ class ServerMapValueAssertionTest extends SpecificationWithJUnit with Mockito {
       audit.isAuditPresent(ASSERTION_MISCONFIGURED) must beTrue
       audit.isNoneOfAuditsPresent(List(MAP_VALUE_PATTERN_NOT_MATCHED, MAP_VALUE_NO_PATTERNS_MATCHED, MAP_VALUE_PATTERN_NOT_MATCHED)) must beTrue
     }
+
+    // @BugNumber(12188)
+    "fail cleanly if the target variable cannot be set" in new DefaultScope() {
+      val mockPec = mock[PolicyEnforcementContext]
+      mockPec.getVariableMap(any, any) returns CollectionUtils.mapBuilder[String, Object].put("in", "cat").map
+      mockPec.setVariable(anyString, any) throws new VariableNotSettableException("unsettable")
+      ass.setOutputVar("unsettable")
+
+      checkRequest(mockPec, sass) must be equalTo SERVER_ERROR
+
+      audit.isAuditPresent(VARIABLE_NOTSET) must beTrue
+      audit.isNoneOfAuditsPresent(List(MAP_VALUE_PATTERN_NOT_MATCHED, MAP_VALUE_NO_PATTERNS_MATCHED, MAP_VALUE_PATTERN_NOT_MATCHED)) must beTrue
+    }
   }
 
 
@@ -135,5 +148,12 @@ class ServerMapValueAssertionTest extends SpecificationWithJUnit with Mockito {
     
     pec.setVariable("in", "cat")
     pec.setVariable("dog", "dawg")
+
+    def checkRequest(context: PolicyEnforcementContext, sass: ServerMapValueAssertion): AssertionStatus =
+      try {
+        sass.checkRequest(context)
+      } catch {
+        case e: AssertionStatusException => e.getAssertionStatus
+      }
   }
 }
