@@ -125,12 +125,12 @@
             </constraints>
             <properties/>
           </component>
-          <component id="de55d" class="javax.swing.JLabel">
+          <component id="de55d" class="javax.swing.JLabel" binding="domainNetbiosNameLabel">
             <constraints>
               <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Domain Netbios name: *"/>
+              <text value="Domain Netbios Name: *"/>
             </properties>
           </component>
           <component id="67f63" class="javax.swing.JTextField" binding="domainNetbiosTextField">
@@ -146,7 +146,7 @@
               <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Host Dns Name:"/>
+              <text value="Host DNS Name:"/>
             </properties>
           </component>
           <component id="b39dd" class="javax.swing.JTextField" binding="hostDnsTextField">
@@ -157,7 +157,7 @@
             </constraints>
             <properties/>
           </component>
-          <component id="1e48a" class="javax.swing.JLabel">
+          <component id="1e48a" class="javax.swing.JLabel" binding="serverNameLabel">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -173,7 +173,7 @@
             </constraints>
             <properties/>
           </component>
-          <component id="254ad" class="javax.swing.JLabel">
+          <component id="254ad" class="javax.swing.JLabel" binding="serviceAccountLabel">
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -197,7 +197,7 @@
               <text value="Service Password: *"/>
             </properties>
           </component>
-          <component id="a97c9" class="javax.swing.JLabel">
+          <component id="a97c9" class="javax.swing.JLabel" binding="hostNetbiosNameLabel">
             <constraints>
               <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>

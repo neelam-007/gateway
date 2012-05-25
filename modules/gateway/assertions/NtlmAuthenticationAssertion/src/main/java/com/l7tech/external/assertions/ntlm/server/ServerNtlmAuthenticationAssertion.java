@@ -146,36 +146,33 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
                 logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_MISSING_AUTHORIZATION_ATTRIBUTE, NtlmAuthenticationAssertion.USER_LOGIN_NAME);
                 throw new PolicyAssertionException(assertion, "sAMAccountName attribute is null!");
             }
+            String sid = null;
             if(userAccountInfo.containsKey("primaryGroupSid")){
                 SID primaryGroupSID = (SID) userAccountInfo.get("primaryGroupSid");
-                context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.SID, primaryGroupSID.toDisplayString());
+                sid = primaryGroupSID.toDisplayString();
             }
-            if(userAccountInfo.containsKey(NtlmAuthenticationAssertion.ACCOUNT_FLAGS)) {
-                context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_FLAGS, userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_FLAGS));
-            }
-            if(userAccountInfo.containsKey(NtlmAuthenticationAssertion.DOMAIN_NAME)) {
-                context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.DOMAIN_NAME, userAccountInfo.get(NtlmAuthenticationAssertion.DOMAIN_NAME));
-            }
+            context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.SID, sid);
+            context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_FLAGS, userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_FLAGS));
+            context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.DOMAIN_NAME, userAccountInfo.get(NtlmAuthenticationAssertion.DOMAIN_NAME));
+            String sessionKey = null;
             if(userAccountInfo.containsKey(NtlmAuthenticationAssertion.SESSION_KEY)) {
-                context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.SESSION_KEY, userAccountInfo.get(NtlmAuthenticationAssertion.SESSION_KEY));
+               sessionKey = HexUtils.encodeBase64((byte[])userAccountInfo.get(NtlmAuthenticationAssertion.SESSION_KEY), true);
             }
-            if(userAccountInfo.containsKey(NtlmAuthenticationAssertion.ACCOUNT_FULL_NAME)) {
-                context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_FULL_NAME, userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_FULL_NAME));
-            }
-            if(userAccountInfo.containsKey(NtlmAuthenticationAssertion.ACCOUNT_HOME_DIR)) {
-                context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_HOME_DIR, userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_HOME_DIR));
-            }
-            if(userAccountInfo.containsKey(NtlmAuthenticationAssertion.ACCOUNT_DIR_DRIVE)) {
-                context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_DIR_DRIVE, userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_DIR_DRIVE));
-            }
+            context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.SESSION_KEY, sessionKey);
+            context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_FULL_NAME, userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_FULL_NAME));
+            context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_HOME_DIR, userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_HOME_DIR));
+            context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_DIR_DRIVE, userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_DIR_DRIVE));
+            String[] sidGroups = null;
             if(userAccountInfo.containsKey(NtlmAuthenticationAssertion.ACCOUNT_SIDS)){
                 Set<SID> groupSet = (Set<SID>)userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_SIDS);
-                List<String> sidGroups = new ArrayList<String>();
+                List<String> sidGroupList = new ArrayList<String>();
                 for(SID group : groupSet){
-                    sidGroups.add(group.toDisplayString());
+                    sidGroupList.add(group.toDisplayString());
                 }
-                context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_SIDS, sidGroups.toArray(new String[0]));
+                sidGroups = sidGroupList.toArray(new String[0]);
             }
+            context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_SIDS, sidGroups);
+
         }
         else {
             logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_MISSING_ACCOUNT_INFO);

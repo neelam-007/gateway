@@ -17,6 +17,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Copyright: Layer 7 Technologies, 2012
@@ -33,6 +35,8 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
     public static final String RES_NTLM_PROPERTY_TABLE_VALUE_COL = "ntlmConfiguration.ntlm.propertyTable.col.1";
     public static final String RES_SERVICE_PASSWORD_EMPTY = "ntlmConfiguration.service.password.errors.empty";
 
+    private static final Pattern hostPattern = Pattern.compile("^[a-zA-Z0-9-\\\\.]+$");
+
     private JPanel mainPanel;
     private JCheckBox enableNtlmCheckBox;
     private JTextField domainDnsTextField;
@@ -48,10 +52,15 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
     private JTextField hostNetbiosTextField;
     private JComboBox passwordComboBox;
     private JButton manageSecurePasswordsButton;
+    private JLabel serviceAccountLabel;
+    private JLabel domainNetbiosNameLabel;
+    private JLabel hostNetbiosNameLabel;
+    private JLabel serverNameLabel;
 
     private boolean isValid = false;
 
     private SimpleTableModel<NameValuePair> ntlmPropertiesTableModel;
+    private InputValidator inputValidator;
 
     public LdapNtlmConfigurationPanel( final WizardStepPanel next ) {
         super( next );
@@ -89,11 +98,7 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
 
     @Override
     public boolean canAdvance() {
-        return (!enableNtlmCheckBox.isSelected() || 
-                !serverNameTextField.getText().isEmpty() && 
-                !serviceAccountTextField.getText().isEmpty() &&
-                !hostNetbiosTextField.getText().isEmpty() &&
-                !domainNetbiosTextField.getText().isEmpty());
+        return (!enableNtlmCheckBox.isSelected() || inputValidator.isValid());
     }
 
     /**
@@ -174,21 +179,21 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
 
         TreeMap<String, String> props = new TreeMap<String, String>();
         props.put("enabled", Boolean.toString(enableNtlmCheckBox.isSelected()));
-        props.put("server.dns.name", serverNameTextField.getText());
-        props.put("service.account", serviceAccountTextField.getText());
+        props.put("server.dns.name", serverNameTextField.getText().trim());
+        props.put("service.account", serviceAccountTextField.getText().trim());
         SecurePassword securePassword = ((SecurePasswordComboBox) passwordComboBox).getSelectedSecurePassword();
         if(securePassword != null) {
             Long  passwordOid = securePassword.getOidAsLong();
             props.put("service.passwordOid", passwordOid.toString());
         }
-        props.put("domain.dns.name", domainDnsTextField.getText());
-        props.put("domain.netbios.name", domainNetbiosTextField.getText());
-        props.put("localhost.dns.name", hostDnsTextField.getText());
-        props.put("localhost.netbios.name", hostNetbiosTextField.getText());
+        props.put("domain.dns.name", domainDnsTextField.getText().trim());
+        props.put("domain.netbios.name", domainNetbiosTextField.getText().trim());
+        props.put("localhost.dns.name", hostDnsTextField.getText().trim());
+        props.put("localhost.netbios.name", hostNetbiosTextField.getText().trim());
         
         List<NameValuePair> ntlmAdvancedProperties = ntlmPropertiesTableModel.getRows();
         for(NameValuePair pair : ntlmAdvancedProperties){
-            props.put(pair.getKey(), pair.getValue());
+            props.put(pair.getKey().trim(), pair.getValue().trim());
         }
         
         config.setNtlmAuthenticationProviderProperties(props);    
@@ -203,6 +208,7 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
             public void run() {
                 if( isValid != canAdvance()) {
                     isValid = canAdvance();
+                    enableAndDisableComponents();
                     notifyListeners();
                 }
             }
@@ -227,6 +233,24 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
         serviceAccountTextField.getDocument().addDocumentListener(serviceAccountEmptyListener);
         domainNetbiosTextField.getDocument().addDocumentListener(validationListener);
         hostNetbiosTextField.getDocument().addDocumentListener(validationListener);
+
+        inputValidator = new InputValidator(this, getStepLabel());
+        InputValidator.ComponentValidationRule hostNameRule = new InputValidator.ComponentValidationRule(serverNameTextField) {
+            final String errorMsg = "Invalid characters entered";
+
+            @Override
+            public String getValidationError() {
+                Matcher m = hostPattern.matcher(serverNameTextField.getText().trim());
+                if (!m.matches()) {
+                    return errorMsg;
+                }
+                return null;
+            }
+        };
+        inputValidator.constrainTextFieldToBeNonEmpty(serverNameLabel.getText(), serverNameTextField, hostNameRule);
+        inputValidator.constrainTextFieldToBeNonEmpty(serviceAccountLabel.getText(), serviceAccountTextField, null) ;
+        inputValidator.constrainTextFieldToBeNonEmpty(domainNetbiosNameLabel.getText(), domainNetbiosTextField, null);
+        inputValidator.constrainTextFieldToBeNonEmpty(hostNetbiosNameLabel.getText(), hostNetbiosTextField, null);
 
         enableNtlmCheckBox.addActionListener(new ActionListener() {
             @Override
@@ -273,22 +297,22 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 Map<String, String> props = new HashMap<String, String>();
-                props.put("server.dns.name", serverNameTextField.getText());
-                props.put("service.account", serviceAccountTextField.getText());
+                props.put("server.dns.name", serverNameTextField.getText().trim());
+                props.put("service.account", serviceAccountTextField.getText().trim());
                 SecurePassword securePassword = ((SecurePasswordComboBox) passwordComboBox).getSelectedSecurePassword();
                 if(securePassword != null) {
                     Long  passwordOid = securePassword.getOidAsLong();
                     props.put("service.passwordOid", passwordOid.toString());
                 }
-                props.put("domain.dns.name", domainDnsTextField.getText());
-                props.put("domain.netbios.name", domainNetbiosTextField.getText());
-                props.put("localhost.dns.name", hostDnsTextField.getText());
-                props.put("localhost.netbios.name", hostNetbiosTextField.getText());
+                props.put("domain.dns.name", domainDnsTextField.getText().trim());
+                props.put("domain.netbios.name", domainNetbiosTextField.getText().trim());
+                props.put("localhost.dns.name", hostDnsTextField.getText().trim());
+                props.put("localhost.netbios.name", hostNetbiosTextField.getText().trim());
 
                 java.util.List<NameValuePair> propertiesList  = ntlmPropertiesTableModel.getRows();
 
                 for(NameValuePair pair : propertiesList) {
-                    props.put(pair.getKey(), pair.getValue());
+                    props.put(pair.getKey().trim(), pair.getValue().trim());
                 }
                 try {
                     getIdentityAdmin().testNtlmConfig(props);
@@ -329,7 +353,7 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
         editNtlmPropertyButton.setEnabled(isEnabled);
         deleteNtlmPropertyButton.setEnabled(isEnabled);
         ntlmPropertyTable.setEnabled(isEnabled);
-        testNetlogonConnectionButton.setEnabled(isEnabled);
+        testNetlogonConnectionButton.setEnabled(isEnabled & inputValidator.isValid());
         notifyListeners();
     }
 
