@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.cache.server;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.external.assertions.cache.CacheStorageAssertion;
@@ -56,6 +57,8 @@ public class ServerCacheStorageAssertion extends AbstractMessageTargetableServer
             } finally {
                 if (messageBody != null) messageBody.close();
             }
+        } catch (NoSuchVariableException e) {
+            logAndAudit(AssertionMessages.NO_SUCH_VARIABLE_WARNING, e.getVariable());
         } catch (Exception e) {
             logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO,
                 new String[]{"Unable to store cached value: " + ExceptionUtils.getMessage(e)}, e);
