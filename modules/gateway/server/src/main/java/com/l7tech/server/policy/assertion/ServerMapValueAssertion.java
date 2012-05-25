@@ -51,6 +51,11 @@ public class ServerMapValueAssertion extends AbstractServerAssertion<MapValueAss
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (assertion.getInputExpr() == null) {
+            logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, "No input expression is configured.");
+            return AssertionStatus.SERVER_ERROR;
+        }
+
         final Map<String,Object> variableMap = context.getVariableMap(varsUsed, getAudit());
         String inputStr = ExpandVariables.process(assertion.getInputExpr(), variableMap, getAudit());
 

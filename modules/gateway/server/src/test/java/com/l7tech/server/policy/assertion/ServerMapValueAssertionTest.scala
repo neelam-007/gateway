@@ -99,6 +99,14 @@ class ServerMapValueAssertionTest extends SpecificationWithJUnit with Mockito {
       audit.isAuditPresent(MAP_VALUE_PATTERN_MATCHED) must beFalse
       audit.isAllOfAuditsPresent(List(MAP_VALUE_PATTERN_NOT_MATCHED, MAP_VALUE_NO_PATTERNS_MATCHED)) must beTrue
     }
+
+    // @BugNumber(12178)
+    "fail cleanly if the input expression is null" in new DefaultScope() {
+      ass.setInputExpr(null);
+      sass.checkRequest(pec) must be equalTo SERVER_ERROR
+      audit.isAuditPresent(ASSERTION_MISCONFIGURED) must beTrue
+      audit.isNoneOfAuditsPresent(List(MAP_VALUE_PATTERN_NOT_MATCHED, MAP_VALUE_NO_PATTERNS_MATCHED, MAP_VALUE_PATTERN_NOT_MATCHED)) must beTrue
+    }
   }
 
 

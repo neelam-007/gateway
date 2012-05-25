@@ -95,7 +95,8 @@ public class MapValueAssertion extends Assertion implements UsesVariables, SetsV
         meta.put(DESCRIPTION, "Map an input set to an output set.  Match an input value against a list of patterns, and output the first matching result.");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Map16.gif");
-        
+
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.MapValueAssertionPropertiesDialog");
 
         return meta;
