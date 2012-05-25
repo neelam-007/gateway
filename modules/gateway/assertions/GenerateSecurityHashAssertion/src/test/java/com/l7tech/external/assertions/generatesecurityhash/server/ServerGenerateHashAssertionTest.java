@@ -1,7 +1,7 @@
-package com.l7tech.external.assertions.generatehash.server;
+package com.l7tech.external.assertions.generatesecurityhash.server;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.generatehash.GenerateHashAssertion;
+import com.l7tech.external.assertions.generatesecurityhash.GenerateSecurityHashAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Test cases for {@link ServerGenerateHashAssertion}.
+ * Test cases for {@link ServerGenerateSecurityHashAssertion}.
  *
  * @author KDiep
  */
@@ -47,21 +47,21 @@ public class ServerGenerateHashAssertionTest {
         HMAC_TEST_DATA = Collections.unmodifiableMap(m);
     }
 
-    private GenerateHashAssertion assertion;
+    private GenerateSecurityHashAssertion assertion;
 
     private PolicyEnforcementContext pec;
 
-    private ServerGenerateHashAssertion serverAssertion;
+    private ServerGenerateSecurityHashAssertion serverAssertion;
 
     @Before
     public void setUp(){
-        assertion = new GenerateHashAssertion();
+        assertion = new GenerateSecurityHashAssertion();
         Message request = new Message();
         request.initialize(XmlUtil.stringAsDocument("<request />"));
         Message response = new Message();
         response.initialize(XmlUtil.stringAsDocument("<response />"));
         pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-        serverAssertion = new ServerGenerateHashAssertion(assertion);
+        serverAssertion = new ServerGenerateSecurityHashAssertion(assertion);
     }
 
     private void setTestData(final String algorithm, final String key, final String data, final String outputVariable ) {

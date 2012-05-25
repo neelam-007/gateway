@@ -1,8 +1,8 @@
-package com.l7tech.external.assertions.generatehash.console;
+package com.l7tech.external.assertions.generatesecurityhash.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.external.assertions.generatehash.GenerateHashAssertion;
+import com.l7tech.external.assertions.generatesecurityhash.GenerateSecurityHashAssertion;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.assertion.LineBreak;
 import com.l7tech.util.TextUtils;
@@ -11,9 +11,9 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * The dialog to present the configuration of the {@link GenerateHashAssertion} to the user.
+ * The dialog to present the configuration of the {@link com.l7tech.external.assertions.generatesecurityhash.GenerateSecurityHashAssertion} to the user.
  */
-public class GenerateHashPropertiesDialog extends AssertionPropertiesOkCancelSupport<GenerateHashAssertion> {
+public class GenerateSecurityHashPropertiesDialog extends AssertionPropertiesOkCancelSupport<GenerateSecurityHashAssertion> {
 
     private JPanel customPane;
     private JTextField keyTextField;
@@ -29,13 +29,13 @@ public class GenerateHashPropertiesDialog extends AssertionPropertiesOkCancelSup
      * Construct a new dialog with the given owner.
      * @param owner the dialog's owner.
      */
-    public GenerateHashPropertiesDialog(final Window owner) {
-        super(GenerateHashAssertion.class, owner, "Generate Security Hash Properties", true);
+    public GenerateSecurityHashPropertiesDialog(final Window owner) {
+        super(GenerateSecurityHashAssertion.class, owner, "Generate Security Hash Properties", true);
         initComponents();
     }
 
     @Override
-    public void setData(GenerateHashAssertion assertion) {
+    public void setData(GenerateSecurityHashAssertion assertion) {
         keyTextField.setText(assertion.getKeyText());
         keyTextField.setCaretPosition(0);
         dataToSign.setText(TextUtils.convertLineBreaks(assertion.dataToSignText(), LineBreak.LF.getCharacters()));
@@ -56,7 +56,7 @@ public class GenerateHashPropertiesDialog extends AssertionPropertiesOkCancelSup
     }
 
     @Override
-    public GenerateHashAssertion getData(GenerateHashAssertion assertion) throws ValidationException {
+    public GenerateSecurityHashAssertion getData(GenerateSecurityHashAssertion assertion) throws ValidationException {
         assertion.setAlgorithm(algorithmComboBox.getSelectedItem().toString());
         assertion.setKeyText(keyTextField.isEnabled() ? keyTextField.getText() : null);
         assertion.setTargetOutputVariable(targetVariablePanel.getVariable());
@@ -93,7 +93,7 @@ public class GenerateHashPropertiesDialog extends AssertionPropertiesOkCancelSup
             }
         });
 
-        for(String item : GenerateHashAssertion.getSupportedAlgorithm().keySet()){
+        for(String item : GenerateSecurityHashAssertion.getSupportedAlgorithm().keySet()){
             algorithmComboBox.addItem(item);
         }
         algorithmComboBox.addItemListener(algorithmComboBoxListener);
@@ -130,7 +130,7 @@ public class GenerateHashPropertiesDialog extends AssertionPropertiesOkCancelSup
         boolean toReturn = true;
         // key needs a value if we are using an HMAC algorithm
         if (algorithmComboBox.getSelectedItem() != null && !algorithmComboBox.getSelectedItem().toString().trim().isEmpty()) {
-            toReturn = GenerateHashAssertion.HMAC_ALGORITHM.matcher(algorithmComboBox.getSelectedItem().toString()).matches();
+            toReturn = GenerateSecurityHashAssertion.HMAC_ALGORITHM.matcher(algorithmComboBox.getSelectedItem().toString()).matches();
         }
         return toReturn;
     }

@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.generatehash;
+package com.l7tech.external.assertions.generatesecurityhash;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
  * </p>
  * 
  */
-public class GenerateHashAssertion extends Assertion implements UsesVariables, SetsVariables {
+public class GenerateSecurityHashAssertion extends Assertion implements UsesVariables, SetsVariables {
 
     /**
      * The default output variable name.
@@ -50,7 +50,7 @@ public class GenerateHashAssertion extends Assertion implements UsesVariables, S
      */
     public static final String DEFAULT_ALGORITHM = "HMAC-SHA1";
 
-    private static final String META_INITIALIZED = GenerateHashAssertion.class.getName() + ".metadataInitialized";
+    private static final String META_INITIALIZED = GenerateSecurityHashAssertion.class.getName() + ".metadataInitialized";
 
     private String base64Data;
     private String keyText;

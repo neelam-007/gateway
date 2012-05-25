@@ -1,6 +1,6 @@
-package com.l7tech.external.assertions.generatehash.server;
+package com.l7tech.external.assertions.generatesecurityhash.server;
 
-import com.l7tech.external.assertions.generatehash.GenerateHashAssertion;
+import com.l7tech.external.assertions.generatesecurityhash.GenerateSecurityHashAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -20,17 +20,17 @@ import java.util.Map;
 import java.util.logging.Level;
 
 /**
- * Server side implementation of the {@link GenerateHashAssertion}.
+ * Server side implementation of the {@link com.l7tech.external.assertions.generatesecurityhash.GenerateSecurityHashAssertion}.
  *
  */
-public class ServerGenerateHashAssertion extends AbstractServerAssertion<GenerateHashAssertion> {
+public class ServerGenerateSecurityHashAssertion extends AbstractServerAssertion<GenerateSecurityHashAssertion> {
 
     /**
-     * Constructor a new ServerGenerateHashAssertion with the given GenerateHashAssertion bean.
+     * Constructor a new ServerGenerateSecurityHashAssertion with the given GenerateHashAssertion bean.
      *
      * @param assertion the GenerateHashAssertion bean.
      */
-    public ServerGenerateHashAssertion(final GenerateHashAssertion assertion) {
+    public ServerGenerateSecurityHashAssertion(final GenerateSecurityHashAssertion assertion) {
         super(assertion);
     }
 
@@ -43,7 +43,7 @@ public class ServerGenerateHashAssertion extends AbstractServerAssertion<Generat
         }
 
         final String dataToSign = ExpandVariables.process(assertion.dataToSignText(), vars, getAudit(), true);
-        final String algorithm = GenerateHashAssertion.getSupportedAlgorithm().get(assertion.getAlgorithm());
+        final String algorithm = GenerateSecurityHashAssertion.getSupportedAlgorithm().get(assertion.getAlgorithm());
         final String variableName = assertion.getTargetOutputVariable();
 
         if (dataToSign == null) {
@@ -76,7 +76,7 @@ public class ServerGenerateHashAssertion extends AbstractServerAssertion<Generat
         AssertionStatus returnStatus = AssertionStatus.NONE;
         try {
             String output = "";
-            if (GenerateHashAssertion.HMAC_ALGORITHM.matcher(algorithm).matches()) {
+            if (GenerateSecurityHashAssertion.HMAC_ALGORITHM.matcher(algorithm).matches()) {
                 // in this case we have to check to make sure a key exists as well
                 final Map<String, Object> vars = Collections.unmodifiableMap(context.getVariableMap(assertion.getVariablesUsed(), getAudit()));
                 if(ExpandVariables.isVariableReferencedNotFound(assertion.getKeyText(), vars, getAudit())){

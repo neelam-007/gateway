@@ -640,9 +640,9 @@ public class GatewayFeatureSets {
         fsr("set:JsonTransformation:Assertions", "The necessary assertions to enable JSON transformation functionality",
             mass("assertion:JsonTransformation"));
 
-        GatewayFeatureSet generateHashAssertion =
-                fsr("set:GenerateHashAssertion:Assertions", "The necessary assertions to enable the Generate Hash functionality",
-                        mass("assertion:GenerateHash"));
+        GatewayFeatureSet generateSecurityHashAssertion =
+                fsr("set:GenerateSecurityHashAssertion:Assertions", "The necessary assertions to enable the Generate Security Hash functionality",
+                        mass("assertion:GenerateSecurityHash"));
 
         GatewayFeatureSet evaluateJsonPathExpression =
                 fsr("set:EvaluateJsonPathExpressionAssertion:Assertions", "The necessary assertions to enable the Evaluate Json Path Expression functionality",
@@ -694,7 +694,7 @@ public class GatewayFeatureSets {
             fs(customDs),
             fs(uddiNotificationAssertions),
             fs(esmAssertions),
-            fs(generateHashAssertion),
+            fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
             fs(lookupDynamicContextVariables),
             ass(SslAssertion.class),
@@ -744,7 +744,7 @@ public class GatewayFeatureSets {
             fs(esmAssertions),
             fs(samlpSsoAssertions),
             fs(samlpInboundAssertions),
-            fs(generateHashAssertion),
+            fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
             fs(lookupDynamicContextVariables));
 
@@ -788,7 +788,7 @@ public class GatewayFeatureSets {
             fs(wssp),
             fs(icapAntivirusScannerAssertions),
             fs(jsonTransformationAssertion),
-            fs(generateHashAssertion),
+            fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
             fs(lookupDynamicContextVariables));
 
@@ -834,7 +834,7 @@ public class GatewayFeatureSets {
             fs(mtomValidateAssertions),
             fs(esmAssertions),
             fs(uiFw),
-            fs(generateHashAssertion),
+            fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
             fs(lookupDynamicContextVariables));
 
