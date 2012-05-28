@@ -1132,9 +1132,11 @@ public class AssertionMessages extends Messages {
     public static final Messages.M EVALUATE_JSON_PATH_INVALID_EVALUATOR     = m(9647, Level.WARNING, "Invalid evaluator: ''{0}''");
     public static final Messages.M EVALUATE_JSON_PATH_ERROR     = m(9648, Level.WARNING, "Error occurred evaluating JSON Path: ''{0}''");
 
-    public static final Messages.M LOOKUP_DYNAMIC_VARIABLE_NOT_FOUND     = m(9655, Level.WARNING, "Context variable ''{0}'' is not found.");
     public static final Messages.M LOOKUP_DYNAMIC_VARIABLE_MISSING_SOURCE     = m(9656, Level.WARNING, "Source variable is not set.");
     public static final Messages.M LOOKUP_DYNAMIC_VARIABLE_MISSING_TARGET     = m(9657, Level.WARNING, "Target output variable is not set.");
     public static final Messages.M LOOKUP_DYNAMIC_VARIABLE_INVALID_SYNTAX     = m(9658, Level.WARNING, "Invalid variable syntax: {0}");
+    public static final Messages.M LOOKUP_DYNAMIC_VARIABLE_UNSUPPORTED_TYPE     = m(9659, Level.WARNING, "''{0}'' is not a supported data type.");
+    public static final Messages.M LOOKUP_DYNAMIC_VARIABLE_TYPE_MISMATCH     = m(9660, Level.WARNING, "Target data type is ''{0}'' but found ''{1}''.");
+
     // Highest ID reserved for AssertionMessages = 99999
 }

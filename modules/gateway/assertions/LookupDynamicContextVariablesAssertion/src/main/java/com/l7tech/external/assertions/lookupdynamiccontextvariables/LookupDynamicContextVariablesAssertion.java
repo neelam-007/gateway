@@ -11,14 +11,40 @@ import com.l7tech.policy.variable.VariableMetadata;
  */
 public class LookupDynamicContextVariablesAssertion extends Assertion implements SetsVariables {
 
-    private static final String DEFAULT_OUTPUT_VARIABLE = "lookup.result";
+    /**
+     * The supported data types.
+     */
+    public static final DataType[] SUPPORTED_TYPES = new DataType[]{
+            DataType.STRING,
+            DataType.DATE_TIME,
+            DataType.CERTIFICATE,
+            DataType.ELEMENT,
+            DataType.MESSAGE
+    };
 
     private static final String META_INITIALIZED = LookupDynamicContextVariablesAssertion.class.getName() + ".metadataInitialized";
 
     private static final String BASE_NAME = "Look Up Context Variable";
 
     private String sourceVariable;
-    private String targetOutputVariable = DEFAULT_OUTPUT_VARIABLE;
+    private String targetOutputVariable;
+    private DataType targetDataType;
+
+    /**
+     *
+     * @return the target data type.
+     */
+    public DataType getTargetDataType() {
+        return targetDataType;
+    }
+
+    /**
+     *
+     * @param targetDataType the target data type.
+     */
+    public void setTargetDataType(final DataType targetDataType) {
+        this.targetDataType = targetDataType;
+    }
 
     /**
      *
@@ -54,8 +80,9 @@ public class LookupDynamicContextVariablesAssertion extends Assertion implements
 
     @Override
     public VariableMetadata[] getVariablesSet() {
+        if(getTargetOutputVariable() == null || getTargetOutputVariable().trim().isEmpty()) return new VariableMetadata[0];
         return new VariableMetadata[]{
-                new VariableMetadata(getTargetOutputVariable(), false, false, null, true, DataType.STRING)
+                new VariableMetadata(getTargetOutputVariable(), false, false, null, true, getTargetDataType())
         };
     }
 
