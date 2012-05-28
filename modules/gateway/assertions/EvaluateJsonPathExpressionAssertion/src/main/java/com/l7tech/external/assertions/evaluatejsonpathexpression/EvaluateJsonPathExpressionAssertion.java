@@ -22,12 +22,14 @@ public class EvaluateJsonPathExpressionAssertion extends MessageTargetableAssert
 
     private static final String DEFAULT_EVALUATOR = "JsonPath";
 
+    private static final String BASE_NAME = "Evaluate JSON Path Expression";
+
     private static final String META_INITIALIZED = EvaluateJsonPathExpressionAssertion.class.getName() + ".metadataInitialized";
     private static final String SUFFIX_FOUND = "found";
     private static final String SUFFIX_COUNT = "count";
     private static final String SUFFIX_RESULT = "result";
     private static final String SUFFIX_RESULTS = "results";
-    
+
     private static final String[] AVAILABLE_SUFFIXES = new String[]{
             SUFFIX_FOUND, SUFFIX_COUNT, SUFFIX_RESULT, SUFFIX_RESULTS
     };
@@ -35,14 +37,14 @@ public class EvaluateJsonPathExpressionAssertion extends MessageTargetableAssert
     private String evaluator = DEFAULT_EVALUATOR;
     private String expression;
     private String variablePrefix = VARIABLE_PREFIX;
-    
+
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Evaluate JSON Path Expression");
-        meta.put(AssertionMetadata.LONG_NAME, "Evaluate JSON Path Expression");
+        meta.put(AssertionMetadata.SHORT_NAME, BASE_NAME);
+        meta.put(AssertionMetadata.LONG_NAME, "Query and extract data from JSON Object using JSON Path notation.");
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xml" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/regex16.gif");
@@ -62,6 +64,14 @@ public class EvaluateJsonPathExpressionAssertion extends MessageTargetableAssert
             }
         });
 
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<EvaluateJsonPathExpressionAssertion>() {
+            @Override
+            public String getAssertionName(final EvaluateJsonPathExpressionAssertion assertion, final boolean decorate) {
+                if(!decorate) return BASE_NAME;
+                final String decoration = BASE_NAME + " - " + assertion.getExpression();
+                return AssertionUtils.decorateName(assertion, decoration);
+            }
+        });
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
