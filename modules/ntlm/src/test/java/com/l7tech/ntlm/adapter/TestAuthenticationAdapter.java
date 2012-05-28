@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * User: awitrisna
  */
 public class TestAuthenticationAdapter extends NetLogon {
-    
+
     private static Logger log = Logger.getLogger(TestAuthenticationAdapter.class.getName());
 
     public TestAuthenticationAdapter(Map properties) {

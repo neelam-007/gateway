@@ -46,7 +46,7 @@ public class NtlmClient {
     }
 
     public static Type3Message generateType3Msg(String username, String password,
-                                   String domain, String workstation, String challenge)
+                                                String domain, String workstation, String challenge)
             throws IOException {
         Type2Message type2Message;
         type2Message = new Type2Message(Base64.decode(challenge));
@@ -54,7 +54,7 @@ public class NtlmClient {
         final int type3Flags = type2Flags
                 & (0xffffffff ^ (NtlmFlags.NTLMSSP_TARGET_TYPE_DOMAIN | NtlmFlags.NTLMSSP_TARGET_TYPE_SERVER));
         if (domain == null) {
-            domain= "";
+            domain = "";
         }
         final Type3Message type3Message = new Type3Message(type2Message, password, domain,
                 username, workstation, type3Flags);

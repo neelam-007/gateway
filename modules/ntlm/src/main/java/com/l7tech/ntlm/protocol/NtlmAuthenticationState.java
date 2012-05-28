@@ -69,7 +69,7 @@ public class NtlmAuthenticationState {
     }
 
     public void setTargetInfo(byte[] targetInfo) {
-      this.targetInfo = targetInfo;
+        this.targetInfo = targetInfo;
     }
 
 

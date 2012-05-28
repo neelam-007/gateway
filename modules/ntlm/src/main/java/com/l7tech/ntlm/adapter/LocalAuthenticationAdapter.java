@@ -12,28 +12,28 @@ import java.util.Map;
  * User: ymoiseyenko
  */
 public class LocalAuthenticationAdapter extends HashMap implements AuthenticationAdapter {
-    
+
     public LocalAuthenticationAdapter(Map props) {
         super(props);
     }
-    
+
     @Override
     public Object validate(NtlmChallengeResponse response, byte[] challenge, Map account) throws AuthenticationManagerException {
-        if(response == null ) {
-            throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_INVALID_CREDENTIALS,"User credentials cannot be null!");
+        if (response == null) {
+            throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_INVALID_CREDENTIALS, "User credentials cannot be null!");
         }
         String domain = response.getDomain();
         String username = response.getUsername();
 
-        String nbtName = (String)get("domain.netbios.name");
-        String dnsName = (String)get("domain.dns.name");
+        String nbtName = (String) get("domain.netbios.name");
+        String dnsName = (String) get("domain.dns.name");
 
         if ((domain == null) || (domain.trim().length() == 0)) {
             domain = nbtName;
         }
 
-        String myusername = (String)get("my.username");
-        String mypassword = (String)get("my.password");
+        String myusername = (String) get("my.username");
+        String mypassword = (String) get("my.password");
 
         if ((domain.equalsIgnoreCase(nbtName)) || (domain.equalsIgnoreCase(dnsName))) {
             if (username.equalsIgnoreCase(myusername)) {

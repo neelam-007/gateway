@@ -10,7 +10,7 @@ import jcifs.dcerpc.rpc;
  * Date: 3/14/12
  */
 public final class DceRpcUtil {
-    
+
     public static NdrBuffer encode_rpc_string_buffer(NdrBuffer dst, rpc.unicode_string unicode_string) {
         if (unicode_string.buffer != null) {
             dst = dst.deferred;
@@ -30,7 +30,7 @@ public final class DceRpcUtil {
 
         return dst;
     }
-    
+
     public static NdrBuffer decode_rpc_string(NdrBuffer src, rpc.unicode_string unicode_string) throws NdrException {
         src = src.deferred;
         int s = src.dec_ndr_long();
@@ -40,23 +40,25 @@ public final class DceRpcUtil {
         src.advance(2 * l);
 
         if (unicode_string.buffer == null) {
-            if ((s < 0) || (s > 65535)) throw new NdrException("invalid buffer size");
+            if ((s < 0) || (s > 65535)) {
+                throw new NdrException("invalid buffer size");
+            }
             unicode_string.buffer = new short[s];
         }
         src = src.derive(i);
         for (int k = 0; k < l; k++) {
-            unicode_string.buffer[k] = (short)src.dec_ndr_short();
+            unicode_string.buffer[k] = (short) src.dec_ndr_short();
         }
         return src;
     }
-    
+
     public static byte[] decode_bytes(NdrBuffer src, byte[] bytes) throws NdrException {
         src = src.deferred;
         int s = src.dec_ndr_long();
         src.dec_ndr_long();
         int l = src.dec_ndr_long();
         int i = src.index;
-        src.advance(1 * l);
+        src.advance(l);
         byte[] data = bytes;
         if (data == null) {
             if ((s < 0) || (s > 65535)) throw new NdrException("invalid byte array size");
@@ -64,10 +66,11 @@ public final class DceRpcUtil {
         }
         src = src.derive(i);
         for (int k = 0; k < l; k++) {
-            data[k] = (byte)src.dec_ndr_small();
+            data[k] = (byte) src.dec_ndr_small();
         }
         return data;
     }
 
-    private DceRpcUtil() {}
+    private DceRpcUtil() {
+    }
 }

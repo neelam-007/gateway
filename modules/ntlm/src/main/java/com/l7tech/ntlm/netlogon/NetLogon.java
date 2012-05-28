@@ -337,7 +337,7 @@ public class NetLogon extends HashMap implements AuthenticationAdapter{
         acct.put("sAMAccountName", new UnicodeString(samInfo2.effectiveName, false).toString());
         acct.put("userSid", new SID(domainSid, samInfo2.userId));
         acct.put("primaryGroupSid", new SID(domainSid, samInfo2.primaryGroupId));
-        acct.put("userAccountFlags", "0x" + Hexdump.toHexString(samInfo2.accountFlags, 8));
+        acct.put("userAccountFlags", "0x" + Hexdump.toHexString(samInfo2.userFlags, 8));
         acct.put("session.key", sessionKey);
 
         if ((samInfo2.fullName != null) && (samInfo2.fullName.buffer != null))

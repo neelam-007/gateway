@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 /**
  * Copyright: Layer 7 Technologies, 2012
  * User: ymoiseyenko
- *
+ * <p/>
  * Implementation of the NTLM client that supports both NTLMv1 and NTLMv2 protocols
  */
 public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
@@ -36,29 +36,29 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
 
     /**
      * Requests NTLM authentication from the server. Generates NTLM messages according to the NTLM protocol
+     *
      * @param token response sent from the server
-     * @param cred - PasswordCredentials of the user
-     * @return  request sent to the server (can be either Negotiate message or Authenticate message)
+     * @param cred  - PasswordCredentials of the user
+     * @return request sent to the server (can be either Negotiate message or Authenticate message)
      * @throws AuthenticationManagerException
      */
     @Override
     public byte[] requestAuthentication(byte[] token, PasswordCredential cred) throws AuthenticationManagerException {
         int flags = state.getFlags();
-        String workstation =  cred.getHost();
-        if(StringUtils.isEmpty(workstation)){
-            workstation = (String)get("localhost.netbios.name");
+        String workstation = cred.getHost();
+        if (StringUtils.isEmpty(workstation)) {
+            workstation = (String) get("localhost.netbios.name");
         }
         NtlmSecurityPrincipal principal = cred.getSecurityPrincipal();
         String name = principal.getName();
         String domainName = principal.getDomain();
 
-        try
-        {
+        try {
             switch (state.getState()) {
                 case DEFAULT:
                     state.setState(State.NEGOTIATE);
                 case NEGOTIATE:
-                    if(flags == 0) {
+                    if (flags == 0) {
                         flags = NtlmConstants.NTLMSSP_NEGOTIATE_56 |
                                 NtlmConstants.NTLMSSP_NEGOTIATE_128 |
                                 NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY |
@@ -76,7 +76,7 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
                     Type2Message ncm = new Type2Message(token);
 
                     byte[] serverChallenge = ncm.getChallenge();
-                   
+
                     flags &= ncm.getFlags();
                     flags &= NtlmConstants.NTLMSSP_NEGOTIATE_VERSION_MASK;//-33554433;
                     flags &= NtlmConstants.NTLMSSP_R6_MASK;//-262145 r6 unused, always set to 0
@@ -102,8 +102,8 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
                     byte[] lmChallengeResponseFields = NtlmConstants.ZERO24;
                     byte[] ntChallengeResponseFields = NtlmPasswordAuthentication.getNTLMv2Response(responseKeyNT, serverChallenge, clientChallenge, nanos1601, ncm.getTargetInformation());
 
-                    Type3Message nam = new Type3Message(flags, lmChallengeResponseFields,ntChallengeResponseFields, domainNameFields, userNameFields, workstation);
-                    
+                    Type3Message nam = new Type3Message(flags, lmChallengeResponseFields, ntChallengeResponseFields, domainNameFields, userNameFields, workstation);
+
                     byte[] encryptedRandomSessionKeyFields = null;
                     byte[] sessionKey = null;
                     if ((flags & NtlmConstants.NTLMSSP_NEGOTIATE_SIGN) != 0) {
@@ -118,8 +118,7 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
                             secureRandom.nextBytes(masterKey);
 
                             byte[] exchangedKey = new byte[16];
-                            try
-                            {
+                            try {
                                 Cipher rc4 = Cipher.getInstance("RC4");
                                 rc4.init(1, new SecretKeySpec(sessionKey, "RC4"));
                                 rc4.update(masterKey, 0, 16, exchangedKey, 0);
@@ -134,11 +133,10 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
                     }
 
                     nam.setSessionKey(encryptedRandomSessionKeyFields);
-                    
+
                     token = nam.toByteArray();
 
-                    if (((flags & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY) != 0) && ((flags & NtlmConstants.NTLMSSP_NEGOTIATE_SIGN) != 0))
-                    {
+                    if (((flags & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY) != 0) && ((flags & NtlmConstants.NTLMSSP_NEGOTIATE_SIGN) != 0)) {
                         if (sessionKey == null) {
                             throw new AuthenticationManagerException("Can't sign the request if an NTLM sessionKey is null!");
                         }

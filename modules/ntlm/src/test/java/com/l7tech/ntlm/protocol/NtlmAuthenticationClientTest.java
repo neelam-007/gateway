@@ -78,18 +78,15 @@ public class NtlmAuthenticationClientTest {
         byte[] token = new byte[0];
         try {
             while (!server.getNtlmAuthenticationState().isComplete()) {
-                token = fixture.requestAuthentication(token,creds);
+                token = fixture.requestAuthentication(token, creds);
                 token = server.processAuthentication(token);
             }
-        }
-        finally
-        {
+        } finally {
             if (token != null)
                 for (int i = 0; i < token.length; i++)
                     token[i] = 0;
         }
 
-        creds.destroy();
         Map testAccount = server.getNtlmAuthenticationState().getAccountInfo();
         assertEquals("user", testAccount.get("sAMAccountName"));
         assertEquals("l7tech.com", testAccount.get("domain.dns.name"));

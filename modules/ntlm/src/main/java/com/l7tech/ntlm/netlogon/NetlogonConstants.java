@@ -6,7 +6,7 @@ package com.l7tech.ntlm.netlogon;
  * Date: 3/13/12
  */
 public final class NetlogonConstants {
-    public enum NetlogonLogonInfoClass{
+    public enum NetlogonLogonInfoClass {
         NetlogonInteractiveInformation(1),
         NetlogonNetworkInformation(2),
         NetlogonServiceInformation(3),
@@ -18,7 +18,7 @@ public final class NetlogonConstants {
         public short value;
 
         private NetlogonLogonInfoClass(int val) {
-            this.value = (short)val;
+            this.value = (short) val;
         }
     }
 
@@ -29,15 +29,15 @@ public final class NetlogonConstants {
         NetlogonValidationGenericInfo(4),
         NetlogonValidationGenericInfo2(5),
         NetlogonValidationSamInfo4(6);
-        
+
         public short value;
-        
+
         private NetlogonValidationInfoClass(int val) {
-            this.value = (short)val;
+            this.value = (short) val;
         }
     }
 
-    public enum NetlogonSecureChannelType{
+    public enum NetlogonSecureChannelType {
         NullSecureChannel(0),
         MsvApSecureChannel(1),
         WorkstationSecureChannel(2),
@@ -50,7 +50,7 @@ public final class NetlogonConstants {
         public short value;
 
         private NetlogonSecureChannelType(int val) {
-            this.value = (short)val;
+            this.value = (short) val;
         }
     }
 }

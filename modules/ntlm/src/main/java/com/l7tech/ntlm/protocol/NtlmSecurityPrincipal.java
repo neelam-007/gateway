@@ -7,119 +7,131 @@ import java.security.Principal;
  * User: ymoiseyenko
  */
 public class NtlmSecurityPrincipal
-  implements Principal
-{
-  public static final CanonicalForm DEFAULT_FORM = CanonicalForm.SIMPLE_NAME;
+        implements Principal {
+    public static final CanonicalForm DEFAULT_FORM = CanonicalForm.SIMPLE_NAME;
 
-  public enum CanonicalForm {
-      SIMPLE_NAME,
-      NETBIOS,
-      INTERNET
-  }
+    public enum CanonicalForm {
+        SIMPLE_NAME,
+        NETBIOS,
+        INTERNET
+    }
 
-  protected String domain;
-  protected String name;
-  protected CanonicalForm form = DEFAULT_FORM;
+    protected String domain;
+    protected String name;
+    protected CanonicalForm form = DEFAULT_FORM;
 
-  public NtlmSecurityPrincipal(String acctname)
-    throws AuthenticationManagerException
-  {
-    this(null, acctname);
-  }
+    public NtlmSecurityPrincipal(String acctname)
+            throws AuthenticationManagerException {
+        this(null, acctname);
+    }
 
-  public NtlmSecurityPrincipal(String dname, String uname)
-    throws AuthenticationManagerException
-  {
-      int ci = uname.indexOf('@');
-      if (ci >= 0) {
-        dname = uname.substring(ci + 1);
-        uname = uname.substring(0, ci);
-        form = CanonicalForm.INTERNET;
-      } else {
-        ci = uname.indexOf('\\');
+    public NtlmSecurityPrincipal(String dname, String uname)
+            throws AuthenticationManagerException {
+        int ci = uname.indexOf('@');
         if (ci >= 0) {
-          dname = uname.substring(0, ci);
-          uname = uname.substring(ci + 1);
-          form = CanonicalForm.NETBIOS;
+            dname = uname.substring(ci + 1);
+            uname = uname.substring(0, ci);
+            form = CanonicalForm.INTERNET;
+        } else {
+            ci = uname.indexOf('\\');
+            if (ci >= 0) {
+                dname = uname.substring(0, ci);
+                uname = uname.substring(ci + 1);
+                form = CanonicalForm.NETBIOS;
+            }
         }
-      }
 
-    if (dname != null) {
-      dname = dname.trim();
-      if (dname.length() == 0)
-        dname = null;
-      if (dname == null) {
-          form = DEFAULT_FORM;
-      }
+        if (dname != null) {
+            dname = dname.trim();
+            if (dname.length() == 0)
+                dname = null;
+            if (dname == null) {
+                form = DEFAULT_FORM;
+            }
+        }
+        if (uname != null) {
+            uname = uname.trim();
+            if (uname.length() == 0) {
+                uname = null;
+            }
+        }
+        if (uname == null) {
+            throw new AuthenticationManagerException("Invalid account name");
+        }
+        this.domain = dname;
+        this.name = uname;
     }
-    if (uname != null) {
-      uname = uname.trim();
-      if (uname.length() == 0) {
-        uname = null;
-      }
+
+    public String getDomain() {
+        return this.domain;
     }
-    if (uname == null) {
-      throw new AuthenticationManagerException("Invalid account name");
+
+    public String getUsername() {
+        return this.name;
     }
-    this.domain = dname;
-    this.name = uname;
-  }
 
-  public String getDomain()
-  {
-    return this.domain;
-  }
-
-  public String getUsername()
-  {
-    return this.name;
-  }
-
-  public String getName()
-  {
-    return getCanonicalForm(DEFAULT_FORM);
-  }
-
-  public String getCanonicalForm(CanonicalForm form) {
-   String ret = null;
-   switch (form) {
-    case SIMPLE_NAME:
-      ret = name;
-      break;
-    case NETBIOS:
-      ret =  (this.domain == null ? "" : this.domain) + '\\' + this.name;
-      break;
-    case INTERNET:
-      ret = this.name + '@' + (this.domain == null ? "" : this.domain);
+    public String getName() {
+        return getCanonicalForm(DEFAULT_FORM);
     }
-    return ret;
-  }
 
-
-  public int hashCode()
-  {
-    int hc = this.name.hashCode();
-    if (this.domain != null)
-      hc *= this.domain.hashCode();
-    return hc;
-  }
-
-  public boolean equals(Object obj)
-  {
-    if ((obj instanceof NtlmSecurityPrincipal)) {
-      NtlmSecurityPrincipal p = (NtlmSecurityPrincipal)obj;
-
-      if (this.name.equalsIgnoreCase(p.name)) {
-        if ((this.domain == null) && (p.domain == null))
-          return true;
-        return (this.domain != null) && (p.domain != null) && (this.domain.equalsIgnoreCase(p.domain));
-      }
+    public String getCanonicalForm(CanonicalForm form) {
+        String ret = null;
+        switch (form) {
+            case SIMPLE_NAME:
+                ret = name;
+                break;
+            case NETBIOS:
+                ret = (this.domain == null ? "" : this.domain) + '\\' + this.name;
+                break;
+            case INTERNET:
+                ret = this.name + '@' + (this.domain == null ? "" : this.domain);
+        }
+        return ret;
     }
-    return false;
-  }
 
-  public String toString()
-  {
-    return getName();
-  }
+
+ /*   public int hashCode() {
+        int hc = this.name.hashCode();
+        if (this.domain != null)
+            hc *= this.domain.hashCode();
+        return hc;
+    }
+
+    public boolean equals(Object obj) {
+        if ((obj instanceof NtlmSecurityPrincipal)) {
+            NtlmSecurityPrincipal p = (NtlmSecurityPrincipal) obj;
+
+            if (this.name.equalsIgnoreCase(p.name)) {
+                if ((this.domain == null) && (p.domain == null))
+                    return true;
+                return (this.domain != null) && (p.domain != null) && (this.domain.equalsIgnoreCase(p.domain));
+            }
+        }
+        return false;
+    }*/
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof NtlmSecurityPrincipal)) return false;
+
+        NtlmSecurityPrincipal that = (NtlmSecurityPrincipal) o;
+
+        if (domain != null ? !domain.equals(that.domain) : that.domain != null) return false;
+        if (form != that.form) return false;
+        if (name != null ? !name.equals(that.name) : that.name != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = domain != null ? domain.hashCode() : 0;
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        return result;
+    }
+
+    public String toString() {
+        return getName();
+    }
 }

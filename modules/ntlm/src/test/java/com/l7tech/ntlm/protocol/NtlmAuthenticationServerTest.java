@@ -54,20 +54,19 @@ public class NtlmAuthenticationServerTest {
                                         new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null)))));
 
 
-
         assertArrayEquals(expectedTargetInfoList.toByteArray(0), fixture.getTargetInfo());
     }
 
     @Test
-    public void shouldReturnLocalhostOnlyTargetInfo() throws  Exception{
-        Av_Pair expectedTargetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) fixture.get("localhost.netbios.name"),  new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null));
+    public void shouldReturnLocalhostOnlyTargetInfo() throws Exception {
+        Av_Pair expectedTargetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) fixture.get("localhost.netbios.name"), new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null));
         fixture.remove("domain.netbios.name");
         fixture.remove("domain.dns.name");
         fixture.remove("localhost.dns.name");
         assertTrue(fixture.size() == 3);
         assertArrayEquals(expectedTargetInfoList.toByteArray(0), fixture.getTargetInfo());
     }
-    
+
     @Test
     public void shouldReturnEmptyTargetInfo() throws Exception {
         Av_Pair expectedTargetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null);
@@ -83,7 +82,6 @@ public class NtlmAuthenticationServerTest {
     public void shouldAuthenticateUser() throws Exception {
         PasswordCredential credential = new PasswordCredential("user@l7tech.com" /*"L7TECH\\user"*/, "password".toCharArray());
         authenticate(credential);
-        credential.destroy();
         Map testAccount = fixture.getNtlmAuthenticationState().getAccountInfo();
         assertEquals("user", testAccount.get("sAMAccountName"));
         assertEquals("l7tech.com", testAccount.get("domain.dns.name"));
@@ -94,7 +92,6 @@ public class NtlmAuthenticationServerTest {
     public void shouldFailWhenCredentialsIncorrect() throws Exception {
         PasswordCredential credential = new PasswordCredential("user", "pass".toCharArray());
         authenticate(credential);
-        credential.destroy();
 
     }
 
@@ -126,18 +123,15 @@ public class NtlmAuthenticationServerTest {
         byte[] token = new byte[0];
         try {
             while (!fixture.getNtlmAuthenticationState().isComplete()) {
-                token = client.requestAuthentication(token,creds);
+                token = client.requestAuthentication(token, creds);
                 token = fixture.processAuthentication(token);
             }
-        }
-        finally
-        {
+        } finally {
             if (token != null)
                 for (int i = 0; i < token.length; i++)
                     token[i] = 0;
         }
 
-        creds.destroy();
         Map testAccount = fixture.getNtlmAuthenticationState().getAccountInfo();
         assertEquals("user", testAccount.get("sAMAccountName"));
         assertEquals("l7tech.com", testAccount.get("domain.dns.name"));

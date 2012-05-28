@@ -46,7 +46,7 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
      */
     @Override
     public byte[] processAuthentication(byte[] token) throws AuthenticationManagerException {
-        if(token == null || token.length <= 0) {
+        if (token == null || token.length <= 0) {
             throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_ERROR, "Invalid token");
         }
         int flags = state.getFlags();
@@ -56,7 +56,7 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
                 case DEFAULT:
                     state.setState(State.CHALLENGE);
                 case CHALLENGE:
-                    if(flags == 0){
+                    if (flags == 0) {
                         flags = DEFAULT_NTLMSSP_FLAGS;//set to default flags
                     }
                     Type1Message negotiateMessage = new Type1Message(token);
@@ -72,13 +72,12 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
 
                     flags |= NtlmConstants.NTLMSSP_NEGOTIATE_VERSION;//33554432;/The data for this field is provided in hte version field of the message
                     String targetName = null;
-                    if(StringUtils.isNotEmpty((String)get("domain.netbios.name"))) {
+                    if (StringUtils.isNotEmpty((String) get("domain.netbios.name"))) {
                         flags |= NtlmConstants.NTLMSSP_TARGET_TYPE_DOMAIN;//65536; TargetName must be domain name
-                        targetName = (String)get("domain.netbios.name");
-                    }
-                    else if (StringUtils.isNotEmpty((String)get("localhost.netbios.name"))) {
+                        targetName = (String) get("domain.netbios.name");
+                    } else if (StringUtils.isNotEmpty((String) get("localhost.netbios.name"))) {
                         flags |= NtlmConstants.NTLMSSP_TARGET_TYPE_SERVER;//131072; TargetName must be server
-                        targetName = (String)get("localhost.netbios.name");
+                        targetName = (String) get("localhost.netbios.name");
                     }
 
                     if ((flags & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY/*0x80000*/) != 0) { //if NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY is set
@@ -87,12 +86,12 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
 
                     Type2Message challengeMessage = new Type2Message();
                     //set the target name
-                    if(targetName != null) {
+                    if (targetName != null) {
                         challengeMessage.setTarget(targetName);
                     }
                     challengeMessage.setFlags(flags);
                     challengeMessage.setChallenge(state.getServerChallenge());
-                    if((flags & NtlmConstants.NTLMSSP_REQUEST_TARGET) != 0) {
+                    if ((flags & NtlmConstants.NTLMSSP_REQUEST_TARGET) != 0) {
                         challengeMessage.setTargetInformation(getTargetInfo());
                     }
                     token = challengeMessage.toByteArray();
@@ -136,7 +135,7 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
                         }
                         if ((state.getFlags() & NtlmConstants.NTLMSSP_NEGOTIATE_KEY_EXCH/*0x40000000*/) != 0) {
                             byte[] exchangedKey = authenticateMessage.getSessionKey();
-                            if(exchangedKey == null || exchangedKey.length < 16) {
+                            if (exchangedKey == null || exchangedKey.length < 16) {
                                 throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_ERROR, "Encrypted exchange key length is invalid");
                             }
                             byte[] masterKey = new byte[16];

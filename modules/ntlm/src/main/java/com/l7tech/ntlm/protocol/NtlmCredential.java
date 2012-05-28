@@ -8,5 +8,4 @@ public interface NtlmCredential
 {
   public NtlmSecurityPrincipal getSecurityPrincipal();
 
-  public void destroy();
 }

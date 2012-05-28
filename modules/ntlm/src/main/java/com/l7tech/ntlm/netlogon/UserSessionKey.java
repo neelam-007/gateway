@@ -9,35 +9,27 @@ import jcifs.dcerpc.ndr.NdrObject;
  * User: ymoiseyenko
  * Date: 3/12/12
  */
-public class UserSessionKey extends NdrObject{
-     public byte[] key;
+public class UserSessionKey extends NdrObject {
+    public byte[] key;
 
-     @Override
-     public void encode(NdrBuffer buffer) throws NdrException {
-       buffer.align(1);
-       int size = 16;
-       int index = buffer.index;
-       buffer.advance(1 * size);
+    @Override
+    public void decode(NdrBuffer buffer) throws NdrException {
+        buffer.align(1);
+        int size = 16;
+        int index = buffer.index;
+        buffer.advance(1 * size);
 
-       buffer = buffer.derive(index);
-       for (int i = 0; i < size; i++)
-         buffer.enc_ndr_small(key[i]);
-     }
+        if (key == null) {
+            if ((size < 0) || (size > 65535)) throw new NdrException("invalid array size");
+            key = new byte[size];
+        }
+        buffer = buffer.derive(index);
+        for (int i = 0; i < size; i++)
+            key[i] = (byte) buffer.dec_ndr_small();
+    }
 
-
-     @Override
-     public void decode(NdrBuffer buffer) throws NdrException {
-       buffer.align(1);
-       int size = 16;
-       int index = buffer.index;
-       buffer.advance(1 * size);
-
-       if (key == null) {
-         if ((size < 0) || (size > 65535)) throw new NdrException("invalid array size");
-         key = new byte[size];
-       }
-       buffer = buffer.derive(index);
-       for (int i = 0; i < size; i++)
-         key[i] = (byte)buffer.dec_ndr_small();
-     }
+    @Override
+    public void encode(NdrBuffer buffer) throws NdrException {
+        //no need to decode. Leave it empty
+    }
 }

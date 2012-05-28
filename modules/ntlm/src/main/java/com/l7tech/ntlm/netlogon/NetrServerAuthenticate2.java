@@ -34,7 +34,7 @@ public class NetrServerAuthenticate2 extends DcerpcMessage {
        this.serverCredential = serverCredential;
        this.negotiateFlags = negotiateFlags;
        this.ptype = 0;
-       this.flags = 3;
+       this.flags = DCERPC_FIRST_FRAG | DCERPC_LAST_FRAG;
      }
 
      @Override

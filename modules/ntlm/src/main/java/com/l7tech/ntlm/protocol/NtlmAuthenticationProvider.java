@@ -69,10 +69,10 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
 
     public NtlmAuthenticationProvider(Map properties) {
         super(properties);
-        if(properties.containsKey("flags")){
+        if (properties.containsKey("flags")) {
             try {
-                String sflags = (String)properties.get("flags");
-                if(sflags.startsWith(HEX)) {
+                String sflags = (String) properties.get("flags");
+                if (sflags.startsWith(HEX)) {
                     sflags = sflags.substring(HEX.length());
                 }
                 state.setFlags(Integer.parseInt(sflags, 16));
@@ -116,17 +116,17 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
     protected byte[] getTargetInfo() throws AuthenticationManagerException {
 
         if ((state.getTargetInfo() == null) || (state.getTargetInfo().length == 0)) {
-            Av_Pair targetInfoList =  new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null);
-            if(containsKey("localhost.dns.name")) {
+            Av_Pair targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null);
+            if (containsKey("localhost.dns.name")) {
                 targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsComputerName, (String) get("localhost.dns.name"), targetInfoList);
             }
-            if(containsKey("domain.dns.name")) {
+            if (containsKey("domain.dns.name")) {
                 targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsDomainName, (String) get("domain.dns.name"), targetInfoList);
             }
-            if(containsKey("localhost.netbios.name")) {
+            if (containsKey("localhost.netbios.name")) {
                 targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) get("localhost.netbios.name"), targetInfoList);
             }
-            if(containsKey("domain.netbios.name")) {
+            if (containsKey("domain.netbios.name")) {
                 targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbDomainName, (String) get("domain.netbios.name"), targetInfoList);
             }
             if (containsKey("tree.dns.name")) {

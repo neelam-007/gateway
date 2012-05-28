@@ -14,7 +14,7 @@ public class NetlogonAuthenticator extends NdrObject {
     public byte[] credential;
     public int timestamp;
 
-    NetlogonAuthenticator(){
+    NetlogonAuthenticator() {
 
     }
 
@@ -24,32 +24,32 @@ public class NetlogonAuthenticator extends NdrObject {
         this.timestamp = timestamp;
     }
 
-     public void encode(NdrBuffer buffer) throws NdrException {
-       buffer.align(4);
-       int size = 8;
-       int index = buffer.index;
-         buffer.advance(1 * size);
-       buffer.enc_ndr_long(timestamp);
+    public void encode(NdrBuffer buffer) throws NdrException {
+        buffer.align(4);
+        int size = 8;
+        int index = buffer.index;
+        buffer.advance(size);
+        buffer.enc_ndr_long(timestamp);
 
-       buffer = buffer.derive(index);
-       for (int i = 0; i < size; i++)
-         buffer.enc_ndr_small(credential[i]);
-     }
-        
-     public void decode(NdrBuffer buffer) throws NdrException {
-       buffer.align(4);
-       int size = 8;
-       int index = buffer.index;
-       buffer.advance(1 * size);
-       timestamp = buffer.dec_ndr_long();
+        buffer = buffer.derive(index);
+        for (int i = 0; i < size; i++)
+            buffer.enc_ndr_small(credential[i]);
+    }
 
-       if (credential == null) {
-         if ((size < 0) || (size > 65535)) throw new NdrException("invalid buffer size");
-         credential = new byte[size];
-       }
-       buffer = buffer.derive(index);
-       for (int i = 0; i < size; i++) {
-         credential[i] = (byte)buffer.dec_ndr_small();
-       }
-     }
+    public void decode(NdrBuffer buffer) throws NdrException {
+        buffer.align(4);
+        int size = 8;
+        int index = buffer.index;
+        buffer.advance(size);
+        timestamp = buffer.dec_ndr_long();
+
+        if (credential == null) {
+            if ((size < 0) || (size > 65535)) throw new NdrException("invalid buffer size");
+            credential = new byte[size];
+        }
+        buffer = buffer.derive(index);
+        for (int i = 0; i < size; i++) {
+            credential[i] = (byte) buffer.dec_ndr_small();
+        }
+    }
 }
