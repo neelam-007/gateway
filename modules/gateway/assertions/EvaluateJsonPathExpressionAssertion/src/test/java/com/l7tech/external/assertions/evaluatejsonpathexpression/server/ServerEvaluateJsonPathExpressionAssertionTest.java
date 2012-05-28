@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import org.junit.Assert;
@@ -82,6 +83,7 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
     @Test
     public void testEmptyExpression() {
         try {
+            assertion.setExpression("");
             final AssertionStatus status = serverAssertion.checkRequest(pec);
             Assert.assertEquals(AssertionStatus.FAILED, status);
         } catch (Exception e) {
@@ -92,6 +94,7 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
     @Test
     public void testInvalidEvaluator() {
         try {
+            assertion.setExpression("$.store.book[1].author");
             assertion.setTarget(TargetMessageType.REQUEST);
             assertion.setEvaluator("layer7");
             final AssertionStatus status = serverAssertion.checkRequest(pec);
@@ -266,6 +269,62 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             }
         } catch (Exception e) {
             Assert.fail("Error initializing test");
+        }
+    }
+
+    @Test
+    public void testJsonPathSingleObjectResultFromContextVariable() {
+        try {
+            assertion.setEvaluator("JsonPath");
+            assertion.setExpression("${myExpression}");
+            pec.setVariable("myExpression", "$.store.book[1]");
+            final AssertionStatus status = serverAssertion.checkRequest(pec);
+            Assert.assertEquals(AssertionStatus.NONE, status);
+
+            //check results
+            Assert.assertEquals(true, pec.getVariable("jsonPath.found"));
+            Assert.assertEquals(1, pec.getVariable("jsonPath.count"));
+            try {
+                final String expected = "{\"author\":\"Evelyn Waugh\",\"title\":\"Sword of Honour\",\"category\":\"fiction\",\"price\":12.99,\"isbn\":\"0-553-21311-3\"}";
+                Assert.assertEquals(expected, pec.getVariable("jsonPath.result"));
+            } catch (NoSuchVariableException e) {
+                Assert.fail("Should have NOT failed with NoSuchVariableException!");
+            }
+            try {
+                pec.getVariable("jsonPath.results");
+                Assert.fail("Should have failed with NoSuchVariableException!");
+            } catch (NoSuchVariableException e) {
+
+            }
+
+        } catch (Exception e) {
+            Assert.fail("Test JsonPath failed: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testJsonPathSingleObjectResultFromInvalidContextVariable() {
+        try {
+            assertion.setEvaluator("JsonPath");
+            assertion.setExpression("${myExpression[1}");
+            pec.setVariable("myExpression", "$.store.book[1]");
+            final AssertionStatus status = serverAssertion.checkRequest(pec);
+            Assert.assertEquals(AssertionStatus.FAILED, status);
+
+            //check results
+            try {
+                pec.getVariable("jsonPath.found");
+                pec.getVariable("jsonPath.count");
+                pec.getVariable("jsonPath.result");
+                pec.getVariable("jsonPath.results");
+                Assert.fail("Should have failed with NoSuchVariableException!");
+            } catch (NoSuchVariableException e) {
+
+            }
+        } catch (VariableNameSyntaxException e) {
+
+        } catch (Exception e) {
+            Assert.fail("Test JsonPath failed: " + e.getMessage());
         }
     }
 }

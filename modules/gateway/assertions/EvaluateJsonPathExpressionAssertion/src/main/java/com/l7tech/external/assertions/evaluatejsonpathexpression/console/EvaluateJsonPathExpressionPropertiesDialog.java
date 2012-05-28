@@ -8,7 +8,9 @@ import com.l7tech.external.assertions.evaluatejsonpathexpression.EvaluateJsonPat
 import com.l7tech.external.assertions.evaluatejsonpathexpression.EvaluateJsonPathExpressionAssertion;
 import com.l7tech.external.assertions.evaluatejsonpathexpression.JsonPathEvaluator;
 import com.l7tech.external.assertions.evaluatejsonpathexpression.JsonPathExpressionResult;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import java.awt.*;
@@ -94,6 +96,10 @@ public class EvaluateJsonPathExpressionPropertiesDialog extends AssertionPropert
             @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
+                    if(Syntax.getReferencedNames(textFieldExpression.getText()).length > 0){
+                        showErrorDialog();
+                        return;
+                    }
                     final EvaluateJsonPathExpressionAdmin admin = Registry.getDefault().getExtensionInterface(EvaluateJsonPathExpressionAdmin.class, null);
                     final JsonPathExpressionResult result = admin.testEvaluation(
                             JsonPathEvaluator.valueOf(cbEvaluator.getSelectedItem().toString()), 
@@ -111,6 +117,13 @@ public class EvaluateJsonPathExpressionPropertiesDialog extends AssertionPropert
                 }
             }
         });
+    }
+
+    private void showErrorDialog(){
+        DialogDisplayer.showMessageDialog(this,
+                "Cannot test using context variable as Expression value.",
+                "Error",
+                JOptionPane.ERROR_MESSAGE, null);
     }
 
     private void toggleButtonState() {

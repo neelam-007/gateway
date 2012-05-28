@@ -11,14 +11,17 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Map;
 
 /**
  * Server side implementation of the EvaluateJsonPathExpressionAssertion.
@@ -44,9 +47,10 @@ public class ServerEvaluateJsonPathExpressionAssertion extends AbstractServerAss
             if(firstPart.getContentType().isJson()){
                 final Charset encoding = firstPart.getContentType().getEncoding();
                 final String sourceJsonString = new String(IOUtils.slurpStream(firstPart.getInputStream(false)), encoding);
+                final Map<String, Object> lookup = context.getVariableMap(Syntax.getReferencedNames(assertion.getExpression()), getAudit());
+                final String expression = ExpandVariables.process(assertion.getExpression(), lookup, getAudit());
                 try{
                     final Evaluator evaluator = JsonPathEvaluator.valueOf(assertion.getEvaluator());
-                    final String expression = assertion.getExpression();
                     if(expression == null || expression.trim().isEmpty()){
                         logAndAudit(AssertionMessages.EVALUATE_JSON_PATH_INVALID_EXPRESSION, expression);
                         status = AssertionStatus.FAILED;
