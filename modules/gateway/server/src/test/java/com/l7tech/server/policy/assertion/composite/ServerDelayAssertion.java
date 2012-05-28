@@ -8,23 +8,18 @@ import com.l7tech.server.policy.assertion.ServerSetVariableAssertion;
 
 import java.io.IOException;
 
-/**
- * Created by IntelliJ IDEA.
- * User: awitrisna
- * Date: 23/04/12
- * Time: 2:51 PM
- */
 public class ServerDelayAssertion extends ServerSetVariableAssertion {
     
-    public ServerDelayAssertion(SetVariableAssertion assertion) {
+    public ServerDelayAssertion(DelayAssertion assertion) {
         super(assertion);
     }
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
+        DelayAssertion delayAssertion = (DelayAssertion) assertion;
         try {
-            Thread.sleep(((DelayAssertion) assertion).getDelay());
+            delayAssertion.getTimeSource().sleep(delayAssertion.getDelay(), 0);
         } catch (InterruptedException e) {
         }
 

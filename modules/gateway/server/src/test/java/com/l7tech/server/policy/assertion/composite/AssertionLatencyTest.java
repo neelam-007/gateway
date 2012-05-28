@@ -3,7 +3,6 @@ package com.l7tech.server.policy.assertion.composite;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.SetVariableAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -11,6 +10,8 @@ import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.MockInjector;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.util.TestTimeSource;
+import com.l7tech.util.TimeSource;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -22,27 +23,24 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-/**
- * Created by IntelliJ IDEA.
- * User: awitrisna
- * Date: 23/04/12
- * Time: 12:07 PM
- */
-public class ServerAllAssertionTest {
+public class AssertionLatencyTest {
 
-    private AllAssertion assertion;
+    private MockCompositeAssertion assertion;
     private SetVariableAssertion assertion1;
     private SetVariableAssertion assertion2;
     private SetVariableAssertion assertion3;
     private PolicyEnforcementContext peCtx;
     static ServerPolicyFactory serverPolicyFactory;
+    static GenericApplicationContext applicationContext;
+    private TimeSource timeSource;
+
 
     @BeforeClass
     public static void init() throws Exception {
         final AssertionRegistry assertionRegistry = new AssertionRegistry();
         assertionRegistry.afterPropertiesSet();
         serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
-        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+        applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
         }}));
@@ -55,13 +53,16 @@ public class ServerAllAssertionTest {
         // Get the policy enforcement context
         //create assertion
         peCtx = makeContext();
-        assertion = new AllAssertion();
-        assertion1 = new DelayAssertion("a", "Test1", 100);
-        assertion2 = new DelayAssertion("b", "Test2", 200);
-        assertion3 = new DelayAssertion("c", "Test3", 300);
+        timeSource = new TestTimeSource();
+        assertion = new MockCompositeAssertion();
+        assertion.setTimeSource(timeSource);
+        assertion1 = new DelayAssertion("a", "Test1", 100, timeSource);
+        assertion2 = new DelayAssertion("b", "Test2", 200, timeSource);
+        assertion3 = new DelayAssertion("c", "Test3", 300, timeSource);
         assertion.addChild(assertion1);
         assertion.addChild(assertion2);
         assertion.addChild(assertion3);
+
     }
 
     private PolicyEnforcementContext makeContext() {
@@ -97,10 +98,11 @@ public class ServerAllAssertionTest {
 
     @Test
     public void testAllAssertionLatencyCapture() throws Exception {
-        AllAssertion root = new AllAssertion();
-        assertion.addChild(new DelayAssertion("c.1", "${assertion.latency.ns}", 0));
+        MockCompositeAssertion root = new MockCompositeAssertion();
+        root.setTimeSource(timeSource);
+        assertion.addChild(new DelayAssertion("c.1", "${assertion.latency.ns}", 0, timeSource));
         root.addChild(assertion);
-        root.addChild(new DelayAssertion("d", "${assertion.latency.ns}", 0));
+        root.addChild(new DelayAssertion("d", "${assertion.latency.ns}", 0, timeSource));
         ServerAssertion sass = serverPolicyFactory.compilePolicy(root, false);
         sass.checkRequest(peCtx);
         check(TimeUnit.NANOSECONDS, (Long) peCtx.getVariable("assertion.latency.ns"), 600L);
@@ -110,10 +112,11 @@ public class ServerAllAssertionTest {
 
     @Test
     public void testAllAssertionLatencyCaptureMs() throws Exception {
-        AllAssertion root = new AllAssertion();
-        assertion.addChild(new DelayAssertion("c.1", "${assertion.latency.ms}", 0));
+        MockCompositeAssertion root = new MockCompositeAssertion();
+        root.setTimeSource(timeSource);
+        assertion.addChild(new DelayAssertion("c.1", "${assertion.latency.ms}", 0, timeSource));
         root.addChild(assertion);
-        root.addChild(new DelayAssertion("d", "${assertion.latency.ms}", 0));
+        root.addChild(new DelayAssertion("d", "${assertion.latency.ms}", 0, timeSource));
         ServerAssertion sass = serverPolicyFactory.compilePolicy(root, false);
         sass.checkRequest(peCtx);
         check(TimeUnit.MILLISECONDS, (Long) peCtx.getVariable("assertion.latency.ms"), 600L);
@@ -124,16 +127,14 @@ public class ServerAllAssertionTest {
     /**
      * Make sure the checkTime is greater than the minimum time
      * but less than the minimum + 100.
-     * @parma unit the checkTime unit
+     *
      * @param checkTime the time to verify
-     * @param minimum the minimum time in millisecond
+     * @param time      the minimum time in millisecond
+     * @parma unit the checkTime unit
      */
-    private void check(TimeUnit unit, long checkTime, long minimum) {
+    private void check(TimeUnit unit, long checkTime, long time) {
         checkTime = unit.toMillis(checkTime);
-        /*
-        assertTrue(checkTime >= minimum);
-        assertTrue(checkTime <= minimum);
-        */
+        assertEquals(checkTime,time);
     }
 
 }

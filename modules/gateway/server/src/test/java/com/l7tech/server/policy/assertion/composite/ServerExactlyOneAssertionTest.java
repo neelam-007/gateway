@@ -22,13 +22,6 @@ import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * Created by IntelliJ IDEA.
- * User: awitrisna
- * Date: 30/04/12
- * Time: 11:21 AM
- * To change this template use File | Settings | File Templates.
- */
 public class ServerExactlyOneAssertionTest {
 
     private ExactlyOneAssertion assertion;

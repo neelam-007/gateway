@@ -14,6 +14,7 @@ import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.TimeSource;
 import org.springframework.beans.factory.BeanFactory;
 
 import java.io.IOException;
@@ -30,6 +31,7 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
     private static final Logger logger = Logger.getLogger(ServerCompositeAssertion.class.getName());
     private List<ServerAssertion> children;
     private final boolean[] recordLatency;
+    private final TimeSource timeSource;
 
     public ServerCompositeAssertion(CT composite, BeanFactory beanFactory) throws PolicyAssertionException, LicenseException {
         super(composite);
@@ -39,6 +41,8 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
         final ServerPolicyFactory pf = beanFactory.getBean("policyFactory", ServerPolicyFactory.class);
 
         final List<ServerAssertion> result = new ArrayList<ServerAssertion>(composite.getChildren().size());
+
+        timeSource = getTimeSource();
         recordLatency = new boolean[composite.getChildren().size()];
         try {
             Assertion prevChild = null;
@@ -73,6 +77,11 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
         }
         this.children = Collections.unmodifiableList(result);
     }
+    
+    protected TimeSource getTimeSource() {
+        return new TimeSource();
+    }
+            
 
     public List<ServerAssertion> getChildren() {
         return children;
@@ -122,7 +131,7 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
             context.assertionStarting(kid);
 
             if (recordLatency[i]) {
-                startTime = System.nanoTime();
+                startTime = timeSource.nanoTime();
             }
             try {
                 result = kid.checkRequest(context);
@@ -130,7 +139,7 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
                 result = e.getAssertionStatus();
             }
             if (recordLatency[i]) {
-                context.setAssertionLatencyNanos(System.nanoTime() - startTime);
+                context.setAssertionLatencyNanos(timeSource.nanoTime() - startTime);
             }
             i++;
             context.assertionFinished(kid, result);
