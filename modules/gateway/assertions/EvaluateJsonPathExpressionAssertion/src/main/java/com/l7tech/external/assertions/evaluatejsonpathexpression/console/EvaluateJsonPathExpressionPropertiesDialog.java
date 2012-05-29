@@ -55,6 +55,7 @@ public class EvaluateJsonPathExpressionPropertiesDialog extends AssertionPropert
         targetVariablePrefix.setDefaultVariableOrPrefix(EvaluateJsonPathExpressionAssertion.VARIABLE_PREFIX);
         targetVariablePrefix.setSuffixes( EvaluateJsonPathExpressionAssertion.getVariableSuffixes() );
         targetVariablePrefix.setVariable(assertion.getVariablePrefix());
+        targetVariablePrefix.setAssertion(assertion, getPreviousAssertion());
         cbEvaluator.setSelectedItem(assertion.getEvaluator());
     }
 

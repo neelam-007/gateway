@@ -69,8 +69,7 @@ public class ServerEvaluateJsonPathExpressionAssertion extends AbstractServerAss
                 status =  AssertionStatus.FAILED;
             }
         } catch (NoSuchVariableException e) {
-            logAndAudit( AssertionMessages.MESSAGE_TARGET_ERROR, new String[]{assertion.getTargetName()},
-                    ExceptionUtils.getDebugException(e) );
+            logAndAudit( AssertionMessages.MESSAGE_TARGET_ERROR, assertion.getTargetName(), ExceptionUtils.getMessage(e));
             status =  AssertionStatus.FAILED;
         } catch (NoSuchPartException e) {
             logAndAudit(AssertionMessages.NO_SUCH_PART, assertion.getTargetName(), "first part");
