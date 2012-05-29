@@ -2,9 +2,11 @@ package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.policy.assertion.OptionalPrivateKeyable;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Option;
 import com.l7tech.util.RunnableCallable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -131,10 +133,14 @@ public class AuditContextFactory {
      * @param source source for details, or null if no details.
      * @param details details to include in audit record, or null for none.
      */
-    public void emitAuditRecordWithDetails(AuditRecord auditRecord, boolean update, @Nullable Object source, @Nullable Collection<AuditDetail> details) {
-        AuditContextImpl context = (AuditContextImpl) newContext();
-        context.setCurrentRecord(auditRecord);
-        if (update) context.setUpdate(true);
+    public void emitAuditRecordWithDetails(final AuditRecord auditRecord, final boolean update, @Nullable Object source, @Nullable Collection<AuditDetail> details) {
+        final AuditContext context = newContext();
+        final Option<AuditContextImpl> acImpl = Option.optional(context instanceof AuditContextImpl ? (AuditContextImpl)context : null);
+        if (acImpl.isSome()) {
+            acImpl.some().setCurrentRecord(auditRecord);
+            if (update)
+                acImpl.some().setUpdate(true);
+        }
 
         if (details != null && !details.isEmpty()) {
             if (source == null)
@@ -144,7 +150,8 @@ public class AuditContextFactory {
             }
         }
 
-        context.flush();
+        if (acImpl.isSome())
+            acImpl.some().flush();
     }
 
     /**
@@ -209,14 +216,17 @@ public class AuditContextFactory {
      */
     public <T> T doWithNewAuditContext(@NotNull Callable<T> callable, @NotNull Functions.Nullary<AuditRecord> recordFactory) throws Exception {
         final AuditContext prev = currentAuditContext.get();
-        final AuditContextImpl current = (AuditContextImpl)newContext();
+        final AuditContext current = newContext();
+        final Option<AuditContextImpl> acImpl = Option.optional(current instanceof AuditContextImpl ? (AuditContextImpl)current : null);
         currentAuditContext.set(current);
         try {
             return callable.call();
         } finally {
             try {
-                current.setCurrentRecord(recordFactory.call());
-                current.flush();
+                if (acImpl.isSome()) {
+                    acImpl.some().setCurrentRecord(recordFactory.call());
+                    acImpl.some().flush();
+                }
             } finally {
                 currentAuditContext.set(prev);
             }
@@ -224,7 +234,7 @@ public class AuditContextFactory {
     }
 
     /**
-     * If a subclass overrides this method, it must also override doWithNewAuditContext and emitAuditRecord.
+     * If a subclass overrides this method, it likely also want to override doWithNewAuditContext and emitAuditRecord.
      *
      * @return an AuditContext that will work with {@link #doWithNewAuditContext(java.util.concurrent.Callable, com.l7tech.util.Functions.Nullary)}.
      * @throws IllegalStateException if it is too early in startup to create an audit context
