@@ -281,6 +281,16 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
         context.close();
     }
 
+    @Override
+    public long getAssertionLatencyNanos() {
+        return context.getAssertionLatencyNanos();
+    }
+
+    @Override
+    public void setAssertionLatencyNanos(long latency) {
+        context.setAssertionLatencyNanos(latency);
+    }
+
     //- PACKAGE
 
     ChildPolicyEnforcementContext( final PolicyEnforcementContext parent,
