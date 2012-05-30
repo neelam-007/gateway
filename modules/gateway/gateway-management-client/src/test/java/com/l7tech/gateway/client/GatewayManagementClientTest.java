@@ -6,8 +6,6 @@ import com.l7tech.util.ResourceUtils;
 import com.sun.ws.management.Management;
 import com.sun.ws.management.addressing.Addressing;
 import com.sun.ws.management.client.impl.TransportClient;
-import static org.junit.Assert.*;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -17,17 +15,16 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.xml.bind.JAXBException;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.ConnectException;
 import java.net.PasswordAuthentication;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Queue;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for Gateway Management Client
@@ -271,7 +268,7 @@ public class GatewayManagementClientTest {
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0L, (long) exitCode );
-        assertTrue( "Expected cluster property enumeration:\n" + output , output.contains("<ClusterProperty") && output.contains( "<enumeration>" ) && output.endsWith( "</enumeration>\n" ));
+        assertTrue( "Expected cluster property enumeration:\n" + output , output.contains("ClusterProperty>") && output.contains( "<enumeration>" ) && output.endsWith( "</enumeration>\n" ));
     }
 
     @Test
@@ -304,7 +301,7 @@ public class GatewayManagementClientTest {
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0L, (long) exitCode );
-        assertTrue( "Expected cluster property:\n" + output , output.contains("<ClusterProperty") && output.contains( "test value" ));
+        assertTrue( "Expected cluster property:\n" + output , output.contains("ClusterProperty>") && output.contains( "test value" ));
         assertTrue( "Expected ID in output:\n" + output , output.contains( "id=\"264372224\"" ));
     }
 
@@ -320,7 +317,7 @@ public class GatewayManagementClientTest {
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0L, (long) exitCode );
-        assertTrue( "Expected cluster property:\n" + output , output.contains("<ClusterProperty") && output.contains( "secure_span" ));
+        assertTrue( "Expected cluster property:\n" + output , output.contains("ClusterProperty>") && output.contains( "secure_span" ));
     }
 
     @Test
@@ -340,7 +337,7 @@ public class GatewayManagementClientTest {
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0L, (long) exitCode );
-        assertTrue( "Expected cluster property:\n" + output , output.contains("<ClusterProperty") && output.contains( "test value2" ));
+        assertTrue( "Expected cluster property:\n" + output , output.contains("ClusterProperty>") && output.contains( "test value2" ));
         assertTrue( "Expected ID in output:\n" + output , output.contains( "id=\"264372224\"" ));
         assertTrue( "Expected version in output:\n" + output , output.contains( "version=\"1\"" ));
     }
@@ -372,7 +369,7 @@ public class GatewayManagementClientTest {
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0L, (long) exitCode );
-        assertTrue( "Expected validation result:\n" + output , output.contains("<PolicyValidationResult") && output.contains( "Credentials are collected but not authenticated." ));
+        assertTrue( "Expected validation result:\n" + output , output.contains("PolicyValidationResult>") && output.contains( "Credentials are collected but not authenticated." ));
     }
 
     @Test
@@ -387,7 +384,7 @@ public class GatewayManagementClientTest {
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0L, (long) exitCode );
-        assertTrue( "Expected validation result:\n" + output , output.contains("<PolicyValidationResult") && output.contains( "Credentials are collected but not authenticated." ));
+        assertTrue( "Expected validation result:\n" + output , output.contains("PolicyValidationResult>") && output.contains( "Credentials are collected but not authenticated." ));
     }
 
     @Test
@@ -402,7 +399,7 @@ public class GatewayManagementClientTest {
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0L, (long) exitCode );
-        assertTrue( "Expected validation result:\n" + output , output.contains("<PolicyValidationResult") && output.contains( "Credentials are collected but not authenticated." ));
+        assertTrue( "Expected validation result:\n" + output , output.contains("PolicyValidationResult>") && output.contains( "Credentials are collected but not authenticated." ));
     }
 
     @Test
@@ -429,7 +426,7 @@ public class GatewayManagementClientTest {
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0L, (long) exitCode );
-        assertTrue( "Expected policy import result:\n" + output , output.contains("<PolicyImportResult") );
+        assertTrue( "Expected policy import result:\n" + output , output.contains("PolicyImportResult") );
     }
 
     @Test
@@ -503,7 +500,7 @@ public class GatewayManagementClientTest {
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0L, (long) exitCode );
-        assertTrue( "Expected private key resource:\n" + output , output.contains("<PrivateKey ") && output.contains( "<Encoded>MII" ));
+        assertTrue( "Expected private key resource:\n" + output , output.contains("PrivateKey>") && output.contains( "Encoded>MII" ));
     }
 
     @Test
@@ -518,7 +515,7 @@ public class GatewayManagementClientTest {
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0L, (long) exitCode );
-        assertTrue( "Expected private key resource:\n" + output , output.contains("<PrivateKey ") && output.contains( "Default SSL Key" ));
+        assertTrue( "Expected private key resource:\n" + output , output.contains("PrivateKey>") && output.contains( "Default SSL Key" ));
     }
 
     @BeforeClass
