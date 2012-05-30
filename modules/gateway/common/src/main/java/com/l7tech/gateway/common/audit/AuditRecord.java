@@ -33,6 +33,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
     public static final String SERSEP = ":";
 
     private long oid;
+    private String guid;
     private int version;
     private String signature;
     private String nodeId;
@@ -95,6 +96,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         this.identityProviderOid = identityProviderOid;
         this.userName = userName;
         this.userId = userId;
+        this.guid = UUID.randomUUID().toString();
     }
 
     /**
@@ -158,6 +160,14 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
     @Override
     public long getOid() {
         return oid;
+    }
+
+    public String getGuid() {
+        return guid;
+    }
+
+    public void setGuid(String guid) {
+        this.guid = guid;
     }
 
     @Override
@@ -351,6 +361,9 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
 
 
         // Note that object ids cannot be included in the calculation since it changes once saved
+
+        if (guid != null) out.write(guid.getBytes());
+        out.write(SERSEP.getBytes());
 
         if (nodeId != null) out.write(nodeId.getBytes());
         out.write(SERSEP.getBytes());

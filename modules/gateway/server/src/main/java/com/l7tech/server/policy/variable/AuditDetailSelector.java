@@ -1,7 +1,14 @@
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditDetailPropertiesDomMarshaller;
 import com.l7tech.policy.variable.Syntax;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import javax.xml.bind.MarshalException;
+import java.io.IOException;
 
 /**
  *
@@ -21,6 +28,25 @@ public class AuditDetailSelector implements ExpandVariables.Selector<AuditDetail
             return new Selection(detail.getOrdinal());
         } else if ("params".equalsIgnoreCase(name)) {
             return new Selection(detail.getParams());
+        } else if ("properties".equalsIgnoreCase(name)) {
+            return new Selection(getProperties(detail));
+        } else if ("time".equalsIgnoreCase(name)) {
+            return new Selection(detail.getTime());
+        }
+        return null;
+    }
+
+    private String getProperties(AuditDetail detail) {
+        Document doc = XmlUtil.createEmptyDocument();
+        try {
+            Element element = detailsMarshaller.marshal(doc, detail);
+            doc.appendChild(element);
+            return XmlUtil.nodeToFormattedString(element);
+        } catch (MarshalException e) {
+            //todo [wynne]
+
+        } catch (IOException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
         return null;
     }
@@ -29,4 +55,5 @@ public class AuditDetailSelector implements ExpandVariables.Selector<AuditDetail
     public Class<AuditDetail> getContextObjectClass() {
         return AuditDetail.class;
     }
+    private static final AuditDetailPropertiesDomMarshaller detailsMarshaller = new AuditDetailPropertiesDomMarshaller();
 }

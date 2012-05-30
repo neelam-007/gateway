@@ -65,6 +65,9 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         } else if (looksLikeAuditSinkPolicy(policy)) {
             this.canUpdate = false;
             unsavedWarningLabel.setText(resources.getString("auditsink.warning"));
+        } else if (looksLikeAuditLookupPolicy(policy)) {
+            this.canUpdate = false;
+            unsavedWarningLabel.setText(resources.getString("auditlookup.warning"));
         } else if (looksLikeDebugTracePolicy(policy)) {
             this.canUpdate = false;
             unsavedWarningLabel.setText(resources.getString("debugtrace.warning"));
@@ -79,7 +82,13 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
     private boolean looksLikeAuditSinkPolicy(Policy policy) {
         return policy != null &&
                PolicyType.INTERNAL.equals(policy.getType()) &&
-               AuditSinkGlobalPropertiesDialog.INTERNAL_TAG_AUDIT_SINK.equals(policy.getInternalTag());
+                ExternalAuditStoreConfigWizard.INTERNAL_TAG_AUDIT_SINK.equals(policy.getInternalTag());
+    }
+
+    private boolean looksLikeAuditLookupPolicy(Policy policy) {
+        return policy != null &&
+                PolicyType.INTERNAL.equals(policy.getType()) &&
+                ExternalAuditStoreConfigWizard.INTERNAL_TAG_AUDIT_LOOKUP.equals(policy.getInternalTag());
     }
 
     private boolean looksLikeDebugTracePolicy(Policy policy) {
@@ -131,6 +140,10 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
 
                 if (looksLikeAuditSinkPolicy(policy) && policyInternalTag != null)
                     policyTags.put(policyInternalTag, null);
+
+                if (looksLikeAuditLookupPolicy(policy) && policyInternalTag != null)
+                    policyTags.put(policyInternalTag, null);
+
             }
 
             for ( final String tag : type.getGuiTags() ) {

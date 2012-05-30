@@ -158,9 +158,15 @@ public class PolicyAdminImpl implements PolicyAdmin {
         if (!(PolicyType.INTERNAL.equals(policy.getType())))
             return;
         String guid = policy.getGuid();
+
         String sinkGuid = config.getProperty( ServerConfigParams.PARAM_AUDIT_SINK_POLICY_GUID );
         if (sinkGuid != null && sinkGuid.trim().equals(guid))
             throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global audit sink policy");
+
+        String lookupGuid = config.getProperty( ServerConfigParams.PARAM_AUDIT_LOOKUP_POLICY_GUID );
+        if (lookupGuid != null && lookupGuid.trim().equals(guid))
+            throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global audit lookup policy");
+
         String traceGuid = config.getProperty( ServerConfigParams.PARAM_TRACE_POLICY_GUID );
         if (traceGuid != null && traceGuid.trim().equals(guid)) {
             if (atLeastOneServiceHasTracingEnabled())

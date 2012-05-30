@@ -1,6 +1,7 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.*;
 import com.l7tech.objectmodel.DeleteException;
@@ -193,6 +194,11 @@ public class AuditRecordManagerImpl
         });
 
         return Collections.unmodifiableList(auditRecordHeaders);
+    }
+
+    @Override
+    public AuditRecord findByHeader(EntityHeader header) throws FindException {
+        return super.findByHeader(header);
     }
 
     private <T> List<T> find( final AuditSearchCriteria criteria,

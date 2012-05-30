@@ -1,16 +1,15 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.audit.AuditRecord;
-import com.l7tech.gateway.common.audit.AuditRecordDomMarshaller;
-import com.l7tech.gateway.common.audit.AuditRecordTest;
+import com.l7tech.gateway.common.audit.*;
 import com.l7tech.test.BenchmarkRunner;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.w3c.dom.*;
 
 import javax.xml.bind.MarshalException;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Tests the ability to convert audit records to and from XML.
@@ -89,5 +88,34 @@ public class AuditRecordDomMarshallerTest {
                 }
             }
         }, 1000, 8, "Marshal").run();
+    }
+
+    @Test
+    public void testSimpleAuditDetailUnmarshal() throws Exception {
+        Document d = XmlUtil.stringAsDocument("<a/>");
+        AuditDetailPropertiesDomMarshaller m = new AuditDetailPropertiesDomMarshaller();
+        String[] origParams = new String[]{"foomp"};
+        AuditDetail detail =  new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO,origParams, new IllegalArgumentException("Exception for foomp detail"));
+        Element got = m.marshal(d, detail);
+        XmlUtil.nodeToFormattedOutputStream(got, System.out);
+
+        for(int i = 0 ; i < got.getChildNodes().getLength() ; ++i){
+            if( got.getChildNodes().item(i).getNodeName().equals("params"))
+            {
+                Node paramsNode = got.getChildNodes().item(0);
+                NodeList paramNodeList = paramsNode.getChildNodes();
+
+                String[] params = new String[paramNodeList.getLength()];
+                for(int j = 0 ; j < paramNodeList.getLength(); ++j){
+                    Node paramNode = paramNodeList.item(j);
+                    params[j]=paramNode.getChildNodes().item(0).getNodeValue();
+                }
+
+                for(int k = 0 ; k < origParams.length ; ++k){
+                    assertEquals(origParams[k], params[k]);
+                }
+            }
+        }
+
     }
 }

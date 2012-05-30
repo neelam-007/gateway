@@ -88,7 +88,14 @@ public class AuditRecordWorker extends SwingWorker {
 
         try {
             //retrieve the full AuditRecord associated with this AuditRecordHeader
-            auditRecord = auditAdminService.findByPrimaryKey(auditHeaderLogMessage.getMsgNumber());
+            String guid = auditHeaderLogMessage.getGuid();
+            if(guid!=null){
+                auditRecord = auditAdminService.findByGuid( guid);
+            } else{
+
+                auditRecord = auditAdminService.findByPrimaryKey( auditHeaderLogMessage.getMsgNumber() );
+            }
+
             if (auditRecord != null) this.logMessage = new AuditMessage(auditRecord);
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Unable to retrieve audit record from server", e);

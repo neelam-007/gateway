@@ -11,6 +11,7 @@ import com.l7tech.identity.internal.InternalGroupMembership;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.GatewayKeyAccessFilter;
 import com.l7tech.server.PersistenceEventInterceptor;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.AdminInfo;
@@ -30,7 +31,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -63,6 +65,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     private AuditDownloadManager auditDownloadManager;
     private AuditRecordManager auditRecordManager;
+    private AuditLookupPolicyEvaluator auditLookupPolicyEvaluator;
     private SecurityFilter filter;
     private Config config;
     private ClusterPropertyManager clusterPropertyManager;
@@ -89,6 +92,10 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     public void setAuditRecordManager(AuditRecordManager auditRecordManager) {
         this.auditRecordManager = auditRecordManager;
+    }
+
+    public void setAuditLookupPolicyEvaluator(AuditLookupPolicyEvaluator auditLookupPolicyEvaluator) {
+        this.auditLookupPolicyEvaluator = auditLookupPolicyEvaluator;
     }
 
     public void setSecurityFilter(SecurityFilter filter) {
@@ -171,7 +178,10 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     @Override
     public List<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException{
         notifyAuditSearch(criteria);
-        return auditRecordManager.findHeaders(criteria);
+        if(criteria.getFromPolicy)
+            return auditLookupPolicyEvaluator.findHeaders(criteria);
+        else
+            return auditRecordManager.findHeaders(criteria);
     }
 
     @Override
@@ -634,5 +644,41 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
             return newCriteria;
         }
+    }
+
+    private static final File gatewayDir = new File( ConfigFactory.getProperty( "com.l7tech.gateway.home", "/opt/SecureSpan/Gateway" ) );
+    private static final File nodesDir = new File(gatewayDir, "node");
+    private static final String sqlPath = "../config/etc/sql/externalAudits.sql";
+
+    private ServerConfig serverConfig() {
+        return ServerConfig.getInstance();
+    }
+    @Override
+    public String getExternalAuditsSchema(){
+        FileInputStream fin = null;
+        ByteArrayOutputStream out = null;
+        try {
+            final File configDir = serverConfig().getLocalDirectoryProperty( ServerConfigParams.PARAM_CONFIG_DIRECTORY, true);
+            File schemaFile = new File(configDir,"etc/sql/externalAudits.sql");
+            fin = new FileInputStream(schemaFile);
+            out = new ByteArrayOutputStream(16384);
+
+            IOUtils.copyStream(fin,out);
+            return out.toString(Charset.defaultCharset().name());
+
+        } catch (FileNotFoundException e) {
+            logger.warning("Schema file not found: "+sqlPath);
+        } catch (IOException e) {
+            logger.warning("Error reading schema file: "+sqlPath);
+        }
+        finally {
+            ResourceUtils.closeQuietly(fin,out);
+        }
+        return null;
+    }
+
+    @Override
+    public AuditRecord findByGuid(String guid) throws FindException {
+        return auditLookupPolicyEvaluator.findByGuid(guid);
     }
 }

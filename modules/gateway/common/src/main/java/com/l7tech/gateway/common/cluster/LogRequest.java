@@ -32,6 +32,7 @@ public final class LogRequest {
     private final String entityClassName; // null = any
     private final Long entityId; // null = any
     private int retrievedLogCount;
+    private final boolean getFromPolicy;
     private final Map<String, Long> nodeIdToStartMsg = new HashMap<String, Long>();
     private final Map<String, Long> nodeIdToEndMsg = new HashMap<String, Long>();
 
@@ -52,6 +53,7 @@ public final class LogRequest {
         paramValue = builder.paramValue;
         entityClassName = builder.entityClassName;
         entityId = builder.entityId;
+        getFromPolicy = builder.getFromPolicy;
         retrievedLogCount = 0;
     }
 
@@ -68,6 +70,7 @@ public final class LogRequest {
         private AuditType auditType = AuditType.ALL;
         private String userName;
         private String userIdOrDn;
+        private boolean getFromPolicy;
         private Integer messageId; // null = any
         private String paramValue; //not currently supported. Will be ignored.
         private String entityClassName; // null = any
@@ -152,6 +155,11 @@ public final class LogRequest {
 
         public Builder entityId(Long value) {
             entityId = value;
+            return this;
+        }
+
+        public Builder getFromPolicy(boolean value) {
+            getFromPolicy = value;
             return this;
         }
 
@@ -325,5 +333,9 @@ public final class LogRequest {
 
     public String getUserName() {
         return userName;
+    }
+    
+    public boolean isGetFromPolicy() {
+        return getFromPolicy;
     }
 }

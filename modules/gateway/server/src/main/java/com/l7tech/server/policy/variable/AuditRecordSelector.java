@@ -4,7 +4,9 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.server.util.CompressedStringType;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,14 +47,26 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
             }
         }
 
+        if (auditRecord instanceof SystemAuditRecord) {
+            SystemAuditRecord adminRec = (SystemAuditRecord) auditRecord;
+            FieldGetter<SystemAuditRecord> systemFieldFinder = systemFields.get(name);
+            if (systemFieldFinder != null) {
+                return systemFieldFinder.getFieldValue(adminRec, name);
+            }
+        }
+
         if (name.toLowerCase().startsWith("details.")) {
             if (name.length() < "details.".length() + 1)
                 return null;
             AuditDetail[] details = auditRecord.getDetailsInOrder();
             if (details == null || details.length == 0)
-                return new Selection(null);
+                // return emmty array of details
+                return new Selection(new AuditDetail[0]);
             return selectDetails( name, details, logger );
         }
+        
+        if(allAvaliableFields.contains(name))
+            return new Selection("");
 
         return null;
     }
@@ -99,11 +113,11 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
             public Selection getFieldValue(AuditRecord auditRecord, String baseAndRemainingName) {
                 String type;
                 if (auditRecord instanceof MessageSummaryAuditRecord) {
-                    type = "message";
+                    type = AuditRecordUtils.TYPE_MESSAGE;
                 } else if (auditRecord instanceof SystemAuditRecord) {
-                    type = "system";
+                    type = AuditRecordUtils.TYPE_SYSTEM;
                 } else if (auditRecord instanceof AdminAuditRecord) {
-                    type = "admin";
+                    type = AuditRecordUtils.TYPE_ADMIN;
                 } else {
                     type = "unknown";
                 }
@@ -136,7 +150,8 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
         baseFields.put("name", new FieldGetter<AuditRecord>() {
             @Override
             public Selection getFieldValue(AuditRecord auditRecord, String baseAndRemainingName) {
-                return new Selection(auditRecord.getName());
+                String name = auditRecord.getName();
+                return new Selection(name == null ? "" : name);
             }
         });
 
@@ -157,7 +172,8 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
         baseFields.put("requestId", new FieldGetter<AuditRecord>() {
             @Override
             public Selection getFieldValue(AuditRecord auditRecord, String baseAndRemainingName) {
-                return new Selection(auditRecord.getStrRequestId());
+                String reqId = auditRecord.getStrRequestId();
+                return new Selection( reqId == null? "" : reqId);
             }
         });
 
@@ -185,14 +201,16 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
         baseFields.put("user.name", new FieldGetter<AuditRecord>() {
             @Override
             public Selection getFieldValue(AuditRecord auditRecord, String baseAndRemainingName) {
-                return new Selection(auditRecord.getUserName());
+                String userName = auditRecord.getUserName();
+                return new Selection(userName==null?"":userName);
             }
         });
 
         baseFields.put("user.id", new FieldGetter<AuditRecord>() {
             @Override
             public Selection getFieldValue(AuditRecord auditRecord, String baseAndRemainingName) {
-                return new Selection(auditRecord.getUserId());
+                String userId = auditRecord.getUserId();
+                return new Selection(userId==null?"":userId);
             }
         });
 
@@ -211,6 +229,14 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
                 // compatibility issues. It will be removed from the
                 // documentation as of 6.2 / Escolar.
                 return new Selection(null);
+            }
+        });
+
+        // todo todo [wynne]
+        baseFields.put("numDetails", new FieldGetter<AuditRecord>() {
+            @Override
+            public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
+                return new Selection(rec.getDetailsInOrder().length);
             }
         });
 
@@ -235,7 +261,7 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
                     AdminAuditRecord adminrec = (AdminAuditRecord) rec;
                     return new Selection(String.valueOf(adminrec.getAction()));
                 }
-                else return null;
+                else  return new Selection("");
             }
         });
 
@@ -247,17 +273,87 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
                     final Component component = Component.fromId(sysrec.getComponentId());
                     return new Selection(component == null ? null : component.getName());
                 }
-                else return null;
+                else  return new Selection("");
+            }
+        });
+
+        baseFields.put("properties", new FieldGetter<AuditRecord>() {
+            @Override
+            public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
+                return new Selection(getProperties(rec));
+            }
+        });
+
+        baseFields.put("signature", new FieldGetter<AuditRecord>() {
+            @Override
+            public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
+                return new Selection(rec.getSignature());
+            }
+        });
+
+        baseFields.put("resZip", new FieldGetter<AuditRecord>() {
+            @Override
+            public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
+                if (rec instanceof MessageSummaryAuditRecord) {
+                    MessageSummaryAuditRecord msgrec = (MessageSummaryAuditRecord) rec;
+                    return new Selection(msgrec.getResponseXml()==null? new  byte[0]:getCompressedString(msgrec.getResponseXml()));
+                }
+                else  return new Selection(new  byte[0]);
+            }
+        });
+
+        baseFields.put("reqZip", new FieldGetter<AuditRecord>() {
+            @Override
+            public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
+                if (rec instanceof MessageSummaryAuditRecord) {
+                    MessageSummaryAuditRecord msgrec = (MessageSummaryAuditRecord) rec;
+                    return new Selection(msgrec.getRequestXml()==null? new  byte[0]:getCompressedString(msgrec.getRequestXml()));
+                }
+                else  return new Selection(new  byte[0]);
             }
         });
     }
 
+    private static String getProperties(AuditRecord rec) {
+//        Document doc = XmlUtil.createEmptyDocument();
+//        try {
+//            Element element = recordMarshaller.marshal(doc, rec);
+//            doc.appendChild(element);
+//            return XmlUtil.nodeToFormattedString(element);
+//        } catch (MarshalException e) {
+//            //todo [wynne]
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//        }
+        return null;
+    }
+
+    static Map<String, FieldGetter<SystemAuditRecord>> systemFields = new TreeMap<String, FieldGetter<SystemAuditRecord>>(String.CASE_INSENSITIVE_ORDER);
+    static {
+        systemFields.put("componentId", new FieldGetter<SystemAuditRecord>() {
+            @Override
+            public Selection getFieldValue(SystemAuditRecord rec, String baseAndRemainingName) {
+                return new Selection(rec.getComponentId());
+            }
+        });
+
+        systemFields.put("action", new FieldGetter<SystemAuditRecord>() {
+            @Override
+            public Selection getFieldValue(SystemAuditRecord rec, String baseAndRemainingName) {
+                return new Selection(rec.getAction());
+            }
+        });
+    }
+
+    private static final AuditRecordPropertiesDomMarshaller recordMarshaller = new AuditRecordPropertiesDomMarshaller();
     static Map<String, FieldGetter<AdminAuditRecord>> adminFields = new TreeMap<String, FieldGetter<AdminAuditRecord>>(String.CASE_INSENSITIVE_ORDER);
     static {
         adminFields.put("entity.class", new FieldGetter<AdminAuditRecord>() {
             @Override
             public Selection getFieldValue(AdminAuditRecord rec, String baseAndRemainingName) {
-                return new Selection(rec.getEntityClassname());
+                String className = rec.getEntityClassname();
+                return new Selection(className==null?"":className);
             }
         });
 
@@ -267,6 +363,15 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
                 return new Selection(rec.getEntityOid());
             }
         });
+
+        adminFields.put("action", new FieldGetter<AdminAuditRecord>() {
+            @Override
+            public Selection getFieldValue(AdminAuditRecord rec, String baseAndRemainingName) {
+                return new Selection(rec.getAction());
+            }
+        });
+
+
     }
 
     static Map<String, FieldGetter<MessageSummaryAuditRecord>> messageFields = new TreeMap<String, FieldGetter<MessageSummaryAuditRecord>>(String.CASE_INSENSITIVE_ORDER);
@@ -327,5 +432,80 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
                 return new Selection(rec.getStatus());
             }
         });
+
+        messageFields.put("authenticated", new FieldGetter<MessageSummaryAuditRecord>() {
+            @Override
+            public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
+                return new Selection(rec.isAuthenticated());
+            }
+        });
+
+        messageFields.put("responseStatus", new FieldGetter<MessageSummaryAuditRecord>() {
+            @Override
+            public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
+                return new Selection(rec.getResponseHttpStatus());
+            }
+        });
+
+        messageFields.put("resContentLength", new FieldGetter<MessageSummaryAuditRecord>() {
+            @Override
+            public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
+                return new Selection(rec.getResponseContentLength());
+            }
+        });
+
+        messageFields.put("reqContentLength", new FieldGetter<MessageSummaryAuditRecord>() {
+            @Override
+            public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
+                return new Selection(rec.getRequestContentLength());
+            }
+        });
+
+        messageFields.put("resZip", new FieldGetter<MessageSummaryAuditRecord>() {
+            @Override
+            public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
+                return new Selection(rec.getResponseXml()==null? new  byte[0]:getCompressedString(rec.getResponseXml()));
+            }
+        });
+
+        messageFields.put("reqZip", new FieldGetter<MessageSummaryAuditRecord>() {
+            @Override
+            public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
+                return new Selection(rec.getRequestXml()==null? new  byte[0] :getCompressedString(rec.getRequestXml()));
+            }
+        });
+
+    }
+    
+    static List<String> allAvaliableFields = new ArrayList<String>();
+    static{
+        allAvaliableFields.add("componentId");
+        allAvaliableFields.add("action");
+        allAvaliableFields.add("entity.class");
+        allAvaliableFields.add("entity.oid");
+        allAvaliableFields.add("authType");
+        allAvaliableFields.add("mappingValuesOid");
+        allAvaliableFields.add("operationName");
+        allAvaliableFields.add("requestSavedFlag");
+        allAvaliableFields.add("responseSavedFlag");
+        allAvaliableFields.add("routingLatency");
+        allAvaliableFields.add("resContentLength");
+        allAvaliableFields.add("reqContentLength");
+        allAvaliableFields.add("serviceOid");
+        allAvaliableFields.add("status");
+        allAvaliableFields.add("authenticated");
+        allAvaliableFields.add("responseStatus");
+        allAvaliableFields.add("resZip");
+        allAvaliableFields.add("reqZip");
+        allAvaliableFields.add("componentId");
+        allAvaliableFields.add("action");
+
+    }
+    private static byte[] getCompressedString(String in){
+        try {
+            return CompressedStringType.compress(in);
+        } catch (SQLException e) {
+            return null;
+        }
     }
 }

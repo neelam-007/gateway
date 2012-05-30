@@ -53,6 +53,16 @@ public class SecurityTokenType implements Serializable {
         return null;
     }
 
+    public static SecurityTokenType getByName(String name) {
+        if(name == null)
+            return null;
+        for (SecurityTokenType value : VALUES) {
+            if (name.equals(value.getName()))
+                return value;
+        }
+        return null;
+    }
+
     public int getNum() {
         return num;
     }

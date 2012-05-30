@@ -146,6 +146,11 @@
         <constructor-arg index="1" ref="policyCache"/>
     </bean>
 
+    <bean id="auditLookupPolicyEvaluator" class="com.l7tech.server.audit.AuditLookupPolicyEvaluator">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="policyCache"/>
+    </bean>
+
     <bean id="auditFilterPolicyManager" class="com.l7tech.server.audit.AuditFilterPolicyManager">
         <constructor-arg ref="policyCache"/>
         <constructor-arg ref="stashManagerFactory"/>

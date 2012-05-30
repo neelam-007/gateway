@@ -283,6 +283,7 @@
     <bean id="auditAdmin" class="com.l7tech.server.audit.AuditAdminImpl">
         <property name="auditDownloadManager" ref="auditDownloadManager"/>
         <property name="auditRecordManager" ref="auditRecordManager"/>
+        <property name="auditLookupPolicyEvaluator" ref="auditLookupPolicyEvaluator"/>
         <property name="securityFilter">
             <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
                 <property name="targetObject" ref="rbacAdvice"/>

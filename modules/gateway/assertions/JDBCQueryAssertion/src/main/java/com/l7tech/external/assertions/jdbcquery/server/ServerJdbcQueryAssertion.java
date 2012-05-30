@@ -129,7 +129,12 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                 Matcher matcher = searchPattern.matcher(query);
                 query = matcher.replaceFirst(sb.toString());
             } else {
-                String value = ExpandVariables.process("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit());
+                //todo [wynne]********** HACK FOR AUDIT SINK POLICY***********************
+                Object value;
+                if(varWithIndex.equals("audit.reqZip") || varWithIndex.equals("audit.resZip"))
+                    value= ExpandVariables.processSingleVariableAsObject("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit());
+                else
+                    value = ExpandVariables.process("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit());
                 params.add(value);
             }
         }

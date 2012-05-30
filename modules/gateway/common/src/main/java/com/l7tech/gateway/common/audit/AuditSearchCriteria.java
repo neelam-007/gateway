@@ -57,6 +57,7 @@ public final class AuditSearchCriteria implements Serializable {
         entityId = builder.entityId;
         nodeIdToStartMsg = builder.nodeIdToStartMsg;
         nodeIdToEndMsg = builder.nodeIdToEndMsg;
+        getFromPolicy = builder.getFromPolicy;
     }
 
     /**
@@ -134,6 +135,7 @@ public final class AuditSearchCriteria implements Serializable {
     public final String paramValue;
     public final String entityClassName; // Initial value: null, which means Entity Type Search Criterion is not set.
     public final Long entityId; // null = any
+    public final boolean getFromPolicy;
 
     /**
      * Grabs information about the search criteria.  Similar to toString() method.
@@ -219,6 +221,9 @@ public final class AuditSearchCriteria implements Serializable {
             if (entityId != null) fullDetailsOnSearchCriteria.append("{Entity ID: " + entityId + "} ");
         }
 
+        // construct get from audit lookup policy
+        fullDetailsOnSearchCriteria.append("{Get from Audit Lookup Policy: " + getFromPolicy + "} ");
+
         return new Pair<String, String>(partialDetailsOnSearchCriteria.toString(), fullDetailsOnSearchCriteria.toString());
     }
 
@@ -283,6 +288,7 @@ public final class AuditSearchCriteria implements Serializable {
         private final Map<String, Long> nodeIdToStartMsg;
         private final Map<String, Long> nodeIdToEndMsg;
         private int maxRecords = 0;
+        private boolean getFromPolicy = false;
 
         private String serviceName = null; //null == any
         private String message = null; //null == any
@@ -315,6 +321,7 @@ public final class AuditSearchCriteria implements Serializable {
             paramValue(logRequest.getParamValue());
             entityClassName(logRequest.getEntityClassName());
             entityId(logRequest.getEntityId());
+            getFromPolicy(logRequest.isGetFromPolicy());
             //String and Long are immutable - can just add all to Map.
             nodeIdToStartMsg = Collections.unmodifiableMap(new HashMap<String, Long>(logRequest.getNodeIdToStartMsg()));
             nodeIdToEndMsg = Collections.unmodifiableMap(new HashMap<String, Long>(logRequest.getNodeIdToEndMsg()));
@@ -438,6 +445,11 @@ public final class AuditSearchCriteria implements Serializable {
 
         public Builder entityId(Long value) {
             entityId = value;
+            return this;
+        }
+        
+        public Builder getFromPolicy(boolean value){
+            getFromPolicy = value;
             return this;
         }
 

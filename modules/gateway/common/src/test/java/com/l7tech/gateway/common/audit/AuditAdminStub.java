@@ -128,4 +128,14 @@ public class AuditAdminStub implements AuditAdmin {
     public Collection<String> getAllEntityClassNames() {
         return null;
     }
+
+    @Override
+    public String getExternalAuditsSchema() {
+        return null;
+    }
+
+    @Override
+    public AuditRecord findByGuid(String guid) throws FindException {
+        return null;
+    }
 }

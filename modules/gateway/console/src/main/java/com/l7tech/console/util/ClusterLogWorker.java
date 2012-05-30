@@ -187,7 +187,10 @@ public class ClusterLogWorker extends SwingWorker {
                             //should never happen.
                             oldest = -1L;
                         }
-                        logRequest.setEndMsgDate(new Date(oldest + 1L)); // end date is exclusive
+                        logRequest.setEndMsgDate(new Date(oldest - 1L)); // end date is exclusive
+
+                        // todo [wynne] remove
+                        logRequest = null;
 
                     } else {
                         //we are done
@@ -195,6 +198,7 @@ public class ClusterLogWorker extends SwingWorker {
                     }
                 } catch (FindException e) {
                     logger.log(Level.SEVERE, "Unable to retrieve audits from server", e);
+                    // todo [wynne] add retry timeout?
                 }
 
                 if (newLogs.size() > 0) {

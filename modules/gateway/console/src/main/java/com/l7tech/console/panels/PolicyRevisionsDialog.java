@@ -267,7 +267,7 @@ public class PolicyRevisionsDialog extends JDialog {
     private boolean isAuditSinkPolicy(Policy policy) {
         return policy != null &&
             PolicyType.INTERNAL.equals(policy.getType()) &&
-            AuditSinkGlobalPropertiesDialog.INTERNAL_TAG_AUDIT_SINK.equals(policy.getInternalTag());
+                ExternalAuditStoreConfigWizard.INTERNAL_TAG_AUDIT_SINK.equals(policy.getInternalTag());
     }
 
     private void doSetComment() {

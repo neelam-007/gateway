@@ -30,6 +30,7 @@ public interface ServerConfigParams {
     String PARAM_MODULAR_ASSERTIONS_FILE_EXTENSIONS = "modularAssertionsFileExtensions";
     String PARAM_TRACE_POLICY_GUID = "trace.policy.guid"; // serverconfig name must be same as cluster property name for this property
     String PARAM_AUDIT_SINK_POLICY_GUID = "audit.sink.policy.guid";
+    String PARAM_AUDIT_LOOKUP_POLICY_GUID = "audit.lookup.policy.guid";
     String PARAM_AUDIT_SINK_FALLBACK_ON_FAIL = "audit.sink.fallbackToInternal";
     String PARAM_AUDIT_SINK_ALWAYS_FALLBACK = "audit.sink.alwaysSaveInternal";
     String PARAM_AUDIT_MESSAGE_THRESHOLD = "auditMessageThreshold";

@@ -224,11 +224,10 @@
                       <component id="7dcf7" class="javax.swing.JTextArea" binding="sqlQueryTextArea">
                         <constraints/>
                         <properties>
-                          <columns value="256"/>
                           <maximumSize width="-1" height="-1"/>
                           <minimumSize width="460" height="-1"/>
-                          <preferredSize width="2816" height="4096"/>
-                          <rows value="256"/>
+                          <preferredSize width="2816" height="9600"/>
+                          <rows value="600"/>
                           <wrapStyleWord value="false"/>
                         </properties>
                       </component>

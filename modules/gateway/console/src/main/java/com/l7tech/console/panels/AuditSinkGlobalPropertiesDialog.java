@@ -1,23 +1,13 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.action.EditPolicyAction;
-import com.l7tech.console.tree.PolicyEntityNode;
-import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.ClusterPropertyCrud;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyCheckpointState;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -34,9 +24,10 @@ import java.util.logging.Logger;
 public class AuditSinkGlobalPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(AuditSinkGlobalPropertiesDialog.class.getName());
 
-    public static final String INTERNAL_TAG_AUDIT_SINK = "audit-sink";
+
     public static final String AUDIT_SINK_POLICY_GUID_CLUSTER_PROP = "audit.sink.policy.guid";
     public static final String AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP = "audit.sink.alwaysSaveInternal";
+    public static final String AUDIT_LOOKUP_POLICY_GUID_CLUSTER_PROP = "audit.lookup.policy.guid";
 
 
     private JPanel mainPanel;
@@ -44,9 +35,12 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
     private JButton cancelButton;
     private JCheckBox cbOutputToPolicy;
     private JCheckBox cbSaveToDb;
+    private JButton configureButton;
 
     boolean committed = false;
     boolean policyEditRequested = false;
+    private PolicyHeader sinkPolicyHeader = null;
+    private PolicyHeader lookupPolicyHeader = null;
 
     public AuditSinkGlobalPropertiesDialog(Window owner) {
         super(owner, "Audit Sink Properties", ModalityType.DOCUMENT_MODAL);
@@ -60,6 +54,7 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 commit();
+                dispose();
             }
         });
 
@@ -71,10 +66,17 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
             }
         });
 
+        configureButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doConfigure();
+            }
+        });
+
         final ActionListener buttonListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                okButton.setEnabled(isCommittable());
+                enableDiableButtons();
             }
         };
         cbSaveToDb.addActionListener(buttonListener);
@@ -87,6 +89,25 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
         final boolean usingSinkPolicy = isUsingSinkPolicy();
         cbOutputToPolicy.setSelected(usingSinkPolicy);
         cbSaveToDb.setSelected(!usingSinkPolicy || isAlwaysSaveToDb());
+        enableDiableButtons();
+    }
+
+    private void enableDiableButtons() {
+        okButton.setEnabled(isCommittable());
+        configureButton.setEnabled(cbOutputToPolicy.isSelected());
+    }
+
+    private void doConfigure() {
+        final ExternalAuditStoreConfigWizard dialog = ExternalAuditStoreConfigWizard.getInstance(this);
+        dialog.pack();
+        Utilities.centerOnScreen(dialog);
+        DialogDisplayer.display(dialog, new Runnable() {
+            @Override
+            public void run() {
+                sinkPolicyHeader = dialog.getSinkPolicyHeader();
+                lookupPolicyHeader = dialog.getLookupPolicyHeader();
+            }
+        });
     }
 
     private boolean isUsingSinkPolicy() {
@@ -113,69 +134,21 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
     }
 
     private PolicyHeader getSinkPolicyHeader() throws FindException {
+        if(sinkPolicyHeader != null ) return sinkPolicyHeader;
         Collection<PolicyHeader> allInternals = Registry.getDefault().getPolicyAdmin().findPolicyHeadersByType(PolicyType.INTERNAL);
         for (PolicyHeader internal : allInternals) {
-            if (INTERNAL_TAG_AUDIT_SINK.equals(internal.getDescription())) {
-                return internal;
+            if (ExternalAuditStoreConfigWizard.INTERNAL_TAG_AUDIT_SINK.equals(internal.getDescription())) {
+                sinkPolicyHeader = internal;
+                break;
             }
         }
-        return null;
+        return sinkPolicyHeader;
     }
 
-    private PolicyHeader getOrCreateSinkPolicyHeader() throws FindException, PolicyAssertionException, SaveException {
-        PolicyHeader header = getSinkPolicyHeader();
-        if (header == null) {
-            // Create new sink policy with default settings
-            Policy policy = makeDefaultAuditSinkPolicyEntity();
-            PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
-            policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyOid());
-            header = new PolicyHeader(policy);
 
-            // Refresh service tree
-            ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-            tree.refresh();
-        }
-        return header;
-    }
-
-    private static Policy makeDefaultAuditSinkPolicyEntity() {
-        String theXml = makeDefaultAuditSinkPolicyXml();
-        Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Audit Sink Policy]", theXml, false);
-        policy.setInternalTag(INTERNAL_TAG_AUDIT_SINK);
-        return policy;
-    }
-
-    private static String makeDefaultAuditSinkPolicyXml() {
-        AllAssertion all = makeDefaultAuditSinkPolicyAssertions();
-        return WspWriter.getPolicyXml(all);
-    }
-
-    private static AllAssertion makeDefaultAuditSinkPolicyAssertions() {
-        AllAssertion all = new AllAssertion();
-        all.addChild(new CommentAssertion("A simple audit sink policy could convert the audit record to XML, then post it somewhere via HTTP"));
-        all.addChild(new AuditRecordToXmlAssertion());
-        all.addChild(new CommentAssertion("Enable the below routing assertion or replace it with something else"));
-        HttpRoutingAssertion routingAssertion = new HttpRoutingAssertion();
-        routingAssertion.setProtectedServiceUrl("${gateway.audit.sink.url}");
-        routingAssertion.setEnabled(false);
-        all.addChild(routingAssertion);
-        FalseAssertion falseAssertion = new FalseAssertion();
-        String falseName = falseAssertion.meta().get(AssertionMetadata.SHORT_NAME);
-        all.addChild(new CommentAssertion("The below " + falseName + " causes this sink policy to always fail."));
-        all.addChild(new CommentAssertion("This will (by default) cause the record to be saved to the internal audit database."));
-        all.addChild(new CommentAssertion("Remove it once you have customized the audit sink policy."));
-        all.addChild(falseAssertion);
-        return all;
-    }
-
-    private Action prepareEditAction() throws FindException, PolicyAssertionException, SaveException {
-        PolicyHeader header = getOrCreateSinkPolicyHeader();
-        PolicyEntityNode node = new PolicyEntityNode(header);
-        return new EditPolicyAction(node, true);
-    }
 
     private boolean isCommittable() {
-        return cbOutputToPolicy.isSelected() || cbSaveToDb.isSelected();
+        return cbSaveToDb.isSelected() || ( cbOutputToPolicy.isSelected() && sinkPolicyHeader != null && lookupPolicyHeader != null );
     }
 
     private void commit() {
@@ -188,37 +161,19 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
             if (!cbOutputToPolicy.isSelected()) {
                 ClusterPropertyCrud.deleteClusterProperty(AUDIT_SINK_POLICY_GUID_CLUSTER_PROP);
                 ClusterPropertyCrud.deleteClusterProperty(AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP);
+                ClusterPropertyCrud.deleteClusterProperty(AUDIT_LOOKUP_POLICY_GUID_CLUSTER_PROP);
                 dispose();
                 return;
             }
 
-            PolicyHeader header = getOrCreateSinkPolicyHeader();
-            String guid = header.getGuid();
             ClusterPropertyCrud.putClusterProperty(AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP, String.valueOf(cbSaveToDb.isSelected()));
-            ClusterPropertyCrud.putClusterProperty(AUDIT_SINK_POLICY_GUID_CLUSTER_PROP, guid);
-
-            final Action editAction = prepareEditAction();
-            
-            DialogDisplayer.showConfirmDialog(this,
-                    "Do you want to edit the audit sink policy now?",
-                    "Edit Sink Policy",
-                    JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
-                @Override
-                public void reportResult(int option) {
-                    committed = true;
-                    if (JOptionPane.YES_OPTION == option) {
-                        policyEditRequested = true;
-                        editAction.actionPerformed(null);
-                    }
-                    dispose();
-                }
-            });
+            ClusterPropertyCrud.putClusterProperty(AUDIT_SINK_POLICY_GUID_CLUSTER_PROP, sinkPolicyHeader.getGuid());
+            ClusterPropertyCrud.putClusterProperty(AUDIT_LOOKUP_POLICY_GUID_CLUSTER_PROP, lookupPolicyHeader.getGuid());
+            committed = true;
 
         } catch (ObjectModelException e) {
             err("configure audit sink", e);
-        } catch (PolicyAssertionException e) {
-            err("configure audit sink", e);
-        }
+        } 
     }
 
     public boolean isCommitted() {

@@ -273,4 +273,20 @@ public interface AuditAdmin {
      */
     @Transactional(propagation= Propagation.SUPPORTS)
     int getSystemLogRefresh();
+
+    @Transactional(readOnly=true)
+    String getExternalAuditsSchema();
+
+    /**
+     * Retrieves the {@link AuditRecord} with the given oid, or null if no such record exists.
+     * @param guid the string object identifier of the record to retrieve
+     * @return the {@link AuditRecord} with the given oid, or null if no such record exists.
+     * @throws FindException if there was a problem retrieving Audit records from the database
+     */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITY)
+    @Administrative(licensed=false)
+    AuditRecord findByGuid(String guid) throws FindException;
+
+
 }

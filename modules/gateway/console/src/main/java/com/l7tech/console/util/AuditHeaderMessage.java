@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.gateway.common.audit.AuditRecordGuidHeader;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
 
 import java.io.IOException;
@@ -70,6 +71,10 @@ public class AuditHeaderMessage extends AbstractAuditMessage {
 
     public void setDigestWasSkipped(boolean digestWasSkipped) {
         this.digestWasSkipped = digestWasSkipped;
+    }
+    
+    public String getGuid(){
+        return header instanceof AuditRecordGuidHeader ? ((AuditRecordGuidHeader) header).getGuid() : null;
     }
 
     //- PRIVATE

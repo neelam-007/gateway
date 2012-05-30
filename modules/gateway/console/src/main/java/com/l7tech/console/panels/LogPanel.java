@@ -240,6 +240,9 @@ public class LogPanel extends JPanel {
     // Entity ID
     private Long entityId;
 
+    // Use audit lookup policy
+    private boolean getFromPolicy = false;
+
     public enum LogLevelOption {
         ALL("All", Level.ALL), INFO("Info", Level.INFO), WARNING("Warning", Level.WARNING), SEVERE("Severe", Level.SEVERE);
 
@@ -589,7 +592,8 @@ public class LogPanel extends JPanel {
             (! isNullOrEmpty(requestId)) ||
             (! "<any>".equals(entityTypeName)) ||
             (entityId != null) ||
-            (messageId != null);
+            (messageId != null) ||
+            getFromPolicy    ;
     }
 
     /**
@@ -720,6 +724,8 @@ public class LogPanel extends JPanel {
         userName = controlPanel.userNameTextField.getText();
         userIdOrDn = controlPanel.userIdOrDnTextField.getText();
 
+        getFromPolicy = controlPanel.viaAuditLookupPolicyRadioButton.isSelected();
+
         try {
             String msgIdTxt = controlPanel.auditCodeTextField.getText();
             if (msgIdTxt == null || msgIdTxt.trim().isEmpty()) {
@@ -790,6 +796,8 @@ public class LogPanel extends JPanel {
             String entityIdTxt = entityId.equals(Long.MIN_VALUE)? preferences.getString(SsmPreferences.AUDIT_WINDOW_ENTITY_ID) : entityId.toString();
             controlPanel.entityIdTextField.setText(entityIdTxt);
         }
+
+        controlPanel.viaAuditLookupPolicyRadioButton.setSelected(getFromPolicy);
         enableOrDisableComponents();
     }
 
@@ -922,6 +930,12 @@ public class LogPanel extends JPanel {
         } else {
             entityId = null; // null = Any
         }
+
+        final String useLookupString = preferences.getString(SsmPreferences.AUDIT_WINDOW_USE_LOOKUP_POLICY);
+        if(useLookupString!=null){
+            getFromPolicy = Boolean.valueOf(useLookupString);
+        }
+
         setControlPanelFromData();
     }
 
@@ -988,6 +1002,7 @@ public class LogPanel extends JPanel {
         } else {
             preferences.remove(SsmPreferences.AUDIT_WINDOW_ENTITY_ID);
         }
+        preferences.putProperty(SsmPreferences.AUDIT_WINDOW_USE_LOOKUP_POLICY,Boolean.toString(controlPanel.viaAuditLookupPolicyRadioButton.isSelected()));
     }
 
     private void updateControlState() {
@@ -1204,7 +1219,8 @@ public class LogPanel extends JPanel {
                     StringBuilder sb = new StringBuilder("\nMessage Context Mappings\n");
                     boolean foundCustomMapping = false;
                     for (MessageContextMapping mapping : mappings) {
-                        if (mapping.getMappingType().equals(MessageContextMapping.MappingType.CUSTOM_MAPPING)) {
+//                        if (mapping.getMappingType().equals(MessageContextMapping.MappingType.CUSTOM_MAPPING))
+                        {
                             sb.append(TextUtils.pad("Mapping Key", maxWidth)).append(": ").append(mapping.getKey()).append("\n");
                             sb.append(TextUtils.pad("Mapping Value", maxWidth)).append(": ").append(mapping.getValue()).append("\n");
                             foundCustomMapping = true;
@@ -2185,6 +2201,7 @@ public class LogPanel extends JPanel {
                 paramValue(paramValue).
                 entityClassName(entityTypeName == null? null : getAllEntities().get(entityTypeName)).
                 entityId(entityId).
+                getFromPolicy(getFromPolicy).
                 build();
 
             //save the log request
@@ -2232,6 +2249,7 @@ public class LogPanel extends JPanel {
                 paramValue(paramValue).
                 entityClassName(entityTypeName == null? null : getAllEntities().get(entityTypeName)).
                 entityId(entityId).
+                getFromPolicy(getFromPolicy).
                 build();
 
             //save the log request
@@ -2598,7 +2616,18 @@ public class LogPanel extends JPanel {
     }
 
     private static AuditMessage getLogMessage( final AbstractAuditMessage logMessage ) throws FindException {
-        AuditRecord record = Registry.getDefault().getAuditAdmin().findByPrimaryKey( logMessage.getMsgNumber() );
+        AuditRecord record = null;
+        if(logMessage instanceof AuditHeaderMessage){
+            String guid =((AuditHeaderMessage) logMessage).getGuid();
+            if(guid!=null){
+                record = Registry.getDefault().getAuditAdmin().findByGuid( guid);
+            }
+        }
+
+        if(record == null){
+            record = Registry.getDefault().getAuditAdmin().findByPrimaryKey( logMessage.getMsgNumber() );
+        }
+
         if ( record == null )
             throw new FindException("Missing audit record for id '"+logMessage.getMsgNumber()+"'.");
         return new AuditMessage( record, logMessage.getNodeName() );
@@ -2685,5 +2714,8 @@ public class LogPanel extends JPanel {
         private JCheckBox validateSignaturesCheckBox;
         private JButton clearButton;
         private JButton cancelButton;
+        private JRadioButton internalDatabaseRadioButton;
+        private JRadioButton viaAuditLookupPolicyRadioButton;
+        private JButton configureAuditLookupPolicyButton;
     }
 }
