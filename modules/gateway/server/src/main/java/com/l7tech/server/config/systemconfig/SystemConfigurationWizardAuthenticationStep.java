@@ -109,21 +109,14 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
 
         doLdapPamOptionsPrompts(ldapView);
 
-        doCustomizeAdvancedLdapPrompts(ldapView);
+//        doCustomizeAdvancedLdapPrompts(ldapView);
 
 
         //store bean
         configBean.addAuthTypeView(ldapView);
     }
 
-    private void doCustomizeAdvancedLdapPrompts(LdapAuthTypeSettings ldapView) {
-        //TODO not implemented yet
-        //this is a chance to have the user customize any of the very advanced options that we didn't prompt them for
-        //PAM_MIN_UID="0"
-        //PAM_MAX_UID="0"
-    }
-
-    private void doLdapPamOptionsPrompts(LdapAuthTypeSettings ldapView) throws IOException, WizardNavigationException {
+        private void doLdapPamOptionsPrompts(LdapAuthTypeSettings ldapView) throws IOException, WizardNavigationException {
         String defaultPamAttr = "uid";
         String pamLoginAttr = defaultPamAttr;
         if (getConfirmationFromUser("Do you want to customize the PAM login attribute name?","n")) {
@@ -326,7 +319,7 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         String ldapGroupName = getData(
             new String[]{"What is the name of the group in LDAP which contains the users granted access to the Gateway? : " + "[" + defaultGroup + "] "},
                 defaultGroup,
-            Pattern.compile("\\S+"),
+            DN_PATTERN,
             "*** Invalid Entry: Please enter a valid group name***"
         );
         printText(EOL);
