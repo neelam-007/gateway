@@ -1,10 +1,10 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.util.InetAddressUtil;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
-import com.l7tech.policy.assertion.RemoteIpRange;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.RemoteIpRange;
+import com.l7tech.util.InetAddressUtil;
 
 import javax.swing.*;
 import javax.swing.text.DefaultFormatterFactory;
@@ -20,9 +20,10 @@ import static com.l7tech.policy.assertion.RemoteIpRange.IPV6_MAX_PREFIX;
 
 /**
  * Dialog for viewing and editing a RemoteIpRange assertion.
- *
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
  * @author flascell<br/>
  */
 public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog {
@@ -59,12 +60,12 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
         setModal(true);
         initResources();
         setContentPane(mainPanel);
-        okButton.setEnabled( !readOnly );
+        okButton.setEnabled(!readOnly);
         Utilities.equalizeButtonSizes(okButton, cancelButton, helpButton);
 
-        includeExcludeCombo.setModel(new DefaultComboBoxModel(new String[] {
-                                                          resources.getString("includeExcludeCombo.include"),
-                                                          resources.getString("includeExcludeCombo.exclude")}));
+        includeExcludeCombo.setModel(new DefaultComboBoxModel(new String[]{
+                resources.getString("includeExcludeCombo.include"),
+                resources.getString("includeExcludeCombo.exclude")}));
 
         suffix.setFormatterFactory(new DefaultFormatterFactory(new NumberFormatter() {{
             setMinimum(1);
@@ -98,7 +99,13 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
         // get rule
         int index = includeExcludeCombo.getSelectedIndex();
         // get address
-        String addressStr = address.getText();
+        String addressStrOrig = address.getText();
+
+        //since we really can't know the value of the variables until run time, replace them accordingly
+        //at least we can test a valid format (assuming the variables resolve to a proper value on runtime)
+        //before the user actually saves the values of this assertion
+        String addressStr = subject.formatStringWithVariables(addressStrOrig, true);
+
         // get prefix
         Integer prefix;
         try {
@@ -110,7 +117,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
 
         boolean isIpv4 = InetAddressUtil.isValidIpv4Address(addressStr);
         boolean isIpv6 = InetAddressUtil.isValidIpv6Address(addressStr);
-        if ( ! isIpv4 && ! isIpv6 ) {
+        if (!isIpv4 && !isIpv6) {
             bark(resources.getString("error.badaddress"));
             return;
         }
@@ -130,7 +137,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
                     subject.setAllowRange(false);
                     break;
             }
-            subject.setAddressRange(addressStr, prefix);
+            subject.setAddressRange(addressStrOrig, prefix);
             subject.setIpSourceContextVariable(contextval);
             oked = true;
         }
