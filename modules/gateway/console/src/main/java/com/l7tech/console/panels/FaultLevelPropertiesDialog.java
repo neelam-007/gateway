@@ -1,30 +1,28 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.XMLContainerFactory;
-import com.l7tech.policy.assertion.FaultLevel;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.util.DomUtils;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.action.Actions;
-
 import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.editor.XMLEditor;
-
-import javax.swing.*;
-import javax.xml.soap.SOAPConstants;
-import javax.xml.XMLConstants;
-import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.WindowEvent;
-
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.action.Actions;
+import com.l7tech.console.util.XMLContainerFactory;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.assertion.FaultLevel;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+
+import javax.swing.*;
+import javax.xml.XMLConstants;
+import javax.xml.soap.SOAPConstants;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
 
 /**
  * Dialog box to edit the properties of a FaultLevel assertion.
@@ -384,6 +382,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
                 // can't happen (unless bug)
                 throw new RuntimeException("Unhandled SoapFaultLevel");
         }
+        editor.setCaretPosition(0);
         urlCheckBox.setEnabled(enableUrlCheckBox);
         signSoapFaultCheckBox.setEnabled(enableSignSoapFaultCheckBox);
         alwaysReturnSoapFaultCheckBox.setEnabled(enableAlwaysReturnSoapFaultCheckBox);

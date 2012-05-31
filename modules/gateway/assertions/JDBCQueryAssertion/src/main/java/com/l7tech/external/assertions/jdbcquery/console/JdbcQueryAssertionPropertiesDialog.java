@@ -168,6 +168,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private void modelToView() {
         populateConnectionCombobox();
         sqlQueryTextArea.setText(assertion.getSqlQuery());
+        sqlQueryTextArea.setCaretPosition(0);
         namingMap = assertion.getNamingMap();
         variablePrefixTextField.setVariable(assertion.getVariablePrefix());
         variablePrefixTextField.setAssertion(assertion,getPreviousAssertion());

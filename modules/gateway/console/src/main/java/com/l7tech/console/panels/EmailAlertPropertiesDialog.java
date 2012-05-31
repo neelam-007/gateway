@@ -264,6 +264,7 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
         bccAddressesField.setText(assertion.getTargetBCCEmailAddress());
         subjectField.setText(assertion.getSubject());
         messageField.setText(assertion.messageString());
+        messageField.setCaretPosition(0);
         fromAddressField.setText(assertion.getSourceEmailAddress());
         authenticateCheckBox.setSelected(assertion.isAuthenticate());
         contextVarPasswordCheckBox.setSelected(assertion.isContextVarPassword());

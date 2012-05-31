@@ -107,6 +107,7 @@ public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         if(resourceInfo instanceof StaticResourceInfo){
             StaticResourceInfo sri = (StaticResourceInfo) resourceInfo;
             jsonTextArea.setText(sri.getDocument());
+            jsonTextArea.setCaretPosition(0);
         } 
     }
 

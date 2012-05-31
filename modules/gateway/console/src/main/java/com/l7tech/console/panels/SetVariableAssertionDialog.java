@@ -237,7 +237,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
             expression = expression.trim();
 
         _expressionTextArea.setText(expression);
-
+        _expressionTextArea.setCaretPosition(0);
         if (assertion.getLineBreak() == LineBreak.LF) {
             _lfRadioButton.doClick();
         } else if (assertion.getLineBreak() == LineBreak.CR) {

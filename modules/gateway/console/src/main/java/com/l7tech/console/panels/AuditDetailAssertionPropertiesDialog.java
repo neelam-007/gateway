@@ -71,6 +71,7 @@ public class AuditDetailAssertionPropertiesDialog extends LegacyAssertionPropert
         levelComboBox.setModel(new DefaultComboBoxModel(levels));
         levelComboBox.setSelectedItem(assertion.getLevel());
         detailTextArea.setText(assertion.getDetail());
+        detailTextArea.setCaretPosition(0);
         detailTextArea.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) { enableButtons(); }

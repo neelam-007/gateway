@@ -312,6 +312,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         this.regexAssertion = regexAssertion;
         if (regexAssertion.getRegex() != null) {
             regexTextArea.setText(regexAssertion.getRegex());
+            regexTextArea.setCaretPosition(0);
         }
         if (regexAssertion.getEncoding() != null) {
             encodingField.setText(regexAssertion.getEncoding());
