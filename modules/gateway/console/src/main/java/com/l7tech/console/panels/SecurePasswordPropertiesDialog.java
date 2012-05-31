@@ -166,9 +166,12 @@ public class SecurePasswordPropertiesDialog extends JDialog {
                             public void reportResult(int option) {
                                 if (JOptionPane.YES_OPTION == option) {
                                     doConfirm();
+                                } else {
+                                    dispose();
                                 }
                             }
                         });
+                        return;
                     }
                 }
                 doConfirm();
