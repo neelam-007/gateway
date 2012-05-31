@@ -23,7 +23,7 @@ public abstract class GroupMembership implements PersistentEntity, Serializable 
      *
      * Not the OID of the membership itself!
      */
-    public abstract void setThisGroupId(String thisGroupId);
+    public abstract void setThisGroupId(long thisGroupId);
 
     /**
      * The ID of the {@link User} who's a member of the group.  May be null.

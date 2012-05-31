@@ -4,7 +4,6 @@
 package com.l7tech.identity.fed;
 
 import com.l7tech.identity.GroupMembership;
-import com.l7tech.objectmodel.PersistentEntity;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -53,18 +52,16 @@ public class FederatedGroupMembership extends GroupMembership {
         return super.getMemberUserId();
     }
 
+    @Override
     @Id
     @Column(name="fed_group_oid",nullable=false)
     public long getThisGroupId() {
         return thisGroupOid;
     }
 
-    public void setThisGroupId(String thisGroupId) throws NumberFormatException {
-        if (thisGroupId == null) {
-            thisGroupOid = PersistentEntity.DEFAULT_OID;
-        } else {
-            thisGroupOid = Long.parseLong(thisGroupId);
-        }
+    @Override
+    public void setThisGroupId(long thisGroupId) throws NumberFormatException {
+        thisGroupOid = thisGroupId;
     }
 
     /**

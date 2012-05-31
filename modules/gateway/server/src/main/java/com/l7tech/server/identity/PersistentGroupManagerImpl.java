@@ -435,14 +435,14 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             public Object doInHibernate(Session session) throws HibernateException, SQLException {
                 Criteria crit = session.createCriteria(getMembershipClass());
                 addMembershipCriteria(crit, group, user);
-                crit.add(Restrictions.eq("memberUserId", user.getId()));
-                crit.add(Restrictions.eq("thisGroupId", group.getId()));
+                crit.add(Restrictions.eq("memberUserId", user.getOid()));
+                crit.add(Restrictions.eq("thisGroupId", group.getOid()));
                 addMembershipCriteria(crit, group, user);
                 List toBeDeleted = crit.list();
                 if (toBeDeleted == null || toBeDeleted.size() == 0) {
-                    throw new RuntimeException("Couldn't find membership to be deleted; user " + user.getId() + ", group " + group.getId());
+                    throw new RuntimeException("Couldn't find membership to be deleted; user " + user.getOid() + ", group " + group.getOid());
                 } else if (toBeDeleted.size() > 1) {
-                    throw new RuntimeException("Found more than one membership to be deleted; user " + user.getId() + ", group " + group.getId());
+                    throw new RuntimeException("Found more than one membership to be deleted; user " + user.getOid() + ", group " + group.getOid());
                 }
                 session.delete(toBeDeleted.get(0));
                 return null;

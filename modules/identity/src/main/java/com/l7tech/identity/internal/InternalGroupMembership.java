@@ -70,8 +70,8 @@ public class InternalGroupMembership extends GroupMembership {
     }
 
     @Override
-    public void setThisGroupId(String thisGroupId) {
-        this.thisGroupOid = Long.parseLong(thisGroupId);
+    public void setThisGroupId(long thisGroupId) {
+        this.thisGroupOid = thisGroupId;
     }
 
     @Column(name="provider_oid", nullable=false)
