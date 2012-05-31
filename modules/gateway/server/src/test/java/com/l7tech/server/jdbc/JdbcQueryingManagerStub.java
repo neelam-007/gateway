@@ -2,6 +2,7 @@ package com.l7tech.server.jdbc;
 
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 
+import javax.sql.DataSource;
 import java.util.List;
 
 /**
@@ -32,6 +33,11 @@ public class JdbcQueryingManagerStub implements JdbcQueryingManager {
 
     @Override
     public Object performJdbcQuery(String connectionName, String query, int maxRecords, List<Object> preparedStmtParams) {
+        return mockResults;
+    }
+
+    @Override
+    public Object performJdbcQuery(String connectionName, DataSource dataSource, String query, int maxRecords, List<Object> preparedStmtParams) {
         return mockResults;
     }
 }

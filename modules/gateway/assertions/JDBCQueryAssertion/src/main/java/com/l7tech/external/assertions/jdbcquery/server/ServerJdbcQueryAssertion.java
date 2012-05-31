@@ -14,6 +14,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.jdbc.support.rowset.SqlRowSetMetaData;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -48,9 +49,16 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         try {
             final String plainQuery = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), preparedStmtParams, context);
 
-            // Get result by querying.  The result could be a ResultSet object, an integer (updated rows), or a string (a warning message).
             final String connName = ExpandVariables.process(assertion.getConnectionName(), context.getVariableMap(variablesUsed, getAudit()), getAudit());
-            final Object result = jdbcQueryingManager.performJdbcQuery(connName, plainQuery, assertion.getMaxRecords(), preparedStmtParams);
+            DataSource dataSource = null;
+            try {
+                //get the transaction managed datasource, if any
+                dataSource = (DataSource) context.getVariable(JdbcQueryAssertion.TRANSACTION_DATASOURCE + connName);
+            } catch (Exception e) {
+                logger.finer("no existing transaction to join.");
+            }
+            // Get result by querying.  The result could be a ResultSet object, an integer (updated rows), or a string (a warning message).
+            final Object result = jdbcQueryingManager.performJdbcQuery(connName, dataSource, plainQuery, assertion.getMaxRecords(), preparedStmtParams);
 
             // Analyze the result type and perform a corresponding action.
             if (result instanceof String) {
@@ -82,7 +90,8 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                         affectedRows += setContextVariables(rowSet, context, resultCountVariable);
                     }
                     if (resultCount > 1) {
-                        context.setVariable(getVariablePrefix(context) + "." + JdbcQueryAssertion.MULTIPLE_RESULTSET_COUNT, resultCount);
+                        context.setVariable(getVariablePrefix(context) + "." + JdbcQueryAssertion.MULTIPLE_VARIABLE_COUNT, resultCount);
+                        context.setVariable(getVariablePrefix(context) + "." + JdbcQueryAssertion.MULTIPLE_RESULTSET_COUNT, listOfRowSet.size());
                     }
                 }
                 if (affectedRows == 0 && assertion.isAssertionFailureEnabled()) {
@@ -131,8 +140,8 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             } else {
                 //todo [wynne]********** HACK FOR AUDIT SINK POLICY***********************
                 Object value;
-                if(varWithIndex.equals("audit.reqZip") || varWithIndex.equals("audit.resZip"))
-                    value= ExpandVariables.processSingleVariableAsObject("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit());
+                if (varWithIndex.equals("audit.reqZip") || varWithIndex.equals("audit.resZip"))
+                    value = ExpandVariables.processSingleVariableAsObject("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit());
                 else
                     value = ExpandVariables.process("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit());
                 params.add(value);

@@ -7,6 +7,7 @@ import com.l7tech.server.jdbc.JdbcCallHelper;
 import com.l7tech.server.jdbc.JdbcQueryingManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugNumber;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,7 +51,9 @@ public class JdbcCallHelperTest {
     @Mock
     private Connection conn;
     @Mock
-    private ResultSet resultSet;
+    private ResultSet resultSet1;
+    @Mock
+    private ResultSet resultSet2;
     @Mock
     private DatabaseMetaData databaseMetaData;
     @Mock
@@ -70,15 +73,13 @@ public class JdbcCallHelperTest {
         when(conn.getMetaData()).thenReturn(databaseMetaData);
         when(databaseMetaData.getDatabaseProductName()).thenReturn("MySQL");//pretend we are using a MySQL database
 
-        when(resultSet.getString("PROCEDURE_CAT")).thenReturn("test");
-        when(resultSet.getString("PROCEDURE_SCHEM")).thenReturn("test");
-        when(resultSet.getString("PROCEDURE_NAME")).thenReturn("getsamples");
-        when(resultSet.getString("COLUMN_NAME")).thenReturn("inparam");
-        when(resultSet.getInt("COLUMN_TYPE")).thenReturn(1);
-        when(resultSet.next()).thenReturn(true).thenReturn(false);
+        when(resultSet1.getString("PROCEDURE_CAT")).thenReturn("test");
+        when(resultSet1.getString("PROCEDURE_SCHEM")).thenReturn("test");
+        when(resultSet1.getString("PROCEDURE_NAME")).thenReturn("getsamples");
+        when(resultSet1.next()).thenReturn(true).thenReturn(false);
 
-        when(databaseMetaData.getProcedures(anyString(), anyString(), anyString())).thenReturn(resultSet);
-        when(databaseMetaData.getProcedureColumns(anyString(), anyString(), anyString(), anyString())).thenReturn(resultSet);
+        when(databaseMetaData.getProcedures(anyString(), anyString(), anyString())).thenReturn(resultSet1);
+        when(databaseMetaData.getProcedureColumns(anyString(), anyString(), anyString(), anyString())).thenReturn(resultSet1);
         when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyResults());
         when(simpleJdbcCall.getJdbcTemplate()).thenReturn(new JdbcTemplate(dataSource));
     }
@@ -225,7 +226,7 @@ public class JdbcCallHelperTest {
     @Test
     public void testContextVariables() throws Exception {
         PolicyEnforcementContext peCtx = makeContext("<myrequest/>", "<myresponse/>");
-        String query = "CALL GetSamples";
+        String query = "CALL GetSamples ()";
         List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
         JdbcQueryingManagerStub jdbcQueryingManager = (JdbcQueryingManagerStub) appCtx.getBean("jdbcQueryingManager");
         jdbcQueryingManager.setMockResults(results);
@@ -255,6 +256,51 @@ public class JdbcCallHelperTest {
         fixture.checkRequest(peCtx);
         assertNotNull(peCtx.getVariable("jdbcQuery.outparam"));
         assertEquals(((Object[]) peCtx.getVariable("jdbcQuery.outparam"))[0], "output param1");
+    }
+
+    @BugNumber(12255)
+    @Test
+    public void testParameterCount() throws Exception {
+        when(resultSet2.getString("COLUMN_NAME")).thenReturn("inparam");
+        when(resultSet2.getInt("COLUMN_TYPE")).thenReturn(1);
+        when(resultSet2.next()).thenReturn(true).thenReturn(false);
+        when(databaseMetaData.getProcedureColumns(anyString(), anyString(), anyString(), anyString())).thenReturn(resultSet2);
+        try {
+            //expecting a parameter, but passed empty argument
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSamples (?)";
+            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+        try {
+            //not expecting a parameter, but an argument was passed
+            String query = "CALL GetSamples ";
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[]{"value1"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+        try {
+            //parameter vs argument passed does not match, expected 1 vs 2
+            String query = "CALL GetSamples (?,?)";
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[]{"value1", "value2"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+        try {
+            //parameter vs argument passed does not match, expected 2 vs 1
+            String query = "CALL GetSamples (?)";
+            when(resultSet2.next()).thenReturn(true).thenReturn(true).thenReturn(false);//this will mock a 2 required parameter
+            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[]{"value1"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
     }
 
     private PolicyEnforcementContext makeContext(String req, String res) {

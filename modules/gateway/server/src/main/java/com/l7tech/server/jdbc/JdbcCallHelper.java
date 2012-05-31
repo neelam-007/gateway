@@ -3,6 +3,7 @@ package com.l7tech.server.jdbc;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.InvalidResultSetAccessException;
 import org.springframework.jdbc.core.metadata.CallMetaDataContext;
 import org.springframework.jdbc.core.metadata.CallMetaDataProvider;
@@ -65,16 +66,22 @@ public class JdbcCallHelper {
         final MapSqlParameterSource inParameters = new MapSqlParameterSource();
         List<String> queryParameters = getParametersFromQuery(query);
         List<String> parametersNames = getInParametersName(procName);
+        if ((parametersNames.size() != queryParameters.size())) {
+            throw new BadSqlGrammarException("", query, new SQLException("Incorrect number of arguments for " + procName + "; expected " + parametersNames.size() + ", got " + queryParameters.size() + "; query generated was " + query));
+        }
         if (parametersNames.size() > 0) {//input parameters needed
             int paramIndex = 0;
             int varArgIndex = 0;//index of the parameter values from context
             for (final String paramName : parametersNames) {//get all IN parameter names of the procedure
-                Object paramValue = queryParameters.get(paramIndex++);
-                if (paramValue.equals("?"))
+                Object paramValue = null;
+                if (paramIndex < queryParameters.size())
+                    paramValue = queryParameters.get(paramIndex++);
+                if (paramValue != null && paramValue.equals("?"))
                     paramValue = args[varArgIndex++];
-                else if (((String) paramValue).startsWith("@"))//special case if we want to verbose define INOUT param in MS SQL, see known issue
+                else if (paramValue != null && ((String) paramValue).startsWith("@"))//special case if we want to verbose define INOUT param in MS SQL, see known issue
                     paramValue = "";
-                inParameters.addValue(paramName, paramValue);
+                if (paramValue != null)
+                    inParameters.addValue(paramName, paramValue);
                 //there's an issue in MS SQL where OUT param behaves as an INOUT and therefore has the same columnType code
                 //therefore those parameters will be included in the result
                 //workaround in MS SQL is to make sure all IN parameters are declared first before any OUT parameter or introduce a @param or re-use a variable(dummy)
@@ -168,6 +175,9 @@ public class JdbcCallHelper {
         }
         if (marker < query.length()) marker++;
         final String query2 = query.substring(marker);
+        if (query2 != null && (query2.trim().equals("") || query2.trim().equals(")"))) {
+            return values;
+        }
         for (String param : query2.split(",")) {
             param = param.trim();
             while (param.startsWith("(")) {
