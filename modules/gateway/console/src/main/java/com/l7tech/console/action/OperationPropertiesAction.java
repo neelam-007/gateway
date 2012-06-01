@@ -45,7 +45,7 @@ public class OperationPropertiesAction extends NodeActionWithMetaSupport {
             DialogDisplayer.showMessageDialog(f, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
             return;
         }
-        if (!svc.isSoap()) {
+        if (svc == null || !svc.isSoap()) {
             String msg = "This assertion is not applicable to non-SOAP services.";
             DialogDisplayer.showMessageDialog(f, msg, "Not applicable", JOptionPane.ERROR_MESSAGE, null);
             return;
