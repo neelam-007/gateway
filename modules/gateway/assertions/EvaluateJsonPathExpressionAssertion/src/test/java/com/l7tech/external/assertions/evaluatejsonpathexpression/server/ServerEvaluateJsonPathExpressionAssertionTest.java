@@ -200,7 +200,7 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             assertion.setEvaluator("JsonPath");
             assertion.setExpression("$.book2");
             final AssertionStatus status = serverAssertion.checkRequest(pec);
-            Assert.assertEquals(AssertionStatus.NONE, status);
+            Assert.assertEquals(AssertionStatus.FALSIFIED, status);
 
             //check results
             Assert.assertEquals(false, pec.getVariable("jsonPath.found"));

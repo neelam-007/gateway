@@ -80,12 +80,15 @@ public class ServerEvaluateJsonPathExpressionAssertion extends AbstractServerAss
 
     private AssertionStatus evaluateExpression(@NotNull final PolicyEnforcementContext context, @NotNull final Evaluator evaluator,
                                                @NotNull final String sourceJsonString, @NotNull final String expression) {
-        AssertionStatus status = AssertionStatus.NONE;
         try{
             final JsonPathExpressionResult result = evaluator.evaluate(sourceJsonString, expression);
             context.setVariable(assertion.getVariablePrefix() + ".found", result.isFound());
             final int count = result.getCount();
             context.setVariable(assertion.getVariablePrefix() + ".count", count);
+            if(!result.isFound()){
+                logAndAudit(AssertionMessages.EVALUATE_JSON_PATH_NOT_FOUND, expression);
+                return AssertionStatus.FALSIFIED;
+            }
             if(count == 1){
                 context.setVariable(assertion.getVariablePrefix() + ".result", result.getResults().get(0));
             } else if(count > 1){
@@ -95,8 +98,8 @@ public class ServerEvaluateJsonPathExpressionAssertion extends AbstractServerAss
         }
         catch(Evaluator.EvaluatorException e){
             logAndAudit(AssertionMessages.EVALUATE_JSON_PATH_ERROR, e.getMessage());
-            status = AssertionStatus.FAILED;
+            return AssertionStatus.FAILED;
         }
-        return status;
+        return AssertionStatus.NONE;
     }
 }
