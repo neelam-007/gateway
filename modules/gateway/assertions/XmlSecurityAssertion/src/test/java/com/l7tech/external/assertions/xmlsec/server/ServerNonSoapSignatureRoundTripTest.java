@@ -70,12 +70,16 @@ public class ServerNonSoapSignatureRoundTripTest {
     @Test
     public void testSignatureRoundTripEcdsa() throws Exception {
         SyspropUtil.setProperty( "com.l7tech.security.xml.decorator.digsig.messagedigest", "SHA384" );
-        Document doc = createAndSign(NonSoapXmlSecurityTestUtils.ECDSA_KEY_ALIAS);
+        try {
+            Document doc = createAndSign(NonSoapXmlSecurityTestUtils.ECDSA_KEY_ALIAS);
 
-        verifySuccess(NonSoapXmlSecurityTestUtils.getEcdsaKey().getCertificate(),
-                XmlUtil.nodeToString(doc),
-                "http://www.w3.org/2001/04/xmldsig-more#sha384",
-                "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384");
+            verifySuccess(NonSoapXmlSecurityTestUtils.getEcdsaKey().getCertificate(),
+                    XmlUtil.nodeToString(doc),
+                    "http://www.w3.org/2001/04/xmldsig-more#sha384",
+                    "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384");
+        } finally {
+            SyspropUtil.clearProperty("com.l7tech.security.xml.decorator.digsig.messagedigest");
+        }
     }
 
     @Test
