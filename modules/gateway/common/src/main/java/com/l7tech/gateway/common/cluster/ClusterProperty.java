@@ -35,6 +35,7 @@ public class ClusterProperty extends NamedEntityImp implements Comparable {
     private String value;
     private String description;
 
+    // Cluster properties that are hidden in the cluster properties GUI _even if_ they are customized with a non-default value.
     // Currently, there are only a few hidden properties
     // just hardcoded for now, rather than having a whole new DB column and support code
     private static HashSet<String> hiddenInGui = new HashSet<String>();
