@@ -120,13 +120,6 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             } catch (NoSuchVariableException e) {
                 Assert.fail("Should have NOT failed with NoSuchVariableException!");
             }
-            try {
-                pec.getVariable("jsonPath.results");
-                Assert.fail("Should have failed with NoSuchVariableException!");
-            } catch (NoSuchVariableException e) {
-
-            }
-
         } catch (Exception e) {
             Assert.fail("Test JsonPath failed: " + e.getMessage());
         }
@@ -149,13 +142,6 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             } catch (NoSuchVariableException e) {
                 Assert.fail("Should have NOT failed with NoSuchVariableException!");
             }
-            try {
-                pec.getVariable("jsonPath.results");
-                Assert.fail("Should have failed with NoSuchVariableException!");
-            } catch (NoSuchVariableException e) {
-
-            }
-
         } catch (Exception e) {
             Assert.fail("Test JsonPath failed: " + e.getMessage());
         }
@@ -172,17 +158,13 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             //check results
             Assert.assertEquals(true, pec.getVariable("jsonPath.found"));
             Assert.assertEquals(2, pec.getVariable("jsonPath.count"));
-            try {
-                Assert.assertEquals("", pec.getVariable("jsonPath.result"));
-                Assert.fail("Should have failed with NoSuchVariableException!");
-            } catch (NoSuchVariableException e) {
 
-            }
+            String[] expected = new String[]{
+                    "{\"author\":\"Nigel Rees\",\"title\":\"Sayings of the Century\",\"category\":\"reference\",\"price\":8.95}",
+                    "{\"author\":\"Evelyn Waugh\",\"title\":\"Sword of Honour\",\"category\":\"fiction\",\"price\":12.99,\"isbn\":\"0-553-21311-3\"}"
+            };
             try {
-                String[] expected = new String[]{
-                        "{\"author\":\"Nigel Rees\",\"title\":\"Sayings of the Century\",\"category\":\"reference\",\"price\":8.95}",
-                        "{\"author\":\"Evelyn Waugh\",\"title\":\"Sword of Honour\",\"category\":\"fiction\",\"price\":12.99,\"isbn\":\"0-553-21311-3\"}"
-                };
+                Assert.assertEquals(expected[0], pec.getVariable("jsonPath.result"));
                 Object results = pec.getVariable("jsonPath.results");
                 Assert.assertArrayEquals(expected, (Object[]) results);
             } catch (NoSuchVariableException e) {
@@ -290,13 +272,6 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             } catch (NoSuchVariableException e) {
                 Assert.fail("Should have NOT failed with NoSuchVariableException!");
             }
-            try {
-                pec.getVariable("jsonPath.results");
-                Assert.fail("Should have failed with NoSuchVariableException!");
-            } catch (NoSuchVariableException e) {
-
-            }
-
         } catch (Exception e) {
             Assert.fail("Test JsonPath failed: " + e.getMessage());
         }

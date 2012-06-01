@@ -87,14 +87,12 @@ public class ServerEvaluateJsonPathExpressionAssertion extends AbstractServerAss
             context.setVariable(assertion.getVariablePrefix() + ".count", count);
             if(!result.isFound()){
                 logAndAudit(AssertionMessages.EVALUATE_JSON_PATH_NOT_FOUND, expression);
+                context.setVariable(assertion.getVariablePrefix() + ".result", null);
+                context.setVariable(assertion.getVariablePrefix() + ".results", null);
                 return AssertionStatus.FALSIFIED;
             }
-            if(count == 1){
-                context.setVariable(assertion.getVariablePrefix() + ".result", result.getResults().get(0));
-            } else if(count > 1){
-                context.setVariable(assertion.getVariablePrefix() + ".results",
-                        result.getResults().toArray(new String[count]));
-            }
+            context.setVariable(assertion.getVariablePrefix() + ".result", result.getResults().get(0));
+            context.setVariable(assertion.getVariablePrefix() + ".results", result.getResults().toArray(new String[count]));
         }
         catch(Evaluator.EvaluatorException e){
             logAndAudit(AssertionMessages.EVALUATE_JSON_PATH_ERROR, e.getMessage());
