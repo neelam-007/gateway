@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
+import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
@@ -24,6 +25,7 @@ public class AuditRecordCompatibilityVerifier52Test {
 
     @BeforeClass
     public static void initJceProvider() {
+        Security.removeProvider("SunEC");
         // Init jceprovider to ensure a Singature.SHA512withECDSA implementation is available
         JceProvider.init();
     }
