@@ -53,6 +53,9 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
         } else if(factory instanceof AssertionNodeNameFactory){
             AssertionNodeNameFactory nameFactory = (AssertionNodeNameFactory) factory;
             name = nameFactory.getAssertionName(assertion, decorate);
+            if(name != null && name.length() > 60){
+                name = name.substring(0, 60) + "...";
+            }
         } else if (factory != null && factory instanceof String) {
             name = addFeatureNames(assertion, factory.toString());
         } else {
