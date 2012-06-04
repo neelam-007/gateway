@@ -3,12 +3,15 @@ package com.l7tech.external.assertions.generatesecurityhash.console;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.generatesecurityhash.GenerateSecurityHashAssertion;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.assertion.LineBreak;
 import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * The dialog to present the configuration of the {@link com.l7tech.external.assertions.generatesecurityhash.GenerateSecurityHashAssertion} to the user.
@@ -20,10 +23,11 @@ public class GenerateSecurityHashPropertiesDialog extends AssertionPropertiesOkC
     private JComboBox algorithmComboBox;
     private TargetVariablePanel targetVariablePanel;
     private JTextArea dataToSign;
-    private JLabel warningLabel;
     private JRadioButton rbCRLF;
     private JRadioButton rbLF;
     private JRadioButton rbCR;
+
+    private JButton okButton;
 
     /**
      * Construct a new dialog with the given owner.
@@ -117,13 +121,7 @@ public class GenerateSecurityHashPropertiesDialog extends AssertionPropertiesOkC
     }
 
     private void enableOrDisablekeyTextField() {
-        boolean keyRequired = isKeyFieldValueRequired();
-        this.keyTextField.setEnabled(keyRequired);
-        String warningText = "";
-        if(!keyRequired){
-            warningText = "WARNING: the selected algorithm is a weak hashing algorithm.";
-        }
-        warningLabel.setText(warningText);
+        this.keyTextField.setEnabled(isKeyFieldValueRequired());
     }
 
     private boolean isKeyFieldValueRequired() {
@@ -137,5 +135,47 @@ public class GenerateSecurityHashPropertiesDialog extends AssertionPropertiesOkC
 
     private boolean isNonEmptyRequiredTextField(String text) {
         return text != null && !text.trim().isEmpty();
+    }
+
+    @Override
+    protected JButton getOkButton() {
+        if (okButton == null){
+            okButton = new JButton("OK");
+            okButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(final ActionEvent e) {
+                    if(!isKeyFieldValueRequired()){
+                        showNonHmacConfirmation();
+                    }
+                    else {
+                        setConfirmed(true);
+                        dispose();
+                    }
+                }
+            });
+        }
+        return okButton;
+    }
+
+    private void showNonHmacConfirmation() {
+        DialogDisplayer.showSafeConfirmDialog(
+                this,
+                "<html><center><p>Warning: The selected algorithm is non-HMAC and is not recommended as it is a weak algorithm and is exploitable.</p>" +
+                        "<p>Do you wish to continue?</p></center></html>",
+                "Confirm Use of non-HMAC Algorithm",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.CANCEL_OPTION) {
+                            setConfirmed(false);
+                            return;
+                        }
+                        setConfirmed(true);
+                        dispose();
+                    }
+                }
+        );
     }
 }
