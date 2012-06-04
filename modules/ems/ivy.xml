@@ -38,7 +38,7 @@
         <dependency org="org.mortbay.jetty" name="jetty" rev="6.1.26" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.26" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty-sslengine" rev="6.1.26" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-test" rev="3.0.5.RELEASE" force="true" conf="test"/>
+        <dependency org="org.springframework" name="spring-test" rev="3.0.7.RELEASE" force="true" conf="test"/>
         <dependency org="mysql" name="mysql-connector-java" rev="5.1.20" force="true" conf="core"/>
         <dependency org="org.apache.cxf" name="cxf-rt-frontend-jaxws" rev="2.3.10" force="true" conf="core"/>
         <dependency org="org.apache.cxf" name="cxf-rt-transports-http" rev="2.3.10" force="true" conf="core"/>

@@ -31,15 +31,15 @@
         <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.4" force="true" conf="core"/>
         <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.4" force="true" conf="core"/>
         <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.4" force="true" conf="core"/>
-        <dependency org="org.snmp4j" name="snmp4j" rev="1.11.2" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-web" rev="3.0.5.RELEASE" force="true" conf="core"/>
+        <dependency org="org.snmp4j" name="snmp4j" rev="1.11.3" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-web" rev="3.0.7.RELEASE" force="true" conf="core"/>
 
         <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/>
 
         <!-- Hibernate annotations used on beans that we use, so we need the hibernate JAR to compile -->
         <dependency org="org.hibernate" name="hibernate-core" rev="3.6.9.Final" force="true" conf="compile->master"/>
 
-        <dependency org="org.springframework" name="spring-test" rev="3.0.5.RELEASE" force="true" conf="test"/>
+        <dependency org="org.springframework" name="spring-test" rev="3.0.7.RELEASE" force="true" conf="test"/>
 
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
         <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>

@@ -11,7 +11,7 @@
   <library name="org.springframework.spring-test" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
   <library name="org.springframework.spring-tx" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
   <library name="org.springframework.spring-web" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
-  <library name="org.springframework.spring-webmvc" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
+  <library name="org.springframework.spring-web-servlet" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
 
   <!-- Hibernate -->
   <library name="org.hibernate.hibernate-core" javadoc-url="http://docs.jboss.org/hibernate/stable/core/api/"/>

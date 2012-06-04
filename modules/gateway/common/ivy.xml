@@ -20,15 +20,15 @@
         <dependency name="layer7-uddi" rev="latest.integration" conf="core"/>
         <dependency name="layer7-test" rev="latest.integration" conf="test"/>
         <dependency org="aopalliance" name="aopalliance" rev="1.0" force="true" conf="core"/>
-        <dependency org="com.jscape" name="sftp" rev="8.8.0" force="true" conf="core"/>
+        <dependency org="com.jscape" name="sftp" rev="8.8.1" force="true" conf="core"/>
         <dependency org="javax.validation" name="validation-api" rev="1.0.0.GA" force="true" conf="core"/>
         <!-- Hibernate annotations used on beans that we use, so we need the hibernate JAR to compile -->
         <dependency org="org.hibernate" name="hibernate-core" rev="3.6.9.Final" force="true" conf="compile->master"/>
-        <dependency org="org.springframework" name="spring-aop" rev="3.0.5.RELEASE" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-tx" rev="3.0.5.RELEASE" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-orm" rev="3.0.5.RELEASE" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-aop" rev="3.0.7.RELEASE" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-tx" rev="3.0.7.RELEASE" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-orm" rev="3.0.7.RELEASE" force="true" conf="core"/>
         <!-- Required on server -->
-        <dependency org="org.springframework" name="spring-web" rev="3.0.5.RELEASE" force="true" conf="optional"/>
+        <dependency org="org.springframework" name="spring-web" rev="3.0.7.RELEASE" force="true" conf="optional"/>
 
         <!-- RSA needed for running tests (since alternatives jarfiles are not deployed) -->
         <dependency org="com.rsa" name="cryptoj" rev="5.0" force="true" conf="test"/>
