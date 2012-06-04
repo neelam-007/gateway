@@ -45,7 +45,7 @@
         <exclude org="xom" module="xom" ext="jar" matcher="exact" />
         <exclude org="bouncycastle" module="*" ext="jar" matcher="exact" />
 
-        <override org="org.springframework" module="spring-web" matcher="exact" rev="3.0.5.RELEASE"/>
+        <override org="org.springframework" module="spring-web" matcher="exact" rev="3.0.7.RELEASE"/>
     </dependencies>
 
 </ivy-module>
