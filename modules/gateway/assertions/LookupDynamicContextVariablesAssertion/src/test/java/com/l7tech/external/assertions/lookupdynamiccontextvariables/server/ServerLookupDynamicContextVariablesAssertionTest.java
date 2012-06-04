@@ -59,7 +59,7 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
             assertion.setSourceVariable("${sugar}.${foo22222}");
             assertion.setTargetOutputVariable("targetOutput");
             AssertionStatus actual = serverAssertion.checkRequest(pec);
-            Assert.assertEquals(AssertionStatus.NONE, actual);
+            Assert.assertEquals(AssertionStatus.FAILED, actual);
             Assert.assertNull(pec.getVariable(assertion.getTargetOutputVariable()));
             Assert.fail(assertion.getTargetOutputVariable() + " should NOT exist!");
         } catch (Exception e) {
@@ -74,7 +74,7 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
             assertion.setSourceVariable("${sugar}.${foo22222");
             assertion.setTargetOutputVariable("targetOutput");
             AssertionStatus actual = serverAssertion.checkRequest(pec);
-            Assert.assertEquals(AssertionStatus.NONE, actual);
+            Assert.assertEquals(AssertionStatus.FAILED, actual);
             Assert.assertNull(pec.getVariable(assertion.getTargetOutputVariable()));
             Assert.fail(assertion.getTargetOutputVariable() + " should NOT exist!");
         } catch (Exception e) {
@@ -147,7 +147,7 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
         assertion.setTargetDataType(DataType.STRING);
         pec.setVariable("foo", true);
         actual = serverAssertion.checkRequest(pec);
-        Assert.assertEquals(AssertionStatus.NONE, actual);
+        Assert.assertEquals(AssertionStatus.FAILED, actual);
 
         assertion.setTargetDataType(DataType.STRING);
         pec.setVariable("foo", DataType.FLOAT);
