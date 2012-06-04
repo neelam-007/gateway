@@ -27,29 +27,19 @@ public class Av_Pair {
 
     MsvAvType type;
     String name;
-    Av_Pair next;
 
-    public Av_Pair(MsvAvType type, String name, Av_Pair next) {
+    public Av_Pair(MsvAvType type, String name) {
         this.type = type;
         this.name = name;
-        this.next = next;
     }
 
-    public byte[] toByteArray(int off) throws UnsupportedEncodingException {
-        byte[] ret;
-        byte[] data;
-        if (this.next == null) {
-            this.type.value = 0;
-            data = new byte[0];
-            ret = new byte[off + 4];
-        } else {
-            data = this.name != null ? this.name.getBytes("UnicodeLittleUnmarked") : "".getBytes("UnicodeLittleUnmarked");
-            ret = this.next.toByteArray(off + 4 + data.length);
-        }
-        Encdec.enc_uint16le((short) this.type.value, ret, off);
-        Encdec.enc_uint16le((short) data.length, ret, off + 2);
-        System.arraycopy(data, 0, ret, off + 4, data.length);
-
+    public byte[] toByteArray() throws UnsupportedEncodingException {
+        byte[] data = this.name != null ? this.name.getBytes("UnicodeLittleUnmarked") : "".getBytes("UnicodeLittleUnmarked");
+        byte[] ret =  new byte[data.length + 4];
+        Encdec.enc_uint16le((short) this.type.value, ret, 0);
+        Encdec.enc_uint16le((short) data.length, ret, 2);
+        System.arraycopy(data, 0, ret, 4, data.length);
         return ret;
     }
+
 }

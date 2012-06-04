@@ -131,26 +131,26 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
                         log.log(Level.FINE, "NtlmAuthenticationServer: Generating NTLM2 Session Security keys");
 
                         if (state.getSessionKey() == null) {
-                            throw new AuthenticationManagerException("Cannot perform signing or sealing if an NTLMSSP sessionKey is not established");
+                            throw new AuthenticationManagerException("Cannot perform signing or sealing if an NTLMSSP sessionKey is not set");
                         }
                         if ((state.getFlags() & NtlmConstants.NTLMSSP_NEGOTIATE_KEY_EXCH/*0x40000000*/) != 0) {
                             byte[] exchangedKey = authenticateMessage.getSessionKey();
                             if (exchangedKey == null || exchangedKey.length < 16) {
                                 throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_ERROR, "Encrypted exchange key length is invalid");
                             }
-                            byte[] masterKey = new byte[16];
+                            byte[] decryptedKey = new byte[16];
 
                             log.log(Level.FINE, "NtlmAuthenticationServer: Decrypting Key Exchange session key");
 
                             try {
                                 Cipher rc4 = Cipher.getInstance("RC4");
                                 rc4.init(2, new SecretKeySpec(state.getSessionKey(), "RC4"));
-                                rc4.update(exchangedKey, 0, 16, masterKey, 0);
+                                rc4.update(exchangedKey, 0, 16, decryptedKey, 0);
                             } catch (GeneralSecurityException gse) {
                                 throw new AuthenticationManagerException("Failed to decrypt exchange key", gse);
                             }
 
-                            state.setSessionKey(masterKey);
+                            state.setSessionKey(decryptedKey);
                         }
                         log.log(Level.FINE, "NTLMv2 Extended Session Security Key negotiated successfully");
                     } else {

@@ -1,8 +1,11 @@
 package com.l7tech.ntlm.protocol;
 
+import org.apache.commons.lang.ArrayUtils;
+
 import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,29 +36,12 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
 
 
     public enum State {
-        DEFAULT(0),
-        NEGOTIATE(1),
-        CHALLENGE(2),
-        AUTHENTICATE(3),
-        COMPLETE(4),
-        FAILED(5);
-
-        int val;
-
-        private State(int val) {
-            this.val = val;
-        }
-
-        public static State toState(int val) {
-            State[] states = State.values();
-            for (State state : states) {
-                if (state.val == val) {
-                    return state;
-                }
-            }
-            return DEFAULT;
-        }
-
+        DEFAULT,
+        NEGOTIATE,
+        CHALLENGE,
+        AUTHENTICATE,
+        COMPLETE,
+        FAILED
     }
 
     static final long MILLISECONDS_BETWEEN_1970_AND_1601 = 11644473600000L;
@@ -96,7 +82,7 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
     }
 
     @Override
-    public byte[] requestAuthentication(byte[] token, PasswordCredential creds) throws AuthenticationManagerException {
+    public byte[] requestAuthentication(byte[] token, NtlmCredential creds) throws AuthenticationManagerException {
         throw new AuthenticationManagerException("Not implemented!");
     }
 
@@ -116,24 +102,29 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
     protected byte[] getTargetInfo() throws AuthenticationManagerException {
 
         if ((state.getTargetInfo() == null) || (state.getTargetInfo().length == 0)) {
-            Av_Pair targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null);
+            LinkedList<Av_Pair> targetInfoList  =  new LinkedList<Av_Pair>();
+            targetInfoList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, ""));
             if (containsKey("localhost.dns.name")) {
-                targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsComputerName, (String) get("localhost.dns.name"), targetInfoList);
+                targetInfoList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsComputerName, (String) get("localhost.dns.name")));
             }
             if (containsKey("domain.dns.name")) {
-                targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsDomainName, (String) get("domain.dns.name"), targetInfoList);
+                targetInfoList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsDomainName, (String) get("domain.dns.name")));
             }
             if (containsKey("localhost.netbios.name")) {
-                targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) get("localhost.netbios.name"), targetInfoList);
+                targetInfoList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) get("localhost.netbios.name")));
             }
             if (containsKey("domain.netbios.name")) {
-                targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbDomainName, (String) get("domain.netbios.name"), targetInfoList);
+                targetInfoList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvNbDomainName, (String) get("domain.netbios.name")));
             }
             if (containsKey("tree.dns.name")) {
-                targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsTreeName, (String) get("tree.dns.name"), targetInfoList);
+                targetInfoList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsTreeName, (String) get("tree.dns.name")));
             }
             try {
-                state.setTargetInfo(targetInfoList.toByteArray(0));
+                byte[] targetInfo = new byte[0];
+                for(Av_Pair avPair : targetInfoList) {
+                    targetInfo = ArrayUtils.addAll(targetInfo, avPair.toByteArray());
+                }
+                state.setTargetInfo(targetInfo);
             } catch (UnsupportedEncodingException uee) {
                 throw new AuthenticationManagerException(uee.getMessage());
             }

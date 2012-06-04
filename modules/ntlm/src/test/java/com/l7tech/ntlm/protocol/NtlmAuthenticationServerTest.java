@@ -5,11 +5,13 @@ import com.l7tech.ntlm.adapter.LocalAuthenticationAdapter;
 import com.l7tech.util.HexUtils;
 import jcifs.ntlmssp.Type1Message;
 import jcifs.ntlmssp.Type3Message;
+import org.apache.commons.lang.ArrayUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
@@ -44,43 +46,49 @@ public class NtlmAuthenticationServerTest {
 
     }
 
-
     @Test
-    public void shouldReturnFullTargetInfo() throws Exception {
-        Av_Pair expectedTargetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbDomainName, (String) fixture.get("domain.netbios.name"),
-                new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) fixture.get("localhost.netbios.name"),
-                        new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsDomainName, (String) fixture.get("domain.dns.name"),
-                                new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsComputerName, (String) fixture.get("localhost.dns.name"),
-                                        new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null)))));
+    public void shouldReturnFullTargetInfo2() throws Exception {
+        LinkedList<Av_Pair> avpairList  =  new LinkedList<Av_Pair>();
 
+        avpairList.add(new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, ""));
+        avpairList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsComputerName, (String) fixture.get("localhost.dns.name")));
+        avpairList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsDomainName, (String) fixture.get("domain.dns.name")));
+        avpairList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) fixture.get("localhost.netbios.name")));
+        avpairList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvNbDomainName, (String) fixture.get("domain.netbios.name")));
 
-        assertArrayEquals(expectedTargetInfoList.toByteArray(0), fixture.getTargetInfo());
+        byte[] expectedTargetInfo = new byte[0];
+        for(Av_Pair av_pair: avpairList){
+            expectedTargetInfo = ArrayUtils.addAll(expectedTargetInfo, av_pair.toByteArray());
+        }
+
+        assertArrayEquals(expectedTargetInfo, fixture.getTargetInfo());
     }
 
     @Test
     public void shouldReturnLocalhostOnlyTargetInfo() throws Exception {
-        Av_Pair expectedTargetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) fixture.get("localhost.netbios.name"), new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null));
+        byte[] expectedTargetInfo = new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "").toByteArray();
+        expectedTargetInfo = ArrayUtils.addAll(new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) fixture.get("localhost.netbios.name")).toByteArray(), expectedTargetInfo);
         fixture.remove("domain.netbios.name");
         fixture.remove("domain.dns.name");
         fixture.remove("localhost.dns.name");
         assertTrue(fixture.size() == 3);
-        assertArrayEquals(expectedTargetInfoList.toByteArray(0), fixture.getTargetInfo());
+        assertArrayEquals(expectedTargetInfo, fixture.getTargetInfo());
     }
 
     @Test
     public void shouldReturnEmptyTargetInfo() throws Exception {
-        Av_Pair expectedTargetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null);
+        Av_Pair expectedTargetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "");
         fixture.remove("domain.netbios.name");
         fixture.remove("domain.dns.name");
         fixture.remove("localhost.dns.name");
         fixture.remove("localhost.netbios.name");
         assertTrue(fixture.size() == 2);
-        assertArrayEquals(expectedTargetInfoList.toByteArray(0), fixture.getTargetInfo());
+        assertArrayEquals(expectedTargetInfoList.toByteArray(), fixture.getTargetInfo());
     }
 
     @Test
     public void shouldAuthenticateUser() throws Exception {
-        PasswordCredential credential = new PasswordCredential("user@l7tech.com" /*"L7TECH\\user"*/, "password".toCharArray());
+        NtlmCredential credential = new NtlmCredential("user@l7tech.com" /*"L7TECH\\user"*/, "password".toCharArray());
         authenticate(credential);
         Map testAccount = fixture.getNtlmAuthenticationState().getAccountInfo();
         assertEquals("user", testAccount.get("sAMAccountName"));
@@ -90,7 +98,7 @@ public class NtlmAuthenticationServerTest {
 
     @Test(expected = AuthenticationManagerException.class)
     public void shouldFailWhenCredentialsIncorrect() throws Exception {
-        PasswordCredential credential = new PasswordCredential("user", "pass".toCharArray());
+        NtlmCredential credential = new NtlmCredential("user", "pass".toCharArray());
         authenticate(credential);
 
     }
@@ -116,7 +124,7 @@ public class NtlmAuthenticationServerTest {
 
     @Test
     public void shouldAuthenticateClient() throws Exception {
-        PasswordCredential creds = new PasswordCredential("user@l7tech.com" /*"L7TECH\\user"*/, "password".toCharArray());
+        NtlmCredential creds = new NtlmCredential("user@l7tech.com" /*"L7TECH\\user"*/, "password".toCharArray());
 
         NtlmAuthenticationClient client = new NtlmAuthenticationClient(fixture);
         //client.put("flags", "0xA0088005");
@@ -137,15 +145,15 @@ public class NtlmAuthenticationServerTest {
         assertEquals("l7tech.com", testAccount.get("domain.dns.name"));
     }
 
-    void authenticate(PasswordCredential creds) throws Exception {
+    void authenticate(NtlmCredential creds) throws Exception {
 
         byte[] token = new byte[0];
         try {
             state = new NtlmAuthenticationState();
-            Type1Message type1Message = NtlmClient.generateType1Msg(creds.getSecurityPrincipal().getDomain(), NtlmTestConstants.WORKSTATION);
+            Type1Message type1Message = NtlmClient.generateType1Msg(creds.getDomain(), NtlmTestConstants.WORKSTATION);
             token = fixture.processAuthentication(type1Message.toByteArray());
-            Type3Message type3Message = NtlmClient.generateType3Msg(creds.getSecurityPrincipal().getUsername(),
-                    new String(creds.getPassword()), creds.getSecurityPrincipal().getDomain(), NtlmTestConstants.WORKSTATION, HexUtils.encodeBase64(token, true));
+            Type3Message type3Message = NtlmClient.generateType3Msg(creds.getName(),
+                    new String(creds.getPassword()), creds.getDomain(), NtlmTestConstants.WORKSTATION, HexUtils.encodeBase64(token, true));
             token = fixture.processAuthentication(type3Message.toByteArray());
         } finally {
             int i;

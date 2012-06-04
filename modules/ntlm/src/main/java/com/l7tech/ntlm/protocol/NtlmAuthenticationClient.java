@@ -43,15 +43,14 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
      * @throws AuthenticationManagerException
      */
     @Override
-    public byte[] requestAuthentication(byte[] token, PasswordCredential cred) throws AuthenticationManagerException {
+    public byte[] requestAuthentication(byte[] token, NtlmCredential cred) throws AuthenticationManagerException {
         int flags = state.getFlags();
         String workstation = cred.getHost();
         if (StringUtils.isEmpty(workstation)) {
             workstation = (String) get("localhost.netbios.name");
         }
-        NtlmSecurityPrincipal principal = cred.getSecurityPrincipal();
-        String name = principal.getName();
-        String domainName = principal.getDomain();
+        String name = cred.getName();
+        String domainName = cred.getDomain();
 
         try {
             switch (state.getState()) {

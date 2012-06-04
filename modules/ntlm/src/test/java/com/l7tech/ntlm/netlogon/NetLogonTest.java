@@ -6,6 +6,7 @@ import com.l7tech.util.HexUtils;
 import jcifs.ntlmssp.Type1Message;
 import jcifs.ntlmssp.Type2Message;
 import jcifs.ntlmssp.Type3Message;
+import org.apache.commons.lang.ArrayUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -47,6 +48,19 @@ public class NetLogonTest {
     public void testConnect() throws Exception {
         fixture.connect();
     }
+
+/*    @Test
+    public void testConnectNetlogonConnection() throws Exception {
+        NetlogonConnection netlogonConnection = new NetlogonConnection();
+        String hostname = properties.get("localhost.netbios.name");
+        String serverName = properties.get("server.dns.name");
+        String serviceName = properties.get("service.account");
+        String servicePassword = properties.get("service.password");
+        NtlmServiceAccount serviceAccount = new NtlmServiceAccount(serviceName, servicePassword);
+
+       netlogonConnection.connect(serverName, serverName, serviceAccount, new SecureRandom());
+
+    }*/
 
     @Test
     public void testValidate() throws Exception {
@@ -112,11 +126,7 @@ public class NetLogonTest {
     }
 
     public byte[] getTargetInformation() throws UnsupportedEncodingException {
-        Av_Pair targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvNbDomainName, properties.get("domain.netbios.name"), new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, properties.get("localhost.netbios.name"), new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsDomainName, properties.get("domain.dns.name"), new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsComputerName, properties.get("localhost.dns.name"), new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "", null)))));
-        if (properties.containsKey("tree.dns.name")) {
-            targetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsTreeName, properties.get("tree.dns.name"), targetInfoList);
-        }
-        return targetInfoList.toByteArray(0);
+        return ArrayUtils.addAll( new Av_Pair(Av_Pair.MsvAvType.MsvAvNbDomainName, properties.get("domain.netbios.name")).toByteArray(), new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "").toByteArray());
     }
 
 

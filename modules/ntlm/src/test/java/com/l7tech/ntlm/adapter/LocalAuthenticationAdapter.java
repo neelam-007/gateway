@@ -2,8 +2,10 @@ package com.l7tech.ntlm.adapter;
 
 import com.l7tech.ntlm.protocol.NtlmChallengeResponse;
 import com.l7tech.ntlm.protocol.AuthenticationManagerException;
+import com.l7tech.ntlm.protocol.TestNtlmChallengeResponse;
 
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,10 +40,9 @@ public class LocalAuthenticationAdapter extends HashMap implements Authenticatio
         if ((domain.equalsIgnoreCase(nbtName)) || (domain.equalsIgnoreCase(dnsName))) {
             if (username.equalsIgnoreCase(myusername)) {
 
-                NtlmChallengeResponse local = new NtlmChallengeResponse(response, domain, myusername, mypassword.toCharArray(), response.getTargetInformation());
+                NtlmChallengeResponse local = new TestNtlmChallengeResponse(response, domain, myusername, mypassword.toCharArray(), response.getTargetInformation());
 
-                if (response.equals(local)) {
-
+                if (Arrays.equals(response.getNtResponse(), local.getNtResponse())) {
                     account.put("domain.dns.name", domain);
                     account.put("sAMAccountName", username);
                     byte[] sessionKey = new byte[16];

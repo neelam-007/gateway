@@ -134,10 +134,10 @@ public class Ntlm2AuthScheme implements AuthScheme{
         return "NTLM " + response;
     }
 
-    private PasswordCredential convertCredentials(Credentials credentials) throws AuthenticationException, AuthenticationManagerException {
+    private NtlmCredential convertCredentials(Credentials credentials) throws AuthenticationException, AuthenticationManagerException {
         if(credentials instanceof NTCredentials) {
             NTCredentials ntCredentials = (NTCredentials)credentials;
-            return new PasswordCredential(ntCredentials.getHost(), ntCredentials.getDomain(), ntCredentials.getUserName(), ntCredentials.getPassword().toCharArray());
+            return new NtlmCredential(ntCredentials.getHost(), ntCredentials.getDomain(), ntCredentials.getUserName(), ntCredentials.getPassword().toCharArray());
         }
         throw new AuthenticationException("Expected NTCredentials");
     }
