@@ -34,6 +34,8 @@ import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -157,6 +159,13 @@ public class PrivateKeyManagerWindow extends JDialog {
             }
         });
 
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                dispose();
+            }
+        });
+
         pack();
         enableOrDisableButtons();
 
@@ -169,9 +178,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         Utilities.setDoubleClickAction(keyTable, propertiesButton);
 
         loadPrivateKeys();
-        if(activeKeypairJob.getKeypairJobId() != null) {
-            checkActiveJob();
-        }
+        checkActiveJob();
     }
 
     private void disableManagementButtons() {
@@ -619,9 +626,6 @@ public class PrivateKeyManagerWindow extends JDialog {
                 if (dlg.isConfirmed()) {
                     setActiveKeypairJob(dlg.getKeypairJobId(), dlg.getNewAlias(), dlg.getSecondsToWaitForJobToFinish());
                     loadPrivateKeys();
-                    if(activeKeypairJob.getKeypairJobId() != null){
-                        checkActiveJob();
-                    }
                 }
             }
         });
@@ -647,10 +651,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        if(activeKeypairJob.getKeypairJobId() == null) {
-                            cancel();
-                            return;
-                        }
+                        iconFlipCount.incrementAndGet();
                         if (showingInScrollPane != keyTable) {
                             loadPrivateKeys();
                         }
@@ -847,6 +848,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         private final KeystoreFileEntityHeader keystoreInfo;
         private final boolean certCaCapable;
         private final EnumSet<SpecialKeyType> specialKeyTypeDesignations;
+        private int specialKeyTypeIndex = 0;
         private final boolean hasRestrictedAccessDesignation;
         private SsgKeyEntry keyEntry;
         private String keyType = null;
@@ -923,6 +925,11 @@ public class PrivateKeyManagerWindow extends JDialog {
 
         public EnumSet<SpecialKeyType> getSpecialKeyTypeDesignations() {
             return specialKeyTypeDesignations;
+        }
+        
+        public Integer getCurrentSpecialKeyTypeIndex() {
+            EnumSet<SpecialKeyType> specialKeyTypes = getSpecialKeyTypeDesignations();
+            return specialKeyTypeIndex++ % specialKeyTypes.size();
         }
 
         public boolean isRestrictedAccessDesignation() {
@@ -1104,7 +1111,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
                     new Col(" ", 19, 19, 19, Object.class) {
                         @Override
-                        Object getValueForRow(KeyTableRow row) {
+                        Object getValueForRow(final KeyTableRow row) {
                             final List<Icon> icons = new ArrayList<Icon>();
                             for (SpecialKeyType type : row.getSpecialKeyTypeDesignations()) {
                                 Icon icon = getIconForSpecialKeyType(type);
@@ -1118,7 +1125,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
                                 @Override
                                 public void paintIcon(Component c, Graphics g, int x, int y) {
-                                    int toDisp = (iconFlipCount.get() / TICKS_PER_ICON_REPAINT) % numIcons;
+                                    int toDisp = row.getCurrentSpecialKeyTypeIndex();
                                     Icon icon = icons.get(toDisp);
                                     if (icon != null)
                                         icon.paintIcon(c, g, x,y);
