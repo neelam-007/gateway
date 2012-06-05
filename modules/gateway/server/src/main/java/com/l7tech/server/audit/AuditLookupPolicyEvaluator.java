@@ -177,8 +177,7 @@ public class AuditLookupPolicyEvaluator  {
                             SecurityTokenType.getByName(authenticationType),
                             providerOid,
                             userName,
-                            userId,
-                            null ) ;  //mappingValueOidHaver
+                            userId) ;
 
 
 

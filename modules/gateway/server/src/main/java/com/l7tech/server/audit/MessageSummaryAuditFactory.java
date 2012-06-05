@@ -52,13 +52,11 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class MessageSummaryAuditFactory implements PropertyChangeListener {
+public class MessageSummaryAuditFactory{
     private final String nodeId;
     private static final Logger logger = Logger.getLogger(MessageSummaryAuditFactory.class.getName());
     private static final Charset FALLBACK_ENCODING = Charsets.ISO8859;
 
-    private MessageContextMappingManager messageContextMappingManager;
-    private boolean addMappingsIntoAudit;
     private IdentityProviderFactory identityProviderFactory;
 
     public MessageSummaryAuditFactory(String nodeId) {
@@ -66,7 +64,6 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
             throw new IllegalArgumentException("Cluster Node ID is required");
         }
         this.nodeId = nodeId;
-        addMappingsIntoAudit = ConfigFactory.getBooleanProperty(ServerConfigParams.PARAM_ADD_MAPPINGS_INTO_AUDIT,false);
     }
 
     public MessageSummaryAuditRecord makeEvent(final PolicyEnforcementContext context, AssertionStatus status ) {
@@ -168,24 +165,6 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
             }
         };
 
-        // Mapping info
-        Number mapping_values_oid = null;
-        if (addMappingsIntoAudit) {
-            mapping_values_oid = new Number(){
-                private long mvoid=Long.MIN_VALUE;
-                public long longValue() {
-                    if ( mvoid==Long.MIN_VALUE ) {
-                        Long result = saveMessageContextMapping(operationNameHaver, authUser, context.getMappings());
-                        mvoid = result == null ? -1 : result;
-                    }
-                    return mvoid;
-                }
-                public int intValue() { return (int)longValue(); }
-                public float floatValue() { return (float)longValue(); }
-                public double doubleValue() { return (double)longValue(); }
-            };
-        }
-
         MessageSummaryAuditRecord ret = new MessageSummaryAuditRecord(context.getAuditLevel(), nodeId, requestId, status, clientAddr,
                                              context.isAuditSaveRequest() ? requestXml : null,
                                              requestContentLength,
@@ -194,67 +173,14 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
                                              responseHttpStatus,
                                              routingLatency,
                                              serviceOid, serviceName, operationNameHaver,
-                                             authenticated, authType, identityProviderOid, userName, userId,
-                                             mapping_values_oid);
+                                             authenticated, authType, identityProviderOid, userName, userId);
         ret.originalPolicyEnforcementContext(context);
         return ret;
     }
 
-    public void setMessageContextMappingManager(MessageContextMappingManager messageContextMappingManager) {
-        this.messageContextMappingManager = messageContextMappingManager;
-    }
 
     public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
         this.identityProviderFactory = identityProviderFactory;
-    }
-
-    public void propertyChange(PropertyChangeEvent event) {
-        if ( ServerConfigParams.PARAM_ADD_MAPPINGS_INTO_AUDIT.equals(event.getPropertyName())) {
-            if (Boolean.valueOf((String)event.getNewValue())) {
-                addMappingsIntoAudit = true;
-            } else {
-                addMappingsIntoAudit = false;
-                logger.info("Adding message context mappings to Gateway Audit Events is currently disabled.");
-            }
-        }
-    }
-
-    private Long saveMessageContextMapping(Object operationHaver, User user, List<MessageContextMapping> mappings) {
-        if (messageContextMappingManager == null) return null;
-
-        MessageContextMappingKeys keysEntity = new MessageContextMappingKeys();
-        MessageContextMappingValues valuesEntity = new MessageContextMappingValues();
-
-        keysEntity.setCreateTime(System.currentTimeMillis());
-        valuesEntity.setCreateTime(System.currentTimeMillis());
-        valuesEntity.setServiceOperation(operationHaver.toString());
-
-        if ( mappings != null ) {
-            int index = 0;
-            for ( MessageContextMapping mapping : mappings ) {
-                if ( mapping.getMappingType() == MessageContextMapping.MappingType.AUTH_USER ) {
-                    if (user != null) {
-                        valuesEntity.setAuthUserId(describe(user.getProviderId(), user.getId()));
-                        valuesEntity.setAuthUserUniqueId(user.getId());
-                        valuesEntity.setAuthUserProviderId( user.getProviderId() );
-                    }
-                } else {
-                    keysEntity.setTypeAndKey(index, mapping.getMappingType(), mapping.getKey());
-                    valuesEntity.setValue(index, mapping.getValue());
-                    index++;
-                }
-            }
-        }
-
-        try {
-            long mapping_keys_oid = messageContextMappingManager.saveMessageContextMappingKeys(keysEntity);
-            valuesEntity.setMappingKeysOid(mapping_keys_oid);
-
-            return messageContextMappingManager.saveMessageContextMappingValues(valuesEntity);
-        } catch (Exception e) {
-            logger.warning("Failed to save the keys or values of the message context mapping.");
-            return null;
-        }
     }
 
     private String getMessageBodyText(Message msg, int[] lengthHolder, boolean isRequest) {

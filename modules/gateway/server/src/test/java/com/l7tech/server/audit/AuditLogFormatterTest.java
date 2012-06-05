@@ -470,8 +470,7 @@ public class AuditLogFormatterTest {
                     true,
                     SECURITY_TOKEN,
                     IDENTITY_PROV_OID,
-                    USER_NAME, USER_ID,
-                    3);
+                    USER_NAME, USER_ID);
         }
     }
 

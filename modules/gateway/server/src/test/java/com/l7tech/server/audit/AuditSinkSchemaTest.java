@@ -47,14 +47,14 @@ public class AuditSinkSchemaTest {
     private static final String SAVE_DETAIL_QUERY = "insert into ${auditDetailTable}(id, audit_oid,time,component_id,ordinal,message_id,exception_message,properties) values " +
             "(${i.current.id},${i.current.auditId},${i.current.time},${i.current.componentId},${i.current.ordinal},${i.current.messageId},${i.current.exception},${i.current.properties});";
 
-    private static final String SAVE_RECORD_QUERY = "insert into ${auditRecordTable}(id,nodeid,time,type,audit_level,name,message,ip_address,user_name,user_id,provider_oid,signature,properties," +
+    private static final String SAVE_RECORD_QUERY = "insert into ${auditRecordTable} (id,nodeid,time,type,audit_level,name,message,ip_address,user_name,user_id,provider_oid,signature,properties," +
             "entity_class,entity_id," +
             "status,request_id,service_oid,operation_name,authenticated,authenticationType,request_length,response_length,request_xml,response_xml,response_status,routing_latency," +
             "component_id,action)" +
             " values " +
-            "(${audit.id},${audit.nodeId},${audit.time},${audit.type},${audit.level},${audit.message},${audit.name},${audit.ipAddress},${audit.user.name},${audit.user.id},${audit.user.idProv},${audit.signature},${audit.properties}," +
+            "(${record.guid},${audit.nodeId},${audit.time},${audit.type},${audit.level},${audit.name},${audit.message},${audit.ipAddress},${audit.user.name},${audit.user.id},${audit.user.idProv},${audit.signature},${audit.properties}," +
             "${audit.entity.class},${audit.entity.oid}," +
-            "${audit.status},${audit.requestId},${audit.serviceOid},${audit.operationName},${audit.authenticated},${audit.authTypeNum},${audit.request.size},${audit.response.size},${audit.request.mainpart},${audit.response.mainpart},${audit.responseStatus},${audit.latency}," +
+            "${audit.status},${audit.requestId},${audit.serviceOid},${audit.operationName},${audit.authenticated},${audit.authType},${audit.request.size},${audit.response.size},${audit.reqZip},${audit.resZip},${audit.responseStatus},${audit.routingLatency}," +
             "${audit.componentId},${audit.action});";
 
     @Before
@@ -80,10 +80,10 @@ public class AuditSinkSchemaTest {
 
     private void checkAuditDetail(AuditDetail detail) throws Exception {
         if(cleanup){
-            String query = "select * from "+auditDetailTable+" where id ='"+detail.getGuid()+"'";
+            String query = "select * from "+auditDetailTable+" where audit_oid ='"+detail.getAuditGuid()+"' and ordinal = "+detail.getOrdinal() ;
             int result = performJdbcQuery( query);
-            if(result != 0)
-                deleteRow(auditDetailTable,detail.getGuid());
+//            if(result != 0)
+//                deleteRow(auditDetailTable,detail.getGuid()); todo
             assertTrue("Audit detail not deleted with corresponding audit record", result == 0  );
         }
     }
@@ -174,12 +174,13 @@ public class AuditSinkSchemaTest {
                 "responseXml", 6 , 1234, 5678,
                 7, "serviceName", "operationNameHaver",
                 true, SecurityTokenType.UNKNOWN, -5,
-                "userName", "userId", -10);
+                "userName", "userId");
         signAuditRecord(record);
 
         AuditSinkPolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(record,  PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,makeContext("<myrequest/>", "<myresponse/>"));
         String query = SAVE_RECORD_QUERY;
         query = query.replace("${auditRecordTable}",auditRecordTable);
+        query = query.replace("${record.guid}",record.getGuid());
         query = resolveContextVariables(context, query);
         int result = performJdbcQuery(query);
         success = result==1;

@@ -52,7 +52,6 @@ create table audit_main (
 create table audit_message (
     authenticated smallint default 0,
     authenticationType integer,
-    mapping_values_oid bigint,
     operation_name varchar(255),
     request_length integer not null,
     request_zipxml blob(2147483647),
@@ -128,11 +127,6 @@ alter table audit_detail_params
     foreign key (audit_detail_oid)
     references audit_detail
     on delete cascade;
-
-alter table audit_message
-    add constraint FK33C837A384D0EAD
-    foreign key (mapping_values_oid)
-    references message_context_mapping_values;
 
 alter table audit_message
     add constraint FK33C837A37AEF109A

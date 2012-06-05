@@ -384,13 +384,6 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
             }
         });
 
-        messageFields.put("mappingValuesOid", new FieldGetter<MessageSummaryAuditRecord>() {
-            @Override
-            public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
-                return new Selection(rec.getMappingValuesOid());
-            }
-        });
-
         messageFields.put("operationName", new FieldGetter<MessageSummaryAuditRecord>() {
             @Override
             public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
@@ -484,7 +477,6 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
         allAvaliableFields.add("entity.class");
         allAvaliableFields.add("entity.oid");
         allAvaliableFields.add("authType");
-        allAvaliableFields.add("mappingValuesOid");
         allAvaliableFields.add("operationName");
         allAvaliableFields.add("requestSavedFlag");
         allAvaliableFields.add("responseSavedFlag");

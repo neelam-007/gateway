@@ -64,7 +64,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
                                      String responseXml, int responseContentLength, int httpRespStatus, int routingLatency,
                                      long serviceOid, String serviceName, Object operationNameHaver,
                                      boolean authenticated, SecurityTokenType authenticationType, long identityProviderOid,
-                                     String userName, String userId, Number mappingValueOidHaver)
+                                     String userName, String userId)
     {
         super(level, nodeId, clientAddr, identityProviderOid, userName, userId, serviceName, null);
         StringBuffer msg = new StringBuffer("Message ");
@@ -94,7 +94,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.serviceOid = serviceOid;
         this.authenticated = authenticated;
         this.authenticationType = authenticationType;
-        this.mappingValueOidHaver = mappingValueOidHaver;
     }
 
     /**
@@ -198,22 +197,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         return operationName;
     }
 
-    public Long getMappingValuesOid() {
-        if ( mappingValuesOid == null ) {
-            if (mappingValueOidHaver != null) {
-                mappingValuesOid = mappingValueOidHaver.longValue();
-                if ( mappingValuesOid <= 0 ) mappingValuesOid = null;
-            }
-
-        }
-        return mappingValuesOid;
-    }
-
-    public void setMappingValuesOid(Long mappingValuesOid) {
-        this.mappingValueOidHaver = null;
-        this.mappingValuesOid = mappingValuesOid;
-    }
-
     /** @deprecated to be called only for serialization and persistence purposes! */
     @Deprecated
     protected void setOperationName(String operationName) {
@@ -283,27 +266,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.routingLatency = routingLatency;
     }
 
-    public MessageContextMappingValues getMappingValuesEntity() {
-        return mappingValuesEntity;
-    }
-
-    public void setMappingValuesEntity(MessageContextMappingValues mappingValuesEntity) {
-        this.mappingValuesEntity = mappingValuesEntity;
-    }
-
-    public MessageContextMapping[] obtainMessageContextMappings() {
-        if (mappingValuesEntity == null) return new MessageContextMapping[0];
-        MessageContextMappingKeys mappingKeysEntity = mappingValuesEntity.getMappingKeysEntity();
-        if (mappingKeysEntity == null) return new MessageContextMapping[0];
-
-        List<MessageContextMapping> mappings = mappingKeysEntity.obtainMappingsWithEmptyValues();
-        String[] mappingValues = mappingValuesEntity.obtainValues();
-        for (int i = 0; i < mappings.size(); i++) {
-            mappings.get(i).setValue(mappingValues[i]);
-        }
-
-        return mappings.toArray(new MessageContextMapping[mappings.size()]);
-    }
 
     /**
      * Get the associated original policy enforcement context; used while running within the Gateway.
@@ -364,13 +326,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     /** Used to lazily populate operationName if it is not yet set. */
     private Object operationNameHaver;
-
-    private Long mappingValuesOid;
-
-    /** Used to lazily populate mapping_values_oid if it is not yet set. */
-    private Number mappingValueOidHaver;
-
-    private MessageContextMappingValues mappingValuesEntity;
 
     /** Holds the original policy enforcement context for Message Summary Audit Records. */
     private transient Object originalPolicyEnforcementContext;

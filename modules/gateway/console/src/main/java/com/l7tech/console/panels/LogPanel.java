@@ -1214,24 +1214,6 @@ public class LogPanel extends JPanel {
                     msg += TextUtils.pad("Auth Method", maxWidth) + ": " + sum.getAuthenticationType().getName() + "\n";
                 }
 
-                MessageContextMapping[] mappings = sum.obtainMessageContextMappings();
-                if (mappings != null && mappings.length > 0) {
-                    StringBuilder sb = new StringBuilder("\nMessage Context Mappings\n");
-                    boolean foundCustomMapping = false;
-                    for (MessageContextMapping mapping : mappings) {
-//                        if (mapping.getMappingType().equals(MessageContextMapping.MappingType.CUSTOM_MAPPING))
-                        {
-                            sb.append(TextUtils.pad("Mapping Key", maxWidth)).append(": ").append(mapping.getKey()).append("\n");
-                            sb.append(TextUtils.pad("Mapping Value", maxWidth)).append(": ").append(mapping.getValue()).append("\n");
-                            foundCustomMapping = true;
-                        }
-                    }
-
-                    if (foundCustomMapping) {
-                        msg += sb.toString();
-                    }
-                }
-
                 if (sum.getRequestXml() != null) {
                     reqXmlVisible = true;
                     reqXmlDisplayed = sum.getRequestXml();

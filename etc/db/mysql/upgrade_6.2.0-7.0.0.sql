@@ -14,6 +14,10 @@ SET FOREIGN_KEY_CHECKS=0;
 --
 UPDATE ssg_version SET current_version = '7.0.0';
 
+-- External audits enhancements
+ALTER TABLE audit_message DROP FOREIGN KEY message_context_mapping;
+ALTER TABLE audit_message DROP COLUMN mapping_values_oid ;
+
 --
 -- Reenable FK at very end of script
 --
