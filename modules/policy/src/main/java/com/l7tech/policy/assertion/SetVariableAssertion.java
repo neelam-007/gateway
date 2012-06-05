@@ -48,8 +48,6 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
      */
     private String _contentType;
 
-    private String format;
-
     private transient VariableMetadata _meta;   // just for caching
 
     public SetVariableAssertion() {
@@ -131,16 +129,6 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
     public void setLineBreak(LineBreak lineBreak) {
         _lineBreak = lineBreak;
     }
-
-
-    public String getFormat() {
-        return format;
-    }
-
-    public void setFormat(String format) {
-        this.format = format;
-    }
-
 
     @Override
     public VariableMetadata[] getVariablesSet() {

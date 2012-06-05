@@ -6,7 +6,6 @@ import com.l7tech.util.Functions;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -111,8 +110,6 @@ public interface ValueConverter<RT> {
                 dataType = DataType.BOOLEAN;
             } else if ( value instanceof Double ) {
                 dataType = DataType.FLOAT;
-            } else if ( value instanceof Date) {
-                dataType = DataType.DATE_TIME;
             } else {
                 dataType = null;
             }

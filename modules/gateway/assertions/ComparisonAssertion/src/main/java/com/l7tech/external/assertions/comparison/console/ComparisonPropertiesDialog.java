@@ -19,7 +19,10 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
@@ -49,7 +52,6 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         DataType.INTEGER,
         DataType.DECIMAL,
         DataType.BOOLEAN,
-        DataType.DATE_TIME
     };
 
     public ComparisonPropertiesDialog(Window owner, ComparisonAssertion assertion) throws HeadlessException {
@@ -152,11 +154,7 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         addPredicateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent event) {
-                DialogDisplayer.showInputDialog(ComparisonPropertiesDialog.this,
-                                                ComparisonAssertion.resources.getString("predicateSelection.text"),
-                                                ComparisonAssertion.resources.getString("predicateSelection.title"),
-                                                JOptionPane.QUESTION_MESSAGE, null, VALUES, BINARY,
-                                                new DialogDisplayer.InputListener() {
+                DialogDisplayer.showInputDialog(ComparisonPropertiesDialog.this, ComparisonAssertion.resources.getString("predicateSelection.text"), ComparisonAssertion.resources.getString("predicateSelection.title"), JOptionPane.QUESTION_MESSAGE, null, VALUES, BINARY, new DialogDisplayer.InputListener() {
                     @Override
                     public void reportResult(Object option) {
                         PredicateSelection sel = (PredicateSelection) option;
