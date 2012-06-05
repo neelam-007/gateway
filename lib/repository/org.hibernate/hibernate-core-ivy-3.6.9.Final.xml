@@ -29,6 +29,6 @@
 		<dependency org="org.javassist" name="javassist" rev="[3.12.0.GA,)" conf="optional->compile(*),master(*)"/>
 		<dependency org="cglib" name="cglib" rev="[2.2,)" conf="optional->compile(*),master(*)"/>
 		<dependency org="javax.transaction" name="jta" rev="1.1" conf="compile"/>
-		<dependency org="org.slf4j" name="slf4j-api" rev="[1.6.4,)" conf="compile"/>
+		<dependency org="org.slf4j" name="slf4j-api" rev="[1.6.5,)" conf="compile"/>
 	</dependencies>
 </ivy-module>

@@ -51,6 +51,6 @@
 		<dependency org="junit-addons" name="junit-addons" rev="1.4" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="mockobjects" name="mockobjects-core" rev="0.09" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="mockobjects" name="mockobjects-jdk1.4-j2ee1.3" rev="0.09" force="true" conf="test->runtime(*),master(*)"/>
-		<dependency org="log4j" name="log4j" rev="1.2.16" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="log4j" name="log4j" rev="1.2.17" force="true" conf="test->runtime(*),master(*)"/>
 	</dependencies>
 </ivy-module>
