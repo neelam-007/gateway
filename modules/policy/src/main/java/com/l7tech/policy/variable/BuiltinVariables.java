@@ -168,6 +168,7 @@ public class BuiltinVariables {
 
             new VariableMetadata(PREFIX_ASSERTION + "." + ASSERTION_SUFFIX_NUMBER, false, true, null, false, DataType.INTEGER),
             new VariableMetadata(PREFIX_ASSERTION + "." + ASSERTION_SUFFIX_NUMBERSTR, false, false, null, false),
+            new VariableMetadata(ASSERTION_LATENCY, true, false, null, false),
             new VariableMetadata(ASSERTION_LATENCY_MS, false, false, null, false, DataType.INTEGER),
             new VariableMetadata(ASSERTION_LATENCY_NS, false, false, null, false, DataType.INTEGER),
 
