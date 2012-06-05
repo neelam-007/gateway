@@ -78,6 +78,7 @@ public class KeyUsageCheckerTest {
         SyspropUtil.clearProperty( KeyUsageChecker.PROPERTY_POLICY_FILE );
         SyspropUtil.clearProperty( KeyUsageChecker.PROPERTY_POLICY_XML );
         SyspropUtil.clearProperty(KeyUsageChecker.PROPERTY_ENFORCEMENT_MODE);
+        KeyUsageChecker.setDefault(KeyUsageChecker.makeDefaultKeyUsageChecker()); // Restore default
     }
 
     @Test
