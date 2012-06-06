@@ -4,8 +4,8 @@ import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
+import com.l7tech.server.jdbc.JdbcQueryUtils;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Server side implementation of the JdbcQueryAssertion.
@@ -47,7 +45,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         final List<Object> preparedStmtParams = new ArrayList<Object>();
         try {
-            final String plainQuery = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), preparedStmtParams, context);
+            final String plainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), preparedStmtParams, context,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),getAudit());
 
             final String connName = ExpandVariables.process(assertion.getConnectionName(), context.getVariableMap(variablesUsed, getAudit()), getAudit());
             DataSource dataSource = null;
@@ -112,51 +110,6 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         return AssertionStatus.NONE;
     }
 
-    String getQueryStatementWithoutContextVariables(String query, List<Object> params, PolicyEnforcementContext context) {
-        if (Syntax.getReferencedNames(query).length == 0) {
-            // There are no context variables in the query text. Just return it immediately.
-            return query;
-        }
-        // Get values of these context variables and then store these values into the parameter list, params.
-        // params will be used in the PreparedStatement to set up values.
-        final String[] varsWithIndex = Syntax.getReferencedNamesIndexedVarsNotOmitted(query);
-        final String[] varsWithoutIndex = assertion.getVariablesUsed();
-        final Map<String, Pattern> varPatternMap = new HashMap<String, Pattern>();
-        for (final String varWithIndex : varsWithIndex) {
-            if (assertion.isAllowMultiValuedVariables()) {
-                List<Object> varValues = ExpandVariables.processNoFormat("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit(), true);
-                //when parameters are multi-value, make each value as a separate parameter of the parameterized query separated by comma.
-                StringBuilder sb = new StringBuilder();
-                Iterator<Object> iter = varValues.iterator();
-                while (iter.hasNext()) {
-                    Object value = iter.next();
-                    params.add(value);
-                    sb.append("?").append(iter.hasNext() ? ", " : "");
-                }
-
-                final Pattern searchPattern = getSearchPattern(varWithIndex, varPatternMap);
-                Matcher matcher = searchPattern.matcher(query);
-                query = matcher.replaceFirst(sb.toString());
-            } else {
-                //todo [wynne]********** HACK FOR AUDIT SINK POLICY***********************
-                Object value;
-                if (varWithIndex.equals("audit.reqZip") || varWithIndex.equals("audit.resZip"))
-                    value = ExpandVariables.processSingleVariableAsObject("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit());
-                else
-                    value = ExpandVariables.process("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit());
-                params.add(value);
-            }
-        }
-
-        if (!assertion.isAllowMultiValuedVariables()) {
-            // Replace all context variables with a question mark, ?
-            Matcher matcher = Syntax.regexPattern.matcher(query);
-            query = matcher.replaceAll("?");
-        }
-
-        return query;
-    }
-
     /**
      * To make sure we don't break any calls to the old signature
      */
@@ -205,17 +158,6 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         context.setVariable(varPrefix + resultSetPrefix + "." + JdbcQueryAssertion.VARIABLE_COUNT, row);
 
         return row;
-    }
-
-    private Pattern getSearchPattern(String varWithIndex, Map<String, Pattern> varPatternMap) {
-        if (varPatternMap.containsKey(varWithIndex)) {
-            return varPatternMap.get(varWithIndex);
-        }
-
-        final Pattern searchPattern = Pattern.compile("${" + varWithIndex + "}", Pattern.LITERAL);
-        varPatternMap.put(varWithIndex, searchPattern);
-
-        return searchPattern;
     }
 
     private String getVariablePrefix(PolicyEnforcementContext context) {

@@ -148,10 +148,4 @@ public interface JdbcAdmin extends AsyncAdminMethods{
      */
     @Transactional(readOnly=true)
     int getPropertyDefaultMaxPoolSize();
-
-    @Transactional(readOnly=true)
-    AsyncAdminMethods.JobId<String> testAuditSinkSchema(String connectionName, String auditRecordTableName, String auditDetailTableName);
-
-
-
 }

@@ -14,10 +14,8 @@ import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
-import org.springframework.jdbc.support.rowset.SqlRowSet;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -241,127 +239,5 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
         return config.getIntProperty(ServerConfigParams.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE, ORIGINAL_C3P0_BASIC_POOL_CONFIG_MAXPOOLSIZE);
     }
 
-    @Override
-    public  AsyncAdminMethods.JobId<String> testAuditSinkSchema(final String connectionName, final String auditRecordTableName, final String auditDetailTableName){
-        final FutureTask<String> queryTask = new FutureTask<String>( find( false ).wrapCallable( new Callable<String>(){
-            @Override
-            public String call() throws Exception {
-
-                long bigInt = 123456789012345678L;
-                String auditRecordId = UUID.randomUUID().toString();
-                Map<String,Object> recordQueryObjects = new HashMap<String, Object>();
-                recordQueryObjects.put("id",auditRecordId); // varchar(40)
-                recordQueryObjects.put("nodeid","0123456789012345678901234567890123456789"); // varchar(40)
-                recordQueryObjects.put("time", bigInt );  // bigint
-                recordQueryObjects.put("type","record type");   //  varchar(50)
-                recordQueryObjects.put("audit_level","very bad 123");   //  varchar(12)
-                recordQueryObjects.put("name","very long name");   //  varchar(255)
-                recordQueryObjects.put("message","very long message");   //  varchar(255)
-                recordQueryObjects.put("ip_address","255.255.255.255");   //  varchar(39)
-                recordQueryObjects.put("user_name","user name");   //  varchar(255)
-                recordQueryObjects.put("user_id","user id");   //  varchar(255)
-                recordQueryObjects.put("provider_oid", bigInt);   //  bigint
-                recordQueryObjects.put("signature","123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789");   //  varchar(1024)
-                recordQueryObjects.put("entity_class","entity class");   //  varchar(255)
-                recordQueryObjects.put("entity_id",bigInt);   //  bigint
-                recordQueryObjects.put("status","200");   //  varchar(50)
-                recordQueryObjects.put("request_id","request id");   //  varchar(40)
-                recordQueryObjects.put("service_oid",bigInt);   //  bigint
-                recordQueryObjects.put("operation_name","operation name");   //  varchar(255)
-                recordQueryObjects.put("authenticated", true );   //  bit
-                recordQueryObjects.put("authenticationType", "auth type" );   //  int
-                recordQueryObjects.put("request_length", 123);   //  int
-                recordQueryObjects.put("response_length",123);   //  int
-                recordQueryObjects.put("request_xml","123456789-123456789-123456789-123456789-123456789-123456789-123456789".getBytes());   //  varbinary(max)
-                recordQueryObjects.put("response_xml","123456789-123456789-123456789-123456789-123456789-123456789-123456789".getBytes());   //  varbinary(max)
-                recordQueryObjects.put("response_status",123);   // int
-                recordQueryObjects.put("routing_latency",123);   //  int
-                recordQueryObjects.put("properties","some properties");   //  varchar(max)
-                recordQueryObjects.put("component_id",123);   // int
-                recordQueryObjects.put("action","action");   //  varchar(32)
-
-                List<Object> values = new ArrayList<Object>();
-                StringBuffer query =  createTestQuery(recordQueryObjects,values,auditRecordTableName);
-
-                Object result = jdbcQueryingManager.performJdbcQuery(connectionName, query.toString(), 10, values);
-                boolean success = result instanceof Integer && (Integer)result==1;
-                if(!success)
-                    return "Failed audit record";
-
-
-                // test audit detail
-                String auditDetailId = UUID.randomUUID().toString();
-                Map<String,Object> detailQueryObjects = new HashMap<String, Object>();
-                detailQueryObjects.put("id",auditDetailId); // varchar(40)
-                detailQueryObjects.put("audit_oid",auditRecordId); // varchar(40)
-                detailQueryObjects.put("time",bigInt); // bigint
-                detailQueryObjects.put("component_id",456); // int
-                detailQueryObjects.put("message_id",123); // int)
-                detailQueryObjects.put("exception_message","exception message"); // varchar(max)
-                detailQueryObjects.put("properties","some properties"); // varchar(max)
-
-                values = new ArrayList<Object>();
-                query =  createTestQuery(detailQueryObjects,values,auditDetailTableName);
-
-                result = jdbcQueryingManager.performJdbcQuery(connectionName, query.toString(), 10, values);
-                success = result instanceof Integer && (Integer)result==1;
-                if(!success)
-                    return "Failed audit record";
-
-                // remove audit record
-                String queryStr = "delete from "+auditRecordTableName+" where id like'"+auditRecordId+"'";
-                result = jdbcQueryingManager.performJdbcQuery(connectionName, queryStr, 10, null);
-                success = result instanceof Integer && (Integer)result==1;
-                if(!success)
-                    return "Failed audit record";
-
-
-                // check if audit detail is removed
-                queryStr = "select * from "+auditDetailTableName+" where id like'"+auditDetailId+"'";
-                result = jdbcQueryingManager.performJdbcQuery(connectionName, queryStr, 10, null);
-                success = result instanceof SqlRowSet && ((SqlRowSet) result).next()== false;
-
-
-                // cleanup - remove audit detail?
-                if(!success){
-                    queryStr = "delete from "+auditDetailTableName+" where id like'"+auditDetailId+"'";
-                    result = jdbcQueryingManager.performJdbcQuery(connectionName, queryStr, 10, null);
-                    return "Failed audit record";
-
-                }
-                return "" ;
-            }
-        }));
-
-        Background.scheduleOneShot(new TimerTask() {
-            @Override
-            public void run() {
-                queryTask.run();
-            }
-        }, 0L);
-
-        return registerJob( queryTask, String.class);
-    }
-
-    private StringBuffer createTestQuery(Map<String, Object> recordQueryObjects, List<Object> values, String auditRecordTable) {
-        StringBuffer query = new StringBuffer( "insert into "+auditRecordTable+" (");
-        Object[] keys = recordQueryObjects.keySet().toArray();
-        StringBuffer valueQuery = new StringBuffer(" values (");
-        for(Object key:keys){
-            query.append(key);
-            query.append(',');
-            values.add(recordQueryObjects.get(key));
-
-            valueQuery.append("?");
-            valueQuery.append(',');
-        }
-        query.deleteCharAt(query.length()-1);
-        valueQuery.deleteCharAt(valueQuery.length()-1);
-
-        query.append(") ");
-        query.append(valueQuery);
-        query.append(");");
-        return query;
-    }
 
 }

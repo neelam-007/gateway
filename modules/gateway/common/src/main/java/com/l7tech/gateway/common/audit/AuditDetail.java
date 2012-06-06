@@ -11,15 +11,12 @@ import java.io.*;
 import java.util.Arrays;
 import java.text.MessageFormat;
 import java.text.FieldPosition;
-import java.util.UUID;
 
 /**
  * An audit detail record.
  */
 public class AuditDetail extends PersistentEntityImp implements Serializable, Comparable {
     private transient AuditRecord auditRecord;
-    private String guid;
-    private long auditOid;
     private String auditGuid;
     private long time;
     private int messageId;
@@ -52,7 +49,6 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         this.time = System.currentTimeMillis();
         this.messageId = message.getId();
         this.params = params;
-        this.guid = UUID.randomUUID().toString();
         if (e != null) {
             StringWriter sw = new StringWriter(4096);
             e.printStackTrace(new PrintWriter(sw));
@@ -60,9 +56,8 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         }
     }
 
-    public AuditDetail(int messageId, String guid, String[] params, String exceptionMessage, long time){
+    public AuditDetail(int messageId, String[] params, String exceptionMessage, long time){
         this.messageId = messageId;
-        this.guid = guid;
         this.params = params;
         this.time = time;
         this.exception = exceptionMessage;
@@ -84,9 +79,6 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         return messageId;
     }
 
-    public String getGuid() {
-        return guid;
-    }
 
     public String getAuditGuid() {
         return auditGuid;
@@ -104,19 +96,11 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
 
     /**
      * Not deprecated because this needs to be set later on
-     * @param oid
+     * @param auditGuid
      */
     public void setAuditGuid(String auditGuid) {
         this.auditGuid = auditGuid;
     }
-
-    /**
-     * Not deprecated because this needs to be set later on
-     * @param oid
-     */
-//    public void setAuditOid(long oid) {
-//        this.auditOid = oid;
-//    }
 
     public String getException() {
         return exception;
@@ -174,7 +158,6 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
 
         final AuditDetail that = (AuditDetail) o;
 
-        if (auditOid != that.auditOid) return false;
         if (componentId != that.componentId) return false;
         if (messageId != that.messageId) return false;
         if (ordinal != that.ordinal) return false;
@@ -189,7 +172,6 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 29 * result + (int) (auditOid ^ (auditOid >>> 32));
         result = 29 * result + (int) (time ^ (time >>> 32));
         result = 29 * result + messageId;
         result = 29 * result + componentId;

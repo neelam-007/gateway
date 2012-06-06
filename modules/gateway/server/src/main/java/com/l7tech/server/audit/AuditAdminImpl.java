@@ -1,7 +1,9 @@
 package com.l7tech.server.audit;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
 import com.l7tech.gateway.common.uddi.UDDIServiceControlRuntime;
@@ -9,14 +11,14 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.fed.FederatedGroupMembership;
 import com.l7tech.identity.internal.InternalGroupMembership;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.GatewayKeyAccessFilter;
-import com.l7tech.server.PersistenceEventInterceptor;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.*;
+import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.AuditViewGatewayAuditsData;
+import com.l7tech.server.jdbc.JdbcConnectionManager;
+import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.sharedkey.SharedKeyRecord;
 import com.l7tech.server.sla.CounterRecord;
@@ -36,13 +38,16 @@ import java.nio.charset.Charset;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.event.AdminInfo.find;
 
 /**
  * Implementation of AuditAdmin in SSG.
  */
-public class AuditAdminImpl implements AuditAdmin, InitializingBean, ApplicationContextAware {
+public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin, InitializingBean, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
     private static final String CLUSTER_PROP_LAST_AUDITACK_TIME = "audit.acknowledge.highestTime";
     private static final int MAX_CRITERIA_HISTORY = ConfigFactory.getIntProperty( "com.l7tech.server.audit.maxAuditSearchCriteria", 20 );
@@ -653,24 +658,41 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     private ServerConfig serverConfig() {
         return ServerConfig.getInstance();
     }
+
     @Override
-    public String getExternalAuditsSchema(){
+    public String getExternalAuditsSchema(String connectionName, String auditRecordTableName, String auditDetailTableName){
+        JdbcConnectionManager jdbcConnectionManager = (JdbcConnectionManager)applicationContext.getBean("jdbcConnectionManager");
+
         FileInputStream fin = null;
         ByteArrayOutputStream out = null;
         try {
-            final File configDir = serverConfig().getLocalDirectoryProperty( ServerConfigParams.PARAM_CONFIG_DIRECTORY, true);
-            File schemaFile = new File(configDir,"etc/sql/externalAudits.sql");
+
+            JdbcConnection connection = jdbcConnectionManager.getJdbcConnection(connectionName);
+            String driverClass = connection.getDriverClass();
+
+            // todo
+            // get db type and translate schema
+
+
+            final File configDir = serverConfig().getLocalDirectoryProperty( ServerConfigParams.PARAM_SSG_HOME_DIRECTORY, true);
+            File schemaFile = new File(configDir,"../../config/etc/sql/externalAudits.sql");
             fin = new FileInputStream(schemaFile);
             out = new ByteArrayOutputStream(16384);
 
             IOUtils.copyStream(fin,out);
-            return out.toString(Charset.defaultCharset().name());
+            String schemaString = out.toString(Charset.defaultCharset().name());
+            schemaString.replace("audit_main",auditRecordTableName);
+            schemaString.replace("audit_detail",auditDetailTableName);
+            return schemaString;
 
         } catch (FileNotFoundException e) {
             logger.warning("Schema file not found: "+sqlPath);
         } catch (IOException e) {
             logger.warning("Error reading schema file: "+sqlPath);
+        } catch (FindException e) {
+            logger.warning("Jdbc connection not found:" +connectionName);
         }
+
         finally {
             ResourceUtils.closeQuietly(fin,out);
         }
@@ -680,5 +702,65 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     @Override
     public AuditRecord findByGuid(String guid) throws FindException {
         return auditLookupPolicyEvaluator.findByGuid(guid);
+    }
+    @Override
+    public  AsyncAdminMethods.JobId<String> testAuditSinkSchema(final String connectionName, final String auditRecordTableName, final String auditDetailTableName){
+        final FutureTask<String> queryTask = new FutureTask<String>( find( false ).wrapCallable( new Callable<String>(){
+            @Override
+            public String call() throws Exception {
+
+                JdbcQueryingManager jdbcQueryingManager = (JdbcQueryingManager)applicationContext.getBean("jdbcQueryingManager");
+                DefaultKey defaultKey = (DefaultKey)applicationContext.getBean("defaultKey");
+
+
+                String result = ExternalAuditsUtils.testMessageSummaryRecord(connectionName, auditRecordTableName, auditDetailTableName,jdbcQueryingManager,defaultKey);
+                if(!result.isEmpty())
+                    return result;
+                result =  ExternalAuditsUtils.testAdminAuditRecord(connectionName, auditRecordTableName, jdbcQueryingManager,defaultKey);
+                if(!result.isEmpty())
+                    return result;
+                result  =  ExternalAuditsUtils.testSystemAuditRecord(connectionName, auditRecordTableName,jdbcQueryingManager,defaultKey);
+                return result;
+
+            }
+        }));
+
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                queryTask.run();
+            }
+        }, 0L);
+
+        return registerJob( queryTask, String.class);
+    }
+
+    @Override
+    public AsyncAdminMethods.JobId<String> createExternalAuditDatabase(final String connection,final  String auditRecordTableName, final String auditDetailTableName) {
+        final FutureTask<String> queryTask = new FutureTask<String>( find( false ).wrapCallable( new Callable<String>(){
+            @Override
+            public String call() throws Exception {
+
+                JdbcQueryingManager jdbcQueryingManager = (JdbcQueryingManager)applicationContext.getBean("jdbcQueryingManager");
+
+                String schema = getExternalAuditsSchema(connection,auditRecordTableName,auditDetailTableName);
+                Object result = jdbcQueryingManager.performJdbcQuery(connection,schema,2,Collections.emptyList());
+
+                if(result instanceof String)
+                    return (String)result;
+
+                return "";
+
+            }
+        }));
+
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                queryTask.run();
+            }
+        }, 0L);
+
+        return registerJob(queryTask, String.class);
     }
 }

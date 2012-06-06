@@ -25,6 +25,9 @@ public class ExternalAuditStoreConfigJdbc extends WizardStepPanel {
     private JPanel mainPanel;
     private JComboBox jdbcConnectionComboBox;
     private JButton manageConnectionsButton;
+    private JRadioButton createDefaultAuditSinkRadioButton;
+    private JRadioButton createCustomAuditSInkRadioButton;
+    private JPanel defaultSinkConfigurationPanel;
 
     private static final Logger logger = Logger.getLogger(ExternalAuditStoreConfigJdbc.class.getName());
 
@@ -55,6 +58,7 @@ public class ExternalAuditStoreConfigJdbc extends WizardStepPanel {
     @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
        ((ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig)settings).connection = (String)jdbcConnectionComboBox.getSelectedItem();
+       ((ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig)settings).custom = createCustomAuditSInkRadioButton.isSelected();
     }
 
     /**
@@ -77,6 +81,7 @@ public class ExternalAuditStoreConfigJdbc extends WizardStepPanel {
         // populate jdbc connections
         final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
             public void run() {
+                defaultSinkConfigurationPanel.setEnabled(createDefaultAuditSinkRadioButton.isSelected());
                 notifyListeners();
             }
         });
@@ -96,6 +101,10 @@ public class ExternalAuditStoreConfigJdbc extends WizardStepPanel {
         });
         jdbcConnectionComboBox.addItemListener(changeListener);
         populateConnectionCombobox();
+
+        createDefaultAuditSinkRadioButton.addChangeListener(changeListener);
+        createCustomAuditSInkRadioButton.addChangeListener(changeListener);
+
         notifyListeners();
 
     }
@@ -153,11 +162,11 @@ public class ExternalAuditStoreConfigJdbc extends WizardStepPanel {
 
     @Override
     public boolean canAdvance() {
-        return jdbcConnectionComboBox.getSelectedIndex() > 0; // first entry empty;
+        return createDefaultAuditSinkRadioButton.isSelected() && jdbcConnectionComboBox.getSelectedIndex() > 0; // first entry empty;
     }
 
     @Override
     public boolean canFinish() {
-        return false;
+        return createCustomAuditSInkRadioButton.isSelected();
     }
 }

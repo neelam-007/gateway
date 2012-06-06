@@ -86,7 +86,7 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
         Utilities.equalizeButtonSizes(okButton, cancelButton);
 
-        final boolean usingSinkPolicy = isUsingSinkPolicy();
+        final boolean usingSinkPolicy = isUsingSinkPolicy() || isUsingLookupPolicy();
         cbOutputToPolicy.setSelected(usingSinkPolicy);
         cbSaveToDb.setSelected(!usingSinkPolicy || isAlwaysSaveToDb());
         enableDiableButtons();
@@ -98,6 +98,15 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
     }
 
     private void doConfigure() {
+        if(isUsingSinkPolicy() || isUsingLookupPolicy()){
+            DialogDisplayer.showMessageDialog(
+                    AuditSinkGlobalPropertiesDialog.this,
+                    "Audit Sink/Lookup policies already configured.",
+                    "Configuring",
+                    JOptionPane.INFORMATION_MESSAGE,
+                    null);
+            return;
+        }
         final ExternalAuditStoreConfigWizard dialog = ExternalAuditStoreConfigWizard.getInstance(this);
         dialog.pack();
         Utilities.centerOnScreen(dialog);
@@ -123,6 +132,20 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
         }
     }
 
+    private boolean isUsingLookupPolicy() {
+        try {
+            String configuredGuid = ClusterPropertyCrud.getClusterProperty(AUDIT_LOOKUP_POLICY_GUID_CLUSTER_PROP);
+            if (configuredGuid == null || configuredGuid.trim().length() < 1)
+                return false;
+            final PolicyHeader lookupHeader = getLookupPolicyHeader();
+            return lookupHeader != null && configuredGuid.equals(lookupHeader.getGuid());
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to check if lookup policy configured and exists: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return false;
+        }
+    }
+
+
     private boolean isAlwaysSaveToDb() {
         try {
             String val = ClusterPropertyCrud.getClusterProperty(AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP);
@@ -143,6 +166,18 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
             }
         }
         return sinkPolicyHeader;
+    }
+
+    private PolicyHeader getLookupPolicyHeader() throws FindException {
+        if(lookupPolicyHeader != null ) return lookupPolicyHeader;
+        Collection<PolicyHeader> allInternals = Registry.getDefault().getPolicyAdmin().findPolicyHeadersByType(PolicyType.INTERNAL);
+        for (PolicyHeader internal : allInternals) {
+            if (ExternalAuditStoreConfigWizard.INTERNAL_TAG_AUDIT_LOOKUP.equals(internal.getDescription())) {
+                lookupPolicyHeader = internal;
+                break;
+            }
+        }
+        return lookupPolicyHeader;
     }
 
 
@@ -167,8 +202,10 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
             }
 
             ClusterPropertyCrud.putClusterProperty(AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP, String.valueOf(cbSaveToDb.isSelected()));
-            ClusterPropertyCrud.putClusterProperty(AUDIT_SINK_POLICY_GUID_CLUSTER_PROP, sinkPolicyHeader.getGuid());
-            ClusterPropertyCrud.putClusterProperty(AUDIT_LOOKUP_POLICY_GUID_CLUSTER_PROP, lookupPolicyHeader.getGuid());
+            if(sinkPolicyHeader!=null)
+                ClusterPropertyCrud.putClusterProperty(AUDIT_SINK_POLICY_GUID_CLUSTER_PROP, sinkPolicyHeader.getGuid());
+            if(lookupPolicyHeader!=null)
+                ClusterPropertyCrud.putClusterProperty(AUDIT_LOOKUP_POLICY_GUID_CLUSTER_PROP, lookupPolicyHeader.getGuid());
             committed = true;
 
         } catch (ObjectModelException e) {

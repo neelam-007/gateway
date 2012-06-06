@@ -9,11 +9,15 @@ import org.w3c.dom.Element;
 
 import javax.xml.bind.MarshalException;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  *
  */
 public class AuditDetailSelector implements ExpandVariables.Selector<AuditDetail> {
+
+    private static final Logger logger = Logger.getLogger(AuditDetailSelector.class.getName());
+
     @Override
     public Selection select(String contextName, AuditDetail detail, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
         if (detail == null)
@@ -43,10 +47,9 @@ public class AuditDetailSelector implements ExpandVariables.Selector<AuditDetail
             doc.appendChild(element);
             return XmlUtil.nodeToFormattedString(element);
         } catch (MarshalException e) {
-            //todo [wynne]
-
+            logger.warning("Unable to marshall properties");
         } catch (IOException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            logger.warning("Unable to marshall properties");
         }
         return null;
     }

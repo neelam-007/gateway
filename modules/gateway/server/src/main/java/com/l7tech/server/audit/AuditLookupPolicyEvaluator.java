@@ -1,20 +1,17 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
-import com.l7tech.server.util.CompressedStringType;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
@@ -23,7 +20,6 @@ import org.xml.sax.SAXException;
 
 import javax.xml.bind.MarshalException;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,7 +35,6 @@ public class AuditLookupPolicyEvaluator  {
     private final PolicyCache policyCache;
     private final Map<String,AuditRecord> auditRecordsCache = new HashMap<String, AuditRecord>();
     private final AuditDetailPropertiesDomUnmarshaller detailUnmarshaller = new AuditDetailPropertiesDomUnmarshaller();
-    private final AuditRecordPropertiesDomUnmarshaller recordUnmarshaller = new AuditRecordPropertiesDomUnmarshaller();
 
     public AuditLookupPolicyEvaluator(Config config, PolicyCache policyCache) {
         this.config = config;
@@ -134,74 +129,16 @@ public class AuditLookupPolicyEvaluator  {
                 String properties = (String)properties_var[i];
                 Integer componentId = (Integer)componentId_var[i];
                 String action = (String)action_var[i];
-                Map<String,Object> props =  getRecordPropertiesMap(properties);
 
-                AuditRecord record = null;
-                if(type.equals(AuditRecordUtils.TYPE_ADMIN)){
-                    record = new AdminAuditRecord(
-                            Level.parse(auditLevel),
-                            nodeid,
-                            entityId,
-                            entityClass,
-                            name,
-                            action.charAt(0),
-                            message,
-                            providerOid,
-                            userName,
-                            userId,
-                            ip_addr) ;
-                } else if(type.equals(AuditRecordUtils.TYPE_MESSAGE)){
+                AuditRecord record = ExternalAuditsUtils.makeAuditRecord(
+                        id,nodeid,time,type,auditLevel,name,message,ip_addr,userName,userId,providerOid,
+                        entityClass,entityId,status,requestId,serviceOid,operationName,authenticated,authenticationType,
+                        requestLength,responseLength,requestZip,responseZip,responseStatus,latency,componentId,action,properties);
 
-                    String requestXml = requestZip==null? null: getDecompressedString(requestZip);
-                    String responseXml = responseZip==null? null: getDecompressedString(responseZip);
-                    requestXml = requestXml==null ||  requestXml.isEmpty() ? null:responseXml;
-                    responseXml = responseXml==null ||  responseXml.isEmpty() ? null:responseXml;
-
-
-                    record = new MessageSummaryAuditRecord(
-                            Level.parse(auditLevel),
-                            nodeid,
-                            requestId,
-                            AssertionStatus.fromInt(status),
-                            ip_addr,
-                            requestXml,
-                            requestLength,
-                            responseXml,
-                            responseLength,
-                            responseStatus,
-                            latency,
-                            serviceOid,
-                            name,
-                            operationName,
-                            authenticated,
-                            SecurityTokenType.getByName(authenticationType),
-                            providerOid,
-                            userName,
-                            userId) ;
-
-
-
-                } else if(type.equals(AuditRecordUtils.TYPE_SYSTEM)){
-                    record = new SystemAuditRecord(
-                            Level.parse(auditLevel),
-                            nodeid,
-                            Component.fromId(componentId),
-                            message,
-                            false, // alwaysAudit - not displayed, only used in flush
-                            providerOid,
-                            userName,
-                            userId,
-                            action,
-                            ip_addr);
-                }
-
-                // todo [wynne] check signature?
-
-                record.setOid(i);    // todo ?
-                record.setMillis(time);
-
+                record.setOid(i); // todo?
                 auditRecordsCache.put(id,record);
                 AuditRecordGuidHeader header = new AuditRecordGuidHeader(record,id,time);
+                header.setSignature(signature);
 
                 recordHeaders.add(header);
             }
@@ -209,7 +146,7 @@ public class AuditLookupPolicyEvaluator  {
             return recordHeaders;
 
         } catch (NoSuchVariableException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            logger.warning("Error creating audit records, some fields not present: "+e.getMessage());
         }
         return new ArrayList<AuditRecordHeader>();
     }
@@ -222,7 +159,6 @@ public class AuditLookupPolicyEvaluator  {
                 String prefix = "detailQuery"+iterations;
                 sizeObj = context.getVariable(prefix+".queryresult.count");
 
-                Object[] id_var = (Object[])context.getVariable(prefix + ".id");
                 Object[] audit_oid_var = (Object[])context.getVariable(prefix+".audit_oid");
                 Object[] time_var = (Object[])context.getVariable(prefix+".time");
                 Object[] componentId_var = (Object[])context.getVariable(prefix+".component_id");
@@ -232,7 +168,6 @@ public class AuditLookupPolicyEvaluator  {
                 Object[] props_var = (Object[])context.getVariable(prefix+".properties");
 
                 for(int i = 0 ; i < (Integer)sizeObj ; ++i){
-                    String id = (String)id_var[i];
                     String audit_oid = (String)audit_oid_var[i];
                     Long time = (Long)time_var[i];
                     Integer componentId = (Integer)componentId_var[i];
@@ -244,8 +179,8 @@ public class AuditLookupPolicyEvaluator  {
                     Map<String,Object> props =  getDetailsPropertiesMap(properties);
 
                     String[] params = (props == null || props.get("params") == null )? null : (String [])props.get("params");
-                    AuditDetail detail = new AuditDetail( messageId,  id, params ,  message,  time);
-//                    detail.setAuditGuid(audit_oid);
+                    AuditDetail detail = new AuditDetail( messageId, params ,  message,  time);
+                    detail.setAuditGuid(audit_oid);
                     detail.setOrdinal(ordinal);
                     detail.setComponentId(componentId);
                     detail.setOid(iterations+(iterations*i*6));  // todo [wynne] remove
@@ -282,28 +217,6 @@ public class AuditLookupPolicyEvaluator  {
         return null;
     }
 
-    private Map<String,Object>  getRecordPropertiesMap(String props){
-        if(props == null || props.isEmpty())
-            return null;
-        try {
-            Document doc = XmlUtil.parse(props);
-            return recordUnmarshaller.unmarshal(doc.getDocumentElement());
-        } catch (SAXException e) {
-            logger.log(Level.WARNING, "Error parsing audit record properties: ", props);
-
-        } catch (MarshalException e) {
-            logger.log(Level.WARNING, "Error parsing audit record properties: ", props);
-        }
-        return null;
-    }
-
-    private static String getDecompressedString(byte[] in){
-        try {
-            return new String(CompressedStringType.decompress(in));
-        } catch (SQLException e) {
-            return null;
-        }
-    }
     /**
      * Run the current audit lookup policy to retrieve audits.
      *

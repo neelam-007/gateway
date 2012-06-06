@@ -2,6 +2,8 @@ package com.l7tech.gateway.common.audit;
 
 import static com.l7tech.objectmodel.EntityType.AUDIT_RECORD;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
+
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.util.OpaqueId;
 import com.l7tech.objectmodel.DeleteException;
@@ -27,7 +29,7 @@ import java.util.logging.Level;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=AUDIT_RECORD)
 @Administrative
-public interface AuditAdmin {
+public interface AuditAdmin extends AsyncAdminMethods{
 
     /**
      * Retrieves the {@link AuditRecord} with the given oid, or null if no such record exists.
@@ -274,8 +276,6 @@ public interface AuditAdmin {
     @Transactional(propagation= Propagation.SUPPORTS)
     int getSystemLogRefresh();
 
-    @Transactional(readOnly=true)
-    String getExternalAuditsSchema();
 
     /**
      * Retrieves the {@link AuditRecord} with the given oid, or null if no such record exists.
@@ -287,6 +287,41 @@ public interface AuditAdmin {
     @Secured(stereotype=FIND_ENTITY)
     @Administrative(licensed=false)
     AuditRecord findByGuid(String guid) throws FindException;
+
+
+    /**
+     * Retrieves the default external audit schema translated for the database type.
+     *
+     * @param connectionName    The database to translate the schema into
+     * @param auditRecordTableName  the audit record table name
+     * @param auditDetailTableName  the audit detail table name
+     * @return  the translated schema
+     */
+    @Transactional(readOnly=true)
+    String getExternalAuditsSchema(String connectionName, String auditRecordTableName, String auditDetailTableName);
+
+
+    /**
+     * Tests if the specified database connection is correctly configured for the default schema.  It saves the different
+     * audit record types and also deletes them.
+     * @param connectionName    jdbc connection name
+     * @param auditRecordTableName  the audit record table name
+     * @param auditDetailTableName  the audit detail table name
+     * @return empty string if successful, error message if failed.
+     */
+    @Transactional(readOnly=true)
+    AsyncAdminMethods.JobId<String> testAuditSinkSchema(String connectionName, String auditRecordTableName, String auditDetailTableName);
+
+    /**
+     * Creates the default external audit tables on the specified jdbc connection.  The schema is from getExternalAuditsSchema()
+     *
+     * @param connectionName    jdbc connection name
+     * @param auditRecordTableName  the audit record table name
+     * @param auditDetailTableName  the audit detail table name
+     * @return empty string if successful, error message if failed.
+     */
+    @Transactional(readOnly = true)
+    AsyncAdminMethods.JobId<String> createExternalAuditDatabase(String connectionName, String auditRecordTableName, String auditDetailTableName);
 
 
 }

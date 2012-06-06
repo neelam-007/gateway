@@ -5,6 +5,7 @@ import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.audit.ExternalAuditsCommonUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.Policy;
@@ -12,11 +13,14 @@ import com.l7tech.policy.PolicyCheckpointState;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.HexUtils;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -59,26 +63,26 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig config = (ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig)wizardInput;
         // create policies
         try {
-            sinkPolicyHeader = getOrCreateSinkPolicyHeader(config.connection,config.auditRecordTableName,config.auditDetailTableName);
-            lookupPolicyHeader = getOrCreateLookupPolicyHeader(config.connection,config.auditRecordTableName,config.auditDetailTableName);
+            sinkPolicyHeader = getOrCreateSinkPolicyHeader(config.connection,config.auditRecordTableName,config.auditDetailTableName, config.custom);
+            lookupPolicyHeader = getOrCreateLookupPolicyHeader(config.connection,config.auditRecordTableName,config.auditDetailTableName, config.custom);
 
             super.finish(evt);
         } catch (FindException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            logger.warning("Error creating external sink/lookup policies: "+e.getMessage());
         } catch (PolicyAssertionException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            logger.warning("Error creating external sink/lookup policies: "+e.getMessage());
         } catch (SaveException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            logger.warning("Error creating external sink/lookup policies: "+e.getMessage());
         }
 
 
 
     }
-    private PolicyHeader getOrCreateLookupPolicyHeader(String connection, String recordTable, String detailTable) throws FindException, PolicyAssertionException, SaveException {
+    private PolicyHeader getOrCreateLookupPolicyHeader(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) throws FindException, PolicyAssertionException, SaveException {
         PolicyHeader header = getLookupPolicyHeader();
         if (header == null) {
             // Create new lookup policy with default settings
-            Policy policy = makeDefaultAuditLookupPolicyEntity(connection,recordTable,detailTable);
+            Policy policy = makeDefaultAuditLookupPolicyEntity(connection,recordTable,detailTable, createEmptyPolicy);
             PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
             policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyOid());
             header = new PolicyHeader(policy);
@@ -90,10 +94,12 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         return header;
     }
 
-    private static Policy makeDefaultAuditLookupPolicyEntity(String connection, String recordTable, String detailTable) {
-        String theXml = makeDefaultAuditLookupPolicyXml(connection,recordTable,detailTable);
-        Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Audit Lookup Policy]", theXml, false);
+    private static Policy makeDefaultAuditLookupPolicyEntity(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) {
+        Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Audit Lookup Policy]", null, false);
         policy.setInternalTag(INTERNAL_TAG_AUDIT_LOOKUP);
+        String theXml = createEmptyPolicy ? getDefaultPolicyXml(policy) : makeDefaultAuditLookupPolicyXml(connection,recordTable,detailTable);
+
+        policy.setXml(theXml);
         return policy;
     }
 
@@ -110,12 +116,12 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                     "and lower(entity_class) like lower(${recordQuery.entityClassName}) " +
                     "and entity_id >=${entityIdMin}  " +
                     "and entity_id &lt;=${entityIdMax} " +
-                    "and lower(request_id) like lower(${recordQuery.requestId});";
+                    "and lower(request_id) like lower(${recordQuery.requestId}) order by time desc;";
     }
 
     private static String messaageIdLookupQuery ( String detailTable){
         return
-            "select distinct audit_oid from "+detailTable+" where message_id >=${messageIdMin}  and message_id &lt;=${messageIdMax}";
+            "select top 1024 distinct audit_oid from "+detailTable+" where message_id >=${messageIdMin}  and message_id &lt;=${messageIdMax} order by time desc";
     }
 
     private static String lookupQueryWithAuditId(String recordTable){
@@ -131,7 +137,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                     "and lower(user_id) like lower(${recordQuery.userIdOrDn}) " +
                     "and lower(entity_class) like lower(${recordQuery.entityClassName}) " +
                     "and entity_id >=${entityIdMin}  and entity_id &lt;=${entityIdMax} " +
-                    "and lower(request_id) like lower(${recordQuery.requestId}) ;";
+                    "and lower(request_id) like lower(${recordQuery.requestId}) order by time desc;";
     }
 
     private static String detailLookupQuery (String detailTable){
@@ -301,11 +307,11 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
     public PolicyHeader getSinkPolicyHeader() {
         return sinkPolicyHeader;
     }
-    private PolicyHeader getOrCreateSinkPolicyHeader(String connection, String recordTable, String detailTable) throws FindException, PolicyAssertionException, SaveException {
+    private PolicyHeader getOrCreateSinkPolicyHeader(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) throws FindException, PolicyAssertionException, SaveException {
         PolicyHeader header = getSinkPolicyHeader();
         if (header == null) {
             // Create new sink policy with default settings
-            Policy policy = makeDefaultAuditSinkPolicyEntity(connection,recordTable,detailTable);
+            Policy policy = makeDefaultAuditSinkPolicyEntity(connection,recordTable,detailTable,createEmptyPolicy);
             PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
             policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyOid());
             header = new PolicyHeader(policy);
@@ -317,13 +323,40 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         return header;
     }
 
-    private static Policy makeDefaultAuditSinkPolicyEntity(String connection, String recordTable, String detailTable) {
-        String theXml = makeDefaultAuditSinkPolicyXml(connection,recordTable,detailTable);
-        Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Audit Sink Policy]", theXml, false);
+    private static Policy makeDefaultAuditSinkPolicyEntity(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) {
+        Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Audit Sink Policy]", null, false);
         policy.setInternalTag(INTERNAL_TAG_AUDIT_SINK);
+
+        String theXml = createEmptyPolicy ? getSendToHttpSinkPolicyXml() : makeDefaultAuditSinkPolicyXml(connection,recordTable,detailTable);
+
+        policy.setXml(theXml);
         return policy;
     }
 
+    private static String getSendToHttpSinkPolicyXml(){
+        AllAssertion all = new AllAssertion();
+        all.addChild(new CommentAssertion("A simple audit sink policy could convert the audit record to XML, then post it somewhere via HTTP"));
+        all.addChild(new AuditRecordToXmlAssertion());
+        all.addChild(new CommentAssertion("Enable the below routing assertion or replace it with something else"));
+        HttpRoutingAssertion routingAssertion = new HttpRoutingAssertion();
+        routingAssertion.setProtectedServiceUrl("${gateway.audit.sink.url}");
+        routingAssertion.setEnabled(false);
+        all.addChild(routingAssertion);
+        FalseAssertion falseAssertion = new FalseAssertion();
+        String falseName = falseAssertion.meta().get(AssertionMetadata.SHORT_NAME);
+        all.addChild(new CommentAssertion("The below " + falseName + " causes this sink policy to always fail."));
+        all.addChild(new CommentAssertion("This will (by default) cause the record to be saved to the internal audit database."));
+        all.addChild(new CommentAssertion("Remove it once you have customized the audit sink policy."));
+        all.addChild(falseAssertion);
+        return WspWriter.getPolicyXml(all);
+    }
+
+    private static String getDefaultPolicyXml(Policy policy){
+        String defaultPolicyXml =  Registry.getDefault().getPolicyAdmin().getDefaultPolicyXml(policy.getType(),policy.getInternalTag());
+        String xml = (defaultPolicyXml != null)? defaultPolicyXml: WspWriter.getPolicyXml(
+                new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Internal Policy: " + policy.getName()))));
+        return xml;
+    }
     private static String makeDefaultAuditSinkPolicyXml(String connection, String recordTable, String detailTable) {
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
@@ -341,7 +374,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                 "        <L7p:JdbcQuery>\n" +
                 "            <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
                 "            <L7p:ConnectionName stringValue=\"${auditConnection}\"/>\n" +
-                "            <L7p:SqlQuery stringValue=\""+saveRecordQuery(recordTable)+"\"/>\n" +
+                "            <L7p:SqlQuery stringValue=\""+ExternalAuditsCommonUtils.saveRecordQuery(recordTable)+"\"/>\n" +
                 "        </L7p:JdbcQuery>\n" +
                 "        <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
                 "            <L7p:ComparisonAssertion>\n" +
@@ -365,7 +398,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                 "                <L7p:JdbcQuery>\n" +
                 "                    <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
                 "                    <L7p:ConnectionName stringValue=\"${auditConnection}\"/>\n" +
-                "                    <L7p:SqlQuery stringValue=\""+saveDetailQuery(detailTable)+"\"/>\n" +
+                "                    <L7p:SqlQuery stringValue=\""+ExternalAuditsCommonUtils.saveDetailQuery(detailTable)+"\"/>\n" +
                 "                </L7p:JdbcQuery>\n" +
                 "            </L7p:ForEachLoop>\n" +
                 "        </wsp:OneOrMore>\n" +
@@ -376,25 +409,6 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                 "</wsp:Policy>\n" +
                 "";
     }
-
-
-    private static String saveDetailQuery(String detailTable){
-        return "insert into "+detailTable +"(id, audit_oid,time,component_id,ordinal,message_id,exception_message,properties) values " +
-                "(${detail.guid},${record.guid},${i.current.time},${i.current.componentId},${i.current.ordinal},${i.current.messageId},${i.current.exception},${i.current.properties});";
-    }
-
-    private static String saveRecordQuery(String recordTable){
-        return  "insert into "+recordTable+"(id,nodeid,time,type,audit_level,name,message,ip_address,user_name,user_id,provider_oid,signature,properties," +
-            "entity_class,entity_id," +
-            "status,request_id,service_oid,operation_name,authenticated,authenticationType,request_length,response_length,request_xml,response_xml,response_status,routing_latency," +
-            "component_id,action)" +
-            " values " +
-            "(${record.guid},${audit.nodeId},${audit.time},${audit.type},${audit.level},${audit.name},${audit.message},${audit.ipAddress},${audit.user.name},${audit.user.id},${audit.user.idProv},${audit.signature},${audit.properties}," +
-            "${audit.entity.class},${audit.entity.oid}," +
-            "${audit.status},${audit.requestId},${audit.serviceOid},${audit.operationName},${audit.authenticated},${audit.authType},${audit.request.size},${audit.response.size},${audit.reqZip},${audit.resZip},${audit.responseStatus},${audit.routingLatency}," +
-            "${audit.componentId},${audit.action});";
-    }
-
 
     /**
      * add the EntityListener
@@ -415,6 +429,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
     }
 
     public class ExternalAuditStoreWizardConfig {
+        public boolean custom;  // crate custom policies
         public String connection;
         public String auditRecordTableName = null;
         public String auditDetailTableName = null;

@@ -1,10 +1,12 @@
 package com.l7tech.gateway.common.audit;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.util.OpaqueId;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -130,12 +132,37 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
-    public String getExternalAuditsSchema() {
+    public String getExternalAuditsSchema(String connectionName, String auditRecordTableName, String auditDetailTableName) {
         return null;
     }
 
     @Override
     public AuditRecord findByGuid(String guid) throws FindException {
+        return null;
+    }
+
+    @Override
+    public AsyncAdminMethods.JobId<String> testAuditSinkSchema(String connectionName, String auditRecordTableName, String auditDetailTableName) {
+        return null;
+    }
+
+    @Override
+    public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
+        return null;
+    }
+
+    @Override
+    public <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException {
+        return null;
+    }
+
+    @Override
+    public <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning) {
+        // do nothing
+    }
+
+    @Override
+    public AsyncAdminMethods.JobId<String> createExternalAuditDatabase(String connection, String auditRecordTableName, String auditDetailTableName) {
         return null;
     }
 }

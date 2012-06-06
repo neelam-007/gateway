@@ -5,7 +5,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.audit.*;
-import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 
@@ -28,6 +27,7 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
     private JTextArea schemaTextArea;
     private JTextField auditRecordTextField;
     private JTextField auditDetailTextField;
+    private JButton createDatabaseButton;
 
     private static final Logger logger = Logger.getLogger(ExternalAuditStoreConfigSchema.class.getName());
     private String connection;
@@ -95,6 +95,7 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
         final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
             public void run() {
                 notifyListeners();
+                createDatabaseButton.setEnabled(canFinish());
             }
         });
         testButton.addActionListener(new ActionListener() {
@@ -110,11 +111,62 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
                 schemaTextArea.setCaretPosition(0);
             }
         });
+        auditRecordTextField.getDocument().addDocumentListener(changeListener);
+        auditDetailTextField.getDocument().addDocumentListener(changeListener);
+
+        createDatabaseButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doCreateDatabase();
+            }
+        });
+
+    }
+
+    private void doCreateDatabase() {
+
+        AuditAdmin admin = getAuditAdmin();
+
+        if(admin == null) {
+            DialogDisplayer.showMessageDialog(
+                    ExternalAuditStoreConfigSchema.this,
+                    "Failed  Cannot create databse due to JDBC Conneciton Admin unavailable.",
+                    "Creating Database\"",
+                    JOptionPane.WARNING_MESSAGE,
+                    null);
+
+            return ;
+        }
+        boolean success = false;
+        String errorMessage = "";
+        try {
+            errorMessage = doAsyncAdmin(
+                    admin,
+                    ExternalAuditStoreConfigSchema.this.getOwner(),
+                    "Creating Database",
+                    "Creating Database",
+                    getAuditAdmin().createExternalAuditDatabase(connection, auditRecordTextField.getText(), auditDetailTextField.getText())).right();
+
+            success = errorMessage.isEmpty();
+
+        } catch (InterruptedException e) {
+            // do nothing, user cancelled operation
+        } catch (InvocationTargetException e) {
+            success = false;
+            errorMessage = e.getMessage();
+        }
+
+        DialogDisplayer.showMessageDialog(
+                ExternalAuditStoreConfigSchema.this,
+                success ? "Database created successfully!" : "Failed to create database \n"+errorMessage ,
+                "Creating Database",
+                success ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
+                null);
 
     }
 
     private void doTest() {
-        JdbcAdmin admin = getJdbcAdmin();
+        AuditAdmin admin = getAuditAdmin();
 
         if(admin == null) {
             DialogDisplayer.showMessageDialog(
@@ -147,7 +199,7 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
 
         DialogDisplayer.showMessageDialog(
             ExternalAuditStoreConfigSchema.this,
-            success ? "Passed!" : "Failed" ,
+            success ? "Passed!" : "Failed \n"+errorMessage ,
             "Testing",
             success ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
             null);
@@ -158,15 +210,11 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
     }
 
     private String getSchema() {
-        return getAuditAdmin().getExternalAuditsSchema();
+        return getAuditAdmin().getExternalAuditsSchema(connection,auditRecordTextField.getText(),auditDetailTextField.getText());
     }
 
     private AuditAdmin getAuditAdmin() {
         return  Registry.getDefault().getAuditAdmin();
-    }
-
-    private JdbcAdmin getJdbcAdmin() {
-        return  Registry.getDefault().getJdbcConnectionAdmin();
     }
 
     /**
@@ -191,6 +239,6 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
 
     @Override
     public boolean canFinish() {
-        return true;
+        return !auditDetailTextField.getText().isEmpty() && !auditRecordTextField.getText().isEmpty();
     }
 }

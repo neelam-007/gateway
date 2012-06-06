@@ -2,15 +2,18 @@ package com.l7tech.external.assertions.jdbcquery.server;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.jdbc.JdbcQueryUtils;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.jdbc.MockJdbcDatabaseManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.internal.runners.JUnit38ClassRunner;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -39,16 +42,12 @@ public class ServerJdbcQueryAssertionTest {
 
     private JdbcQueryAssertion assertion;
 
-    private ServerJdbcQueryAssertion fixture;
-
-
     @Before
     public void setUp() throws Exception {
         // Get the policy enforcement context
         peCtx = makeContext("<myrequest/>", "<myresponse/>");
         //create assertion
         assertion = new JdbcQueryAssertion();
-        fixture = new ServerJdbcQueryAssertion(assertion, appCtx);
     }
 
     /**
@@ -74,7 +73,7 @@ public class ServerJdbcQueryAssertionTest {
         assertion.setSqlQuery(query);
 
         String expectedPlainQuery = "SELECT * FROM employees WHERE employee_department = ? AND name = ? ADN sex = ? AND age = ?";
-        String actualPlainQuery = fixture.getQueryStatementWithoutContextVariables(query, params, peCtx);
+        String actualPlainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),new TestAudit() );
 
         // Check the query statement
         assertEquals("Correct plain query produced", expectedPlainQuery, actualPlainQuery);
@@ -104,7 +103,7 @@ public class ServerJdbcQueryAssertionTest {
         assertion.setAllowMultiValuedVariables(true);
 
         String expectedPlainQuery = "select * from employees where id in (?, ?, ?) and department = ?";
-        String actualPlainQuery = fixture.getQueryStatementWithoutContextVariables(query, params, peCtx);
+        String actualPlainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),new TestAudit());
         assertEquals(expectedPlainQuery, actualPlainQuery);
         assertEquals(employeeIds.get(0), params.get(0));
         assertEquals(employeeIds.get(1), params.get(1));
@@ -130,7 +129,7 @@ public class ServerJdbcQueryAssertionTest {
         assertion.setAllowMultiValuedVariables(false);
 
         String expectedPlainQuery = "select * from employees where id in (?) and department = ?";
-        String actualPlainQuery = fixture.getQueryStatementWithoutContextVariables(query, params, peCtx);
+        String actualPlainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),new TestAudit());
         assertEquals(expectedPlainQuery, actualPlainQuery);
         assertEquals("1, 2, 3", params.get(0));
         assertEquals(department, params.get(1));
@@ -154,7 +153,7 @@ public class ServerJdbcQueryAssertionTest {
         assertion.setAllowMultiValuedVariables(true);
 
         String expectedPlainQuery = "select * from employees e1, employees e2 where e1.id in (?, ?, ?) and e2.id in (?, ?, ?) and e1.department = ?";
-        String actualPlainQuery = fixture.getQueryStatementWithoutContextVariables(query, params, peCtx);
+        String actualPlainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),new TestAudit());
         assertEquals(expectedPlainQuery, actualPlainQuery);
         assertEquals(employeeIds.get(0), params.get(0));
         assertEquals(employeeIds.get(1), params.get(1));
@@ -178,7 +177,7 @@ public class ServerJdbcQueryAssertionTest {
         List<Object> params = new ArrayList<Object>();
         String query = "select * from employees where id=${var_ids[3]} and department = ${var_dept}";
         assertion.setSqlQuery(query);
-        fixture.getQueryStatementWithoutContextVariables(query, params, peCtx);
+        JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),new TestAudit());
     }
 
     @Test
@@ -194,7 +193,7 @@ public class ServerJdbcQueryAssertionTest {
         List<Object> params = new ArrayList<Object>();
         String query = "select * from employees where id=${var_ids[3]} and department = ${var_dept}";
         assertion.setSqlQuery(query);
-        String actualQuery = fixture.getQueryStatementWithoutContextVariables(query, params, peCtx);
+        String actualQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),new TestAudit());
         assertEquals("select * from employees where id=? and department = ?", actualQuery);
         assertEquals("", params.get(0));
         assertEquals(department, params.get(1));
@@ -206,7 +205,7 @@ public class ServerJdbcQueryAssertionTest {
         List<Object> params = new ArrayList<Object>();
         String expectedQuery = "select * from employees where id=1 and department = 'Production'";
         assertion.setSqlQuery(expectedQuery);
-        String actualQuery = fixture.getQueryStatementWithoutContextVariables(expectedQuery, params, peCtx);
+        String actualQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(expectedQuery, params, peCtx,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),new TestAudit());
         assertEquals(expectedQuery, actualQuery);
         assertTrue(params.size() == 0);
 
@@ -231,7 +230,8 @@ public class ServerJdbcQueryAssertionTest {
         JdbcQueryingManager jdbcQueryingManager = (JdbcQueryingManager) appCtx.getBean("jdbcQueryingManager");
         SqlRowSet resultSet = jdbcQueryingManager.getMockSqlRowSet();
 
-        int numOfRecords = fixture.setContextVariables(resultSet, peCtx);
+        ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, appCtx);
+        int numOfRecords = serverAssertion.setContextVariables(resultSet, peCtx);
 
         // Check the number of returned records by the query
         assertEquals("The number of returned numOfRecords matched", MockJdbcDatabaseManager.MOCK_MAX_ROWS, numOfRecords);
