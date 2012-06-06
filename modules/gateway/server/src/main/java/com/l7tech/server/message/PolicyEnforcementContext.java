@@ -204,7 +204,8 @@ public interface PolicyEnforcementContext extends Closeable {
      * Get the value of a context variable if it's set, otherwise throw.
      *
      * @param name the name of the variable to get (case-insensitive), ie "requestXpath.result".  Required.
-     * @return  the Object representing the value of the specified variable.  Never null.
+     * @return  the Object representing the value of the specified variable.  May currently be null in some situations
+     *          (for example, when a built-in variable returns null, or selects an empty collection, when using a wrapped PEC).
      * @throws NoSuchVariableException  if no value is set for the specified variable
      */
     Object getVariable(String name) throws NoSuchVariableException;

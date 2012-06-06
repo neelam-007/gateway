@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -20,6 +21,7 @@ import com.l7tech.test.BugNumber;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
@@ -163,14 +165,15 @@ public class ServerForEachLoopAssertionTest {
     }
 
     @Test
+    @BugNumber(12309)
     public void testNoSuchTargetVar() throws Exception {
         ass.setLoopVariableName("nonexist");
         ass.setVariablePrefix("i");
-        checkRequest(AssertionStatus.FAILED);
+        checkRequest(AssertionStatus.NONE);
         assertNoSuchVariable("accum");
         assertNoSuchVariable("i.current");
-        assertNoSuchVariable("i.iterations");
-        assertNoSuchVariable("i.exceededlimit");
+        assertEquals(0, context.getVariable("i.iterations"));
+        assertEquals(false, context.getVariable("i.exceededlimit"));
     }
 
     @Test
@@ -179,7 +182,7 @@ public class ServerForEachLoopAssertionTest {
         ass.setLoopVariableName("nullvalue");
         ass.setVariablePrefix("i");
         checkRequest(AssertionStatus.NONE, sass(), mockPec);
-        verify(mockPec, times(1)).getVariable("nullvalue");
+        verify(mockPec, times(1)).getVariableMap(Matchers.<String[]>anyObject(), Matchers.<Audit>anyObject());
         verify(mockPec, never()).setVariable(eq("i.current"), anyObject());
         verify(mockPec, times(1)).setVariable("i.iterations", 0);
         verify(mockPec, times(2)).setVariable("i.exceededlimit", false);

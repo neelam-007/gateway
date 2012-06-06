@@ -1,13 +1,10 @@
 package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AssertionStatusException;
 import org.jboss.util.collection.ArrayIterator;
 import org.springframework.beans.factory.BeanFactory;
 
@@ -15,6 +12,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Server side implementation of the ForEachLoopAssertion.
@@ -80,16 +78,12 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
     }
 
     private Object findValues(PolicyEnforcementContext context) {
-        final Object multivaluedObj;
-        try {
-            multivaluedObj = context.getVariable(multivaluedVar);
-        } catch (NoSuchVariableException e) {
-            logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, multivaluedVar);
-            throw new AssertionStatusException(AssertionStatus.FAILED);
-        }
+        // Use getVariableMap() rather than getVariable() so that empty collections do not result in NoSuchVariableException (Bug #12309)
+        Map<String, Object> map = context.getVariableMap(new String[]{multivaluedVar}, getAudit());
+        final Object multivaluedObj = map.get(multivaluedVar);
 
         if (multivaluedObj == null) {
-            // Treat as empty collection for iteration purposes (Bug #12309)
+            // Might have been a selector trying to return an empty collection, so treat as empty collection for iteration purposes (Bug #12309)
             return Collections.emptyList();
         }
 
