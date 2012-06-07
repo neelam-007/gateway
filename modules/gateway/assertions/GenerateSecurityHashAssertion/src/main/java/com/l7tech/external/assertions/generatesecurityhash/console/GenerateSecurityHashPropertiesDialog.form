@@ -26,19 +26,19 @@
       </scrollpane>
       <component id="8e99a" class="javax.swing.JLabel">
         <constraints>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="&amp;Source Data"/>
+          <text value="&amp;Source Data:"/>
         </properties>
       </component>
       <component id="cab78" class="javax.swing.JLabel">
         <constraints>
-          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <labelFor value="73e8b"/>
-          <text value="Signature &amp;Algorithm"/>
+          <text value="Signature &amp;Algorithm:"/>
         </properties>
       </component>
       <component id="73e8b" class="javax.swing.JComboBox" binding="algorithmComboBox">
@@ -51,11 +51,11 @@
       </component>
       <component id="b307" class="javax.swing.JLabel">
         <constraints>
-          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <labelFor value="b2101"/>
-          <text value="&amp;Key"/>
+          <text value="&amp;Key:"/>
         </properties>
       </component>
       <component id="b2101" class="javax.swing.JTextField" binding="keyTextField">
@@ -68,10 +68,10 @@
       </component>
       <component id="7feb8" class="javax.swing.JLabel">
         <constraints>
-          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="&amp;Output Variable"/>
+          <text value="&amp;Output Variable:"/>
         </properties>
       </component>
       <component id="2c494" class="com.l7tech.console.panels.TargetVariablePanel" binding="targetVariablePanel">
