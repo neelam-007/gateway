@@ -1,42 +1,49 @@
 package com.l7tech.external.assertions.cache;
 
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.server.MockClusterPropertyManager;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.HybridStashManager;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.common.mime.HybridStashManager;
 import com.l7tech.external.assertions.cache.server.ServerCacheLookupAssertion;
 import com.l7tech.external.assertions.cache.server.ServerCacheStorageAssertion;
+import com.l7tech.external.assertions.cache.server.SsgCacheManager;
 import com.l7tech.gateway.common.Component;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.server.MockClusterPropertyManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.system.Stopping;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.File;
+import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test the CacheStorageAssertion and the CacheLookupAssertion.
  *
  * @noinspection JavaDoc
  */
+
 public class CacheAssertionTest {
     private static final ApplicationEventProxy eventProxy = new ApplicationEventProxy();
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
@@ -45,6 +52,27 @@ public class CacheAssertionTest {
         beanFactory.addBean( "messageCacheStashManagerFactory", TestStashManagerFactory.getInstance() );
         beanFactory.addBean( "applicationEventProxy", eventProxy );
         beanFactory.addBean( "clusterPropertyManager", new MockClusterPropertyManager( new ClusterProperty("messageCache.resetGeneration", "0")));
+    }
+
+    @Before
+    public void resetSsgCacheManager(){
+        Field field = null;
+        try{
+            field = SsgCacheManager.class.getDeclaredField("INSTANCE");
+            field.setAccessible(true);
+            final Object o = field.get(SsgCacheManager.class);
+            if(o != null){
+                ((AtomicReference)o).set(null);
+            }
+        }
+        catch(Exception e){
+            fail("Error resting SsgCacheManager via reflection: " + e.getMessage());
+        }
+        finally {
+            if(field != null){
+                field.setAccessible(false);
+            }
+        }
     }
 
     @Ignore("unknown")
@@ -79,14 +107,14 @@ public class CacheAssertionTest {
         String cachedString = messageBodyToString( ctx.getResponse() );
         assertTrue( cachedString.contains( "<responseToCache" ) ); // may be canonicalized; we'll accept it if so
         AssertionStatus storeResult = storass.checkRequest( ctx );
-        assertEquals( storeResult, AssertionStatus.NONE );
+        assertEquals( AssertionStatus.NONE, storeResult);
 
         ctx = makeContext();
         ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToReplace/>" ) );
         AssertionStatus lookResult = lookass.checkRequest( ctx );
 
         // Must hit
-        assertEquals( lookResult, AssertionStatus.NONE );
+        assertEquals( AssertionStatus.NONE, lookResult );
         assertEquals( messageBodyToString( ctx.getResponse() ), cachedString );
     }
 
@@ -102,7 +130,7 @@ public class CacheAssertionTest {
         String cachedString = messageBodyToString( ctx.getResponse() );
         assertTrue( cachedString.contains( "<responseToCache" ) ); // may be canonicalized; we'll accept it if so
         AssertionStatus storeResult = storass.checkRequest( ctx );
-        assertEquals( storeResult, AssertionStatus.NONE );
+        assertEquals( AssertionStatus.NONE, storeResult );
 
         ctx = makeContext();
         ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToReplace/>" ) );
@@ -112,7 +140,7 @@ public class CacheAssertionTest {
 
         // Must miss (different cache id)
         assertEquals( AssertionStatus.FALSIFIED, lookResult );
-        assertEquals( messageBodyToString( ctx.getResponse() ), origResponse );
+        assertEquals( origResponse, messageBodyToString( ctx.getResponse() ) );
     }
 
     @Test
@@ -123,7 +151,7 @@ public class CacheAssertionTest {
         final String funkyResp1 = "<resp>funkyKey1</resp>";
         PolicyEnforcementContext ctx = makeContext( funkyResp1 );
         AssertionStatus storeResult1 = storass1.checkRequest( ctx );
-        assertEquals( storeResult1, AssertionStatus.NONE );
+        assertEquals( AssertionStatus.NONE, storeResult1 );
 
         ServerCacheStorageAssertion storass2 = makeStorAss( "myOtherKey2" );
         ServerCacheLookupAssertion lookass2 = makeLookAss( "myOtherKey2" );
@@ -132,20 +160,20 @@ public class CacheAssertionTest {
         ctx.close();
         ctx = makeContext( otherResp2 );
         AssertionStatus storeResult2 = storass2.checkRequest( ctx );
-        assertEquals( storeResult2, AssertionStatus.NONE );
+        assertEquals( AssertionStatus.NONE, storeResult2 );
 
         // Must hit
         ctx.close();
         ctx = makeContext();
         AssertionStatus lookResult1 = lookass1.checkRequest( ctx );
-        assertEquals( lookResult1, AssertionStatus.NONE );
+        assertEquals( AssertionStatus.NONE, lookResult1 );
         assertEquals( messageBodyToString( ctx.getResponse() ), funkyResp1 );
 
         // Must hit
         ctx.close();
         ctx = makeContext();
         AssertionStatus lookResult2 = lookass2.checkRequest( ctx );
-        assertEquals( lookResult2, AssertionStatus.NONE );
+        assertEquals( AssertionStatus.NONE, lookResult2 );
         assertEquals( messageBodyToString( ctx.getResponse() ), otherResp2 );
     }
 
@@ -175,19 +203,15 @@ public class CacheAssertionTest {
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
     }
 
-    // This test shuts down the cache and so must be the final test executed
-    /**
-     * @noinspection InstanceMethodNamingConvention
-     */
     @Test
-    public void test_FINALTEST_DefaultCacheShutdown() throws Exception {
+    public void testDefaultCacheShutdown() throws Exception {
         ServerCacheStorageAssertion storass = new ServerCacheStorageAssertion( new CacheStorageAssertion(), beanFactory );
         ServerCacheLookupAssertion lookass = new ServerCacheLookupAssertion( new CacheLookupAssertion(), beanFactory );
 
         PolicyEnforcementContext ctx = makeContext();
         ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToCache/>" ) );
         AssertionStatus storeResult = storass.checkRequest( ctx );
-        assertEquals( AssertionStatus.NONE, storeResult );
+        assertEquals( storeResult, AssertionStatus.NONE );
 
         // Now shut down the cache and verify that it no longer finds the result
         eventProxy.onApplicationEvent( new Stopping( this, Component.GATEWAY, "0.0.0.0" ) );
@@ -199,7 +223,7 @@ public class CacheAssertionTest {
         AssertionStatus lookResult = lookass.checkRequest( ctx );
 
         // Must miss
-        assertEquals( AssertionStatus.FALSIFIED, lookResult );
+        assertEquals( lookResult, AssertionStatus.FALSIFIED );
         assertEquals( messageBodyToString( ctx.getResponse() ), origResponse );
     }
 
