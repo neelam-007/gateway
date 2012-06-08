@@ -98,18 +98,13 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         final ContentTypeHeader contentType = getResponseContentType(variableMap);
         final byte[] bytes = getResponseContent(variableMap, contentType);
 
-        Integer status;
-        if (assertion.getResponseStatus() != null) {
-            final String statusStr = ExpandVariables.process(assertion.getResponseStatus(), context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
-            final Option<Integer> option = ConversionUtils.getTextToIntegerConverter().call(statusStr);
-            if (option.isSome() && option.some() > 0) {
-                status = option.some();
-            } else {
-                logAndAudit(AssertionMessages.TEMPLATE_RESPONSE_INVALID_STATUS, statusStr);
-                return AssertionStatus.FAILED;
-            }
+        final Integer status;
+        final String statusStr = ExpandVariables.process(assertion.getResponseStatus(), variableMap, getAudit());
+        final Option<Integer> option = ConversionUtils.getTextToIntegerConverter().call(statusStr);
+        if (option.isSome() && option.some() > 0) {
+            status = option.some();
         } else {
-            logAndAudit(AssertionMessages.TEMPLATE_RESPONSE_INVALID_STATUS, "null");
+            logAndAudit(AssertionMessages.TEMPLATE_RESPONSE_INVALID_STATUS, statusStr);
             return AssertionStatus.FAILED;
         }
 

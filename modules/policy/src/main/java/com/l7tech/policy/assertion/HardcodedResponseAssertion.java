@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
+import org.jetbrains.annotations.NotNull;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -28,7 +29,7 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
         return responseStatus;
     }
 
-    public void setResponseStatus(final String responseStatus) {
+    public void setResponseStatus(@NotNull final String responseStatus) {
         this.responseStatus = responseStatus;
     }
 
