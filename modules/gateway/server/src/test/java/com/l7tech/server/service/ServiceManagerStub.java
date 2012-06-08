@@ -2,12 +2,14 @@ package com.l7tech.server.service;
 
 import com.l7tech.gateway.common.StubDataStore;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -15,6 +17,7 @@ import org.springframework.context.ApplicationContextAware;
 import javax.wsdl.WSDLException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,11 +70,52 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
         if (policy == null) throw new IllegalArgumentException("Service saved without a policy");
         if (policy.getOid() == Policy.DEFAULT_OID) policyManager.save(policy);
         long oid = super.save(service);
+        Field soapVersionField = null;
         try {
+            soapVersionField = service.getClass().getDeclaredField("_soapVersion");
+            soapVersionField.setAccessible(true);
+            final Object currentSoapVersion = soapVersionField.get(service);
+            if (currentSoapVersion == null) {
+                service.setSoapVersion(SoapVersion.UNKNOWN);
+            }
+
+            // allow copy constructor to be successful - call to getSoapVersion will not trigger parsing the WSDL
+            final PublishedService newService = new PublishedService(service, true){
+                private boolean setSoapVersionOnce = false;
+
+                @Override
+                public SoapVersion getSoapVersion() {
+                    if (setSoapVersionOnce) {
+                        return super.getSoapVersion();
+                    }
+                    _locked = false;
+                    // set to null so that the version will be read from the wsdl
+                    setSoapVersion(null);
+                    final SoapVersion soapVersion = super.getSoapVersion();
+                    _locked = true;
+                    setSoapVersionOnce = true;
+                    return soapVersion;
+                }
+            };
+            if (currentSoapVersion == null) {
+                //restore back to null so its back to it's original state
+                service.setSoapVersion(null);
+            }
+
+            //TODO Test environment should not have access to UI resources
+            //explicitly set the wsdl strategy to avoid possibly incorrectly loaded strategy in test environment
+            newService.parseWsdlStrategy(new ServiceDocumentWsdlStrategy(null));
+            // read actual soap version now that it's safe to do so
+            newService.getSoapVersion();
+
             ServiceCache serviceCache = getServiceCache();
-            serviceCache.cache(new PublishedService(service, true));
+            serviceCache.cache(newService);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            if (soapVersionField != null) {
+                soapVersionField.setAccessible(false);
+            }
         }
         return oid;
     }
