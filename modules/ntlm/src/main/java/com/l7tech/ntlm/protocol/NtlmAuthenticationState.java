@@ -17,7 +17,7 @@ public class NtlmAuthenticationState {
     private byte[] sessionKey;
     private byte[] targetInfo;
     private Map accountInfo;
-    private NtlmAuthenticationProvider.State state = NtlmAuthenticationProvider.State.DEFAULT;
+    private NtlmAuthenticationProvider.State state = NtlmAuthenticationProvider.State.CHALLENGE;
 
     public NtlmAuthenticationProvider.State getState() {
         return state;

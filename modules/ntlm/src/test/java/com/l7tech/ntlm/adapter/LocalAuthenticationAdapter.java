@@ -1,8 +1,8 @@
 package com.l7tech.ntlm.adapter;
 
-import com.l7tech.ntlm.protocol.NtlmChallengeResponse;
+import com.l7tech.ntlm.protocol.NtlmServerResponse;
 import com.l7tech.ntlm.protocol.AuthenticationManagerException;
-import com.l7tech.ntlm.protocol.TestNtlmChallengeResponse;
+import com.l7tech.ntlm.protocol.TestNtlmServerResponse;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -20,9 +20,9 @@ public class LocalAuthenticationAdapter extends HashMap implements Authenticatio
     }
 
     @Override
-    public Object validate(NtlmChallengeResponse response, byte[] challenge, Map account) throws AuthenticationManagerException {
+    public Object validate(NtlmServerResponse response, byte[] challenge, Map account) throws AuthenticationManagerException {
         if (response == null) {
-            throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_INVALID_CREDENTIALS, "User credentials cannot be null!");
+            throw new AuthenticationManagerException( "User credentials cannot be null!");
         }
         String domain = response.getDomain();
         String username = response.getUsername();
@@ -40,7 +40,7 @@ public class LocalAuthenticationAdapter extends HashMap implements Authenticatio
         if ((domain.equalsIgnoreCase(nbtName)) || (domain.equalsIgnoreCase(dnsName))) {
             if (username.equalsIgnoreCase(myusername)) {
 
-                NtlmChallengeResponse local = new TestNtlmChallengeResponse(response, domain, myusername, mypassword.toCharArray(), response.getTargetInformation());
+                NtlmServerResponse local = new TestNtlmServerResponse(response, domain, myusername, mypassword, response.getTargetInformation());
 
                 if (Arrays.equals(response.getNtResponse(), local.getNtResponse())) {
                     account.put("domain.dns.name", domain);
@@ -48,12 +48,11 @@ public class LocalAuthenticationAdapter extends HashMap implements Authenticatio
                     byte[] sessionKey = new byte[16];
                     SecureRandom secureRandom = new SecureRandom();
                     secureRandom.nextBytes(sessionKey);
-                    response.setSessionKey(sessionKey);
                     return sessionKey;
                 }
             }
         }
 
-        throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_INVALID_CREDENTIALS, "User domain/username incorrect");
+        throw new AuthenticationManagerException("User domain/username incorrect");
     }
 }

@@ -1,32 +1,25 @@
 package com.l7tech.ntlm.protocol;
 
-import jcifs.smb.NtlmPasswordAuthentication;
-import jcifs.util.Encdec;
-import jcifs.util.HMACT64;
-import jcifs.util.MD4;
-
-import java.util.Arrays;
-
 /**
  * Copyright: Layer 7 Technologies, 2012
  * User: ymoiseyenko
  */
-public class NtlmChallengeResponse {
-    String domain;
+public class NtlmServerResponse {
 
-    String username;
-    byte[] challenge;
-    byte[] sessionNonce;
-    byte[] targetInformation;
-    byte[] lmResponse;
-    byte[] ntResponse;
-    byte[] sessionKey = null;
-    int flags = 0;
-    protected NtlmChallengeResponse() {
+    protected String domain;
+    protected String username;
+    protected byte[] challenge;
+    protected byte[] sessionNonce;
+    protected byte[] targetInformation;
+    protected byte[] lmResponse;
+    protected byte[] ntResponse;
+    protected int flags = 0;
+
+    protected NtlmServerResponse() {
 
     }
-
-    public NtlmChallengeResponse(String domain, String username, byte[] challenge, byte[] sessionNonce, byte[] targetInformation, byte[] lmResponse, byte[] ntResponse, int flags) {
+    
+    public NtlmServerResponse(String domain, String username, byte[] challenge, byte[] sessionNonce, byte[] targetInformation, byte[] lmResponse, byte[] ntResponse, int flags) {
         this.domain = domain;
         this.username = username;
         this.challenge = challenge;
@@ -91,14 +84,6 @@ public class NtlmChallengeResponse {
 
     public void setNtResponse(byte[] ntResponse) {
         this.ntResponse = ntResponse;
-    }
-
-    public byte[] getSessionKey() {
-        return sessionKey;
-    }
-
-    public void setSessionKey(byte[] sessionKey) {
-        this.sessionKey = sessionKey;
     }
 
     public int getFlags() {

@@ -11,6 +11,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -26,12 +27,15 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
 
     private static final Logger log = Logger.getLogger(NtlmAuthenticationClient.class.getName());
 
+    private final SecureRandom secureRandom = new SecureRandom();
+
     public NtlmAuthenticationClient() {
         this(new HashMap());
     }
 
     public NtlmAuthenticationClient(Map properties) {
         super(properties);
+        state.setState(State.NEGOTIATE);
     }
 
     /**
@@ -54,8 +58,6 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
 
         try {
             switch (state.getState()) {
-                case DEFAULT:
-                    state.setState(State.NEGOTIATE);
                 case NEGOTIATE:
                     if (flags == 0) {
                         flags = NtlmConstants.NTLMSSP_NEGOTIATE_56 |
@@ -83,18 +85,18 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
                     flags &= NtlmConstants.NTLMSSP_TARGET_TYPE_DOMAIN_MASK;// -65537;
                     flags |= NtlmConstants.NTLMSSP_NEGOTIATE_VERSION;//33554432;
 
-                    char[] passwordChars = cred.getPassword();
-                    if (passwordChars == null) {
-                        throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_INVALID_CREDENTIALS, "Password is required");
+                    String password = cred.getPassword();
+                    if (StringUtils.isEmpty(password)) {
+                        throw new AuthenticationManagerException("Password required");
                     }
 
                     String domainNameFields = (domainName != null ? domainName : "");
                     String userNameFields = name;
 
-                    String password = new String(passwordChars);
                     byte[] responseKeyNT = NtlmPasswordAuthentication.nTOWFv2(domainNameFields, userNameFields, password);
 
                     byte[] clientChallenge = new byte[8];
+
                     secureRandom.nextBytes(clientChallenge);
                     long nanos1601 = (System.currentTimeMillis() + MILLISECONDS_BETWEEN_1970_AND_1601) * 10000L;
 
@@ -137,12 +139,12 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
 
                     if (((flags & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY) != 0) && ((flags & NtlmConstants.NTLMSSP_NEGOTIATE_SIGN) != 0)) {
                         if (sessionKey == null) {
-                            throw new AuthenticationManagerException("Can't sign the request if an NTLM sessionKey is null!");
+                            throw new AuthenticationManagerException("Can't sign the message if an NTLM sessionKey is null!");
                         }
                         log.log(Level.FINE, "Extended Session Security key was sent to the client");
                     }
 
-                    log.log(Level.FINE, "NTLM Client negotiated NTLMv2");
+                    log.log(Level.FINE, "Client negotiated NTLMv2");
 
                     serverChallenge = null;
                     state.setTargetInfo(null);
@@ -152,7 +154,7 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
                     break;
                 case COMPLETE:
                     state.setState(State.FAILED);
-                    throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_INVALID_CREDENTIALS, "Authentication failed");
+                    throw new AuthenticationManagerException("Authentication failed");
                 default:
                     throw new IOException("Invalid state");
             }
@@ -166,5 +168,10 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
         }
     }
 
+    @Override
+    public void resetAuthentication() {
+        super.resetAuthentication();
+        state.setState(State.NEGOTIATE);
+    }
 
 }

@@ -70,7 +70,7 @@ public class NtlmAuthenticationClientTest {
 
     @Test
     public void shouldAuthenticateClient() throws Exception {
-        NtlmCredential creds = new NtlmCredential("user@l7tech.com" /*"L7TECH\\user"*/, "password".toCharArray());
+        NtlmCredential creds = new NtlmCredential("user@l7tech.com" /*"L7TECH\\user"*/, "password");
         Map props = new HashMap();
         props.putAll(fixture);
         props.put("flags", "0x628882B7");//set negotiate flags

@@ -79,7 +79,7 @@ public class Ntlm2AuthScheme implements AuthScheme{
             client.getNtlmAuthenticationState().setState(NtlmAuthenticationProvider.State.CHALLENGE);
         } else {
             this.ntlmchallenge = "";
-            if (client.getNtlmAuthenticationState().getState() != NtlmAuthenticationProvider.State.DEFAULT) {
+            if (client.getNtlmAuthenticationState().getState() != NtlmAuthenticationProvider.State.NEGOTIATE) {
                 client.getNtlmAuthenticationState().setState(NtlmAuthenticationProvider.State.FAILED);
             }
         }
@@ -137,7 +137,7 @@ public class Ntlm2AuthScheme implements AuthScheme{
     private NtlmCredential convertCredentials(Credentials credentials) throws AuthenticationException, AuthenticationManagerException {
         if(credentials instanceof NTCredentials) {
             NTCredentials ntCredentials = (NTCredentials)credentials;
-            return new NtlmCredential(ntCredentials.getHost(), ntCredentials.getDomain(), ntCredentials.getUserName(), ntCredentials.getPassword().toCharArray());
+            return new NtlmCredential(ntCredentials.getHost(), ntCredentials.getDomain(), ntCredentials.getUserName(), ntCredentials.getPassword());
         }
         throw new AuthenticationException("Expected NTCredentials");
     }

@@ -14,39 +14,36 @@ public class NtlmCredential {
     private String accountName;
     private String domain;
     private String host;
-    private char[] password = null;
+    private String password = null;
 
 
-    public NtlmCredential(String acctname, char[] password)
+    public NtlmCredential(String acctname, String password)
             throws AuthenticationManagerException {
         this(null, null, acctname, password);
     }
 
-    public NtlmCredential(String host, String domain, String acctname, char[] password)
+    public NtlmCredential(String host, String domain, String acctname, String password)
             throws AuthenticationManagerException {
         if(!parseAccountName(acctname)){
             this.accountName = acctname;
             this.domain = domain;
         }
         this.host = host;
-        if (password != null) {
-            this.password = new char[password.length];
-            System.arraycopy(password, 0, this.password, 0, password.length);
-        }
+        this.password = password;
     }
 
     private boolean parseAccountName(String acctname) {
         Matcher m = INTERNET_PATTERN.matcher(acctname);
         if(m.find()){
-            this.accountName = m.group(1);
-            this.domain = m.group(2);
+            accountName = m.group(1);
+            domain = m.group(2);
             return true;
         }
         else {
             m = NETBIOS_PATTERN.matcher(acctname);
             if(m.find()) {
-                this.domain = m.group(1);
-                this.accountName = m.group(2);
+                domain = m.group(1);
+                accountName = m.group(2);
                 return true;
             }
         }
@@ -61,8 +58,8 @@ public class NtlmCredential {
         return domain;
     }
 
-    public char[] getPassword() {
-        return this.password;
+    public String getPassword() {
+        return password;
     }
 
     public String getHost() {

@@ -1,6 +1,7 @@
 package com.l7tech.ntlm.netlogon;
 
 import com.l7tech.ntlm.NtlmTestConstants;
+import com.l7tech.ntlm.adapter.NetlogonAdapter;
 import com.l7tech.ntlm.protocol.*;
 import com.l7tech.util.HexUtils;
 import jcifs.ntlmssp.Type1Message;
@@ -30,67 +31,69 @@ import static junit.framework.Assert.assertTrue;
 @Ignore("needs connection to the test AD server")
 public class NetLogonTest {
 
-    NetLogon fixture = null;
+    NetlogonAdapter fixture = null;
     Map<String, String> properties = NtlmTestConstants.config;
+    private String user;
+    private String password;
 
 
     @Before
     public void setUp() throws Exception {
-        fixture = new NetLogon(properties);
+        fixture = new NetlogonAdapter(properties);
+        user = NtlmTestConstants.USER;
+        password = NtlmTestConstants.PASSWORD;
     }
 
     @After
     public void tearDown() throws Exception {
-        //fixture.disconnect();
     }
 
     @Test
     public void testConnect() throws Exception {
-        fixture.connect();
+        fixture.testConnect();
     }
 
-/*    @Test
-    public void testConnectNetlogonConnection() throws Exception {
-        NetlogonConnection netlogonConnection = new NetlogonConnection();
-        String hostname = properties.get("localhost.netbios.name");
-        String serverName = properties.get("server.dns.name");
-        String serviceName = properties.get("service.account");
-        String servicePassword = properties.get("service.password");
-        NtlmServiceAccount serviceAccount = new NtlmServiceAccount(serviceName, servicePassword);
 
-       netlogonConnection.connect(serverName, serverName, serviceAccount, new SecureRandom());
+    @Test(expected = AuthenticationManagerException.class)
+    public void shouldFailTestConnectWhenServiceAccountInvalid() throws Exception {
+        Map props = new HashMap();
 
-    }*/
+        props.put("server.dns.name", properties.get("server.dns.name"));
+        props.put("service.account", "");
+        props.put("service.password", "");
+
+        new NetlogonAdapter(props);
+    }
+
+    @Test(expected = AuthenticationManagerException.class)
+    public void shouldFailUserValidation() throws Exception {
+        user = "test";
+        password = "123";
+        NtlmServerResponse response = getTestChallengeResponse();
+
+        byte[] challenge = generateTestServerChallenge(response);
+        Map acctInfo = new HashMap();
+        fixture.validate(response, challenge, acctInfo);
+    }
+
+
 
     @Test
     public void testValidate() throws Exception {
-        NtlmChallengeResponse response = getTestChallengeResponse();
+        NtlmServerResponse response = getTestChallengeResponse();
 
         byte[] challenge = generateTestServerChallenge(response);
         Map acctInfo = new HashMap();
         fixture.validate(response, challenge, acctInfo);
         assertTrue(acctInfo.size() > 0);
         assertEquals(NtlmTestConstants.USER, acctInfo.get("sAMAccountName"));
-        assertTrue(fixture.handle == null);
-
+        assertEquals(NtlmTestConstants.DOMAIN, acctInfo.get("logonDomainName"));
+        assertEquals(NtlmTestConstants.USERSID, acctInfo.get("userSid").toString());
     }
 
-    @Test
-    public void shouldReleaseHandleWhenFailed() throws Exception {
-        fixture.remove("localhost.netbios.name");
 
-        NtlmChallengeResponse response = getTestChallengeResponse();
 
-        byte[] challenge = generateTestServerChallenge(response);
-        try{
-            fixture.validate(response, challenge, new HashMap());
-        }catch (Exception ex){}
-
-        assertTrue(fixture.handle == null);
-
-    }
-
-    private byte[] generateTestServerChallenge(NtlmChallengeResponse response) throws AuthenticationManagerException {
+    private byte[] generateTestServerChallenge(NtlmServerResponse response) throws AuthenticationManagerException {
         byte[] challenge = response.getChallenge();
 
         if (((response.getFlags() & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY /*0x80000*/) != 0) && (response.getNtResponse().length == NtlmAuthenticationServer.NTLM_V1_NT_RESPONSE_LENGTH)) {
@@ -99,13 +102,13 @@ public class NetLogonTest {
                 md5.update(response.getSessionNonce());
                 challenge = md5.digest();
             } catch (GeneralSecurityException e) {
-                throw new AuthenticationManagerException(AuthenticationManagerException.Status.STATUS_ERROR, "Failed to compute NTLMv2 server challenge", e);
+                throw new AuthenticationManagerException("Failed to compute NTLMv2 server challenge", e);
             }
         }
         return challenge;
     }
 
-    private NtlmChallengeResponse getTestChallengeResponse() throws IOException {
+    private NtlmServerResponse getTestChallengeResponse() throws IOException {
         Type1Message type1Message = NtlmClient.generateType1Msg(NtlmTestConstants.DOMAIN, NtlmTestConstants.WORKSTATION);
         SecureRandom random = new SecureRandom();
         byte[] serverChallenge = new byte[8];
@@ -113,15 +116,15 @@ public class NetLogonTest {
 
         Type2Message type2Message = new Type2Message(type1Message, serverChallenge, NtlmTestConstants.DOMAIN);
         type2Message.setTargetInformation(getTargetInformation());
-        Type3Message type3Message = NtlmClient.generateType3Msg(NtlmTestConstants.USER,
-                NtlmTestConstants.PASSWORD, NtlmTestConstants.DOMAIN, NtlmTestConstants.WORKSTATION,
+        Type3Message type3Message = NtlmClient.generateType3Msg(user,
+                password, NtlmTestConstants.DOMAIN, NtlmTestConstants.WORKSTATION,
                 HexUtils.encodeBase64(type2Message.toByteArray(), true));
 
         byte[] sessionNonce = new byte[16];
         System.arraycopy(serverChallenge, 0, sessionNonce, 0, 8);
         System.arraycopy(type3Message.getLMResponse(), 0, sessionNonce, 8, type3Message.getLMResponse().length < 8 ? 0 : 8);
 
-        return new NtlmChallengeResponse(type3Message.getDomain(), type3Message.getUser(),
+        return new NtlmServerResponse(type3Message.getDomain(), type3Message.getUser(),
                 serverChallenge, sessionNonce, getTargetInformation(), type3Message.getLMResponse(), type3Message.getNTResponse(), type3Message.getFlags());
     }
 

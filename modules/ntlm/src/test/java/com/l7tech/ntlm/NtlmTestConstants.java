@@ -1,6 +1,5 @@
 package com.l7tech.ntlm;
 
-import com.l7tech.ntlm.netlogon.NetLogon;
 import org.junit.Before;
 
 import java.util.HashMap;
@@ -18,6 +17,7 @@ public class NtlmTestConstants {
     public static final String PASSWORD = "7layer]";
     public static final String DOMAIN = "L7TECH";
     public static final String WORKSTATION = "MYWORKSTATION";
+    public static final Object USERSID = "S-1-5-21-3002938684-2689761534-3921868429-1109";
 
     public static final Map<String, String> config;
 
@@ -31,5 +31,4 @@ public class NtlmTestConstants {
         config.put("service.account", "linux-12vk$@l7tech.dev");
         config.put("service.password", "linux-12vk$");
     }
-
 }

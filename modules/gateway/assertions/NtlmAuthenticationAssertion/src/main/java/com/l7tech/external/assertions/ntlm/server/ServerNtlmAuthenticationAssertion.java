@@ -8,7 +8,7 @@ import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
-import com.l7tech.ntlm.netlogon.NetLogon;
+import com.l7tech.ntlm.adapter.NetlogonAdapter;
 import com.l7tech.ntlm.protocol.AuthenticationManagerException;
 import com.l7tech.ntlm.protocol.AuthenticationProvider;
 import com.l7tech.ntlm.protocol.NtlmAuthenticationProvider;
@@ -48,8 +48,8 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
     private static final Logger log = Logger.getLogger(ServerNtlmAuthenticationAssertion.class.getName());
 
     public static final String SCHEME = "NTLM";
-    
-    protected final ThreadLocal<Pair<Object, AuthenticationProvider>> ntlmAuthenticationProviderThreadLocal =  new ThreadLocal<Pair<Object,AuthenticationProvider>>();
+
+    protected final ThreadLocal<Pair<Object, AuthenticationProvider>> ntlmAuthenticationProviderThreadLocal = new ThreadLocal<Pair<Object, AuthenticationProvider>>();
 
     private final String[] variablesUsed;
 
@@ -94,7 +94,7 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
     @Override
     protected void challenge(PolicyEnforcementContext context, Map<String, String> authParams) {
         StringBuilder challengeHeader = new StringBuilder(scheme());
-        if(authParams.containsKey(scheme())) {
+        if (authParams.containsKey(scheme())) {
             challengeHeader.append(" ");
             challengeHeader.append(authParams.get(scheme()));
         }
@@ -132,22 +132,21 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
 
     private void setContextVariables(PolicyEnforcementContext context, NtlmToken securityToken) throws PolicyAssertionException {
         Map<String, Object> vars = context.getVariableMap(this.variablesUsed, getAudit());
-        //get prefix the default on is protocol
+        //get context variable prefix
         String variablePrefix = ExpandVariables.process(assertion.getVariablePrefix(), vars, getAudit());
         variablePrefix = variablePrefix != null ? variablePrefix : NtlmAuthenticationAssertion.DEFAULT_PREFIX;
         HashMap userAccountInfo = (HashMap) securityToken.getParams().get("account.info");
         if (userAccountInfo != null) {
-            if(userAccountInfo.containsKey(NtlmAuthenticationAssertion.USER_LOGIN_NAME)) {
-                final String userLoginName = (String)userAccountInfo.get(NtlmAuthenticationAssertion.USER_LOGIN_NAME);
+            if (userAccountInfo.containsKey(NtlmAuthenticationAssertion.USER_LOGIN_NAME)) {
+                final String userLoginName = (String) userAccountInfo.get(NtlmAuthenticationAssertion.USER_LOGIN_NAME);
                 context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.USER_LOGIN_NAME, userLoginName);
                 logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_USER_AUTHENTICATED, userLoginName);
-            }
-            else {
+            } else {
                 logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_MISSING_AUTHORIZATION_ATTRIBUTE, NtlmAuthenticationAssertion.USER_LOGIN_NAME);
                 throw new PolicyAssertionException(assertion, "sAMAccountName attribute is null!");
             }
             String sid = null;
-            if(userAccountInfo.containsKey("primaryGroupSid")){
+            if (userAccountInfo.containsKey("primaryGroupSid")) {
                 SID primaryGroupSID = (SID) userAccountInfo.get("primaryGroupSid");
                 sid = primaryGroupSID.toDisplayString();
             }
@@ -155,26 +154,25 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
             context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_FLAGS, userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_FLAGS));
             context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.DOMAIN_NAME, userAccountInfo.get(NtlmAuthenticationAssertion.DOMAIN_NAME));
             String sessionKey = null;
-            if(userAccountInfo.containsKey(NtlmAuthenticationAssertion.SESSION_KEY)) {
-               sessionKey = HexUtils.encodeBase64((byte[])userAccountInfo.get(NtlmAuthenticationAssertion.SESSION_KEY), true);
+            if (userAccountInfo.containsKey(NtlmAuthenticationAssertion.SESSION_KEY)) {
+                sessionKey = HexUtils.encodeBase64((byte[]) userAccountInfo.get(NtlmAuthenticationAssertion.SESSION_KEY), true);
             }
             context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.SESSION_KEY, sessionKey);
             context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_FULL_NAME, userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_FULL_NAME));
             context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_HOME_DIR, userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_HOME_DIR));
             context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_DIR_DRIVE, userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_DIR_DRIVE));
             String[] sidGroups = null;
-            if(userAccountInfo.containsKey(NtlmAuthenticationAssertion.ACCOUNT_SIDS)){
-                Set<SID> groupSet = (Set<SID>)userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_SIDS);
+            if (userAccountInfo.containsKey(NtlmAuthenticationAssertion.ACCOUNT_SIDS)) {
+                Set<SID> groupSet = (Set<SID>) userAccountInfo.get(NtlmAuthenticationAssertion.ACCOUNT_SIDS);
                 List<String> sidGroupList = new ArrayList<String>();
-                for(SID group : groupSet){
+                for (SID group : groupSet) {
                     sidGroupList.add(group.toDisplayString());
                 }
                 sidGroups = sidGroupList.toArray(new String[0]);
             }
             context.setVariable(variablePrefix + "." + NtlmAuthenticationAssertion.ACCOUNT_SIDS, sidGroups);
 
-        }
-        else {
+        } else {
             logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_MISSING_ACCOUNT_INFO);
             throw new PolicyAssertionException(assertion, "Account Info of the authenticated account is null");
         }
@@ -193,16 +191,15 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
         AuthenticationProvider authenticationProvider = getOrCreateAuthenticationProvider(connectionId);
 
         NtlmToken token = checkProviderStatus(authenticationProvider);
-        if(token == null) {
+        if (token == null) {
             byte[] authorizationData = getAuthorizationData(request);
-            if(authorizationData == null) {
+            if (authorizationData == null) {
                 //needs authentication
                 //the challenge will be send to the client requesting NTLM authntication
                 return null;
             }
             token = authenticateClient(authorizationData, authParams, authenticationProvider);
-        }
-        else if(!checkConnectionTimeouts(token, connectionId)) {
+        } else if (!checkConnectionTimeouts(token, connectionId)) {
             //create a new provider that will reset the state
             log.log(Level.FINE, "Connection has expired. Recessing the provider status");
             authenticationProvider.resetAuthentication();
@@ -211,8 +208,8 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
         }
         if (token != null) {
             loginCredentials = LoginCredentials.makeLoginCredentials(token, assertion.getClass());
-            if(token.getParams() != null && token.getParams().containsKey("sAMAccountName")) {
-                logAndAudit(AssertionMessages.HTTPCREDS_FOUND_USER, (String)token.getParams().get("sAMAccountName"));
+            if (token.getParams() != null && token.getParams().containsKey("sAMAccountName")) {
+                logAndAudit(AssertionMessages.HTTPCREDS_FOUND_USER, (String) token.getParams().get("sAMAccountName"));
             }
             return loginCredentials;
         }
@@ -221,15 +218,14 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
 
     private AuthenticationProvider getOrCreateAuthenticationProvider(Object connectionId) throws CredentialFinderException {
         AuthenticationProvider authenticationProvider = null;
-        Pair<Object,AuthenticationProvider> pair = ntlmAuthenticationProviderThreadLocal.get();
+        Pair<Object, AuthenticationProvider> pair = ntlmAuthenticationProviderThreadLocal.get();
         //in the existing implementation connection ID is tied to a processing thread this means, the connection id remains the same for the duration of a
         //client connection. Once the connection ID changes the provider should be reset
-        if(pair == null || !connectionId.equals(pair.left)) {
+        if (pair == null || !connectionId.equals(pair.left)) {
             authenticationProvider = createAuthenticationProvider();
-            Pair<Object,AuthenticationProvider> newPair = new Pair<Object, AuthenticationProvider>(connectionId, authenticationProvider);
+            Pair<Object, AuthenticationProvider> newPair = new Pair<Object, AuthenticationProvider>(connectionId, authenticationProvider);
             ntlmAuthenticationProviderThreadLocal.set(newPair);
-        }
-        else {
+        } else {
             authenticationProvider = pair.right;
         }
 
@@ -239,37 +235,44 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
     protected AuthenticationProvider createAuthenticationProvider() throws CredentialFinderException {
         AuthenticationProvider authenticationProvider;
         try {
-            LdapIdentityProvider ldapProvider = (LdapIdentityProvider)identityProviderFactory.getProvider(assertion.getLdapProviderOid());
-            if(ldapProvider == null) {
+            LdapIdentityProvider ldapProvider = (LdapIdentityProvider) identityProviderFactory.getProvider(assertion.getLdapProviderOid());
+            if (ldapProvider == null) {
                 throw new FindException("Identity Provider with oid=" + String.valueOf(assertion.getLdapProviderOid()) + " does not exist");
             }
             LdapIdentityProviderConfig providerConfig = ldapProvider.getConfig();
 
             Map<String, String> props = new HashMap(providerConfig.getNtlmAuthenticationProviderProperties());
-            if(props.size() == 0 || !Boolean.TRUE.toString().equals(props.get("enabled"))) {
+            if (props.size() == 0 || !Boolean.TRUE.toString().equals(props.get("enabled"))) {
                 throw new FindException("NTLM Configuration is disabled or missing");
             }
-            
+
             //find password property and replace it if password is stored as a secure password
-            if(props.containsKey("service.passwordOid")) {
+            if (props.containsKey("service.passwordOid")) {
                 try {
                     long oid = Long.parseLong(props.get("service.passwordOid"));
                     String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), oid);
                     props.put("service.password", plaintextPassword);
                 } catch (FindException e) {
                     throw new CredentialFinderException("Password is invalid");
-                } catch(NumberFormatException ne){
+                } catch (NumberFormatException ne) {
                     throw new CredentialFinderException("Password is invalid");
                 }
             }
 
-            authenticationProvider = new NtlmAuthenticationServer(props, new NetLogon(props));
+            authenticationProvider = new NtlmAuthenticationServer(props, /*new NetLogon(props)*/new NetlogonAdapter(props));
         } catch (FindException e) {
             final String errorMsg = "Unable to find the Identity Provider instance";
-            if(log.isLoggable(Level.FINE)){
+            if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, errorMsg, e);
             }
             logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_IDENTITY_PROVIDER_CONFIG_FAILURE, new String[]{errorMsg}, ExceptionUtils.getDebugException(e));
+            throw new CredentialFinderException(errorMsg);
+        } catch (AuthenticationManagerException ame) {
+            final String errorMsg = "Invalid NETLOGON credentials";
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, errorMsg, ame);
+            }
+            logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_IDENTITY_PROVIDER_CONFIG_FAILURE, new String[]{errorMsg}, ExceptionUtils.getDebugException(ame));
             throw new CredentialFinderException(errorMsg);
         }
         return authenticationProvider;
@@ -296,17 +299,16 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
         try {
             byte[] ntlmToken = authenticationProvider.processAuthentication(encryptedNtlmData);
             securityToken = checkProviderStatus(authenticationProvider);
-            if(securityToken == null) {
+            if (securityToken == null) {
                 authParams.put(NtlmAuthenticationAssertion.NTLM, HexUtils.encodeBase64(ntlmToken, true));
             }
         } catch (AuthenticationManagerException e) {
             final String errMessage = "NTLM Authentication failed";
-            log.log(Level.FINE, errMessage + ": "  + e.getMessage());
+            log.log(Level.FINE, errMessage + ": " + e.getMessage());
             logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_FAILED, new String[]{errMessage}, ExceptionUtils.getDebugException(e));
             throw new CredentialFinderException(errMessage, e, AssertionStatus.AUTH_FAILED);
-        }
-        finally {
-            if(authenticationProvider.getNtlmAuthenticationState().getState() == NtlmAuthenticationProvider.State.FAILED) {
+        } finally {
+            if (authenticationProvider.getNtlmAuthenticationState().getState() == NtlmAuthenticationProvider.State.FAILED) {
                 authenticationProvider.resetAuthentication();
             }
         }
@@ -318,16 +320,16 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
         String ntlmData = "";
         NtlmToken securityToken = null;
         Map<String, Object> params = new HashMap<String, Object>();
-        if(authenticationProvider.getNtlmAuthenticationState().isComplete()){
+        if (authenticationProvider.getNtlmAuthenticationState().isComplete()) {
             Map<String, Object> accountInfo = authenticationProvider.getNtlmAuthenticationState().getAccountInfo();
 
-            if(accountInfo == null) {
+            if (accountInfo == null) {
                 throw new CredentialFinderException("NTLM account info cannot be null!", AssertionStatus.FAILED);
             }
             ntlmData = HexUtils.encodeBase64(authenticationProvider.getNtlmAuthenticationState().getSessionKey(), true);
 
             long currentMills = System.currentTimeMillis();
-            if(!accountInfo.containsKey("session.authenticate.time")) {
+            if (!accountInfo.containsKey("session.authenticate.time")) {
                 accountInfo.put("session.authenticate.time", currentMills);
             }
             accountInfo.put("request.idle.time", currentMills);
@@ -340,26 +342,24 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
 
     protected boolean checkConnectionTimeouts(final NtlmToken securityToken, final Object connectionId) {
         long maxConnectionDuration = assertion.getMaxConnectionDuration();
-        long maxIdleTimeout =  assertion.getMaxConnectionIdleTime();
-        if(securityToken != null) {
-            Map<String, Object> accountInfo = (Map)securityToken.getParams().get("account.info");
-            if(accountInfo ==  null) {
+        long maxIdleTimeout = assertion.getMaxConnectionIdleTime();
+        if (securityToken != null) {
+            Map<String, Object> accountInfo = (Map) securityToken.getParams().get("account.info");
+            if (accountInfo == null) {
                 return false;
             }
             long currentMills = System.currentTimeMillis();
-            Long sessionTime = (Long)accountInfo.get("session.authenticate.time");
+            Long sessionTime = (Long) accountInfo.get("session.authenticate.time");
             log.log(Level.FINE, "Checking session expiry...");
-            if(maxConnectionDuration == NtlmAuthenticationAssertion.DEFAULT_MAX_CONNECTION_DURATION || sessionTime != null && currentMills - sessionTime < maxConnectionDuration * 1000) {
-                Long requestIdleTime = (Long)accountInfo.get("request.idle.time");
-                if(maxIdleTimeout == NtlmAuthenticationAssertion.DEFAULT_MAX_IDLE_TIMEOUT || requestIdleTime != null && currentMills - requestIdleTime < maxIdleTimeout * 1000) {
+            if (maxConnectionDuration == NtlmAuthenticationAssertion.DEFAULT_MAX_CONNECTION_DURATION || sessionTime != null && currentMills - sessionTime < maxConnectionDuration * 1000) {
+                Long requestIdleTime = (Long) accountInfo.get("request.idle.time");
+                if (maxIdleTimeout == NtlmAuthenticationAssertion.DEFAULT_MAX_IDLE_TIMEOUT || requestIdleTime != null && currentMills - requestIdleTime < maxIdleTimeout * 1000) {
                     return true;
-                }
-                else{
+                } else {
                     logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_IDLE_TIMEOUT_EXPIRED, connectionId.toString());
                     log.log(Level.FINE, "Connection idle timeout expired for connection " + connectionId);
                 }
-            }
-            else {
+            } else {
                 logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_CONNECTION_EXPIRED, connectionId.toString());
                 log.log(Level.FINE, "Connection " + connectionId + " has expired!");
             }
@@ -367,6 +367,6 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
 
         return false;
     }
-    
+
 
 }

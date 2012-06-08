@@ -23,6 +23,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -162,7 +163,7 @@ public class ServerNtlmAuthenticationAssertionTest {
         assertTrue(fixture.checkRequest(context) == AssertionStatus.AUTH_FAILED);
     }
 
-    //@Ignore("Need to connect to to NetLogon.")
+//    @Ignore("Need to connect to to Netlogon.")
     @Test
     public void testInvalidChallenge() throws Exception {
         sendNegotiateMsg();

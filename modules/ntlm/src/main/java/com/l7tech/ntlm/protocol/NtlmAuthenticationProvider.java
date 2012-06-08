@@ -36,7 +36,6 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
 
 
     public enum State {
-        DEFAULT,
         NEGOTIATE,
         CHALLENGE,
         AUTHENTICATE,
@@ -46,7 +45,7 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
 
     static final long MILLISECONDS_BETWEEN_1970_AND_1601 = 11644473600000L;
 
-    static SecureRandom secureRandom = new SecureRandom();
+//    static SecureRandom secureRandom = new SecureRandom();
 
     protected String identity = null;
     protected Map account = null;
@@ -92,7 +91,6 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
 
     @Override
     public void resetAuthentication() {
-        state.setState(State.DEFAULT);
         state.setFlags(0);
         state.setServerChallenge(null);
         state.setSessionKey(null);

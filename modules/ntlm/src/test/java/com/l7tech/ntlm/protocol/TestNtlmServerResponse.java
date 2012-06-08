@@ -12,24 +12,29 @@ import java.util.Arrays;
  * User: ymoiseyenko
  * Date: 6/1/12
  */
-public class TestNtlmChallengeResponse extends NtlmChallengeResponse {
+public class TestNtlmServerResponse extends NtlmServerResponse {
 
-    public TestNtlmChallengeResponse(NtlmChallengeResponse clientChallengeResponse, String domain, String username, char[] password, byte[] targetInformation) {
+
+    byte[] sessionKey = null;
+
+
+    public TestNtlmServerResponse(NtlmServerResponse clientServerResponse, String domain, String username, String password, byte[] targetInformation) {
         this.domain = domain;
         this.username = username;
         this.lmResponse = null;
-        this.flags = clientChallengeResponse.flags;
+        this.flags = clientServerResponse.flags;
+        this.targetInformation = targetInformation;
 
-        if (clientChallengeResponse.ntResponse.length == 24) {
+        if (clientServerResponse.ntResponse.length == 24) {
             if ((this.flags & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY/*0x80000*/) == 0) {
-                this.ntResponse = NtlmPasswordAuthentication.getNTLMResponse(new String(password), clientChallengeResponse.challenge);
-                this.lmResponse = NtlmPasswordAuthentication.getPreNTLMResponse(new String(password), clientChallengeResponse.challenge);
+                this.ntResponse = NtlmPasswordAuthentication.getNTLMResponse(password, clientServerResponse.challenge);
+                this.lmResponse = NtlmPasswordAuthentication.getPreNTLMResponse(password, clientServerResponse.challenge);
             } else {
                 byte[] clientChallenge = new byte[8];
-                System.arraycopy(clientChallengeResponse.lmResponse, 0, clientChallenge, 0, 8);
+                System.arraycopy(clientServerResponse.lmResponse, 0, clientChallenge, 0, 8);
 
-                byte[] nTOWFv1 = NtlmPasswordAuthentication.nTOWFv1(new String(password));
-                this.ntResponse = NtlmPasswordAuthentication.getNTLM2Response(nTOWFv1, clientChallengeResponse.challenge, clientChallenge);
+                byte[] nTOWFv1 = NtlmPasswordAuthentication.nTOWFv1(password);
+                this.ntResponse = NtlmPasswordAuthentication.getNTLM2Response(nTOWFv1, clientServerResponse.challenge, clientChallenge);
 
                 if ((this.flags & NtlmConstants.NTLMSSP_NEGOTIATE_SIGN/*0x10*/) != 0) {
                     MD4 md4 = new MD4();
@@ -37,27 +42,27 @@ public class TestNtlmChallengeResponse extends NtlmChallengeResponse {
                     byte[] userSessionKey = md4.digest();
 
                     HMACT64 hmac = new HMACT64(userSessionKey);
-                    hmac.update(clientChallengeResponse.sessionNonce);
+                    hmac.update(clientServerResponse.sessionNonce);
                     this.sessionKey = hmac.digest();
-                    clientChallengeResponse.sessionKey = this.sessionKey;
+                    //clientServerResponse.sessionKey = this.sessionKey;
                 }
             }
         } else {
-            byte[] nTOWFv2 = NtlmPasswordAuthentication.nTOWFv2(domain, username, new String(password));
+            byte[] nTOWFv2 = NtlmPasswordAuthentication.nTOWFv2(domain, username, password);
 
             byte[] clientChallenge = new byte[8];
-            System.arraycopy(clientChallengeResponse.ntResponse, 32, clientChallenge, 0, 8);
-            long nanos1601 = Encdec.dec_uint64le(clientChallengeResponse.ntResponse, 24);
+            System.arraycopy(clientServerResponse.ntResponse, 32, clientChallenge, 0, 8);
+            long nanos1601 = Encdec.dec_uint64le(clientServerResponse.ntResponse, 24);
 
-            targetInformation = getCombinedTargetInformation(clientChallengeResponse.ntResponse, targetInformation);
+            targetInformation = getCombinedTargetInformation(clientServerResponse.ntResponse, targetInformation);
 
-            this.ntResponse = NtlmPasswordAuthentication.getNTLMv2Response(nTOWFv2, clientChallengeResponse.challenge, clientChallenge, nanos1601, targetInformation);
+            this.ntResponse = NtlmPasswordAuthentication.getNTLMv2Response(nTOWFv2, clientServerResponse.challenge, clientChallenge, nanos1601, targetInformation);
 
             if ((this.flags & NtlmConstants.NTLMSSP_NEGOTIATE_SIGN/*0x10*/) != 0) {
                 HMACT64 hmac = new HMACT64(nTOWFv2);
                 hmac.update(this.ntResponse, 0, 16);
                 this.sessionKey = hmac.digest();
-                clientChallengeResponse.sessionKey = this.sessionKey;
+               // clientServerResponse.sessionKey = this.sessionKey;
             }
         }
     }
@@ -95,9 +100,9 @@ public class TestNtlmChallengeResponse extends NtlmChallengeResponse {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof NtlmChallengeResponse)) return false;
+        if (!(o instanceof NtlmServerResponse)) return false;
 
-        NtlmChallengeResponse that = (NtlmChallengeResponse) o;
+        NtlmServerResponse that = (NtlmServerResponse) o;
 
         //if (!Arrays.equals(lmResponse, that.lmResponse)) return false;
         if (!Arrays.equals(ntResponse, that.ntResponse)) return false;

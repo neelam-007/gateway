@@ -88,7 +88,7 @@ public class NtlmAuthenticationServerTest {
 
     @Test
     public void shouldAuthenticateUser() throws Exception {
-        NtlmCredential credential = new NtlmCredential("user@l7tech.com" /*"L7TECH\\user"*/, "password".toCharArray());
+        NtlmCredential credential = new NtlmCredential("user@l7tech.com" /*"L7TECH\\user"*/, "password");
         authenticate(credential);
         Map testAccount = fixture.getNtlmAuthenticationState().getAccountInfo();
         assertEquals("user", testAccount.get("sAMAccountName"));
@@ -98,7 +98,7 @@ public class NtlmAuthenticationServerTest {
 
     @Test(expected = AuthenticationManagerException.class)
     public void shouldFailWhenCredentialsIncorrect() throws Exception {
-        NtlmCredential credential = new NtlmCredential("user", "pass".toCharArray());
+        NtlmCredential credential = new NtlmCredential("user", "pass");
         authenticate(credential);
 
     }
@@ -124,7 +124,7 @@ public class NtlmAuthenticationServerTest {
 
     @Test
     public void shouldAuthenticateClient() throws Exception {
-        NtlmCredential creds = new NtlmCredential("user@l7tech.com" /*"L7TECH\\user"*/, "password".toCharArray());
+        NtlmCredential creds = new NtlmCredential("user@l7tech.com" /*"L7TECH\\user"*/, "password");
 
         NtlmAuthenticationClient client = new NtlmAuthenticationClient(fixture);
         //client.put("flags", "0xA0088005");
@@ -153,7 +153,7 @@ public class NtlmAuthenticationServerTest {
             Type1Message type1Message = NtlmClient.generateType1Msg(creds.getDomain(), NtlmTestConstants.WORKSTATION);
             token = fixture.processAuthentication(type1Message.toByteArray());
             Type3Message type3Message = NtlmClient.generateType3Msg(creds.getName(),
-                    new String(creds.getPassword()), creds.getDomain(), NtlmTestConstants.WORKSTATION, HexUtils.encodeBase64(token, true));
+                    creds.getPassword(), creds.getDomain(), NtlmTestConstants.WORKSTATION, HexUtils.encodeBase64(token, true));
             token = fixture.processAuthentication(type3Message.toByteArray());
         } finally {
             int i;
