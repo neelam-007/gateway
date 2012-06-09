@@ -2,6 +2,8 @@ package com.l7tech.server.util;
 
 import org.hibernate.dialect.DerbyDialect;
 
+import java.sql.Types;
+
 /**
  * Dialect to fix the following issue:
  *
@@ -16,4 +18,16 @@ public class ExtendedDerbyDialect extends DerbyDialect {
             return null;
         }
     }
+
+    @Override
+    public String getSelectClauseNullString(int sqlType) {
+        final int fixedSqlType;
+        if (Types.CLOB == sqlType) {
+            fixedSqlType = Types.VARCHAR;
+        } else {
+            fixedSqlType = sqlType;
+        }
+        return super.getSelectClauseNullString(fixedSqlType);
+    }
+
 }
