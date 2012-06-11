@@ -36,11 +36,6 @@ import java.util.regex.Pattern;
 public class GenerateSecurityHashAssertion extends Assertion implements UsesVariables, SetsVariables {
 
     /**
-     * The default output variable name.
-     */
-    public static final String DEFAULT_VARIABLE_NAME = "hash.output";
-
-    /**
      * The pattern to determine if an alogorithm is an HMAC algorithm or not.
      */
     public static final Pattern HMAC_ALGORITHM = Pattern.compile("(?i)HMAC.*");
@@ -54,7 +49,7 @@ public class GenerateSecurityHashAssertion extends Assertion implements UsesVari
 
     private String base64Data;
     private String keyText;
-    private String targetOutputVariable = DEFAULT_VARIABLE_NAME;
+    private String targetOutputVariable;
     private String algorithm = DEFAULT_ALGORITHM;
 
     private static final Map<String, String> SUPPORTED_ALGORITHM;
@@ -193,8 +188,9 @@ public class GenerateSecurityHashAssertion extends Assertion implements UsesVari
 
     @Override
     public VariableMetadata[] getVariablesSet() {
+        if(targetOutputVariable == null || targetOutputVariable.trim().isEmpty())return new VariableMetadata[0];
         return new VariableMetadata[]{
-                new VariableMetadata(getTargetOutputVariable(), false, false, null, true, DataType.STRING)
+                new VariableMetadata(targetOutputVariable, false, false, null, true, DataType.STRING)
         };
     }
 
