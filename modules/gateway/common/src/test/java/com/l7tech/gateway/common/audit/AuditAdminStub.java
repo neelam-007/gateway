@@ -22,7 +22,7 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
-    public AuditRecord findByPrimaryKey(long oid) throws FindException {
+    public AuditRecord findByPrimaryKey(String id, boolean fromInternal) throws FindException {
         throw new UnsupportedOperationException("Not supported in stub mode");
     }
 
@@ -133,11 +133,6 @@ public class AuditAdminStub implements AuditAdmin {
 
     @Override
     public String getExternalAuditsSchema(String connectionName, String auditRecordTableName, String auditDetailTableName) {
-        return null;
-    }
-
-    @Override
-    public AuditRecord findByGuid(String guid) throws FindException {
         return null;
     }
 

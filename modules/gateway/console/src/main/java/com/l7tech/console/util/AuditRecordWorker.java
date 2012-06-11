@@ -90,10 +90,10 @@ public class AuditRecordWorker extends SwingWorker {
             //retrieve the full AuditRecord associated with this AuditRecordHeader
             String guid = auditHeaderLogMessage.getGuid();
             if(guid!=null){
-                auditRecord = auditAdminService.findByGuid( guid);
+                auditRecord = auditAdminService.findByPrimaryKey( guid, false);
             } else{
 
-                auditRecord = auditAdminService.findByPrimaryKey( auditHeaderLogMessage.getMsgNumber() );
+                auditRecord = auditAdminService.findByPrimaryKey( Long.toString(auditHeaderLogMessage.getMsgNumber()), true );
             }
 
             if (auditRecord != null) this.logMessage = new AuditMessage(auditRecord);

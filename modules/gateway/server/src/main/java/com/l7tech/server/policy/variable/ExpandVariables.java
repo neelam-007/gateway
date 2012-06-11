@@ -162,6 +162,7 @@ public final class ExpandVariables {
         "com.l7tech.server.policy.variable.AuditSelector",
         "com.l7tech.server.policy.variable.AuditRecordSelector",
         "com.l7tech.server.policy.variable.AuditDetailSelector",
+        "com.l7tech.server.policy.variable.AuditSearchCriteriaSelector",
         "com.l7tech.server.policy.variable.PolicyEnforcementContextSelector",
         "com.l7tech.server.policy.variable.PartInfoSelector",
         "com.l7tech.server.policy.variable.ArraySelector",

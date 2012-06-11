@@ -52,7 +52,6 @@ public final class AuditSearchCriteria implements Serializable {
         userName = builder.userName;
         userIdOrDn = builder.userIdOrDn;
         messageId = builder.messageId;
-        paramValue = builder.paramValue;
         entityClassName = builder.entityClassName;
         entityId = builder.entityId;
         nodeIdToStartMsg = builder.nodeIdToStartMsg;
@@ -132,7 +131,6 @@ public final class AuditSearchCriteria implements Serializable {
     public final String userName;
     public final String userIdOrDn;
     public final Integer messageId; // null = any
-    public final String paramValue;
     public final String entityClassName; // Initial value: null, which means Entity Type Search Criterion is not set.
     public final Long entityId; // null = any
     public final boolean getFromPolicy;
@@ -209,9 +207,6 @@ public final class AuditSearchCriteria implements Serializable {
         // construct Audit Code
         if (messageId != null) fullDetailsOnSearchCriteria.append("{Audit Code: " + messageId + "} ");
 
-        // construct Aduit Detail Parameter Value
-        if (paramValue != null) fullDetailsOnSearchCriteria.append("{Audit Detail Parameter Value: " + paramValue + "} ");
-
         // Entity Type and Entity ID search criteria are only applied to Audit Type, ANY and Admin.
         if (recordClass == null || recordClass.equals(AdminAuditRecord.class)) {
             // construct Entity Type
@@ -263,9 +258,6 @@ public final class AuditSearchCriteria implements Serializable {
         if ((messageId == null && criteria.messageId != null)
             || (messageId != null && !messageId.equals(criteria.messageId))) return false;
 
-        if ((paramValue == null && criteria.paramValue != null)
-            || (paramValue != null && !paramValue.equals(criteria.paramValue))) return false;
-
         // Entity Type and Entity ID search criteria are only applied to Audit Type, ANY and Admin.
         if (recordClass == null || recordClass.equals(AdminAuditRecord.class)) {
             if ((entityClassName == null && criteria.entityClassName != null)
@@ -298,7 +290,6 @@ public final class AuditSearchCriteria implements Serializable {
         private String userName; // null == any
         private String userIdOrDn; // null == any
         private Integer messageId; // null == any
-        private String paramValue; // null == any
         private String entityClassName; // null == any
         private Long entityId; // null == any
 
@@ -318,7 +309,6 @@ public final class AuditSearchCriteria implements Serializable {
             userName(logRequest.getUserName());
             userIdOrDn(logRequest.getUserIdOrDn());
             messageId(logRequest.getMessageId());
-            paramValue(logRequest.getParamValue());
             entityClassName(logRequest.getEntityClassName());
             entityId(logRequest.getEntityId());
             getFromPolicy(logRequest.isGetFromPolicy());
@@ -426,15 +416,6 @@ public final class AuditSearchCriteria implements Serializable {
 
         public Builder messageId(Integer value) {
             messageId = value;
-            return this;
-        }
-
-        public Builder paramValue(String value) {
-            if (value != null && !value.trim().isEmpty()) {
-                paramValue = value;  // Pattern match is done in AuditRecordManagerImpl.
-            } else {
-                paramValue = null;
-            }
             return this;
         }
 

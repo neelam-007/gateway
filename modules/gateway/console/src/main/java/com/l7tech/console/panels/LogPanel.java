@@ -1,8 +1,10 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.action.EditPolicyAction;
 import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.table.AuditLogTableSorterModel;
+import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.util.*;
 import com.l7tech.console.util.jcalendar.TimeRangePicker;
 import com.l7tech.gateway.common.audit.*;
@@ -10,7 +12,6 @@ import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.LogRequest;
-import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.security.rbac.AttemptedOther;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gui.NumberField;
@@ -19,6 +20,8 @@ import com.l7tech.gui.widgets.ContextMenuTextArea;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.*;
 import org.apache.xml.serialize.OutputFormat;
@@ -79,6 +82,7 @@ public class LogPanel extends JPanel {
             "Service",
             "Thread Id"
     };
+    public static final String AUDIT_LOOKUP_POLICY_GUID_CLUSTER_PROP = "audit.lookup.policy.guid";
 
     public static final String MSG_TOTAL_PREFIX = "Total: ";
 
@@ -367,7 +371,25 @@ public class LogPanel extends JPanel {
             }
         };
 
-        //initialize time range panel widets
+        controlPanel.configureAuditLookupPolicyButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String lookupPolicyGuid = getLookupPolicyGuid();
+                if(lookupPolicyGuid==null)
+                    return;
+                try {
+                    Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(lookupPolicyGuid);
+                    PolicyEntityNode node = new PolicyEntityNode(new PolicyHeader(policy));
+                    Action editAction = new EditPolicyAction(node, true);
+                    editAction.actionPerformed(null);
+                } catch (FindException e1) {
+                    logger.warning("Failed to edit lookup policy");
+                }
+
+            }
+        });
+
+        //initialize time range panel widgets
         controlPanel.durationButton.addActionListener(l);
         controlPanel.timeRangeButton.addActionListener(l);
 
@@ -383,7 +405,7 @@ public class LogPanel extends JPanel {
         });
 
         //initizlize additional search field widgets
-        controlPanel.levelComboBox.setModel(new DefaultComboBoxModel(LogLevelOption.values()/*LogPanel.logLevelComboBoxOptions*/));
+        controlPanel.levelComboBox.setModel(new DefaultComboBoxModel(LogLevelOption.values()));
         controlPanel.levelComboBox.setSelectedItem(LogLevelOption.WARNING.toString());
         controlPanel.auditTypeComboBox.setModel(new DefaultComboBoxModel(AuditType.values()));
         controlPanel.auditTypeComboBox.setSelectedItem(AuditType.ALL.toString());
@@ -797,7 +819,7 @@ public class LogPanel extends JPanel {
             controlPanel.entityIdTextField.setText(entityIdTxt);
         }
 
-        controlPanel.viaAuditLookupPolicyRadioButton.setSelected(getFromPolicy);
+        controlPanel.viaAuditLookupPolicyRadioButton.setSelected(getFromPolicy && controlPanel.viaAuditLookupPolicyRadioButton.isEnabled());
         enableOrDisableComponents();
     }
 
@@ -1532,6 +1554,17 @@ public class LogPanel extends JPanel {
         }
 
         return bottomPane;
+    }
+
+    String getLookupPolicyGuid (){
+    //initialize source panel widgets
+        boolean enabledLookupPolicy = false;
+        try{
+            return ClusterPropertyCrud.getClusterProperty(AUDIT_LOOKUP_POLICY_GUID_CLUSTER_PROP);
+        }catch(FindException e){
+            // failed to get lookup policy guid, disable button
+        }
+        return null;
     }
 
     /**
@@ -2602,12 +2635,12 @@ public class LogPanel extends JPanel {
         if(logMessage instanceof AuditHeaderMessage){
             String guid =((AuditHeaderMessage) logMessage).getGuid();
             if(guid!=null){
-                record = Registry.getDefault().getAuditAdmin().findByGuid( guid);
+                record = Registry.getDefault().getAuditAdmin().findByPrimaryKey( guid, false);
             }
         }
 
         if(record == null){
-            record = Registry.getDefault().getAuditAdmin().findByPrimaryKey( logMessage.getMsgNumber() );
+            record = Registry.getDefault().getAuditAdmin().findByPrimaryKey( Long.toString(logMessage.getMsgNumber()),true );
         }
 
         if ( record == null )

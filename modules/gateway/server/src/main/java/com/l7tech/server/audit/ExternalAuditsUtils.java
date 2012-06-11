@@ -230,6 +230,7 @@ public class ExternalAuditsUtils {
                             String userName,
                             String userId ,
                             Long providerOid ,
+                            String signature,
                             String entityClass ,
                             Long entityId ,
                             Integer status ,
@@ -312,7 +313,7 @@ public class ExternalAuditsUtils {
                     ip_addr);
         }
 
-        // todo [wynne] check signature?
+        record.setSignature(signature);
          record.setGuid(id);
         record.setMillis(time);
 
@@ -376,7 +377,7 @@ public class ExternalAuditsUtils {
         String action = resultSet.getString("action");
 
         AuditRecord record =
-                makeAuditRecord(id,nodeid, time, type, auditLevel, name, message ,ip_addr, userName, userId, providerOid, entityClass, entityId, status, requestId, serviceOid,  operationName, authenticated, authenticationType, requestLength,  responseLength, requestZip, responseZip, responseStatus, latency, componentId, action, properties);
+                makeAuditRecord(id,nodeid, time, type, auditLevel, name, message ,ip_addr, userName, userId, providerOid, signature,entityClass, entityId, status, requestId, serviceOid,  operationName, authenticated, authenticationType, requestLength,  responseLength, requestZip, responseZip, responseStatus, latency, componentId, action, properties);
 
         SignerInfo signerInfo = defaultKey.getAuditSigningInfo();
         if (signerInfo == null) signerInfo = defaultKey.getSslInfo();

@@ -1,9 +1,7 @@
 package com.l7tech.server.policy.variable;
 
 import com.l7tech.gateway.common.RequestId;
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.LoggingAudit;
+import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -19,6 +17,7 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.variable.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContextFactory;
+import com.l7tech.server.audit.AuditLookupPolicyEnforcementContext;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
@@ -642,6 +641,7 @@ public class ServerVariables {
             }),
 
             new Variable("audit", new AuditContextGetter("audit")),
+            new Variable("audit.recordQuery", new AuditQueryGetter("audit.recordQuery")),
             new Variable("audit.request", new AuditOriginalMessageGetter("audit.request", false, false)),
             new Variable("audit.requestContentLength", new AuditOriginalMessageSizeGetter(false)),
             new Variable("audit.response", new AuditOriginalMessageGetter("audit.response", true, false)),
@@ -938,6 +938,27 @@ public class ServerVariables {
             } else {
                 return new AuditSelector.AuditHolder(AuditContextFactory.getCurrent());
             }
+        }
+    }
+
+    private static class AuditQueryGetter extends SelectingGetter {
+        private AuditQueryGetter(String baseName) {
+            super(baseName);
+        }
+
+
+        @Override
+        protected Object getBaseObject(PolicyEnforcementContext context) {
+            if (context instanceof AuditLookupPolicyEnforcementContext) {
+                AuditLookupPolicyEnforcementContext lookupctx = (AuditLookupPolicyEnforcementContext) context;
+                return   lookupctx.getAuditSearchCriteria();
+            }
+            return null;
+        }
+
+        @Override
+        boolean isValidForContext(PolicyEnforcementContext context) {
+            return context instanceof AuditLookupPolicyEnforcementContext;
         }
     }
 

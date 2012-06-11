@@ -33,14 +33,15 @@ public interface AuditAdmin extends AsyncAdminMethods{
 
     /**
      * Retrieves the {@link AuditRecord} with the given oid, or null if no such record exists.
-     * @param oid the numeric object identifier of the record to retrieve
-     * @return the {@link AuditRecord} with the given oid, or null if no such record exists.
+     * @param id  the oid or the GUID of the record to retrieve
+     * @param fromInternal getting from internal database
+     * @return the {@link AuditRecord} with the given id, or null if no such record exists.
      * @throws FindException if there was a problem retrieving Audit records from the database
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITY)
     @Administrative(licensed=false)
-    AuditRecord findByPrimaryKey(long oid) throws FindException;
+    AuditRecord findByPrimaryKey(String id, boolean fromInternal) throws FindException;
 
     /**
      * Retrieves a collection of {@link AuditRecordHeader}s matching the provided criteria.  May be empty, but never null.
@@ -276,19 +277,6 @@ public interface AuditAdmin extends AsyncAdminMethods{
     @Transactional(propagation= Propagation.SUPPORTS)
     int getSystemLogRefresh();
 
-
-    /**
-     * Retrieves the {@link AuditRecord} with the given oid, or null if no such record exists.
-     * @param guid the string object identifier of the record to retrieve
-     * @return the {@link AuditRecord} with the given oid, or null if no such record exists.
-     * @throws FindException if there was a problem retrieving Audit records from the database
-     */
-    @Transactional(readOnly=true)
-    @Secured(stereotype=FIND_ENTITY)
-    @Administrative(licensed=false)
-    AuditRecord findByGuid(String guid) throws FindException;
-
-
     /**
      * Retrieves the default external audit schema translated for the database type.
      *
@@ -322,6 +310,5 @@ public interface AuditAdmin extends AsyncAdminMethods{
      */
     @Transactional(readOnly = true)
     AsyncAdminMethods.JobId<String> createExternalAuditDatabase(String connectionName, String auditRecordTableName, String auditDetailTableName);
-
 
 }

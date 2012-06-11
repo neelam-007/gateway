@@ -134,8 +134,17 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
     }
 
     @Override
-    public AuditRecord findByPrimaryKey( final long oid ) throws FindException {
-        return auditRecordManager.findByPrimaryKey(oid);
+    public AuditRecord findByPrimaryKey( String id, boolean fromInternal) throws FindException {
+        if(fromInternal){
+            try{
+                long oid = Long.parseLong(id);
+                return auditRecordManager.findByPrimaryKey(oid);
+            }catch (NumberFormatException e){
+                throw new FindException("Invalid oid:"+id, e);
+            }
+        }
+        else
+            return auditLookupPolicyEvaluator.findByGuid(id);
     }
 
     /**
@@ -699,10 +708,6 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
         return null;
     }
 
-    @Override
-    public AuditRecord findByGuid(String guid) throws FindException {
-        return auditLookupPolicyEvaluator.findByGuid(guid);
-    }
     @Override
     public  AsyncAdminMethods.JobId<String> testAuditSinkSchema(final String connectionName, final String auditRecordTableName, final String auditDetailTableName){
         final FutureTask<String> queryTask = new FutureTask<String>( find( false ).wrapCallable( new Callable<String>(){

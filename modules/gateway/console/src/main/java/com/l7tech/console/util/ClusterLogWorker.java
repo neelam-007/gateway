@@ -189,16 +189,13 @@ public class ClusterLogWorker extends SwingWorker {
                         }
                         logRequest.setEndMsgDate(new Date(oldest - 1L)); // end date is exclusive
 
-                        // todo [wynne] remove
-                        logRequest = null;
-
                     } else {
                         //we are done
                         logRequest = null;
                     }
                 } catch (FindException e) {
-                    logger.log(Level.SEVERE, "Unable to retrieve audits from server", e);
-                    // todo [wynne] add retry timeout?
+                    logger.log(Level.SEVERE, "Unable to retrieve audits from server:"+e.getMessage(), ExceptionUtils.getDebugException(e));
+                    logRequest = null;
                 }
 
                 if (newLogs.size() > 0) {

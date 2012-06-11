@@ -322,6 +322,10 @@ public class AuditContextImpl implements AuditContext {
             if (update)
                 return;
 
+            if (isSignAudits()) {
+                signRecord(rec);
+            }
+
             sinkPolicyStatus = auditPolicyEvaluator.outputRecordToPolicyAuditSink(rec, policyEnforcementContext);
             if (AssertionStatus.NONE.equals(sinkPolicyStatus)) {
                 // Sink policy succeeded
