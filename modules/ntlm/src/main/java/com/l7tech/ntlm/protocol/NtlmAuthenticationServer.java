@@ -4,7 +4,6 @@ import com.l7tech.ntlm.adapter.AuthenticationAdapter;
 import jcifs.ntlmssp.Type1Message;
 import jcifs.ntlmssp.Type2Message;
 import jcifs.ntlmssp.Type3Message;
-import jcifs.util.Hexdump;
 import org.apache.commons.lang.StringUtils;
 
 import javax.crypto.Cipher;
@@ -100,7 +99,10 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
                     state.setFlags(flags);
                     state.setTargetInfo(challengeMessage.getTargetInformation()); //store target info
 
-                    log.log(Level.FINE, "NtlmAuthenticationServer: Negotiated NTLM flags: 0x" + Hexdump.toHexString(flags, 8));
+                    if(log.isLoggable(Level.FINE)) {
+                        log.log(Level.FINE, "Server negotiated NTLM flags: 0x" + Integer.toHexString(flags));
+                    }
+
                     break;
                 case AUTHENTICATE:
                     Type3Message authenticateMessage = new Type3Message(token);
@@ -112,7 +114,9 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
                         throw new AuthenticationManagerException("Invalid user name");
                     }
 
-                    log.log(Level.FINE, "NtlmAuthenticationServer: NTLM credentials: DomainName=" + authenticateMessage.getDomain() + " UserName=" + authenticateMessage.getUser() + " Workstation=" + authenticateMessage.getWorkstation());
+                    if(log.isLoggable(Level.FINE)) {
+                        log.log(Level.FINE, "User credentials: " + authenticateMessage.getDomain() + "\\" + authenticateMessage.getUser());
+                    }
 
 
                     byte[] userSessionKey = authenticate(authenticateMessage);
@@ -120,16 +124,17 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
                     state.setSessionKey(userSessionKey);
 
                     if (((state.getFlags() & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY/*0x80000*/) != 0) && ((state.getFlags() & NtlmConstants.NTLMSSP_NEGOTIATE_SIGN/*0x10*/) != 0)) {
+                        if(((state.getFlags() & NtlmConstants.NTLMSSP_NEGOTIATE_KEY_EXCH/*0x40000000*/)) != 0 && (authenticateMessage.getNTResponse().length == NTLM_V1_NT_RESPONSE_LENGTH)) {
+                            throw new AuthenticationManagerException("Key exchange is not supported for NTLMv1");
+                        }
                         generateSessionSecurityKeys(authenticateMessage, userSessionKey);
-                    } else {
-                        log.log(Level.FINE, "NTLMv2 Extended Session Security Key was not negotiated");
                     }
 
                     if(log.isLoggable(Level.FINE)) {
-                        if (authenticateMessage.getNTResponse().length > NTLM_V1_NT_RESPONSE_LENGTH) {
-                            log.log(Level.FINE, "Server negotiated NTLMv2");
+                        if (authenticateMessage.getNTResponse().length > NTLM_V1_NT_RESPONSE_LENGTH && authenticateMessage.getLMResponse().length >= 8) {
+                            log.log(Level.FINE, "Authenticated user " + authenticateMessage.getDomain() + "\\" + authenticateMessage.getUser() + "using NTLMv2");
                         } else {
-                            log.log(Level.FINE, "Server negotiated NTLMv1");
+                            log.log(Level.FINE, "Authenticated user " + authenticateMessage.getDomain() + "\\" + authenticateMessage.getUser() + "using NTLMv1");
                         }
                     }
 
@@ -151,23 +156,23 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
     }
 
     private void generateSessionSecurityKeys(Type3Message authenticateMessage, byte[] userSessionKey) throws AuthenticationManagerException {
-        log.log(Level.FINE, "NtlmAuthenticationServer: Generating NTLM2 Session Security keys");
+        if(log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Generating NTLM2 Session Security Keys");
+        }
 
         if (userSessionKey == null) {
-            throw new AuthenticationManagerException("Cannot perform signing or sealing if an NTLMSSP sessionKey is not set");
+            throw new AuthenticationManagerException("Can't sign or seal when User Session Key is null!");
         }
         if ((state.getFlags() & NtlmConstants.NTLMSSP_NEGOTIATE_KEY_EXCH/*0x40000000*/) != 0) {
             byte[] exchangedKey = authenticateMessage.getSessionKey();
             if (exchangedKey == null || exchangedKey.length < 16) {
-                throw new AuthenticationManagerException("Encrypted exchange key length is invalid");
+                throw new AuthenticationManagerException("Encrypted key size is invalid!");
             }
             byte[] decryptedKey = new byte[16];
 
-            log.log(Level.FINE, "NtlmAuthenticationServer: Decrypting Key Exchange session key");
-
             try {
                 Cipher rc4 = Cipher.getInstance("RC4");
-                rc4.init(2, new SecretKeySpec(userSessionKey, "RC4"));
+                rc4.init(Cipher.DECRYPT_MODE, new SecretKeySpec(userSessionKey, "RC4"));
                 rc4.update(exchangedKey, 0, 16, decryptedKey, 0);
             } catch (GeneralSecurityException gse) {
                 throw new AuthenticationManagerException("Failed to decrypt exchange key", gse);
@@ -175,7 +180,10 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
 
             state.setSessionKey(decryptedKey);
         }
-        log.log(Level.FINE, "NTLMv2 Extended Session Security Key was negotiated");
+
+        if(log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "NTLMv2 Session Security Keys were generated successfully");
+        }
     }
 
     @Override

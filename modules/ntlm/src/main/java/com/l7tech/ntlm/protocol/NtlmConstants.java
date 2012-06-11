@@ -5,14 +5,9 @@ package com.l7tech.ntlm.protocol;
  * User: ymoiseyenko
  */
 public final class NtlmConstants {
-    public static final byte[] NTLM_SIGNATURE = {78, 84, 76, 77, 83, 83, 80, 0};
-
-    public static final byte[] ZERO24 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-    public static final byte[] NTLM_VERSION = {6, 1, -79, 29, 0, 0, 0, 15};
     public static final int NTLMSSP_TARGET_TYPE_SERVER = 131072;
     public static final int NTLMSSP_TARGET_TYPE_SERVER_MASK = -131073;
-    public static final int NTLMSSP_TARGET_TYPE_SHARE = 262144;//reserved 6
+    public static final int NTLMSSP_R6 = 262144;//reserved 6
     public static final int NTLMSSP_R6_MASK = -262145;
     public static final int NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY = 524288;
     public static final int NTLMSSP_NEGOTIATE_TARGET_INFO = 8388608;

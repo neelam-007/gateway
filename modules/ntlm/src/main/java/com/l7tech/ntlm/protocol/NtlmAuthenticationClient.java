@@ -69,21 +69,27 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
                     }
                     Type1Message nnm = new Type1Message(flags, domainName, workstation);
                     token = nnm.toByteArray();
-                    log.log(Level.FINE, "NTLM Client: Negotiate Message sent");
+                    if(log.isLoggable(Level.FINE)) {
+                        log.log(Level.FINE, "NTLMSSP_Negotiate Message sent");
+                    }
 
                     state.setState(State.CHALLENGE);
                     break;
                 case CHALLENGE:
                     Type2Message ncm = new Type2Message(token);
 
+                    if(log.isLoggable(Level.FINE)) {
+                        log.log(Level.FINE, "Received NTLMSSP_Challenge message");
+                    }
+
                     byte[] serverChallenge = ncm.getChallenge();
 
                     flags &= ncm.getFlags();
-                    flags &= NtlmConstants.NTLMSSP_NEGOTIATE_VERSION_MASK;//-33554433;
-                    flags &= NtlmConstants.NTLMSSP_R6_MASK;//-262145 r6 unused, always set to 0
-                    flags &= NtlmConstants.NTLMSSP_TARGET_TYPE_SERVER_MASK;//-131073;
-                    flags &= NtlmConstants.NTLMSSP_TARGET_TYPE_DOMAIN_MASK;// -65537;
-                    flags |= NtlmConstants.NTLMSSP_NEGOTIATE_VERSION;//33554432;
+                    flags &= NtlmConstants.NTLMSSP_NEGOTIATE_VERSION_MASK;
+                    flags &= NtlmConstants.NTLMSSP_R6_MASK;//r6 unused, always set to 0
+                    flags &= NtlmConstants.NTLMSSP_TARGET_TYPE_SERVER_MASK;
+                    flags &= NtlmConstants.NTLMSSP_TARGET_TYPE_DOMAIN_MASK;
+                    flags |= NtlmConstants.NTLMSSP_NEGOTIATE_VERSION;
 
                     String password = cred.getPassword();
                     if (StringUtils.isEmpty(password)) {
@@ -93,64 +99,33 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
                     String domainNameFields = (domainName != null ? domainName : "");
                     String userNameFields = name;
 
-                    byte[] responseKeyNT = NtlmPasswordAuthentication.nTOWFv2(domainNameFields, userNameFields, password);
+                    byte[] nTOWFv2 = NtlmPasswordAuthentication.nTOWFv2(domainNameFields, userNameFields, password);
 
                     byte[] clientChallenge = new byte[8];
 
                     secureRandom.nextBytes(clientChallenge);
                     long nanos1601 = (System.currentTimeMillis() + MILLISECONDS_BETWEEN_1970_AND_1601) * 10000L;
 
-                    byte[] lmChallengeResponseFields = NtlmConstants.ZERO24;
-                    byte[] ntChallengeResponseFields = NtlmPasswordAuthentication.getNTLMv2Response(responseKeyNT, serverChallenge, clientChallenge, nanos1601, ncm.getTargetInformation());
+                    byte[] lmChallengeResponseFields = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; //the client supports only NTLMv2
+                    byte[] ntChallengeResponseFields = NtlmPasswordAuthentication.getNTLMv2Response(nTOWFv2, serverChallenge, clientChallenge, nanos1601, ncm.getTargetInformation());
 
                     Type3Message nam = new Type3Message(flags, lmChallengeResponseFields, ntChallengeResponseFields, domainNameFields, userNameFields, workstation);
 
-                    byte[] encryptedRandomSessionKeyFields = null;
                     byte[] sessionKey = null;
-                    if ((flags & NtlmConstants.NTLMSSP_NEGOTIATE_SIGN) != 0) {
-                        HMACT64 hmac = new HMACT64(responseKeyNT);
-                        hmac.update(ntChallengeResponseFields, 0, 16);
-                        sessionKey = hmac.digest();
 
-                        encryptedRandomSessionKeyFields = sessionKey;
-
-                        if ((flags & NtlmConstants.NTLMSSP_NEGOTIATE_KEY_EXCH) != 0) {
-                            byte[] masterKey = new byte[16];
-                            secureRandom.nextBytes(masterKey);
-
-                            byte[] exchangedKey = new byte[16];
-                            try {
-                                Cipher rc4 = Cipher.getInstance("RC4");
-                                rc4.init(1, new SecretKeySpec(sessionKey, "RC4"));
-                                rc4.update(masterKey, 0, 16, exchangedKey, 0);
-                            } catch (GeneralSecurityException gse) {
-                                throw new AuthenticationManagerException("Failed to encrypt the negotiated exchange key", gse);
-                            }
-
-                            encryptedRandomSessionKeyFields = exchangedKey;
-
-                            sessionKey = masterKey;
-                        }
-                    }
-
-                    nam.setSessionKey(encryptedRandomSessionKeyFields);
+                    sessionKey = generateSessionSecurityKeys(flags, nTOWFv2, ntChallengeResponseFields, nam, sessionKey);
 
                     token = nam.toByteArray();
 
-                    if (((flags & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY) != 0) && ((flags & NtlmConstants.NTLMSSP_NEGOTIATE_SIGN) != 0)) {
-                        if (sessionKey == null) {
-                            throw new AuthenticationManagerException("Can't sign the message if an NTLM sessionKey is null!");
-                        }
-                        log.log(Level.FINE, "Extended Session Security key was sent to the client");
+                    if(log.isLoggable(Level.FINE)) {
+                        log.log(Level.FINE, "Client sent NTLMv2 Authentication");
                     }
-
-                    log.log(Level.FINE, "Client negotiated NTLMv2");
 
                     serverChallenge = null;
                     state.setTargetInfo(null);
                     state.setFlags(flags);
                     state.setState(State.COMPLETE);
-                    state.setSessionKey(sessionKey);
+                    state.setSessionKey(sessionKey);//remember master key that can be used to decrypt messages.
                     break;
                 case COMPLETE:
                     state.setState(State.FAILED);
@@ -166,6 +141,58 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
             state.setState(State.FAILED);
             throw new AuthenticationManagerException(ioe.getMessage(), ioe);
         }
+    }
+
+    /**
+     * This method will generate extended session security keys according to the blog post:
+     * http://blogs.msdn.com/b/openspecification/archive/2010/04/20/ntlm-keys-and-sundry-stuff.aspx
+     * here we don't support generation of NTLMv1 exchange keys
+     * @param flags
+     * @param nTOWFv2
+     * @param ntChallengeResponseFields
+     * @param nam
+     * @param exportedSessionKey
+     * @return
+     * @throws AuthenticationManagerException
+     */
+    private byte[] generateSessionSecurityKeys(int flags, byte[] nTOWFv2, byte[] ntChallengeResponseFields, Type3Message nam, byte[] exportedSessionKey) throws AuthenticationManagerException {
+        byte[] encryptedRandomSessionKeyFields = null;
+        if (((flags & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY/*0x80000*/) != 0) && ((flags & NtlmConstants.NTLMSSP_NEGOTIATE_SIGN/*0x10*/) != 0)) {
+            HMACT64 hmac = new HMACT64(nTOWFv2); //generate session based key
+
+            if ((flags & NtlmConstants.NTLMSSP_NEGOTIATE_KEY_EXCH) != 0) {
+                hmac.update(ntChallengeResponseFields, 0, 16);
+                exportedSessionKey = hmac.digest(); //Exported session key or Nonce(16)
+                byte[] masterKey = new byte[16];
+                secureRandom.nextBytes(masterKey);
+                //calculate encrypted random session key
+                byte[] keyExch = new byte[16];
+                try {
+                    Cipher rc4 = Cipher.getInstance("RC4");
+                    rc4.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(exportedSessionKey, "RC4"));
+                    rc4.update(masterKey, 0, 16, keyExch, 0);
+                } catch (GeneralSecurityException gse) {
+                    throw new AuthenticationManagerException("Failed to encrypt exchange key", gse);
+                }
+
+                encryptedRandomSessionKeyFields = keyExch;
+
+                exportedSessionKey = masterKey;
+
+                if(log.isLoggable(Level.FINE)) {
+                    log.log(Level.FINE, "Extended Session Security key was sent to the server");
+                }
+
+            }
+            else {
+                hmac.update(ntChallengeResponseFields);
+                exportedSessionKey = hmac.digest();
+            }
+
+        }
+
+        nam.setSessionKey(encryptedRandomSessionKeyFields);
+        return exportedSessionKey;
     }
 
     @Override

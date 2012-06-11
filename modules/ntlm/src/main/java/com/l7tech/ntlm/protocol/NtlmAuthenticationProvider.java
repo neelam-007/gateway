@@ -45,8 +45,6 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
 
     static final long MILLISECONDS_BETWEEN_1970_AND_1601 = 11644473600000L;
 
-//    static SecureRandom secureRandom = new SecureRandom();
-
     protected String identity = null;
     protected Map account = null;
     protected byte[] targetInfo = null;

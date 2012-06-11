@@ -34,12 +34,12 @@ public class Av_Pair {
     }
 
     public byte[] toByteArray() throws UnsupportedEncodingException {
-        byte[] data = this.name != null ? this.name.getBytes("UnicodeLittleUnmarked") : "".getBytes("UnicodeLittleUnmarked");
-        byte[] ret =  new byte[data.length + 4];
-        Encdec.enc_uint16le((short) this.type.value, ret, 0);
-        Encdec.enc_uint16le((short) data.length, ret, 2);
-        System.arraycopy(data, 0, ret, 4, data.length);
-        return ret;
+        byte[] data = name != null ? name.getBytes("UTF-16LE") : "".getBytes("UTF-16LE");
+        byte[] bytes =  new byte[data.length + 4];
+        Encdec.enc_uint16le((short) type.value, bytes, 0);
+        Encdec.enc_uint16le((short) data.length, bytes, 2);
+        System.arraycopy(data, 0, bytes, 4, data.length);
+        return bytes;
     }
 
 }
