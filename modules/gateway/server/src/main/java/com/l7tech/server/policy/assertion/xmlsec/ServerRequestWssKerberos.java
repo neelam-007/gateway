@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.kerberos.*;
+import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -82,7 +83,13 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
         String configSpn = requestWssKerberos.getServicePrincipalName();
         if (configSpn == null) {
             try {
-                configSpn = KerberosUtils.toGssName(KerberosClient.getKerberosAcceptPrincipal(false));
+                HttpRequestKnob requestKnob = context.getRequest().getKnob(HttpRequestKnob.class);
+                if (requestKnob != null && requestKnob.getRequestURL() != null) {
+                    configSpn = KerberosUtils.toGssName(KerberosClient.getKerberosAcceptPrincipal(requestKnob.getRequestURL().getProtocol(),
+                            requestKnob.getRequestURL().getHost(), false));
+                } else {
+                    configSpn = KerberosUtils.toGssName(KerberosClient.getKerberosAcceptPrincipal(false));
+                }
             }
             catch(KerberosException ke) {
                 // fallback to system property name

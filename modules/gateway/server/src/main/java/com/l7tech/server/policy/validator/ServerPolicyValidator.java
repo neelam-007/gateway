@@ -343,7 +343,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         // not else-if since this is also a credential source
         if ( assertion instanceof RequestWssKerberos) {
             try {
-                KerberosClient.getKerberosAcceptPrincipal(true);
+                KerberosClient.validateKerberosPrincipals();
             }
             catch(KerberosConfigException kce) {
                 result.addError(new PolicyValidatorResult.Error( assertion,

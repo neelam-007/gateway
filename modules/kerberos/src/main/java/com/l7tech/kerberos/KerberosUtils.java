@@ -1,9 +1,14 @@
 package com.l7tech.kerberos;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SyspropUtil;
+import sun.security.krb5.internal.ktab.KeyTab;
+import sun.security.krb5.internal.ktab.KeyTabEntry;
 
 /**
  * Kerberos Utility class.
@@ -12,7 +17,10 @@ import com.l7tech.util.SyspropUtil;
  */
 public class KerberosUtils {
 
+
     //- PUBLIC
+
+    public static InetAddress inetAddress = null;
 
     /**
      * Check if Kerberos is enabled.
@@ -121,6 +129,62 @@ public class KerberosUtils {
         }
 
         return name;
+    }
+
+    /**
+     * Retrieve the KDC ip from the realm. (The Realm is the hostname of the KDC)
+     * @param realm The realm name
+     * @return The ip address of the KDC, null if we cannot lookup the ip from the realm,
+     */
+    public static String getKdc(String realm) {
+        if (realm != null) {
+            try {
+                if (inetAddress == null) {
+                    return InetAddress.getByName(realm).getHostAddress();
+                } else {
+                     return inetAddress.getHostAddress();
+                }
+            } catch(UnknownHostException uhe) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Validate the keytab file. Make sure the keytab file is in valid format. If the keytab contains multiple
+     * principal, make sure the no principal name are duplicated.
+     *
+     * @param file The keytab file
+     * @throws KerberosException when the keytab file is invalid.
+     */
+    public static void validateKeyTab(File file) throws KerberosException {
+        //Validate the Keytab content, and make sure the keytab in valid format.
+        //We may not required to valid with the com.l7tech.kerberos.Keytab class,
+        //the sun.security.krb5.internal.ktab.KeyTab.isValid may sufficient enough to perform the keytab validation
+        try {
+            new Keytab(file);
+        } catch (IOException ioe) {
+            throw new KerberosException("Error reading Keytab file.", ioe);
+        }
+        KeyTab keyTab = KeyTab.getInstance(file);
+        if (!keyTab.isValid()) {
+            throw new KerberosException("Invalid Keytab file");
+        }
+        //For each entry in the keytab, make sure the principal name is not duplicated.
+        KeyTabEntry[] keyTabEntries = keyTab.getEntries();
+        for (int i = 0; i < keyTabEntries.length; i++) {
+            KeyTabEntry keyTabEntry = keyTabEntries[i];
+            for (int j = i + 1; j < keyTabEntries.length; j++) {
+                KeyTabEntry e = keyTabEntries[j];
+                if (keyTabEntry != e) {
+                    if (e.getService().getNameString().equals(keyTabEntry.getService().getNameString())) {
+                        throw new KerberosException("Invalid Keytab file, duplicate principal name: "
+                                + e.getService().getNameString());
+                    }
+                }
+            }
+        }
     }
 
     //- PRIVATE

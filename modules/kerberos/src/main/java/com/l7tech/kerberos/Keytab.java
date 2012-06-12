@@ -3,6 +3,8 @@ package com.l7tech.kerberos;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
+import sun.security.krb5.internal.ktab.KeyTab;
+import sun.security.krb5.internal.ktab.KeyTabEntry;
 
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
@@ -490,7 +492,7 @@ public class Keytab implements Serializable {
                 keyName = name;
             }
             else {
-                checkPrincipal(keyName, name);
+                //checkPrincipal(keyName, name);
             }
 
             // skip name type (if present)
@@ -576,9 +578,11 @@ public class Keytab implements Serializable {
         if (data.version <= 0) throw new KerberosException("Invalid key version '"+data.version+"'.");
         if (data.type <= 0 || data.type > 23) throw new KerberosException("Invalid key etype '"+data.type+"'.");
 
+        /*
         if (!keyData.isEmpty() && data.version != getKeyVersionNumber()) {
             throw new KerberosException("Mismatched key version numbers ('"+data.version+"', '"+getKeyVersionNumber()+"')");
         }
+        */
     }
 
     /**

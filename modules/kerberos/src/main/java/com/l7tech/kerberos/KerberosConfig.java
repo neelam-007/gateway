@@ -5,12 +5,14 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
+import sun.security.krb5.internal.ktab.KeyTab;
+import sun.security.krb5.internal.ktab.KeyTabEntry;
 
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
-import java.util.Arrays;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,57 +29,71 @@ public class KerberosConfig implements KerberosConfigConstants {
      * @return The KDC that is in use.
      */
     public static String getConfigKdc() {
-        return kerberosFiles.krb5Prop.getKdc();
+        return kerberosFiles.krb5Prop.getDefaultKdc();
     }
-
+    
     /**
      * Get the realm, note that this is the cached value (so call after checkConfig).
      *
      * @return The REALM that is in use.
      */
     public static String getConfigRealm() {
-        return kerberosFiles.krb5Prop.getRealm();
+        return kerberosFiles.krb5Prop.getDefaultRealm();
     }
 
-    public static Keytab getKeytab(boolean nullIfMissing) throws KerberosException {
+    public static Map<String, String> getRealms() {
+        return kerberosFiles.krb5Prop.getRealms();
+    }
+
+    public static KeyTab getKeytab(boolean nullIfMissing) throws KerberosException {
 
         if (kerberosFiles != null) {
-            return kerberosFiles.getKeytab();
-
+            KeyTab keyTab = kerberosFiles.getKeytab();
+            if (keyTab == null)  {
+                if (nullIfMissing) return null;
+                else throw new KerberosConfigException("No Keytab");
+            }
+            return keyTab;
         } else {
             File keytabFile = new File( SyspropUtil.getProperty( SYSPROP_SSG_HOME ) + PATH_KEYTAB);
-            try {
-                if (!keytabFile.exists()) {
-                    if (nullIfMissing) return null;
-                    else throw new KerberosConfigException("No Keytab");
+            if (!keytabFile.exists()) {
+                if (nullIfMissing) return null;
+                else throw new KerberosConfigException("No Keytab");
+            }
+            KerberosUtils.validateKeyTab(keytabFile);
+            return KeyTab.getInstance(keytabFile);
+        }
+    }
+
+    /**
+     * Retrieve the fully qualify service principal Name from the keytab file.
+     *
+     * @param principal the service principal, the principal may not be a fully qualify service principal
+     *                  The service may only contain the service and host name (e.g http/gateway.l7tech.com),
+     *                  null for lookup the default qualified service principal name
+     * @return The fully qualify service principal name from the keytab file.
+     * @throws KerberosException
+     */
+    public static String getKeytabPrincipal(String principal) throws KerberosException {
+        String principalName = principalCache.get(principal);
+        if (principalName == null && kerberosFiles != null) {
+            if ( principal != null) {
+                Map<String, String> realms = kerberosFiles.krb5Prop.getRealms();
+                for (Iterator iterator = realms.keySet().iterator(); iterator.hasNext(); ) {
+                    String next =  (String)iterator.next();
+                    if (principal.toLowerCase().endsWith(next.toLowerCase())) {
+                        principalName = principalCache.get(next.toLowerCase());
+                        break;
+                    }
                 }
-                return new Keytab(keytabFile);
             }
-            catch(IOException ioe) {
-                throw new KerberosException("Error reading Keytab file.", ioe);
+            if (principalName == null) {
+                return kerberosFiles.getDefaultPrinciple();
             }
         }
+        return principalName;
     }
-
-    public static String getKeytabPrincipal() throws KerberosException {
-        String principal;
-
-        Keytab keytab = getKeytab(false);
-        String[] names = keytab.getKeyName();
-        if (names.length == 1) {
-            principal = names[0];
-        }
-        else if (names.length == 2) {
-            principal = names[0] + "/" + names[1];
-        }
-        else {
-            throw new KerberosException("Unknown name type for keytab principal ("+Arrays.asList(names)+")");
-        }
-
-        return principal;
-    }
-
-
+    
     public static boolean hasKeytab() {
 
         if (kerberosFiles != null) {
@@ -164,6 +180,7 @@ public class KerberosConfig implements KerberosConfigConstants {
     private static final Logger logger = Logger.getLogger(KerberosConfig.class.getName());
 
     protected static KerberosConfigFiles kerberosFiles;
+    protected static Map<String, String> principalCache = new HashMap<String, String>();
     private static volatile boolean initialized = false;
 
     private static File getKeytabFile() {
@@ -176,6 +193,10 @@ public class KerberosConfig implements KerberosConfigConstants {
     private static void configSsg( final String kdc, final String realm ) {
 
         try {
+            //Clean up the cache
+            principalCache.clear();
+            kerberosFiles = null;
+
             // pull the realm and kdc values from the cluster properties
             kerberosFiles = new KerberosConfigFiles( realm, kdc );
 
@@ -184,6 +205,16 @@ public class KerberosConfig implements KerberosConfigConstants {
 
             // create the krb5.conf file
             kerberosFiles.createKrb5ConfigFile();
+
+            if  (kerberosFiles.getKeytab() != null) {
+                KeyTabEntry[] keyTabEntries = kerberosFiles.getKeytab().getEntries();
+                for (int i = 0; i < keyTabEntries.length; i++) {
+                    KeyTabEntry keyTabEntry = keyTabEntries[i];
+                    principalCache.put(keyTabEntry.getService().getNameString(), keyTabEntry.getService().getName());
+                    principalCache.put(keyTabEntry.getService().getName(), keyTabEntry.getService().getName());
+                    principalCache.put(keyTabEntry.getService().getRealm().toString().toLowerCase(), keyTabEntry.getService().getName());
+                }
+            }
         }
         catch(Exception e) {
             logger.log(Level.SEVERE, "Error initializing Kerberos settings.", e);

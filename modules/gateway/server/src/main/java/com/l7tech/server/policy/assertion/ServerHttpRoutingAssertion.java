@@ -397,8 +397,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             } else if (assertion.isKrbUseGatewayKeytab()) {
                 // obtain a service ticket using the gateway's keytab
                 KerberosRoutingClient client = new KerberosRoutingClient();
-                String svcPrincipal = KerberosClient.getServicePrincipalName(url.getProtocol(), url.getHost());
-                KerberosServiceTicket kerberosTicket = client.getKerberosServiceTicket(svcPrincipal, true);
+                //Find the keytab principal
+                String svcPrincipal = KerberosClient.getKerberosAcceptPrincipal(url.getProtocol(), url.getHost(), true);
+                String spn = KerberosClient.getServicePrincipalName(url.getProtocol(), url.getHost());
+                KerberosServiceTicket kerberosTicket = client.getKerberosServiceTicket(spn, svcPrincipal,  true);
                 //set kerberos authorization info
                 kerberosAuthorizationInfo = kerberosTicket.getEncData();
                 addKerberosServiceTicketToRequestParam(kerberosTicket , routedRequestParams);

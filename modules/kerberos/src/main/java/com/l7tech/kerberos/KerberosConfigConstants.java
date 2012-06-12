@@ -103,6 +103,20 @@ public interface KerberosConfigConstants {
             "default_domain = {1}\n" +
             "}\n";
 
+    static final String KRB5_CONF_REALMS_TEMPLATE =
+            "{0} = '{'\n" +
+            "{2}" +
+            "admin_server =  {3}:88\n" +
+            "kpasswd_server =  {3}:464\n" +
+            "default_domain = {1}\n" +
+            "}\n";
+
+    static final String KRB5_CONF_DOMAIN_REALM =
+            "\n[domain_realm]\n";
+
+    static final String KRB5_CONF_DOMAIN_REALM_TEMPLATE =
+            ".{1} = {0}\n" +
+            "{1} = {0}\n";
     /**
      * Template for the krb5.conf file on the SSB:
      *

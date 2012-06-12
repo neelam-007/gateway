@@ -113,7 +113,8 @@
         <!-- apacheds-server-integ is used for LdapIdentityProviderTest but not currently in our repository -->
         <!--<dependency org="org.apache.directory.server" name="apacheds-server-integ" rev="1.5.5" force="true" conf="test"/>-->
         <dependency org="org.springframework" name="spring-test" rev="3.0.7.RELEASE" force="true" conf="test"/>
-       
+        <dependency name="layer7-kerberos" rev="latest.integration" conf="test"/>
+
         <!-- Exclusions --> 
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>

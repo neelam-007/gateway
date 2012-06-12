@@ -7,6 +7,8 @@ import org.jaaslounge.decoding.DecodingException;
 import org.jaaslounge.decoding.kerberos.KerberosEncData;
 import org.jaaslounge.decoding.kerberos.KerberosToken;
 import sun.security.krb5.*;
+import sun.security.krb5.internal.ktab.KeyTab;
+import sun.security.krb5.internal.ktab.KeyTabEntry;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -25,9 +27,8 @@ import java.net.URL;
 import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -85,7 +86,15 @@ public class KerberosClient {
      * @return the name
      */
     public static String getServicePrincipalName(String service, String host) {
-        String serviceToUse = service != null ?  service : getServiceName();
+        String serviceToUse = service;
+        if (service != null) {
+            if ("https".equals(service.toLowerCase())) {
+                serviceToUse = "http";
+            }
+        } else {
+            serviceToUse = getServiceName();
+        }
+        
         String hostToUse = host != null ?  host : getHostName();
 
         return serviceToUse + "/" + hostToUse;
@@ -137,14 +146,21 @@ public class KerberosClient {
         return GSSManager.getInstance();
     }
 
+    public KerberosServiceTicket getKerberosServiceTicket(final String servicePrincipalName, boolean isOutboundRouting)
+        throws KerberosException {
+        return this.getKerberosServiceTicket(servicePrincipalName, servicePrincipalName, isOutboundRouting);
+    }
+
     /**
      * Used to get a ticket for initialization of a session.
      *
      * @param servicePrincipalName the name of the service
+     * @param keyTabPrincipal The principal from the keytab file
+     * @param isOutboundRouting
      * @return the ticket
      * @throws KerberosException on error
      */
-    public KerberosServiceTicket getKerberosServiceTicket(final String servicePrincipalName, boolean isOutboundRouting)
+    public KerberosServiceTicket getKerberosServiceTicket(final String servicePrincipalName, final String keyTabPrincipal, boolean isOutboundRouting)
         throws KerberosException
     {
         KerberosServiceTicket ticket;
@@ -163,7 +179,7 @@ public class KerberosClient {
 
             } else {
                 if (isOutboundRouting) {
-                    loginContext  = new LoginContext(LOGIN_CONTEXT_OUT_KEYTAB, kerberosSubject, getServerCallbackHandler(KerberosConfig.getKeytabPrincipal()));
+                    loginContext  = new LoginContext(LOGIN_CONTEXT_OUT_KEYTAB, kerberosSubject, getServerCallbackHandler(keyTabPrincipal));
                     loginContext.login();
                 } else {
                     loginContext  = new LoginContext(LOGIN_CONTEXT_INIT, kerberosSubject);
@@ -439,36 +455,81 @@ public class KerberosClient {
      * @return The Keytab or null
      * @throws KerberosException if the Keytab is invalid.
      */
-    public static Keytab getKerberosAcceptPrincipalKeytab() throws KerberosException {
+    public static KeyTab getKerberosAcceptPrincipalKeytab() throws KerberosException {
         return KerberosConfig.getKeytab(true);
     }
 
     /**
-     * Check if the current server login configuration is valid.
+     * Try best to get a valid SPN, first try to retrieve the spn from the provided host and service,
+     * if fail, then try to retrieve the default spn (the first entry in the keytab file), if fail,
+     * retrieve the system spn.
      *
-     * @return the service principal name (e.g http/gateway.l7tech.com@QAWIN2003.COM)
-     * @throws KerberosException on error
+     * @param service The name of the service
+     * @param host The name of the ssg gateway machine
+     * @param initiator set this to true, if initiator, set this to false, if acceptor only
+     * @return The Service Principal Name
+     * @throws KerberosException When error to retrieve a valid kerberos Principal.
      */
-    public static String getKerberosAcceptPrincipal(final boolean initiator) throws KerberosException {
-        String aPrincipal = acceptPrincipal;
-        if (aPrincipal != null) {
-            if (!KerberosConfig.hasKeytab()) throw new KerberosConfigException("Not configured");
-
-            if(aPrincipal.length()==0) {
-                throw new KerberosException("Principal detection failed.");
-            }
-            else {
-                return aPrincipal;
+    public static String getKerberosAcceptPrincipal(String service, String host, boolean initiator) throws KerberosException {
+        String spn = KerberosClient.getServicePrincipalName(service, host);
+        try {
+            return KerberosClient.getKerberosAcceptPrincipal(spn, initiator);
+        } catch(KerberosException ke) {
+            // fallback to default spn
+            try {
+                return KerberosClient.getKerberosAcceptPrincipal(initiator);
+            } catch (KerberosException e) {
+                throw e;
             }
         }
+    }
+
+    /**
+     * Retrieve the default principal from the keytab file. The default principal is the first keytab entry in the
+     * KeyTab file.
+     * @param initiator
+     * @return The default principal from the keytab file.
+     * @throws KerberosException Fail to retrieve the principal.
+     */
+    public static String getKerberosAcceptPrincipal(final boolean initiator) throws KerberosException {
+        return getKerberosAcceptPrincipal(null, initiator);
+    }
+
+    /**
+     * Check if the current server login configuration is valid. If the provided principal is not defined in
+     * the keytab file, will use the default principal (first entry from the keytab file). If the provided
+     * principal is defined in the keytab, will verify the login configuration.
+     *
+     * @param principal The service principal, the principal my not be a fully qualify service principal
+     *                  The service may only contain the service and host name (e.g http/gateway.l7tech.com),
+     *                  null for lookup the default qualified service principal name
+     * @param initiator set this to true, if initiator, set this to false, if acceptor only
+     * @return the fully qualified service principal name (e.g http/gateway.l7tech.com@QAWIN2003.COM)
+     * @throws KerberosException on error
+     */
+    public static String getKerberosAcceptPrincipal(String principal, final boolean initiator) throws KerberosException {
+        
+        if (!KerberosConfig.hasKeytab()) throw new KerberosConfigException("Not Configured");
+
+        principal = KerberosConfig.getKeytabPrincipal(principal);
+
+        Boolean valid = acceptPrincipalCache.get(principal);
+        if (valid != null) {
+            if (valid) {
+                return principal;
+            } else {
+                throw new KerberosException("Principal detection failed.");
+            }
+        }
+        
+        String aPrincipal = null;
 
         try {
             if (KerberosConfig.hasKeytab()) {
-                String spn = KerberosConfig.getKeytabPrincipal();
 
                 final Subject kerberosSubject = new Subject();
                 String contextName = initiator ? LOGIN_CONTEXT_ACCEPT_INIT : LOGIN_CONTEXT_ACCEPT;
-                LoginContext loginContext = new LoginContext(contextName, kerberosSubject, getServerCallbackHandler(spn));
+                LoginContext loginContext = new LoginContext(contextName, kerberosSubject, getServerCallbackHandler(principal));
                 loginContext.login();
                 // disable inspection until we can use 1.6 api
                 //noinspection unchecked
@@ -516,10 +577,9 @@ public class KerberosClient {
         }
 
         if (aPrincipal != null) {
-            acceptPrincipal = aPrincipal; // cache success
-        }
-        else {
-            acceptPrincipal = ""; // cache failure
+            acceptPrincipalCache.put(principal, Boolean.TRUE); // cache success
+        } else {
+            acceptPrincipalCache.put(principal, Boolean.FALSE); // cache failure
             throw new KerberosException("Error getting principal.");
         }
 
@@ -527,10 +587,23 @@ public class KerberosClient {
     }
 
     /**
+     * Validate all entries in the keytab file.
+     * @throws KerberosException
+     */
+    public static void validateKerberosPrincipals() throws KerberosException {
+        KeyTab keyTab = KerberosConfig.getKeytab(false);
+        KeyTabEntry[] keyTabEntries = keyTab.getEntries();
+        for (int i = 0; i < keyTabEntries.length; i++) {
+            KeyTabEntry keyTabEntry = keyTabEntries[i];
+            getKerberosAcceptPrincipal(keyTabEntry.getService().getName(), true);
+        }
+    }
+
+    /**
      * Reset any cached information
      */
     public static void reset() {
-        acceptPrincipal = null;        
+        acceptPrincipalCache.clear();
     }
 
     public static Oid getKerberos5Oid() throws KerberosException {
@@ -592,7 +665,7 @@ public class KerberosClient {
     private static final boolean PASS_INETADDR = ConfigFactory.getBooleanProperty( PASS_INETADDR_PROPERTY, true );
 
     private static Oid kerb5Oid;
-    private static String acceptPrincipal;
+    private static Map<String, Boolean> acceptPrincipalCache = new ConcurrentHashMap<String, Boolean>();
 
     static {
         KerberosConfig.checkConfig( null, null, true );
@@ -763,7 +836,7 @@ public class KerberosClient {
      * OpenJDK introduced the "InetAddress" argument, so we'll support either
      * the old or the new constructor.
      */
-    private KrbApReq buildKrbApReq( final byte[] apReqBytes,
+    protected KrbApReq buildKrbApReq( final byte[] apReqBytes,
                                     final KerberosKey[] keys,
                                     final InetAddress clientAddress ) throws KerberosException {
         KrbApReq apReq;

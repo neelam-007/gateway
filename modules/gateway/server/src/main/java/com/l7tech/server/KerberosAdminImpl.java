@@ -8,10 +8,10 @@ import com.l7tech.gateway.common.admin.KerberosAdmin;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.objectmodel.ObjectModelException;
+import sun.security.krb5.internal.ktab.KeyTab;
+import sun.security.krb5.internal.ktab.KeyTabEntry;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Collections;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -31,24 +31,46 @@ public class KerberosAdminImpl implements KerberosAdmin {
         this.clusterEncryptionManager = clusterEncryptionManager;
     }
 
-    public Keytab getKeytab() throws KerberosException {
+    /**
+     * Retrieve all the keytab entry under a keytab file
+     * @return List of KeyTabEntryInfo, this never return null, if there is no keytab entry in the keytab file,
+     *         it returns an emply list.
+     * @throws KerberosException
+     */
+    public List<KeyTabEntryInfo> getKeyTabEntryInfos() throws KerberosException {
+        List<KeyTabEntryInfo> keyTabEntryInfos = new ArrayList<KeyTabEntryInfo>();
         try {
-            return KerberosClient.getKerberosAcceptPrincipalKeytab();
-        }
-        catch(KerberosException ke) {
+            KeyTab keyTab = KerberosClient.getKerberosAcceptPrincipalKeytab();
+
+            if (keyTab != null) {
+                KeyTabEntry[] keyTabEntries = keyTab.getEntries();
+                for (int i = 0; i < keyTabEntries.length; i++) {
+                    KeyTabEntry keyTabEntry = keyTabEntries[i];
+                    KeyTabEntryInfo info = new KeyTabEntryInfo();
+                    info.setRealm(keyTabEntry.getService().getRealm().toString());
+                    info.setKdc(KerberosUtils.getKdc(info.getRealm()));
+                    info.setPrincipalName(keyTabEntry.getService().getName());
+                    info.setDate(keyTabEntry.getTimeStamp() == null ? null : keyTabEntry.getTimeStamp().toDate());
+                    info.setVersion(keyTabEntry.getKey().getKeyVersionNumber());
+                    info.setEtype(keyTabEntry.getKey().getEType());
+                    keyTabEntryInfos.add(info);
+                }
+            }
+        } catch(KerberosException ke) {
             logger.log(Level.WARNING, "Kerberos keytab is invalid", ke);
             throw new KerberosException(ke.getMessage());
         }
+        return keyTabEntryInfos;
     }
 
-    public String getPrincipal() throws KerberosException {
+    public void validatePrincipal(final String principal) throws KerberosException {
         final KerberosException[] exceptionHolder = new KerberosException[1];
         final String[] principalHolder = new String[1];
 
         Thread testThread = new Thread( new Runnable() {
             public void run() {
                 try {
-                    principalHolder[0] = KerberosClient.getKerberosAcceptPrincipal(true);
+                    principalHolder[0] = KerberosClient.getKerberosAcceptPrincipal(principal, true);
                 } catch(KerberosException ke) {
                     // Not really an error, since this is usually a configuration problem.
                     // Note that we still throw the exception back to the caller so
@@ -74,8 +96,6 @@ public class KerberosAdminImpl implements KerberosAdmin {
         if ( exceptionHolder[0] != null ) {
             throw exceptionHolder[0];
         }
-
-        return principalHolder[0];
     }
 
     public Map<String,String> getConfiguration() {

@@ -6,55 +6,52 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import sun.security.jgss.krb5.Krb5Util;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
+import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
+import javax.security.auth.kerberos.KeyTab;
 import javax.security.auth.login.LoginContext;
 import java.io.*;
+import java.net.InetAddress;
 import java.security.PrivilegedExceptionAction;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
 
 /**
  * User: awitrisna
  */
 public class KerberosClientTest {
 
-    private static final String LOGIN_CONTEXT_OUT_KEYTAB = "com.l7tech.common.security.kerberos.outbound.keytab";
-    private static final String SERVICE_PRINCIPAL_NAME = "http/awitrisna-desktop@QAWIN2003.COM";
-    private KerberosClient client;
     private static final String TMPDIR = System.getProperty("java.io.tmpdir");
-    private static final String SEPARATOR = System.getProperty("file.separator");
-    private static final String KRB5_CONF = TMPDIR + SEPARATOR + "mockkrb5.conf";
-    private static final String LOGIN_CONFIG = TMPDIR + SEPARATOR + "mocklogin.config";
-    private static final String KEYTAB = TMPDIR + SEPARATOR + "kerberos.keytab";
+    private static final String LOGIN_CONTEXT_OUT_KEYTAB = "com.l7tech.common.security.kerberos.outbound.keytab";
+    //private static final String SERVICE_PRINCIPAL_NAME = "http/ssg1.qawin2003.com@QAWIN2003.COM";
+    //private static final String SERVICE_PRINCIPAL_NAME = "http/ssg2.qawin2003.com@QAWIN2003.COM";
+    //private static final String SERVICE_PRINCIPAL_NAME = "http/ssg4.sup.l7tech.sup@SUP.L7TECH.SUP";
+    private static final String DEFAULT_SERVICE_PRINCIPAL_NAME = KerberosConfigTest.DEFAULT_SERVICE_PRINCIPAL_NAME;
+    private static final String SERVICE_PRINCIPAL_NAME = KerberosConfigTest.SERVICE_PRINCIPAL_NAME;
+    public static final String SERVICE = KerberosConfigTest.SERVICE;
+    public static final String HOST = KerberosConfigTest.HOST;
+
+    private static final String SIMPLE_SERVICE_PRINCIPAL_NAME = "http/ssg3.l7tech.sup";
+    public KerberosClient client;
 
 
     @BeforeClass
-    public static void init() throws IOException {
-        setUpKrb5Conf();
-        setUpLoginConfig();
-        setupKeytab();
+    public static void init() throws IOException, KerberosException {
+        KerberosTestSetup.init();
     }
 
     @AfterClass
     public static void dispose() {
-        File krb5Conf = new File(KRB5_CONF);
-        if (krb5Conf.exists()) {
-            krb5Conf.delete();
-        }
-        File loginConfig = new File(LOGIN_CONFIG);
-        if (loginConfig.exists()) {
-            loginConfig.delete();
-        }
-        File keyTabFile = new File(KEYTAB);
-        if (keyTabFile.exists()) {
-            keyTabFile.delete();
-        }
+        KerberosTestSetup.dispose();
     }
 
     /**
@@ -64,84 +61,8 @@ public class KerberosClientTest {
      * @throws Exception
      */
     public void setUp() throws Exception {
-        client = new KerberosClient() {
-            @Override
-            public GSSManager getGSSManager() {
-                return new MockGSSManagerImpl();
-            }
-        };
-        //locate keytab file
-        System.setProperty(KerberosConfigConstants.SYSPROP_SSG_HOME, TMPDIR);
-        System.setProperty(KerberosConfigConstants.SYSPROP_KRB5CFG_PATH, KRB5_CONF);
-        System.setProperty("java.security.auth.login.config", LOGIN_CONFIG);
-    }
-
-    /**
-     * Setup the krb5.conf file
-     *
-     * @throws IOException
-     */
-    private static void setUpKrb5Conf() throws IOException {
-        String krb5 = "[libdefaults]\n" +
-                "default_realm = QAWIN2003.COM\n" +
-                "default_tkt_enctypes = rc4-hmac,des-cbc-md5\n" +
-                "default_tgs_enctypes = rc4-hmac,des-cbc-md5\n" +
-                "\n" +
-                "[realms]\n" +
-                "QAWIN2003.COM = {\n" +
-                "kdc = localhost:88\n" +
-                "admin_server =  localhost:88\n" +
-                "kpasswd_server =  localhost:464\n" +
-                "default_domain = qawin2003.com\n" +
-                "}";
-        File krb5Conf = new File(KRB5_CONF);
-        if (krb5Conf.exists()) {
-            krb5Conf.delete();
-        }
-        FileWriter fos = new FileWriter(krb5Conf);
-        fos.write(krb5);
-        fos.close();
-    }
-
-    /**
-     * Setup the login.config file
-     *
-     * @throws IOException
-     */
-    private static void setUpLoginConfig() throws IOException {
-        String login = "com.l7tech.common.security.kerberos.outbound.keytab {\n" +
-                "    com.l7tech.kerberos.MockKrb5LoginModule required\n" +
-                "    refreshKrb5Config=true\n" +
-                "    storeKey=true;\n" +
-                "};";
-
-        File loginConfig = new File(LOGIN_CONFIG);
-        if (loginConfig.exists()) {
-            loginConfig.delete();
-        }
-        FileWriter fos = new FileWriter(loginConfig);
-        fos.write(login);
-        fos.close();
-    }
-
-
-    /**
-     * Setup the keytab file
-     *
-     * @throws IOException
-     */
-    public static void setupKeytab() throws IOException {
-        String keytab = "BQIAAABHAAIADVFBV0lOMjAwMy5DT00ABGh0dHAAEWF3aXRyaXNuYS1kZXNrdG9wAAAAAAAAAAAC" +
-                "ABcAEIhG9+ruj7EXrQa92DC3WGw=";
-
-        File keyTabFile = new File(KEYTAB);
-        if (keyTabFile.exists()) {
-            keyTabFile.delete();
-        }
-        byte[] data = Base64.decodeBase64(keytab);
-        FileOutputStream fos = new FileOutputStream(keyTabFile);
-        fos.write(data);
-        fos.close();
+        KerberosTestSetup.setUp();
+        client = KerberosTestSetup.client;
     }
 
     @Test
@@ -155,6 +76,71 @@ public class KerberosClientTest {
     public void testGetKerberosServiceTicketWrongPrinciple() throws Exception {
         setUp();
         client.getKerberosServiceTicket("INVALID", true);
+    }
+
+    @Test
+    public void testGetKerberosAcceptPrincipal() throws Exception {
+        setUp();
+        String acceptPrincipal  = KerberosClient.getKerberosAcceptPrincipal(SERVICE_PRINCIPAL_NAME, true);
+        assertNotNull(acceptPrincipal);
+        acceptPrincipal = KerberosClient.getKerberosAcceptPrincipal(SIMPLE_SERVICE_PRINCIPAL_NAME, true);
+        assertNotNull(acceptPrincipal);
+    }
+
+    @Test
+    public void testGetKerberosAcceptPrincipalWithDomainMatch() throws Exception {
+        setUp();
+        String acceptPrincipal  = KerberosClient.getKerberosAcceptPrincipal("http", "abc.l7tech.sup", true);
+        assertEquals(SERVICE_PRINCIPAL_NAME, acceptPrincipal);
+    }
+
+    @Test
+    public void testGetKerberosAcceptPrincipalWithHttps() throws Exception {
+        setUp();
+        String acceptPrincipal  = KerberosClient.getKerberosAcceptPrincipal("https", "abc.l7tech.sup", true);
+        assertEquals(SERVICE_PRINCIPAL_NAME, acceptPrincipal);
+    }
+
+    @Test
+    public void testGetKerberosAcceptPrincipalWithNull() throws Exception {
+        setUp();
+        String acceptPrincipal  = KerberosClient.getKerberosAcceptPrincipal(null, true);
+        assertEquals(DEFAULT_SERVICE_PRINCIPAL_NAME, acceptPrincipal);
+    }
+
+    @Test
+    public void testGetKerberosUnAcceptPrincipal() throws Exception {
+        setUp();
+        String acceptPrincipal  = KerberosClient.getKerberosAcceptPrincipal("http/doesNotExist", true);
+        assertEquals(DEFAULT_SERVICE_PRINCIPAL_NAME, acceptPrincipal);
+    }
+
+    @Test
+    public void testGetKerberosPrincipal() throws Exception {
+        setUp();
+        assertEquals(SERVICE_PRINCIPAL_NAME, KerberosClient.getKerberosAcceptPrincipal(SERVICE, HOST, true));
+    }
+
+    @Test
+    public void testGetInvalidKerberosPrincipal() throws Exception {
+        setUp();
+        assertEquals(DEFAULT_SERVICE_PRINCIPAL_NAME, KerberosClient.getKerberosAcceptPrincipal("DOES", "NOT_EXIST", true));
+    }
+
+    @Test
+    public void testValidateKerberosPrincipal() throws Exception {
+        setUp();
+        KerberosClient.validateKerberosPrincipals();
+    }
+
+    @Ignore("Needs connection to the KDC")
+    @Test
+    public void getDelegatedServiceTicket() throws Exception {
+        KerberosClient client = new KerberosClient();
+        KerberosServiceTicket serviceTicket = client.getKerberosServiceTicket(SERVICE_PRINCIPAL_NAME, true);
+        KerberosServiceTicket delegateTicket = client.getKerberosServiceTicket(SERVICE_PRINCIPAL_NAME, InetAddress.getByName("localhost"), serviceTicket.getGSSAPReqTicket() );
+        assertNotNull(delegateTicket);
+
     }
 
     @Ignore("Needs connection to the KDC")
@@ -171,20 +157,44 @@ public class KerberosClientTest {
      *  d. Download the keytab
      */
     public void testGetKerberosServiceTicket() throws Exception {
-        System.setProperty(KerberosConfigConstants.SYSPROP_SSG_HOME, "/home/awitrisna/tmp");
         KerberosClient client = new KerberosClient();
-        KerberosServiceTicket serviceTicket = client.getKerberosServiceTicket(SERVICE_PRINCIPAL_NAME, true);
+        final KerberosServiceTicket serviceTicket = client.getKerberosServiceTicket(SERVICE_PRINCIPAL_NAME, true);
+
+
+        Subject subject = new Subject();
+        LoginContext loginContext = new LoginContext("com.l7tech.common.security.kerberos.accept", subject, getServerCallbackHandler(SERVICE_PRINCIPAL_NAME));
+        loginContext.login();
+        Subject.doAs(subject, new PrivilegedExceptionAction() {
+            @Override
+            public Object run() throws Exception {
+                GSSManager manager = GSSManager.getInstance();
+                GSSContext context = manager.createContext((GSSCredential) null);
+                //verify the ticket
+                byte[] token = context.acceptSecContext(serviceTicket.getGSSAPReqTicket().toByteArray(), 0, serviceTicket.getGSSAPReqTicket().toByteArray().length);
+                assertNull(token);
+                return context.getSrcName().toString();
+            }
+        });
         assertNotNull(serviceTicket);
     }
 
-    @Ignore("Needs connection to the KDC and JDK7")
+    @Ignore("Needs connection to the KDC")
+    @Test
+    public void testValidateKerberosServiceTicket() throws Exception {
+        System.setProperty(KerberosConfigConstants.SYSPROP_SSG_HOME, TMPDIR);
+        KerberosClient client = new KerberosClient();
+        KerberosServiceTicket serviceTicket = client.getKerberosServiceTicket(SERVICE_PRINCIPAL_NAME, true);
+        serviceTicket = client.getKerberosServiceTicket(SERVICE_PRINCIPAL_NAME, InetAddress.getByName("localhost"), serviceTicket.getGSSAPReqTicket());
+        assertNotNull(serviceTicket);
+    }
+
+    @Ignore("Needs connection to the KDC")
     @Test
     /**
      * Capture the data from the real KDC connection and
      * we can use the captured data to mock the response from the KDC.
      */
     public void captureLoginStaticData() throws Exception {
-        System.setProperty(KerberosConfigConstants.SYSPROP_SSG_HOME, "/home/awitrisna/tmp");
         KerberosConfig.checkConfig(null, null, true);
 
         Subject subject = new Subject();
@@ -194,16 +204,14 @@ public class KerberosClientTest {
         KerberosPrincipal kerberosPrincipal = (KerberosPrincipal) subject.getPrincipals().toArray()[0];
         //The TGT
         KerberosTicket kerberosTicket = (KerberosTicket) subject.getPrivateCredentials().toArray()[0];
-        //JDK1.7
-        //KeyTab keyTab = (KeyTab) subject.getPrivateCredentials().toArray()[1];
-        //Krb5Util.KeysFromKeyTab keysFromKeyTab = (Krb5Util.KeysFromKeyTab) subject.getPrivateCredentials().toArray()[2];
-        //KerberosKey k = new KerberosKey(keysFromKeyTab.getPrincipal(), keysFromKeyTab.getEncoded(), keysFromKeyTab.getKeyType(), keysFromKeyTab.getVersionNumber());
+        KeyTab keyTab = (KeyTab) subject.getPrivateCredentials().toArray()[1];
+        Krb5Util.KeysFromKeyTab keysFromKeyTab = (Krb5Util.KeysFromKeyTab) subject.getPrivateCredentials().toArray()[2];
+        KerberosKey k = new KerberosKey(keysFromKeyTab.getPrincipal(), keysFromKeyTab.getEncoded(), keysFromKeyTab.getKeyType(), keysFromKeyTab.getVersionNumber());
         System.out.println("KerberosPrincipal: " + encode(kerberosPrincipal));
         System.out.println("TGT: " + encode(kerberosTicket));
-        //System.out.println("KeyBytes: " + Base64.encodeBase64String(keysFromKeyTab.getEncoded()));
-        //JDK1.7
-        //System.out.println("KeyType: " + keysFromKeyTab.getKeyType());
-        //System.out.println("VersionNumber: " + keysFromKeyTab.getVersionNumber());
+        System.out.println("KeyBytes: " + Base64.encodeBase64String(keysFromKeyTab.getEncoded()));
+        System.out.println("KeyType: " + keysFromKeyTab.getKeyType());
+        System.out.println("VersionNumber: " + keysFromKeyTab.getVersionNumber());
         Subject.doAs(subject, new PrivilegedExceptionAction<KerberosServiceTicket>() {
             @Override
             public KerberosServiceTicket run() throws Exception {
@@ -232,7 +240,7 @@ public class KerberosClientTest {
             }
         });
         //The Service Ticket
-        KerberosTicket ticket = (KerberosTicket) subject.getPrivateCredentials().toArray()[2];
+        KerberosTicket ticket = (KerberosTicket) subject.getPrivateCredentials().toArray()[3];
         System.out.println("Service Ticket: " + encode(ticket));
     }
 
@@ -263,5 +271,4 @@ public class KerberosClientTest {
             }
         };
     }
-
 }

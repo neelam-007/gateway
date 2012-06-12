@@ -36,7 +36,8 @@ public class KerberosSigningSecurityTokenImpl extends SigningSecurityTokenImpl i
         this.wsuId = null;
     }
 
-    public KerberosSigningSecurityTokenImpl( final KerberosGSSAPReqTicket ticket,
+    public KerberosSigningSecurityTokenImpl( final String spn,
+                                             final KerberosGSSAPReqTicket ticket,
                                              final InetAddress clientAddress,
                                              final String wsuId,
                                              final Element element ) throws GeneralSecurityException {
@@ -45,13 +46,6 @@ public class KerberosSigningSecurityTokenImpl extends SigningSecurityTokenImpl i
 
         try {
             KerberosClient client = new KerberosClient();
-            String spn;
-            try {
-                spn = KerberosClient.getKerberosAcceptPrincipal(false);
-            }
-            catch(KerberosException ke) { // fallback to system property name
-                spn = KerberosClient.getGSSServiceName();
-            }
             kerberosServiceTicket = client.getKerberosServiceTicket(spn, clientAddress, ticket);
         }
         catch(KerberosException ke) {

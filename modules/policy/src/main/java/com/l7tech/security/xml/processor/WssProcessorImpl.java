@@ -10,9 +10,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
-import com.l7tech.kerberos.KerberosConfigException;
-import com.l7tech.kerberos.KerberosGSSAPReqTicket;
-import com.l7tech.kerberos.KerberosUtils;
+import com.l7tech.kerberos.*;
 import com.l7tech.message.*;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
@@ -1623,7 +1621,20 @@ public class WssProcessorImpl implements WssProcessor {
 
     private void recordKerberosFromBst(Element binarySecurityTokenElement, byte[] decodedValue, String wsuId) {
         try {
-            securityTokens.add(new KerberosSigningSecurityTokenImpl(new KerberosGSSAPReqTicket(decodedValue),
+            String spn;
+            try {
+                HttpRequestKnob requestKnob = message.getKnob(HttpRequestKnob.class);
+                if (requestKnob != null && requestKnob.getRequestURL() != null) {
+                    spn = KerberosClient.getKerberosAcceptPrincipal(requestKnob.getRequestURL().getProtocol(),
+                            requestKnob.getRequestURL().getHost(), false);
+                } else {
+                    spn = KerberosClient.getKerberosAcceptPrincipal(false);
+                }
+            }
+            catch(KerberosException ke) { // fallback to system property name
+                spn = KerberosClient.getGSSServiceName();
+            }
+            securityTokens.add(new KerberosSigningSecurityTokenImpl(spn, new KerberosGSSAPReqTicket(decodedValue),
                                                                            getClientInetAddress(message),
                                                                            wsuId,
                                                                            binarySecurityTokenElement));

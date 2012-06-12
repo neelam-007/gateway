@@ -9,23 +9,29 @@ import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.kerberos.KerberosConstants;
 import com.l7tech.kerberos.KerberosException;
-import com.l7tech.kerberos.Keytab;
+import com.l7tech.kerberos.KerberosUtils;
+import com.l7tech.kerberos.KeyTabEntryInfo;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
+import sun.security.krb5.internal.ktab.KeyTab;
+import sun.security.krb5.internal.ktab.KeyTabEntry;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
 import java.util.TimerTask;
 import java.util.logging.Level;
 
@@ -35,6 +41,8 @@ import java.util.logging.Level;
  * @author Steve Jones
  */
 public class KerberosDialog extends JDialog {
+    private static final ResourceBundle resources = ResourceBundle.getBundle(KerberosDialog.class.getName());
+    private static final int MAX_TABLE_COLUMN_NUM = 6;
 
     //- PUBLIC
 
@@ -52,21 +60,16 @@ public class KerberosDialog extends JDialog {
 
     private JPanel mainPanel;
     private JButton closeButton;
-    private JLabel configKdcLabel;
-    private JLabel configRealmLabel;
-    private JLabel versionLabel;
-    private JLabel dateLabel;
-    private JLabel principalNameLabel;
-    private JLabel realmLabel;
     private JPanel keytabPanel;
     private JLabel validLabel;
     private JLabel summaryLabel;
-    private JLabel encryptionTypesLabel;
     private JLabel errorMessageLabel;
     private JButton uploadKeytab;
     private JButton deleteKeytabButton;
+    private JTable keytabTable;
 
     private boolean validKeytab = false;
+    private List<KeyTabEntryInfo> keyTabEntries = new ArrayList<KeyTabEntryInfo>();
 
     private void init() {
         setTitle("Kerberos Configuration");
@@ -101,6 +104,7 @@ public class KerberosDialog extends JDialog {
         deleteKeytabButton.setEnabled(false);
         deleteKeytabButton.setText(label);
 
+        initKeyTabTable();
         initData();
         if (validKeytab) testConfiguration();
 
@@ -112,29 +116,19 @@ public class KerberosDialog extends JDialog {
         KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
 
         if (kerberosAdmin != null) {
-            Map config = kerberosAdmin.getConfiguration();
-            if (config != null) {
-                String kdc = (String) config.get("kdc");
-                if (kdc != null) configKdcLabel.setText(kdc);
-
-                String realm = (String) config.get("realm");
-                if (realm != null) configRealmLabel.setText(realm);
-            }
-
-            Keytab keytab = null;
             boolean keytabInvalid = false;
             try {
-                keytab = kerberosAdmin.getKeytab();
+                keyTabEntries = kerberosAdmin.getKeyTabEntryInfos();
             }
             catch(KerberosException e) {
                 keytabInvalid = true;
             }
 
-            if ( keytab != null || keytabInvalid ) {
+            if ( keyTabEntries.size() != 0 || keytabInvalid ) {
                  deleteKeytabButton.setEnabled( uploadKeytab.isEnabled() );
             }
 
-            if ( keytab == null ) {
+            if ( keyTabEntries.size() == 0 ) {
                 validKeytab = false;
 
                 validLabel.setText("No");
@@ -145,12 +139,6 @@ public class KerberosDialog extends JDialog {
                     summaryLabel.setText("Keytab file not present.");
                 }
                 keytabPanel.setEnabled(false);
-
-                versionLabel.setText("");
-                dateLabel.setText("");
-                principalNameLabel.setText("");
-                realmLabel.setText("");
-                encryptionTypesLabel.setText("");
             }
             else {
                 validKeytab = true;
@@ -158,24 +146,86 @@ public class KerberosDialog extends JDialog {
                 validLabel.setText(" - ");
                 summaryLabel.setText("Checking configuration ...");
 
-                versionLabel.setText(Long.toString(keytab.getKeyVersionNumber()));
-                dateLabel.setText(keytab.getKeyTimestamp() == 0 ?
-                        "<Not Available>" :
-                        new SimpleDateFormat("yyyy/MM/dd").format(new Date(keytab.getKeyTimestamp())));
-                principalNameLabel.setText(formatName(keytab.getKeyName()));
-                realmLabel.setText(keytab.getKeyRealm());
+                ((KeyTabTableModel)keytabTable.getModel()).fireTableDataChanged();
 
-                StringBuffer encTypeStringBuffer = new StringBuffer();
-                String[] keyTypes = keytab.getKeyTypes();
-                for (int e=0; e<keyTypes.length; e++) {
-                    if (e > 0) encTypeStringBuffer.append(", ");
-                    encTypeStringBuffer.append(keyTypes[e]);
-                }
-                encryptionTypesLabel.setText(encTypeStringBuffer.toString());
             }
         }
         else {
             validLabel.setText("No");
+        }
+    }
+    private void initKeyTabTable() {
+
+        keytabTable.setModel(new KeyTabTableModel());
+
+    }
+
+    private class KeyTabTableModel extends AbstractTableModel {
+
+
+        @Override
+        public int getColumnCount() {
+            return MAX_TABLE_COLUMN_NUM;
+        }
+
+        @Override
+        public int getRowCount() {
+            return keyTabEntries.size();
+        }
+
+        @Override
+        public String getColumnName(int col) {
+            switch (col) {
+                case 0:
+                    return resources.getString("table.column.kdc");
+                case 1:
+                    return resources.getString("table.column.realm");
+                case 2:
+                    return resources.getString("table.column.principalName");
+                case 3:
+                    return resources.getString("table.column.date");
+                case 4:
+                    return resources.getString("table.column.version");
+                case 5:
+                    return resources.getString("table.column.encryption");
+                default:
+                    throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
+            }
+        }
+
+        @Override
+        public boolean isCellEditable(int row, int col) {
+            return false;
+        }
+
+        @Override
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            KeyTabEntryInfo keyTabEntry = keyTabEntries.get(rowIndex);
+
+            switch (columnIndex) {
+                case 0:
+                    KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
+                    if (kerberosAdmin != null) {
+                        return keyTabEntry.getKdc();
+                    }
+                case 1:
+                    return keyTabEntry.getRealm();
+                case 2:
+                    return keyTabEntry.getPrincipalName();
+                case 3:
+                    return keyTabEntry.getDate() == null ? "<Not Avaliable>" :
+                            new SimpleDateFormat("yyyy/MM/dd").format(keyTabEntry.getDate());
+                case 4:
+                    return keyTabEntry.getVersion();
+                case 5:
+                    try {
+                        return KerberosConstants.ETYPE_NAMES[keyTabEntry.getEType()];
+                    } catch( ArrayIndexOutOfBoundsException aioobe ) {
+                        return "unknown [" + keyTabEntry.getEType() + "]";
+                    }
+                default:
+                    throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
+            }
         }
     }
 
@@ -192,24 +242,28 @@ public class KerberosDialog extends JDialog {
                     try {
                         KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
                         if ( kerberosAdmin != null ) {
-                            boolean valid = false;
-                            String errorMessageText = null;
+                            boolean valid = true;
+                            StringBuilder errorMessageText = new StringBuilder();
 
-                            try {
-                                kerberosAdmin.getPrincipal();
-                                valid = true;
-                            }
-                            catch(KerberosException e) {
-                                // bug 5603: truncate the error message to a maximum length of 150 chars.
-                                if (e.getMessage() != null && e.getMessage().length() > 150) {
-                                    errorMessageText = new StringBuffer(e.getMessage().substring(0, 150)).append("...").toString();
-                                } else {
-                                    errorMessageText = e.getMessage();
+                            for (int i = 0; i < keyTabEntries.size(); i++) {
+                                KeyTabEntryInfo keyTabEntryInfo =  keyTabEntries.get(i);
+                                try {
+                                    kerberosAdmin.validatePrincipal(keyTabEntryInfo.getPrincipalName());
+                                }
+                                catch(KerberosException e) {
+                                    valid = false;
+                                    errorMessageText.append(keyTabEntryInfo.getPrincipalName() + " : " + e.getMessage() + "\n\t");
                                 }
                             }
 
                             final boolean wasValid = valid;
-                            final String errorMessage = errorMessageText;
+                            final StringBuilder errorMessage = new StringBuilder();
+                            // bug 5603: truncate the error message to a maximum length of 150 chars.
+                            if (errorMessageText.length() > 150 ) {
+                                errorMessage.append(errorMessageText.substring(0, 150) + "...");
+                            } else {
+                                errorMessage.append(errorMessageText.toString());
+                            }
 
                             SwingUtilities.invokeLater( new Runnable() {
                                 @Override
@@ -221,8 +275,8 @@ public class KerberosDialog extends JDialog {
                                     else {
                                         validLabel.setText("No");
                                         summaryLabel.setText("Authentication failed.");
-                                        errorMessageLabel.setVisible( true );
-                                        errorMessageLabel.setText( errorMessage );
+                                        errorMessageLabel.setVisible(true);
+                                        errorMessageLabel.setText( errorMessage.toString() );
                                     }
 
                                     // use DialogDisplayer so that applet resizes correctly - bug 11050
@@ -262,11 +316,8 @@ public class KerberosDialog extends JDialog {
     private void showUpdating() {
         validLabel.setText(" - ");
         summaryLabel.setText("Updating configuration ...");
-        versionLabel.setText("");
-        dateLabel.setText("");
-        principalNameLabel.setText("");
-        realmLabel.setText("");
-        encryptionTypesLabel.setText("");
+        keyTabEntries = new ArrayList<KeyTabEntryInfo>();
+        ((KeyTabTableModel)keytabTable.getModel()).fireTableDataChanged();
     }
 
     private void doUpload(  final File keytabFile  ) {
@@ -309,11 +360,17 @@ public class KerberosDialog extends JDialog {
 
     private void loadKeytab( final File keytabFile ) {
         try {
-            Keytab keytab = new Keytab( keytabFile );
+            KerberosUtils.validateKeyTab(keytabFile);
+            KeyTab keyTab = KeyTab.getInstance(keytabFile);
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < keyTab.getEntries().length; i++) {
+                KeyTabEntry entry = keyTab.getEntries()[i];
+                sb.append(entry.getService().getNameString() + "\n\t");
+            }
 
             DialogDisplayer.showConfirmDialog(
                     KerberosDialog.this,
-                    "Load keytab for principal:\n\t" + formatName(keytab.getKeyName()),
+                    "Load keytab for principal:\n\t" + sb.toString(),
                     "Confirm Keytab Update",
                     JOptionPane.OK_CANCEL_OPTION,
                     new DialogDisplayer.OptionListener(){
@@ -329,13 +386,6 @@ public class KerberosDialog extends JDialog {
                     KerberosDialog.this,
                     "Invalid kerberos keytab:\n\t" + ExceptionUtils.getMessage(ke),
                     "Invalid Keytab",
-                    JOptionPane.WARNING_MESSAGE,
-                    null );
-        } catch ( IOException ioe ) {
-            DialogDisplayer.showMessageDialog(
-                    KerberosDialog.this,
-                    "Error reading keytab:\n\t" + ExceptionUtils.getMessage(ioe),
-                    "Keytab Error",
                     JOptionPane.WARNING_MESSAGE,
                     null );
         }

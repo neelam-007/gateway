@@ -1,15 +1,15 @@
 package com.l7tech.gateway.common.admin;
 
-import com.l7tech.kerberos.KerberosException;
-import com.l7tech.kerberos.Keytab;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-
-import java.util.Map;
-
-import org.springframework.transaction.annotation.Transactional;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.kerberos.KerberosException;
+import com.l7tech.kerberos.KeyTabEntryInfo;
+import com.l7tech.objectmodel.EntityType;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Remote interface to check Kerberos configuration.
@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Propagation;
 public interface KerberosAdmin  {
 
     /**
-     * Get the kerberos service principal name.
+     * Validate the kerberos service principal name.
      *
      * <p>This method will attempt a login on the Gateway to check that the
      * Kerberos configuration is good.</p>
@@ -34,10 +34,11 @@ public interface KerberosAdmin  {
      * probably the case that Kerberos is not configured (so not really an
      * error)</p>
      *
+     * @param principle
      * @return the SPN (e.g. http/gateway.qawin2003.com@QAWIN2003.COM)
      * @throws com.l7tech.kerberos.KerberosException if the log in fails.
      */
-    public String getPrincipal() throws KerberosException;
+    public void validatePrincipal(String principle) throws KerberosException ;
 
     /**
      * Get the configured Keytab.
@@ -48,7 +49,7 @@ public interface KerberosAdmin  {
      * @return the Keytab or null if non is available.
      * @throws KerberosException if a Keytab is present but invalid.
      */
-    public Keytab getKeytab() throws KerberosException;
+    public List<KeyTabEntryInfo> getKeyTabEntryInfos() throws KerberosException;
 
     /**
      * Get the Kerberos configuration for the SSG.
