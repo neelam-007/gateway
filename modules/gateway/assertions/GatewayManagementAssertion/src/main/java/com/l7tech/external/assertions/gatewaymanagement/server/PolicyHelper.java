@@ -30,6 +30,7 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
@@ -47,7 +48,8 @@ import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
-import org.jetbrains.annotations.Nullable;
+import com.sun.istack.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.SAXException;
@@ -175,7 +177,7 @@ public class PolicyHelper {
                         references.add( reference );
                     }
                 }
-                
+
                 if ( !warnings.isEmpty() ) {
                     pir.setWarnings( warnings );
                 }
@@ -333,6 +335,7 @@ public class PolicyHelper {
         private final TrustedCertManager trustedCertManager;
         private final SsgActiveConnectorManager ssgActiveConnectorManager;
         private final PolicyExporterImporterManager policyExporterImporterManager;
+        private final GenericEntityManager genericEntityManager;
 
         public GatewayExternalReferenceFinder( final RbacServices rbacServices,
                                                final SecurityFilter securityFilter,
@@ -347,7 +350,8 @@ public class PolicyHelper {
                                                final SsgKeyStoreManager ssgKeyStoreManager,
                                                final TrustedCertManager trustedCertManager,
                                                final SsgActiveConnectorManager ssgActiveConnectorManager,
-                                               final PolicyExporterImporterManager policyExporterImporterManager ) {
+                                               final PolicyExporterImporterManager policyExporterImporterManager,
+                                               final GenericEntityManager genericEntityManager) {
             this.rbacServices = rbacServices;
             this.securityFilter = securityFilter;
             this.customAssertionsRegistrar = customAssertionsRegistrar;
@@ -362,6 +366,7 @@ public class PolicyHelper {
             this.trustedCertManager = trustedCertManager;
             this.ssgActiveConnectorManager = ssgActiveConnectorManager;
             this.policyExporterImporterManager = policyExporterImporterManager;
+            this.genericEntityManager = genericEntityManager;
         }
 
         private User getUser() {
@@ -560,6 +565,11 @@ public class PolicyHelper {
         @Override
         public User findUserByLogin( final long providerOid, final String login ) throws FindException {
             return filter( getIdentityProvider( providerOid ).getUserManager().findByLogin( login ) );
+        }
+
+        @Override
+        public <ET extends GenericEntity> EntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException {
+            return genericEntityManager.getEntityManager(entityClass);
         }
 
         private IdentityProvider<?,?,?,?> getIdentityProvider( final long providerOid ) throws FindException {
@@ -896,7 +906,7 @@ public class PolicyHelper {
                                                 handled = true;
                                             }
                                         } catch ( FindException fe ) {
-                                            throw new ResourceFactory.ResourceAccessException(fe);                                            
+                                            throw new ResourceFactory.ResourceAccessException(fe);
                                         }
                                     }
                                     break;

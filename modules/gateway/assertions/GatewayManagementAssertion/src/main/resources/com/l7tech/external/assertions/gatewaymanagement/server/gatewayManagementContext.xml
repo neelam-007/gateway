@@ -59,6 +59,7 @@
                 <constructor-arg index="11" ref="trustedCertManager"/>
                 <constructor-arg index="12" ref="ssgActiveConnectorManager"/>
                 <constructor-arg index="13" ref="policyExporterImporterManager"/>
+                <constructor-arg index="14" ref="genericEntityManager" />
             </bean>
         </constructor-arg>
         <constructor-arg index="4" ref="resourceEntrySchemaSourceResolver"/>

@@ -11,13 +11,13 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityHeaderSet;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
+import com.l7tech.policy.GenericEntity;
+import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import java.security.KeyStoreException;
 import java.util.Collection;
@@ -149,4 +149,10 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
     public User findUserByLogin( final long providerOid, final String login ) throws FindException {
         return null;
     }
+
+    @Override
+    public <ET extends GenericEntity> EntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException {
+        return null;
+    }
+
 }

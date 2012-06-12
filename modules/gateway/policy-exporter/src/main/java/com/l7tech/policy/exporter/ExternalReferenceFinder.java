@@ -12,11 +12,15 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.policy.GenericEntity;
+import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import java.security.KeyStoreException;
 import java.util.Collection;
@@ -78,4 +82,8 @@ public interface ExternalReferenceFinder {
     User findUserByID( long providerOid, String userId ) throws FindException;
 
     User findUserByLogin( long providerOid, String login ) throws FindException;
+
+    <ET extends GenericEntity>
+    EntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException;
+
 }

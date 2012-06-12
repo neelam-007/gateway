@@ -26,21 +26,17 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityHeaderSet;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
+import com.l7tech.policy.GenericEntity;
+import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.exporter.ExternalReference;
-import com.l7tech.policy.exporter.ExternalReferenceErrorListener;
-import com.l7tech.policy.exporter.ExternalReferenceFinder;
-import com.l7tech.policy.exporter.PolicyImportCancelledException;
-import com.l7tech.policy.exporter.PolicyImporter;
+import com.l7tech.policy.exporter.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 
@@ -74,7 +70,7 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
     @Override
     public Collection<TrustedCert> findAllCerts() throws FindException {
         final TrustedCertAdmin admin = getAdminInterface(TrustedCertAdmin.class);
-        return admin.findAllCerts(); 
+        return admin.findAllCerts();
     }
 
     @Override
@@ -172,7 +168,7 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
     @Override
     public EntityHeader[] findAllIdentityProviderConfig() throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
-        return idAdmin.findAllIdentityProviderConfig();        
+        return idAdmin.findAllIdentityProviderConfig();
     }
 
     @Override
@@ -190,19 +186,19 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
     @Override
     public Group findGroupByID( long providerOid, String groupId ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
-        return idAdmin.findGroupByID( providerOid, groupId );        
+        return idAdmin.findGroupByID( providerOid, groupId );
     }
 
     @Override
     public Group findGroupByName( long providerOid, String name ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
-        return idAdmin.findGroupByName( providerOid, name );        
+        return idAdmin.findGroupByName( providerOid, name );
     }
 
     @Override
     public Set<IdentityHeader> getUserHeaders( long providerOid, String groupId ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
-        return idAdmin.getUserHeaders( providerOid, groupId );        
+        return idAdmin.getUserHeaders( providerOid, groupId );
     }
 
     @Override
@@ -214,15 +210,19 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
     @Override
     public User findUserByID( long providerOid, String userId ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
-        return idAdmin.findUserByID( providerOid, userId );        
+        return idAdmin.findUserByID( providerOid, userId );
     }
 
     @Override
     public User findUserByLogin( long providerOid, String login ) throws FindException {
         IdentityAdmin idAdmin = getAdminInterface( IdentityAdmin.class );
-        return idAdmin.findUserByLogin( providerOid, login );        
+        return idAdmin.findUserByLogin( providerOid, login );
     }
 
+    @Override
+    public <ET extends GenericEntity> EntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException {
+        return null; //Intentionally null, meant to support interface only. Not to be called in this context.
+    }
 
     @Override
     public void warning( final String title, final String msg ) {

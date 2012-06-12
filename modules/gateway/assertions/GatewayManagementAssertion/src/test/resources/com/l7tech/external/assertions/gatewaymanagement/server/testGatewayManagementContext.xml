@@ -40,10 +40,13 @@
                 <constructor-arg index="11" ref="trustedCertManager"/>
                 <constructor-arg index="12" ref="ssgActiveConnectorManager"/>
                 <constructor-arg index="13" ref="policyExporterImporterManager"/>
+                <constructor-arg index="14" ref="genericEntityManager" />
             </bean>
         </constructor-arg>
         <constructor-arg index="4"><null/></constructor-arg>
     </bean>
+
+    <bean id="genericEntityManager" class="com.l7tech.server.entity.GenericEntityManagerStub"/>
 
     <bean id="entityResourceFactoryParent" abstract="true">
         <constructor-arg index="0"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
