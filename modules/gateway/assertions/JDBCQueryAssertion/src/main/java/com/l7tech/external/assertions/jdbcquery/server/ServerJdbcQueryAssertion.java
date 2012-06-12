@@ -14,7 +14,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.jdbc.support.rowset.SqlRowSetMetaData;
 
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -45,18 +44,11 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         final List<Object> preparedStmtParams = new ArrayList<Object>();
         try {
-            final String plainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), preparedStmtParams, context,assertion.getVariablesUsed(),assertion.isAllowMultiValuedVariables(),getAudit());
+            final String plainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), preparedStmtParams, context, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(), getAudit());
 
             final String connName = ExpandVariables.process(assertion.getConnectionName(), context.getVariableMap(variablesUsed, getAudit()), getAudit());
-            DataSource dataSource = null;
-            try {
-                //get the transaction managed datasource, if any
-                dataSource = (DataSource) context.getVariable(JdbcQueryAssertion.TRANSACTION_DATASOURCE + connName);
-            } catch (Exception e) {
-                logger.finer("no existing transaction to join.");
-            }
             // Get result by querying.  The result could be a ResultSet object, an integer (updated rows), or a string (a warning message).
-            final Object result = jdbcQueryingManager.performJdbcQuery(connName, dataSource, plainQuery, assertion.getMaxRecords(), preparedStmtParams);
+            final Object result = jdbcQueryingManager.performJdbcQuery(connName, plainQuery, assertion.getMaxRecords(), preparedStmtParams);
 
             // Analyze the result type and perform a corresponding action.
             if (result instanceof String) {

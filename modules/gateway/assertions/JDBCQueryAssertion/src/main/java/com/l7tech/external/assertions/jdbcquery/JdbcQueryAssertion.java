@@ -27,7 +27,6 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     public static final String MULTIPLE_VARIABLE_COUNT = "multipleResultSet.queryresult.count";
     public static final String DEFAULT_VARIABLE_PREFIX = "jdbcQuery";
     public static final String ASSERTION_SHORT_NAME = "Perform JDBC Query";
-    public static final String TRANSACTION_DATASOURCE = "transactionDataSource.";
 
     private static final String META_INITIALIZED = JdbcQueryAssertion.class.getName() + ".metadataInitialized";
 
