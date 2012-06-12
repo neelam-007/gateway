@@ -14,11 +14,11 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTML;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 
@@ -35,7 +35,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     private static final String OPEN_HTML = "<html>";
     private static final String CLOSE_HTML = "</html>";
 
-    private static ExceptionDialog currentlyDisplayed = null;
+    private static final AtomicReference<ExceptionDialog> currentlyDisplayed = new AtomicReference<>();
     private static Runnable shutdownHandler = new Runnable() {public void run(){System.exit(-1);}};
 
     static {
@@ -115,32 +115,44 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         initialize(title, labelMessage, message, throwable, level);
     }
 
+    private static void clearCurrent(ExceptionDialog dlg) {
+        currentlyDisplayed.compareAndSet(dlg, null);
+    }
+
+    private static ExceptionDialog current(ExceptionDialog dlg) {
+        currentlyDisplayed.set(dlg);
+        return dlg;
+    }
+
     public synchronized static ExceptionDialog createExceptionDialog(Frame parent, String title, String message, Throwable throwable, Level level) {
         // Suppress all but the very first critical error dialog, to prevent dialog blizzard during cascading failures (such as during repaint)
-        if (currentlyDisplayed != null) {
+        if (currentlyDisplayed.get() != null) {
             return createFakeExceptionDialog(parent);
         }
-        return currentlyDisplayed = new ExceptionDialog(parent, title, message, throwable, level);
+        return current(new ExceptionDialog(parent, title, message, throwable, level));
     }
 
     public synchronized static ExceptionDialog createExceptionDialog(Frame parent, String message, Throwable throwable, Level level) {
         // Suppress all but the very first critical error dialog, to prevent dialog blizzard during cascading failures (such as during repaint)
-        if (currentlyDisplayed != null) return createFakeExceptionDialog(parent);
-        return currentlyDisplayed = new ExceptionDialog(parent, message, throwable, level);
+        if (currentlyDisplayed.get() != null)
+            return createFakeExceptionDialog(parent);
+        return current(new ExceptionDialog(parent, message, throwable, level));
     }
 
     public synchronized static ExceptionDialog createExceptionDialog(Frame parent, String title, String labelMessage, String message, Throwable throwable, Level level)
     {
         // Suppress all but the very first critical error dialog, to prevent dialog blizzard during cascading failures (such as during repaint)
-        if (currentlyDisplayed != null) return createFakeExceptionDialog(parent);
-        return currentlyDisplayed = new ExceptionDialog(parent, title, labelMessage, message, throwable, level);
+        if (currentlyDisplayed.get() != null)
+            return createFakeExceptionDialog(parent);
+        return current(new ExceptionDialog(parent, title, labelMessage, message, throwable, level));
     }
 
     public synchronized static ExceptionDialog createExceptionDialog(Dialog parent, String title, String labelMessage, String message, Throwable throwable, Level level)
     {
         // Suppress all but the very first critical error dialog, to prevent dialog blizzard during cascading failures (such as during repaint)
-        if (currentlyDisplayed != null) return createFakeExceptionDialog(parent);
-        return currentlyDisplayed = new ExceptionDialog(parent, title, labelMessage, message, throwable, level);
+        if (currentlyDisplayed.get() != null)
+            return createFakeExceptionDialog(parent);
+        return current(new ExceptionDialog(parent, title, labelMessage, message, throwable, level));
     }
 
     public synchronized static void setShutdownHandler(Runnable handler) {
@@ -162,9 +174,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
 
     public void setVisible(boolean b) {
         if (!b) {
-            synchronized (ExceptionDialog.class) {
-                currentlyDisplayed = null;
-            }
+            currentlyDisplayed.set(null);
         }
         if (neverDisplay) {
             // Fake dialog never displays
@@ -277,6 +287,13 @@ public class ExceptionDialog extends JDialog implements ActionListener {
             shutdown.setEnabled(false);
             shutdown.setVisible(false);
         }
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                clearCurrent(ExceptionDialog.this);
+            }
+        });
     }
 
     private JLabel getExceptionMessageLabel(Throwable t)
@@ -400,9 +417,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         final Object source = e.getSource();
         if (source == close || source == ignore) {
             this.dispose();
-            synchronized (ExceptionDialog.class) {
-                currentlyDisplayed = null;
-            }
+            currentlyDisplayed.set(null);
         } else if (source == shutdown) {
             shutdownHandler.run();
             this.dispose();
