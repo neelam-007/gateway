@@ -1,5 +1,7 @@
 package com.l7tech.gui.widgets;
 
+import org.jetbrains.annotations.Nullable;
+
 import static com.l7tech.gui.widgets.SquigglyField.*;
 import static com.l7tech.gui.widgets.SquigglyFieldUnderlineStyle.*;
 
@@ -110,7 +112,7 @@ class SquigglyFieldSupport {
         return modelessFeedback;
     }
 
-    public void setModelessFeedback(String feedback) {
+    public void setModelessFeedback(@Nullable String feedback) {
         modelessFeedback = feedback;
         if (feedback == null || feedback.length() < 1) {
             setNone();

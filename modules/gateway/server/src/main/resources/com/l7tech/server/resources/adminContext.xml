@@ -439,6 +439,7 @@
         <constructor-arg ref="trustedEsmUserManager"/>
         <constructor-arg ref="rbacServices"/>
         <constructor-arg ref="extensionInterfaceManager"/>
+        <constructor-arg ref="dateTimeConfigUtils"/>
     </bean>
 
     <!-- RBAC admin impl -->

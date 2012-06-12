@@ -1,5 +1,6 @@
 package com.l7tech.policy.variable;
 
+import com.l7tech.util.DateUtils;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.jetbrains.annotations.NotNull;
@@ -123,7 +124,7 @@ public abstract class Syntax {
      *
      * @param s String to find out what variables are referenced using our syntax of ${}. May be null.
      * @return all the variable names which are contained within our variable reference syntax of ${...} in String s.  May be empty but never null.
-     * @throws VariableNameSyntaxException If an error occurs
+     * @throws VariableNameSyntaxException If an error occurs e.g. s contains an invalid variable reference e.g. ${var[}
      */
     @NotNull
     public static String[] getReferencedNames(final @Nullable String s) {
@@ -261,6 +262,7 @@ public abstract class Syntax {
      *
      * @param value user input to validate for a single reference.
      * @return true if parameter only contains a single single reference to a variable
+     * @throws VariableNameSyntaxException if an invalid variable reference is contained within value.
      */
     public static boolean isOnlyASingleVariableReferenced(final @NotNull String value) {
         final String[] referencedNames = Syntax.getReferencedNamesIndexedVarsNotOmitted(value);
@@ -269,6 +271,24 @@ public abstract class Syntax {
         } catch (VariableNameSyntaxException e) {
             return false;
         }
+    }
+
+    /**
+     * Check if an expression references any variables. This method will never throw a VariableNameSyntaxException
+     *
+     * @param value expression value to check
+     * @return true if any variable is referenced, false otherwise. No distinction is made for invalid references, a
+     * variable is only referenced if the reference is valid.
+     */
+    public static boolean isAnyVariableReferenced(final @NotNull String value) {
+        boolean varIsReferenced = false;
+        try {
+            final String[] referencedNames = Syntax.getReferencedNames(value);
+            varIsReferenced =  referencedNames.length >0;
+        } catch (VariableNameSyntaxException e) {
+            // do nothing
+        }
+        return varIsReferenced;
     }
 
     /**
@@ -336,9 +356,22 @@ public abstract class Syntax {
     public static Formatter getFormatter( final Object object ) {
         if ( object instanceof Element ) {
             return ELEMENT_FORMATTER;
+        } else if (object instanceof Date) {
+            return DATE_FORMATTER;
         }
         return DEFAULT_FORMATTER;
     }
+
+    private static final Formatter DATE_FORMATTER = new Formatter() {
+        @Override
+        public String format(Syntax syntax, Object o, SyntaxErrorHandler handler, boolean strict) {
+            if (o == null || !(o instanceof Date)) {
+                return "";
+            }
+
+            return DateUtils.getZuluFormattedString((Date) o);
+        }
+    };
 
     private static final Formatter DEFAULT_FORMATTER = new Formatter() {
         @Override

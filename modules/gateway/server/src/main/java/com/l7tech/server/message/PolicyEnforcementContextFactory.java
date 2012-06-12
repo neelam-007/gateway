@@ -1,6 +1,8 @@
 package com.l7tech.server.message;
 
 import com.l7tech.message.Message;
+import com.l7tech.util.TimeSource;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.Callable;
@@ -57,7 +59,7 @@ public class PolicyEnforcementContextFactory {
                                                                                        @Nullable final Message response,
                                                                                        final boolean replyExpected ) {
         // Construct PEC
-        final PolicyEnforcementContextImpl context = new PolicyEnforcementContextImpl( request, response );
+        final PolicyEnforcementContextImpl context = new PolicyEnforcementContextImpl( request, response, timeSource);
         context.setReplyExpected( replyExpected );
 
         return context;
@@ -83,7 +85,7 @@ public class PolicyEnforcementContextFactory {
      * @return the new child PEC.  Never null.
      */
     public static PolicyEnforcementContext createUnregisteredPolicyEnforcementContext( final PolicyEnforcementContext parent ) {
-        return new ChildPolicyEnforcementContext( parent, new PolicyEnforcementContextImpl(null, null) );
+        return new ChildPolicyEnforcementContext( parent, new PolicyEnforcementContextImpl(null, null, timeSource) );
     }
 
     /**
@@ -121,7 +123,21 @@ public class PolicyEnforcementContextFactory {
         }
     }
 
+    /**
+     * Configure the TimeSource. Called via spring and reflection in test cases.
+     * @param timeSource TimeSource to set
+     */
+    public static void setTimeSource(@NotNull TimeSource timeSource) {
+        PolicyEnforcementContextFactory.timeSource = timeSource;
+    }
+
     //- PRIVATE
+
+    /**
+     * Has default value to support simple usages in test cases.
+     */
+    @NotNull
+    private static TimeSource timeSource = new TimeSource();
 
     private static PolicyEnforcementContext registerThreadLocal( final PolicyEnforcementContext context, final ThreadLocal<PolicyEnforcementContext> threadLocal ) {
         // Handle current instance tracking

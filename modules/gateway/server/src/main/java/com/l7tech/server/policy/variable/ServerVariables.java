@@ -27,6 +27,8 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TextUtils;
+import com.l7tech.util.TimeSource;
+import org.jetbrains.annotations.NotNull;
 
 import javax.wsdl.Binding;
 import javax.wsdl.Operation;
@@ -61,6 +63,12 @@ public class ServerVariables {
     private static ClusterPropertyCache clusterPropertyCache;
     private static SecurePasswordManager securePasswordManager;
     private static ClusterInfoManager clusterInfoManager;
+
+    /**
+     * Has default value to support simple usages in test cases.
+     */
+    @NotNull
+    private static TimeSource timeSource = new TimeSource();
 
     static Variable getVariable(String name, PolicyEnforcementContext targetContext) {
         final String lname = name.toLowerCase();
@@ -540,37 +548,17 @@ public class ServerVariables {
 
             new Variable(BuiltinVariables.SSGNODE_BUILD,
                     SelectingGetter.selectingGetter( BuiltinVariables.SSGNODE_BUILD, BUILD_VERSION_CONTEXT )),
-
-            new Variable(BuiltinVariables.PREFIX_GATEWAY_TIME, new Getter() {
+            new Variable(BuiltinVariables.PREFIX_GATEWAY_TIME, new SelectingGetter(BuiltinVariables.PREFIX_GATEWAY_TIME) {
                 @Override
-                public Object get(String name, PolicyEnforcementContext context) {
-                    try {
-                        return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_GATEWAY_TIME, name, new TimeVariableUtils.LazyLong() {
-                            @Override
-                            public long get() {
-                                return System.currentTimeMillis();
-                            }
-                        });
-                    } catch (TimeVariableUtils.TimeFormatException e) {
-                        logger.warning("Variable name '" + name + "' uses an invalid date format: " + getMessage( e.getCause() ));
-                        return null;
-                    }
+                protected Object getBaseObject(PolicyEnforcementContext context) {
+                    return new Date(timeSource.currentTimeMillis());
                 }
             }),
-            new Variable(BuiltinVariables.PREFIX_REQUEST_TIME, new Getter() {
+
+            new Variable(BuiltinVariables.PREFIX_REQUEST_TIME, new SelectingGetter(BuiltinVariables.PREFIX_REQUEST_TIME) {
                 @Override
-                public Object get(String name, final PolicyEnforcementContext context) {
-                    try {
-                        return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_REQUEST_TIME, name, new TimeVariableUtils.LazyLong() {
-                            @Override
-                            public long get() {
-                                return context.getStartTime();
-                            }
-                        });
-                    } catch (TimeVariableUtils.TimeFormatException e) {
-                        logger.warning("Variable name '" + name + "' uses an invalid date format: " + getMessage( e.getCause() ));
-                        return null;
-                    }
+                protected Object getBaseObject(PolicyEnforcementContext context) {
+                    return new Date(context.getStartTime());
                 }
             }),
             new Variable("response.http.status", new Getter() {
@@ -775,6 +763,14 @@ public class ServerVariables {
 
     public static void setSecurePasswordManager(SecurePasswordManager spm) {
         securePasswordManager = spm;
+    }
+
+    /**
+     * Configure the TimeSource. Called via spring and reflection in test cases.
+     * @param timeSource TimeSource to set
+     */
+    public static void setTimeSource(@NotNull TimeSource timeSource) {
+        ServerVariables.timeSource = timeSource;
     }
 
     static {

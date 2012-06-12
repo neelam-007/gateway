@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Steve Jones
  */
-public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer {
+public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer<SO> {
 
     //- PUBLIC
 

@@ -11,9 +11,13 @@ import java.util.regex.Pattern;
 /**
  * Date parser for ISO 8601 format 
  * http://www.w3.org/TR/1998/NOTE-datetime-19980827
+ *
+ * Deprecated as JDK7 now provides support for ISO 8601 date formats
  * @author  Benoit Mahe (bmahe@w3.org)
  */
+@Deprecated
 public class ISO8601Date {
+    //todo TimeZone is not thread safe. Current usages of this variable are safe as no modifications are made (based on TimeZone implementation)
     private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
     private static boolean check(StringTokenizer st, String token) throws ParseException {
@@ -246,6 +250,7 @@ public class ISO8601Date {
                 buffer.append(threeDigit((int)(nanos % 1000L)));
             }
         }
+        //TODO looks suspicious comparing object equality using ==. This works due to current usages. Will not work for user supplied instances.
         if (tz == UTC)
             buffer.append("Z");
         else {

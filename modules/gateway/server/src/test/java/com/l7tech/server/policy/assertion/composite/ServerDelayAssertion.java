@@ -10,7 +10,7 @@ import java.io.IOException;
 
 public class ServerDelayAssertion extends ServerSetVariableAssertion {
     
-    public ServerDelayAssertion(DelayAssertion assertion) {
+    public ServerDelayAssertion(DelayAssertion assertion) throws PolicyAssertionException {
         super(assertion);
     }
 

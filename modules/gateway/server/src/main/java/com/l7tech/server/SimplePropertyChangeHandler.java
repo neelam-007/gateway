@@ -1,17 +1,21 @@
 package com.l7tech.server;
 
+import com.l7tech.util.DateTimeConfigUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.AuditFactory;
+import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.log.LoggingPrintStream;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.UnaryVoid;
 
-import static com.l7tech.util.CollectionUtils.list;
-import static com.l7tech.util.Functions.flatmap;
-import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Functions.*;
 import static com.l7tech.util.Option.some;
+import static com.l7tech.util.TextUtils.splitAndTransform;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.inject.Inject;
@@ -19,10 +23,8 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -41,31 +43,36 @@ import java.util.regex.Pattern;
  * @author darmstrong
  */
 public class SimplePropertyChangeHandler implements PropertyChangeListener, InitializingBean {
-
     //- PUBLIC
 
     @Override
     public void afterPropertiesSet() throws Exception {
+        audit = auditFactory.newInstance(this, logger);
         setConfiguredContentTypes();
         setStdOutLevel(some(Level.INFO));
         setStdErrLevel(some(Level.WARNING));
         setSslDebug(); // Call after streams are configured
+        setConfiguredDateFormats();
     }
 
     @Override
     public void propertyChange(PropertyChangeEvent event) {
-        if ( ServerConfigParams.PARAM_OTHER_TEXTUAL_CONTENT_TYPES.equals(event.getPropertyName())) {
+        final String propertyName = event.getPropertyName();
+        if ( ServerConfigParams.PARAM_OTHER_TEXTUAL_CONTENT_TYPES.equals(propertyName)) {
             //Configurable content-types see bug 8884
             setConfiguredContentTypes();
-        } else if ( ServerConfigParams.PARAM_DEBUG_SSL.equals(event.getPropertyName()) ||
-                    ServerConfigParams.PARAM_DEBUG_SSL_VALUE.equals(event.getPropertyName())) {
+        } else if ( ServerConfigParams.PARAM_DEBUG_SSL.equals(propertyName) ||
+                    ServerConfigParams.PARAM_DEBUG_SSL_VALUE.equals(propertyName)) {
             setSslDebug();
-        } else if ( ServerConfigParams.PARAM_LOG_STDOUT_LEVEL.equals(event.getPropertyName()) ) {
+        } else if ( ServerConfigParams.PARAM_LOG_STDOUT_LEVEL.equals(propertyName) ) {
             setStdOutLevel(Option.<Level>none());
             setSslDebug(); // Reset SSL Debug in case this causes the provider to use the new stream
-        } else if ( ServerConfigParams.PARAM_LOG_STDERR_LEVEL.equals(event.getPropertyName()) ) {
+        } else if ( ServerConfigParams.PARAM_LOG_STDERR_LEVEL.equals(propertyName) ) {
             setStdErrLevel(Option.<Level>none());
             setSslDebug(); // Reset SSL Debug in case this causes the provider to use the new stream
+        } else if (ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS.equals(propertyName)||
+                ServerConfigParams.PARAM_DATE_TIME_AUTO_FORMATS.equals(propertyName)) {
+            setConfiguredDateFormats();
         }
     }
 
@@ -79,30 +86,98 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
     @NotNull
     ContentTypeHeader[] getConfiguredContentTypes() {
         final String otherTypes = config.getProperty(ServerConfigParams.PARAM_OTHER_TEXTUAL_CONTENT_TYPES);
-        final Either<ArrayList<String>, String[]> either = optional(otherTypes)
-                .toEither(new ArrayList<String>())
-                .mapRight(TextUtils.split(TEXTUAL_CONTENT_TYPES_SPLIT_PATTERN));
-
-        final List<String> types = either.isLeft()? either.left(): list(either.right());
-
-        final List<ContentTypeHeader> contentTypeHeaderList = flatmap(types, new Functions.UnaryThrows<Iterable<ContentTypeHeader>, String, RuntimeException>() {
+        final List<ContentTypeHeader> contentTypeHeaderList = splitAndTransform(otherTypes, TEXTUAL_CONTENT_TYPES_SPLIT_PATTERN, new Unary<ContentTypeHeader, String>() {
             @Override
-            public Iterable<ContentTypeHeader> call(String type) throws RuntimeException {
+            public ContentTypeHeader call(String type) {
                 try {
-                    return Arrays.asList(ContentTypeHeader.parseValue(type));
+                    return ContentTypeHeader.parseValue(type);
                 } catch (IOException e) {
-                    if (logger.isLoggable(Level.INFO)) {
-                        logger.log(Level.INFO, "Cannot parse content-type value '" + type + "' from cluster property. " +
-                                "Reason: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    }
+                    audit.logAndAudit(SystemMessages.INVALID_CONTENT_TYPE, new String[]{type, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                 }
-
-                return Collections.emptyList();
+                return null;
             }
         });
 
         return contentTypeHeaderList.toArray(new ContentTypeHeader[contentTypeHeaderList.size()]);
     }
+
+    /**
+     * Get all configured Date format strings.
+     *
+     * The list will be comprised of any user defined formats set via the datetime.customFormats cluster property
+     * followed by the formats defined in hidden cluster property datetime.autoFormats
+     *
+     * @return all configured date formats. Never null, may be empty.
+     */
+    @NotNull
+    List<String> getCustomDateFormatsStrings(){
+        final String customFormats = config.getProperty(ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS);
+        final Unary<String, String> simpleDatePredicate = new Unary<String, String>() {
+            @Override
+            public String call(final String input) {
+                return (isValidDateFormat(input, new UnaryVoid<Exception>() {
+                    @Override
+                    public void call(Exception e) {
+                        audit.logAndAudit(SystemMessages.INVALID_CUSTOM_DATE_FORMAT, new String[]{input, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+                    }
+                }))? input: null;
+            }
+        };
+        return splitAndTransform(customFormats, DATE_FORMATS_SPLIT_PATTERN, simpleDatePredicate);
+    }
+
+    private boolean isValidDateFormat(@NotNull String input, @Nullable UnaryVoid<Exception> auditCallback) {
+        boolean isValid = false;
+        if (!input.isEmpty()) {
+            try {
+                new SimpleDateFormat(input);
+                isValid = true;
+            } catch (Exception e) {
+                if (auditCallback != null) {
+                    auditCallback.call(e);
+                }
+            }
+        }
+        return isValid;
+    }
+
+    @NotNull
+    List<Pair<String, Pattern>> getAutoDateFormatsStrings(){
+        final String autoFormatsProp = config.getProperty(ServerConfigParams.PARAM_DATE_TIME_AUTO_FORMATS);
+        return grepNotNull(splitAndTransform(autoFormatsProp, AUTO_DATE_FORMATS_SPLIT_PATTERN, new Unary<Pair<String, Pattern>, String>() {
+            @Override
+            public Pair<String, Pattern> call(String input) {
+                final String[] split = AUTO_DATE_FORMATS_PAIR_SPLIT_PATTERN.split(input);
+                if (split.length == 2) {
+                    // values need to be trimmed after local split
+                    final String format = split[0].trim();
+                    final boolean isValidFormat = isValidDateFormat(format, new UnaryVoid<Exception>() {
+                        @Override
+                        public void call(Exception o) {
+                            audit.logAndAudit(SystemMessages.INVALID_AUTO_DATE_FORMAT, new String[]{format}, ExceptionUtils.getDebugException(o));
+                        }
+                    });
+
+                    if (!isValidFormat) {
+                        return null;
+                    }
+
+                    final Pattern pattern;
+                    try {
+                        pattern = Pattern.compile(split[1].trim());
+                    } catch (Exception e) {
+                        audit.logAndAudit(SystemMessages.INVALID_AUTO_DATE_FORMAT, format);
+                        return null;
+                    }
+
+                    return new Pair<String, Pattern>(format, pattern);
+                }
+                audit.logAndAudit(SystemMessages.INVALID_AUTO_DATE_FORMAT, input);
+                return null;
+            }
+        }));
+    }
+
 
     // - PRIVATE
 
@@ -111,13 +186,41 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
     private static final String DEFAULT_SSL_DEBUG_VALUE = "ssl";
 
     private final Pattern TEXTUAL_CONTENT_TYPES_SPLIT_PATTERN = Pattern.compile("\\n+|\\r+|\\f+");
+    private final Pattern DATE_FORMATS_SPLIT_PATTERN = Pattern.compile(";");
+    private final Pattern AUTO_DATE_FORMATS_SPLIT_PATTERN = Pattern.compile("\\$");
+    private final Pattern AUTO_DATE_FORMATS_PAIR_SPLIT_PATTERN = Pattern.compile("\\^");
+
+    private Audit audit;
 
     @Inject
     private Config config;
 
+    @Inject
+    private AuditFactory auditFactory;
+
+    @Inject
+    private DateTimeConfigUtils dateParser;
+
     private void setConfiguredContentTypes() {
         final ContentTypeHeader[] headers = getConfiguredContentTypes();
         ContentTypeHeader.setConfigurableTextualContentTypes(headers);
+    }
+
+    private void setConfiguredDateFormats() {
+        final List<String> formats = getCustomDateFormatsStrings();
+        final List<Pair<String, Pattern>> autoDateFormatsStrings = getAutoDateFormatsStrings();
+
+        final HashSet<String> allFormats = new HashSet<String>(formats);
+        allFormats.addAll(formats);
+        allFormats.addAll(map(autoDateFormatsStrings, new Unary<String, Pair<String, Pattern>>() {
+            @Override
+            public String call(Pair<String, Pattern> pair) {
+                return pair.left;
+            }
+        }));
+
+        dateParser.setCustomDateFormats(formats);
+        dateParser.setAutoDateFormats(autoDateFormatsStrings);
     }
 
     private void setSslDebug() {

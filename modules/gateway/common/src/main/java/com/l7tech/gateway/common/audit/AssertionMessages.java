@@ -1140,5 +1140,11 @@ public class AssertionMessages extends Messages {
     public static final Messages.M LOOKUP_DYNAMIC_VARIABLE_UNSUPPORTED_TYPE     = m(9659, Level.WARNING, "''{0}'' is not a supported data type.");
     public static final Messages.M LOOKUP_DYNAMIC_VARIABLE_TYPE_MISMATCH     = m(9660, Level.WARNING, "Target data type is ''{0}'' but found ''{1}''.");
 
+    // Set variable assertion
+    public static final M SET_VARIABLE_UNABLE_TO_PARSE_DATE = m(9680, Level.INFO, "Unable to parse date string: {0}");
+    public static final M SET_VARIABLE_UNRECOGNISED_DATE_FORMAT = m(9681, Level.INFO, "Date string format is not recognized: {0}");
+    public static final M SET_VARIABLE_INVALID_DATE_OFFSET = m(9682, Level.INFO, "Invalid integer date offset: {0}");
+    public static final M SET_VARIABLE_INVALID_DATE_PATTERN = m(9683, Level.WARNING, "Invalid date format pattern: {0}");
+
     // Highest ID reserved for AssertionMessages = 99999
 }

@@ -6,9 +6,13 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.variable.*;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Calendar;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import static com.l7tech.policy.assertion.VariableUseSupport.expressions;
 
 /**
  * Assertion to set a context variable, either built-in or user-defined.
@@ -19,6 +23,47 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * </ul>
  */
 public class SetVariableAssertion extends Assertion implements SetsVariables, UsesVariables {
+
+    /**
+     * Enum wrapper for Calendar int fields. Not serialized, just used for convenience.
+     */
+    public static enum CalendarFields {
+        MILLISECONDS(Calendar.MILLISECOND, "Milliseconds"),
+        SECONDS(Calendar.SECOND, "Seconds"),
+        MINUTES(Calendar.MINUTE, "Minutes"),
+        HOURS(Calendar.HOUR_OF_DAY, "Hours"),
+        DAYS(Calendar.DAY_OF_MONTH, "Days"),
+        WEEKS(Calendar.WEEK_OF_YEAR, "Weeks"),
+        MONTHS(Calendar.MONTH, "Months")
+        ;
+
+        CalendarFields(int calendarField, String displayName) {
+            this.calendarField = calendarField;
+            this.displayName = displayName;
+        }
+
+        public int getCalendarField() {
+            return calendarField;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public static CalendarFields getCalendarField(final int calendarField) {
+            final CalendarFields[] values = CalendarFields.values();
+            for (CalendarFields value : values) {
+                if (value.getCalendarField() == calendarField) {
+                    return value;
+                }
+            }
+            throw new IllegalArgumentException("Unknown calendar field : " + calendarField);
+        }
+
+        private final int calendarField;
+        private final String displayName;
+    }
+
     private String _variableToSet;
 
     /**
@@ -47,6 +92,27 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
      * @since SecureSpan 4.3
      */
     private String _contentType;
+
+    /**
+     * Used only if {@link #_dataType} == {@link DataType#DATE_TIME}
+     *
+     * @since SecureSpan 7.0
+     */
+    private String dateFormat;
+
+    /**
+     * Used only if {@link #_dataType} == {@link DataType#DATE_TIME}
+     *
+     * @since SecureSpan 7.0
+     */
+    private int dateOffsetField = CalendarFields.SECONDS.getCalendarField();
+
+    /**
+     * Used only if {@link #_dataType} == {@link DataType#DATE_TIME}
+     *
+     * @since SecureSpan 7.0
+     */
+    private String dateOffsetExpression;
 
     private transient VariableMetadata _meta;   // just for caching
 
@@ -130,6 +196,31 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
         _lineBreak = lineBreak;
     }
 
+
+    public String getDateFormat() {
+        return dateFormat;
+    }
+
+    public void setDateFormat(@Nullable String dateFormat) {
+        this.dateFormat = dateFormat;
+    }
+
+    public int getDateOffsetField() {
+        return dateOffsetField;
+    }
+
+    public void setDateOffsetField(int dateOffsetField) {
+        this.dateOffsetField = dateOffsetField;
+    }
+
+    public String getDateOffsetExpression() {
+        return dateOffsetExpression;
+    }
+
+    public void setDateOffsetExpression(@Nullable String dateOffsetExpression) {
+        this.dateOffsetExpression = dateOffsetExpression;
+    }
+
     @Override
     public VariableMetadata[] getVariablesSet() {
         if (_variableToSet == null) return new VariableMetadata[0];
@@ -139,8 +230,7 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        if (_base64Expression == null) return new String[0];
-        return Syntax.getReferencedNames(expression());
+        return expressions(expression(), getDateFormat(), getDateOffsetExpression()).asArray();
     }
 
     private VariableMetadata getMetadata() {

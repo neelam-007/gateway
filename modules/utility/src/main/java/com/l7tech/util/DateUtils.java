@@ -5,12 +5,19 @@
 
 package com.l7tech.util;
 
-import java.util.Date;
+import org.jetbrains.annotations.NotNull;
+
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * Utilities related to date handling.
  */
 public class DateUtils {
+
+    // - PUBLIC
+
+    public static final String ISO8601_DEFAULT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
     /**
      * Compare the specified date to today and produce a relative date phrase like "Yesterday" or "3 years from now".
@@ -52,4 +59,72 @@ public class DateUtils {
         }
         return yearsStr + TextUtils.plural(days, "day") + ago;
     }
+
+    /**
+     * Get the default formatting of a date string on the Gateway. This is backwards compatible with the Gateway's
+     * gateway.time and request.time variables, which defaulted to ISO8601 with a fixed 'Z' string.
+     *
+     * @param date Date to format. Never null
+     * @return Zulu (UTC) formatted String. Never null
+     */
+    @NotNull
+    public static String getZuluFormattedString(@NotNull final Date date) {
+        try {
+            return getFormattedString(date, "UTC");
+        } catch (UnknownTimeZoneException e) {
+            // can't happen - coding error
+            throw new RuntimeException(e);
+        } catch (InvalidPatternException e) {
+            // can't happen - coding error
+            throw new RuntimeException(e);
+        }
+    }
+
+    @NotNull
+    public static String getFormattedString(@NotNull final Date date, @NotNull final String timeZoneIdentifier)
+            throws UnknownTimeZoneException, InvalidPatternException {
+        return getFormattedString(date, timeZoneIdentifier, ISO8601_DEFAULT_PATTERN);
+    }
+
+    @NotNull
+    public static String getFormattedString(@NotNull final Date date,
+                                            @NotNull final String timeZoneIdentifier,
+                                            @NotNull final String format)
+            throws UnknownTimeZoneException, InvalidPatternException {
+        final SimpleDateFormat dateFormat;
+        try {
+            dateFormat = new SimpleDateFormat(format);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidPatternException(ExceptionUtils.getMessage(e));
+        }
+        dateFormat.setLenient(false);
+        if ("utc".equalsIgnoreCase(timeZoneIdentifier)) {
+            dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        } else if (!"local".equalsIgnoreCase(timeZoneIdentifier)) {
+            throw new UnknownTimeZoneException("Unknown timezone: " + timeZoneIdentifier);
+        }
+
+        return dateFormat.format(date);
+    }
+
+    public static boolean isSupportedTimezoneDesignator(@NotNull final String tzd) {
+        return timeZoneDesignators.contains(tzd);
+    }
+
+    public static class UnknownTimeZoneException extends Exception{
+        public UnknownTimeZoneException(String message) {
+            super(message);
+        }
+    }
+
+    public static class InvalidPatternException extends Exception{
+        public InvalidPatternException(String message) {
+            super(message);
+        }
+    }
+
+    // - PRIVATE
+
+    private final static Set<String> timeZoneDesignators = Collections.unmodifiableSet(
+            new HashSet<String>(Arrays.asList("utc", "local")));
 }

@@ -124,6 +124,26 @@
         </property>
     </bean>
 
+    <bean id="timeSource" class="com.l7tech.util.TimeSource"/>
+
+    <bean id="configurePolicyEnforcementContextFactoryTimeSource" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
+        <property name="staticMethod" value="com.l7tech.server.message.PolicyEnforcementContextFactory.setTimeSource"/>
+        <property name="arguments">
+            <list>
+                <ref bean="timeSource"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="configureServerVariablesTimeSource" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
+        <property name="staticMethod" value="com.l7tech.server.policy.variable.ServerVariables.setTimeSource"/>
+        <property name="arguments">
+            <list>
+                <ref bean="timeSource"/>
+            </list>
+        </property>
+    </bean>
+
     <bean id="originalRequestUpdator" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="staticMethod" value="com.l7tech.message.Message.setDefaultEnableOriginalDocument"/>
         <property name="arguments">
@@ -2322,6 +2342,8 @@
     <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration"/>
 
     <bean id="entityManagementContextProvider" class="com.l7tech.server.EntityManagementContextProvider"/>
+
+    <bean id="dateTimeConfigUtils" class="com.l7tech.util.DateTimeConfigUtils" />
 
     <!-- export beans to JMX -->
     <context:mbean-export/>

@@ -1,7 +1,13 @@
 package com.l7tech.util;
 
+import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.List;
+import java.util.regex.Pattern;
+
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 
 
 /**
@@ -279,5 +285,33 @@ public class TextUtilsTest {
             System.out.println(token);
         }
         assertEquals(4, tokens.length);
+    }
+
+    @Test
+    public void testSplitAndTransform() throws Exception {
+        //test with null propValue
+        assertNotNull(TextUtils.splitAndTransform(null, Pattern.compile(","), Functions.<String>identity()));
+
+        final List<String> convertedStrings = TextUtils.splitAndTransform("one, two, three  ,   ", Pattern.compile(","), Functions.<String>identity());
+        assertEquals(3, convertedStrings.size());
+        assertEquals("one", convertedStrings.get(0));
+        assertEquals("two", convertedStrings.get(1));
+        assertEquals("three", convertedStrings.get(2));
+
+        final List<Integer> convertedInts = TextUtils.splitAndTransform("1, 2, invalid,  three,  3  , ", Pattern.compile(","), new Functions.Unary<Integer, String>() {
+            @Override
+            public Integer call(String o) {
+                try {
+                    return Integer.parseInt(o);
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            }
+        });
+
+        assertEquals(3, convertedInts.size());
+        assertEquals(Integer.valueOf(1), convertedInts.get(0));
+        assertEquals(Integer.valueOf(2), convertedInts.get(1));
+        assertEquals(Integer.valueOf(3), convertedInts.get(2));
     }
 }

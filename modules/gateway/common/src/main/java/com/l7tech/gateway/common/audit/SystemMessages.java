@@ -160,5 +160,9 @@ public class SystemMessages extends Messages {
     public static final M CONNECTOR_STOP  = m(2401, Level.INFO, "Stopping {0} listener: {1}");
     public static final M CONNECTOR_ERROR = m(2402, Level.WARNING, "{0} listener error: {1}");
 
+    public static final M INVALID_CONTENT_TYPE = m(2420, Level.WARNING, "Cannot parse content-type value ''{0}'' from cluster property. Reason: {1}");
+    public static final M INVALID_CUSTOM_DATE_FORMAT = m(2421, Level.WARNING, "Cannot parse custom date format ''{0}'' from cluster property. Reason: {1}");
+    public static final M INVALID_AUTO_DATE_FORMAT = m(2422, Level.WARNING, "Cannot parse auto date format / pattern ''{0}'' from cluster property.");
+
     // MAX -                                      m(2999
 }

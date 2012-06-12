@@ -430,4 +430,7 @@
 
     <bean id="counterManager" class="com.l7tech.server.sla.CounterManagerStub"/>
 
+    <bean id="dateTimeConfigUtils" class="com.l7tech.util.DateTimeConfigUtils" />
+
+    <bean id="timeSource" class="com.l7tech.util.TimeSource"/>
 </beans>

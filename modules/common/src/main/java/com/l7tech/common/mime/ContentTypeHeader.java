@@ -12,9 +12,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -413,6 +411,10 @@ public class ContentTypeHeader extends MimeHeader {
         } else {
             refToContentTypes.set(new CopyOnWriteArrayList<ContentTypeHeader>(typeHeaders));
         }
+    }
+
+    public static List<ContentTypeHeader> getConfigurableTextualContentTypes() {
+        return new ArrayList<ContentTypeHeader>(refToContentTypes.get());
     }
 
     /** @return true if the type is "text" */

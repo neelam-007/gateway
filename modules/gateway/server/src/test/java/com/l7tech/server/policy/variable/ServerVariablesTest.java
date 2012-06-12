@@ -44,10 +44,10 @@ import com.l7tech.server.policy.assertion.ServerTrueAssertion;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.BuildInfo;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -56,23 +56,38 @@ import org.w3c.dom.Document;
 import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  *
  */
+@SuppressWarnings({"JavaDoc"})
 public class ServerVariablesTest {
     private static final Logger logger = Logger.getLogger(ServerVariablesTest.class.getName());
-    private static final LoggingAudit auditor = new LoggingAudit(logger);
+    private TestAudit auditor;
     private static final String REQUEST_BODY = "<myrequest/>";
     private static final String RESPONSE_BODY = "<myresponse/>";
     private static final String JSON_MESSAGE = "{\"result\":\"success\"}";
     private static final String AUDITED_REQUEST_XML = "<auditRecordRequestXml/>";
     private static final String AUDITED_RESPONSE_XML = "<auditRecordResponseXml/>";
+    private TimeZone utcTimeZone;
+    private TimeZone localTimeZone;
+
+    @Before
+    public void setUp() throws Exception {
+        auditor = new TestAudit();
+        utcTimeZone = TimeZone.getTimeZone("UTC");
+        localTimeZone = TimeZone.getDefault();
+    }
 
     @AfterClass
     public static void cleanupSystemProperties() {
@@ -87,14 +102,14 @@ public class ServerVariablesTest {
         final PublishedService ps = new PublishedService();
         ps.setOid(123456L);
         ps.setName( "testServiceNameContextVariable" );
-        ps.getPolicy().setGuid( "8ca3ff80-eaf5-11e0-9572-0800200c9a66" );
-        pec.setService( ps );
-        pec.setServicePolicyMetadata( new PolicyMetadataStub() {
+        ps.getPolicy().setGuid("8ca3ff80-eaf5-11e0-9572-0800200c9a66");
+        pec.setService(ps);
+        pec.setServicePolicyMetadata(new PolicyMetadataStub() {
             @Override
             public PolicyHeader getPolicyHeader() {
-                return new PolicyHeader( ps.getPolicy(), 123L );
+                return new PolicyHeader(ps.getPolicy(), 123L);
             }
-        } );
+        });
 
         final String nameValue = ServerVariables.get("service.name", pec).toString();
         assertEquals("service name variable ", "testServiceNameContextVariable", nameValue);
@@ -113,8 +128,8 @@ public class ServerVariablesTest {
     public void testPolicyContextVariables() throws Exception {
         final PolicyEnforcementContext pec = context();
         final Policy policy = new Policy( PolicyType.INCLUDE_FRAGMENT, "testPolicyNameContextVariable", null, false );
-        policy.setOid( 1234567L );
-        policy.setGuid( "8ca3ff80-eaf5-11e0-9572-0800200c9a67" );
+        policy.setOid(1234567L);
+        policy.setGuid("8ca3ff80-eaf5-11e0-9572-0800200c9a67");
         pec.setCurrentPolicyMetadata( new PolicyMetadataStub() {
             @Override
             public PolicyHeader getPolicyHeader() {
@@ -964,6 +979,146 @@ public class ServerVariablesTest {
         expandAndCheck(context, "${ssgnode.build.version.major}", BuildInfo.getProductVersionMajor());
         expandAndCheck(context, "${ssgnode.build.version.minor}", BuildInfo.getProductVersionMinor());
         expandAndCheck(context, "${ssgnode.build.version.subminor}", BuildInfo.getProductVersionSubMinor());
+    }
+
+    @Test
+    public void testGatewayTime_DefaultFormatting() throws Exception {
+        testBuiltInVariablePreFangtooth_Formatting("${gateway.time}", ServerVariables.class, utcTimeZone);
+    }
+
+    @Test
+    public void testRequestTime_DefaultFormatting() throws Exception {
+        testBuiltInVariablePreFangtooth_Formatting("${request.time}", PolicyEnforcementContextFactory.class, utcTimeZone);
+    }
+
+    @Test
+    public void testGatewayTime_LocalFormatting() throws Exception {
+        testBuiltInVariablePreFangtooth_Formatting("${gateway.time.local}", ServerVariables.class, localTimeZone);
+    }
+
+    @Test
+    public void testRequestTime_LocalFormatting() throws Exception {
+        testBuiltInVariablePreFangtooth_Formatting("${request.time.local}", PolicyEnforcementContextFactory.class, localTimeZone);
+    }
+
+    @Test
+    public void testGatewayTime_CustomFormatSuffix() throws Exception {
+        testBuiltInVariablePreFangtooth_Formatting("${gateway.time.yyyyMMdd'T'HH:mm:ss}", ServerVariables.class, utcTimeZone, "yyyyMMdd'T'HH:mm:ss");
+    }
+
+    @Test
+    public void testRequestTime_CustomFormatSuffix() throws Exception {
+        testBuiltInVariablePreFangtooth_Formatting("${request.time.yyyyMMdd'T'HH:mm:ss}", PolicyEnforcementContextFactory.class, utcTimeZone, "yyyyMMdd'T'HH:mm:ss");
+    }
+
+    @Test
+    public void testGatewayTime_LocalCustomFormatSuffix() throws Exception {
+        testBuiltInVariablePreFangtooth_Formatting("${gateway.time.local.yyyyMMdd'T'HH:mm:ss}", ServerVariables.class, localTimeZone, "yyyyMMdd'T'HH:mm:ss");
+    }
+
+    @Test
+    public void testRequestTime_LocalCustomFormatSuffix() throws Exception {
+        testBuiltInVariablePreFangtooth_Formatting("${request.time.local.yyyyMMdd'T'HH:mm:ss}", PolicyEnforcementContextFactory.class, localTimeZone, "yyyyMMdd'T'HH:mm:ss");
+    }
+
+    @Test
+    public void testGatewayTime_UtcCustomFormatSuffix() throws Exception {
+        testBuiltInVariablePreFangtooth_Formatting("${gateway.time.utc.yyyyMMdd'T'HH:mm:ss}", ServerVariables.class, utcTimeZone, "yyyyMMdd'T'HH:mm:ss");
+    }
+
+    @Test
+    public void testRequestTime_UtcCustomFormatSuffix() throws Exception {
+        testBuiltInVariablePreFangtooth_Formatting("${request.time.utc.yyyyMMdd'T'HH:mm:ss}", PolicyEnforcementContextFactory.class, utcTimeZone, "yyyyMMdd'T'HH:mm:ss");
+    }
+
+    @Test
+    public void testGatewayTime_Millis() throws Exception {
+        testBuiltInVariablePreFangtooth_Timestamp("${gateway.time.millis}", ServerVariables.class, false);
+    }
+
+    @Test
+    public void testRequestTime_Millis() throws Exception {
+        testBuiltInVariablePreFangtooth_Timestamp("${request.time.millis}", PolicyEnforcementContextFactory.class, false);
+    }
+
+    @Test
+    public void testGatewayTime_Seconds() throws Exception {
+        testBuiltInVariablePreFangtooth_Timestamp("${gateway.time.seconds}", ServerVariables.class, true);
+    }
+
+    @Test
+    public void testRequestTime_Seconds() throws Exception {
+        testBuiltInVariablePreFangtooth_Timestamp("${request.time.seconds}", PolicyEnforcementContextFactory.class, true);
+    }
+
+    // - PRIVATE
+
+    private void testBuiltInVariablePreFangtooth_Formatting(final String builtInDateVarExp,
+                                                            final Class classWithTimeSource,
+                                                            TimeZone timeZone) throws Exception{
+        testBuiltInVariablePreFangtooth_Formatting(builtInDateVarExp, classWithTimeSource, timeZone, DateUtils.ISO8601_DEFAULT_PATTERN);
+    }
+
+    private void testBuiltInVariablePreFangtooth_Formatting(final String builtInDateVarExp,
+                                                            final Class classWithTimeSource,
+                                                            TimeZone expectedTimeZone,
+                                                            String expectedFormat)
+            throws Exception{
+        final Pair<Long, String> expectedActualPair = processWithTimeSource(builtInDateVarExp, classWithTimeSource);
+
+        final SimpleDateFormat format = new SimpleDateFormat(expectedFormat);
+        format.setTimeZone(expectedTimeZone);
+        format.setLenient(false);
+        final Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(expectedActualPair.left);
+        assertEquals(format.format(cal.getTime()), expectedActualPair.right);
+    }
+
+    private void testBuiltInVariablePreFangtooth_Timestamp(final String builtInDateVarExp,
+                                                           final Class classWithTimeSource,
+                                                           final boolean seconds)
+            throws Exception {
+
+        final Pair<Long, String> expectedActualPair = processWithTimeSource(builtInDateVarExp, classWithTimeSource);
+        if (seconds) {
+            assertEquals(Long.valueOf(expectedActualPair.left / 1000L), Long.valueOf(expectedActualPair.right));
+        } else {
+            assertEquals(expectedActualPair.left, Long.valueOf(expectedActualPair.right));
+        }
+    }
+
+    private Pair<Long, String> processWithTimeSource(final String builtInDateVarExp, Class classWithTimeSource) throws Exception {
+        return doWithTimeSource(classWithTimeSource, new Functions.Nullary<String>() {
+                @Override
+                public String call() {
+                    final PolicyEnforcementContext context = context();
+                    String[] usedVars = Syntax.getReferencedNames(builtInDateVarExp);
+                    Map<String, Object> vars = context.getVariableMap(usedVars, auditor);
+                    String actual = ExpandVariables.process(builtInDateVarExp, vars, auditor);
+                    assertFalse("No audits are expected", auditor.iterator().hasNext());
+                    System.out.println("Actual: " + actual);
+                    return actual;
+                }
+            });
+    }
+
+    private <T> Pair<Long, T> doWithTimeSource(final Class classWithTimeSource, final Functions.Nullary<T> function)
+            throws Exception{
+        final long currentTime = System.currentTimeMillis();
+        final Method setTimeSourceMethod = classWithTimeSource.getDeclaredMethod("setTimeSource", TimeSource.class);
+        try {
+            setTimeSourceMethod.invoke(classWithTimeSource, new TimeSource() {
+                @Override
+                public long currentTimeMillis() {
+                    return currentTime;
+                }
+            });
+
+            final T returnVal = function.call();
+            return new Pair<Long, T>(currentTime, returnVal);
+        } finally {
+            setTimeSourceMethod.invoke(classWithTimeSource, new TimeSource());
+        }
     }
 
     private PolicyEnforcementContext context() {

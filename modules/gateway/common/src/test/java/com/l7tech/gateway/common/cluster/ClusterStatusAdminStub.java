@@ -14,11 +14,13 @@ import com.l7tech.util.CollectionUpdateProducer;
 import com.l7tech.util.Either;
 import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /*
  * Test stub for ClusterStatusAdmin interface
@@ -215,6 +217,18 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     @Override
     public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration, final boolean includeEmpty) throws FindException {
         throw new UnsupportedOperationException();
+    }
+
+    @NotNull
+    @Override
+    public List<String> getConfiguredDateFormats() {
+        return Collections.emptyList();
+    }
+
+    @NotNull
+    @Override
+    public List<Pair<String, Pattern>> getAutoDateFormats() {
+        return Collections.emptyList();
     }
 
     @Override

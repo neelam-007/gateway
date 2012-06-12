@@ -13,13 +13,16 @@ import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.Either;
 import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.security.KeyStoreException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_MULTI;
 import static com.l7tech.objectmodel.EntityType.SSG_KEY_ENTRY;
@@ -340,6 +343,23 @@ public interface ClusterStatusAdmin {
                                       final int duration,
                                       final boolean includeEmpty)
             throws FindException;
+
+    /**
+     * Get all configured date formats configured on the gateway.
+     *
+     * @return List of configured date formats. Never null. May be empty if none are configured.
+     */
+    @Transactional(readOnly = true)
+    @NotNull List<String> getConfiguredDateFormats();
+
+    /**
+     * Get all date formats the gateway can automatically parse based on configuration.
+     *
+     * @return List of configured date formats. Never null. May be empty if none are configured. Each pair's left value
+     * is the Simple Date Format and the right is the Regex pattern which strictly matches the format.
+     */
+    @Transactional(readOnly = true)
+    @NotNull List<Pair<String, Pattern>> getAutoDateFormats();
 
     /**
      * Describes a loaded module.

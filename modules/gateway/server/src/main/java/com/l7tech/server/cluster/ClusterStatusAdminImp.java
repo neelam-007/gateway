@@ -1,5 +1,6 @@
 package com.l7tech.server.cluster;
 
+import com.l7tech.util.DateTimeConfigUtils;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.LicenseException;
@@ -29,9 +30,12 @@ import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
+
 import static com.l7tech.util.Option.optional;
+
 import com.l7tech.util.ValidationUtils.Validator;
 import com.l7tech.xml.TarariLoader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -42,6 +46,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.logging.Logger;
 import java.security.KeyStoreException;
+import java.util.regex.Pattern;
 
 /**
  * Server side implementation of the ClusterStatusAdmin interface.
@@ -68,7 +73,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
                                  TrustedEsmManager trustedEsmManager,
                                  TrustedEsmUserManager trustedEsmUserManager,
                                  RbacServices rbacServices,
-                                 ExtensionInterfaceManager extensionInterfaceManager)
+                                 ExtensionInterfaceManager extensionInterfaceManager,
+                                 DateTimeConfigUtils dateTimeConfigUtils)
     {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
@@ -82,6 +88,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
         this.trustedEsmUserManager = trustedEsmUserManager;
         this.rbacServices = rbacServices;
         this.extensionInterfaceManager = extensionInterfaceManager;
+        this.dateTimeConfigUtils = dateTimeConfigUtils;
 
         if (clusterInfoManager == null)
             throw new IllegalArgumentException("Cluster Info manager is required");
@@ -336,6 +343,18 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
         return serviceMetricsManager.summarizeLatest(nodeId, serviceOids, resolution, duration, includeEmpty);
     }
 
+    @NotNull
+    @Override
+    public List<String> getConfiguredDateFormats() {
+        return dateTimeConfigUtils.getConfiguredDateFormats();
+    }
+
+    @NotNull
+    @Override
+    public List<Pair<String, Pattern>> getAutoDateFormats() {
+        return dateTimeConfigUtils.getAutoDateFormats();
+    }
+
     @Override
     @Transactional(propagation = Propagation.SUPPORTS)
     public Collection<ModuleInfo> getAssertionModuleInfo() {
@@ -505,6 +524,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     private final TrustedEsmUserManager trustedEsmUserManager;
     private final RbacServices rbacServices;
     private final ExtensionInterfaceManager extensionInterfaceManager;
+    private final DateTimeConfigUtils dateTimeConfigUtils;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

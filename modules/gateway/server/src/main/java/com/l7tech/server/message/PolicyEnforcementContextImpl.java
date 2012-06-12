@@ -29,10 +29,12 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
+import com.l7tech.util.TimeSource;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
@@ -49,7 +51,7 @@ import java.util.logging.Level;
  * TODO write some farking javadoc
  */
 class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationContext> implements PolicyEnforcementContext {
-    private final long startTime = System.currentTimeMillis();
+    private final long startTime;
     private long assertionLatencyNanos = 0;
     private long endTime;
     private final RequestId requestId;
@@ -88,9 +90,10 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private PolicyMetadata servicePolicyMetadata = null;
     private @Nullable AuditContext auditContext;
 
-    protected PolicyEnforcementContextImpl(Message request, Message response) {
+    protected PolicyEnforcementContextImpl(@Nullable Message request, @Nullable Message response, @NotNull TimeSource timeSource) {
         super(request, response);
         this.requestId = RequestIdGenerator.next();
+        this.startTime = timeSource.currentTimeMillis();
     }
 
     @Override

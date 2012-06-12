@@ -2,17 +2,18 @@ package com.l7tech.util;
 
 import static com.l7tech.util.CollectionUtils.list;
 import static com.l7tech.util.CollectionUtils.toList;
+import static com.l7tech.util.Functions.*;
+
 import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.grep;
-import static com.l7tech.util.Functions.map;
-import static com.l7tech.util.Functions.negate;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.Collection;
@@ -765,6 +766,25 @@ public class TextUtils {
                 return pattern.split( text );
             }
         };
+    }
+
+    /**
+     * Get a list of objects obtained by splitting the propValue string and applying the transformation for each non
+     * empty value. Null values returned from the transformation are ignored.
+     *
+     * @param propValue      string value to split. May be null when a property has no value.
+     * @param splitPattern   pattern to split propValue on
+     * @param transformation function to call for each non empty value. Must return null if a value should be ignored.
+     * @param <O>            type of objects transformed from split string
+     * @return list of transformed objects. Never null. May be empty.
+     */
+    @NotNull
+    public static <O> List<O> splitAndTransform(@Nullable final String propValue,
+                                                @NotNull final Pattern splitPattern,
+                                                @NotNull final Unary<O, String> transformation) {
+
+        final List<String> values = grep(map(Arrays.asList(Option.optional(propValue).map(split(splitPattern)).orSome(new String[]{})), trim()), isNotEmpty());
+        return grepNotNull(map(values, transformation));
     }
 
     /**
