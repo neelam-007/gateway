@@ -33,8 +33,8 @@ public class NtlmAuthenticationServerTest {
         HashMap props = new HashMap();
         props.put("domain.netbios.name", "L7TECH");
         props.put("domain.dns.name", "l7tech.com");
-        props.put("localhost.dns.name", "linux-12vk");
-        props.put("localhost.netbios.name", "LINUX12-VK");
+        props.put("host.dns.name", "linux-12vk");
+        props.put("host.netbios.name", "LINUX12-VK");
         props.put("my.username", "user");
         props.put("my.password", "password");
 
@@ -51,9 +51,9 @@ public class NtlmAuthenticationServerTest {
         LinkedList<Av_Pair> avpairList  =  new LinkedList<Av_Pair>();
 
         avpairList.add(new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, ""));
-        avpairList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsComputerName, (String) fixture.get("localhost.dns.name")));
+        avpairList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsComputerName, (String) fixture.get("host.dns.name")));
         avpairList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsDomainName, (String) fixture.get("domain.dns.name")));
-        avpairList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) fixture.get("localhost.netbios.name")));
+        avpairList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) fixture.get("host.netbios.name")));
         avpairList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvNbDomainName, (String) fixture.get("domain.netbios.name")));
 
         byte[] expectedTargetInfo = new byte[0];
@@ -67,10 +67,10 @@ public class NtlmAuthenticationServerTest {
     @Test
     public void shouldReturnLocalhostOnlyTargetInfo() throws Exception {
         byte[] expectedTargetInfo = new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "").toByteArray();
-        expectedTargetInfo = ArrayUtils.addAll(new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) fixture.get("localhost.netbios.name")).toByteArray(), expectedTargetInfo);
+        expectedTargetInfo = ArrayUtils.addAll(new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) fixture.get("host.netbios.name")).toByteArray(), expectedTargetInfo);
         fixture.remove("domain.netbios.name");
         fixture.remove("domain.dns.name");
-        fixture.remove("localhost.dns.name");
+        fixture.remove("host.dns.name");
         assertTrue(fixture.size() == 3);
         assertArrayEquals(expectedTargetInfo, fixture.getTargetInfo());
     }
@@ -80,8 +80,8 @@ public class NtlmAuthenticationServerTest {
         Av_Pair expectedTargetInfoList = new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, "");
         fixture.remove("domain.netbios.name");
         fixture.remove("domain.dns.name");
-        fixture.remove("localhost.dns.name");
-        fixture.remove("localhost.netbios.name");
+        fixture.remove("host.dns.name");
+        fixture.remove("host.netbios.name");
         assertTrue(fixture.size() == 2);
         assertArrayEquals(expectedTargetInfoList.toByteArray(), fixture.getTargetInfo());
     }

@@ -20,7 +20,7 @@ public class LocalAuthenticationAdapter extends HashMap implements Authenticatio
     }
 
     @Override
-    public Object validate(NtlmServerResponse response, byte[] challenge, Map account) throws AuthenticationManagerException {
+    public Object validateCredentials(NtlmServerResponse response, byte[] challenge, Map account) throws AuthenticationManagerException {
         if (response == null) {
             throw new AuthenticationManagerException( "User credentials cannot be null!");
         }

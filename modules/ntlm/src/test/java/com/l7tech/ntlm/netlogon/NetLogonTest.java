@@ -73,7 +73,7 @@ public class NetLogonTest {
 
         byte[] challenge = generateTestServerChallenge(response);
         Map acctInfo = new HashMap();
-        fixture.validate(response, challenge, acctInfo);
+        fixture.validateCredentials(response, challenge, acctInfo);
     }
 
 
@@ -84,7 +84,7 @@ public class NetLogonTest {
 
         byte[] challenge = generateTestServerChallenge(response);
         Map acctInfo = new HashMap();
-        fixture.validate(response, challenge, acctInfo);
+        fixture.validateCredentials(response, challenge, acctInfo);
         assertTrue(acctInfo.size() > 0);
         assertEquals(NtlmTestConstants.USER, acctInfo.get("sAMAccountName"));
         assertEquals(NtlmTestConstants.DOMAIN, acctInfo.get("logonDomainName"));

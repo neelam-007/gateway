@@ -14,14 +14,13 @@ public interface AuthenticationAdapter {
     /**
      * validates supplied credentials
      *
-     *
-     *
-     * @param response
-     * @param challenge
-     *@param acct  @throws AuthenticationManagerException
+     * @param response - server response containing user supplied credentials
+     * @param challenge - server challenge
+     * @param acct -  user account authorization data
+     * @throws AuthenticationManagerException
      * @return object containing additional authorization data
      * the type of data is determinate by the implementing adapter
      */
-    public Object validate(NtlmServerResponse response, byte[] challenge, Map acct) throws AuthenticationManagerException;
+    public Object validateCredentials(NtlmServerResponse response, byte[] challenge, Map acct) throws AuthenticationManagerException;
 
 }

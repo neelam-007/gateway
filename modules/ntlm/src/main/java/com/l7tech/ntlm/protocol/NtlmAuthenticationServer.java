@@ -66,21 +66,40 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
                     secureRandom.nextBytes(serverChallenge);
                     state.setServerChallenge(serverChallenge);
 
-                    flags &= NtlmConstants.NTLMSSP_NEGOTIATE_OEM_MASK;//-3;
+                    flags |= NtlmConstants.NTLMSSP_NEGOTIATE_VERSION;//The data for this field is provided in the version field of the message
 
-                    flags |= NtlmConstants.NTLMSSP_NEGOTIATE_VERSION;//33554432;/The data for this field is provided in hte version field of the message
+                    if( negotiateMessage.getFlag(NtlmConstants.NTLMSSP_NEGOTIATE_UNICODE)) {
+                        flags |= NtlmConstants.NTLMSSP_NEGOTIATE_UNICODE;
+                        flags &= NtlmConstants.NTLMSSP_NEGOTIATE_OEM_MASK;
+                    }
+                    else if(negotiateMessage.getFlag(NtlmConstants.NTLMSSP_NEGOTIATE_OEM)) {
+                        flags |= NtlmConstants.NTLMSSP_NEGOTIATE_OEM;
+                        flags &= NtlmConstants.NTLMSSP_NEGOTIATE_UNICODE_MASK;
+                    }
+
+                    if(negotiateMessage.getFlag(NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
+                        flags |= NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY;
+                    }
+                    else if(negotiateMessage.getFlag(NtlmConstants.NTLMSSP_NEGOTIATE_LM_KEY)) {
+                        flags |= NtlmConstants.NTLMSSP_NEGOTIATE_LM_KEY;
+                    }
+
                     String targetName = null;
                     if (StringUtils.isNotEmpty((String) get("domain.netbios.name"))) {
-                        flags |= NtlmConstants.NTLMSSP_TARGET_TYPE_DOMAIN;//65536; TargetName must be domain name
+                        flags |= NtlmConstants.NTLMSSP_TARGET_TYPE_DOMAIN;//TargetName must be domain name
                         targetName = (String) get("domain.netbios.name");
-                    } else if (StringUtils.isNotEmpty((String) get("localhost.netbios.name"))) {
-                        flags |= NtlmConstants.NTLMSSP_TARGET_TYPE_SERVER;//131072; TargetName must be server
-                        targetName = (String) get("localhost.netbios.name");
+                    } else if (StringUtils.isNotEmpty((String) get("host.netbios.name"))) {
+                        flags |= NtlmConstants.NTLMSSP_TARGET_TYPE_SERVER;//TargetName must be server
+                        targetName = (String) get("host.netbios.name");
                     }
 
-                    if ((flags & NtlmConstants.NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY/*0x80000*/) != 0) { //if NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY is set
-                        flags |= NtlmConstants.NTLMSSP_NEGOTIATE_TARGET_INFO;//8388608;
-                    }
+                    /*
+                     Even though the default settings already set these flags just to make sure no one overrides them
+                     Set the NTLMSSP_NEGOTIATE_TARGET_INFO and NTLMSSP_REQUEST_TARGET flags in CHALLENGE_MESSAGE.NegotiateFlags
+                     according to [MS-NLMP].pdf doc
+                     */
+                    flags |= NtlmConstants.NTLMSSP_NEGOTIATE_TARGET_INFO;
+                    flags |= NtlmConstants.NTLMSSP_REQUEST_TARGET;
 
                     Type2Message challengeMessage = new Type2Message();
                     //set the target name
@@ -89,9 +108,9 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
                     }
                     challengeMessage.setFlags(flags);
                     challengeMessage.setChallenge(state.getServerChallenge());
-                    if ((flags & NtlmConstants.NTLMSSP_REQUEST_TARGET) != 0) {
-                        challengeMessage.setTargetInformation(getTargetInfo());
-                    }
+                    //set target information since we already set NTLMSSP_REQUEST_TARGET flag
+                    challengeMessage.setTargetInformation(getTargetInfo());
+
                     token = challengeMessage.toByteArray();
 
                     //set NtlmAuthenticationState
@@ -228,7 +247,7 @@ public class NtlmAuthenticationServer extends NtlmAuthenticationProvider {
             }
         }
         Map acct = new HashMap();
-        byte[] token = (byte[]) authenticationAdapter.validate(response, challenge, acct);
+        byte[] token = (byte[]) authenticationAdapter.validateCredentials(response, challenge, acct);
         //set authenticated user account
         state.setAccountInfo(acct);
 

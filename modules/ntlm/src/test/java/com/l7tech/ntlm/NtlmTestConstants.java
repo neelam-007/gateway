@@ -25,8 +25,8 @@ public class NtlmTestConstants {
         config = new HashMap<String, String>();
         config.put("domain.netbios.name", "L7TECH");
         config.put("domain.dns.name", "l7tech.dev");
-        config.put("localhost.dns.name", "linux-12vk");
-        config.put("localhost.netbios.name", "LINUX-12VK");
+        config.put("host.dns.name", "linux-12vk");
+        config.put("host.netbios.name", "LINUX-12VK");
         config.put("server.dns.name", "test2008.l7tech.dev");
         config.put("service.account", "linux-12vk$@l7tech.dev");
         config.put("service.password", "linux-12vk$");

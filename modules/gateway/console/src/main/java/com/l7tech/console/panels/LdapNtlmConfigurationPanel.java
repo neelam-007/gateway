@@ -144,11 +144,11 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
         if(props.containsKey("domain.netbios.name")) {
             domainNetbiosTextField.setText(props.remove("domain.netbios.name") );
         }
-        if(props.containsKey("localhost.dns.name")) {
-            hostDnsTextField.setText(props.remove("localhost.dns.name"));
+        if(props.containsKey("host.dns.name")) {
+            hostDnsTextField.setText(props.remove("host.dns.name"));
         }
-        if(props.containsKey("localhost.netbios.name")) {
-            hostNetbiosTextField.setText(props.remove("localhost.netbios.name"));
+        if(props.containsKey("host.netbios.name")) {
+            hostNetbiosTextField.setText(props.remove("host.netbios.name"));
         }
 
         if(props != null){
@@ -188,8 +188,8 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
         }
         props.put("domain.dns.name", domainDnsTextField.getText().trim());
         props.put("domain.netbios.name", domainNetbiosTextField.getText().trim());
-        props.put("localhost.dns.name", hostDnsTextField.getText().trim());
-        props.put("localhost.netbios.name", hostNetbiosTextField.getText().trim());
+        props.put("host.dns.name", hostDnsTextField.getText().trim());
+        props.put("host.netbios.name", hostNetbiosTextField.getText().trim());
         
         List<NameValuePair> ntlmAdvancedProperties = ntlmPropertiesTableModel.getRows();
         for(NameValuePair pair : ntlmAdvancedProperties){
@@ -306,8 +306,8 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
                 }
                 props.put("domain.dns.name", domainDnsTextField.getText().trim());
                 props.put("domain.netbios.name", domainNetbiosTextField.getText().trim());
-                props.put("localhost.dns.name", hostDnsTextField.getText().trim());
-                props.put("localhost.netbios.name", hostNetbiosTextField.getText().trim());
+                props.put("host.dns.name", hostDnsTextField.getText().trim());
+                props.put("host.netbios.name", hostNetbiosTextField.getText().trim());
 
                 java.util.List<NameValuePair> propertiesList  = ntlmPropertiesTableModel.getRows();
 

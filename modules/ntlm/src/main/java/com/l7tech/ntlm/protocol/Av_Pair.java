@@ -1,5 +1,6 @@
 package com.l7tech.ntlm.protocol;
 
+import com.l7tech.util.Charsets;
 import jcifs.util.Encdec;
 
 import java.io.UnsupportedEncodingException;
@@ -34,7 +35,7 @@ public class Av_Pair {
     }
 
     public byte[] toByteArray() throws UnsupportedEncodingException {
-        byte[] data = name != null ? name.getBytes("UTF-16LE") : "".getBytes("UTF-16LE");
+        byte[] data = name != null ? name.getBytes(Charsets.UTF16LE) : "".getBytes(Charsets.UTF16LE);
         byte[] bytes =  new byte[data.length + 4];
         Encdec.enc_uint16le((short) type.value, bytes, 0);
         Encdec.enc_uint16le((short) data.length, bytes, 2);

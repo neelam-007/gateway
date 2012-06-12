@@ -259,7 +259,7 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
                 }
             }
 
-            authenticationProvider = new NtlmAuthenticationServer(props, /*new NetLogon(props)*/new NetlogonAdapter(props));
+            authenticationProvider = new NtlmAuthenticationServer(props, new NetlogonAdapter(props));
         } catch (FindException e) {
             final String errorMsg = "Unable to find the Identity Provider instance";
             if (log.isLoggable(Level.FINE)) {

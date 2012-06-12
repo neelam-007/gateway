@@ -100,14 +100,14 @@ public abstract class NtlmAuthenticationProvider extends HashMap implements Auth
         if ((state.getTargetInfo() == null) || (state.getTargetInfo().length == 0)) {
             LinkedList<Av_Pair> targetInfoList  =  new LinkedList<Av_Pair>();
             targetInfoList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvEOL, ""));
-            if (containsKey("localhost.dns.name")) {
-                targetInfoList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsComputerName, (String) get("localhost.dns.name")));
+            if (containsKey("host.dns.name")) {
+                targetInfoList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsComputerName, (String) get("host.dns.name")));
             }
             if (containsKey("domain.dns.name")) {
                 targetInfoList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvDnsDomainName, (String) get("domain.dns.name")));
             }
-            if (containsKey("localhost.netbios.name")) {
-                targetInfoList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) get("localhost.netbios.name")));
+            if (containsKey("host.netbios.name")) {
+                targetInfoList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvNbComputerName, (String) get("host.netbios.name")));
             }
             if (containsKey("domain.netbios.name")) {
                 targetInfoList.addFirst(new Av_Pair(Av_Pair.MsvAvType.MsvAvNbDomainName, (String) get("domain.netbios.name")));

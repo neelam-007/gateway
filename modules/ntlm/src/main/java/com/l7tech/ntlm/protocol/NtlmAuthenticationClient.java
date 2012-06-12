@@ -51,7 +51,7 @@ public class NtlmAuthenticationClient extends NtlmAuthenticationProvider {
         int flags = state.getFlags();
         String workstation = cred.getHost();
         if (StringUtils.isEmpty(workstation)) {
-            workstation = (String) get("localhost.netbios.name");
+            workstation = (String) get("host.netbios.name");
         }
         String name = cred.getName();
         String domainName = cred.getDomain();

@@ -25,8 +25,8 @@ public class NtlmAuthenticationClientTest {
         HashMap props = new HashMap();
         props.put("domain.netbios.name", "L7TECH");
         props.put("domain.dns.name", "l7tech.com");
-        props.put("localhost.dns.name", "linux-12vk");
-        props.put("localhost.netbios.name", "LINUX12-VK");
+        props.put("host.dns.name", "linux-12vk");
+        props.put("host.netbios.name", "LINUX12-VK");
         props.put("my.username", "user");
         props.put("my.password", "password");
 

@@ -57,7 +57,7 @@ public class Ntlm2AuthScheme implements AuthScheme{
         super();
         HashMap<String, Object> props = new HashMap<String, Object>();
         if(LOCALHOST_NETBIOS_NAME != null){
-            props.put("localhost.netbios.name", LOCALHOST_NETBIOS_NAME);
+            props.put("host.netbios.name", LOCALHOST_NETBIOS_NAME);
         }
         if(DEFAULT_FLAGS != null && DEFAULT_FLAGS.length() > 0){
             props.put("flags", DEFAULT_FLAGS);

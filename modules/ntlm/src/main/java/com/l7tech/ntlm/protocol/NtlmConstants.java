@@ -29,6 +29,7 @@ public final class NtlmConstants {
     public static final int NTLMSSP_NEGOTIATE_OEM = 2;
     public static final int NTLMSSP_NEGOTIATE_OEM_MASK = -3;
     public static final int NTLMSSP_NEGOTIATE_UNICODE = 1;
+    public static final int NTLMSSP_NEGOTIATE_UNICODE_MASK = -2;
 
 
     private NtlmConstants() {

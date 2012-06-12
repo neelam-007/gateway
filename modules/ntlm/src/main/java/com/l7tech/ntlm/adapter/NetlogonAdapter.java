@@ -34,7 +34,7 @@ public class NetlogonAdapter implements AuthenticationAdapter {
         }
         String servicePassword = (String)getProperty(properties, "service.password");
 
-        hostname = (String)getProperty(properties, "localhost.netbios.name");
+        hostname = (String)getProperty(properties, "host.netbios.name");
 
         netlogon = new Netlogon();
         serviceAccount = new NtlmServiceAccount(serviceName, servicePassword);
@@ -73,16 +73,15 @@ public class NetlogonAdapter implements AuthenticationAdapter {
     /**
      * validates supplied credentials
      *
-     *
-     * @param response
-     * @param acct
+     * @param response - server response containing user supplied credentials
+     * @param challenge - server challenge
+     * @param acct -  user account authorization data
+     * @throws AuthenticationManagerException
      * @return object containing additional authorization data
-     *         the type of data is determinate by the implementing adapter
-     * @throws com.l7tech.ntlm.protocol.AuthenticationManagerException
-     *
+     * the type of data is determinate by the implementing adapter
      */
     @Override
-    public Object validate(NtlmServerResponse response, byte[] challenge,  Map acct) throws AuthenticationManagerException {
+    public Object validateCredentials(NtlmServerResponse response, byte[] challenge,  Map acct) throws AuthenticationManagerException {
         byte[] sessionKey = null;
         try {
             NtlmUserAccount authenticatedUser = netlogon.logon(response.getDomain(), response.getUsername(), hostname, challenge, response.getNtResponse(),response.getLmResponse());

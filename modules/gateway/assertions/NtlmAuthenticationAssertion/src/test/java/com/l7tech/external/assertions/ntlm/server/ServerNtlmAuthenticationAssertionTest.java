@@ -243,8 +243,8 @@ public class ServerNtlmAuthenticationAssertionTest {
                 HashMap props = new HashMap();
                 props.put("domain.netbios.name", NtlmTestConstants.DOMAIN);
                 props.put("domain.dns.name", "l7tech.com");
-                props.put("localhost.dns.name", "linux-12vk");
-                props.put("localhost.netbios.name", "LINUX12-VK");
+                props.put("host.dns.name", "linux-12vk");
+                props.put("host.netbios.name", "LINUX12-VK");
                 props.put("my.username", NtlmTestConstants.USER);
                 props.put("my.password", NtlmTestConstants.PASSWORD);
 
