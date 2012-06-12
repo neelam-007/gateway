@@ -270,6 +270,9 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         wssCleanupButton.setEnabled(!isDownloadFrom);
         wssRemoveButton.setEnabled(!isDownloadFrom);
         preserveFileMetadataCheckBox.setEnabled(uploadToRadioButton.isSelected() && SFTPRadioButton.isSelected());
+        if(uploadToRadioButton.isSelected() && SCPRadioButton.isSelected()){
+            preserveFileMetadataCheckBox.setSelected(false);
+        }
 
         // authentication tab
         boolean isSpecifyUserCredentials = specifyUserCredentialsRadioButton.isSelected();
@@ -372,7 +375,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         }
 
         // populate SSH settings
-        assertion.setPreserveFileMetadata(preserveFileMetadataCheckBox.isSelected());
+        assertion.setPreserveFileMetadata(SFTPRadioButton.isSelected() && preserveFileMetadataCheckBox.isSelected());
         assertion.setHost(hostField.getText().trim());
         assertion.setPort(portNumberTextField.getText().trim());
         assertion.setDirectory(directoryTextField.getText());
