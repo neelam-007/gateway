@@ -12,9 +12,20 @@
 		<artifact name="MqNativeAssertion" type="aar" ext="aar" conf="master"/>
 	</publications>
 	<dependencies>
-        <dependency org="com.ibm.mq" name="com.ibm.mq" rev="6.0.2.11" force="true" conf="compile"/>
+        <!-- Don't package jars with modular assertion aar (due to licensing restriction) -->
+        <dependency org="com.ibm.mq" name="com.ibm.mq" rev="7.1.0.1" force="true" conf="compile"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.jmqi" rev="7.1.0.1" force="true" conf="compile"/>
+
+        <!-- Package MQ jars with modular assertion aar (make sure there's no licensing restriction)
+        <dependency org="com.ibm.mq" name="com.ibm.mq" rev="7.1.0.1" force="true" conf="core"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.jmqi" rev="7.1.0.1" force="true" conf="core"/>
+
+        <dependency org="com.ibm.mq" name="com.ibm.mq.commonservices" rev="7.1.0.1" force="true" conf="runtime"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.headers" rev="7.1.0.1" force="true" conf="runtime"/>
+        <dependency org="com.ibm.mq" name="connector" rev="7.1.0.1" force="true" conf="runtime"/>
+        -->
+
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test"/>
-
-	</dependencies>
+    </dependencies>
 </ivy-module>
