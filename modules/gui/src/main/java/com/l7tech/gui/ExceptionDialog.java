@@ -35,7 +35,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     private static final String OPEN_HTML = "<html>";
     private static final String CLOSE_HTML = "</html>";
 
-    private static final AtomicReference<ExceptionDialog> currentlyDisplayed = new AtomicReference<>();
+    private static final AtomicReference<ExceptionDialog> currentlyDisplayed = new AtomicReference<ExceptionDialog>();
     private static Runnable shutdownHandler = new Runnable() {public void run(){System.exit(-1);}};
 
     static {
