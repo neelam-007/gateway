@@ -3,12 +3,14 @@ package com.l7tech.server.service;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.identity.User;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.List;
 
 /**
  *
  */
-public class DisabledServiceMetricsServices implements ServiceMetricsServices {
+public class DisabledServiceMetricsServices implements ServiceMetricsServices, PropertyChangeListener {
 
     @Override
     public void addRequest( final long serviceOid,
@@ -33,5 +35,9 @@ public class DisabledServiceMetricsServices implements ServiceMetricsServices {
     @Override
     public int getFineInterval() {
         return DEF_FINE_BIN_INTERVAL;
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
     }
 }
