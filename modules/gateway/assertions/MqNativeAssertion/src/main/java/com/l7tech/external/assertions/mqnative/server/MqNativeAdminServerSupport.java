@@ -16,6 +16,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Collection;
@@ -23,6 +24,7 @@ import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.ibm.mq.constants.CMQC.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.isTransactional;
@@ -164,7 +166,7 @@ public class MqNativeAdminServerSupport {
                     }
                 } catch (MQException e) {
                     logger.log(Level.INFO, "Caught MQException while testing MQ Native destination '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
-                    throw new MqNativeTestException(testName + getMeaningfulMqErrorDetail(e.toString()));
+                    throw new MqNativeTestException(testName + getMeaningfulMqErrorDetail(e));
                 } catch (Throwable t) {
                     //noinspection ThrowableResultOfMethodCallIgnored
                     logger.log(Level.INFO, "Caught Throwable while testing MQ Native destination '" + ExceptionUtils.getMessage(t) + "'.", ExceptionUtils.getDebugException(t));
@@ -191,26 +193,27 @@ public class MqNativeAdminServerSupport {
      * If more reason codes are found, please add them into this method.
      * If same codes specify different errors, please update them in this method.
      *
-     * @param originalMqErrorMessage: the original MQ error message before this process
+     * @param e: the original MQ Exception
      * @return a meaningful error detail
      */
-    private String getMeaningfulMqErrorDetail(String originalMqErrorMessage) {
-        if (originalMqErrorMessage == null || originalMqErrorMessage.trim().isEmpty()) return null;
+    private String getMeaningfulMqErrorDetail(@NotNull MQException e) {
 
-        if (originalMqErrorMessage.contains("Reason 2009")) {
+        int errorCode = e.getReason();
+
+        if (errorCode == MQRC_CONNECTION_BROKEN) {
             return "Invalid channel name";
-        } else if (originalMqErrorMessage.contains("Reason 2035")) {
+        } else if (errorCode == MQRC_NOT_AUTHORIZED) {
             return "The user is not authorized to perform the operation attempted";
-        } else if (originalMqErrorMessage.contains("Reason 2058")) {
+        } else if (errorCode == MQRC_Q_MGR_NAME_ERROR) {
             return "Invalid queue manager name";
-        } else if (originalMqErrorMessage.contains("Reason 2059")) {
+        } else if (errorCode == MQRC_Q_MGR_NOT_AVAILABLE) {
             return "Invalid host name or port number";
-        } else if (originalMqErrorMessage.contains("Reason 2085")) {
+        } else if (errorCode == MQRC_UNKNOWN_OBJECT_NAME) {
             return "Invalid queue name, reply queue name, or failure queue name";
-        }  else if (originalMqErrorMessage.contains("Reason 2397")) {
+        }  else if (errorCode == MQRC_JSSE_ERROR) {
             return "Invalid SSL setting";
         }
 
-        return originalMqErrorMessage;
+        return e.toString();
     }
 }
