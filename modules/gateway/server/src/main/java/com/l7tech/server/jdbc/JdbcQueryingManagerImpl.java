@@ -43,22 +43,6 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
      */
     @Override
     public Object performJdbcQuery(String connectionName, final String query, final int maxRecords, final List<Object> preparedStmtParams) {
-        return performJdbcQuery(connectionName, null, query, maxRecords, preparedStmtParams);
-    }
-
-    /**
-     * Perform a JDBC query that could be a select statement or a non-select statement.
-     *
-     * @param connectionName:     the name of a JdbcConnection entity to retrieve a dataSource (i.e., a connection pool)
-     * @param dataSource:         dataSource if joining an existing transaction
-     * @param query:              the SQL query
-     * @param maxRecords:         the maximum number of records allowed to return.
-     * @param preparedStmtParams: the parameters of a prepared statement.
-     * @return an object, which may be a string (an error message), an integer (the number of records updated), or
-     *         a SqlRowSet representing disconnected java.sql.ResultSet data (the result of a select statement).
-     */
-    @Override
-    public Object performJdbcQuery(String connectionName, DataSource dataSource, final String query, final int maxRecords, final List<Object> preparedStmtParams) {
         if (connectionName == null || connectionName.isEmpty()) {
             logger.warning("Failed to perform querying since the JDBC connection name is not specified.");
             return "JDBC Connection Name is not specified.";
@@ -68,14 +52,14 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
         }
 
         // Get a DataSource for creating a JdbcTemplate.
-        if (dataSource == null) {
-            try {
-                dataSource = jdbcConnectionPoolManager.getDataSource(connectionName);
-            } catch (Exception e) {
-                logger.warning("Failed to perform querying since " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e)));
-                return "Cannot retrieve a C3P0 DataSource.";
-            }
+        DataSource dataSource;
+        try {
+            dataSource = jdbcConnectionPoolManager.getDataSource(connectionName);
+        } catch (Exception e) {
+            logger.warning("Failed to perform querying since " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e)));
+            return "Cannot retrieve a C3P0 DataSource.";
         }
+
 
         // Create a JdbcTemplate and set the max rows.
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
