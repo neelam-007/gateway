@@ -38,6 +38,7 @@ import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.some;
 import static com.l7tech.util.TextUtils.isNotEmpty;
 import static com.l7tech.util.ValidationUtils.getMinMaxPredicate;
+import static com.ibm.mq.constants.CMQC.*;
 
 /**
  * MQ Native connector helper class.
@@ -411,14 +412,16 @@ class MqNativeUtils {
      * @return original exception or if expected reason code, return exception only if in debug mode
      */
     static MQException getDebugExceptionForExpectedReasonCode(MQException e) {
-        String errorMessage = ExceptionUtils.getMessage(e);
-        if (errorMessage.contains("Reason 2009")
-                || errorMessage.contains("Reason 2035")
-                || errorMessage.contains("Reason 2058")
-                || errorMessage.contains("Reason 2059")
-                || errorMessage.contains("Reason 2085")
-                || errorMessage.contains("Reason 2397") ) {
-            return ExceptionUtils.getDebugException( e );
+
+        int reasonCode = e.getReason();
+
+        if ( reasonCode == MQRC_CONNECTION_BROKEN
+                || reasonCode == MQRC_NOT_AUTHORIZED
+                || reasonCode == MQRC_Q_MGR_NAME_ERROR
+                || reasonCode == MQRC_Q_MGR_NOT_AVAILABLE
+                || reasonCode == MQRC_UNKNOWN_OBJECT_NAME
+                || reasonCode == MQRC_JSSE_ERROR ) {
+            return ExceptionUtils.getDebugException(e);
         }
         return e;
     }
