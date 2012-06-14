@@ -13,9 +13,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
-import com.l7tech.util.Config;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import com.whirlycott.cache.Cache;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -23,6 +21,7 @@ import org.xml.sax.SAXException;
 import javax.xml.bind.MarshalException;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,19 +50,38 @@ public class AuditLookupPolicyEvaluator  {
         return config.getProperty( ServerConfigParams.PARAM_AUDIT_LOOKUP_POLICY_GUID );
     }
 
-    public List<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException{
+    public List<AuditRecordHeader> findHeaders(final AuditSearchCriteria criteria) throws FindException{
+        try {
+            // Make sure a logging-only audit context is active while running the audit sink policy, so we don't
+            // try to add details to the record that is currently being flushed via this very policy
+            final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
 
-        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
-        AuditLookupPolicyEnforcementContext lookupContext = new AuditLookupPolicyEnforcementContext(criteria,context);
-        AssertionStatus assertionStatus = executeAuditLookupPolicy(criteria, lookupContext);
-        if(assertionStatus != AssertionStatus.NONE){
-            throw new FindException("Audit Lookup Policy Failed");
+            AssertionStatus assertionStatus = AuditContextFactory.doWithCustomAuditContext(AuditContextFactory.createLogOnlyAuditContext(), new Callable<AssertionStatus>() {
+                @Override
+                public AssertionStatus call() throws Exception {
+                    return executeAuditLookupPolicy(criteria, context);
+                }
+            });
+
+            if(assertionStatus != AssertionStatus.NONE){
+                throw new FindException("Audit Lookup Policy Failed");
+            }
+            List<AuditRecordHeader> recordHeaders = makeAuditRecords(context);
+            return recordHeaders;
+
+
+
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to execute audit lookup policy: " + ExceptionUtils.getMessage(e), e);
+            return null;
         }
-        List<AuditRecordHeader> recordHeaders = makeAuditRecords(context);
-        return recordHeaders;
-        
     }
-    
+
+
+
+
+        
+
     private List<AuditRecordHeader> makeAuditRecords(PolicyEnforcementContext context){
         Object sizeObj = null;
         try {
@@ -229,7 +247,7 @@ public class AuditLookupPolicyEvaluator  {
      * @param   policyContext  context for the lookup policy to use
      * @return
      */
-    private AssertionStatus executeAuditLookupPolicy(AuditSearchCriteria criteria, AuditLookupPolicyEnforcementContext policyContext) {
+    private AssertionStatus executeAuditLookupPolicy(AuditSearchCriteria criteria, PolicyEnforcementContext policyContext) {
         ServerPolicyHandle sph = null;
         try {
             final String guid = loadAuditSinkPolicyGuid();
@@ -237,14 +255,15 @@ public class AuditLookupPolicyEvaluator  {
                 logger.log(Level.FINEST, "No audit lookup policy is configured");
                 return null;
             }
-            policyContext.setAuditLevel(Level.INFO);
-//            setQueryParams(criteria, policyContext);
+
+            final AuditLookupPolicyEnforcementContext lookupContext = new AuditLookupPolicyEnforcementContext(criteria,policyContext);
+            lookupContext.setAuditLevel(Level.INFO);
 
             // Use fake service
             final PublishedService svc = new PublishedService();
-            svc.setName("[Internal audit sink policy pseudo-service]");
+            svc.setName("[Internal audit lookup policy pseudo-service]");
             svc.setSoap(false);
-            policyContext.setService(svc);
+            lookupContext.setService(svc);
 
             sph = policyCache.getServerPolicy(guid);
             if (sph == null) {
@@ -252,7 +271,7 @@ public class AuditLookupPolicyEvaluator  {
                 return AssertionStatus.SERVER_ERROR;
             }
 
-            AssertionStatus status = sph.checkRequest(policyContext);
+            AssertionStatus status = sph.checkRequest(lookupContext);
 
             // We won't bother processing any deferred assertions because they mostly deal with response processing
             // and we intend to ignore any response from this policy.
@@ -277,6 +296,4 @@ public class AuditLookupPolicyEvaluator  {
             ResourceUtils.closeQuietly(policyContext);
         }
     }
-    private static final Level[] LEVELS_IN_ORDER = { Level.FINEST, Level.FINER, Level.FINE, Level.CONFIG, Level.INFO, Level.WARNING, Level.SEVERE };
-
 }

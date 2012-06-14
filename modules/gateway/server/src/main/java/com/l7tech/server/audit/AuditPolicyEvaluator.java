@@ -3,21 +3,31 @@ package com.l7tech.server.audit;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyUtil;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.PolicyCacheEvent;
+import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
+import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
 import org.springframework.context.ApplicationEvent;
 
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -38,13 +48,17 @@ public class AuditPolicyEvaluator implements PostStartupApplicationListener {
 
     private final Config config;
     private final PolicyCache policyCache;
+    private final PolicyManager policyManger;
+    private final JdbcConnectionPoolManager jdbcConnectionPoolManager;
 
     private final AtomicBoolean sinkOpen = new AtomicBoolean(false);
     private final Queue<SystemAuditRecord> startupRecords = new ConcurrentLinkedQueue<SystemAuditRecord>();
 
-    public AuditPolicyEvaluator(Config config, PolicyCache policyCache) {
+    public AuditPolicyEvaluator(Config config, PolicyCache policyCache,PolicyManager policyManger, JdbcConnectionPoolManager jdbcConnectionPoolManager) {
         this.config = config;
         this.policyCache = policyCache;
+        this.policyManger = policyManger;
+        this.jdbcConnectionPoolManager = jdbcConnectionPoolManager;
     }
 
     private String loadAuditSinkPolicyGuid() {
@@ -114,7 +128,7 @@ public class AuditPolicyEvaluator implements PostStartupApplicationListener {
                 return AssertionStatus.SERVER_ERROR;
             }
 
-            AssertionStatus status = sph.checkRequest(context);
+            AssertionStatus status =  executePolicy(sph, guid, context);
 
             // We won't bother processing any deferred assertions because they mostly deal with response processing
             // and we intend to ignore any response from this policy.
@@ -125,16 +139,43 @@ public class AuditPolicyEvaluator implements PostStartupApplicationListener {
 
             return status;
 
-        } catch (PolicyAssertionException e) {
-            logger.log(Level.WARNING, "Failed to execute audit sink policy: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            return AssertionStatus.SERVER_ERROR;
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Failed to execute audit sink policy: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } finally {
             ResourceUtils.closeQuietly(sph);
             ResourceUtils.closeQuietly(context);
         }
+    }
+
+    private AssertionStatus executePolicy(final ServerPolicyHandle sph, String guid, final PolicyEnforcementContext context) throws Exception {
+        DataSource ds = initJdbcTransactional(guid);
+        if(ds!=null){
+            return JdbcConnectionPoolManager.doWithContextualConnection(connectionNameList.get(0),ds,new Functions.NullaryThrows<AssertionStatus, Exception>(){
+                @Override
+                public AssertionStatus call() throws Exception {
+                    return sph.checkRequest(context);
+                }
+            });
+        }
+        return sph.checkRequest(context);
+    }
+
+    private DataSource initJdbcTransactional(String guid) {
+        getConnectionNames(guid);
+        if(!connectionNameList.isEmpty())
+        {
+            String connectionName = connectionNameList.get(0);
+            try {
+                return jdbcConnectionPoolManager.getDataSource(connectionName);
+                // black magic
+            } catch (NamingException e) {
+                logger.warning("Unable to get jdbc connection datasource: "+connectionName);
+            } catch (SQLException e) {
+                logger.warning("Unable to get jdbc connection datasource: "+connectionName);
+            }
+        }
+        return null;
     }
 
     private void processStartupRecords() {
@@ -163,6 +204,32 @@ public class AuditPolicyEvaluator implements PostStartupApplicationListener {
                 throw new IllegalStateException("AuditPolicyEvaluator was started before the PolicyCache");
             processStartupRecords();
         }
+    }
+
+    private void getConnectionNames(String guid){
+        try {
+            Policy policy = policyManger.findByGuid(guid);
+            Assertion root = policy.getAssertion();
+            connectionNameList.clear();
+            PolicyUtil.visitDescendantsAndSelf(root, new Functions.UnaryVoid<Assertion>() {
+                @Override
+                public void call(Assertion assertion) {
+                    if(assertion instanceof JdbcConnectionable){
+                        addConnection(((JdbcConnectionable) assertion).getConnectionName());
+                    }
+                }
+            });
+
+        } catch (IOException e) {
+            logger.warning("Unable to get jdbc connections");
+        } catch (FindException e) {
+            logger.warning("Unable to get jdbc connections");
+        }
+    }
+
+    private List<String> connectionNameList = new ArrayList<String>();
+    private void addConnection(String connectionName){
+        connectionNameList.add(connectionName);
     }
 
     @Override

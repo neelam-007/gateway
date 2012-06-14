@@ -17,6 +17,8 @@ import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.folder.FolderCacheStub;
+import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
+import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.*;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -97,7 +99,7 @@ public class AuditPolicyEvaluatorTest {
     }
 
     AuditPolicyEvaluator sink(boolean open) {
-        AuditPolicyEvaluator ape = new AuditPolicyEvaluator(serverConfig, policyCache);
+        AuditPolicyEvaluator ape = new AuditPolicyEvaluator(serverConfig, policyCache,policyManager,jdbcConnectionPoolManager);
         if (open)
             fireStartedEvent(ape);
         return ape;
@@ -166,5 +168,7 @@ public class AuditPolicyEvaluatorTest {
             log(message, params, null);
         }
     };
+
+    JdbcConnectionPoolManager jdbcConnectionPoolManager = new JdbcConnectionPoolManager(new JdbcConnectionManagerStub());
 
 }

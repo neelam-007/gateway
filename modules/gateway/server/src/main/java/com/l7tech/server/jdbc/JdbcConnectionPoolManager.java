@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Functions;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Pair;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
@@ -42,6 +43,7 @@ public class JdbcConnectionPoolManager implements InitializingBean {
 
     private static final long MIN_CHECK_AGE = ConfigFactory.getLongProperty( "com.l7tech.server.jdbc.poolConnectionCheckMinAge", 30000L );
     private static final String[] CPDS_IGNORE_PROPS = new String[]{ "connectionPoolDataSource", "driverClass", "initialPoolSize", "jdbcUrl", "logWriter", "maxPoolSize", "minPoolSize", "password", "properties", "propertyCycle", "user", "userOverridesAsString" };
+    private static final ThreadLocal<Pair<String, DataSource>> getContextualDataSource = new ThreadLocal<Pair<String, DataSource>>();
 
     private final Audit auditor = new LoggingAudit(logger);
     private final JdbcConnectionManager jdbcConnectionManager;
@@ -93,6 +95,10 @@ public class JdbcConnectionPoolManager implements InitializingBean {
      * @throws NamingException: thrown when errors retrieving the data source.
      */
     public DataSource getDataSource(String jdbcConnName) throws NamingException, SQLException {
+        DataSource contextualDS = getContextualDataSource(jdbcConnName);
+        if(contextualDS!=null)
+            return contextualDS;
+
         final DataSource ds = (DataSource) context.lookup(jdbcConnName);
 
         // Verify that the pool is functional to avoid long delays when connections
@@ -106,6 +112,41 @@ public class JdbcConnectionPoolManager implements InitializingBean {
         }
 
         return ds;
+    }
+
+    /**
+     * Get a contextual connection for the current thread, if there is one.
+     * <p/>
+     * This can allow a JDBC query assertion to reuse an existing connection/transaction for the current thread
+     * rather than creating a new one.
+     *
+     * @return a contextual connection for the current thread specified JdbcConnection entity name, if there is one; otherwise null.
+     */
+    public static DataSource getContextualDataSource(String connectionName) {
+        Pair<String, DataSource> got = getContextualDataSource.get();
+        return got != null && got.left != null && got.left.equals(connectionName) ? got.right : null;
+    }
+
+    /**
+     * Perform some action with a contextual JDBC connection set.
+     *
+     * @param connectionName the JdbcConnection entity name that owns the specified connection.  Only users of a matching
+     *                       connection name will be given access to the contextual connection.  Required.
+     * @param dataSource  the data source to set as the contextual data source.  May have begun a transaction.  Required.
+     * @param stuff   some operations to invoke with the contextual connection set.  Required.
+     * @param <R>  the type of the return value from the operation.
+     * @param <T>  the type of checked exception that may be thrown by the operation.
+     * @return the return value of the operation, if it does not throw an exception.
+     * @throws T if the operation throws an exception.
+     */
+    public static <R, T extends Exception> R doWithContextualConnection(@javax.validation.constraints.NotNull String connectionName, @javax.validation.constraints.NotNull DataSource dataSource, @javax.validation.constraints.NotNull Functions.NullaryThrows<R, T> stuff) throws T {
+        final Pair<String, DataSource> old = getContextualDataSource.get();
+        getContextualDataSource.set(new Pair<String, DataSource>(connectionName, dataSource));
+        try {
+            return stuff.call();
+        } finally {
+            getContextualDataSource.set(old);
+        }
     }
 
     /**

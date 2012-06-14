@@ -154,7 +154,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                 "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <exp:References>\n" +
                 "        <JdbcConnectionReference RefType=\"com.l7tech.console.policy.exporter.JdbcConnectionReference\">\n" +
-                "            <ConnectionName>${auditConnection}</ConnectionName>\n" +
+                "            <ConnectionName>"+connection+"</ConnectionName>\n" +
                 "        </JdbcConnectionReference>\n" +
                 "    </exp:References>\n" +
                 "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
@@ -162,10 +162,6 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                 "            <L7p:CommentAssertion>\n" +
                 "                <L7p:Comment stringValue=\"Start Default Lookup Policy\"/>\n" +
                 "            </L7p:CommentAssertion>\n" +
-                "            <L7p:SetVariable>\n" +
-                "                <L7p:Base64Expression stringValue=\""+HexUtils.encodeBase64(HexUtils.encodeUtf8(connection), true)+"\"/>\n" +
-                "                <L7p:VariableToSet stringValue=\"auditConnection\"/>\n" +
-                "            </L7p:SetVariable>\n" +
                 "            <L7p:SetVariable>\n" +
                 "                <L7p:Base64Expression stringValue=\"JHthdWRpdC5yZWNvcmRRdWVyeS5zZXJ2aWNlTmFtZX0=\"/>\n" +
                 "                <L7p:VariableToSet stringValue=\"serviceName\"/>\n" +
@@ -239,7 +235,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                 "                    <L7p:JdbcQuery>\n" +
                 "                        <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
                 "                        <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
-                "                        <L7p:ConnectionName stringValue=\"${auditConnection}\"/>\n" +
+                "                        <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
                 "                        <L7p:MaxRecords intValue=\"1000\"/>\n" +
                 "                        <L7p:NamingMap mapValue=\"included\">\n" +
                 "                            <L7p:entry>\n" +
@@ -262,7 +258,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                 "                    </L7p:SetVariable>\n" +
                 "                    <L7p:JdbcQuery>\n" +
                 "                        <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
-                "                        <L7p:ConnectionName stringValue=\"${auditConnection}\"/>\n" +
+                "                        <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
                 "                        <L7p:MaxRecords intValue=\"1000\"/>\n" +
                 "                        <L7p:SqlQuery stringValue=\""+messaageIdLookupQuery(detailTable)+" \"/>\n" +
                 "                        <L7p:VariablePrefix stringValue=\"recordIdQuery\"/>\n" +
@@ -270,7 +266,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                 "                    <L7p:JdbcQuery>\n" +
                 "                        <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
                 "                        <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
-                "                        <L7p:ConnectionName stringValue=\"${auditConnection}\"/>\n" +
+                "                        <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
                 "                        <L7p:MaxRecords intValue=\"1000\"/>\n" +
                 "                        <L7p:NamingMap mapValue=\"included\">\n" +
                 "                            <L7p:entry>\n" +
@@ -300,7 +296,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                 "                <L7p:JdbcQuery>\n" +
                 "                    <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
                 "                    <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
-                "                    <L7p:ConnectionName stringValue=\"${auditConnection}\"/>\n" +
+                "                    <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
                 "                    <L7p:MaxRecords intValue=\"1000\"/>\n" +
                 "                    <L7p:SqlQuery stringValue=\""+detailLookupQuery(detailTable)+"\"/>\n" +
                 "                    <L7p:VariablePrefix stringValue=\"detailQuery\"/>\n" +
@@ -378,16 +374,12 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                 "        <L7p:CommentAssertion>\n" +
                 "            <L7p:Comment stringValue=\"Start default audit sink policy\"/>\n" +
                 "        </L7p:CommentAssertion>\n" +
-                "        <L7p:SetVariable>\n" +
-                "            <L7p:Base64Expression stringValue=\""+HexUtils.encodeBase64(HexUtils.encodeUtf8(connection), true)+"\"/>\n" +
-                "            <L7p:VariableToSet stringValue=\"auditConnection\"/>\n" +
-                "        </L7p:SetVariable>\n" +
                 "        <L7p:UUIDGenerator>\n" +
                 "            <L7p:TargetVariable stringValue=\"record.guid\"/>\n" +
                 "        </L7p:UUIDGenerator>\n" +
                 "        <L7p:JdbcQuery>\n" +
                 "            <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
-                "            <L7p:ConnectionName stringValue=\"${auditConnection}\"/>\n" +
+                "            <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
                 "            <L7p:SqlQuery stringValue=\""+ExternalAuditsCommonUtils.saveRecordQuery(recordTable)+"\"/>\n" +
                 "        </L7p:JdbcQuery>\n" +
                 "        <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
@@ -411,7 +403,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                 "                </L7p:UUIDGenerator>\n" +
                 "                <L7p:JdbcQuery>\n" +
                 "                    <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
-                "                    <L7p:ConnectionName stringValue=\"${auditConnection}\"/>\n" +
+                "                    <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
                 "                    <L7p:SqlQuery stringValue=\""+ExternalAuditsCommonUtils.saveDetailQuery(detailTable)+"\"/>\n" +
                 "                </L7p:JdbcQuery>\n" +
                 "            </L7p:ForEachLoop>\n" +

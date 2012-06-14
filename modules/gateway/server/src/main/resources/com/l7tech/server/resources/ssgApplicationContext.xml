@@ -164,6 +164,8 @@
     <bean id="auditPolicyEvaluator" class="com.l7tech.server.audit.AuditPolicyEvaluator">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="policyCache"/>
+        <constructor-arg index="2" ref="policyManager"/>
+        <constructor-arg index="3" ref="jdbcConnectionPoolManager"/>
     </bean>
 
     <bean id="auditLookupPolicyEvaluator" class="com.l7tech.server.audit.AuditLookupPolicyEvaluator">
