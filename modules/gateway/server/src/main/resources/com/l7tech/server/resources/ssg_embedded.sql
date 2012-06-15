@@ -10,7 +10,7 @@
 
 create table audit_admin (
     action char(1),
-    entity_class varchar(255),
+    entity_class varchar(1024),
     entity_id bigint,
     objectid bigint not null,
     primary key (objectid)
@@ -303,7 +303,7 @@ create table fed_group_virtual (
     description varchar(4096),
     provider_oid bigint not null,
     saml_email_pattern varchar(128),
-    x509_subject_dn_pattern varchar(255),
+    x509_subject_dn_pattern varchar(1024),
     properties clob(2147483647),
     primary key (objectid)
 );
@@ -415,9 +415,9 @@ create table jdbc_connection (
     objectid bigint not null,
     name varchar(128) not null,
     version integer,
-    driver_class varchar(255) not null,
+    driver_class varchar(1024) not null,
     enabled smallint,
-    jdbc_url varchar(255) not null,
+    jdbc_url varchar(4096) not null,
     max_pool_size integer,
     min_pool_size integer,
     password varchar(255) not null,
@@ -430,8 +430,8 @@ create table jms_connection (
     objectid bigint not null,
     name varchar(128) not null,
     version integer,
-    destination_factory_url varchar(255),
-    factory_classname varchar(255),
+    destination_factory_url varchar(4096),
+    factory_classname varchar(1024),
     jndi_url varchar(255),
     password varchar(255),
     properties clob(2147483647),
@@ -656,11 +656,11 @@ create table resolution_configuration (
 create table resource_entry (
     objectid bigint not null,
     version integer,
-    description varchar(255),
+    description varchar(2048),
     uri varchar(4096),
     uri_hash varchar(128),
     type varchar(32),
-    content_type varchar(255),
+    content_type varchar(1024),
     content clob(2147483647),
     resource_key1 varchar(4096),
     resource_key2 varchar(4096),
@@ -704,10 +704,10 @@ create table service_documents (
     objectid bigint not null,
     version integer not null,
     service_oid bigint,
-    uri varchar(255),
+    uri varchar(4096),
     type varchar(255),
-    content_type varchar(255),
-    content varchar(255),
+    content_type varchar(1024),
+    content clob(2147483647),
     primary key (objectid)
 );
 
@@ -759,7 +759,7 @@ create table service_usage (
 
 create table shared_keys (
     encodingid varchar(32) not null,
-    b64edval varchar(255) not null,
+    b64edval varchar(2048) not null,
     primary key (encodingid)
 );
 
@@ -780,7 +780,7 @@ create table trusted_cert (
     objectid bigint not null,
     cert_base64 clob(2147483647),
     issuer_dn varchar(500),
-    serial varchar(255),
+    serial varchar(1024),
     ski varchar(64),
     subject_dn varchar(500),
     thumbprint_sha1 varchar(64),
@@ -822,10 +822,10 @@ create table uddi_business_service_status (
     published_service_oid bigint,
     metrics_reference_status varchar(255),
     uddi_metrics_tmodel_key varchar(255),
-    uddi_policy_publish_url varchar(255),
+    uddi_policy_publish_url varchar(4096),
     policy_status varchar(255),
     uddi_policy_tmodel_key varchar(255),
-    uddi_policy_url varchar(255),
+    uddi_policy_url varchar(4096),
     uddi_registry_oid bigint,
     uddi_service_key varchar(255),
     uddi_service_name varchar(255),
@@ -860,7 +860,7 @@ create table uddi_proxied_service_info (
     uddi_registry_oid bigint,
     update_proxy_on_local_change smallint,
     version integer,
-    wsdl_hash varchar(255),
+    wsdl_hash varchar(512),
     primary key (objectid)
 );
 
@@ -877,22 +877,22 @@ create table uddi_registries (
     objectid bigint not null,
     name varchar(128) not null,
     version integer,
-    base_url varchar(255),
+    base_url varchar(4096),
     client_auth smallint,
     enabled smallint,
-    inquiry_url varchar(255),
+    inquiry_url varchar(4096),
     key_alias varchar(255),
     keystore_oid bigint,
     metrics_publish_frequency bigint,
     metrics_enabled smallint,
     monitoring_enabled smallint,
     monitor_frequency bigint,
-    publish_url varchar(255),
+    publish_url varchar(4096),
     password varchar(255),
     user_name varchar(255),
-    security_url varchar(255),
+    security_url varchar(4096),
     subscribe_for_notifications smallint,
-    subscription_url varchar(255),
+    subscription_url varchar(4096),
     registry_type varchar(255),
     primary key (objectid)
 );
@@ -936,7 +936,7 @@ create table uddi_service_control (
 
 create table uddi_service_control_monitor_runtime (
     objectid bigint not null,
-    access_point_url varchar(255),
+    access_point_url varchar(4096),
     last_uddi_modified_timestamp bigint,
     uddi_service_control_oid bigint,
     version integer,
@@ -950,7 +950,7 @@ create table wsdm_subscription (
     notification_policy_guid varchar(36),
     owner_node_id varchar(64),
     published_service_oid bigint not null,
-    callback_url varchar(255) not null,
+    callback_url varchar(4096) not null,
     reference_parameters varchar(16384),
     termination_time bigint not null,
     topic integer not null,
@@ -1495,7 +1495,7 @@ create table generic_entity (
   version integer,
   name varchar(255),
   description clob(8388607),
-  classname varchar(255) not null,
+  classname varchar(1024) not null,
   enabled smallint default 1,
   value_xml clob(8388607),
   primary key (objectid),
