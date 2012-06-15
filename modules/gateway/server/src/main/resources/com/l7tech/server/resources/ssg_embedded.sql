@@ -190,7 +190,7 @@ create table active_connector_property (
 
 create table client_cert (
     objectid bigint not null,
-    cert clob(255),
+    cert clob(2147483647),
     issuer_dn varchar(500),
     serial varchar(255),
     ski varchar(64),
