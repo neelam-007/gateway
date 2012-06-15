@@ -1,16 +1,20 @@
 package com.l7tech.server;
 
+import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.password.PasswordHasher;
+import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.AssertionTranslator;
+import com.l7tech.policy.IncludeAssertionDereferenceTranslator;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -18,31 +22,22 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.IncludeAssertionDereferenceTranslator;
 import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.server.admin.AdminSessionManager;
+import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.server.identity.AuthenticatingIdentityProvider;
-import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.policy.PolicyManager;
+import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.ServletUtils;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.http.HttpConstants;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.grepFirst;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -55,13 +50,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.Functions.grepFirst;
 
 /**
  * Base class for servlets that share the capability of authenticating requests against
@@ -142,7 +135,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         try {
             requireEndpoint(req);
         } catch (ListenerException e) {
-            resp.sendError(404, "Service unavailable on this port");
+            resp.sendError(502, "Service unavailable on this port");
             return;
         }
         super.service(req, resp);
