@@ -73,7 +73,7 @@ public class AuditLookupPolicyEvaluator  {
 
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed to execute audit lookup policy: " + ExceptionUtils.getMessage(e), e);
-            return null;
+            throw new FindException("Failed to execute audit lookup policy",e);
         }
     }
 
