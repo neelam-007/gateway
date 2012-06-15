@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.mqnative.server;
 import com.ibm.mq.MQException;
 import com.ibm.mq.MQQueue;
 import com.ibm.mq.MQQueueManager;
-import com.ibm.mq.MQC;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
@@ -12,7 +11,6 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.Config;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
 import org.apache.commons.lang.StringUtils;
@@ -24,11 +22,13 @@ import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.ibm.mq.constants.CMQC.*;
+import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.isTransactional;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
 
 /**
  * Sever-side glue for the MQ Native Admin implementation,
@@ -83,12 +83,12 @@ public class MqNativeAdminServerSupport {
                     queueManager = new MQQueueManager(
                             mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME ),
                             MqNativeUtils.buildQueueManagerConnectProperties( mqNativeActiveConnector, securePasswordManager ) );
-                    logger.finer("... successfully got queue manager " + queueManager.name + "!");
+                    logger.finer("... successfully got queue manager " + queueManager.getName() + "!");
                     
                     logger.finer("Attempting to get queue to inquire on its properties ...");
                     testName = "inquiry queue properties (type) - ";
                     targetQueue = queueManager.accessQueue(
-                            mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME ), MQC.MQOO_INQUIRE);
+                            mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME ), MQOO_INQUIRE);
                     targetQueueType = targetQueue.getQueueType();
                     targetQueue.close();
                     logger.finer("... successfully got queue properties");
@@ -102,7 +102,7 @@ public class MqNativeAdminServerSupport {
                         targetQueue = queueManager.accessQueue(
                                 mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME ), QUEUE_OPEN_OPTIONS_INBOUND );
                         targetQueue.close();
-                        logger.finer("... successfully got inbound queue " + targetQueue.name + "!");
+                        logger.finer("... successfully got inbound queue " + targetQueue.getName() + "!");
 
                         // if applicable test reply queue
                         MqNativeReplyType replyType = MqNativeReplyType.valueOf( mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE) );
@@ -112,7 +112,7 @@ public class MqNativeAdminServerSupport {
                             testName = "inbound specified reply queue - ";
                             replyQueue = queueManager.accessQueue( specifiedReplyQueueName, QUEUE_OPEN_OPTIONS_INBOUND_REPLY_SPECIFIED_QUEUE );
                             replyQueue.close();
-                            logger.finer("... successfully got specified inbound reply queue " + replyQueue.name + "!");
+                            logger.finer("... successfully got specified inbound reply queue " + replyQueue.getName() + "!");
                         }
 
                         // if applicable test failure queue
@@ -124,7 +124,7 @@ public class MqNativeAdminServerSupport {
                             testName = "inbound failure queue - ";
                             replyQueue = queueManager.accessQueue( failureQueueName, QUEUE_OPEN_OPTIONS_INBOUND_FAILURE_QUEUE );
                             replyQueue.close();
-                            logger.finer("... successfully got inbound failure queue " + replyQueue.name + "!");
+                            logger.finer("... successfully got inbound failure queue " + replyQueue.getName() + "!");
                         }
 
                     // else test outbound when queue is not a template
@@ -135,14 +135,14 @@ public class MqNativeAdminServerSupport {
                         targetQueue = queueManager.accessQueue(
                                 mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME ), QUEUE_OPEN_OPTIONS_OUTBOUND_PUT );
                         targetQueue.close();
-                        logger.finer("... successfully got outbound put queue " + targetQueue.name + "!");
+                        logger.finer("... successfully got outbound put queue " + targetQueue.getName() + "!");
 
-                        if ( targetQueueType !=  MQC.MQQT_REMOTE ) {    // GETs cannot be performed on Remote Queues
+                        if ( targetQueueType !=  MQQT_REMOTE ) {    // GETs cannot be performed on Remote Queues
                             logger.finer("Attempting to get outbound get queue ...");
                             targetQueue = queueManager.accessQueue(
                                     mqNativeActiveConnector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME ), QUEUE_OPEN_OPTIONS_OUTBOUND_GET );
                             targetQueue.close();
-                            logger.finer("... successfully got outbound get queue " + targetQueue.name + "!");
+                            logger.finer("... successfully got outbound get queue " + targetQueue.getName() + "!");
                         }
                         
                         MqNativeReplyType replyType = MqNativeReplyType.valueOf( mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE) );
@@ -153,7 +153,7 @@ public class MqNativeAdminServerSupport {
                             String modelQueueName = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN);
                             replyQueue = queueManager.accessQueue(modelQueueName, QUEUE_OPEN_OPTIONS_OUTBOUND_REPLY_MODEL_QUEUE);
                             replyQueue.close();
-                            logger.finer("... successfully got outbound model queue " + replyQueue.name + "!");
+                            logger.finer("... successfully got outbound model queue " + replyQueue.getName() + "!");
                         } else if ( MqNativeReplyType.REPLY_SPECIFIED_QUEUE == replyType) {
                             // if applicable test specified reply queue
                             logger.finer("Attempting to get outbound specified reply queue ...");
@@ -161,16 +161,16 @@ public class MqNativeAdminServerSupport {
                             String specifiedReplyQueueName = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME);
                             replyQueue = queueManager.accessQueue(specifiedReplyQueueName, QUEUE_OPEN_OPTIONS_OUTBOUND_REPLY_SPECIFIED_QUEUE);
                             replyQueue.close();
-                            logger.finer("... successfully got outbound specified reply queue " + replyQueue.name + "!");
+                            logger.finer("... successfully got outbound specified reply queue " + replyQueue.getName() + "!");
                         }
                     }
                 } catch (MQException e) {
-                    logger.log(Level.INFO, "Caught MQException while testing MQ Native destination '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+                    logger.log(Level.INFO, "Caught MQException while testing MQ Native destination '" + getMessage(e) + "'.", getDebugException(e));
                     throw new MqNativeTestException(testName + getMeaningfulMqErrorDetail(e));
                 } catch (Throwable t) {
                     //noinspection ThrowableResultOfMethodCallIgnored
-                    logger.log(Level.INFO, "Caught Throwable while testing MQ Native destination '" + ExceptionUtils.getMessage(t) + "'.", ExceptionUtils.getDebugException(t));
-                    throw new MqNativeTestException(testName + ExceptionUtils.getMessage(t));
+                    logger.log(Level.INFO, "Caught Throwable while testing MQ Native destination '" + getMessage(t) + "'.", getDebugException(t));
+                    throw new MqNativeTestException(testName + getMessage(t));
                 } finally {
                     closeQuietly(targetQueue);
                     closeQuietly(replyQueue);
@@ -197,7 +197,6 @@ public class MqNativeAdminServerSupport {
      * @return a meaningful error detail
      */
     private String getMeaningfulMqErrorDetail(@NotNull MQException e) {
-
         int errorCode = e.getReason();
 
         if (errorCode == MQRC_CONNECTION_BROKEN) {

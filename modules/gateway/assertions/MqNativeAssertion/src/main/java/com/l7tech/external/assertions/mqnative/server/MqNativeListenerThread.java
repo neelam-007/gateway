@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.mqnative.server;
 
-import com.ibm.mq.MQC;
 import com.ibm.mq.MQException;
 import com.ibm.mq.MQGetMessageOptions;
 import com.ibm.mq.MQMessage;
@@ -13,6 +12,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+import static com.ibm.mq.constants.MQConstants.MQGMO_SYNCPOINT;
+import static com.ibm.mq.constants.MQConstants.MQGMO_WAIT;
 import static java.text.MessageFormat.format;
 
 /**
@@ -55,7 +56,7 @@ class MqNativeListenerThread extends Thread {
                         @Override
                         public MQMessage call( final ClientBag bag ) throws MQException {
                             final MQGetMessageOptions getOptions = new MQGetMessageOptions();
-                            getOptions.options = MQC.MQGMO_WAIT | MQC.MQGMO_SYNCPOINT;
+                            getOptions.options = MQGMO_WAIT | MQGMO_SYNCPOINT;
                             getOptions.waitInterval = pollInterval.get();
                             return mqNativeListener.receiveMessage( bag.getTargetQueue(), getOptions );
                         }

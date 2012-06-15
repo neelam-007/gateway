@@ -32,13 +32,13 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.some;
 import static com.l7tech.util.TextUtils.isNotEmpty;
 import static com.l7tech.util.ValidationUtils.getMinMaxPredicate;
-import static com.ibm.mq.constants.CMQC.*;
 
 /**
  * MQ Native connector helper class.
@@ -84,7 +84,7 @@ class MqNativeUtils {
             msg.setDataOffset(0);
             msg.readFully(headType, 0, 4);
 
-            if ( MQC.MQRFH_STRUC_ID.equals(new String(headType)) ) {
+            if (MQRFH_STRUC_ID.equals(new String(headType)) ) {
                 hasHeader = true;
                 rfh.structId = new String(headType);
                 rfh.version = msg.readInt4();
@@ -271,39 +271,39 @@ class MqNativeUtils {
             try{
                 if(keyString.equals(MqNativeConstants.MQ_PROPERTY_APPDATA))
                     mqMessage.applicationIdData = ToString(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_APPORIGIN))
+                else if(keyString.equals(MQ_PROPERTY_APPORIGIN))
                     mqMessage.applicationOriginData = ToString(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_CHARSET))
+                else if(keyString.equals(MQ_PROPERTY_CHARSET))
                     mqMessage.characterSet = ToInt(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_ENCODING))
+                else if(keyString.equals(MQ_PROPERTY_ENCODING))
                     mqMessage.encoding = ToInt(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_EXPIRY))
+                else if(keyString.equals(MQ_PROPERTY_EXPIRY))
                     mqMessage.expiry = ToInt(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_FEEDBACK))
+                else if(keyString.equals(MQ_PROPERTY_FEEDBACK))
                     mqMessage.feedback = ToInt(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_FORMAT))
+                else if(keyString.equals(MQ_PROPERTY_FORMAT))
                     mqMessage.format = ToString(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_GROUPID))
+                else if(keyString.equals(MQ_PROPERTY_GROUPID))
                     mqMessage.groupId = ToByteArr(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_MSG_FLAGS))
+                else if(keyString.equals(MQ_PROPERTY_MSG_FLAGS))
                     mqMessage.messageFlags = ToInt(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_MSG_SEQNUM))
+                else if(keyString.equals(MQ_PROPERTY_MSG_SEQNUM))
                     mqMessage.messageSequenceNumber = ToInt(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_MSG_TYPE))
+                else if(keyString.equals(MQ_PROPERTY_MSG_TYPE))
                     mqMessage.messageType = ToInt(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_OFFSET))
+                else if(keyString.equals(MQ_PROPERTY_OFFSET))
                     mqMessage.offset = ToInt(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_PERSISTENCE))
+                else if(keyString.equals(MQ_PROPERTY_PERSISTENCE))
                     mqMessage.persistence = ToInt(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_PRIORITY))
+                else if(keyString.equals(MQ_PROPERTY_PRIORITY))
                     mqMessage.priority = ToInt(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_APPNAME))
+                else if(keyString.equals(MQ_PROPERTY_APPNAME))
                     mqMessage.putApplicationName = ToString(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_APPTYPE))
+                else if(keyString.equals(MQ_PROPERTY_APPTYPE))
                     mqMessage.putApplicationType = ToInt(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_REPORT))
+                else if(keyString.equals(MQ_PROPERTY_REPORT))
                     mqMessage.report = ToInt(value);
-                else if(keyString.equals(MqConstants.MQ_PROPERTY_USERID))
+                else if(keyString.equals(MQ_PROPERTY_USERID))
                     mqMessage.userId = ToString(value);
             }catch(IllegalArgumentException ex){
                 String message = "Unable to set property:"+keyString+" value:"+value;
@@ -362,7 +362,7 @@ class MqNativeUtils {
 
     static boolean isTransactional(SsgActiveConnector connector) {
         return MqNativeAcknowledgementType.ON_COMPLETION ==
-                    connector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE,null,MqNativeAcknowledgementType.class);
+                    connector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, null, MqNativeAcknowledgementType.class);
     }
 
     static void closeQuietly( final MQManagedObject object ) {
@@ -412,9 +412,7 @@ class MqNativeUtils {
      * @return original exception or if expected reason code, return exception only if in debug mode
      */
     static MQException getDebugExceptionForExpectedReasonCode(MQException e) {
-
         int reasonCode = e.getReason();
-
         if ( reasonCode == MQRC_CONNECTION_BROKEN
                 || reasonCode == MQRC_NOT_AUTHORIZED
                 || reasonCode == MQRC_Q_MGR_NAME_ERROR

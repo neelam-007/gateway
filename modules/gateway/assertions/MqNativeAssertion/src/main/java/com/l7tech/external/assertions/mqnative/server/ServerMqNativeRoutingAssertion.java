@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
@@ -170,8 +171,8 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                         if(attempts>=10){
                             //10 failed attempts made to make a connection, fail!
                             logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion and returning completion code 2059.", mqre);
-                            context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, 2);
-                            context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, 2059);
+                            context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, MQCC_FAILED);
+                            context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, MQRC_Q_MGR_NOT_AVAILABLE);
                             return AssertionStatus.FALSIFIED;
                         }
                     }
@@ -323,11 +324,11 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
                     // write to queue
                     final MQPutMessageOptions pmo = new MQPutMessageOptions();
-                    pmo.options = MQC.MQPMO_NO_SYNCPOINT; // make message available immediately
+                    pmo.options = MQPMO_NO_SYNCPOINT; // make message available immediately
                     if ( cfg.isCopyCorrelationId() && cfg.getReplyType() == REPLY_SPECIFIED_QUEUE ) {
                         if ( logger.isLoggable( Level.FINE ))
                             logger.fine("New correlationId will be generated");
-                        pmo.options |= MQC.MQPMO_NEW_CORREL_ID;
+                        pmo.options |= MQPMO_NEW_CORREL_ID;
                     }
                     mqResponse = writeMessageToQueue(targetQueue, replyQueue, pmo, readTimeout);
 
@@ -343,7 +344,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                     // else route via read from queue
                 } else {
                     final MQGetMessageOptions gmo = new MQGetMessageOptions();
-                    gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_NO_SYNCPOINT;
+                    gmo.options = MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
                     gmo.waitInterval = readTimeout;
 
                     targetQueue = queueManager.accessQueue(cfg.getQueueName(), QUEUE_OPEN_OPTIONS_OUTBOUND_GET);
@@ -404,7 +405,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             try {
                 readQueue.get(mqResponse, gmoOptions);
             } catch (MQException readEx) {
-                if (readEx.reasonCode != 2033) {
+                if (readEx.reasonCode != MQRC_NO_MSG_AVAILABLE) {
                     throw readEx;
                 }
             }
@@ -421,7 +422,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             final MQMessage outboundRequest = makeRequest(
                     context,
                     cfg,
-                    replyQueue==null ? null : replyQueue.name);
+                    replyQueue==null ? null : replyQueue.getName());
 
             logAndAudit(MQ_ROUTING_REQUEST_ROUTED);
 
@@ -447,9 +448,9 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             final byte[] selector = getSelector( outboundRequest, cfg );
 
             final MQGetMessageOptions gmo = new MQGetMessageOptions();
-            gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_NO_SYNCPOINT;
+            gmo.options = MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
             gmo.waitInterval = timeout;
-            gmo.matchOptions = MQC.MQMO_MATCH_MSG_ID | MQC.MQMO_MATCH_CORREL_ID;
+            gmo.matchOptions = MQMO_MATCH_MSG_ID | MQMO_MATCH_CORREL_ID;
             MQMessage mqResponse = new MQMessage();
             mqResponse.correlationId = selector;
 
@@ -457,7 +458,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             try {
                 replyQueue.get(mqResponse, gmo);
             } catch (MQException readEx) {
-                if (readEx.reasonCode == 2033) {
+                if (readEx.getReason() == MQRC_NO_MSG_AVAILABLE) {
                     mqResponse = null;
                 } else
                     throw readEx;
@@ -708,8 +709,8 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         if (endpointConfig.getReplyType() == REPLY_AUTOMATIC && modelQName != null && modelQName.length() > 0) {
             // access the model queue
             replyQueue = queueManager.accessQueue(modelQName, QUEUE_OPEN_OPTIONS_OUTBOUND_REPLY_MODEL_QUEUE, null, modelQName + ".*", null);
-            logger.log( Level.FINE, "Temp queue opened Name({2}) MQQDT({0}) MQQT({1})", new Object[]{ replyQueue.getDefinitionType(), replyQueue.getQueueType(), replyQueue.name } );
-            if ( MQC.MQQDT_PREDEFINED == replyQueue.getDefinitionType() ) {
+            logger.log( Level.FINE, "Temp queue opened Name({2}) MQQDT({0}) MQQT({1})", new Object[]{ replyQueue.getDefinitionType(), replyQueue.getQueueType(), replyQueue.getName() } );
+            if ( MQQDT_PREDEFINED == replyQueue.getDefinitionType() ) {
                 closeQuietly( replyQueue );
                 throw new MqNativeConfigException( "Reply queue (" + modelQName + ") is not a model, cannot create temporary queue." );
             }

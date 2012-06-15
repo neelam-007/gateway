@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.mqnative.server;
 
-import com.ibm.mq.MQC;
 import com.ibm.mq.MQException;
 import com.ibm.mq.MQMessage;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -33,6 +32,7 @@ import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 import java.io.IOException;
 
+import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeModule.DEFAULT_MESSAGE_MAX_BYTES;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE;
@@ -156,14 +156,14 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         final String pubCommand = "<psc><Command>Publish</Command><Topic>Stock</Topic>" +
                 "<QMgrName>QFLEXT1</QMgrName><QName>QFLEXT1.A</QName></psc>";
         final int folderLength = pubCommand.length();
-        requestMessage.format = MQC.MQFMT_RF_HEADER_2; // Msg Format
-        requestMessage.writeString(MQC.MQRFH_STRUC_ID); // StrucId
-        requestMessage.writeInt4(MQC.MQRFH_VERSION_2); // Version
-        requestMessage.writeInt4(MQC.MQRFH_STRUC_LENGTH_FIXED_2 + folderLength + 4); //4) + rf); // StrucLength
-        requestMessage.writeInt4(MQC.MQENC_NATIVE); // Encoding
-        requestMessage.writeInt4(MQC.MQCCSI_DEFAULT); // CodedCharacterSetId
-        requestMessage.writeString(MQC.MQFMT_NONE); // Format (content)
-        requestMessage.writeInt4(MQC.MQRFH_NO_FLAGS); // Flags
+        requestMessage.format = MQFMT_RF_HEADER_2; // Msg Format
+        requestMessage.writeString(MQRFH_STRUC_ID); // StrucId
+        requestMessage.writeInt4(MQRFH_VERSION_2); // Version
+        requestMessage.writeInt4(MQRFH_STRUC_LENGTH_FIXED_2 + folderLength + 4); //4) + rf); // StrucLength
+        requestMessage.writeInt4(MQENC_NATIVE); // Encoding
+        requestMessage.writeInt4(MQCCSI_DEFAULT); // CodedCharacterSetId
+        requestMessage.writeString(MQFMT_NONE); // Format (content)
+        requestMessage.writeInt4(MQRFH_NO_FLAGS); // Flags
         requestMessage.writeInt4(1208); // NameValueCCSID = UTF-8
         requestMessage.writeInt4(folderLength);
         requestMessage.writeString(pubCommand);

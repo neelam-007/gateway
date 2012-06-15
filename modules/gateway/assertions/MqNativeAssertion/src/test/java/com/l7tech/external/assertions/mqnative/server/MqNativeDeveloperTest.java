@@ -13,10 +13,9 @@ import java.text.MessageFormat;
 import java.util.Date;
 import java.util.Hashtable;
 
+import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
+import static junit.framework.Assert.*;
 
 /**
  * Developer tests to perform various MQ Native tasks against a live MQ server.
@@ -30,30 +29,30 @@ public class MqNativeDeveloperTest {
     public void msgPeekPop() {
         MQEnvironment.disableTracing();
         // turn off log (e.g. MQJE001: Completion Code 2, Reason 2033)
-        MQException.logExclude(MQException.MQRC_NO_MSG_AVAILABLE);
+        MQException.logExclude(MQRC_NO_MSG_AVAILABLE);
 
         Hashtable<String, Object> connProps = new Hashtable<String, Object>(20, 0.7f);
-        connProps.put(MQC.HOST_NAME_PROPERTY, "ibmq6l.l7tech.com");
-        connProps.put(MQC.PORT_PROPERTY, 7777);
-        connProps.put(MQC.CHANNEL_PROPERTY, "SYSTEM.DEF.SVRCONN");
-        connProps.put(MQC.USER_ID_PROPERTY, "mqm");
-        connProps.put(MQC.PASSWORD_PROPERTY, "7layer");
+        connProps.put(HOST_NAME_PROPERTY, "ibmq6l.l7tech.com");
+        connProps.put(PORT_PROPERTY, 7777);
+        connProps.put(CHANNEL_PROPERTY, "SYSTEM.DEF.SVRCONN");
+        connProps.put(USER_ID_PROPERTY, "mqm");
+        connProps.put(PASSWORD_PROPERTY, "7layer");
 
         MQQueueManager queueManager = null;
         MQQueue queue = null;
         try {
             queueManager = new MQQueueManager("deepQueueManager", connProps);
 
-            final int openOps = MQC.MQOO_INPUT_AS_Q_DEF | MQC.MQOO_BROWSE | MQC.MQOO_INQUIRE;
+            final int openOps = MQOO_INPUT_AS_Q_DEF | MQOO_BROWSE | MQOO_INQUIRE;
 
             // make sure this queue exists
             queue = queueManager.accessQueue("COREDEVREQUESTQ01", openOps);
 
             MQGetMessageOptions browseFirstOptions = new MQGetMessageOptions();
-            browseFirstOptions.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_FIRST; // | MQC.MQGMO_LOCK;
+            browseFirstOptions.options = MQGMO_WAIT | MQGMO_BROWSE_FIRST; // | MQGMO_LOCK;
             browseFirstOptions.waitInterval = 5000;
             MQGetMessageOptions browseNextOpts = new MQGetMessageOptions();
-            browseNextOpts.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_NEXT; // | MQC.MQGMO_LOCK;
+            browseNextOpts.options = MQGMO_WAIT | MQGMO_BROWSE_NEXT; // | MQGMO_LOCK;
             browseNextOpts.waitInterval = 5000;
 
             // peek at the message
@@ -65,7 +64,7 @@ public class MqNativeDeveloperTest {
             System.out.println(new String(payloadBytes));
 
             MQGetMessageOptions gmo = new MQGetMessageOptions();
-            gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_NO_SYNCPOINT;
+            gmo.options = MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
 
             // pop the message
             MQMessage readMsg = new MQMessage();
@@ -75,7 +74,7 @@ public class MqNativeDeveloperTest {
             readMsg.readFully(payloadBytes);
             System.out.println(new String(payloadBytes));
         } catch (Exception readEx) {
-            if (readEx instanceof MQException && ((MQException) readEx).reasonCode == 2033) {
+            if (readEx instanceof MQException && ((MQException) readEx).reasonCode == MQRC_NO_MSG_AVAILABLE) {
                 System.out.println("queue is empty");
             } else {
                 readEx.printStackTrace();
@@ -96,14 +95,14 @@ public class MqNativeDeveloperTest {
     @Test
     public void dynamicQueue() {
         MQEnvironment.disableTracing();
-        MQException.logExclude(MQException.MQRC_NO_MSG_AVAILABLE);
+        MQException.logExclude(MQRC_NO_MSG_AVAILABLE);
 
         Hashtable<String, Object> connProps = new Hashtable<String, Object>(20, 0.7f);
-        connProps.put(MQC.HOST_NAME_PROPERTY, "ibmq6l.l7tech.com");
-        connProps.put(MQC.PORT_PROPERTY, 7777);
-        connProps.put(MQC.CHANNEL_PROPERTY, "SYSTEM.DEF.SVRCONN");
-        connProps.put(MQC.USER_ID_PROPERTY, "mqm");
-        connProps.put(MQC.PASSWORD_PROPERTY, "7layer");
+        connProps.put(HOST_NAME_PROPERTY, "ibmq6l.l7tech.com");
+        connProps.put(PORT_PROPERTY, 7777);
+        connProps.put(CHANNEL_PROPERTY, "SYSTEM.DEF.SVRCONN");
+        connProps.put(USER_ID_PROPERTY, "mqm");
+        connProps.put(PASSWORD_PROPERTY, "7layer");
 
         MQQueueManager queueManager = null;
         MQQueue dynamicQueue = null;
@@ -114,9 +113,9 @@ public class MqNativeDeveloperTest {
             String modelQName = "COREDEVRESPONSEQ01";
             String dynamicQName = "COREDEVRESPONSEQ01.*";
 
-            dynamicQueue = queueManager.accessQueue(modelQName, MQC.MQOO_OUTPUT | MQC.MQOO_FAIL_IF_QUIESCING, null, dynamicQName, null);
+            dynamicQueue = queueManager.accessQueue(modelQName, MQOO_OUTPUT | MQOO_FAIL_IF_QUIESCING, null, dynamicQName, null);
             final MQPutMessageOptions pmo = new MQPutMessageOptions();
-            pmo.options = MQC.MQPMO_NO_SYNCPOINT;
+            pmo.options = MQPMO_NO_SYNCPOINT;
             MQMessage dynamicWriteMsg = new MQMessage();
             String output = "Simple temporary dynamic queue (" + new Date().toString() + ")";
             dynamicWriteMsg.write(output.getBytes());
@@ -124,10 +123,10 @@ public class MqNativeDeveloperTest {
             dynamicQueue.close();
 
             System.out.println("Reading from temporary dynamic queue ...");
-            dynamicQueue = queueManager.accessQueue(modelQName, MQC.MQOO_INPUT_AS_Q_DEF | MQC.MQOO_INQUIRE, null, dynamicQName, null);
+            dynamicQueue = queueManager.accessQueue(modelQName, MQOO_INPUT_AS_Q_DEF | MQOO_INQUIRE, null, dynamicQName, null);
             MQMessage dynamicReadMsg = new MQMessage();
             MQGetMessageOptions dynamicGmo = new MQGetMessageOptions();
-            dynamicGmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_NO_SYNCPOINT;
+            dynamicGmo.options = MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
             dynamicQueue.get(dynamicReadMsg, dynamicGmo);
             byte[] payloadBytes = new byte[dynamicReadMsg.getTotalMessageLength()];
             dynamicReadMsg.setDataOffset(0);
@@ -135,7 +134,7 @@ public class MqNativeDeveloperTest {
             System.out.println(new String(payloadBytes));
             dynamicQueue.close();
         } catch (Exception readEx) {
-            if (readEx instanceof MQException && ((MQException) readEx).reasonCode == 2033) {
+            if (readEx instanceof MQException && ((MQException) readEx).reasonCode == MQRC_NO_MSG_AVAILABLE) {
                 System.out.println("queue is empty");
             } else {
                 readEx.printStackTrace();
@@ -156,14 +155,14 @@ public class MqNativeDeveloperTest {
     @Test
     public void msgWrite() {
         MQEnvironment.disableTracing();
-        MQException.logExclude(MQException.MQRC_NO_MSG_AVAILABLE);
+        MQException.logExclude(MQRC_NO_MSG_AVAILABLE);
 
         Hashtable<String, Object> connProps = new Hashtable<String, Object>(20, 0.7f);
-        connProps.put(MQC.HOST_NAME_PROPERTY, "ibmq6l.l7tech.com");
-        connProps.put(MQC.PORT_PROPERTY, 7777);
-        connProps.put(MQC.CHANNEL_PROPERTY, "SYSTEM.DEF.SVRCONN");
-        connProps.put(MQC.USER_ID_PROPERTY, "mqm");
-        connProps.put(MQC.PASSWORD_PROPERTY, "7layer");
+        connProps.put(HOST_NAME_PROPERTY, "ibmq6l.l7tech.com");
+        connProps.put(PORT_PROPERTY, 7777);
+        connProps.put(CHANNEL_PROPERTY, "SYSTEM.DEF.SVRCONN");
+        connProps.put(USER_ID_PROPERTY, "mqm");
+        connProps.put(PASSWORD_PROPERTY, "7layer");
 
         MQQueueManager queueManager = null;
         MQQueue queue = null;
@@ -173,15 +172,15 @@ public class MqNativeDeveloperTest {
             // make sure this queue exists
             final String queueName = "SYSTEM.DEFAULT.MODEL.QUEUE.4F14B2E020012506";
 
-            queue = queueManager.accessQueue(queueName, MQC.MQOO_OUTPUT | MQC.MQOO_FAIL_IF_QUIESCING);
+            queue = queueManager.accessQueue(queueName, MQOO_OUTPUT | MQOO_FAIL_IF_QUIESCING);
             final MQPutMessageOptions pmo = new MQPutMessageOptions();
-            pmo.options = MQC.MQPMO_NO_SYNCPOINT;
+            pmo.options = MQPMO_NO_SYNCPOINT;
             MQMessage dynamicWriteMsg = new MQMessage();
             String output = "Test write to queue (" + new Date().toString() + ")";
             dynamicWriteMsg.write(output.getBytes());
             queue.put(dynamicWriteMsg, pmo);
         } catch (Exception readEx) {
-            if (readEx instanceof MQException && ((MQException) readEx).reasonCode == 2033) {
+            if (readEx instanceof MQException && ((MQException) readEx).reasonCode == MQRC_NO_MSG_AVAILABLE) {
                 System.out.println("queue is empty");
             } else {
                 readEx.printStackTrace();
@@ -202,14 +201,14 @@ public class MqNativeDeveloperTest {
     @Test
     public void correlationIds() {
         MQEnvironment.disableTracing();
-        MQException.logExclude(MQException.MQRC_NO_MSG_AVAILABLE);
+        MQException.logExclude(MQRC_NO_MSG_AVAILABLE);
 
         Hashtable<String, Object> connProps = new Hashtable<String, Object>(20, 0.7f);
-        connProps.put(MQC.HOST_NAME_PROPERTY, "ibmq6l.l7tech.com");
-        connProps.put(MQC.PORT_PROPERTY, 7777);
-        connProps.put(MQC.CHANNEL_PROPERTY, "SYSTEM.DEF.SVRCONN");
-        connProps.put(MQC.USER_ID_PROPERTY, "mqm");
-        connProps.put(MQC.PASSWORD_PROPERTY, "7layer");
+        connProps.put(HOST_NAME_PROPERTY, "ibmq6l.l7tech.com");
+        connProps.put(PORT_PROPERTY, 7777);
+        connProps.put(CHANNEL_PROPERTY, "SYSTEM.DEF.SVRCONN");
+        connProps.put(USER_ID_PROPERTY, "mqm");
+        connProps.put(PASSWORD_PROPERTY, "7layer");
 
         MQQueueManager queueManager = null;
         MQQueue queue = null;
@@ -217,33 +216,32 @@ public class MqNativeDeveloperTest {
             queueManager = new MQQueueManager("deepQueueManager", connProps);
 
             // read request message
-            queue = queueManager.accessQueue("COREDEVREQUESTQ01", MQC.MQOO_INPUT_AS_Q_DEF | MQC.MQOO_BROWSE | MQC.MQOO_INQUIRE);
+            queue = queueManager.accessQueue("COREDEVREQUESTQ01", MQOO_INPUT_AS_Q_DEF | MQOO_BROWSE | MQOO_INQUIRE);
             MQGetMessageOptions gmo = new MQGetMessageOptions();
-            gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_NO_SYNCPOINT;
+            gmo.options = MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
             MQMessage readMsg = new MQMessage();
             queue.get(readMsg, gmo);
             System.out.println(new String(readMsg.correlationId));
             queue.close();
 
             // write response message
-            queue = queueManager.accessQueue("COREDEVRESPONSEQ01", MQC.MQOO_OUTPUT | MQC.MQOO_FAIL_IF_QUIESCING);
+            queue = queueManager.accessQueue("COREDEVRESPONSEQ01", MQOO_OUTPUT | MQOO_FAIL_IF_QUIESCING);
             final MQPutMessageOptions pmo = new MQPutMessageOptions();
             MQMessage writeMsg = new MQMessage();
 
-            //pmo.options = MQC.MQPMO_NO_SYNCPOINT | MQC.MQRO_PASS_CORREL_ID;
+            //pmo.options = MQPMO_NO_SYNCPOINT | MQRO_PASS_CORREL_ID;
             //byte[] correlationId = readMsg.correlationId;
 
-            pmo.options = MQC.MQPMO_NO_SYNCPOINT | MQC.MQRO_COPY_MSG_ID_TO_CORREL_ID;
-            byte[] correlationId = readMsg.messageId;
+            pmo.options = MQPMO_NO_SYNCPOINT | MQRO_COPY_MSG_ID_TO_CORREL_ID;
 
-            writeMsg.correlationId = correlationId;
+            writeMsg.correlationId = readMsg.messageId;
             String output = "Test write to queue (" + new Date().toString() + ")";
             writeMsg.write(output.getBytes());
             queue.put(writeMsg, pmo);
             System.out.println(new String(writeMsg.correlationId));
             queue.close();
         } catch (Exception readEx) {
-            if (readEx instanceof MQException && ((MQException) readEx).reasonCode == 2033) {
+            if (readEx instanceof MQException && ((MQException) readEx).reasonCode == MQRC_NO_MSG_AVAILABLE) {
                 System.out.println("queue is empty");
             } else {
                 readEx.printStackTrace();
@@ -287,12 +285,12 @@ public class MqNativeDeveloperTest {
                     msgs[i] = new MQMessage();
 
                     MQGetMessageOptions gmo = new MQGetMessageOptions();
-                    gmo.matchOptions=MQC.MQMO_NONE;
+                    gmo.matchOptions = MQMO_NONE;
                     gmo.waitInterval = 5000; // 5 sec
                     if (i == 0)
-                        gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_FIRST;
+                        gmo.options = MQGMO_WAIT | MQGMO_BROWSE_FIRST;
                     else
-                        gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_NEXT;
+                        gmo.options = MQGMO_WAIT | MQGMO_BROWSE_NEXT;
 
                     q.get(msgs[i], gmo);
                     assertNotNull(msgs[i]);
@@ -302,7 +300,7 @@ public class MqNativeDeveloperTest {
                     System.out.println(new String(payload));
                 }
             } catch (MQException mqEx) {
-                if (mqEx.getMessage().contains("Reason 2033"))
+                if (mqEx.reasonCode == MQRC_NO_MSG_AVAILABLE)
                     System.out.println("No messages on queue: " + qName);
                 else
                     throw mqEx;
@@ -347,12 +345,12 @@ public class MqNativeDeveloperTest {
                     msgs[i] = new MQMessage();
 
                     MQGetMessageOptions gmo = new MQGetMessageOptions();
-                    gmo.matchOptions=MQC.MQMO_NONE;
+                    gmo.matchOptions=MQMO_NONE;
                     gmo.waitInterval = 5000; // 5 sec
                     if (i == 0)
-                        gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_FIRST;
+                        gmo.options = MQGMO_WAIT | MQGMO_BROWSE_FIRST;
                     else
-                        gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_NEXT;
+                        gmo.options = MQGMO_WAIT | MQGMO_BROWSE_NEXT;
 
                     q.get(msgs[i], gmo);
                     assertNotNull(msgs[i]);
@@ -362,7 +360,7 @@ public class MqNativeDeveloperTest {
                     System.out.println(new String(payload));
                 }
             } catch (MQException mqEx) {
-                if (mqEx.getMessage().indexOf("Reason 2033") >= 0)
+                if (mqEx.reasonCode == MQRC_NO_MSG_AVAILABLE)
                     System.out.println("No messages on queue: " + qName);
                 else
                     throw mqEx;
@@ -402,15 +400,15 @@ public class MqNativeDeveloperTest {
 
             // read first
             MQGetMessageOptions gmo = new MQGetMessageOptions();
-            gmo.matchOptions=MQC.MQMO_NONE;
+            gmo.matchOptions = MQMO_NONE;
             gmo.waitInterval = 5000; // 5 sec
-            gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_FIRST | MQC.MQGMO_LOCK;
+            gmo.options = MQGMO_WAIT | MQGMO_BROWSE_FIRST | MQGMO_LOCK;
 
             msgs[0] = new MQMessage();
             q.get(msgs[0], gmo);
             System.out.println("Msg 0 read: " + HexUtils.encodeBase64(msgs[0].messageId));
 
-            gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_NEXT | MQC.MQGMO_LOCK;
+            gmo.options = MQGMO_WAIT | MQGMO_BROWSE_NEXT | MQGMO_LOCK;
             for (int i=1; i<msgs.length; i++) {
                 // read subsequent
                 msgs[i] = new MQMessage();
@@ -422,9 +420,9 @@ public class MqNativeDeveloperTest {
 
             // remove msgs in order
             MQGetMessageOptions popgmo = new MQGetMessageOptions();
-            popgmo.options = MQC.MQGMO_WAIT;
+            popgmo.options = MQGMO_WAIT;
             popgmo.waitInterval = 5000; // 5 sec
-            popgmo.matchOptions = MQC.MQMO_MATCH_MSG_ID;
+            popgmo.matchOptions = MQMO_MATCH_MSG_ID;
             MQMessage pop;
             for (int j=0; j<msgs.length; j++) {
                 pop = new MQMessage();
@@ -465,9 +463,9 @@ public class MqNativeDeveloperTest {
 
             // read first
             MQGetMessageOptions gmo = new MQGetMessageOptions();
-            gmo.matchOptions=MQC.MQMO_NONE;
+            gmo.matchOptions=MQMO_NONE;
             gmo.waitInterval = 5000; // 5 sec
-            gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_FIRST | MQC.MQGMO_LOCK;
+            gmo.options = MQGMO_WAIT | MQGMO_BROWSE_FIRST | MQGMO_LOCK;
 
             MQMessage msg1 = new MQMessage();
             q.get(msg1, gmo);
@@ -476,7 +474,7 @@ public class MqNativeDeveloperTest {
             // System.out.println(messageToString(msg1, null));
 
             // read second
-            gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_NEXT | MQC.MQGMO_LOCK;
+            gmo.options = MQGMO_WAIT | MQGMO_BROWSE_NEXT | MQGMO_LOCK;
             MQMessage msg2 = new MQMessage();
             q.get(msg2, gmo);
 
@@ -484,7 +482,7 @@ public class MqNativeDeveloperTest {
             // System.out.println(messageToString(msg2, null));
 
             // read second
-            gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_NEXT | MQC.MQGMO_LOCK;
+            gmo.options = MQGMO_WAIT | MQGMO_BROWSE_NEXT | MQGMO_LOCK;
             MQMessage msg3 = new MQMessage();
             q.get(msg3, gmo);
 
@@ -495,8 +493,8 @@ public class MqNativeDeveloperTest {
 
             // remove the 2 messages in order
             MQMessage pop = new MQMessage();
-            gmo.options = MQC.MQGMO_WAIT;
-            gmo.matchOptions = MQC.MQMO_MATCH_MSG_ID;
+            gmo.options = MQGMO_WAIT;
+            gmo.matchOptions = MQMO_MATCH_MSG_ID;
             pop.messageId = msg1.messageId;
             q.get(pop, gmo);
             System.out.println("Msg popped: " + HexUtils.encodeBase64(pop.messageId));
@@ -554,17 +552,17 @@ public class MqNativeDeveloperTest {
             for (int i=0; i<msgs.length; i++) {
                 msgs[i] = new MQMessage();
                 MQPutMessageOptions pmo = new MQPutMessageOptions();
-                pmo.options = MQC.MQPMO_NEW_MSG_ID;
+                pmo.options = MQPMO_NEW_MSG_ID;
                 // what else?
                 String dasMsg = MessageFormat.format(testMessage, i, "JUnit Test Payload yo!");
                 msgs[i].writeString(dasMsg);
 
                 msgs[i].replyToQueueManagerName = "qmgr";
                 msgs[i].replyToQueueName = "VCTEST.Q.REPLY";
-                // msgs[i].format = MQC.MQFMT_NONE;
-                msgs[i].format = MQC.MQFMT_STRING;
-                // msgs[i].format = MQC.MQFMT_RF_HEADER_2;
-                // msgs[i].format = MQC.MQFMT_PCF;
+                // msgs[i].format = MQFMT_NONE;
+                msgs[i].format = MQFMT_STRING;
+                // msgs[i].format = MQFMT_RF_HEADER_2;
+                // msgs[i].format = MQFMT_PCF;
                 msgs[i].persistence = 2;
                 msgs[i].priority = 5;
 
@@ -589,32 +587,31 @@ public class MqNativeDeveloperTest {
     public void buildRFH2Header() throws IOException {
 
         try {
-            MQMessage msg = new MQMessage();
             String pubCommand = "<psc><Command>Publish</Command><Topic>Stock</Topic>" +
             "<QMgrName>QFLEXT1</QMgrName><QName>QFLEXT1.A</QName></psc>";
             
             int folderLength = pubCommand.length();
-            MQMessage theMsg = msg;
-            theMsg.format = MQC.MQFMT_RF_HEADER_2; // Msg Format
-            theMsg.writeString(MQC.MQRFH_STRUC_ID); // StrucId
-            theMsg.writeInt4(MQC.MQRFH_VERSION_2); // Version
-            theMsg.writeInt4(MQC.MQRFH_STRUC_LENGTH_FIXED_2 + folderLength + 4);
+            MQMessage msg = new MQMessage();
+            msg.format = MQFMT_RF_HEADER_2; // Msg Format
+            msg.writeString(MQRFH_STRUC_ID); // StrucId
+            msg.writeInt4(MQRFH_VERSION_2); // Version
+            msg.writeInt4(MQRFH_STRUC_LENGTH_FIXED_2 + folderLength + 4);
             //4) + rf); // StrucLength
-            theMsg.writeInt4(MQC.MQENC_NATIVE); // Encoding
-            theMsg.writeInt4(MQC.MQCCSI_DEFAULT); // CodedCharacterSetId
-            theMsg.writeString(MQC.MQFMT_NONE); // Format (content)
-            theMsg.writeInt4(MQC.MQRFH_NO_FLAGS); // Flags
-            theMsg.writeInt4(1208); // NameValueCCSID = UTF-8
-            theMsg.writeInt4(folderLength);
-            theMsg.writeString(pubCommand);
-            theMsg.writeInt4(folderLength);
-            theMsg.writeString(pubCommand);
-            theMsg.writeInt4(folderLength);
-            theMsg.writeString(pubCommand);
-            theMsg.writeString("begin payload");
+            msg.writeInt4(MQENC_NATIVE); // Encoding
+            msg.writeInt4(MQCCSI_DEFAULT); // CodedCharacterSetId
+            msg.writeString(MQFMT_NONE); // Format (content)
+            msg.writeInt4(MQRFH_NO_FLAGS); // Flags
+            msg.writeInt4(1208); // NameValueCCSID = UTF-8
+            msg.writeInt4(folderLength);
+            msg.writeString(pubCommand);
+            msg.writeInt4(folderLength);
+            msg.writeString(pubCommand);
+            msg.writeInt4(folderLength);
+            msg.writeString(pubCommand);
+            msg.writeString("begin payload");
 
-            byte[] payload = new byte[theMsg.getDataLength()];
-            theMsg.readFully(payload);
+            byte[] payload = new byte[msg.getDataLength()];
+            msg.readFully(payload);
             System.out.println(new String(payload));
         } catch (Throwable th) {
             th.printStackTrace();
@@ -637,19 +634,19 @@ public class MqNativeDeveloperTest {
                                                   final String qName,
                                                   boolean forWrite) throws MQException {
         Hashtable<String, Object> connProps = new Hashtable<String, Object>(10);
-        connProps.put(MQC.HOST_NAME_PROPERTY, hostname);
-        connProps.put(MQC.PORT_PROPERTY, port);
-        connProps.put(MQC.CHANNEL_PROPERTY, channel);
-        // connProps.put(MQC.USER_ID_PROPERTY, "");
-        // connProps.put(MQC.PASSWORD_PROPERTY, "");
+        connProps.put(HOST_NAME_PROPERTY, hostname);
+        connProps.put(PORT_PROPERTY, port);
+        connProps.put(CHANNEL_PROPERTY, channel);
+        // connProps.put(USER_ID_PROPERTY, "");
+        // connProps.put(PASSWORD_PROPERTY, "");
         MQQueueManager qmgr = new MQQueueManager(qmName, connProps);
 
-        // int openOps = MQC.MQOO_BROWSE;
+        // int openOps = MQOO_BROWSE;
         int oops;
         if (forWrite)
-            oops = MQC.MQOO_OUTPUT;
+            oops = MQOO_OUTPUT;
         else
-            oops = MQC.MQOO_INPUT_SHARED | MQC.MQOO_BROWSE | MQC.MQOO_INQUIRE;
+            oops = MQOO_INPUT_SHARED | MQOO_BROWSE | MQOO_INQUIRE;
 
         MQQueue q = qmgr.accessQueue(qName, oops);
         // alternate method ...

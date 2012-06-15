@@ -40,6 +40,7 @@ import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.QUEUE_OPEN_OPTIONS_INBOUND_FAILURE_QUEUE;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
@@ -80,7 +81,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             MQException.log = null; // This is part of the public API ...
         } else {
             // excluded log message when polling an empty queue.  i.e. excluded "MQJE001: Completion Code 2, Reason 2033"
-            MQException.logExclude(MQException.MQRC_NO_MSG_AVAILABLE);
+            MQException.logExclude(MQRC_NO_MSG_AVAILABLE);
         }
     }
 
@@ -500,8 +501,8 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         final boolean allowReconnect = !transactional; // allow reconnect for reply if not transactional
         final MqNativeReplyType replyType = connector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class);
         final MQPutMessageOptions replyOptions = new MQPutMessageOptions();
-        replyOptions.options = MQC.MQPMO_NEW_MSG_ID |
-                ( transactional ? MQC.MQPMO_SYNCPOINT : MQC.MQPMO_NO_SYNCPOINT );
+        replyOptions.options = MQPMO_NEW_MSG_ID |
+                ( transactional ? MQPMO_SYNCPOINT : MQPMO_NO_SYNCPOINT );
         switch(replyType) {
             case REPLY_NONE:
                 logger.fine( "No response will be sent!" );
@@ -518,7 +519,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                             public Void call( final ClientBag clientBag ) throws MQException {
                                 MQQueue replyToQueue = null;
                                 try {
-                                    replyToQueue = clientBag.getQueueManager().accessQueue(replyToQueueName, MQC.MQOO_OUTPUT);
+                                    replyToQueue = clientBag.getQueueManager().accessQueue(replyToQueueName, MQOO_OUTPUT);
                                     logger.log(Level.FINER, "Sending response to {0} for request seqNum: {1}", new Object[] { replyToQueueName, requestMessage.messageSequenceNumber });
                                     setResponseCorrelationId(connector, requestMessage, responseMessage);
                                     replyToQueue.put( responseMessage, replyOptions );
@@ -594,7 +595,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                         try {
                             failedQueue = clientBag.getQueueManager().accessQueue( failedQueueName, QUEUE_OPEN_OPTIONS_INBOUND_FAILURE_QUEUE );
                             final MQPutMessageOptions pmo = new MQPutMessageOptions();
-                            pmo.options = MQC.MQPMO_SYNCPOINT;
+                            pmo.options = MQPMO_SYNCPOINT;
                             failedQueue.put(requestMessage, pmo);
                             logger.log( Level.FINE, "Message sent to failure queue");
                         } finally {

@@ -25,6 +25,7 @@ import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.ibm.mq.constants.CMQC.MQRC_NO_MSG_AVAILABLE;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECT_ERROR_SLEEP_PROPERTY;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_LISTENER_POLLING_INTERVAL_PROPERTY;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
@@ -234,7 +235,7 @@ public abstract class MqNativeListener {
             queue.get(tempReadMsg, mqGetMessageOptions);
             readMsg = tempReadMsg;
         } catch (MQException readEx) {
-            if (readEx.reasonCode != 2033) { // queue is empty
+            if (readEx.getReason() != MQRC_NO_MSG_AVAILABLE) { // queue is empty
                 throw readEx;
             }
         }
