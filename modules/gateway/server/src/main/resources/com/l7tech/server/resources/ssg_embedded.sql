@@ -979,17 +979,20 @@ create table wssc_session (
 alter table active_connector_property
     add constraint FK58920F603AEA90B6
     foreign key (connector_oid)
-    references active_connector;
+    references active_connector
+    on delete cascade;
 
 alter table connector_property
     add constraint FK7EC2A187BA66EE5C
     foreign key (connector_oid)
-    references connector;
+    references connector
+    on delete cascade;
 
 alter table email_listener_state
     add constraint FK5A708C492FC43EC3
     foreign key (email_listener_id)
-    references email_listener;
+    references email_listener
+    on delete cascade;
 
 alter table folder
     add constraint FKB45D1C6EF8097918
@@ -1009,7 +1012,8 @@ alter table policy
 alter table policy_alias
     add constraint FKA07B7103DB935A63
     foreign key (folder_oid)
-    references folder;
+    references folder
+    on delete cascade;
 
 alter table published_service
     add constraint FK25874164DB935A63
@@ -1024,7 +1028,8 @@ alter table published_service
 alter table published_service_alias
     add constraint FK6AE79FB5DB935A63
     foreign key (folder_oid)
-    references folder;
+    references folder
+    on delete cascade;
 
 alter table rbac_assignment
     add constraint FK51FEC6DACCD6DF3E
@@ -1034,37 +1039,44 @@ alter table rbac_assignment
 alter table rbac_permission
     add constraint FKF5F905DCCCD6DF3E
     foreign key (role_oid)
-    references rbac_role;
+    references rbac_role
+    on delete cascade;
 
 alter table rbac_predicate
     add constraint FKB894B40A45FC8430
     foreign key (permission_oid)
-    references rbac_permission;
+    references rbac_permission
+    on delete cascade;
 
 alter table rbac_predicate_attribute
     add constraint FK563B54A7918005E4
     foreign key (objectid)
-    references rbac_predicate;
+    references rbac_predicate
+    on delete cascade;
 
 alter table rbac_predicate_entityfolder
     add constraint FK6AE46026918005E4
     foreign key (objectid)
-    references rbac_predicate;
+    references rbac_predicate
+    on delete cascade;
 
 alter table rbac_predicate_folder
     add constraint FKF111A643DB935A63
     foreign key (folder_oid)
-    references folder;
+    references folder
+    on delete cascade;
 
 alter table rbac_predicate_folder
     add constraint FKF111A643918005E4
     foreign key (objectid)
-    references rbac_predicate;
+    references rbac_predicate
+    on delete cascade;
 
 alter table rbac_predicate_oid
     add constraint FK37D47C15918005E4
     foreign key (objectid)
-    references rbac_predicate;
+    references rbac_predicate
+    on delete cascade;
 
 alter table trusted_esm
     add constraint FK581D7A373ACD94B6
@@ -1074,7 +1086,8 @@ alter table trusted_esm
 alter table trusted_esm_user
     add constraint FKC48AF4D34548A1A6
     foreign key (trusted_esm_oid)
-    references trusted_esm;
+    references trusted_esm
+    on delete cascade;
 
 alter table uddi_proxied_service
     add constraint FK127C390874249C8B
