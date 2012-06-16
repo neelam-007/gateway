@@ -12,18 +12,11 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.EstablishOutboundSecureConversation;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.token.http.HttpBasicToken;
-import com.l7tech.server.ApplicationContextTest;
 import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
-import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
-import com.l7tech.server.secureconversation.SecureConversationSession;
-import com.l7tech.server.secureconversation.SessionCreationException;
-import com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerStub;
-import com.l7tech.server.util.ApplicationContextInjector;
+import com.l7tech.server.secureconversation.*;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.MockConfig;
 import org.junit.Before;
@@ -43,14 +36,14 @@ import static org.junit.Assert.*;
  * @author ghuang
  */
 public class ServerEstablishOutboundSecureConversationTest {
-    private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
-    private static final Properties configProperties = new Properties();
-    private static final MockConfig mockConfig = new MockConfig(configProperties);
-    private static final TestAudit testAudit = new TestAudit();
-    private static final InboundSecureConversationContextManager inboundContextManager = new InboundSecureConversationContextManager(mockConfig,new StoredSecureConversationSessionManagerStub());
-    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig,new StoredSecureConversationSessionManagerStub());
+    private final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
+    private final Properties configProperties = new Properties();
+    private final MockConfig mockConfig = new MockConfig(configProperties);
+    private final TestAudit testAudit = new TestAudit();
+    private final InboundSecureConversationContextManager inboundContextManager = new InboundSecureConversationContextManager(mockConfig,new StoredSecureConversationSessionManagerStub());
+    private final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig,new StoredSecureConversationSessionManagerStub());
 
-    static {
+    {
         beanFactory.addBean("inboundSecureConversationContextManager", inboundContextManager);
         beanFactory.addBean("outboundSecureConversationContextManager", outboundContextManager);
         beanFactory.addBean("serverConfig", mockConfig);
