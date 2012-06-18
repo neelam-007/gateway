@@ -58,10 +58,6 @@ public class ServerLookupDynamicContextVariablesAssertion extends AbstractServer
         try{
             //lookup the variable name
             final Map<String, Object> lookup = context.getVariableMap(Syntax.getReferencedNames(sourceVariable), getAudit());
-            if(lookup.isEmpty()){
-                logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_NOT_FOUND, sourceVariable);
-                return AssertionStatus.FAILED;
-            }
             final String process = ExpandVariables.process(sourceVariable, lookup, getAudit());
 
             //retrieve the variable
