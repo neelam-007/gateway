@@ -147,7 +147,7 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
         assertion.setTargetDataType(DataType.STRING);
         pec.setVariable("foo", true);
         actual = serverAssertion.checkRequest(pec);
-        Assert.assertEquals(AssertionStatus.FAILED, actual);
+        Assert.assertEquals(AssertionStatus.NONE, actual);
 
         assertion.setTargetDataType(DataType.STRING);
         pec.setVariable("foo", DataType.FLOAT);
