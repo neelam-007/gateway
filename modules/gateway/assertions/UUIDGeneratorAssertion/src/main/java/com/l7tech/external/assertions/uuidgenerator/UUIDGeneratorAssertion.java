@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.uuidgenerator;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
@@ -58,7 +59,7 @@ public class UUIDGeneratorAssertion extends Assertion implements UsesVariables, 
     @Override
     public VariableMetadata[] getVariablesSet() {
         if (targetVariable == null) return new VariableMetadata[0];
-        return new VariableMetadata[]{new VariableMetadata(targetVariable)};
+        return new VariableMetadata[]{new VariableMetadata(targetVariable, false, true, null, false, DataType.STRING)};
     }
 
     //

@@ -39,7 +39,7 @@ public class AssertionInfoDialog extends JDialog {
     private static final String YES = "yes";
     private static final String NO = "no";
     private static final String TYPE = "Type";
-    private static final String MULTIVALUED = "Multivalued";
+    private static final String MULTIVALUED = "Supports Multivalued";
     private static final Logger LOGGER = Logger.getLogger(AssertionInfoDialog.class.getName());
     private JPanel contentPanel;
     private JPanel setsVariablesTablePanel;
@@ -92,6 +92,8 @@ public class AssertionInfoDialog extends JDialog {
                         data[i][2] = var.isMultivalued() ? YES : NO;
                     }
                     setsVariablesTable.setModel(new UneditableTableModel(data, new String[]{NAME, TYPE, MULTIVALUED}));
+                    setsVariablesTable.getColumnModel().getColumn(2).setPreferredWidth(80);
+
                     // want to be able to copy-paste context variables
                     setsVariablesTable.setCellSelectionEnabled(true);
                     setsVariablesTablePanel.setLayout(new BorderLayout());
