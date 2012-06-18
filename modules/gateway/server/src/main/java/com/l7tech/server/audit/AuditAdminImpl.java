@@ -18,6 +18,7 @@ import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.AuditViewGatewayAuditsData;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
+import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.sharedkey.SharedKeyRecord;
@@ -32,7 +33,12 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.sql.DataSource;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.text.MessageFormat;
@@ -708,24 +714,47 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
         return null;
     }
 
+
     @Override
     public  AsyncAdminMethods.JobId<String> testAuditSinkSchema(final String connectionName, final String auditRecordTableName, final String auditDetailTableName){
         final FutureTask<String> queryTask = new FutureTask<String>( find( false ).wrapCallable( new Callable<String>(){
             @Override
             public String call() throws Exception {
 
-                JdbcQueryingManager jdbcQueryingManager = (JdbcQueryingManager)applicationContext.getBean("jdbcQueryingManager");
-                DefaultKey defaultKey = (DefaultKey)applicationContext.getBean("defaultKey");
+                final JdbcQueryingManager jdbcQueryingManager = (JdbcQueryingManager)applicationContext.getBean("jdbcQueryingManager");
+                JdbcConnectionPoolManager jdbcConnectionPoolManager = (JdbcConnectionPoolManager)applicationContext.getBean("jdbcConnectionPoolManager");
 
+                final DefaultKey defaultKey = (DefaultKey)applicationContext.getBean("defaultKey");
 
-                String result = ExternalAuditsUtils.testMessageSummaryRecord(connectionName, auditRecordTableName, auditDetailTableName,jdbcQueryingManager,defaultKey);
-                if(!result.isEmpty())
-                    return result;
-                result =  ExternalAuditsUtils.testAdminAuditRecord(connectionName, auditRecordTableName, jdbcQueryingManager,defaultKey);
-                if(!result.isEmpty())
-                    return result;
-                result  =  ExternalAuditsUtils.testSystemAuditRecord(connectionName, auditRecordTableName,jdbcQueryingManager,defaultKey);
-                return result;
+                DataSource ds = jdbcConnectionPoolManager.getDataSource(connectionName);
+
+                TransactionTemplate transactionTemplate = new TransactionTemplate(new DataSourceTransactionManager(ds));
+                return transactionTemplate.execute(new TransactionCallback<String>() {
+                    @Override
+                    public String doInTransaction(TransactionStatus transactionStatus) {
+                        try {
+
+                            String result = ExternalAuditsUtils.testMessageSummaryRecord(connectionName, auditRecordTableName, auditDetailTableName, jdbcQueryingManager, defaultKey);
+                            if(!result.isEmpty()){
+                                transactionStatus.setRollbackOnly();
+                                return result;
+                            }
+                            result =  ExternalAuditsUtils.testAdminAuditRecord(connectionName, auditRecordTableName, jdbcQueryingManager,defaultKey);
+                            if(!result.isEmpty()){
+                                transactionStatus.setRollbackOnly();
+                                return result;
+                            }
+                            result  =  ExternalAuditsUtils.testSystemAuditRecord(connectionName, auditRecordTableName,jdbcQueryingManager,defaultKey);
+                            if(!result.isEmpty())
+                                transactionStatus.setRollbackOnly();
+                            return result;
+                        } catch (Exception e) {
+                            transactionStatus.setRollbackOnly();
+                            return e.getMessage();
+                        }
+                    }
+                });
+
 
             }
         }));

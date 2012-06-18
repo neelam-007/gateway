@@ -3,6 +3,7 @@ package com.l7tech.server.audit;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.token.SecurityTokenType;
@@ -64,7 +65,7 @@ public class ExternalAuditsUtils {
         if(!success)
             return "Failed to get a system audit record";
 
-        boolean verify = verifyRetreievedAuditRecord((SqlRowSet)result,defaultKey);
+        boolean verify = verifyRetreievedAuditRecord((SqlRowSet)result,sar.getOid(),defaultKey);
 
         // delete
         result =  deleteRow(jdbcQueryingManager,auditRecordTable,sar.getGuid(),connectionName);
@@ -109,7 +110,7 @@ public class ExternalAuditsUtils {
         if(!success)
             return "Failed to get an admin audit record";
 
-        boolean verify = verifyRetreievedAuditRecord((SqlRowSet)result,defaultKey);
+        boolean verify = verifyRetreievedAuditRecord((SqlRowSet)result,aar.getOid(),defaultKey);
 
         // delete
         result =  deleteRow(jdbcQueryingManager,auditRecordTable,aar.getGuid(),connectionName);
@@ -131,9 +132,16 @@ public class ExternalAuditsUtils {
     static public String testMessageSummaryRecord(String connectionName, String auditRecordTable, String auditDetailTable, JdbcQueryingManager jdbcQueryingManager, DefaultKey defaultKey) throws Exception {
         boolean success;
         // create record
+        String requestXML = "<request>blah</request>";
+        String responseXML = "<response>blah</response>";
+        Message request = new Message();
+        request.initialize(XmlUtil.stringAsDocument(requestXML));
+        Message response = new Message();
+        response.initialize(XmlUtil.stringAsDocument(responseXML));
+
         MessageSummaryAuditRecord record =new MessageSummaryAuditRecord(Level.WARNING, UUID.randomUUID().toString() , "requestId", AssertionStatus.NOT_APPLICABLE,
-                "clientAddr", "requestXml", 5,
-                "responseXml", 6 , 1234, 5678,
+                "clientAddr",requestXML, requestXML.length(),
+                responseXML, responseXML.length() , 1234, 5678,
                 7, "serviceName", "operationNameHaver",
                 true, SecurityTokenType.UNKNOWN, -5,
                 "userName", "userId");
@@ -141,7 +149,7 @@ public class ExternalAuditsUtils {
 
         AuditSinkPolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(record,
                 PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,
-                PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null));
+                PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response));
 
         String query = ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
         query = query.replace("${record.guid}", "'"+record.getGuid()+"'");
@@ -157,7 +165,7 @@ public class ExternalAuditsUtils {
         if(!success)
             return "Failed to get an message summary  audit record";
 
-        boolean verify = verifyRetreievedAuditRecord((SqlRowSet)result,defaultKey);
+        boolean verify = verifyRetreievedAuditRecord((SqlRowSet)result,record.getOid(),defaultKey);
 
         // save detail
         AuditDetail detail = new AuditDetail(Messages.EXCEPTION_SEVERE,new String[]{"param1","param2"}, new RuntimeException("message"));
@@ -314,7 +322,7 @@ public class ExternalAuditsUtils {
         }
 
         record.setSignature(signature);
-         record.setGuid(id);
+        record.setGuid(id);
         record.setMillis(time);
 
         return record;
@@ -344,7 +352,7 @@ public class ExternalAuditsUtils {
         return null;
     }
 
-    private static boolean verifyRetreievedAuditRecord( SqlRowSet resultSet, DefaultKey defaultKey) throws IOException, SignatureException, InvalidKeyException, KeyUsageException, NoSuchAlgorithmException, CertificateParsingException {
+    private static boolean verifyRetreievedAuditRecord( SqlRowSet resultSet, long originalOid,DefaultKey defaultKey) throws IOException, SignatureException, InvalidKeyException, KeyUsageException, NoSuchAlgorithmException, CertificateParsingException {
 
         String id = resultSet.getString("id");
         String nodeid = resultSet.getString("nodeid");
@@ -378,6 +386,7 @@ public class ExternalAuditsUtils {
 
         AuditRecord record =
                 makeAuditRecord(id,nodeid, time, type, auditLevel, name, message ,ip_addr, userName, userId, providerOid, signature,entityClass, entityId, status, requestId, serviceOid,  operationName, authenticated, authenticationType, requestLength,  responseLength, requestZip, responseZip, responseStatus, latency, componentId, action, properties);
+        record.setOid(originalOid);
 
         SignerInfo signerInfo = defaultKey.getAuditSigningInfo();
         if (signerInfo == null) signerInfo = defaultKey.getSslInfo();
