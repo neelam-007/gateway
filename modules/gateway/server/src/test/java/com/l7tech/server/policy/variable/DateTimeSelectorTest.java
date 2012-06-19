@@ -35,11 +35,13 @@ public class DateTimeSelectorTest {
     @Test
     public void testDefaultFormatting_Utc() throws Exception {
         testFormattedDate("mydate", "${mydate.utc}", DateUtils.ISO8601_DEFAULT_PATTERN, utcTimeZone);
+        testFormattedDate("mydate", "${mydate.uTC}", DateUtils.ISO8601_DEFAULT_PATTERN, utcTimeZone);
     }
 
     @Test
     public void testDefaultFormatting_Local() throws Exception {
         testFormattedDate("mydate", "${mydate.local}", DateUtils.ISO8601_DEFAULT_PATTERN, localTimeZone);
+        testFormattedDate("mydate", "${mydate.LocaL}", DateUtils.ISO8601_DEFAULT_PATTERN, localTimeZone);
     }
 
     @Test
@@ -48,8 +50,18 @@ public class DateTimeSelectorTest {
     }
 
     @Test
+    public void testDefaultFormatting_CustomFormatSuffixWithPeriod() throws Exception {
+        testFormattedDate("mydate", "${mydate.yyyyMMdd'T'HH:mm:ss.SSS}", "yyyyMMdd'T'HH:mm:ss.SSS", utcTimeZone);
+    }
+
+    @Test
     public void testDefaultFormatting_Utc_CustomFormatSuffix() throws Exception {
         testFormattedDate("mydate", "${mydate.utc.yyyyMMdd'T'HH:mm:ss}", "yyyyMMdd'T'HH:mm:ss", utcTimeZone);
+    }
+
+    @Test
+    public void testDefaultFormatting_Utc_CustomFormatSuffixWithPeriod() throws Exception {
+        testFormattedDate("mydate", "${mydate.utc.yyyyMMdd'T'HH:mm:ss.SSS}", "yyyyMMdd'T'HH:mm:ss.SSS", utcTimeZone);
     }
 
     @Test
@@ -65,6 +77,30 @@ public class DateTimeSelectorTest {
     @Test
     public void testSeconds() throws Exception {
         testTimestampDate("mydate", "${mydate.seconds}", true);
+    }
+
+    @Test
+    public void testBuiltInSuffixes_ISO8601() throws Exception {
+        testFormattedDate("mydate", "${mydate.iSo8601}", DateUtils.ISO8601_PATTERN, utcTimeZone);
+        testFormattedDate("mydate", "${mydate.local.iso8601}", DateUtils.ISO8601_PATTERN, localTimeZone);
+    }
+
+    @Test
+    public void testBuiltInSuffixes_RFC1123() throws Exception {
+        testFormattedDate("mydate", "${mydate.RFc1123}", DateUtils.RFC1123_DEFAULT_PATTERN, utcTimeZone);
+        testFormattedDate("mydate", "${mydate.utc.rfc1123}", DateUtils.RFC1123_DEFAULT_PATTERN, utcTimeZone);
+    }
+
+    @Test
+    public void testBuiltInSuffixes_RFC850() throws Exception {
+        testFormattedDate("mydate", "${mydate.RFc850}", DateUtils.RFC850_DEFAULT_PATTERN, utcTimeZone);
+        testFormattedDate("mydate", "${mydate.lOCAL.rfc850}", DateUtils.RFC850_DEFAULT_PATTERN, localTimeZone);
+    }
+
+    @Test
+    public void testBuiltInSuffixes_asctime() throws Exception {
+        testFormattedDate("mydate", "${mydate.asctime}", DateUtils.ASCTIME_DEFAULT_PATTERN, utcTimeZone);
+        testFormattedDate("mydate", "${mydate.lOCAL.asctime}", DateUtils.ASCTIME_DEFAULT_PATTERN, localTimeZone);
     }
 
     private void testFormattedDate(final String dateVarNameNoSuffixes, final String dateExpression, final String expectedFormat, final TimeZone expectedTimeZone) {
@@ -121,7 +157,7 @@ public class DateTimeSelectorTest {
         final String actual = ExpandVariables.process("${mydate.test.local}", vars, testAudit);
 
         //format according to local
-        final String expected = DateUtils.getFormattedString(date, "local");
+        final String expected = DateUtils.getFormattedString(date, "local", null);
         assertEquals(expected, actual);
 
         // no audits were created
@@ -147,7 +183,7 @@ public class DateTimeSelectorTest {
         vars.put("mydate", date);
         final String actual = ExpandVariables.process("${mydate.local}", vars, testAudit);
 
-        assertEquals(DateUtils.getFormattedString(date, "local"), actual);
+        assertEquals(DateUtils.getFormattedString(date, "local", null), actual);
 
         // no audits were created
         assertFalse(testAudit.iterator().hasNext());
@@ -173,7 +209,7 @@ public class DateTimeSelectorTest {
         vars.put("mydate", date);
         final String actual = ExpandVariables.process("${mydate.utc}", vars, testAudit);
 
-        assertEquals(DateUtils.getFormattedString(date, "utc"), actual);
+        assertEquals(DateUtils.getFormattedString(date, "utc", null), actual);
 
         // no audits were created
         assertFalse(testAudit.iterator().hasNext());

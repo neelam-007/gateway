@@ -6,6 +6,7 @@
 package com.l7tech.util;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -18,6 +19,10 @@ public class DateUtils {
     // - PUBLIC
 
     public static final String ISO8601_DEFAULT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+    public static final String ISO8601_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
+    public static final String RFC1123_DEFAULT_PATTERN = "E, dd MM yyyy hh:mm:ss Z";
+    public static final String RFC850_DEFAULT_PATTERN = "EEEE, dd-MM-yy hh:mm:ss Z";
+    public static final String ASCTIME_DEFAULT_PATTERN = "E MMM d hh:mm:ss yyyy";
 
     /**
      * Compare the specified date to today and produce a relative date phrase like "Yesterday" or "3 years from now".
@@ -70,7 +75,7 @@ public class DateUtils {
     @NotNull
     public static String getZuluFormattedString(@NotNull final Date date) {
         try {
-            return getFormattedString(date, "UTC");
+            return getFormattedString(date, null, null);
         } catch (UnknownTimeZoneException e) {
             // can't happen - coding error
             throw new RuntimeException(e);
@@ -80,25 +85,31 @@ public class DateUtils {
         }
     }
 
-    @NotNull
-    public static String getFormattedString(@NotNull final Date date, @NotNull final String timeZoneIdentifier)
-            throws UnknownTimeZoneException, InvalidPatternException {
-        return getFormattedString(date, timeZoneIdentifier, ISO8601_DEFAULT_PATTERN);
-    }
-
+    /**
+     * Format a Date
+     *
+     * @param date Date to format
+     * @param timeZoneIdentifier time zone identifier. If null then UTC is used. Only values for which {@link DateUtils#isSupportedTimezoneDesignator(String)} returns
+     * true can be used.
+     * @param format Format to use. If null then the default ISO8601 format is used.
+     * @return formatted string
+     * @throws UnknownTimeZoneException if timezone is not supported
+     * @throws InvalidPatternException if the format is invalid
+     */
     @NotNull
     public static String getFormattedString(@NotNull final Date date,
-                                            @NotNull final String timeZoneIdentifier,
-                                            @NotNull final String format)
+                                            @Nullable final String timeZoneIdentifier,
+                                            @Nullable final String format)
             throws UnknownTimeZoneException, InvalidPatternException {
+
         final SimpleDateFormat dateFormat;
         try {
-            dateFormat = new SimpleDateFormat(format);
+            dateFormat = new SimpleDateFormat(format == null ? ISO8601_DEFAULT_PATTERN : format);
         } catch (IllegalArgumentException e) {
             throw new InvalidPatternException(ExceptionUtils.getMessage(e));
         }
         dateFormat.setLenient(false);
-        if ("utc".equalsIgnoreCase(timeZoneIdentifier)) {
+        if (timeZoneIdentifier == null || "utc".equalsIgnoreCase(timeZoneIdentifier)) {
             dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         } else if (!"local".equalsIgnoreCase(timeZoneIdentifier)) {
             throw new UnknownTimeZoneException("Unknown timezone: " + timeZoneIdentifier);

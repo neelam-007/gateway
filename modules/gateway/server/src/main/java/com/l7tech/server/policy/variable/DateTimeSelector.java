@@ -26,21 +26,43 @@ public class DateTimeSelector implements ExpandVariables.Selector<Date> {
                 return new Selection(context.getTime() / 1000L);
             }
 
+            final String maybeFormat;
+            final String timeZone;
             if (name.contains(".")) {
-                // in this case we have a timezone.format syntax
                 final int periodIndex = name.indexOf(".");
-                final String timeZone = name.substring(0, periodIndex).toLowerCase();
-                final String format = name.substring(periodIndex + 1);
-                return new Selection(DateUtils.getFormattedString(context, timeZone, format));
+                String maybeTimezone = name.substring(0, periodIndex).toLowerCase();
+                final boolean isTzd = DateUtils.isSupportedTimezoneDesignator(maybeTimezone);
+                if (isTzd) {
+                    maybeFormat = name.substring(periodIndex + 1);
+                    timeZone = maybeTimezone;
+                } else {
+                    maybeFormat = name;
+                    timeZone = null;
+                }
+            } else {
+                if (DateUtils.isSupportedTimezoneDesignator(name.toLowerCase())) {
+                    maybeFormat = null;
+                    timeZone = name.toLowerCase();
+                } else {
+                    maybeFormat = name;
+                    timeZone = null;
+                }
             }
 
-            //name can now only represent either a timezone or a timezone + format
-
-            if (DateUtils.isSupportedTimezoneDesignator(name)) {
-                return new Selection(DateUtils.getFormattedString(context, name));
+            final String format;
+            if (SUFFIX_FORMAT_ISO8601.equalsIgnoreCase(maybeFormat)) {
+                format = DateUtils.ISO8601_PATTERN;
+            } else if (SUFFIX_FORMAT_RFC1123.equalsIgnoreCase(maybeFormat)) {
+                format = DateUtils.RFC1123_DEFAULT_PATTERN;
+            } else if (SUFFIX_FORMAT_RFC850.equalsIgnoreCase(maybeFormat)) {
+                format = DateUtils.RFC850_DEFAULT_PATTERN;
+            } else if (SUFFIX_FORMAT_ASCTIME.equalsIgnoreCase(maybeFormat)) {
+                format = DateUtils.ASCTIME_DEFAULT_PATTERN;
+            } else {
+                format = maybeFormat;
             }
-            // it must be a format
-            return new Selection(DateUtils.getFormattedString(context, "UTC", name));
+
+            return new Selection(DateUtils.getFormattedString(context, timeZone, format));
         } catch (DateUtils.UnknownTimeZoneException e) {
             errorMsg = ExceptionUtils.getMessage(e);
         } catch (DateUtils.InvalidPatternException e) {
@@ -59,5 +81,9 @@ public class DateTimeSelector implements ExpandVariables.Selector<Date> {
 
     private static final String SUFFIX_MILLIS = "millis";
     private static final String SUFFIX_SECONDS = "seconds";
+    private static final String SUFFIX_FORMAT_ISO8601 = "iso8601";
+    private static final String SUFFIX_FORMAT_RFC1123 = "rfc1123";
+    private static final String SUFFIX_FORMAT_RFC850 = "rfc850";
+    private static final String SUFFIX_FORMAT_ASCTIME = "asctime";
 
 }
