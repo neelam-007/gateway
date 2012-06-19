@@ -27,6 +27,10 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * @see com.l7tech.server.message.PolicyEnforcementContext#setVariable(String, Object)
  */
 public class ComparisonAssertion extends Assertion implements UsesVariables {
+    /**
+     * The maximum user definable field length.  Any text exceeding this length will be truncated.
+     */
+    private static final int MAX_USER_DEFINABLE_FIELD_LENGTH = 60;
     private static final String META_INITIALIZED = ComparisonAssertion.class.getName() + ".metadataInitialized";
     public static final List<DataType> DATA_TYPES = Collections.unmodifiableList(Arrays.asList(
         DataType.UNKNOWN,
@@ -187,7 +191,11 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
             if (!decorate) return baseName;
 
             StringBuilder name = new StringBuilder(baseName).append(": ");
-            name.append(assertion.getExpression1()).append(" ");
+            String expression1 = assertion.getExpression1();
+            if(expression1.length() > MAX_USER_DEFINABLE_FIELD_LENGTH){
+                expression1 = expression1.substring(0, MAX_USER_DEFINABLE_FIELD_LENGTH) + "...";
+            }
+            name.append(expression1).append(" ");
 
             Predicate[] predicatesLocal = assertion.getPredicates();
             for (int i = 0; i < predicatesLocal.length; i++) {

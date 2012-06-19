@@ -56,6 +56,9 @@ public class BinaryPredicate extends Predicate {
     public String toString() {
         ResourceBundle res = ComparisonAssertion.resources;
         String rv = rightValue;
+        if(rv != null && rv.length() > MAX_USER_DEFINABLE_FIELD_LENGTH){
+            rv = rv.substring(0, MAX_USER_DEFINABLE_FIELD_LENGTH) + "...";
+        }
         final String prefix = "binaryPredicate." + operator.name().toLowerCase();
         final String negKey = prefix + ".negatedDesc";
         final String nonNegKey = prefix + ".nonNegatedDesc";

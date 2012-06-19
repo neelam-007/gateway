@@ -9,6 +9,11 @@ import java.io.Serializable;
  * @author alex
  */
 public abstract class Predicate implements Cloneable, Serializable {
+    /**
+     * The maximum user definable field length.  Any text exceeding this length will be truncated.
+     */
+    protected static final int MAX_USER_DEFINABLE_FIELD_LENGTH = 60;
+
     protected boolean negated;
 
     public Predicate() {

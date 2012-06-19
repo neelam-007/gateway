@@ -12,6 +12,11 @@ import com.l7tech.policy.variable.VariableMetadata;
 public class LookupDynamicContextVariablesAssertion extends Assertion implements SetsVariables {
 
     /**
+     * The maximum user definable field length.  Any text exceeding this length will be truncated.
+     */
+    private static final int MAX_USER_DEFINABLE_FIELD_LENGTH = 60;
+
+    /**
      * The supported data types.
      */
     public static final DataType[] SUPPORTED_TYPES = new DataType[]{
@@ -106,7 +111,15 @@ public class LookupDynamicContextVariablesAssertion extends Assertion implements
             @Override
             public String getAssertionName(final LookupDynamicContextVariablesAssertion assertion, final boolean decorate) {
                 if(!decorate) return BASE_NAME;
-                final String decoration = BASE_NAME + ": find " + assertion.getSourceVariable() + "; output value to ${" + assertion.getTargetOutputVariable() + "}";
+                String source = assertion.getSourceVariable();
+                if(source != null && source.length() > MAX_USER_DEFINABLE_FIELD_LENGTH){
+                    source = source.substring(0, MAX_USER_DEFINABLE_FIELD_LENGTH) + "...";
+                }
+                String target = assertion.getTargetOutputVariable();
+                if(target != null && target.length() > MAX_USER_DEFINABLE_FIELD_LENGTH){
+                    target = target.substring(0, MAX_USER_DEFINABLE_FIELD_LENGTH) + "...";
+                }
+                final String decoration = BASE_NAME + ": find " + source + "; output value to ${" + target + "}";
                 return AssertionUtils.decorateName(assertion, decoration);
             }
         });

@@ -29,7 +29,11 @@ public class RegexPredicate extends Predicate {
 
     public String toString() {
         String fmt = ComparisonAssertion.resources.getString(negated ? "regexPredicate.negatedDesc" : "regexPredicate.desc");
-        return MessageFormat.format(fmt, pattern);
+        String pat = pattern;
+        if(pat != null && pat.length() > MAX_USER_DEFINABLE_FIELD_LENGTH){
+            pat = pat.substring(0, MAX_USER_DEFINABLE_FIELD_LENGTH) + "...";
+        }
+        return MessageFormat.format(fmt, pat);
     }
 
     public String getSimpleName() {
