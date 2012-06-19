@@ -52,7 +52,8 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
         setStdOutLevel(some(Level.INFO));
         setStdErrLevel(some(Level.WARNING));
         setSslDebug(); // Call after streams are configured
-        setConfiguredDateFormats();
+        setCustomDateFormats(false);
+        setAutoDateFormats(false);
     }
 
     @Override
@@ -70,10 +71,12 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
         } else if ( ServerConfigParams.PARAM_LOG_STDERR_LEVEL.equals(propertyName) ) {
             setStdErrLevel(Option.<Level>none());
             setSslDebug(); // Reset SSL Debug in case this causes the provider to use the new stream
-        } else if (ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS.equals(propertyName)||
-                ServerConfigParams.PARAM_DATE_TIME_AUTO_FORMATS.equals(propertyName)) {
-            setConfiguredDateFormats();
+        } else if (ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS.equals(propertyName) ){
+            setCustomDateFormats(true);
+        } else if (ServerConfigParams.PARAM_DATE_TIME_AUTO_FORMATS.equals(propertyName)) {
+            setAutoDateFormats(true);
         }
+
     }
 
     // - PROTECTED
@@ -206,21 +209,22 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
         ContentTypeHeader.setConfigurableTextualContentTypes(headers);
     }
 
-    private void setConfiguredDateFormats() {
+    private void setCustomDateFormats(boolean isReload) {
         final List<String> formats = getCustomDateFormatsStrings();
-        final List<Pair<String, Pattern>> autoDateFormatsStrings = getAutoDateFormatsStrings();
-
-        final HashSet<String> allFormats = new HashSet<String>(formats);
-        allFormats.addAll(formats);
-        allFormats.addAll(map(autoDateFormatsStrings, new Unary<String, Pair<String, Pattern>>() {
-            @Override
-            public String call(Pair<String, Pattern> pair) {
-                return pair.left;
-            }
-        }));
-
         dateParser.setCustomDateFormats(formats);
+
+        if (isReload) {
+            logger.info("Reloaded custom date formats.");
+        }
+    }
+
+    private void setAutoDateFormats(boolean isReload) {
+        final List<Pair<String, Pattern>> autoDateFormatsStrings = getAutoDateFormatsStrings();
         dateParser.setAutoDateFormats(autoDateFormatsStrings);
+
+        if (isReload) {
+            logger.info("Reloaded auto date formats and patterns.");
+        }
     }
 
     private void setSslDebug() {

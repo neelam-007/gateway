@@ -5,6 +5,7 @@
 
 package com.l7tech.xml.tarari;
 
+import com.l7tech.util.ComparisonOperator;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.SoftwareFallbackException;
@@ -143,7 +144,12 @@ class TarariCompiledXpath extends DomCompiledXpath {
                 }
 
                 public boolean getBoolean() {
-                    return fastXpath.getCountComparison().compare(Integer.valueOf(numMatches), fastXpath.getCountValue(), false);
+                    try {
+                        return fastXpath.getCountComparison().compare(Integer.valueOf(numMatches), fastXpath.getCountValue(), false);
+                    } catch (ComparisonOperator.NotComparableException e) {
+                        // default behavior pre introduction of checked exception - should never happen here
+                        return false;
+                    }
                 }
             };
         }

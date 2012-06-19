@@ -61,8 +61,23 @@ public enum ComparisonOperator {
     private final String name;
     private final ComparisonStrategy strategy;
 
-    public <T extends Comparable> boolean compare(T left, T right, boolean ignoreCase) {
+    /**
+     * @param left value
+     * @param right value
+     * @param ignoreCase ignore case
+     * @param <T> Although both left and right will be comparable, that does not mean that they are, they still must
+     * be the same type or comparable types.
+     * @return true if comparison strategy is successful
+     * @throws com.l7tech.util.ComparisonOperator.NotComparableException if the types are not comparable
+     */
+    public <T extends Comparable> boolean compare(T left, T right, boolean ignoreCase) throws NotComparableException {
         return strategy.compare(left, right, ignoreCase);
+    }
+
+    public static class NotComparableException extends Exception{
+        public NotComparableException(String message) {
+            super(message);
+        }
     }
 
     /**
@@ -73,7 +88,8 @@ public enum ComparisonOperator {
             super(0, 0);
         }
 
-        public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
+        @Override
+        public boolean compare(Comparable left, Comparable right, boolean ignoreCase) throws NotComparableException {
             if (ignoreCase) {
                 if (left instanceof String) {
                     String s = (String)left;
@@ -108,7 +124,8 @@ public enum ComparisonOperator {
      * Negated EQ.
      */
     private static class NotEqualsStrategy extends EqualsStrategy {
-        public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
+        @Override
+        public boolean compare(Comparable left, Comparable right, boolean ignoreCase) throws NotComparableException {
             return !super.compare(left, right, ignoreCase);
         }
     }
@@ -121,6 +138,7 @@ public enum ComparisonOperator {
             super(true);
         }
 
+        @Override
         public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
             return left == null || left.toString().length() == 0;
         }
@@ -134,6 +152,7 @@ public enum ComparisonOperator {
             super(false);
         }
 
+        @Override
         public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
             String s1 = left.toString();
             String s2 = right.toString();
@@ -153,7 +172,7 @@ public enum ComparisonOperator {
             this.unary = unary;
         }
 
-        public abstract boolean compare(Comparable left, Comparable right, boolean ignoreCase);
+        public abstract boolean compare(Comparable left, Comparable right, boolean ignoreCase) throws NotComparableException;
         public boolean isUnary() { return unary; }
     }
 
@@ -170,7 +189,8 @@ public enum ComparisonOperator {
             this.compareVal2 = compareVal2;
         }
 
-        public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
+        @Override
+        public boolean compare(Comparable left, Comparable right, boolean ignoreCase) throws NotComparableException {
             if (left == null) throw new NullPointerException();
             if (right == null) return false;
             boolean match;
@@ -179,7 +199,7 @@ public enum ComparisonOperator {
                 //noinspection unchecked
                 comp = left.compareTo(right);
             } catch ( ClassCastException cce ) {
-                return false; // incomparable types
+                throw new NotComparableException("Cannot compare type '" + left.getClass() + "' with type '" + right.getClass() + "'");
             }
             if (comp > 0) comp = 1;
             if (comp < 0) comp = -1;

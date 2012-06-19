@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.comparison.server.evaluate.Evaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.MultiValuedEvaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.SingleValuedEvaluator;
 import com.l7tech.gateway.common.audit.Audit;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
@@ -18,7 +19,7 @@ import java.util.Map;
 class SVState extends State<Object> {
 
     SVState( final Map<Predicate, Evaluator> evaluators,
-             final Object value,
+             @NotNull final Object value,
              final Map<String, Object> vars,
              final Audit auditor ) {
         super(evaluators, vars, auditor);
@@ -33,7 +34,7 @@ class SVState extends State<Object> {
             DataTypePredicate dtpred = (DataTypePredicate) pred;
             if (this.type != null) throw new IllegalStateException("DataType already set");
             this.type = dtpred.getType();
-            Object val = value == null ? null : convertValue(value, type);
+            Object val = convertValue(value, type);
             if (val == null) {
                 // Unable to convert this value to the desired type
                 assertionResult = false;

@@ -3,12 +3,8 @@ package com.l7tech.server.policy.variable;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.DateUtils;
 import com.l7tech.util.ExceptionUtils;
-import org.jboss.util.collection.ConcurrentSet;
 
-import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.Set;
 
 /**
  * Created via reflection in ExpandVariables
@@ -16,7 +12,7 @@ import java.util.Set;
  * @author darmstrong
  */
 public class DateTimeSelector implements ExpandVariables.Selector<Date> {
-    private final static Set<String> timezones = new ConcurrentSet<String>(Arrays.asList("UTC", "local"));
+
     @Override
     public Selection select(String contextName, Date context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
 

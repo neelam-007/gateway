@@ -26,6 +26,8 @@ public class DateTimeConfigUtils {
      * Timestamps can always be parsed however strings can only be parsed if there is a matching pair set via
      * {@link DateTimeConfigUtils#setAutoDateFormats(java.util.List)}
      *
+     * Thread safe.
+     *
      * @param dateTimeString Input string which may represent a formatted date string or a timestamp (10 or 13 digits)
      * @return Date value configured to the date / time represented by dateTimeString.
      * @throws java.text.ParseException If the format supplied / selected used to parse dateTimeString is not able to.
@@ -54,7 +56,7 @@ public class DateTimeConfigUtils {
                     throw new UnknownDateFormatException("Invalid timestamp: " + dateTimeString);
                 }
             } else {
-                throw new UnknownDateFormatException(dateTimeString);
+                throw new UnknownDateFormatException("Unknown date format: " + dateTimeString);
             }
         } else {
             final SimpleDateFormat dateFormat;
@@ -64,7 +66,7 @@ public class DateTimeConfigUtils {
                 dateFormat.setLenient(false);
             } catch (IllegalArgumentException e) {
                 //invalid simple date format
-                throw new InvalidDateFormatException(formatToUse);
+                throw new InvalidDateFormatException("Invalid format: " + formatToUse);
             }
 
             returnDate = dateFormat.parse(dateTimeString);
@@ -79,7 +81,7 @@ public class DateTimeConfigUtils {
      * @param customFormats All custom date formats.
      */
     public void setCustomDateFormats(@NotNull List<String> customFormats) {
-        customDateFormatsRef.set(new CopyOnWriteArrayList<String>(customFormats));
+        customDateFormatsRef.set(Collections.unmodifiableList(customFormats));
     }
 
     /**
@@ -88,7 +90,7 @@ public class DateTimeConfigUtils {
      * @param autoDateFormats list of paris of simple date format to the strictly matching pattern.
      */
     public void setAutoDateFormats(@NotNull List<Pair<String, Pattern>> autoDateFormats) {
-        autoFormatsRef.set(new CopyOnWriteArrayList<Pair<String, Pattern>>(autoDateFormats));
+        autoFormatsRef.set(Collections.unmodifiableList(autoDateFormats));
     }
 
     /**
@@ -117,7 +119,7 @@ public class DateTimeConfigUtils {
      */
     @NotNull
     public List<Pair<String, Pattern>> getAutoDateFormats() {
-        return CollectionUtils.toList(autoFormatsRef.get());
+        return autoFormatsRef.get();
     }
 
     public static class UnknownDateFormatException extends Exception{
@@ -133,11 +135,11 @@ public class DateTimeConfigUtils {
     }
 
     // - PRIVATE
-    private AtomicReference<CopyOnWriteArrayList<String>> customDateFormatsRef =
-            new AtomicReference<CopyOnWriteArrayList<String>>(new CopyOnWriteArrayList<String>());
+    private AtomicReference<List<String>> customDateFormatsRef =
+            new AtomicReference<List<String>>(new ArrayList<String>());
 
-    private AtomicReference<CopyOnWriteArrayList<Pair<String, Pattern>>> autoFormatsRef =
-            new AtomicReference<CopyOnWriteArrayList<Pair<String, Pattern>>>(new CopyOnWriteArrayList<Pair<String, Pattern>>());
+    private AtomicReference<List<Pair<String, Pattern>>> autoFormatsRef =
+            new AtomicReference<List<Pair<String, Pattern>>>(new ArrayList<Pair<String, Pattern>>());
 
     private boolean isTimestamp(final String timeString) {
         final int length = timeString.length();

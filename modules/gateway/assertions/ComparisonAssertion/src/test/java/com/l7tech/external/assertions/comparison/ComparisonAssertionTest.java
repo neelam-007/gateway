@@ -1,7 +1,9 @@
 package com.l7tech.external.assertions.comparison;
 
+import com.l7tech.external.assertions.comparison.server.convert.ValueConverter;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
@@ -12,8 +14,12 @@ import static org.junit.Assert.*;
 import com.l7tech.util.Functions;
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.lang.reflect.Constructor;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Calendar;
 import java.util.EnumSet;
+import java.util.List;
 
 public class ComparisonAssertionTest {
     @Test
@@ -64,6 +70,54 @@ public class ComparisonAssertionTest {
                 ComparisonAssertion.resources.getString( "multivaluedComparison."+multivaluedComparison+".label" );
             }
         } );
+    }
+
+    /**
+     * It must be possible to convert between all types listed in the valueClasses property for a DataType.
+     */
+    @Test
+    public void testValueClassesForEachDataTypes() throws Exception {
+        final List<DataType> dataTypes = ComparisonAssertion.DATA_TYPES;
+        for (DataType dataType : dataTypes) {
+            if (dataType == DataType.UNKNOWN) {
+                continue;
+            }
+
+            final Class[] valueClasses = dataType.getValueClasses();
+            for (Class valueClass : valueClasses) {
+                final Object o = getInstance(valueClass);
+                final ValueConverter converter = ValueConverter.Factory.getConverterOrHelperConverter((Comparable) o, dataType);
+                assertNotNull("Unknown type '" + valueClass.getName() +
+                "'. Support must be added for a DataType and all it's valueClasses before it can be added to the comparison assertions list of supported types.",
+                        converter);
+            }
+        }
+    }
+
+    private Object getInstance(Class clazz) throws Exception {
+        try {
+            final Constructor declaredConstructor = clazz.getConstructor();
+            return declaredConstructor.newInstance();
+        } catch (NoSuchMethodException e) {
+            // Update this list as new types are added which don't have a default public constructor
+            if (clazz == BigInteger.class) {
+                return new BigInteger("1");
+            } else if (clazz == Calendar.class) {
+                return Calendar.getInstance();
+            } else if (clazz == BigDecimal.class) {
+                return new BigDecimal("1.0");
+            } else if (clazz == Boolean.class) {
+                return new Boolean(true);
+            } else if (clazz == Boolean.TYPE) {
+                return true;
+            } else if (clazz == Long.class) {
+                return new Long(1L);
+            } else if (clazz == Long.TYPE) {
+                return 1L;
+            }
+        }
+
+        return null;
     }
 
     public static final String POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

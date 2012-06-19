@@ -3,7 +3,7 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.util.DateTimeConfigUtils;
+import com.l7tech.util.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.Registry;
@@ -17,9 +17,6 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.LineBreak;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.variable.*;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -474,7 +471,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
             } catch (DateTimeConfigUtils.InvalidDateFormatException e) {
                 message = e.getMessage();
             } catch (IllegalArgumentException e) {
-                //translate message
+                //Can be throw by SimpleDateFormat - translate message
                 message = "Invalid format: " + dateFormat;
             }
         } else {

@@ -322,7 +322,8 @@ public class SimplePropertyChangeHandlerTest {
         // yyyy-MM-dd'T'hh:mmX is defined in both properties - so it will only appear once in output
         properties.put(ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z';yyyy-MM-dd hh:mm:ss aaa;yyyy-MM-dd HH:mm:ss.SSS;yyyy-MM-dd'T'hh:mmX");
 
-        handler.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_DATE_TIME_AUTO_FORMATS /*either property name will do*/, "", ""));
+        handler.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_DATE_TIME_AUTO_FORMATS , "", ""));
+        handler.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "", ""));
 
         final List<String> configuredFormats = dateParser.getConfiguredDateFormats();
         assertFalse("No audits should have been generated", testAudit.iterator().hasNext());
@@ -343,8 +344,8 @@ public class SimplePropertyChangeHandlerTest {
     }
 
     /**
-     * Tests that date formats are set correctly in DateTimeConfigUtils bean after a property change for either of the applicable
-     * cluster properties.
+     * Tests that date formats are set correctly in DateTimeConfigUtils bean after a property change for each cluster properties.
+     *
      */
     @Test
     public void testDateFormats_Integration() throws Exception {
@@ -357,6 +358,7 @@ public class SimplePropertyChangeHandlerTest {
         properties.put(ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z';yyyy-MM-dd hh:mm:ss aaa;yyyy-MM-dd HH:mm:ss.SSS");
 
         handler.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_DATE_TIME_AUTO_FORMATS, "", ""));
+        handler.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "", ""));
 
         final List<String> configuredFormats = dateParser.getConfiguredDateFormats();
         assertEquals("Incorrect number of date formats registered", 8, configuredFormats.size());

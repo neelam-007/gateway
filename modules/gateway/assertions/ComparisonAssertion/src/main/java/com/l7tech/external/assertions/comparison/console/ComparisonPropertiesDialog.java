@@ -31,8 +31,8 @@ import java.util.ArrayList;
  */
 public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport<ComparisonAssertion> {
     private JTextField expressionField;
-    private JComboBox dataTypeComboBox;
-    private JComboBox multivaluedComboBox;
+    private JComboBox<DataType> dataTypeComboBox;
+    private JComboBox<MultivaluedComparison> multivaluedComboBox;
     private JTable predicatesTable;
     private JButton addPredicateButton;
     private JButton okButton;
@@ -46,13 +46,6 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
     private ComparisonAssertion assertion;
     private final java.util.List<Predicate> predicates = new ArrayList<Predicate>();
     private final PredicatesTableModel predicatesTableModel = new PredicatesTableModel();
-    private static final DataType[] DATA_TYPES = new DataType[] {
-        DataType.UNKNOWN,
-        DataType.STRING,
-        DataType.INTEGER,
-        DataType.DECIMAL,
-        DataType.BOOLEAN,
-    };
 
     public ComparisonPropertiesDialog(Window owner, ComparisonAssertion assertion) throws HeadlessException {
         super(owner, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
@@ -138,11 +131,12 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
             }
         });
 
-        dataTypeComboBox.setModel(new DefaultComboBoxModel(DATA_TYPES));
+        dataTypeComboBox.setModel(
+                new DefaultComboBoxModel<DataType>(ComparisonAssertion.DATA_TYPES.toArray( new DataType[ComparisonAssertion.DATA_TYPES.size()])));
         dataTypeComboBox.setSelectedItem(dtp == null ? DataType.UNKNOWN : dtp.getType());
         dataTypeComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
 
-        multivaluedComboBox.setModel(new DefaultComboBoxModel(MultivaluedComparison.values()));
+        multivaluedComboBox.setModel(new DefaultComboBoxModel<MultivaluedComparison>(MultivaluedComparison.values()));
         multivaluedComboBox.setRenderer(new TextListCellRenderer<MultivaluedComparison>( new Functions.Unary<String,MultivaluedComparison>(){
             @Override
             public String call( final MultivaluedComparison multivaluedComparison ) {

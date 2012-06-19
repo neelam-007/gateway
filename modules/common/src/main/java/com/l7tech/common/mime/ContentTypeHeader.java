@@ -414,7 +414,7 @@ public class ContentTypeHeader extends MimeHeader {
     }
 
     public static List<ContentTypeHeader> getConfigurableTextualContentTypes() {
-        return new ArrayList<ContentTypeHeader>(refToContentTypes.get());
+        return refToContentTypes.get();
     }
 
     /** @return true if the type is "text" */

@@ -28,6 +28,15 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  */
 public class ComparisonAssertion extends Assertion implements UsesVariables {
     private static final String META_INITIALIZED = ComparisonAssertion.class.getName() + ".metadataInitialized";
+    public static final List<DataType> DATA_TYPES = Collections.unmodifiableList(Arrays.asList(
+        DataType.UNKNOWN,
+        DataType.STRING,
+        DataType.INTEGER,
+        DataType.DECIMAL,
+        DataType.BOOLEAN,
+        DataType.DATE_TIME
+    ));
+
     private String leftValue;
     private Predicate[] predicates = new Predicate[0];
     private MultivaluedComparison multivaluedComparison = MultivaluedComparison.ALL;
@@ -250,6 +259,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         }});
 
         meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.comparison.server.ServerComparisonAssertion");
+        meta.put(MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.comparison.server.ComparisonAssertionModuleLifecycle");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

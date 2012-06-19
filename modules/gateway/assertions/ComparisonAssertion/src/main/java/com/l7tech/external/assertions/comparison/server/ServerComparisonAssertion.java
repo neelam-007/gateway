@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -76,7 +77,7 @@ public class ServerComparisonAssertion extends AbstractServerAssertion<Compariso
         }
     }
 
-    protected State makeState( final Object value,
+    protected State makeState( @NotNull final Object value,
                                final Map<String,Object> variables) {
         return State.make(evaluators, assertion.getMultivaluedComparison(), value, variables, getAudit());
     }

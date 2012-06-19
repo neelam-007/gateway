@@ -11,6 +11,9 @@ import com.l7tech.external.assertions.comparison.server.convert.ConversionExcept
 import com.l7tech.external.assertions.comparison.server.convert.ValueConverter;
 import com.l7tech.external.assertions.comparison.server.evaluate.Evaluator;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.util.ComparisonOperator;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -24,6 +27,7 @@ abstract class State<T> {
     protected final Map<Predicate, Evaluator> evaluators;
     protected final Audit auditor;
     protected final Map<String, Object> vars;
+    @NotNull
     protected T value;
 
     /**
@@ -50,6 +54,7 @@ abstract class State<T> {
         this.auditor = auditor;
     }
 
+    @NotNull
     final T getValue() {
         return value;
     }
@@ -58,7 +63,7 @@ abstract class State<T> {
 
     protected static State make( final Map<Predicate, Evaluator> evaluators,
                                  final MultivaluedComparison multivaluedComparison,
-                                 final Object left,
+                                 @NotNull final Object left,
                                  final Map<String, Object> vars,
                                  final Audit auditor ) {
         final Class leftClass = left.getClass();
@@ -72,22 +77,37 @@ abstract class State<T> {
         }
     }
 
+    @Nullable
+    protected Object convertValue(@NotNull Object value, DataType type) {
+        return convertValue(value, type, null);
+    }
+
     /**
      * @param value the value to be converted; must not be null.
+     * @param type the DataType value should be converted into. The actual type may be any valid value from the type's
+     * valueClasses property.
+     * @param requiredClass when value represents a 'right' value e.g. when the type of 'left' is known, then
+     * requiredClass should not be null and represents the type required of 'right', which is stored in value. This
+     * is an issue as the DataType declares more than one valueClass, where the types defined are not logically the same
+     * e.g. Boolean defines both the boxed and primitive types, which will always be comparable at runtime, whereas
+     * Binary and Date define unrelated value classes.
+     *
      * @return the converted object or null if an error occurs
      */
-    protected Object convertValue(Object value, DataType type) {
-        if (value == null) throw new NullPointerException();
+    @Nullable
+    protected Object convertValue(@NotNull Object value, DataType type, @Nullable Comparable requiredClass) {
         for (Class clazz : type.getValueClasses()) {
             if (clazz.isAssignableFrom(value.getClass())) {
-                // no conversion required
-                return value;
+                if (clazz.isAssignableFrom(value.getClass())
+                        && (requiredClass == null || requiredClass.getClass().isAssignableFrom(value.getClass()))) {
+                    // no conversion required
+                    return value;
+                }
             }
         }
 
         auditor.logAndAudit(AssertionMessages.COMPARISON_CONVERTING, value.getClass().getName(), type.getShortName());
-
-        ValueConverter conv = ValueConverter.Factory.getConverter(type);
+        ValueConverter conv = ValueConverter.Factory.getConverter(type, requiredClass);
         try {
             return conv.convert(value);
         } catch (ConversionException e) {
@@ -105,7 +125,7 @@ abstract class State<T> {
                                    final Comparable typeExample ) {
         if (value == null) throw new NullPointerException();
 
-        final ValueConverter converter = ValueConverter.Factory.getConverter( typeExample );
+        final ValueConverter converter = ValueConverter.Factory.getConverterOrHelperConverter(typeExample, null);
         if ( converter != null ) {
             auditor.logAndAudit(AssertionMessages.COMPARISON_CONVERTING, value.getClass().getName(), converter.getDataType().getShortName());
 
@@ -139,7 +159,7 @@ abstract class State<T> {
                 if ( type == null ) {
                     right = convertValue(right, cleft);
                 } else {
-                    right = convertValue(right, type);
+                    right = convertValue(right, type, cleft);
                 }
             }
             if (right instanceof Comparable || right == null) {
@@ -149,7 +169,13 @@ abstract class State<T> {
                 cright = right.toString();
             }
         }
-        return bpred.getOperator().compare(cleft, cright, !bpred.isCaseSensitive());
+        try {
+            return bpred.getOperator().compare(cleft, cright, !bpred.isCaseSensitive());
+        } catch (ComparisonOperator.NotComparableException e) {
+            // coding error
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, e.getMessage());
+            return false;
+        }
     }
 
 }

@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 import static org.junit.Assert.*;
 
 @SuppressWarnings({"JavaDoc"})
-public class DateConfigUtilsTest {
+public class DateTimeConfigUtilsTest {
     @Before
     public void setUp() throws Exception {
 

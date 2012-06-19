@@ -133,12 +133,6 @@ public class PolicyEnforcementContextFactory {
 
     //- PRIVATE
 
-    /**
-     * Has default value to support simple usages in test cases.
-     */
-    @NotNull
-    private static TimeSource timeSource = new TimeSource();
-
     private static PolicyEnforcementContext registerThreadLocal( final PolicyEnforcementContext context, final ThreadLocal<PolicyEnforcementContext> threadLocal ) {
         // Handle current instance tracking
         threadLocal.set(context);
@@ -150,6 +144,12 @@ public class PolicyEnforcementContextFactory {
         } );
         return context;
     }
+
+    /**
+     * Has default value to support simple usages in test cases.
+     */
+    @NotNull
+    private static TimeSource timeSource = new TimeSource();
 
     public static final ThreadLocal<PolicyEnforcementContext> instanceHolder = new ThreadLocal<PolicyEnforcementContext>();
     public static final ThreadLocal<PolicyEnforcementContext> childInstanceHolder = new ThreadLocal<PolicyEnforcementContext>();

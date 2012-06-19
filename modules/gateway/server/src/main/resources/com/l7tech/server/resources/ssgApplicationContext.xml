@@ -452,6 +452,8 @@
                                 <value>ioDebugSslValue</value>
                                 <value>logStdOutLevel</value>
                                 <value>logStdErrLevel</value>
+                                <value>datetime.customFormats</value>
+                                <value>datetime.autoFormats</value>
                             </list>
                         </entry>
                         <entry key="httpConfigurationCache">

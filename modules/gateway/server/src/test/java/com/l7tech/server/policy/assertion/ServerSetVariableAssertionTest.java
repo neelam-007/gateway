@@ -87,8 +87,7 @@ public class ServerSetVariableAssertionTest {
         }
 
         assertTrue(testAudit.isAuditPresent(AssertionMessages.SET_VARIABLE_UNRECOGNISED_DATE_FORMAT));
-        assertTrue(testAudit.isAuditPresentContaining(
-                MessageFormat.format(AssertionMessages.SET_VARIABLE_UNRECOGNISED_DATE_FORMAT.getMessage(), inputDate)));
+        assertTrue(testAudit.isAuditPresentContaining("Date string format is not recognized: Unknown date format: 2012-05-07T23:12:24.567Z"));
     }
 
     /**
