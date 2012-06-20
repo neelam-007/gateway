@@ -208,7 +208,7 @@ public interface ClusterStatusAdmin {
      * <p>If the license expires within this period a warning should be shown
      * to allow action to be taken.</p>
      *
-     * @return The warning period
+     * @return The warning period, in milliseconds
      */
     @Administrative(licensed=false)
     long getLicenseExpiryWarningPeriod();
