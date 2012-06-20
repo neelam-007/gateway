@@ -146,36 +146,36 @@ public class SimplePropertyChangeHandlerTest {
         assertTrue("List should be empty", formats.isEmpty());
 
         // single valid values
-        properties.put(ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        properties.put(ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
         formats = handler.getCustomDateFormatsStrings();
         assertFalse(testAudit.iterator().hasNext());
         assertNotNull(formats);
         assertFalse("List should not be empty", formats.isEmpty());
         assertEquals(1, formats.size());
-        assertEquals(formats.get(0), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        assertEquals(formats.get(0), "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
         // test with leading and trailing delimiters and spaces
-        properties.put(ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, " ;  yyyy-MM-dd'T'HH:mm:ss.SSS'Z'  ;  ");
+        properties.put(ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, " ;  yyyy-MM-dd'T'HH:mm:ss.SSSZ  ;  ");
         formats = handler.getCustomDateFormatsStrings();
         assertFalse(testAudit.iterator().hasNext());
         assertNotNull(formats);
         assertFalse("List should not be empty", formats.isEmpty());
         assertEquals(1, formats.size());
-        assertEquals(formats.get(0), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        assertEquals(formats.get(0), "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
         // valid multiple values
-        properties.put(ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z';yyyy-MM-dd hh:mm:ss aaa;yyyy-MM-dd HH:mm:ss.SSS;");
+        properties.put(ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "yyyy-MM-dd'T'HH:mm:ss.SSSZ;yyyy-MM-dd hh:mm:ss aaa;yyyy-MM-dd HH:mm:ss.SSS;");
         formats = handler.getCustomDateFormatsStrings();
         assertFalse(testAudit.iterator().hasNext());
         assertNotNull(formats);
         assertFalse("List should not be empty", formats.isEmpty());
         assertEquals(3, formats.size());
-        assertEquals(formats.get(0), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        assertEquals(formats.get(0), "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
         assertEquals(formats.get(1), "yyyy-MM-dd hh:mm:ss aaa");
         assertEquals(formats.get(2), "yyyy-MM-dd HH:mm:ss.SSS");
 
         // valid multiple values with leading and trailing white space and some invalid values
-        properties.put(ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "  yyyy-MM-dd'T'HH:mm:ss.SSS'Z'  ;  yyyy-MM-dd hh:mm:ss aaa;yyyy-MM-dd HH:mm:ss.SSS; ;   ;   ; TT ;");
+        properties.put(ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "  yyyy-MM-dd'T'HH:mm:ss.SSSZ  ;  yyyy-MM-dd hh:mm:ss aaa;yyyy-MM-dd HH:mm:ss.SSS; ;   ;   ; TT ;");
         formats = handler.getCustomDateFormatsStrings();
         for (String s : testAudit) {
             System.out.println(s);
@@ -185,7 +185,7 @@ public class SimplePropertyChangeHandlerTest {
         assertNotNull(formats);
         assertFalse("List should not be empty", formats.isEmpty());
         assertEquals(3, formats.size());
-        assertEquals(formats.get(0), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        assertEquals(formats.get(0), "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
         assertEquals(formats.get(1), "yyyy-MM-dd hh:mm:ss aaa");
         assertEquals(formats.get(2), "yyyy-MM-dd HH:mm:ss.SSS");
     }

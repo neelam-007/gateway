@@ -3,8 +3,11 @@ package com.l7tech.server.policy.variable;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.DateUtils;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * Created via reflection in ExpandVariables
@@ -26,26 +29,29 @@ public class DateTimeSelector implements ExpandVariables.Selector<Date> {
                 return new Selection(context.getTime() / 1000L);
             }
 
+            @Nullable
             final String maybeFormat;
-            final String timeZone;
+            @Nullable
+            final TimeZone timeZone;
             if (name.contains(".")) {
                 final int periodIndex = name.indexOf(".");
-                String maybeTimezone = name.substring(0, periodIndex).toLowerCase();
-                final boolean isTzd = DateUtils.isSupportedTimezoneDesignator(maybeTimezone);
-                if (isTzd) {
+                String maybeTimezone = name.substring(0, periodIndex);
+                final TimeZone isTzd = DateUtils.getTimeZone(maybeTimezone);
+                if (isTzd != null) {
                     maybeFormat = name.substring(periodIndex + 1);
-                    timeZone = maybeTimezone;
+                    timeZone = isTzd;
                 } else {
                     maybeFormat = name;
-                    timeZone = null;
+                    timeZone = DateUtils.getTimeZone("UTC");
                 }
             } else {
-                if (DateUtils.isSupportedTimezoneDesignator(name.toLowerCase())) {
+                final TimeZone maybeTimeZone = DateUtils.getTimeZone(name);
+                if (maybeTimeZone != null) {
                     maybeFormat = null;
-                    timeZone = name.toLowerCase();
+                    timeZone = maybeTimeZone;
                 } else {
                     maybeFormat = name;
-                    timeZone = null;
+                    timeZone = DateUtils.getTimeZone("UTC");
                 }
             }
 

@@ -1056,7 +1056,7 @@ public class ServerVariablesTest {
     private void testBuiltInVariablePreFangtooth_Formatting(final String builtInDateVarExp,
                                                             final Class classWithTimeSource,
                                                             TimeZone timeZone) throws Exception{
-        testBuiltInVariablePreFangtooth_Formatting(builtInDateVarExp, classWithTimeSource, timeZone, DateUtils.ISO8601_DEFAULT_PATTERN);
+        testBuiltInVariablePreFangtooth_Formatting(builtInDateVarExp, classWithTimeSource, timeZone, DateUtils.ISO8601_PATTERN);
     }
 
     private void testBuiltInVariablePreFangtooth_Formatting(final String builtInDateVarExp,

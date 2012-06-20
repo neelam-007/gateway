@@ -73,13 +73,16 @@ public class ServerConfigTest {
         for (Pair<String, Pattern> pair : pairList) {
             System.out.println(pair.left + " - " + pair.right);
             formatToPattern.put(pair.left, pair.right);
+            //autoFormats.add(new Pair<String, Pattern>("yyyy-MM-dd'T'HH:mm:ss.SSSX", Pattern.compile("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:\\+|-)\\d{2}:?+(?:\\d{2})?+)$")));
+            //
+//            System.out.println("autoFormats.add(new Pair<String, Pattern>(\"" + pair.left + "\", Pattern.compile(\"^" + pair.right.toString().replace("\\", "\\\\") + "$\")));");
         }
 
-        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ss.SSSX", "2012-05-29T19:46:30.123Z", 1338320790123L, MILLISECOND, formatToPattern);
-        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ss.SSX", "2012-05-29T19:46:30.12Z", 1338320790012L, MILLISECOND, formatToPattern);
-        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ss.SX", "2012-05-29T19:46:30.1Z", 1338320790001L, MILLISECOND, formatToPattern);
-        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ssX", "2012-05-29T19:46:30Z", 1338320790839L, SECOND, formatToPattern);
-        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mmX", "2012-05-29T19:46Z", 1338320790839L, MINUTE, formatToPattern);
+        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "2012-05-29T19:46:30.123Z", 1338320790123L, MILLISECOND, formatToPattern);
+        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ss.SSXXX", "2012-05-29T19:46:30.12Z", 1338320790012L, MILLISECOND, formatToPattern);
+        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ss.SXXX", "2012-05-29T19:46:30.1Z", 1338320790001L, MILLISECOND, formatToPattern);
+        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ssXXX", "2012-05-29T19:46:30Z", 1338320790839L, SECOND, formatToPattern);
+        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mmXXX", "2012-05-29T19:46Z", 1338320790839L, MINUTE, formatToPattern);
         validateMatchAndExclusivity("yyyy-MM-dd", "2012-05-29", 1338320790839L, DAY_OF_MONTH, formatToPattern);
         validateMatchAndExclusivity("yyyy-MM", "2012-05", 1338320790839L, MONTH, formatToPattern);
         validateMatchAndExclusivity("yyyy", "2012", 1338320790839L, YEAR, formatToPattern);
@@ -89,11 +92,11 @@ public class ServerConfigTest {
         validateMatchAndExclusivity("EEE MMM dd HH:mm:ss yyyy", "Wed Oct  2 13:46:30 2002", "20021002T13:46:30", SECOND, formatToPattern);
 
         // validate ISO 8601 with 8601 style timezone
-        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ss.SSSX", "2012-05-29T19:46:30.123+01:00", 1338317190123L, MILLISECOND, formatToPattern);
-        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ss.SSX", "2012-05-29T19:46:30.12-01:00", 1338324390012L, MILLISECOND, formatToPattern);
-        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ss.SX", "2012-05-29T19:46:30.1+01:00", 1338317190001L, MILLISECOND, formatToPattern);
-        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ssX", "2012-05-29T19:46:30-01:00", 1338324390012L, SECOND, formatToPattern);
-        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mmX", "2012-05-29T19:46+01:00", 1338317190001L, MINUTE, formatToPattern);
+        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "2012-05-29T19:46:30.123+01:00", 1338317190123L, MILLISECOND, formatToPattern);
+        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ss.SSXXX", "2012-05-29T19:46:30.12-01:00", 1338324390012L, MILLISECOND, formatToPattern);
+        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ss.SXXX", "2012-05-29T19:46:30.1+01:00", 1338317190001L, MILLISECOND, formatToPattern);
+        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mm:ssXXX", "2012-05-29T19:46:30-01:00", 1338324390012L, SECOND, formatToPattern);
+        validateMatchAndExclusivity("yyyy-MM-dd'T'HH:mmXXX", "2012-05-29T19:46+01:00", 1338317190001L, MINUTE, formatToPattern);
 
         // validate rfc822 / 1123 with numeric timezones
         validateMatchAndExclusivity("EEE, dd MMM yyyy HH:mm:ss z", "Wed, 02 Oct 2002 13:46:30 +0200", 1033559190625L, SECOND, formatToPattern);

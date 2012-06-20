@@ -2,6 +2,7 @@ package com.l7tech.server.policy.variable;
 
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.util.DateUtils;
+import com.l7tech.util.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,19 +30,19 @@ public class DateTimeSelectorTest {
 
     @Test
     public void testDefaultFormatting() throws Exception {
-        testFormattedDate("mydate", "${mydate}", DateUtils.ISO8601_DEFAULT_PATTERN, utcTimeZone);
+        testFormattedDate("mydate", "${mydate}", DateUtils.ISO8601_PATTERN, utcTimeZone);
     }
 
     @Test
     public void testDefaultFormatting_Utc() throws Exception {
-        testFormattedDate("mydate", "${mydate.utc}", DateUtils.ISO8601_DEFAULT_PATTERN, utcTimeZone);
-        testFormattedDate("mydate", "${mydate.uTC}", DateUtils.ISO8601_DEFAULT_PATTERN, utcTimeZone);
+        testFormattedDate("mydate", "${mydate.utc}", DateUtils.ISO8601_PATTERN, utcTimeZone);
+        testFormattedDate("mydate", "${mydate.uTC}", DateUtils.ISO8601_PATTERN, utcTimeZone);
     }
 
     @Test
     public void testDefaultFormatting_Local() throws Exception {
-        testFormattedDate("mydate", "${mydate.local}", DateUtils.ISO8601_DEFAULT_PATTERN, localTimeZone);
-        testFormattedDate("mydate", "${mydate.LocaL}", DateUtils.ISO8601_DEFAULT_PATTERN, localTimeZone);
+        testFormattedDate("mydate", "${mydate.local}", DateUtils.ISO8601_PATTERN, localTimeZone);
+        testFormattedDate("mydate", "${mydate.LocaL}", DateUtils.ISO8601_PATTERN, localTimeZone);
     }
 
     @Test
@@ -103,6 +104,105 @@ public class DateTimeSelectorTest {
         testFormattedDate("mydate", "${mydate.lOCAL.asctime}", DateUtils.ASCTIME_DEFAULT_PATTERN, localTimeZone);
     }
 
+    @Test
+    public void testDateSelector_local() throws Exception {
+        final Date date = new Date();
+        final HashMap<String, Object> vars = new HashMap<String, Object>();
+        //doesn't matter what the variable is called - added in .test to illustrate that all that matters is the
+        // longest part of the variable reference which matches a defined variable.
+        vars.put("mydate.test", date);
+        final String actual = ExpandVariables.process("${mydate.test.local}", vars, testAudit);
+
+        //format according to local
+        final String expected = DateUtils.getFormattedString(date, DateUtils.getTimeZone("local"), null);
+        assertEquals(expected, actual);
+
+        // no audits were created
+        assertFalse(testAudit.iterator().hasNext());
+    }
+
+    @Test
+    public void testNamedTimeZoneSuffix() throws Exception {
+        testFormattedDate("mydate", "${mydate.Australia/Victoria}", DateUtils.ISO8601_PATTERN, TimeZone.getTimeZone("Australia/Victoria"));
+        testFormattedDate("mydate", "${mydate.Australia/Victoria.rfc1123}", DateUtils.RFC1123_DEFAULT_PATTERN, TimeZone.getTimeZone("Australia/Victoria"));
+    }
+
+    @Test
+    public void testOffsetTimeZoneNegative() throws Exception {
+        final TimeZone timeZone = TimeZone.getDefault();
+        timeZone.setRawOffset(-7 * TimeUnit.HOURS.getMultiplier());
+        testFormattedDate("mydate", "${mydate.-07:00}", DateUtils.ISO8601_PATTERN, timeZone);
+    }
+
+    @Test
+    public void testOffsetTimeZoneNegative_Short() throws Exception {
+        final TimeZone timeZone = TimeZone.getDefault();
+        timeZone.setRawOffset(-7 * TimeUnit.HOURS.getMultiplier());
+        testFormattedDate("mydate", "${mydate.-07}", DateUtils.ISO8601_PATTERN, timeZone);
+    }
+
+    @Test
+    public void testOffsetTimeZonePositive() throws Exception {
+        final TimeZone timeZone = TimeZone.getDefault();
+        timeZone.setRawOffset(7 * TimeUnit.HOURS.getMultiplier());
+        testFormattedDate("mydate", "${mydate.+07:00}", DateUtils.ISO8601_PATTERN, timeZone);
+    }
+
+    @Test
+    public void testOffsetTimeZonePositive_Short() throws Exception {
+        final TimeZone timeZone = TimeZone.getDefault();
+        timeZone.setRawOffset(7 * TimeUnit.HOURS.getMultiplier());
+        testFormattedDate("mydate", "${mydate.+07}", DateUtils.ISO8601_PATTERN, timeZone);
+    }
+
+    @Test
+    public void testOffsetTimeZoneNegative_NoColon() throws Exception {
+        final TimeZone timeZone = TimeZone.getDefault();
+        timeZone.setRawOffset(-7 * TimeUnit.HOURS.getMultiplier());
+        testFormattedDate("mydate", "${mydate.-0700}", DateUtils.ISO8601_PATTERN, timeZone);
+    }
+
+    @Test
+    public void testOffsetTimeZonePositive_NoColon() throws Exception {
+        final TimeZone timeZone = TimeZone.getDefault();
+        timeZone.setRawOffset(7 * TimeUnit.HOURS.getMultiplier());
+        testFormattedDate("mydate", "${mydate.+0700}", DateUtils.ISO8601_PATTERN, timeZone);
+    }
+
+    @Test
+    public void testOffsetTimeZoneNegativeWithMinutes() throws Exception {
+        final TimeZone timeZone = TimeZone.getDefault();
+        timeZone.setRawOffset(-1 * (4 * TimeUnit.HOURS.getMultiplier() + 30 * TimeUnit.MINUTES.getMultiplier()));
+        testFormattedDate("mydate", "${mydate.-04:30}", DateUtils.ISO8601_PATTERN, timeZone);
+    }
+
+    @Test
+    public void testOffsetTimeZonePositiveWithMinutes() throws Exception {
+        final TimeZone timeZone = TimeZone.getDefault();
+        timeZone.setRawOffset(5 * TimeUnit.HOURS.getMultiplier() + 30 * TimeUnit.MINUTES.getMultiplier());
+        testFormattedDate("mydate", "${mydate.+05:30}", DateUtils.ISO8601_PATTERN, timeZone);
+    }
+
+    @Test
+    public void testOffsetTimeZoneNegative_NoColonWithMinutes() throws Exception {
+        final TimeZone timeZone = TimeZone.getDefault();
+        timeZone.setRawOffset(-1 * (2 * TimeUnit.HOURS.getMultiplier() + 30 * TimeUnit.MINUTES.getMultiplier()));
+        testFormattedDate("mydate", "${mydate.-0230}", DateUtils.ISO8601_PATTERN, timeZone);
+    }
+
+    @Test
+    public void testOffsetTimeZonePositive_NoColonWithMinutes() throws Exception {
+        final TimeZone timeZone = TimeZone.getDefault();
+        timeZone.setRawOffset(5 * TimeUnit.HOURS.getMultiplier() + 30 * TimeUnit.MINUTES.getMultiplier());
+        testFormattedDate("mydate", "${mydate.+0530}", DateUtils.ISO8601_PATTERN, timeZone);
+    }
+
+    // - PRIVATE
+
+    private TestAudit testAudit;
+    private TimeZone utcTimeZone;
+    private TimeZone localTimeZone;
+
     private void testFormattedDate(final String dateVarNameNoSuffixes, final String dateExpression, final String expectedFormat, final TimeZone expectedTimeZone) {
         final Date date = new Date();
         final HashMap<String, Object> vars = new HashMap<String, Object>();
@@ -135,103 +235,4 @@ public class DateTimeSelectorTest {
         assertFalse(testAudit.iterator().hasNext());
     }
 
-    @Test
-    public void testDateSelector_Millisecond() throws Exception {
-        final Date date = new Date();
-        final HashMap<String, Object> vars = new HashMap<String, Object>();
-        vars.put("mydate", date);
-        final String process = ExpandVariables.process("${mydate.millis}", vars, testAudit);
-        assertEquals(Long.valueOf(date.getTime()), Long.valueOf(process));
-
-        // no audits were created
-        assertFalse(testAudit.iterator().hasNext());
-    }
-
-    @Test
-    public void testDateSelector_local() throws Exception {
-        final Date date = new Date();
-        final HashMap<String, Object> vars = new HashMap<String, Object>();
-        //doesn't matter what the variable is called - added in .test to illustrate that all that matters is the
-        // longest part of the variable reference which matches a defined variable.
-        vars.put("mydate.test", date);
-        final String actual = ExpandVariables.process("${mydate.test.local}", vars, testAudit);
-
-        //format according to local
-        final String expected = DateUtils.getFormattedString(date, "local", null);
-        assertEquals(expected, actual);
-
-        // no audits were created
-        assertFalse(testAudit.iterator().hasNext());
-    }
-
-    @Test
-    public void testDateSelector_Second() throws Exception {
-        final Date date = new Date();
-        final HashMap<String, Object> vars = new HashMap<String, Object>();
-        vars.put("mydate", date);
-        final String process = ExpandVariables.process("${mydate.seconds}", vars, testAudit);
-        assertEquals(Long.valueOf(date.getTime() / 1000L), Long.valueOf(process));
-
-        // no audits were created
-        assertFalse(testAudit.iterator().hasNext());
-    }
-
-    @Test
-    public void testDateSelector_Formatting_Local() throws Exception {
-        final Date date = new Date();
-        final HashMap<String, Object> vars = new HashMap<String, Object>();
-        vars.put("mydate", date);
-        final String actual = ExpandVariables.process("${mydate.local}", vars, testAudit);
-
-        assertEquals(DateUtils.getFormattedString(date, "local", null), actual);
-
-        // no audits were created
-        assertFalse(testAudit.iterator().hasNext());
-    }
-
-    @Test
-    public void testDateSelector_Formatting_Local_CustomFormat() throws Exception {
-        final Date date = new Date();
-        final HashMap<String, Object> vars = new HashMap<String, Object>();
-        vars.put("mydate", date);
-        final String actual = ExpandVariables.process("${mydate.local.yyyyMMdd}", vars, testAudit);
-
-        assertEquals(DateUtils.getFormattedString(date, "local", "yyyyMMdd"), actual);
-
-        // no audits were created
-        assertFalse(testAudit.iterator().hasNext());
-    }
-
-    @Test
-    public void testDateSelector_Formatting_UTC() throws Exception {
-        final Date date = new Date();
-        final HashMap<String, Object> vars = new HashMap<String, Object>();
-        vars.put("mydate", date);
-        final String actual = ExpandVariables.process("${mydate.utc}", vars, testAudit);
-
-        assertEquals(DateUtils.getFormattedString(date, "utc", null), actual);
-
-        // no audits were created
-        assertFalse(testAudit.iterator().hasNext());
-    }
-
-    @Test
-    public void testDateSelector_Formatting_UTC_CustomFormat() throws Exception {
-        final Date date = new Date();
-        final HashMap<String, Object> vars = new HashMap<String, Object>();
-        vars.put("mydate", date);
-        final String actual = ExpandVariables.process("${mydate.utc.yyyyMMdd}", vars, testAudit);
-
-        assertEquals(DateUtils.getFormattedString(date, "utc", "yyyyMMdd"), actual);
-
-        // no audits were created
-        assertFalse(testAudit.iterator().hasNext());
-
-    }
-
-    // - PRIVATE
-
-    private TestAudit testAudit;
-    private TimeZone utcTimeZone;
-    private TimeZone localTimeZone;
 }
