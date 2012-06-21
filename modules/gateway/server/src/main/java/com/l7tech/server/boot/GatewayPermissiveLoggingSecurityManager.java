@@ -1,6 +1,13 @@
 package com.l7tech.server.boot;
 
+import com.l7tech.util.FileUtils;
+import org.jetbrains.annotations.NotNull;
+
+import java.beans.XMLEncoder;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FilePermission;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.SocketPermission;
 import java.net.URL;
@@ -23,6 +30,53 @@ public class GatewayPermissiveLoggingSecurityManager extends SecurityManager {
     }
 
     public GatewayPermissiveLoggingSecurityManager(boolean flag) {
+    }
+
+    /**
+     * Begin periodically logging captured permissions to the specified file.
+     *
+     * @param logfile the file in which to log the permissions dump.  Required.  Because the FileUtils#saveFileSafely protocol
+     *                is used, the directory (not just the file) must be writable by the current process.
+     * @param millis number of milliseconds between each log.
+     */
+    public void periodicLog(@NotNull final File logfile, final long millis) {
+        final Thread permsDump = new Thread("SM Permissions Dump") {
+            @Override
+            public void run() {
+                for (;;) {
+                    try {
+                        Thread.sleep(millis);
+                        dumpPerms(getGrantedPermissions(), logfile);
+                    } catch (InterruptedException e) {
+                        System.err.println("SM Permissions Dump: interrupted");
+                        return;
+                    } catch (Exception e) {
+                        System.err.println("SM Permissions Dump: error: " + e.getMessage());
+                        e.printStackTrace(System.err);
+                    }
+                }
+            }
+        };
+        permsDump.setDaemon(true);
+        permsDump.start();
+    }
+
+    private static void dumpPerms(final Set<String> grantedPermissions, final File dumpfile) throws IOException {
+        FileUtils.saveFileSafely(dumpfile.getCanonicalPath(), new FileUtils.Saver() {
+            @Override
+            public void doSave(FileOutputStream fos) throws IOException {
+                XMLEncoder encoder = null;
+                try {
+                    encoder = new XMLEncoder(fos);
+                    encoder.writeObject(grantedPermissions);
+                    encoder.close();
+                    encoder = null;
+                } finally {
+                    if (encoder != null)
+                        encoder.close();
+                }
+            }
+        });
     }
 
     @Override

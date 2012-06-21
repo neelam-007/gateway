@@ -4,13 +4,8 @@ import com.l7tech.server.LifecycleException;
 import com.l7tech.server.RuntimeLifecycleException;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.FileUtils;
 
-import java.beans.XMLEncoder;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,12 +19,7 @@ public class GatewayMain {
             if ( System.getProperty("java.util.logging.manager") == null ) {
                 System.setProperty("java.util.logging.manager", GatewayBoot.GatewayLogManager.class.getName());
             }
-            if (!Boolean.getBoolean("com.l7tech.server.sm.noSecurityManager")) {
-                boolean f = org.apache.catalina.Globals.IS_SECURITY_ENABLED; // Ensure tomcat gets locked into non-SM behavior before we install the SM
-                final GatewayPermissiveLoggingSecurityManager sm = new GatewayPermissiveLoggingSecurityManager(f);
-                System.setSecurityManager(sm);
-                periodicLog(sm);
-            }
+            configureSecurityManager();
             new GatewayBoot().runUntilShutdown();
             System.exit(0); // force exit even if there are non-daemon threads created by mistake (Bug #4384)
         } catch (Throwable e) {
@@ -50,45 +40,29 @@ public class GatewayMain {
         }
     }
 
-    private static void periodicLog(final GatewayPermissiveLoggingSecurityManager sm) {
-        final Thread permsDump = new Thread("SM Permissions Dump") {
-            @Override
-            public void run() {
-                for (;;) {
-                    try {
-                        Thread.sleep(20611L);
-                        dumpPerms(sm.getGrantedPermissions());
-                    } catch (InterruptedException e) {
-                        System.err.println("SM Permissions Dump: interrupted");
-                        return;
-                    } catch (Exception e) {
-                        System.err.println("SM Permissions Dump: error: " + e.getMessage());
-                        e.printStackTrace(System.err);
-                    }
-                }
+    private static void configureSecurityManager() {
+        if (!Boolean.getBoolean("com.l7tech.server.sm.noSecurityManager") && System.getSecurityManager() == null) {
+            boolean f = org.apache.catalina.Globals.IS_SECURITY_ENABLED; // Ensure tomcat gets locked into non-SecurityManager behavior before we enable the SecurityManager
+            if (Boolean.getBoolean("com.l7tech.server.sm.logOnly")) {
+                configureLoggingSecurityManager(f);
+            } else {
+                configureDefaultSecurityManager();
             }
-        };
-        permsDump.setDaemon(true);
-        permsDump.start();
+        }
     }
 
-    private static void dumpPerms(final Set<String> grantedPermissions) throws IOException {
-        File logdir = new File(ConfigFactory.getProperty("logDirectory", "/tmp"));
-        File dumpfile = new File(logdir, "ssgPermsDump");
-        FileUtils.saveFileSafely(dumpfile.getCanonicalPath(), new FileUtils.Saver() {
-            @Override
-            public void doSave(FileOutputStream fos) throws IOException {
-                XMLEncoder encoder = null;
-                try {
-                    encoder = new XMLEncoder(fos);
-                    encoder.writeObject(grantedPermissions);
-                    encoder.close();
-                    encoder = null;
-                } finally {
-                    if (encoder != null)
-                        encoder.close();
-                }
-            }
-        });
+    private static void configureDefaultSecurityManager() {
+        // Install the default SecurityManager -- assumes a policy has already been provided by environment or on command line
+        System.setSecurityManager(new GatewaySecurityManager());
+    }
+
+    private static void configureLoggingSecurityManager(boolean f) {
+        // Install a logging security manager
+        final GatewayPermissiveLoggingSecurityManager sm = new GatewayPermissiveLoggingSecurityManager(f);
+        System.setSecurityManager(sm);
+
+        // Start logging
+        final File logdir = new File(ConfigFactory.getProperty("logDirectory", "/tmp"));
+        sm.periodicLog(new File(logdir, "ssgPermsDump"), 20611L);
     }
 }

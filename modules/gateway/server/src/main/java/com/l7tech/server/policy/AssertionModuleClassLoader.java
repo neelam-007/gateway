@@ -1,13 +1,17 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.IteratorEnumeration;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.IOUtils;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.*;
+import java.security.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -31,6 +35,8 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
     private final Map<NestedZipFile, Object> nestedJarFiles;
     private final Set<ClassLoader> delegates = Collections.synchronizedSet(new LinkedHashSet<ClassLoader>());
     private final String resourceLoadPrefix;
+    private final CodeSource codeSource;
+    private final AccessControlContext accessControlContext;
 
     AssertionModuleClassLoader(String moduleName, URL jarUrl, ClassLoader parent, Set<NestedZipFile> nestedJarFiles, boolean useApplicationClasspath ) {
         super(new URL[] { jarUrl }, parent);
@@ -39,6 +45,8 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         for (NestedZipFile file : nestedJarFiles)
             this.nestedJarFiles.put(file, new Object());
         this.resourceLoadPrefix = useApplicationClasspath ? "com.l7tech.external.assertions" : null;
+        this.codeSource = new CodeSource(jarUrl, (java.security.cert.Certificate[]) null);
+        this.accessControlContext = AccessController.getContext();
     }
 
     /**
@@ -86,23 +94,32 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
 
     @Override
     protected Class<?> findClass(final String name) throws ClassNotFoundException {
-        Class<?> found = null;
         try {
-            if ( shouldLoadFromParentResources( name ) )
-                found = findClassFromParentResource( name );
-            else if (name.startsWith("com.l7tech.external.") || (!name.startsWith("com.l7tech.") && !name.startsWith("java.")))
-                found = findClassFromNestedJars(name, false);
-            if (found == null)
-                found = super.findClass(name);
-        } catch (ClassNotFoundException e) {
-            found = findClassFromNestedJars(name, false);
-            if (found == null)
-                found = findClassFromDelegates(name);
-            if (found == null)
-                throw new ClassNotFoundException(ExceptionUtils.getMessage(e), e);
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<Class>() {
+                @Override
+                public Class run() throws Exception {
+                    Class<?> found = null;
+                    try {
+                        if ( shouldLoadFromParentResources( name ) )
+                            found = findClassFromParentResource( name );
+                        else if (name.startsWith("com.l7tech.external.") || (!name.startsWith("com.l7tech.") && !name.startsWith("java.")))
+                            found = findClassFromNestedJars(name, false);
+                        if (found == null)
+                            found = AssertionModuleClassLoader.super.findClass(name);
+                    } catch (ClassNotFoundException e) {
+                        found = findClassFromNestedJars(name, false);
+                        if (found == null)
+                            found = findClassFromDelegates(name);
+                        if (found == null)
+                            throw new ClassNotFoundException(ExceptionUtils.getMessage(e), e);
+                    }
+                    classes.add(found);
+                    return found;
+                }
+            }, accessControlContext);
+        } catch (PrivilegedActionException pae) {
+            throw new ClassNotFoundException(ExceptionUtils.getMessage(pae), pae);
         }
-        classes.add(found);
-        return found;
     }
 
     private boolean shouldLoadFromParentResources( final String name ) {
@@ -111,12 +128,12 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
 
     private Class findClassFromParentResource( final String name ) {
         final String path = toResourcePath( name );
-        return define( name, super.getResourceAsStream( path ) );
+        return define( name, super.getResourceAsStream(path) );
     }
 
     private Class findClassFromNestedJars(String name, boolean hidePrivate) {
         final String path = toResourcePath( name );
-        return define( name, getResourceBytesFromNestedJars(path, hidePrivate) );
+        return define(name, getResourceBytesFromNestedJars(path, hidePrivate));
     }
 
     private String toResourcePath( final String name ) {
@@ -155,7 +172,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
             }
         }
 
-        return defineClass(name, bytecode, 0, bytecode.length);
+        return defineClass(name, bytecode, 0, bytecode.length, codeSource);
     }
 
     private Class findClassFromDelegates(String name) {
@@ -237,12 +254,17 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
 
     @Override
     public URL findResource(final String name) {
-        URL url = super.findResource(name);
-        if (url == null)
-            url = findResourceFromNestedJars(name);
-        if (url == null)
-            url = findResourceFromDelegates(name);
-        return url;
+        return AccessController.doPrivileged(new PrivilegedAction<URL>() {
+            @Override
+            public URL run() {
+                URL url = AssertionModuleClassLoader.super.findResource(name);
+                if (url == null)
+                    url = findResourceFromNestedJars(name);
+                if (url == null)
+                    url = findResourceFromDelegates(name);
+                return url;
+            }
+        }, accessControlContext);
    }
 
     private URL findResourceFromNestedJars(String name) {

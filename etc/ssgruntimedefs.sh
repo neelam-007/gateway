@@ -10,6 +10,7 @@ else
   default_java_opts="$default_java_opts -Djava.net.preferIPv4Stack=true "
 fi
 
+default_java_opts="$default_java_opts -Djava.security.policy=${SSG_HOME}/runtime/etc/ssg.policy"
 default_java_opts="$default_java_opts -Djava.security.egd=file:/dev/./urandom"
 default_java_opts="$default_java_opts -Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 "
 default_java_opts="$default_java_opts -Djava.awt.headless=true -XX:CompileThreshold=1500 "

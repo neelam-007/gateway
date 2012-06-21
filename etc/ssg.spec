@@ -55,6 +55,7 @@ rm -fr %{buildroot}
 # Group directories and files
 %defattr(0444,layer7,layer7,0755)
 /opt/SecureSpan/Gateway/runtime/etc/profile
+/opt/SecureSpan/Gateway/runtime/etc/ssg.policy
 /opt/SecureSpan/Gateway/runtime/modules
 
 # The main Gateway jar
