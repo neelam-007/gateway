@@ -75,7 +75,7 @@ public class KerberosAdminImpl implements KerberosAdmin {
                     // Not really an error, since this is usually a configuration problem.
                     // Note that we still throw the exception back to the caller so
                     // the admin knows what happened
-                    logger.log(Level.INFO, "Kerberos error getting principal", ExceptionUtils.getDebugException(ke));
+                    logger.log(Level.INFO, "Kerberos error getting principal: " + principal, ExceptionUtils.getDebugException(ke));
                     exceptionHolder[0] = new KerberosException(ke.getMessage());
                 }
             }
@@ -90,6 +90,7 @@ public class KerberosAdminImpl implements KerberosAdmin {
         }
 
         if ( testThread.isAlive() ) {
+            logger.log(Level.INFO, "Kerberos authentication timed out: " + principal );
             throw new KerberosException("Kerberos configuration error 'Authentication timed out'.");
         }
 
