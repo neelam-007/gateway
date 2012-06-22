@@ -3,7 +3,6 @@ package com.l7tech.xml.xslt;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContext;
 import com.l7tech.xml.tarari.TarariCompiledStylesheet;
@@ -160,7 +159,7 @@ public class StylesheetCompiler {
                 PreparedStylesheet ps = (PreparedStylesheet) temp;
                 List<StructuredQName> qns = ps.getGlobalVariableMap().getVariableMap();
                 for (StructuredQName qn : qns) {
-                    vars.add(qn.getLocalName());
+                    vars.add(qn.getLocalPart());
                 }
                 varsUsed = vars.toArray(new String[vars.size()]);
             } else {
