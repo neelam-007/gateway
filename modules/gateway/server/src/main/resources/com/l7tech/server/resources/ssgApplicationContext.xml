@@ -2347,7 +2347,9 @@
 
     <bean id="entityManagementContextProvider" class="com.l7tech.server.EntityManagementContextProvider"/>
 
-    <bean id="dateTimeConfigUtils" class="com.l7tech.util.DateTimeConfigUtils" />
+    <bean id="dateTimeConfigUtils" class="com.l7tech.util.DateTimeConfigUtils" >
+        <property name="config" ref="serverConfig" />
+    </bean>
 
     <!-- export beans to JMX -->
     <context:mbean-export/>

@@ -1,14 +1,20 @@
 package com.l7tech.util;
 
+import com.l7tech.test.BugNumber;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.*;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 @SuppressWarnings({"JavaDoc"})
+@RunWith(MockitoJUnitRunner.class)
 public class DateTimeConfigUtilsTest {
     @Before
     public void setUp() throws Exception {
@@ -62,9 +68,39 @@ public class DateTimeConfigUtilsTest {
 
     }
 
+    @BugNumber(12531)
+    @Test
+    public void testDefaultTimezoneIsZulu() throws Exception {
+        // if GMT is not used by default, then this string would be interpreted as 21:12:24 in PST (in June)
+        final Date date = dateConfigUtils.parseDateFromString("Mon May 07 14:12:24 2012");
+        System.out.println(date);
+        validateDate(date, false, true);
+
+    }
+
+    @Test
+    public void testLenientAutoDateParsing() throws Exception {
+        final ArrayList<Pair<String, Pattern>> autoDateFormats = new ArrayList<Pair<String, Pattern>>();
+        autoDateFormats.add(new Pair<String, Pattern>("EEE MMM dd HH:mm:ss yyyy", Pattern.compile(".*")));
+        dateConfigUtils.setAutoDateFormats(autoDateFormats);
+
+        when(config.getBooleanProperty(eq("com.l7tech.util.lenientDateFormat"), eq(false))).thenReturn(true);
+        dateConfigUtils.setConfig(config);
+
+        final Date date = dateConfigUtils.parseDateFromString("Mon May 07 14:12:24 12");
+        validateDate(date, false, true, true);
+    }
+
     // - PRIVATE
 
     private DateTimeConfigUtils dateConfigUtils;
+
+    @Mock
+    private Config config;
+
+    private void validateDate(Date date, boolean validateMillis, boolean validateSeconds) {
+        validateDate(date, validateMillis, validateSeconds, false);
+    }
 
     /**
      * Validates the date represents 2012-05-07T23:12:24.567Z
@@ -72,12 +108,17 @@ public class DateTimeConfigUtilsTest {
      * @param validateMillis true if milliseconds should be validated.
      * @param validateSeconds
      */
-    private void validateDate(Date date, boolean validateMillis, boolean validateSeconds) {
+    private void validateDate(Date date, boolean validateMillis, boolean validateSeconds, boolean allowTwoDigitYear) {
         Calendar cal = Calendar.getInstance();
         cal.setTimeZone(TimeZone.getTimeZone("Z"));
         cal.setTime(date);
 
-        assertEquals("Incorrect year", 2012, cal.get(Calendar.YEAR));
+        if (allowTwoDigitYear) {
+            assertEquals("Incorrect year", 12, cal.get(Calendar.YEAR));
+        } else {
+            assertEquals("Incorrect year", 2012, cal.get(Calendar.YEAR));
+        }
+
         assertEquals("Incorrect month", 4, cal.get(Calendar.MONTH));
         assertEquals("Incorrect day", 7, cal.get(Calendar.DAY_OF_MONTH));
         assertEquals("Incorrect hour", 14, cal.get(Calendar.HOUR_OF_DAY));

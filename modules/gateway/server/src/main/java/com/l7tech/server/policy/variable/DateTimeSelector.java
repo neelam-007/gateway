@@ -31,7 +31,7 @@ public class DateTimeSelector implements ExpandVariables.Selector<Date> {
 
             @Nullable
             final String maybeFormat;
-            @Nullable
+            @NotNull
             final TimeZone timeZone;
             if (name.contains(".")) {
                 final int periodIndex = name.indexOf(".");
@@ -42,7 +42,7 @@ public class DateTimeSelector implements ExpandVariables.Selector<Date> {
                     timeZone = isTzd;
                 } else {
                     maybeFormat = name;
-                    timeZone = DateUtils.getTimeZone("UTC");
+                    timeZone = DateUtils.getZuluTimeZone();
                 }
             } else {
                 final TimeZone maybeTimeZone = DateUtils.getTimeZone(name);
@@ -51,7 +51,7 @@ public class DateTimeSelector implements ExpandVariables.Selector<Date> {
                     timeZone = maybeTimeZone;
                 } else {
                     maybeFormat = name;
-                    timeZone = DateUtils.getTimeZone("UTC");
+                    timeZone = DateUtils.getZuluTimeZone();
                 }
             }
 

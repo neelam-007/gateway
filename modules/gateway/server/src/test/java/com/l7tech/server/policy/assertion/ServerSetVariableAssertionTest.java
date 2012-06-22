@@ -2,15 +2,14 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.util.DateTimeConfigUtils;
+import com.l7tech.server.ServerConfigStub;
+import com.l7tech.test.BugNumber;
+import com.l7tech.util.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.TimeSource;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -322,6 +321,82 @@ public class ServerSetVariableAssertionTest {
         }
     }
 
+    @BugNumber(12531)
+    @Test
+    public void testDefaultTimezoneIsZulu() throws Exception {
+        try {
+            // make sure the default timezone is not GMT (in case this test ever ran in GMT timezone) as this would mask a fail
+            final TimeZone pst = TimeZone.getTimeZone("PST");
+            TimeZone.setDefault(pst);
+
+            final SimpleDateFormat format = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
+            format.setLenient(false);
+            format.setTimeZone(DateUtils.getZuluTimeZone());
+            final Date date = format.parse("Mon May 07 14:12:24 2012");
+
+            timeSource = new TimeSource() {
+                @Override
+                public long currentTimeMillis() {
+                    return date.getTime();
+                }
+            };
+
+            final SetVariableAssertion assertion = new SetVariableAssertion("mydate", "");
+            assertion.setExpression("Mon May 07 14:12:24 2012");
+            assertion.setDateFormat("EEE MMM dd HH:mm:ss yyyy");
+            assertion.setDataType(DataType.DATE_TIME);
+            createServerAssertion(assertion);
+
+            final AssertionStatus assertionStatus = fixture.checkRequest(mockContext);
+            for (String s : testAudit) {
+                System.out.println(s);
+            }
+
+            assertEquals(AssertionStatus.NONE, assertionStatus);
+
+            verify(mockContext).setVariable(eq("mydate"), eq(date));
+        } finally {
+            TimeZone.setDefault(null);
+        }
+    }
+
+    /**
+     * Verify system property allow lenient date processing if enabled.
+     */
+    @Test
+    public void testLenientDateParsing() throws Exception {
+        configStub.putProperty("com.l7tech.util.lenientDateFormat", String.valueOf(true));
+
+        final SimpleDateFormat format = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
+        format.setLenient(true);
+        format.setTimeZone(DateUtils.getZuluTimeZone());
+        // this date only parses as lenient is true
+        final Date date = format.parse("Mon May 07 14:12:24 12");
+
+        timeSource = new TimeSource() {
+            @Override
+            public long currentTimeMillis() {
+                return date.getTime();
+            }
+        };
+
+        final SetVariableAssertion assertion = new SetVariableAssertion("mydate", "");
+        // only valid for specified format when lenient is true
+        assertion.setExpression("Mon May 07 14:12:24 12");
+        assertion.setDateFormat("EEE MMM dd HH:mm:ss yyyy");
+        assertion.setDataType(DataType.DATE_TIME);
+        createServerAssertion(assertion);
+
+        final AssertionStatus assertionStatus = fixture.checkRequest(mockContext);
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+
+        verify(mockContext).setVariable(eq("mydate"), eq(date));
+    }
+
     // - PRIVATE
 
     @Mock
@@ -331,6 +406,7 @@ public class ServerSetVariableAssertionTest {
     private ServerSetVariableAssertion fixture;
     private TestAudit testAudit;
     private TimeSource timeSource;
+    private ServerConfigStub configStub = new ServerConfigStub();
 
     private void createServerAssertion(SetVariableAssertion assertion) throws PolicyAssertionException {
         fixture = new ServerSetVariableAssertion(assertion);
@@ -339,6 +415,7 @@ public class ServerSetVariableAssertionTest {
                 .put("dateParser", dateParser)
                 .put("auditFactory", testAudit.factory())
                 .put("timeSource", timeSource)
+                .put("config", configStub)
                 .unmodifiableMap()
         );
     }

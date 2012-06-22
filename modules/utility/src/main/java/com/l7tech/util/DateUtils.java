@@ -89,7 +89,7 @@ public class DateUtils {
      * Format a Date
      *
      * @param date Date to format
-     * @param timeZone if not null, the TimeZone to use when formatting th edate
+     * @param timeZone the TimeZone to use when formatting the date. Required.
      * @param format Format to use. If null then the default ISO8601 format is used.
      * @return formatted string
      * @throws UnknownTimeZoneException if timezone is not supported
@@ -97,7 +97,7 @@ public class DateUtils {
      */
     @NotNull
     public static String getFormattedString(@NotNull final Date date,
-                                            @Nullable final TimeZone timeZone,
+                                            @NotNull final TimeZone timeZone,
                                             @Nullable final String format)
             throws UnknownTimeZoneException, InvalidPatternException {
 
@@ -107,12 +107,14 @@ public class DateUtils {
         } catch (IllegalArgumentException e) {
             throw new InvalidPatternException(ExceptionUtils.getMessage(e));
         }
-        dateFormat.setLenient(false);
-        if (timeZone != null) {
-            dateFormat.setTimeZone(timeZone);
-        }
+        dateFormat.setTimeZone(timeZone);
 
         return dateFormat.format(date);
+    }
+
+    @NotNull
+    public static TimeZone getZuluTimeZone() {
+        return TimeZone.getTimeZone("UTC");
     }
 
     @Nullable

@@ -457,7 +457,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                 final Date date;
                 if (!AUTO_STRING.equals(dateFormat) && !dateFormat.isEmpty()) {
                     SimpleDateFormat format = new SimpleDateFormat(dateFormat);
-                    format.setLenient(false);
+                    format.setLenient(ConfigFactory.getBooleanProperty("com.l7tech.util.lenientDateFormat", false));
                     date = format.parse(dateInput);
                 } else {
                     date = dateParser.parseDateFromString(dateInput);

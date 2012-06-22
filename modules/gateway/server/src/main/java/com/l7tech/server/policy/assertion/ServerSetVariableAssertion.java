@@ -1,6 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.util.DateTimeConfigUtils;
+import com.l7tech.util.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -14,8 +14,6 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.gateway.common.audit.CommonMessages;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.TimeSource;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -32,6 +30,9 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
     private DateTimeConfigUtils dateParser;
     @Inject
     private TimeSource timeSource;
+
+    @Inject
+    private Config config;
 
     public ServerSetVariableAssertion(SetVariableAssertion assertion) throws PolicyAssertionException {
         super(assertion);
@@ -84,7 +85,9 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
                         } catch (IllegalArgumentException e) {
                             throw new DateTimeConfigUtils.InvalidDateFormatException(ExceptionUtils.getMessage(e));
                         }
-                        simpleDateFormat.setLenient(false);
+                        simpleDateFormat.setLenient(config.getBooleanProperty("com.l7tech.util.lenientDateFormat", false));
+                        //time zone is overridden if the parsed string contains timezone information
+                        simpleDateFormat.setTimeZone(DateUtils.getZuluTimeZone());
                         date = simpleDateFormat.parse(strValue);
                     } else {
                         date = dateParser.parseDateFromString(strValue);

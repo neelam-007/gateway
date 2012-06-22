@@ -62,8 +62,16 @@ public class DateTimeConfigUtils {
             final SimpleDateFormat dateFormat;
             try {
                 dateFormat = new SimpleDateFormat(formatToUse);
+                // this will be overwritten when the string being parsed contains timezone information
+                dateFormat.setTimeZone(DateUtils.getZuluTimeZone());
                 // we want strict behavior to avoid mis interpreting a date value
-                dateFormat.setLenient(false);
+                final boolean lenient;
+                if (config == null) {
+                    lenient = ConfigFactory.getBooleanProperty("com.l7tech.util.lenientDateFormat", false);
+                } else {
+                    lenient = config.getBooleanProperty("com.l7tech.util.lenientDateFormat", false);
+                }
+                dateFormat.setLenient(lenient);
             } catch (IllegalArgumentException e) {
                 //invalid simple date format
                 throw new InvalidDateFormatException("Invalid format: " + formatToUse);
@@ -134,12 +142,18 @@ public class DateTimeConfigUtils {
         }
     }
 
+    public void setConfig(Config config) {
+        this.config = config;
+    }
+
     // - PRIVATE
     private AtomicReference<List<String>> customDateFormatsRef =
             new AtomicReference<List<String>>(new ArrayList<String>());
 
     private AtomicReference<List<Pair<String, Pattern>>> autoFormatsRef =
             new AtomicReference<List<Pair<String, Pattern>>>(new ArrayList<Pair<String, Pattern>>());
+
+    private Config config;
 
     private boolean isTimestamp(final String timeString) {
         final int length = timeString.length();
