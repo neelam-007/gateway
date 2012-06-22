@@ -68,58 +68,24 @@ public class AuditSinkSchemaTest {
     public void testAuditSinkSchema() throws Exception{
         boolean success = true;
 
-        AuditRecord record = testMessageSummaryRecord();
-        deleteRow(auditRecordTable,record.getGuid());
-        record = testAdminAuditRecord();
-        deleteRow(auditRecordTable,record.getGuid());
-        record = testSystemAuditRecord();
-        AuditDetail detail = testAuditDetail(record);
-        deleteRow(auditRecordTable,record.getGuid());
-        checkAuditDetail(detail);
+        String guid = testMessageSummaryRecord();
+        deleteRow(auditRecordTable,guid);
+        guid = testAdminAuditRecord();
+        deleteRow(auditRecordTable,guid);
+        guid = testSystemAuditRecord();
+        deleteRow(auditRecordTable,guid);
     }
 
-    private void checkAuditDetail(AuditDetail detail) throws Exception {
-        if(cleanup){
-            String query = "select * from "+auditDetailTable+" where audit_oid ='"+detail.getAuditGuid()+"' and ordinal = "+detail.getOrdinal() ;
-            int result = performJdbcQuery( query);
-//            if(result != 0)
-//                deleteRow(auditDetailTable,detail.getGuid()); todo
-            assertTrue("Audit detail not deleted with corresponding audit record", result == 0  );
-        }
-    }
 
-    private AuditDetail testAuditDetail(AuditRecord record) throws Exception {
-        AuditSinkPolicyEnforcementContext context;
-        String query;
-        int result;
-        boolean success;AuditDetail detail = new AuditDetail(Messages.EXCEPTION_SEVERE,new String[]{"param1","param2"}, new RuntimeException("message"));
-        detail.setOrdinal(9);
-        detail.setAuditGuid(record.getGuid());
-        detail.setAuditRecord(record);
-        Set<AuditDetail> details = record.getDetails();
-        details.add(detail);
-        record.setDetails(details);
-        context = new AuditSinkPolicyEnforcementContext(record, PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,null);
-        query = SAVE_DETAIL_QUERY;
-        query = query.replaceAll("i.current", "audit.details.0");
-        query = query.replace("${auditDetailTable}",auditDetailTable);
-
-        query = resolveContextVariables(context, query);
-
-        result = performJdbcQuery( query);
-        success = result==1;
-        assertTrue("Failed to save audit detail", success);
-        return detail;
-    }
-
-    private AuditRecord testSystemAuditRecord() throws Exception {
+    private String testSystemAuditRecord() throws Exception {
         AuditSinkPolicyEnforcementContext context;
         String query;
         int result;
         boolean success;
+        String guid = UUID.randomUUID().toString();
         SystemAuditRecord sar = new SystemAuditRecord(
                 Level.FINE,
-                UUID.randomUUID().toString(),
+                guid,
                 Component.GW_AUDIT_SYSTEM,
                 "message",
                 false,
@@ -136,17 +102,18 @@ public class AuditSinkSchemaTest {
         result = performJdbcQuery(query);
         success = result==1;
         assertTrue("Failed to save system audit record", success);
-        return sar;
+        return guid;
     }
 
-    private AuditRecord testAdminAuditRecord() throws Exception {
+    private String testAdminAuditRecord() throws Exception {
         AuditSinkPolicyEnforcementContext context;
         String query;
         int result;
         boolean success;
+        String guid = UUID.randomUUID().toString();
         AdminAuditRecord aar = new AdminAuditRecord(
                 Level.FINE,
-                UUID.randomUUID().toString(),
+                guid,
                 123,
                 "entityClassname",
                 "name",
@@ -164,11 +131,12 @@ public class AuditSinkSchemaTest {
         result = performJdbcQuery(query);
         success = result==1;
         assertTrue("Failed to save admin audit record", success);
-        return aar;
+        return guid;
     }
 
-    private AuditRecord testMessageSummaryRecord() throws Exception {
+    private String testMessageSummaryRecord() throws Exception {
         boolean success;
+        String guid = UUID.randomUUID().toString();
         MessageSummaryAuditRecord record = new MessageSummaryAuditRecord(Level.WARNING, UUID.randomUUID().toString() , "requestId", AssertionStatus.NOT_APPLICABLE,
                 "clientAddr", "requestXml", 5,
                 "responseXml", 6 , 1234, 5678,
@@ -180,12 +148,12 @@ public class AuditSinkSchemaTest {
         AuditSinkPolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(record,  PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,makeContext("<myrequest/>", "<myresponse/>"));
         String query = SAVE_RECORD_QUERY;
         query = query.replace("${auditRecordTable}",auditRecordTable);
-        query = query.replace("${record.guid}",record.getGuid());
+        query = query.replace("${record.guid}",guid);
         query = resolveContextVariables(context, query);
         int result = performJdbcQuery(query);
         success = result==1;
         assertTrue("Failed to save message audit record", success);
-        return record;
+        return guid;
     }
 
     private void deleteRow(String table, String id) throws Exception {

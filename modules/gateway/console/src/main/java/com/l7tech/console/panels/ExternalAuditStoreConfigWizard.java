@@ -15,13 +15,13 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.util.HexUtils;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Wizard that guides the administrator through the publication of a non-soap service.
@@ -31,6 +31,8 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
 
     public static final String INTERNAL_TAG_AUDIT_SINK = "audit-sink";
     public static final String INTERNAL_TAG_AUDIT_LOOKUP = "audit-lookup";
+
+    public static final Pattern STRICT_CONNECTION_NAME_PATTERN = Pattern.compile("[xA-Za-z][\\sA-Za-z0-9_\\-]*");
 
     private PolicyHeader sinkPolicyHeader = null;
     private PolicyHeader lookupPolicyHeader = null;
@@ -45,7 +47,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
 
     public ExternalAuditStoreConfigWizard(Window parent, WizardStepPanel panel) {
         super(parent, panel);
-        setTitle("Configure External Audit Sink Wizard");
+        setTitle("Configure External Audit Store Wizard");
 
         getButtonHelp().addActionListener(new ActionListener() {
             @Override
@@ -62,6 +64,9 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         getSelectedWizardPanel().storeSettings(wizardInput);
         ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig config = (ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig)wizardInput;
         // create policies
+        if(!safetyCheckNames(config.connection,config.auditRecordTableName,config.auditDetailTableName))
+            return;
+
         try {
             sinkPolicyHeader = getOrCreateSinkPolicyHeader(config.connection,config.auditRecordTableName,config.auditDetailTableName, config.custom);
             lookupPolicyHeader = getOrCreateLookupPolicyHeader(config.connection,config.auditRecordTableName,config.auditDetailTableName, config.custom);
@@ -78,6 +83,11 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
 
 
     }
+
+    private boolean safetyCheckNames(String connection, String auditRecordTableName, String auditDetailTableName) {
+        return STRICT_CONNECTION_NAME_PATTERN.matcher(connection).matches();
+    }
+
     private PolicyHeader getOrCreateLookupPolicyHeader(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) throws FindException, PolicyAssertionException, SaveException {
         PolicyHeader header = getLookupPolicyHeader();
         if (header == null) {
@@ -97,218 +107,12 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
     private static Policy makeDefaultAuditLookupPolicyEntity(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) {
         Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Audit Lookup Policy]", null, false);
         policy.setInternalTag(INTERNAL_TAG_AUDIT_LOOKUP);
-        String theXml = createEmptyPolicy ? getDefaultPolicyXml(policy) : makeDefaultAuditLookupPolicyXml(connection,recordTable,detailTable);
+        String theXml = createEmptyPolicy ? getDefaultPolicyXml(policy) : ExternalAuditsCommonUtils.makeDefaultAuditLookupPolicyXml(connection,recordTable,detailTable);
 
         policy.setXml(theXml);
         return policy;
     }
 
-    private static String defaultLookupQuery(String recordTable) {
-        return
-            "select top 1024 * from "+recordTable+" where " +
-                    "time>=${audit.recordQuery.minTime} and time&lt;${audit.recordQuery.maxTime} " +
-                    "and audit_level in (${audit.recordQuery.levels}) " +
-                    "and  nodeid like ${audit.recordQuery.nodeId} " +
-                    "and type like ${audit.recordQuery.auditType} " +
-                    "and lower(name) like lower(${serviceName}) {escape '#' } " +
-                    "and lower(user_name) like lower(${audit.recordQuery.userName}) " +
-                    "and lower(user_id) like lower(${audit.recordQuery.userIdOrDn}) " +
-                    "and lower(message) like lower(${audit.recordQuery.message}) " +
-                    "and lower(entity_class) like lower(${audit.recordQuery.entityClassName}) " +
-                    "and entity_id >=${entityIdMin}  and entity_id &lt;=${entityIdMax} " +
-                    "and lower(request_id) like lower(${audit.recordQuery.requestId}) order by time desc;";
-    }
-
-    private static String messaageIdLookupQuery ( String detailTable){
-        return
-                "select distinct audit_oid,time from "+detailTable+" where message_id >=${messageIdMin}  and message_id &lt;=${messageIdMax} order by time desc" ;
-    }
-
-    private static String lookupQueryWithAuditId(String recordTable){
-        return
-            "select top 1024 * from "+recordTable+" where " +
-                    "id in (${recordIdQuery.audit_oid}) " +
-                    "and time>=${audit.recordQuery.minTime} and time&lt;=${audit.recordQuery.maxTime} " +
-                    "and audit_level in (${audit.recordQuery.levels}) " +
-                    "and  nodeid like ${audit.recordQuery.nodeId} " +
-                    "and type like ${audit.recordQuery.auditType} " +
-                    "and lower(name) like lower(${serviceName}) {escape '#' } " +
-                    "and lower(user_name) like lower(${audit.recordQuery.userName}) " +
-                    "and lower(user_id) like lower(${audit.recordQuery.userIdOrDn}) " +
-                    "and lower(message) like lower(${audit.recordQuery.message}) " +
-                    "and lower(entity_class) like lower(${audit.recordQuery.entityClassName}) " +
-                    "and entity_id >=${entityIdMin}  " +
-                    "and entity_id &lt;=${entityIdMax} " +
-                    "and lower(request_id) like lower(${audit.recordQuery.requestId}) order by time desc;";
-    }
-
-    private static String detailLookupQuery (String detailTable){
-        return
-           "select * from "+detailTable+" where audit_oid in (${recordQuery.id});";
-    }
-
-    private static String makeDefaultAuditLookupPolicyXml(String connection, String recordTable, String detailTable) {
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<exp:Export Version=\"3.0\"\n" +
-                "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
-                "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                "    <exp:References>\n" +
-                "        <JdbcConnectionReference RefType=\"com.l7tech.console.policy.exporter.JdbcConnectionReference\">\n" +
-                "            <ConnectionName>"+connection+"</ConnectionName>\n" +
-                "        </JdbcConnectionReference>\n" +
-                "    </exp:References>\n" +
-                "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                "        <wsp:All wsp:Usage=\"Required\">\n" +
-                "            <L7p:CommentAssertion>\n" +
-                "                <L7p:Comment stringValue=\"Start Default Lookup Policy\"/>\n" +
-                "            </L7p:CommentAssertion>\n" +
-                "            <L7p:SetVariable>\n" +
-                "                <L7p:Base64Expression stringValue=\"JHthdWRpdC5yZWNvcmRRdWVyeS5zZXJ2aWNlTmFtZX0=\"/>\n" +
-                "                <L7p:VariableToSet stringValue=\"serviceName\"/>\n" +
-                "            </L7p:SetVariable>\n" +
-                "            <L7p:Regex>\n" +
-                "                <L7p:AutoTarget booleanValue=\"false\"/>\n" +
-                "                <L7p:OtherTargetMessageVariable stringValue=\"serviceName\"/>\n" +
-                "                <L7p:Regex stringValue=\"\\[\"/>\n" +
-                "                <L7p:Replace booleanValue=\"true\"/>\n" +
-                "                <L7p:Replacement stringValue=\"#[\"/>\n" +
-                "                <L7p:Target target=\"OTHER\"/>\n" +
-                "            </L7p:Regex>\n" +
-                "            <L7p:Regex>\n" +
-                "                <L7p:AutoTarget booleanValue=\"false\"/>\n" +
-                "                <L7p:OtherTargetMessageVariable stringValue=\"serviceName\"/>\n" +
-                "                <L7p:Regex stringValue=\"\\]\"/>\n" +
-                "                <L7p:Replace booleanValue=\"true\"/>\n" +
-                "                <L7p:Replacement stringValue=\"#]\"/>\n" +
-                "                <L7p:Target target=\"OTHER\"/>\n" +
-                "            </L7p:Regex>\n" +
-                "            <L7p:SetVariable>\n" +
-                "                <L7p:Base64Expression stringValue=\""+HexUtils.encodeBase64(HexUtils.encodeUtf8("10000000000"), true)+"\"/>\n" +
-                "                <L7p:VariableToSet stringValue=\"entityIdMax\"/>\n" +
-                "            </L7p:SetVariable>\n" +
-                "            <L7p:SetVariable>\n" +
-                "                <L7p:Base64Expression stringValue=\""+HexUtils.encodeBase64(HexUtils.encodeUtf8("-10000000000"), true)+"\"/>\n" +
-                "                <L7p:VariableToSet stringValue=\"entityIdMin\"/>\n" +
-                "            </L7p:SetVariable>\n" +
-                "            <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
-                "                <L7p:ComparisonAssertion>\n" +
-                "                    <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
-                "                    <L7p:Expression1 stringValue=\"${audit.recordQuery.entityId}\"/>\n" +
-                "                    <L7p:Operator operatorNull=\"null\"/>\n" +
-                "                    <L7p:Predicates predicates=\"included\">\n" +
-                "                        <L7p:item dataType=\"included\">\n" +
-                "                            <L7p:Type variableDataType=\"string\"/>\n" +
-                "                        </L7p:item>\n" +
-                "                        <L7p:item binary=\"included\">\n" +
-                "                            <L7p:RightValue stringValue=\"%\"/>\n" +
-                "                        </L7p:item>\n" +
-                "                    </L7p:Predicates>\n" +
-                "                </L7p:ComparisonAssertion>\n" +
-                "                <wsp:All wsp:Usage=\"Required\">\n" +
-                "                    <L7p:SetVariable>\n" +
-                "                        <L7p:Base64Expression stringValue=\"JHthdWRpdC5yZWNvcmRRdWVyeS5lbnRpdHlJZH0=\"/>\n" +
-                "                        <L7p:VariableToSet stringValue=\"entityIdMax\"/>\n" +
-                "                    </L7p:SetVariable>\n" +
-                "                    <L7p:SetVariable>\n" +
-                "                        <L7p:Base64Expression stringValue=\"JHthdWRpdC5yZWNvcmRRdWVyeS5lbnRpdHlJZH0=\"/>\n" +
-                "                        <L7p:VariableToSet stringValue=\"entityIdMin\"/>\n" +
-                "                    </L7p:SetVariable>\n" +
-                "                </wsp:All>\n" +
-                "            </wsp:OneOrMore>\n" +
-                "            <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
-                "                <wsp:All wsp:Usage=\"Required\">\n" +
-                "                    <L7p:SetVariable>\n" +
-                "                        <L7p:Base64Expression stringValue=\"JHthdWRpdC5yZWNvcmRRdWVyeS5tZXNzYWdlSWR9\"/>\n" +
-                "                        <L7p:VariableToSet stringValue=\"messageId\"/>\n" +
-                "                    </L7p:SetVariable>\n" +
-                "                    <L7p:ComparisonAssertion>\n" +
-                "                        <L7p:Expression1 stringValue=\"${messageId}\"/>\n" +
-                "                        <L7p:Expression2 stringValue=\"\"/>\n" +
-                "                        <L7p:Operator operator=\"EMPTY\"/>\n" +
-                "                        <L7p:Predicates predicates=\"included\">\n" +
-                "                            <L7p:item binary=\"included\">\n" +
-                "                                <L7p:Operator operator=\"EMPTY\"/>\n" +
-                "                                <L7p:RightValue stringValue=\"\"/>\n" +
-                "                            </L7p:item>\n" +
-                "                        </L7p:Predicates>\n" +
-                "                    </L7p:ComparisonAssertion>\n" +
-                "                    <L7p:JdbcQuery>\n" +
-                "                        <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
-                "                        <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
-                "                        <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
-                "                        <L7p:MaxRecords intValue=\"1000\"/>\n" +
-                "                        <L7p:NamingMap mapValue=\"included\">\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"id\"/>\n" +
-                "                                <L7p:value stringValue=\"id\"/>\n" +
-                "                            </L7p:entry>\n" +
-                "                        </L7p:NamingMap>\n" +
-                "                        <L7p:SqlQuery stringValue=\""+defaultLookupQuery(recordTable)+"\"/>\n" +
-                "                        <L7p:VariablePrefix stringValue=\"recordQuery\"/>\n" +
-                "                    </L7p:JdbcQuery>\n" +
-                "                </wsp:All>\n" +
-                "                <wsp:All wsp:Usage=\"Required\">\n" +
-                "                    <L7p:SetVariable>\n" +
-                "                        <L7p:Base64Expression stringValue=\"JHthdWRpdC5yZWNvcmRRdWVyeS5tZXNzYWdlSWR9\"/>\n" +
-                "                        <L7p:VariableToSet stringValue=\"messageIdMax\"/>\n" +
-                "                    </L7p:SetVariable>\n" +
-                "                    <L7p:SetVariable>\n" +
-                "                        <L7p:Base64Expression stringValue=\"JHthdWRpdC5yZWNvcmRRdWVyeS5tZXNzYWdlSWR9\"/>\n" +
-                "                        <L7p:VariableToSet stringValue=\"messageIdMin\"/>\n" +
-                "                    </L7p:SetVariable>\n" +
-                "                    <L7p:JdbcQuery>\n" +
-                "                        <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
-                "                        <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
-                "                        <L7p:MaxRecords intValue=\"1000\"/>\n" +
-                "                        <L7p:SqlQuery stringValue=\""+messaageIdLookupQuery(detailTable)+" \"/>\n" +
-                "                        <L7p:VariablePrefix stringValue=\"recordIdQuery\"/>\n" +
-                "                    </L7p:JdbcQuery>\n" +
-                "                    <L7p:JdbcQuery>\n" +
-                "                        <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
-                "                        <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
-                "                        <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
-                "                        <L7p:MaxRecords intValue=\"1000\"/>\n" +
-                "                        <L7p:NamingMap mapValue=\"included\">\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"id\"/>\n" +
-                "                                <L7p:value stringValue=\"id\"/>\n" +
-                "                            </L7p:entry>\n" +
-                "                        </L7p:NamingMap>\n" +
-                "                        <L7p:SqlQuery stringValue=\""+lookupQueryWithAuditId(recordTable)+"\"/>\n" +
-                "                        <L7p:VariablePrefix stringValue=\"recordQuery\"/>\n" +
-                "                    </L7p:JdbcQuery>\n" +
-                "                </wsp:All>\n" +
-                "            </wsp:OneOrMore>\n" +
-                "            <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
-                "                <L7p:ComparisonAssertion>\n" +
-                "                    <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
-                "                    <L7p:Expression1 stringValue=\"${recordQuery.queryresult.count}\"/>\n" +
-                "                    <L7p:Operator operatorNull=\"null\"/>\n" +
-                "                    <L7p:Predicates predicates=\"included\">\n" +
-                "                        <L7p:item dataType=\"included\">\n" +
-                "                            <L7p:Type variableDataType=\"int\"/>\n" +
-                "                        </L7p:item>\n" +
-                "                        <L7p:item binary=\"included\">\n" +
-                "                            <L7p:RightValue stringValue=\"0\"/>\n" +
-                "                        </L7p:item>\n" +
-                "                    </L7p:Predicates>\n" +
-                "                </L7p:ComparisonAssertion>\n" +
-                "                <L7p:JdbcQuery>\n" +
-                "                    <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
-                "                    <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
-                "                    <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
-                "                    <L7p:MaxRecords intValue=\"1000\"/>\n" +
-                "                    <L7p:SqlQuery stringValue=\""+detailLookupQuery(detailTable)+"\"/>\n" +
-                "                    <L7p:VariablePrefix stringValue=\"detailQuery\"/>\n" +
-                "                </L7p:JdbcQuery>\n" +
-                "            </wsp:OneOrMore>\n" +
-                "            <L7p:CommentAssertion>\n" +
-                "                <L7p:Comment stringValue=\"End Default Lookup Policy\"/>\n" +
-                "            </L7p:CommentAssertion>\n" +
-                "        </wsp:All>\n" +
-                "    </wsp:Policy>\n" +
-                "</exp:Export>\n";
-    }
 
     public PolicyHeader getLookupPolicyHeader() {
         return lookupPolicyHeader;
@@ -337,7 +141,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Audit Sink Policy]", null, false);
         policy.setInternalTag(INTERNAL_TAG_AUDIT_SINK);
 
-        String theXml = createEmptyPolicy ? getSendToHttpSinkPolicyXml() : makeDefaultAuditSinkPolicyXml(connection,recordTable,detailTable);
+        String theXml = createEmptyPolicy ? getSendToHttpSinkPolicyXml() : ExternalAuditsCommonUtils.makeDefaultAuditSinkPolicyXml(connection,recordTable,detailTable);
 
         policy.setXml(theXml);
         return policy;
@@ -367,54 +171,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
                 new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Internal Policy: " + policy.getName()))));
         return xml;
     }
-    private static String makeDefaultAuditSinkPolicyXml(String connection, String recordTable, String detailTable) {
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                "    <wsp:All wsp:Usage=\"Required\">\n" +
-                "        <L7p:CommentAssertion>\n" +
-                "            <L7p:Comment stringValue=\"Start default audit sink policy\"/>\n" +
-                "        </L7p:CommentAssertion>\n" +
-                "        <L7p:UUIDGenerator>\n" +
-                "            <L7p:TargetVariable stringValue=\"record.guid\"/>\n" +
-                "        </L7p:UUIDGenerator>\n" +
-                "        <L7p:JdbcQuery>\n" +
-                "            <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
-                "            <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
-                "            <L7p:SqlQuery stringValue=\""+ExternalAuditsCommonUtils.saveRecordQuery(recordTable)+"\"/>\n" +
-                "        </L7p:JdbcQuery>\n" +
-                "        <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
-                "            <L7p:ComparisonAssertion>\n" +
-                "                <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
-                "                <L7p:Expression1 stringValue=\"${audit.numDetails}\"/>\n" +
-                "                <L7p:Operator operatorNull=\"null\"/>\n" +
-                "                <L7p:Predicates predicates=\"included\">\n" +
-                "                    <L7p:item dataType=\"included\">\n" +
-                "                        <L7p:Type variableDataType=\"int\"/>\n" +
-                "                    </L7p:item>\n" +
-                "                    <L7p:item binary=\"included\">\n" +
-                "                        <L7p:RightValue stringValue=\"0\"/>\n" +
-                "                    </L7p:item>\n" +
-                "                </L7p:Predicates>\n" +
-                "            </L7p:ComparisonAssertion>\n" +
-                "            <L7p:ForEachLoop L7p:Usage=\"Required\"\n" +
-                "                loopVariable=\"audit.details\" variablePrefix=\"i\">\n" +
-                "                <L7p:UUIDGenerator>\n" +
-                "                    <L7p:TargetVariable stringValue=\"detail.guid\"/>\n" +
-                "                </L7p:UUIDGenerator>\n" +
-                "                <L7p:JdbcQuery>\n" +
-                "                    <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
-                "                    <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
-                "                    <L7p:SqlQuery stringValue=\""+ExternalAuditsCommonUtils.saveDetailQuery(detailTable)+"\"/>\n" +
-                "                </L7p:JdbcQuery>\n" +
-                "            </L7p:ForEachLoop>\n" +
-                "        </wsp:OneOrMore>\n" +
-                "        <L7p:CommentAssertion>\n" +
-                "            <L7p:Comment stringValue=\"End default audit sink policy\"/>\n" +
-                "        </L7p:CommentAssertion>\n" +
-                "    </wsp:All>\n" +
-                "</wsp:Policy>\n" +
-                "";
-    }
+
 
     /**
      * add the EntityListener

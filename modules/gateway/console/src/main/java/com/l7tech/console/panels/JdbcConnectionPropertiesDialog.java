@@ -1,6 +1,8 @@
 package com.l7tech.console.panels;
 
 import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
+
+import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.util.MutablePair;
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
@@ -15,7 +17,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
@@ -40,7 +41,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.resources.JdbcConnectionPropertiesDialog");
 
     private JPanel mainPanel;
-    private JTextField connectionNameTextField;
+    private SquigglyTextField connectionNameTextField;
     private JComboBox driverClassComboBox;
     private JTextField jdbcUrlTextField;
     private JTextField usernameTextField;
@@ -91,23 +92,39 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         getRootPane().setDefaultButton(okButton);
         Utilities.setEscKeyStrokeDisposes(this);
 
-        connectionNameTextField.setDocument(new MaxLengthDocument(128));
+        Utilities.setMaxLength(connectionNameTextField.getDocument(), 128);
         ((JTextField)driverClassComboBox.getEditor().getEditorComponent()).setDocument(new MaxLengthDocument(256));
         jdbcUrlTextField.setDocument(new MaxLengthDocument(4096));
         usernameTextField.setDocument(new MaxLengthDocument(128));
         passwordField.setDocument(new MaxLengthDocument(64));
 
-        final DocumentListener docListener = new RunOnChangeListener(new Runnable() {
+        final RunOnChangeListener docListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
                 enableOrDisableButtons();
             }
         });
-        connectionNameTextField.getDocument().addDocumentListener(docListener);
         ((JTextField)driverClassComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(docListener);
         jdbcUrlTextField.getDocument().addDocumentListener(docListener);
         usernameTextField.getDocument().addDocumentListener(docListener);
         passwordField.getDocument().addDocumentListener(docListener);
+
+        connectionNameTextField.getDocument().addDocumentListener(new RunOnChangeListener() {
+            @Override
+            public void run() {
+                if ( (! ( ExternalAuditStoreConfigWizard.STRICT_CONNECTION_NAME_PATTERN.matcher(connectionNameTextField.getText()).matches()
+                        || connectionNameTextField.getText().equals(""))  )  )  {
+                    connectionNameTextField.setToolTipText("You may set this name but you will not be able to use the " +
+                            "connection in the external audit store configuration.");
+                    connectionNameTextField.setAll();
+
+                } else {
+                    connectionNameTextField.setToolTipText(null);
+                    connectionNameTextField.setNone();
+                }
+                enableOrDisableButtons();
+            }
+        });
 
         final InputValidator inputValidator = new InputValidator(this, resources.getString("dialog.title.jdbc.conn.props"));
         // The values in the spinners will be initialized in the method modelToView().

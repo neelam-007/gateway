@@ -21,7 +21,7 @@ public class JdbcQueryUtils {
         String[] vars = Syntax.getReferencedNames(query);
         final List<Object> preparedStmtParams = new ArrayList<Object>();
         try {
-            final String plainQuery = context == null? query : JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, preparedStmtParams, context, vars, true,audit);
+            final String plainQuery = context == null? query : JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, preparedStmtParams, context, vars, true,new ArrayList<String>(),audit);
             return jdbcQueryingManager.performJdbcQuery(connectionName,plainQuery, 1, preparedStmtParams);
         } catch (VariableNameSyntaxException e) {
             return e.getMessage();
@@ -38,7 +38,7 @@ public class JdbcQueryUtils {
      * @param audit
      * @return
      */
-    static public String getQueryStatementWithoutContextVariables(String query, List<Object> params, PolicyEnforcementContext context,String[] varsWithoutIndex, boolean allowMultiValued, Audit audit) {
+    static public String getQueryStatementWithoutContextVariables(String query, List<Object> params, PolicyEnforcementContext context,String[] varsWithoutIndex, boolean allowMultiValued, List<String> resolveAsObjectList , Audit audit) {
         if (Syntax.getReferencedNames(query).length == 0) {
             // There are no context variables in the query text. Just return it immediately.
             return query;
@@ -63,9 +63,8 @@ public class JdbcQueryUtils {
                 Matcher matcher = searchPattern.matcher(query);
                 query = matcher.replaceFirst(sb.toString());
             } else {
-                //todo [wynne]********** HACK FOR AUDIT SINK POLICY***********************
                 Object value;
-                if(BuiltinVariables.isSupported(varWithIndex))
+                if(resolveAsObjectList.contains(varWithIndex))
                     value= ExpandVariables.processSingleVariableAsObject("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, audit), audit);
                 else
                     value = ExpandVariables.process("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, audit), audit);

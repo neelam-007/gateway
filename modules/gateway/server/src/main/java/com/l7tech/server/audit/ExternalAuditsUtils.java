@@ -38,6 +38,7 @@ public class ExternalAuditsUtils {
         String query;
         Object result;
         boolean success;
+        String guid = UUID.randomUUID().toString();
         SystemAuditRecord sar = new SystemAuditRecord(
                 Level.FINE,
                 UUID.randomUUID().toString(),
@@ -52,14 +53,14 @@ public class ExternalAuditsUtils {
         signAuditRecord(sar,defaultKey);
         context = new AuditSinkPolicyEnforcementContext(sar, PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,null);
         query =  ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
-        query = query.replace("${record.guid}", "'"+sar.getGuid()+"'");
+        query = query.replace("${record.guid}", "'"+guid+"'");
         result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
         success = result instanceof Integer && (Integer)result == 1;
         if(!success)
             return result.toString();
 
         // get data
-        query = "select * from "+auditRecordTable+" where id='"+sar.getGuid()+"';";
+        query = "select * from "+auditRecordTable+" where id='"+guid+"';";
         result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
         success = result instanceof SqlRowSet && ((SqlRowSet) result).next();
         if(!success)
@@ -68,7 +69,7 @@ public class ExternalAuditsUtils {
         boolean verify = verifyRetreievedAuditRecord((SqlRowSet)result,sar.getOid(),defaultKey);
 
         // delete
-        result =  deleteRow(jdbcQueryingManager,auditRecordTable,sar.getGuid(),connectionName);
+        result =  deleteRow(jdbcQueryingManager,auditRecordTable,guid,connectionName);
 
         if(!verify )
             return "Audit message signature verify failed";
@@ -82,6 +83,7 @@ public class ExternalAuditsUtils {
         boolean success;
 
         // test save
+        String guid = UUID.randomUUID().toString();
         AdminAuditRecord aar = new AdminAuditRecord(
                 Level.FINE,
                 UUID.randomUUID().toString(),
@@ -97,14 +99,14 @@ public class ExternalAuditsUtils {
         signAuditRecord(aar,defaultKey);
         context = new AuditSinkPolicyEnforcementContext(aar, PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,null);
         query =  ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
-        query = query.replace("${record.guid}", "'"+aar.getGuid()+"'");
+        query = query.replace("${record.guid}", "'"+guid+"'");
         result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
         success = result instanceof Integer && (Integer)result == 1;
         if(!success)
             return result.toString();
 
         // get data
-        query = "select * from "+auditRecordTable+" where id='"+aar.getGuid()+"';";
+        query = "select * from "+auditRecordTable+" where id='"+guid+"';";
         result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
         success = result instanceof SqlRowSet && ((SqlRowSet) result).next();
         if(!success)
@@ -113,7 +115,7 @@ public class ExternalAuditsUtils {
         boolean verify = verifyRetreievedAuditRecord((SqlRowSet)result,aar.getOid(),defaultKey);
 
         // delete
-        result =  deleteRow(jdbcQueryingManager,auditRecordTable,aar.getGuid(),connectionName);
+        result =  deleteRow(jdbcQueryingManager,auditRecordTable,guid,connectionName);
         if(!verify )
             return "Audit message signature verify failed";
         return result == null? "" : result.toString();
@@ -139,6 +141,7 @@ public class ExternalAuditsUtils {
         Message response = new Message();
         response.initialize(XmlUtil.stringAsDocument(responseXML));
 
+        String guid = UUID.randomUUID().toString();
         MessageSummaryAuditRecord record =new MessageSummaryAuditRecord(Level.WARNING, UUID.randomUUID().toString() , "requestId", AssertionStatus.NOT_APPLICABLE,
                 "clientAddr",requestXML, requestXML.length(),
                 responseXML, responseXML.length() , 1234, 5678,
@@ -152,14 +155,14 @@ public class ExternalAuditsUtils {
                 PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response));
 
         String query = ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
-        query = query.replace("${record.guid}", "'"+record.getGuid()+"'");
+        query = query.replace("${record.guid}", "'"+guid+"'");
         Object result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName, query, context, new LoggingAudit(logger));
         success = result instanceof Integer && (Integer)result == 1;
         if(!success)
             return result.toString();
 
         // get data
-        query = "select * from "+auditRecordTable+" where id='"+record.getGuid()+"';";
+        query = "select * from "+auditRecordTable+" where id='"+guid+"';";
         result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
         success = result instanceof SqlRowSet && ((SqlRowSet) result).next();
         if(!success)
@@ -170,21 +173,21 @@ public class ExternalAuditsUtils {
         // save detail
         AuditDetail detail = new AuditDetail(Messages.EXCEPTION_SEVERE,new String[]{"param1","param2"}, new RuntimeException("message"));
         detail.setOrdinal(9);
-        detail.setAuditGuid(record.getGuid());
+        detail.setAuditGuid(guid);
         detail.setAuditRecord(record);
         Set<AuditDetail> details = record.getDetails();
         details.add(detail);
         record.setDetails(details);
 
         query = ExternalAuditsCommonUtils.saveDetailQuery(auditDetailTable);
-        query = query.replace("${record.guid}", "'"+record.getGuid()+"'");
+        query = query.replace("${record.guid}", "'"+guid+"'");
         query = query.replaceAll("i.current", "audit.details.0");
         result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName, query,context, new LoggingAudit(logger));
         success = result instanceof Integer && (Integer)result == 1;
         if(!success)
             return result.toString();
 
-        query = "select * from "+auditDetailTable+" where audit_oid='"+record.getGuid()+"' and ordinal="+detail.getOrdinal()+";";
+        query = "select * from "+auditDetailTable+" where audit_oid='"+guid+"' and ordinal="+detail.getOrdinal()+";";
         result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
         success = result instanceof SqlRowSet && ((SqlRowSet) result).next();
         if(!success)
@@ -192,7 +195,7 @@ public class ExternalAuditsUtils {
         // todo?
 
         // delete
-        result =  deleteRow(jdbcQueryingManager,auditRecordTable,record.getGuid(),connectionName);
+        result =  deleteRow(jdbcQueryingManager,auditRecordTable,guid,connectionName);
         success = result == null;
         if(!success)
             return "Failed to delete a message summary audit record: "+result.toString();
@@ -203,7 +206,7 @@ public class ExternalAuditsUtils {
         result = JdbcQueryUtils.performJdbcQuery( jdbcQueryingManager,connectionName,query,null, new LoggingAudit(logger));
         if(result instanceof Integer && (Integer)result!= 0){
             // try to clean up audit detail
-            query = "delete from "+auditDetailTable+" where id='"+record.getGuid()+"' and ordinal="+detail.getOrdinal()+";";
+            query = "delete from "+auditDetailTable+" where id='"+guid+"' and ordinal="+detail.getOrdinal()+";";
             result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
             return "Audit detail failed to delete with audit record";
         }
@@ -217,7 +220,7 @@ public class ExternalAuditsUtils {
     }
 
     // return null if successful
-    static public Object deleteRow(JdbcQueryingManager jdbcQueryingManager, String table, String id, String connectionName) throws Exception {
+    static private Object deleteRow(JdbcQueryingManager jdbcQueryingManager, String table, String id, String connectionName) throws Exception {
         String query;
         Object result;
         boolean success;
@@ -322,7 +325,6 @@ public class ExternalAuditsUtils {
         }
 
         record.setSignature(signature);
-        record.setGuid(id);
         record.setMillis(time);
 
         return record;

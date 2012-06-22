@@ -162,14 +162,6 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         return oid;
     }
 
-    public String getGuid() {
-        return guid;
-    }
-
-    public void setGuid(String guid) {
-        this.guid = guid;
-    }
-
     @Override
     public int getVersion() {
         return version;
@@ -361,9 +353,6 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
 
 
         // Note that object ids cannot be included in the calculation since it changes once saved
-
-        if (guid != null) out.write(guid.getBytes());
-        out.write(SERSEP.getBytes());
 
         if (nodeId != null) out.write(nodeId.getBytes());
         out.write(SERSEP.getBytes());

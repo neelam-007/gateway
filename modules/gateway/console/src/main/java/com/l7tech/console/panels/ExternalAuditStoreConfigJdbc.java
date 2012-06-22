@@ -139,8 +139,9 @@ public class ExternalAuditStoreConfigJdbc extends WizardStepPanel {
 
         // Add all items into the combox box.
         jdbcConnectionComboBox.removeAllItems();
-        for (String driverClass: connNameList) {
-            jdbcConnectionComboBox.addItem(driverClass);
+        for (String connectionName: connNameList) {
+            if(ExternalAuditStoreConfigWizard.STRICT_CONNECTION_NAME_PATTERN.matcher(connectionName).matches())
+                jdbcConnectionComboBox.addItem(connectionName);
         }
 
         jdbcConnectionComboBox.setSelectedItem(0);

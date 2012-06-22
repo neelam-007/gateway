@@ -37,6 +37,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     private int maxRecords = JdbcAdmin.ORIGINAL_MAX_RECORDS;
     private boolean assertionFailureEnabled = true;
     private Map<String, String> namingMap = new TreeMap<String, String>();
+    private List<String> resolveAsObjectList = new ArrayList<String>();
 
     private boolean allowMultiValuedVariables = false;
 
@@ -134,6 +135,16 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
 
     public void setAllowMultiValuedVariables(boolean allowMultiValuedVariables) {
         this.allowMultiValuedVariables = allowMultiValuedVariables;
+    }
+
+    // hidden properties
+    public List<String> getResolveAsObjectList() {
+        return resolveAsObjectList;
+    }
+
+    // hidden properties
+    public void setResolveAsObjectList(List<String> resolveAsObjectList) {
+        this.resolveAsObjectList = resolveAsObjectList;
     }
 
     @Override
