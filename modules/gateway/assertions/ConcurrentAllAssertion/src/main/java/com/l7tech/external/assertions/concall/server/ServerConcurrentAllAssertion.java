@@ -99,7 +99,9 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
      */
     static void resetAssertionExecutor(int maxConc, int coreConc, int maxQueue) {
         synchronized (assertionExecutorInitLock) {
-            assertionExecutor.shutdown();
+            if (assertionExecutor != null) {
+                assertionExecutor.shutdown();
+            }
             assertionExecutor = createAssertionExecutor(maxConc, coreConc, maxQueue);
         }
     }
