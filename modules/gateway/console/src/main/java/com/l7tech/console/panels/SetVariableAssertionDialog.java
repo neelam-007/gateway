@@ -53,7 +53,6 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private final static String DATE_PREVIEW_DEFAULT = "<No preview available>";
     private final static String AUTO_STRING = "<auto>";
-    private final static SimpleDateFormat LOCAL_DATE_FORMAT = new SimpleDateFormat();
 
     private final ImageIcon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
     private final ImageIcon OK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Check16.png"));
@@ -457,13 +456,16 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                 final Date date;
                 if (!AUTO_STRING.equals(dateFormat) && !dateFormat.isEmpty()) {
                     SimpleDateFormat format = new SimpleDateFormat(dateFormat);
+                    format.setTimeZone(DateUtils.getZuluTimeZone());
                     format.setLenient(ConfigFactory.getBooleanProperty("com.l7tech.util.lenientDateFormat", false));
                     date = format.parse(dateInput);
                 } else {
                     date = dateParser.parseDateFromString(dateInput);
                 }
 
-                message = LOCAL_DATE_FORMAT.format(date);
+                final SimpleDateFormat format = new SimpleDateFormat(DateUtils.ISO8601_PATTERN);
+                format.setTimeZone(DateUtils.getZuluTimeZone());
+                message = format.format(date);
             } catch (ParseException e) {
                 message = ExceptionUtils.getMessage(e);
             } catch (DateTimeConfigUtils.UnknownDateFormatException e) {
