@@ -24,6 +24,8 @@ DATE_PREFIX=`date +%Y%m%d_%H%M_%S`
 MOUNT_DIR="/mnt/secretvol_${DATE_PREFIX}"
 MOUNT_POINT="/dev/sdf"
 AUTOSCALE_PROPERTIES="autoscalenode.properties"
+MODULAR_ASSERTION_FOLDER="modular_assertions"
+CUSTOM_ASSERTION_FOLDER="custom_assertions"
 
 NODE_MANAGEMENT_URI='https://localhost:8765/services/nodeManagementApi'
 
@@ -69,6 +71,11 @@ if [ ! -r "${MOUNT_DIR}/${AUTOSCALE_PROPERTIES}" ] ; then
   umount "${MOUNT_DIR}"
   exit 1
 fi 
+
+# copy modular assertions and custom assertions into proper locations
+cp -f "${MOUNT_DIR}/${MODULAR_ASSERTION_FOLDER}"/*.aar /opt/SecureSpan/Gateway/runtime/modules/assertions/
+cp -f "${MOUNT_DIR}/${CUSTOM_ASSERTION_FOLDER}"/*.jar  /opt/SecureSpan/Gateway/runtime/modules/lib/
+chown gateway:gateway /opt/SecureSpan/Gateway/runtime/modules/lib/*.jar
 
 databaseAdminPassword=$(sed '/^\#/d' "${MOUNT_DIR}/${AUTOSCALE_PROPERTIES}" | grep 'node.db.config.admin.pass'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 databaseAdminUsername=$(sed '/^\#/d' "${MOUNT_DIR}/${AUTOSCALE_PROPERTIES}" | grep 'node.db.config.admin.user'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
