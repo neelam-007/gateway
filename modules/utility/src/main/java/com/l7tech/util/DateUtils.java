@@ -137,7 +137,15 @@ public class DateUtils {
             final int minutes = (tzd.length() > 3) ? Integer.valueOf((tzd.contains(":")) ? tzd.substring(4, 6) : tzd.substring(3, 5)) : 0;
 
             final int rawOffset = (sign.charAt(0) == '-' ? -1 : 1) * ((hours * TimeUnit.HOURS.getMultiplier()) + (minutes * TimeUnit.MINUTES.getMultiplier()));
-            returnZone = new SimpleTimeZone(rawOffset, tzd);
+
+            final TimeZone timeZone = TimeZone.getTimeZone("GMT" + tzd);
+            // tzd may not be valid. If this is the case, then TimeZone will simply return GMT.
+            // make sure the raw offset requested was received.
+            if (timeZone.getRawOffset() == rawOffset) {
+                returnZone = timeZone;
+            } else {
+                returnZone = null;
+            }
         }
 
         return returnZone;
