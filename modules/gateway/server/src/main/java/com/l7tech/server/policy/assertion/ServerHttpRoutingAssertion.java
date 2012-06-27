@@ -272,6 +272,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
 
             String failedService = null;
+            List<String> blacklist = new ArrayList<String>();
             for (int tries = 0; tries < maxFailoverAttempts; tries++) {
                 String failoverService = failoverStrategy.selectService();
                 if (failoverService == null) {
@@ -292,12 +293,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 AssertionStatus result = tryUrl(context, requestMessage, url);
                 if (result == AssertionStatus.NONE) {
                     failoverStrategy.reportSuccess(failoverService);
+                    context.setVariable(HttpRoutingAssertion.getVarHttpRoutingUrlBlacklist(), blacklist.toArray(new String[blacklist.size()]));
                     return result;
                 }
                 failedService = failoverService;
+                blacklist.add(failoverServiceExpanded);
                 failoverStrategy.reportFailure(failoverService);
             }
-
+            context.setVariable(HttpRoutingAssertion.getVarHttpRoutingUrlBlacklist(), blacklist.toArray(new String[blacklist.size()]));
             logAndAudit(AssertionMessages.HTTPROUTE_TOO_MANY_ATTEMPTS);
             return AssertionStatus.FAILED;
         } finally {

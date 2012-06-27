@@ -51,6 +51,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     public static final String VAR_HTTP_ROUTING_URL_SUFFIX_PATH = "path";
     public static final String VAR_HTTP_ROUTING_URL_SUFFIX_QUERY = "query";
     public static final String VAR_HTTP_ROUTING_URL_SUFFIX_FRAGMENT = "fragment";
+    public static final String VAR_HTTP_ROUTING_URL_BLACKLIST = "blacklist";
     public static final String PROP_SSL_SESSION_TIMEOUT = HttpRoutingAssertion.class.getName() + ".sslSessionTimeoutSeconds";
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
     public static final String KERBEROS_DATA = "kerberos.data";
@@ -842,5 +843,9 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     public static String getVarHttpRoutingUrlFragment() {
         return VAR_HTTP_ROUTING_URL + "." + VAR_HTTP_ROUTING_URL_SUFFIX_FRAGMENT;
+    }
+
+    public static String getVarHttpRoutingUrlBlacklist(){
+        return VAR_HTTP_ROUTING_URL + "." + VAR_HTTP_ROUTING_URL_BLACKLIST;
     }
 }
