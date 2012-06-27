@@ -129,72 +129,52 @@ public class DateTimeSelectorTest {
 
     @Test
     public void testOffsetTimeZoneNegative() throws Exception {
-        final TimeZone timeZone = TimeZone.getDefault();
-        timeZone.setRawOffset(-7 * TimeUnit.HOURS.getMultiplier());
-        testFormattedDate("mydate", "${mydate.-07:00}", DateUtils.ISO8601_PATTERN, timeZone);
+        testFormattedDate(date, "mydate", "${mydate.-07:00}", "2012-06-26T18:17:59.000-07:00");
     }
 
     @Test
     public void testOffsetTimeZoneNegative_Short() throws Exception {
-        final TimeZone timeZone = TimeZone.getDefault();
-        timeZone.setRawOffset(-7 * TimeUnit.HOURS.getMultiplier());
-        testFormattedDate("mydate", "${mydate.-07}", DateUtils.ISO8601_PATTERN, timeZone);
+        testFormattedDate(date, "mydate", "${mydate.-07}", "2012-06-26T18:17:59.000-07:00");
     }
 
     @Test
     public void testOffsetTimeZonePositive() throws Exception {
-        final TimeZone timeZone = TimeZone.getDefault();
-        timeZone.setRawOffset(7 * TimeUnit.HOURS.getMultiplier());
-        testFormattedDate("mydate", "${mydate.+07:00}", DateUtils.ISO8601_PATTERN, timeZone);
+        testFormattedDate(date, "mydate", "${mydate.+07:00}", "2012-06-27T08:17:59.000+07:00");
     }
 
     @Test
     public void testOffsetTimeZonePositive_Short() throws Exception {
-        final TimeZone timeZone = TimeZone.getDefault();
-        timeZone.setRawOffset(7 * TimeUnit.HOURS.getMultiplier());
-        testFormattedDate("mydate", "${mydate.+07}", DateUtils.ISO8601_PATTERN, timeZone);
+        testFormattedDate(date, "mydate", "${mydate.+07:00}", "2012-06-27T08:17:59.000+07:00");
     }
 
     @Test
     public void testOffsetTimeZoneNegative_NoColon() throws Exception {
-        final TimeZone timeZone = TimeZone.getDefault();
-        timeZone.setRawOffset(-7 * TimeUnit.HOURS.getMultiplier());
-        testFormattedDate("mydate", "${mydate.-0700}", DateUtils.ISO8601_PATTERN, timeZone);
+        testFormattedDate(date, "mydate", "${mydate.-0700}", "2012-06-26T18:17:59.000-07:00");
     }
 
     @Test
     public void testOffsetTimeZonePositive_NoColon() throws Exception {
-        final TimeZone timeZone = TimeZone.getDefault();
-        timeZone.setRawOffset(7 * TimeUnit.HOURS.getMultiplier());
-        testFormattedDate("mydate", "${mydate.+0700}", DateUtils.ISO8601_PATTERN, timeZone);
+        testFormattedDate(date, "mydate", "${mydate.+0700}", "2012-06-27T08:17:59.000+07:00");
     }
 
     @Test
     public void testOffsetTimeZoneNegativeWithMinutes() throws Exception {
-        final TimeZone timeZone = TimeZone.getDefault();
-        timeZone.setRawOffset(-1 * (4 * TimeUnit.HOURS.getMultiplier() + 30 * TimeUnit.MINUTES.getMultiplier()));
-        testFormattedDate("mydate", "${mydate.-04:30}", DateUtils.ISO8601_PATTERN, timeZone);
+        testFormattedDate(date, "mydate", "${mydate.-04:30}", "2012-06-26T20:47:59.000-04:30");
     }
 
     @Test
     public void testOffsetTimeZonePositiveWithMinutes() throws Exception {
-        final TimeZone timeZone = TimeZone.getDefault();
-        timeZone.setRawOffset(5 * TimeUnit.HOURS.getMultiplier() + 30 * TimeUnit.MINUTES.getMultiplier());
-        testFormattedDate("mydate", "${mydate.+05:30}", DateUtils.ISO8601_PATTERN, timeZone);
+        testFormattedDate(date, "mydate", "${mydate.+05:30}", "2012-06-27T06:47:59.000+05:30");
     }
 
     @Test
     public void testOffsetTimeZoneNegative_NoColonWithMinutes() throws Exception {
-        final TimeZone timeZone = TimeZone.getDefault();
-        timeZone.setRawOffset(-1 * (2 * TimeUnit.HOURS.getMultiplier() + 30 * TimeUnit.MINUTES.getMultiplier()));
-        testFormattedDate("mydate", "${mydate.-0230}", DateUtils.ISO8601_PATTERN, timeZone);
+        testFormattedDate(date, "mydate", "${mydate.-0230}", "2012-06-26T22:47:59.000-02:30");
     }
 
     @Test
     public void testOffsetTimeZonePositive_NoColonWithMinutes() throws Exception {
-        final TimeZone timeZone = TimeZone.getDefault();
-        timeZone.setRawOffset(5 * TimeUnit.HOURS.getMultiplier() + 30 * TimeUnit.MINUTES.getMultiplier());
-        testFormattedDate("mydate", "${mydate.+0530}", DateUtils.ISO8601_PATTERN, timeZone);
+        testFormattedDate(date, "mydate", "${mydate.+0530}", "2012-06-27T06:47:59.000+05:30");
     }
 
     // - PRIVATE
@@ -202,6 +182,21 @@ public class DateTimeSelectorTest {
     private TestAudit testAudit;
     private TimeZone utcTimeZone;
     private TimeZone localTimeZone;
+    /**
+     * Wed, 27 Jun 2012 01:17:59 GMT
+     */
+    private final Date date = new Date(1340759879000L);
+
+    private void testFormattedDate(final Date date, final String dateVarNameNoSuffixes, final String dateExpression, final String expectedOutput) {
+        final HashMap<String, Object> vars = new HashMap<String, Object>();
+        vars.put(dateVarNameNoSuffixes, date);
+        final String actual = ExpandVariables.process(dateExpression, vars, testAudit);
+        System.out.println(actual);
+
+        assertEquals(expectedOutput, actual);
+        // no audits were created
+        assertFalse(testAudit.iterator().hasNext());
+    }
 
     private void testFormattedDate(final String dateVarNameNoSuffixes, final String dateExpression, final String expectedFormat, final TimeZone expectedTimeZone) {
         final Date date = new Date();

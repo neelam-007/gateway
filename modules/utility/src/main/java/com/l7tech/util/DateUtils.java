@@ -137,12 +137,7 @@ public class DateUtils {
             final int minutes = (tzd.length() > 3) ? Integer.valueOf((tzd.contains(":")) ? tzd.substring(4, 6) : tzd.substring(3, 5)) : 0;
 
             final int rawOffset = (sign.charAt(0) == '-' ? -1 : 1) * ((hours * TimeUnit.HOURS.getMultiplier()) + (minutes * TimeUnit.MINUTES.getMultiplier()));
-            // note we cannot 'pick' a timezone using the rawOffset. It is likely that TimeZone.getAvailableId(offset) will
-            // find a timezone, but that timezone may be in a day light savings period, in which case using it may cause a date
-            // with a different offset from GMT to be produced and may not match the offset requested.
-            returnZone = TimeZone.getDefault();
-            // this is lenient - we could verify that at least one timezone exists for this offset, this is more flexible.
-            returnZone.setRawOffset(rawOffset);
+            returnZone = new SimpleTimeZone(rawOffset, tzd);
         }
 
         return returnZone;
