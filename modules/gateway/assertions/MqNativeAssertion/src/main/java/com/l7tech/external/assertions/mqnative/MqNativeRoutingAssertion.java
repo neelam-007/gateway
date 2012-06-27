@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.mqnative;
 
+import com.l7tech.external.assertions.mqnative.server.MqNativeAdminServerSupport;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
@@ -333,7 +334,16 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
         meta.put( GLOBAL_ACTION_CLASSNAMES, new String[] { "com.l7tech.external.assertions.mqnative.console.MqNativeCustomAction" } );
         meta.put( PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.mqnative.console.MqNativeRoutingAssertionDialog" );
         meta.put( MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.mqnative.server.MqNativeModuleLoadListener" );
-        meta.put( SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.mqnative.server.DelegatingServerMqNativeRoutingAssertion");
+
+        // fix bug #12529: logged message(s) not showing in SOAP fault
+        try {
+            Class.forName("com.ibm.mq.MQException", false, MqNativeAdminServerSupport.class.getClassLoader());
+            meta.put( SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.mqnative.server.ServerMqNativeRoutingAssertion");
+        } catch (ClassNotFoundException e) {
+            // required jars not installed
+            meta.put( SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.mqnative.server.DelegatingServerMqNativeRoutingAssertion");
+        }
+
         meta.put( PROPERTIES_ACTION_NAME, "MQ Native Routing Properties" );
         meta.put( FEATURE_SET_NAME, "(fromClass)" );
 
