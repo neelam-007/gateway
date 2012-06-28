@@ -42,7 +42,6 @@ public class AssertionInfoDialog extends JDialog {
     private static final String MULTIVALUED = "Supports Multivalued";
     private static final Logger LOGGER = Logger.getLogger(AssertionInfoDialog.class.getName());
     private JPanel contentPanel;
-    private JPanel setsVariablesTablePanel;
     private JTable setsVariablesTable;
     private JLabel setsVariablesLabel;
     private JLabel nameLabel;
@@ -50,8 +49,9 @@ public class AssertionInfoDialog extends JDialog {
     // using a text pane because some assertion descriptions contain html code for styling
     private JTextPane descriptionTextPane;
     private JLabel usesVariablesLabel;
-    private JPanel usesVariablesTablePanel;
     private JTable usesVariablesTable;
+    private JScrollPane contextVariableSetScrollPane;
+    private JScrollPane contextVariableUseScrollPane;
 
     private void displayVariablesUsed(Assertion assertion) {
         if (assertion instanceof UsesVariables) {
@@ -65,9 +65,6 @@ public class AssertionInfoDialog extends JDialog {
                 }
                 usesVariablesTable.setModel(new UneditableTableModel(data, new String[]{NAME}));
                 usesVariablesTable.setCellSelectionEnabled(true);
-                usesVariablesTablePanel.setLayout(new BorderLayout());
-                usesVariablesTablePanel.add(usesVariablesTable.getTableHeader(), BorderLayout.NORTH);
-                usesVariablesTablePanel.add(usesVariablesTable, BorderLayout.CENTER);
             } else {
                 disableUsesVariableTable();
             }
@@ -96,9 +93,6 @@ public class AssertionInfoDialog extends JDialog {
 
                     // want to be able to copy-paste context variables
                     setsVariablesTable.setCellSelectionEnabled(true);
-                    setsVariablesTablePanel.setLayout(new BorderLayout());
-                    setsVariablesTablePanel.add(setsVariablesTable.getTableHeader(), BorderLayout.NORTH);
-                    setsVariablesTablePanel.add(setsVariablesTable, BorderLayout.CENTER);
                 } else {
                     disableSetsVariableTable();
                 }
@@ -117,8 +111,7 @@ public class AssertionInfoDialog extends JDialog {
      */
     private void disableSetsVariableTable() {
         setsVariablesLabel.setText(NOT_AVAILABLE);
-        setsVariablesTablePanel.setEnabled(false);
-        setsVariablesTablePanel.setVisible(false);
+        contextVariableSetScrollPane.setVisible(false);
     }
 
     /**
@@ -126,8 +119,7 @@ public class AssertionInfoDialog extends JDialog {
      */
     private void disableUsesVariableTable() {
         usesVariablesLabel.setText(NOT_AVAILABLE);
-        usesVariablesTablePanel.setEnabled(false);
-        usesVariablesTablePanel.setVisible(false);
+        contextVariableUseScrollPane.setVisible(false);
     }
 
     private class UneditableTableModel extends DefaultTableModel {
