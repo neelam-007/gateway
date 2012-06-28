@@ -149,6 +149,21 @@ public class FunctionsTest {
     }
 
     @Test
+    public void testToMap() throws Exception {
+        Map<String, String> upper = toMap(FRUITS, new Unary<Pair<String, String>, String>() {
+            @Override
+            public Pair<String, String> call(String s) {
+                return new Pair<String, String>(s.toUpperCase(), s);
+            }
+        });
+
+        for (Map.Entry<String, String> entry : upper.entrySet()) {
+            assertNotSame(entry.getKey(), entry.getValue());
+            assertEquals(entry.getKey().toUpperCase(), entry.getValue().toUpperCase());
+        }
+    }
+
+    @Test
     public void testReduce() throws Exception {
         int totalLen = reduce(TLAS, 0, new Binary<Integer, Integer, String>() {
             @Override

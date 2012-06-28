@@ -128,9 +128,9 @@ public class DateUtils {
             } else if (tzd.equalsIgnoreCase("local")) {
                 returnZone = TimeZone.getDefault();
             }
-        } else if (validTimezones.contains(tzd)) {
-            // is it a built in timezone
-            returnZone = TimeZone.getTimeZone(tzd);
+        } else if (lowerToActualTimeZones.containsKey(tzd.toLowerCase())) {
+            // it is a built in timezone
+            returnZone = TimeZone.getTimeZone(lowerToActualTimeZones.get(tzd.toLowerCase()));
         } else if (numericTimeZonePattern.matcher(tzd).matches()) {
             final String sign = tzd.substring(0, 1);
             final int hours = Integer.valueOf(tzd.substring(1, 3));
@@ -168,8 +168,14 @@ public class DateUtils {
     private final static Set<String> gatewayTimeZones = Collections.unmodifiableSet(
             new HashSet<String>(Arrays.asList("utc", "local")));
 
-    private final static Set<String> validTimezones =
-            Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(TimeZone.getAvailableIDs())));
+    private final static Map<String, String> lowerToActualTimeZones = Collections.unmodifiableMap(
+            Functions.toMap(Arrays.asList(TimeZone.getAvailableIDs()),
+                    new Functions.Unary<Pair<String, String>, String>() {
+                        @Override
+                        public Pair<String, String> call(String s) {
+                            return new Pair<String, String>(s.toLowerCase(), s);
+                        }
+                    }));
 
     /**
      * Match either + or - 0000 or 00:00 or 00

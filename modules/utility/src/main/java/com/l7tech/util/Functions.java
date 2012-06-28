@@ -379,6 +379,30 @@ public final class Functions {
     }
 
     /**
+     * Transform an iterable into a Map by applying a transform function to each value in the iterable.
+     *
+     * Allows any iterable to be turned into a map of any key / value type.
+     *
+     * @param in iterable to map
+     * @param transformation key function to apply to each item in the iterable
+     * @param <K> Key type
+     * @param <V> Value type
+     * @param <I> Iterable type
+     * @return Map of the input transformed into a map
+     */
+    public static <K, V, I> Map<K, V> toMap(Iterable<I> in, Unary<Pair<K, V>, I> transformation) {
+
+        final Map<K, V> map = new HashMap<K, V>();
+
+        for (I i : in) {
+            final Pair<K, V> pair = transformation.call(i);
+            map.put(pair.getKey(), pair.getValue());
+        }
+
+        return map;
+    }
+
+    /**
      * Transforms a collection of items by applying a map function to each input item
      * to obtain a corresponding output item.
      *

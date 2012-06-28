@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
  */
 public class DateUtilsTest {
     @Test
-    public void testGeTimeZone() throws Exception {
+    public void testGetTimeZone() throws Exception {
 
         assertNotNull(DateUtils.getTimeZone("utc"));
         assertNotNull(DateUtils.getTimeZone("local"));
@@ -31,6 +31,33 @@ public class DateUtilsTest {
         assertNotNull(DateUtils.getTimeZone("-0230"));
 
         Pattern.compile("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:\\+|-)\\d{2}:\\d{2})");
+    }
+
+    @Test
+    public void testNamedTimeZone() throws Exception {
+        final TimeZone timeZone = DateUtils.getTimeZone("America/Halifax");
+        assertNotNull(timeZone);
+
+        final Date date = new Date();
+        final String actual = DateUtils.getFormattedString(date, timeZone, DateUtils.RFC1123_DEFAULT_PATTERN);
+        final String expected = DateUtils.getFormattedString(date, TimeZone.getTimeZone("America/Halifax"), DateUtils.RFC1123_DEFAULT_PATTERN);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testCaseInsensitiveNamedTimeZone() throws Exception {
+//        final String[] availableIDs = TimeZone.getAvailableIDs();
+//        for (String availableID : availableIDs) {
+//            System.out.println(availableID);
+//        }
+
+        final TimeZone timeZone = DateUtils.getTimeZone("americA/halifaX");
+        assertNotNull(timeZone);
+
+        final Date date = new Date();
+        final String actual = DateUtils.getFormattedString(date, timeZone, DateUtils.RFC1123_DEFAULT_PATTERN);
+        final String expected = DateUtils.getFormattedString(date, TimeZone.getTimeZone("America/Halifax"), DateUtils.RFC1123_DEFAULT_PATTERN);
+        assertEquals(expected, actual);
     }
 
     @Test
