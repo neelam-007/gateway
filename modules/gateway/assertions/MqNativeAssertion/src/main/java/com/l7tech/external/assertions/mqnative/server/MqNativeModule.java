@@ -34,6 +34,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -67,7 +68,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     private static final String PROP_ENABLE_MQ_LOGGING = "com.l7tech.external.assertions.mqnative.server.enableMqLogging";
     private static final String SYSPROP_MQ_SOCKET_CONNECT_TIMEOUT = "com.ibm.mq.tuning.socketConnectTimeout";
 
-    private final Map<Long, MqNativeListener> activeListeners = new ConcurrentHashMap<Long, MqNativeListener> ();
+    private final Map<Long, Set<MqNativeListener>> activeListeners = new ConcurrentHashMap<Long, Set<MqNativeListener>> ();
     private final ThreadPoolBean threadPoolBean;
 
     static {
@@ -168,13 +169,18 @@ public class MqNativeModule extends ActiveTransportModule implements Application
      */
     @Override
     protected void doStop() {
-        for (final MqNativeListener listener : activeListeners.values()) {
-            logger.info("Stopping MQ native receiver '" + listener.toString() + "'");
-            listener.stop();
+        for (final Set<MqNativeListener> listenerSet : activeListeners.values()) {
+            for (final MqNativeListener listener : listenerSet) {
+                logger.info("Stopping MQ native receiver '" + listener.toString() + "'");
+                listener.stop();
+            }
         }
-        for (final MqNativeListener listener : activeListeners.values()) {
-            logger.info("Waiting for MQ native receiver to stop '" + listener.toString() + "'");
-            listener.ensureStopped();
+        for (final Set<MqNativeListener> listenerSet : activeListeners.values()) {
+            for (final MqNativeListener listener : listenerSet) {
+                logger.info("Waiting for MQ native receiver to stop '" + listener.toString() + "'");
+                listener.ensureStopped();
+            }
+            listenerSet.clear();
         }
 
         activeListeners.clear();
@@ -193,69 +199,81 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
     @Override
     protected void addConnector( @NotNull final SsgActiveConnector ssgActiveConnector ) throws ListenerException {
-        MqNativeListener newListener = null;
-        try {
-            newListener = new MqNativeListener( ssgActiveConnector, getApplicationContext(), securePasswordManager, serverConfig ) {
-                @Override
-                void handleMessage( final MQMessage queueMessage ) throws MqNativeException {
-                    try {
-                        final Future<MqNativeException> result = threadPoolBean.submitTask( new Callable<MqNativeException>(){
-                            @Override
-                            public MqNativeException call() {
-                                try {
-                                    if ( !isTransactional( ssgActiveConnector ) ) {
-                                        // commit now - on-take / AUTOMATIC
-                                        commitWork( mqNativeClient );
-                                    }
-                                    handleMessageForConnector( ssgActiveConnector, mqNativeClient, queueMessage );
-                                } catch ( MqNativeException e ) {
-                                    return e;
-                                } catch ( Exception e ) {
-                                    return new MqNativeException(e);
-                                }
-                                return null;
-                            }
-                        } );
-                        final MqNativeException exception = result.get();
-                        if ( exception != null ) {
-                            throw exception;
-                        }
-                    } catch ( InterruptedException e ) {
-                        Thread.currentThread().interrupt();
-                    } catch ( ThreadPool.ThreadPoolShutDownException e ) {
-                        logger.log( Level.WARNING, "Error handling message, thread pool is shutdown.", getDebugException( e ) );
-                    } catch ( ExecutionException e ) {
-                        logger.log( Level.WARNING, "Error handling message: " + getMessage( e ), getDebugException( e ) );
-                    } catch ( RejectedExecutionException e ) {
-                        try {
-                            rollbackWork( mqNativeClient );
-                        } catch ( MQException e1 ) {
-                            throw new MqNativeException( "Error rolling back work for rejected execution", e1);
-                        } catch ( MqNativeConfigException e1 ) {
-                            throw new MqNativeException( "Error rolling back work for rejected execution", e1);
-                        }
-                        throw e;
-                    }
-                }
-            };
-            newListener.start();
-            activeListeners.put( ssgActiveConnector.getOid(), newListener );
-        } catch (LifecycleException e) {
-            logger.log( Level.WARNING,
-                    "Exception while initializing MQ native listener " + newListener.getDisplayName() + ": " + getMessage( e ),
-                    getDebugException( e ) );
-        } catch ( MqNativeConfigException e ) {
-            logger.log( Level.WARNING,
-                    "Exception while initializing MQ native listener " + ssgActiveConnector.getName() + ": " + getMessage( e ),
-                    getDebugException( e ) );
+        int numberOfListenersToCreate =  ssgActiveConnector.getIntegerProperty( PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE, 1 );
+        Set<MqNativeListener> listenerSet = new HashSet<MqNativeListener>( numberOfListenersToCreate );
+        activeListeners.put( ssgActiveConnector.getOid(), listenerSet );
+        for ( int i = 1; i <= numberOfListenersToCreate; i++ ) {
+            MqNativeListener newListener = null;
+            try {
+                final int concurrentId = numberOfListenersToCreate > 1 ? i : 0;
+                newListener = newMqNativeListener(ssgActiveConnector, concurrentId);
+                newListener.start();
+                listenerSet.add( newListener );
+            } catch ( LifecycleException e ) {
+                logger.log( Level.WARNING,
+                        "Exception while initializing MQ native listener " + newListener.getDisplayName() + ": " + getMessage( e ),
+                        getDebugException( e ) );
+            } catch ( MqNativeConfigException e ) {
+                logger.log( Level.WARNING,
+                        "Exception while initializing MQ native listener " + ssgActiveConnector.getName() + ": " + getMessage( e ),
+                        getDebugException( e ) );
+            }
         }
+    }
+
+    private MqNativeListener newMqNativeListener(final SsgActiveConnector ssgActiveConnector, final Integer concurrentId) throws MqNativeConfigException {
+        return new MqNativeListener( ssgActiveConnector, concurrentId, getApplicationContext(), securePasswordManager, serverConfig ) {
+            @Override
+            void handleMessage( final MQMessage queueMessage ) throws MqNativeException {
+                try {
+                    final Future<MqNativeException> result = threadPoolBean.submitTask( new Callable<MqNativeException>(){
+                        @Override
+                        public MqNativeException call() {
+                            try {
+                                if ( !isTransactional( ssgActiveConnector ) ) {
+                                    // commit now - on-take / AUTOMATIC
+                                    commitWork( mqNativeClient );
+                                }
+                                handleMessageForConnector( ssgActiveConnector, mqNativeClient, queueMessage );
+                            } catch ( MqNativeException e ) {
+                                return e;
+                            } catch ( Exception e ) {
+                                return new MqNativeException( e );
+                            }
+                            return null;
+                        }
+                    } );
+                    final MqNativeException exception = result.get();
+                    if ( exception != null ) {
+                        throw exception;
+                    }
+                } catch ( InterruptedException e ) {
+                    Thread.currentThread().interrupt();
+                } catch ( ThreadPool.ThreadPoolShutDownException e ) {
+                    logger.log( Level.WARNING, "Error handling message, thread pool is shutdown.", getDebugException( e ) );
+                } catch ( ExecutionException e ) {
+                    logger.log( Level.WARNING, "Error handling message: " + getMessage( e ), getDebugException( e ) );
+                } catch ( RejectedExecutionException e ) {
+                    try {
+                        rollbackWork( mqNativeClient );
+                    } catch ( MQException e1 ) {
+                        throw new MqNativeException( "Error rolling back work for rejected execution", e1 );
+                    } catch ( MqNativeConfigException e1 ) {
+                        throw new MqNativeException( "Error rolling back work for rejected execution", e1 );
+                    }
+                    throw e;
+                }
+            }
+        };
     }
 
     @Override
     protected void removeConnector( long oid ) {
-        final MqNativeListener listener = activeListeners.remove( oid );
-        if  ( listener != null  ) {
-            listener.stop();
+        Set<MqNativeListener> listenerSet = activeListeners.remove(oid);
+        if  (listenerSet != null) {
+            for (MqNativeListener listener : listenerSet) {
+                listener.stop();
+            }
         }
     }
 
@@ -616,7 +634,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
     void setMessageProcessor(final MessageProcessor messageProcessor) {
         this.messageProcessor = messageProcessor;
-
     }
 
     void setServerConfig(final ServerConfig serverConfig){
@@ -629,5 +646,13 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
     void setMessageProcessingEventChannel(final ApplicationEventPublisher messageProcessingEventChannel){
         this.messageProcessingEventChannel = messageProcessingEventChannel;
+    }
+
+    void setSecurePasswordManager(final SecurePasswordManager securePasswordManager) {
+        this.securePasswordManager = securePasswordManager;
+    }
+
+    Map<Long, Set<MqNativeListener>> getActiveListeners() {
+        return activeListeners;
     }
 }

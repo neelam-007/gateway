@@ -39,6 +39,9 @@ public class SsgActiveConnector extends NamedEntityImp {
     /** If specified, the size limit of the request message. */
     public static final String PROPERTIES_KEY_REQUEST_SIZE_LIMIT = "requestSizeLimit";
 
+    /** If specified, the number of ssg active connectors to create using this configuration. */
+    public static final String PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE = "numberOfSacToCreate";
+
     /**
      * The connector is used for inbound messages (transport), if this value is
      * not set then it should be assumed to be true (e.g. "getBooleanProperty(PROPERTIES_KEY_IS_INBOUND,true)")

@@ -64,12 +64,15 @@ public abstract class MqNativeListener {
     private final Object sync = new Object();
     private long lastStopRequestedTime;
     private long lastAuditErrorTime;
+    private int concurrentId;
 
     public MqNativeListener(@NotNull final SsgActiveConnector ssgActiveConnector,
+                                     final int concurrentId,
                             @NotNull final ApplicationEventPublisher eventPublisher,
                             @NotNull final SecurePasswordManager securePasswordManager,
                             @NotNull final ServerConfig serverConfig) throws MqNativeConfigException {
         this.ssgActiveConnector = ssgActiveConnector;
+        this.concurrentId = concurrentId;
         this.eventPublisher = eventPublisher;
         this.securePasswordManager = securePasswordManager;
         this.mqNativeClient = buildMqNativeClient();
@@ -84,6 +87,10 @@ public abstract class MqNativeListener {
         stringBuilder.append( ssgActiveConnector.getOid() );
         stringBuilder.append( ",v" );
         stringBuilder.append( ssgActiveConnector.getVersion() );
+        if ( concurrentId > 0 ) {
+            stringBuilder.append( ",c" );
+            stringBuilder.append( concurrentId );
+        }
         stringBuilder.append( ")" );
         return stringBuilder.toString();
     }

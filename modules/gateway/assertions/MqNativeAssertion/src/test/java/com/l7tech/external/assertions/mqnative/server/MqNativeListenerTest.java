@@ -114,7 +114,7 @@ public class MqNativeListenerTest extends AbstractJUnit4SpringContextTests {
         serverConfig.putProperty(MQ_CONNECT_ERROR_SLEEP_PROPERTY, "10s");
         serverConfig.putProperty(MQ_LISTENER_POLLING_INTERVAL_PROPERTY, "5s");
 
-        MqNativeListener newListener = new MqNativeListener(ssgActiveConnector, applicationContext, securePasswordManager, serverConfig) {
+        MqNativeListener newListener = new MqNativeListener(ssgActiveConnector, 0, applicationContext, securePasswordManager, serverConfig) {
 
             /**
              * Use this method (handleMessage) to gain access to mqNativeClient inside the class

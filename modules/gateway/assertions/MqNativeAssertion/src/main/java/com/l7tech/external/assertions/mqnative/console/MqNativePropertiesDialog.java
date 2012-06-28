@@ -61,6 +61,7 @@ public class MqNativePropertiesDialog extends JDialog {
 
     private static final int TAB_INBOUND = 1;
     private static final int TAB_OUTBOUND = 2;
+    private static final int DEFAULT_CONCURRENT_LISTENER_SIZE = 20;
 
     private JPanel contentPane;
     private JRadioButton outboundRadioButton;
@@ -127,6 +128,9 @@ public class MqNativePropertiesDialog extends JDialog {
     private SecurePasswordComboBox securePasswordComboBox;
     private JPanel byteLimitHolderPanel;
     private JCheckBox enabledCheckBox;
+    private JSpinner concurrentListenerSizeSpinner;
+    private JCheckBox useConcurrencyCheckBox;
+    private JLabel concurrentListenerSizeLabel;
     private ByteLimitPanel byteLimitPanel;
 
     private SsgActiveConnector mqNativeActiveConnector;
@@ -375,6 +379,14 @@ public class MqNativePropertiesDialog extends JDialog {
         byteLimitHolderPanel.setLayout(new BorderLayout());
         byteLimitHolderPanel.add(byteLimitPanel, BorderLayout.CENTER);
 
+        useConcurrencyCheckBox.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                concurrentListenerSizeSpinner.setEnabled(useConcurrencyCheckBox.isSelected());
+                concurrentListenerSizeLabel.setEnabled(concurrentListenerSizeSpinner.isEnabled());
+            }
+        });
+        concurrentListenerSizeSpinner.setModel(new SpinnerNumberModel(DEFAULT_CONCURRENT_LISTENER_SIZE, 2, 10000, 1));
 
         final ComponentEnabler outboundEnabler = new ComponentEnabler(new Functions.Nullary<Boolean>() {
             @Override
@@ -397,7 +409,7 @@ public class MqNativePropertiesDialog extends JDialog {
 
         outboundReplyNoneRadioButton.addActionListener(outboundEnabler);
 
-        outboundReplyNoneRadioButton.addActionListener(new ActionListener(){
+        outboundReplyNoneRadioButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 modelQueueNameLabel.setEnabled(false);
@@ -405,7 +417,7 @@ public class MqNativePropertiesDialog extends JDialog {
             }
         });
 
-        outboundReplySpecifiedQueueRadioButton.addActionListener(new ActionListener(){
+        outboundReplySpecifiedQueueRadioButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 modelQueueNameLabel.setEnabled(false);
@@ -414,12 +426,12 @@ public class MqNativePropertiesDialog extends JDialog {
         });
 
         acknowledgementModeComboBox.setModel(new DefaultComboBoxModel(values()));
-        acknowledgementModeComboBox.setRenderer(new TextListCellRenderer<MqNativeAcknowledgementType>(new Functions.Unary<String,MqNativeAcknowledgementType>() {
+        acknowledgementModeComboBox.setRenderer(new TextListCellRenderer<MqNativeAcknowledgementType>(new Functions.Unary<String, MqNativeAcknowledgementType>() {
             @Override
             public String call(final MqNativeAcknowledgementType type) {
                 String text;
 
-                switch( type ) {
+                switch (type) {
                     case AUTOMATIC:
                         text = "On Take";
                         break;
@@ -434,11 +446,11 @@ public class MqNativePropertiesDialog extends JDialog {
                 return text;
             }
         }));
-        acknowledgementModeComboBox.addActionListener( enableDisableListener );
-        useQueueForFailedCheckBox.addActionListener( enableDisableListener );
+        acknowledgementModeComboBox.addActionListener(enableDisableListener);
+        useQueueForFailedCheckBox.addActionListener(enableDisableListener);
         Utilities.enableGrayOnDisabled(failureQueueNameTextField);
-        useJmsMsgPropAsSoapActionRadioButton.addItemListener( enableDisableListener );
-        jmsMsgPropWithSoapActionTextField.getDocument().addDocumentListener( enableDisableListener );
+        useJmsMsgPropAsSoapActionRadioButton.addItemListener(enableDisableListener);
+        jmsMsgPropWithSoapActionTextField.getDocument().addDocumentListener(enableDisableListener);
         useJmsMsgPropAsSoapActionRadioButton.setVisible(false);
         jmsMsgPropWithSoapActionTextField.setVisible(false);
         jmsMsgPropWithSoapActionLabel.setVisible(false);
@@ -460,6 +472,7 @@ public class MqNativePropertiesDialog extends JDialog {
                 onSave();
             }
         });
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(concurrentListenerSizeSpinner, "Concurrency"));
 
         cancelButton.addActionListener(new ActionListener() {
             @Override
@@ -696,6 +709,14 @@ public class MqNativePropertiesDialog extends JDialog {
                 if (StringUtils.isEmpty(contentTypeFromProperty) && StringUtils.isEmpty(contentType)) {
                     specifyContentTypeCheckBox.setSelected(false);
                 }
+
+                useConcurrencyCheckBox.setSelected(false);
+                concurrentListenerSizeSpinner.setValue(DEFAULT_CONCURRENT_LISTENER_SIZE);
+                Integer concurrentSize = mqNativeActiveConnector.getIntegerProperty(PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE, 1);
+                if (concurrentSize > 1) {
+                    useConcurrencyCheckBox.setSelected(true);
+                    concurrentListenerSizeSpinner.setValue(concurrentSize);
+                }
             // outbound options
             } else {
                 String msgFormatProp = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_MESSAGE_FORMAT);
@@ -857,6 +878,8 @@ public class MqNativePropertiesDialog extends JDialog {
             inboundReplySpecifiedQueueField.setEnabled(specified);
             inboundMessageIdRadioButton.setEnabled(specified || auto);
             inboundCorrelationIdRadioButton.setEnabled(specified || auto);
+            concurrentListenerSizeSpinner.setEnabled(useConcurrencyCheckBox.isEnabled() && useConcurrencyCheckBox.isSelected());
+            concurrentListenerSizeLabel.setEnabled(concurrentListenerSizeSpinner.isEnabled());
         } else {
             isTemplateQueue.setEnabled(true);
             tabbedPane.setEnabledAt(TAB_INBOUND, false);
@@ -1084,6 +1107,12 @@ public class MqNativePropertiesDialog extends JDialog {
             }
 
             connector.setProperty(PROPERTIES_KEY_REQUEST_SIZE_LIMIT, byteLimitPanel.getValue());
+
+            if (useConcurrencyCheckBox.isEnabled() && useConcurrencyCheckBox.isSelected()) {
+                connector.setProperty(PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE, concurrentListenerSizeSpinner.getValue().toString());
+            } else {
+                connector.removeProperty(PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE);
+            }
         } else {
             // else outbound
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE, Boolean.toString(isTemplateQueue.isSelected()));

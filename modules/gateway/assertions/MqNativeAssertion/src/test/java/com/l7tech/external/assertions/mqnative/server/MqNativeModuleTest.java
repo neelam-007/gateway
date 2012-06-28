@@ -9,6 +9,7 @@ import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.*;
@@ -16,6 +17,7 @@ import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.Pair;
 import org.junit.Before;
@@ -25,18 +27,20 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.util.Set;
 
 import static com.ibm.mq.constants.MQConstants.*;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECT_ERROR_SLEEP_PROPERTY;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_LISTENER_POLLING_INTERVAL_PROPERTY;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeModule.DEFAULT_MESSAGE_MAX_BYTES;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static org.junit.Assert.*;
 import static org.junit.matchers.JUnitMatchers.containsString;
 import static org.mockito.Matchers.any;
@@ -47,9 +51,19 @@ import static org.mockito.Mockito.*;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
+    private static final String queueManagerName = "queueManagerName";
+    private static final String targetQueueName = "targetQueueName";
+    private static final String replyQueueName = "replyQueueName";
+    private static final MqNativeReplyType replyType = MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
+    private static final String hostName = "hostName";
+    private static final int port = 4444;
+    private static final String channel = "channel";
+    private static final boolean isQueueCredentialRequired = true;
+    private static final String userId = "userId";
+    private static final long securePasswordOid = 4444;
+    private static final String encryptedPassword = "?????????????????";
+    private static final char[] password = {'p', 'a', 's', 's', 'w', 'o', 'r', 'd'};
 
-    @Mock
-    private ApplicationContext applicationContext;
     @Mock
     private ApplicationEventPublisher applicationEventPublisher;
     @Mock
@@ -151,6 +165,47 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         mqNativeModuleSpy.handleMessageForConnector(ssgActiveConnector, mqNativeClient, mqMessage);
     }
 
+    @Test
+    public void addConnector() throws ListenerException, MqNativeConfigException, FindException, ParseException {
+        mqNativeModule.setApplicationContext(ApplicationContexts.getTestApplicationContext());
+
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME)).thenReturn(queueManagerName);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME)).thenReturn(targetQueueName);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME)).thenReturn(replyQueueName);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE)).thenReturn(replyType.toString());
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME)).thenReturn(hostName);
+        when(ssgActiveConnector.getIntegerProperty(PROPERTIES_KEY_MQ_NATIVE_PORT, -1)).thenReturn(port);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_CHANNEL)).thenReturn(channel);
+        when(ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED)).thenReturn(isQueueCredentialRequired);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_USERID)).thenReturn(userId);
+        when(ssgActiveConnector.getLongProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID, -1L)).thenReturn(securePasswordOid);
+
+        when(securePassword.getEncodedPassword()).thenReturn(encryptedPassword);
+
+        when(securePasswordManager.findByPrimaryKey(securePasswordOid)).thenReturn(securePassword);
+        when(securePasswordManager.decryptPassword(encryptedPassword)).thenReturn(password);
+
+        serverConfig.putProperty(MQ_CONNECT_ERROR_SLEEP_PROPERTY, "10s");
+        serverConfig.putProperty(MQ_LISTENER_POLLING_INTERVAL_PROPERTY, "5s");
+
+        when(ssgActiveConnector.getName()).thenReturn("Test SSG Active Connector");
+        when(ssgActiveConnector.getOid()).thenReturn(999999999L);
+
+        // test one listener create
+        int numberOfListenersToCreate = 1;
+        when(ssgActiveConnector.getIntegerProperty(PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE, 1)).thenReturn(numberOfListenersToCreate);
+        mqNativeModule.addConnector(ssgActiveConnector);
+        Set<MqNativeListener> activeListenerSet = mqNativeModule.getActiveListeners().get(ssgActiveConnector.getOid());
+        assertEquals(numberOfListenersToCreate, activeListenerSet.size());
+
+        // test multiple concurrent listener create
+        numberOfListenersToCreate = 20;
+        when(ssgActiveConnector.getIntegerProperty(PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE, 1)).thenReturn(numberOfListenersToCreate);
+        mqNativeModule.addConnector(ssgActiveConnector);
+        activeListenerSet = mqNativeModule.getActiveListeners().get(ssgActiveConnector.getOid());
+        assertEquals(numberOfListenersToCreate, activeListenerSet.size());
+    }
+
     private MQMessage createMqMessage() throws IOException {
         final MQMessage requestMessage = new MQMessage();
         final String pubCommand = "<psc><Command>Publish</Command><Topic>Stock</Topic>" +
@@ -181,6 +236,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         mqNativeModule.setServerConfig(serverConfig);
         mqNativeModule.setStashManagerFactory(stashManagerFactory);
         mqNativeModule.setMessageProcessingEventChannel(applicationEventPublisher);
+        mqNativeModule.setSecurePasswordManager(securePasswordManager);
         return mqNativeModule;
     }
 
