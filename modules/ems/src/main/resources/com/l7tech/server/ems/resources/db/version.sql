@@ -12,7 +12,7 @@ create table schema_version (
 --
 -- Insert the current schema version (see SchemaUpdaterImpl.SCHEMA_VERSION)
 --
-insert into schema_version values ( 2 );
+insert into schema_version values ( 3 );
 
 --
 -- Initialize the object identifier high value to 1

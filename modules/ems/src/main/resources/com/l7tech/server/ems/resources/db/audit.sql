@@ -37,7 +37,7 @@ create table audit_detail_params (
 create table audit_main (
     objectid bigint not null,
     provider_oid bigint,
-    ip_address varchar(32),
+    ip_address varchar(39),
     message varchar(255) not null,
     time bigint not null,
     name varchar(255),
