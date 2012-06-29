@@ -10,10 +10,10 @@ import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.ems.EsmConfigParams;
 import com.l7tech.server.ems.EsmMessages;
+import com.l7tech.server.ems.audit.AuditContextFactoryImpl;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.enterprise.JSONConstants.MonitoringPropertySettings;
 import com.l7tech.server.ems.monitoring.*;
@@ -29,7 +29,6 @@ import org.apache.wicket.protocol.http.WebRequest;
 import org.mortbay.util.ajax.JSON;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -74,8 +73,7 @@ public class Monitor extends EsmStandardWebPage {
     private MonitoringService monitoringService;
 
     @Inject
-    @Named("auditContextFactory")
-    private AuditContextFactory auditContextFactory;
+    private AuditContextFactoryImpl auditContextFactory;
 
     private boolean isReadOnly;
     private Map<String, String> userProperties = Collections.emptyMap();

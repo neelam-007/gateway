@@ -295,7 +295,7 @@
         <property name="config" ref="serverConfig"/>
     </bean>
 
-    <bean id="auditContextFactory" class="com.l7tech.server.audit.AuditContextFactory">
+    <bean id="auditContextFactory" class="com.l7tech.server.ems.audit.AuditContextFactoryImpl">
         <constructor-arg index="0" ref="auditLogListener"/>
     </bean>
 
