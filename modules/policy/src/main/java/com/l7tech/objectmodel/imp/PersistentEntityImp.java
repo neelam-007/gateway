@@ -6,6 +6,7 @@ import org.hibernate.annotations.*;
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlID;
+import javax.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
 
 /**
@@ -26,7 +27,7 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
     }
 
     @Override
-    @Id
+    @Id @XmlTransient
     @Column(name="objectid", nullable=false, updatable=false)
     @GenericGenerator( name="generator", strategy = "layer7-generator" )
     @GeneratedValue( generator = "generator")
