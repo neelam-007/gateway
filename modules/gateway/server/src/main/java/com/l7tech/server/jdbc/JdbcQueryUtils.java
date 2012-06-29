@@ -17,11 +17,11 @@ import java.util.regex.Pattern;
  */
 public class JdbcQueryUtils {
 
-    static public Object performJdbcQuery(JdbcQueryingManager jdbcQueryingManager,String connectionName, String query, AuditSinkPolicyEnforcementContext context, Audit audit) throws Exception {
+    static public Object performJdbcQuery(JdbcQueryingManager jdbcQueryingManager,String connectionName, String query,List<String> resolveAsObjectList , AuditSinkPolicyEnforcementContext context, Audit audit) throws Exception {
         String[] vars = Syntax.getReferencedNames(query);
-        final List<Object> preparedStmtParams = new ArrayList<Object>();
+        List<Object> preparedStmtParams = new ArrayList<Object>();
         try {
-            final String plainQuery = context == null? query : JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, preparedStmtParams, context, vars, true,new ArrayList<String>(),audit);
+            String plainQuery = context == null? query : JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, preparedStmtParams, context, vars, false ,resolveAsObjectList,audit);
             return jdbcQueryingManager.performJdbcQuery(connectionName,plainQuery, 1, preparedStmtParams);
         } catch (VariableNameSyntaxException e) {
             return e.getMessage();

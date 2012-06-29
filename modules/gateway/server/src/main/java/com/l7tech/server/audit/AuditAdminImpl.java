@@ -38,6 +38,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.naming.NamingException;
 import javax.sql.DataSource;
 import java.io.*;
 import java.nio.charset.Charset;
@@ -666,12 +667,24 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
         }
     }
 
-    private static final File gatewayDir = new File( ConfigFactory.getProperty( "com.l7tech.gateway.home", "/opt/SecureSpan/Gateway" ) );
-    private static final File nodesDir = new File(gatewayDir, "node");
     private static final String sqlPath = "../config/etc/sql/externalAudits.sql";
 
     private ServerConfig serverConfig() {
         return ServerConfig.getInstance();
+    }
+
+    private String getJdbcDbType(String connectionDriverClass){
+        String type = null;
+
+        if(connectionDriverClass.contains("mysql"))
+            type = "mysql";
+        else if(connectionDriverClass.contains("sqlserver"))
+            type = "sqlserver";
+//        else if(connectionDriverClass.contains("oracle"))
+//            type = "oracle";
+//        else if(connectionDriverClass.contains("db2"))
+//            type = "db2";
+        return type;
     }
 
     @Override
@@ -683,21 +696,24 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
         try {
 
             JdbcConnection connection = jdbcConnectionManager.getJdbcConnection(connectionName);
-            String driverClass = connection.getDriverClass();
+            String driverClass = connection.getDriverClass().toLowerCase();
 
-            // todo
             // get db type and translate schema
+            String type =getJdbcDbType(driverClass);
 
+            if(type == null){
+                return "This database type is not supported.  Driver class:"+driverClass;
+            }
 
             final File configDir = serverConfig().getLocalDirectoryProperty( ServerConfigParams.PARAM_SSG_HOME_DIRECTORY, true);
-            File schemaFile = new File(configDir,"../../config/etc/sql/externalAudits.sql");
+            File schemaFile = new File(configDir,"../../config/etc/sql/externalAudits_"+type+".sql");
             fin = new FileInputStream(schemaFile);
             out = new ByteArrayOutputStream(16384);
 
             IOUtils.copyStream(fin,out);
             String schemaString = out.toString(Charset.defaultCharset().name());
-            schemaString.replace("audit_main",auditRecordTableName);
-            schemaString.replace("audit_detail",auditDetailTableName);
+            schemaString = schemaString.replace("audit_main",auditRecordTableName);
+            schemaString = schemaString.replace("audit_detail",auditDetailTableName);
             return schemaString;
 
         } catch (FileNotFoundException e) {
@@ -722,11 +738,16 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
             public String call() throws Exception {
 
                 final JdbcQueryingManager jdbcQueryingManager = (JdbcQueryingManager)applicationContext.getBean("jdbcQueryingManager");
-                JdbcConnectionPoolManager jdbcConnectionPoolManager = (JdbcConnectionPoolManager)applicationContext.getBean("jdbcConnectionPoolManager");
+                final JdbcConnectionPoolManager jdbcConnectionPoolManager = (JdbcConnectionPoolManager)applicationContext.getBean("jdbcConnectionPoolManager");
 
                 final DefaultKey defaultKey = (DefaultKey)applicationContext.getBean("defaultKey");
 
-                DataSource ds = jdbcConnectionPoolManager.getDataSource(connectionName);
+                DataSource ds ;
+                try{
+                    ds = jdbcConnectionPoolManager.getDataSource(connectionName);
+                }catch (NamingException e){
+                    return "Failed to retrieve connection data source.";
+                }
 
                 TransactionTemplate transactionTemplate = new TransactionTemplate(new DataSourceTransactionManager(ds));
                 return transactionTemplate.execute(new TransactionCallback<String>() {
@@ -754,9 +775,8 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
                         }
                     }
                 });
-
-
             }
+
         }));
 
         Background.scheduleOneShot(new TimerTask() {
@@ -775,16 +795,41 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
             @Override
             public String call() throws Exception {
 
-                JdbcQueryingManager jdbcQueryingManager = (JdbcQueryingManager)applicationContext.getBean("jdbcQueryingManager");
+                final JdbcQueryingManager jdbcQueryingManager = (JdbcQueryingManager)applicationContext.getBean("jdbcQueryingManager");
+                final JdbcConnectionPoolManager jdbcConnectionPoolManager = (JdbcConnectionPoolManager)applicationContext.getBean("jdbcConnectionPoolManager");
 
-                String schema = getExternalAuditsSchema(connection,auditRecordTableName,auditDetailTableName);
-                Object result = jdbcQueryingManager.performJdbcQuery(connection,schema,2,Collections.emptyList());
+                final String schema = getExternalAuditsSchema(connection,auditRecordTableName,auditDetailTableName);
+                DataSource ds ;
+                try{
+                    ds = jdbcConnectionPoolManager.getDataSource(connection);
+                }catch (NamingException e){
+                    return "Failed to retrieve connection data source.";
+                }
 
-                if(result instanceof String)
-                    return (String)result;
 
-                return "";
+                TransactionTemplate transactionTemplate = new TransactionTemplate(new DataSourceTransactionManager(ds));
+                return transactionTemplate.execute(new TransactionCallback<String>() {
+                    @Override
+                    public String doInTransaction(TransactionStatus transactionStatus) {
 
+                        int index = 0;
+                        int oldIndex = 0;
+                        while(schema.indexOf(";",index)>0){
+                            oldIndex = index+1;
+                            index = schema.indexOf(";",index);
+
+                            String query = schema.substring(oldIndex-1,index);
+                            index++;
+                            Object result = jdbcQueryingManager.performJdbcQuery(connection,query,2,Collections.emptyList());
+                            if(result instanceof String){
+                                transactionStatus.setRollbackOnly();
+                                return (String)result;
+
+                            }
+                        }
+                        return "";
+                    }
+                });
             }
         }));
 

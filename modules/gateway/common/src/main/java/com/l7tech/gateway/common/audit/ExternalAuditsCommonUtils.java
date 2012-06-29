@@ -23,6 +23,13 @@ public class ExternalAuditsCommonUtils {
                 "            <L7p:ResolveAsObjectList stringListValue=\"included\">\n" +
                 "                <L7p:item stringValue=\"audit.reqZip\"/>\n" +
                 "                <L7p:item stringValue=\"audit.resZip\"/>\n" +
+                "                <L7p:item stringValue=\"audit.componentId\"/>\n" +
+                "                <L7p:item stringValue=\"audit.status\"/>\n" +
+                "                <L7p:item stringValue=\"audit.authenticated\"/>\n" +
+                "                <L7p:item stringValue=\"audit.requestContentLength\"/>\n" +
+                "                <L7p:item stringValue=\"audit.responseContentLength\"/>\n" +
+                "                <L7p:item stringValue=\"audit.responseStatus\"/>\n" +
+                "                <L7p:item stringValue=\"audit.routingLatency\"/>\n" +
                 "            </L7p:ResolveAsObjectList>\n" +
                 "        </L7p:JdbcQuery>\n" +
                 "        <L7p:ForEachLoop L7p:Usage=\"Required\"\n" +
@@ -46,7 +53,7 @@ public class ExternalAuditsCommonUtils {
 
     public static String saveDetailQuery(String detailTable){
         return "insert into "+detailTable +"( audit_oid,time,component_id,ordinal,message_id,exception_message,properties) values " +
-                "(${record.guid},${i.current.time},${i.current.componentId},${i.current.ordinal},${i.current.messageId},${i.current.exception},${i.current.properties});";
+                "(${record.guid},${i.current.time},${i.current.componentId},${i.current.ordinal},${i.current.messageId},${i.current.exception},${i.current.properties})";
     }
 
     public  static String saveRecordQuery(String recordTable){
@@ -58,54 +65,81 @@ public class ExternalAuditsCommonUtils {
                 "(${record.guid},${audit.nodeId},${audit.time},${audit.type},${audit.level},${audit.name},${audit.message},${audit.ipAddress},${audit.user.name},${audit.user.id},${audit.user.idProv},${audit.signature},${audit.properties}," +
                 "${audit.entity.class},${audit.entity.oid}," +
                 "${audit.status},${audit.requestId},${audit.serviceOid},${audit.operationName},${audit.authenticated},${audit.authType},${audit.requestContentLength},${audit.responseContentLength},${audit.reqZip},${audit.resZip},${audit.responseStatus},${audit.routingLatency}," +
-                "${audit.componentId},${audit.action});";
+                "${audit.componentId},${audit.action})";
     }
 
-    private static String defaultLookupQuery(String recordTable) {
+    private static String defaultLookupQuery(String recordTable,String dbType) {
         return
-                "select top 1024 * from "+recordTable+" where " +
+                lookupPrefix(dbType)+" from "+recordTable+" where " +
                         "time>=${audit.recordQuery.minTime} and time&lt;${audit.recordQuery.maxTime} " +
                         "and audit_level in (${audit.recordQuery.levels}) " +
                         "and  nodeid like ${audit.recordQuery.nodeId} " +
                         "and type like ${audit.recordQuery.auditType} " +
-                        "and lower(name) like lower(${serviceName}) {escape '#' } " +
+                        "and lower(name) like lower(${serviceName}) escape '#'  " +
                         "and lower(user_name) like lower(${audit.recordQuery.userName}) " +
                         "and lower(user_id) like lower(${audit.recordQuery.userIdOrDn}) " +
                         "and lower(message) like lower(${audit.recordQuery.message}) " +
                         "and lower(entity_class) like lower(${audit.recordQuery.entityClassName}) " +
-                        "and entity_id >=${entityIdMin}  and entity_id &lt;=${entityIdMax} " +
-                        "and lower(request_id) like lower(${audit.recordQuery.requestId}) order by time desc;";
+                        "and entity_id like ${audit.recordQuery.entityId} " +
+                        "and lower(request_id) like lower(${audit.recordQuery.requestId}) order by time desc "+lookupPostfix(dbType);
     }
+
+    private static String lookupQueryWithAuditId(String recordTable,String dbType){
+        return
+                lookupPrefix(dbType)+ " from "+recordTable+" where " +
+                        "id in (${recordIdQuery.audit_oid}) " +
+                        "and time>=${audit.recordQuery.minTime} and time&lt;=${audit.recordQuery.maxTime} " +
+                        "and audit_level in (${audit.recordQuery.levels}) " +
+                        "and  nodeid like ${audit.recordQuery.nodeId} " +
+                        "and type like ${audit.recordQuery.auditType} " +
+                        "and lower(name) like lower(${serviceName}) escape '#'  " +
+                        "and lower(user_name) like lower(${audit.recordQuery.userName}) " +
+                        "and lower(user_id) like lower(${audit.recordQuery.userIdOrDn}) " +
+                        "and lower(message) like lower(${audit.recordQuery.message}) " +
+                        "and lower(entity_class) like lower(${audit.recordQuery.entityClassName}) " +
+                        "and entity_id like ${audit.recordQuery.entityId}  " +
+                        "and lower(request_id) like lower(${audit.recordQuery.requestId}) order by time desc "+lookupPostfix(dbType);
+    }
+
+
+    private static String lookupPrefix(String dbType) {
+        if(dbType.equals("mysql"))
+            return "select * ";
+        else if(dbType.equals("sqlserver"))
+            return "select top 1024 * ";
+//        else if(dbType.equals("oracle"))
+//            return "select *  FROM ( select * ";
+//        else if(dbType.equals("db2"))
+//            return "select * ";
+        return null;
+    }
+
+    private static String lookupPostfix(String dbType) {
+        if(dbType.equals("mysql"))
+            return "limit 0,1024";
+        else if(dbType.equals("sqlserver"))
+            return "";
+//        else if(dbType.equals("oracle"))
+//            return " ) temp WHERE rownum &lt;= 1024  ORDER BY rownum";
+//        else if(dbType.equals("db2"))
+//            return " fetch first 1024 rows only";
+        return null;
+    }
+
 
     private static String messaageIdLookupQuery ( String detailTable){
         return
                 "select distinct audit_oid,time from "+detailTable+" where message_id >=${messageIdMin}  and message_id &lt;=${messageIdMax} order by time desc" ;
     }
 
-    private static String lookupQueryWithAuditId(String recordTable){
-        return
-                "select top 1024 * from "+recordTable+" where " +
-                        "id in (${recordIdQuery.audit_oid}) " +
-                        "and time>=${audit.recordQuery.minTime} and time&lt;=${audit.recordQuery.maxTime} " +
-                        "and audit_level in (${audit.recordQuery.levels}) " +
-                        "and  nodeid like ${audit.recordQuery.nodeId} " +
-                        "and type like ${audit.recordQuery.auditType} " +
-                        "and lower(name) like lower(${serviceName}) {escape '#' } " +
-                        "and lower(user_name) like lower(${audit.recordQuery.userName}) " +
-                        "and lower(user_id) like lower(${audit.recordQuery.userIdOrDn}) " +
-                        "and lower(message) like lower(${audit.recordQuery.message}) " +
-                        "and lower(entity_class) like lower(${audit.recordQuery.entityClassName}) " +
-                        "and entity_id >=${entityIdMin}  " +
-                        "and entity_id &lt;=${entityIdMax} " +
-                        "and lower(request_id) like lower(${audit.recordQuery.requestId}) order by time desc;";
-    }
+
 
     private static String detailLookupQuery (String detailTable){
         return
-                "select * from "+detailTable+" where audit_oid in (${recordQuery.id});";
+                "select * from "+detailTable+" where audit_oid in (${recordQuery.id})";
     }
 
-    public static String makeDefaultAuditLookupPolicyXml(String connection, String recordTable, String detailTable) {
+    public static String makeDefaultAuditLookupPolicyXml(String connection, String recordTable, String detailTable,String dbType) {
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<exp:Export Version=\"3.0\"\n" +
                 "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
@@ -201,7 +235,7 @@ public class ExternalAuditsCommonUtils {
                 "                                <L7p:value stringValue=\"id\"/>\n" +
                 "                            </L7p:entry>\n" +
                 "                        </L7p:NamingMap>\n" +
-                "                        <L7p:SqlQuery stringValue=\""+defaultLookupQuery(recordTable)+"\"/>\n" +
+                "                        <L7p:SqlQuery stringValue=\""+defaultLookupQuery(recordTable,dbType)+"\"/>\n" +
                 "                        <L7p:VariablePrefix stringValue=\"recordQuery\"/>\n" +
                 "                    </L7p:JdbcQuery>\n" +
                 "                </wsp:All>\n" +
@@ -238,7 +272,7 @@ public class ExternalAuditsCommonUtils {
                 "                                <L7p:value stringValue=\"id\"/>\n" +
                 "                            </L7p:entry>\n" +
                 "                        </L7p:NamingMap>\n" +
-                "                        <L7p:SqlQuery stringValue=\""+lookupQueryWithAuditId(recordTable)+"\"/>\n" +
+                "                        <L7p:SqlQuery stringValue=\""+lookupQueryWithAuditId(recordTable,dbType)+"\"/>\n" +
                 "                        <L7p:VariablePrefix stringValue=\"recordQuery\"/>\n" +
                 "                    </L7p:JdbcQuery>\n" +
                 "                </wsp:All>\n" +

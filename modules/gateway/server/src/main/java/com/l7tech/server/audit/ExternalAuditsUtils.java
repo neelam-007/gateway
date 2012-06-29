@@ -17,11 +17,17 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.sql.rowset.serial.SerialBlob;
+import javax.sql.rowset.serial.SerialClob;
+import javax.sql.rowset.serial.SerialException;
 import javax.xml.bind.MarshalException;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.security.*;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -31,7 +37,7 @@ import java.util.logging.Logger;
  */
 public class ExternalAuditsUtils {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
-
+    private static String[]  resolveAsObjectList  = {"audit.resZip","audit.reqZip","audit.status","audit.authenticated","audit.requestContentLength","audit.responseContentLength","audit.responseStatus","audit.routingLatency","audit.componentId"};
 
     static public String testSystemAuditRecord(String connectionName, String auditRecordTable, JdbcQueryingManager jdbcQueryingManager, DefaultKey defaultKey) throws Exception {
         AuditSinkPolicyEnforcementContext context;
@@ -54,14 +60,14 @@ public class ExternalAuditsUtils {
         context = new AuditSinkPolicyEnforcementContext(sar, PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,null);
         query =  ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
         query = query.replace("${record.guid}", "'"+guid+"'");
-        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
+        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query, Arrays.asList(resolveAsObjectList),  context, new LoggingAudit(logger));
         success = result instanceof Integer && (Integer)result == 1;
         if(!success)
             return result.toString();
 
         // get data
-        query = "select * from "+auditRecordTable+" where id='"+guid+"';";
-        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
+        query = "select * from "+auditRecordTable+" where id='"+guid+"'";
+        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),context, new LoggingAudit(logger));
         success = result instanceof SqlRowSet && ((SqlRowSet) result).next();
         if(!success)
             return "Failed to get a system audit record";
@@ -100,14 +106,14 @@ public class ExternalAuditsUtils {
         context = new AuditSinkPolicyEnforcementContext(aar, PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,null);
         query =  ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
         query = query.replace("${record.guid}", "'"+guid+"'");
-        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
+        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),context, new LoggingAudit(logger));
         success = result instanceof Integer && (Integer)result == 1;
         if(!success)
             return result.toString();
 
         // get data
-        query = "select * from "+auditRecordTable+" where id='"+guid+"';";
-        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
+        query = "select * from "+auditRecordTable+" where id='"+guid+"'";
+        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),context, new LoggingAudit(logger));
         success = result instanceof SqlRowSet && ((SqlRowSet) result).next();
         if(!success)
             return "Failed to get an admin audit record";
@@ -156,14 +162,14 @@ public class ExternalAuditsUtils {
 
         String query = ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
         query = query.replace("${record.guid}", "'"+guid+"'");
-        Object result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName, query, context, new LoggingAudit(logger));
+        Object result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName, query,Arrays.asList(resolveAsObjectList), context, new LoggingAudit(logger));
         success = result instanceof Integer && (Integer)result == 1;
         if(!success)
             return result.toString();
 
         // get data
-        query = "select * from "+auditRecordTable+" where id='"+guid+"';";
-        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
+        query = "select * from "+auditRecordTable+" where id='"+guid+"'";
+        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),context, new LoggingAudit(logger));
         success = result instanceof SqlRowSet && ((SqlRowSet) result).next();
         if(!success)
             return "Failed to get an message summary  audit record";
@@ -182,17 +188,16 @@ public class ExternalAuditsUtils {
         query = ExternalAuditsCommonUtils.saveDetailQuery(auditDetailTable);
         query = query.replace("${record.guid}", "'"+guid+"'");
         query = query.replaceAll("i.current", "audit.details.0");
-        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName, query,context, new LoggingAudit(logger));
+        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName, query,Arrays.asList(resolveAsObjectList),context, new LoggingAudit(logger));
         success = result instanceof Integer && (Integer)result == 1;
         if(!success)
             return result.toString();
 
-        query = "select * from "+auditDetailTable+" where audit_oid='"+guid+"' and ordinal="+detail.getOrdinal()+";";
-        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
+        query = "select * from "+auditDetailTable+" where audit_oid='"+guid+"' and ordinal="+detail.getOrdinal();
+        result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),context, new LoggingAudit(logger));
         success = result instanceof SqlRowSet && ((SqlRowSet) result).next();
         if(!success)
             return "Failed to get an audit detail";
-        // todo?
 
         // delete
         result =  deleteRow(jdbcQueryingManager,auditRecordTable,guid,connectionName);
@@ -202,12 +207,12 @@ public class ExternalAuditsUtils {
 
         // check if detail is also deleted
 
-        query = "select * from "+auditDetailTable+" where audit_oid ='"+detail.getAuditGuid()+"' and ordinal = "+detail.getOrdinal() ;
-        result = JdbcQueryUtils.performJdbcQuery( jdbcQueryingManager,connectionName,query,null, new LoggingAudit(logger));
+        query = "select * from "+auditDetailTable+" where audit_oid ='"+detail.getAuditGuid()+"' " ;
+        result = JdbcQueryUtils.performJdbcQuery( jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),null, new LoggingAudit(logger));
         if(result instanceof Integer && (Integer)result!= 0){
             // try to clean up audit detail
-            query = "delete from "+auditDetailTable+" where id='"+guid+"' and ordinal="+detail.getOrdinal()+";";
-            result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,context, new LoggingAudit(logger));
+            query = "delete from "+auditDetailTable+" where id='"+guid+"' and ordinal="+detail.getOrdinal();
+            result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),context, new LoggingAudit(logger));
             return "Audit detail failed to delete with audit record";
         }
 
@@ -225,7 +230,7 @@ public class ExternalAuditsUtils {
         Object result;
         boolean success;
         query = "delete from " + table +" where id ='" + id + "'";
-        result = JdbcQueryUtils.performJdbcQuery( jdbcQueryingManager,connectionName , query, null , new LoggingAudit(logger));
+        result = JdbcQueryUtils.performJdbcQuery( jdbcQueryingManager,connectionName , query, Arrays.asList(resolveAsObjectList),null , new LoggingAudit(logger));
         success = result instanceof Integer && (Integer)result == 1;
         return success ? null : result;
     }
@@ -240,13 +245,13 @@ public class ExternalAuditsUtils {
                             String ip_addr,
                             String userName,
                             String userId ,
-                            Long providerOid ,
+                            String providerOid ,
                             String signature,
                             String entityClass ,
-                            Long entityId ,
+                            String entityId ,
                             Integer status ,
                             String requestId ,
-                            Long serviceOid ,
+                            String serviceOid ,
                             String operationName ,
                             Boolean authenticated ,
                             String authenticationType,
@@ -267,12 +272,12 @@ public class ExternalAuditsUtils {
             record = new AdminAuditRecord(
                     Level.parse(auditLevel),
                     nodeid,
-                    entityId,
+                    Long.parseLong(entityId),
                     entityClass,
                     name,
                     action.charAt(0),
                     message,
-                    providerOid,
+                    Long.parseLong(providerOid),
                     userName,
                     userId,
                     ip_addr) ;
@@ -299,12 +304,12 @@ public class ExternalAuditsUtils {
                     responseLength,
                     responseStatus,
                     latency,
-                    serviceOid,
+                    Long.parseLong(serviceOid),
                     name,
                     operationName,
                     authenticated,
                     tokenType,
-                    providerOid,
+                    Long.parseLong(providerOid),
                     userName,
                     userId ) ;  //mappingValueOidHaver
 
@@ -317,7 +322,7 @@ public class ExternalAuditsUtils {
                     Component.fromId(componentId),
                     message,
                     false, // alwaysAudit - not displayed, only used in flush
-                    providerOid,
+                    Long.parseLong(providerOid),
                     userName,
                     userId,
                     action,
@@ -366,13 +371,13 @@ public class ExternalAuditsUtils {
         String ip_addr = resultSet.getString("ip_address");
         String userName = resultSet.getString("user_name");
         String userId = resultSet.getString("user_id");
-        Long providerOid = resultSet.getLong("provider_oid");
+        String providerOid = resultSet.getString("provider_oid");
         String signature = resultSet.getString("signature");
         String entityClass = resultSet.getString("entity_class");
-        Long entityId = resultSet.getLong("entity_id");
+        String entityId = resultSet.getString("entity_id");
         Integer status = resultSet.getInt("status");
         String requestId = resultSet.getString("request_id");
-        Long serviceOid = resultSet.getLong("service_oid");
+        String serviceOid = resultSet.getString("service_oid");
         String operationName = resultSet.getString("operation_name");
         Boolean authenticated = resultSet.getBoolean("authenticated");
         String authenticationType = resultSet.getString("authenticationType");

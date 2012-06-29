@@ -69,7 +69,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
 
         try {
             sinkPolicyHeader = getOrCreateSinkPolicyHeader(config.connection,config.auditRecordTableName,config.auditDetailTableName, config.custom);
-            lookupPolicyHeader = getOrCreateLookupPolicyHeader(config.connection,config.auditRecordTableName,config.auditDetailTableName, config.custom);
+            lookupPolicyHeader = getOrCreateLookupPolicyHeader(config.connection,config.connectionDriverClass,config.auditRecordTableName,config.auditDetailTableName, config.custom);
 
             super.finish(evt);
         } catch (FindException e) {
@@ -88,11 +88,11 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         return STRICT_CONNECTION_NAME_PATTERN.matcher(connection).matches();
     }
 
-    private PolicyHeader getOrCreateLookupPolicyHeader(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) throws FindException, PolicyAssertionException, SaveException {
+    private PolicyHeader getOrCreateLookupPolicyHeader(String connection, String connectionDriverClass, String recordTable, String detailTable, boolean createEmptyPolicy) throws FindException, PolicyAssertionException, SaveException {
         PolicyHeader header = getLookupPolicyHeader();
         if (header == null) {
             // Create new lookup policy with default settings
-            Policy policy = makeDefaultAuditLookupPolicyEntity(connection,recordTable,detailTable, createEmptyPolicy);
+            Policy policy = makeDefaultAuditLookupPolicyEntity(connection, connectionDriverClass,recordTable,detailTable, createEmptyPolicy);
             PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
             policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyOid());
             header = new PolicyHeader(policy);
@@ -104,15 +104,27 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         return header;
     }
 
-    private static Policy makeDefaultAuditLookupPolicyEntity(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) {
+    private static Policy makeDefaultAuditLookupPolicyEntity(String connection, String connectionDriverClass, String recordTable, String detailTable, boolean createEmptyPolicy) {
         Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Audit Lookup Policy]", null, false);
         policy.setInternalTag(INTERNAL_TAG_AUDIT_LOOKUP);
-        String theXml = createEmptyPolicy ? getDefaultPolicyXml(policy) : ExternalAuditsCommonUtils.makeDefaultAuditLookupPolicyXml(connection,recordTable,detailTable);
+        String theXml = createEmptyPolicy ? getDefaultPolicyXml(policy) : ExternalAuditsCommonUtils.makeDefaultAuditLookupPolicyXml(connection,recordTable,detailTable,getJdbcDbType(connectionDriverClass));
 
         policy.setXml(theXml);
         return policy;
     }
 
+    private static String getJdbcDbType(String connectionDriverClass){
+        String type = null;
+        if(connectionDriverClass.contains("sqlserver"))
+            type = "sqlserver";
+        else if(connectionDriverClass.contains("mysql"))
+            type = "mysql";
+//        else if(connectionDriverClass.contains("db2"))
+//            type = "db2";
+//        else if(connectionDriverClass.contains("oracle"))
+//            type = "oracle";
+        return type;
+    }
 
     public PolicyHeader getLookupPolicyHeader() {
         return lookupPolicyHeader;
@@ -194,6 +206,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
     public class ExternalAuditStoreWizardConfig {
         public boolean custom;  // crate custom policies
         public String connection;
+        public String connectionDriverClass;
         public String auditRecordTableName = null;
         public String auditDetailTableName = null;
     }

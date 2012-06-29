@@ -134,13 +134,13 @@ public class AuditLookupPolicyEvaluator  {
                 String ip_addr = (String)ip_addr_var[i];
                 String userName = (String)userName_var[i];
                 String userId = (String)userId_var[i];
-                Long providerOid = (Long)providerOid_var[i];
+                String providerOid = (String)providerOid_var[i];
                 String signature = (String)signature_var[i];
                 String entityClass = (String)entityClass_var[i];
-                Long entityId = (Long)entityId_var[i];
+                String entityId = (String)entityId_var[i];
                 Integer status = (Integer)status_var[i];
                 String requestId = (String)requestId_var[i];
-                Long serviceOid = (Long)serviceOid_var[i];
+                String serviceOid = (String)serviceOid_var[i];
                 String operationName = (String)operationName_var[i];
                 Boolean authenticated = (Boolean)authenticated_var[i];
                 String authenticationType = (String)authenticationType_var[i];
@@ -233,7 +233,6 @@ public class AuditLookupPolicyEvaluator  {
             return detailUnmarshaller.unmarshal(doc.getDocumentElement());
         } catch (SAXException e) {
             logger.log(Level.WARNING, "Error parsing audit detail properties: ", props);
-
         } catch (MarshalException e) {
             logger.log(Level.WARNING, "Error parsing audit detail properties: ", props);
         }

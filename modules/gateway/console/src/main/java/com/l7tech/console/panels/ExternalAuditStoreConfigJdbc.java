@@ -6,6 +6,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
@@ -16,6 +17,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.logging.Logger;
 
 /**
@@ -29,6 +31,7 @@ public class ExternalAuditStoreConfigJdbc extends WizardStepPanel {
     private JRadioButton createCustomAuditSInkRadioButton;
     private JPanel defaultSinkConfigurationPanel;
 
+    private java.util.List<JdbcConnection> connList;
     private static final Logger logger = Logger.getLogger(ExternalAuditStoreConfigJdbc.class.getName());
 
     /**
@@ -57,7 +60,14 @@ public class ExternalAuditStoreConfigJdbc extends WizardStepPanel {
      */
     @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
-       ((ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig)settings).connection = (String)jdbcConnectionComboBox.getSelectedItem();
+        String connectionName = (String)jdbcConnectionComboBox.getSelectedItem();
+       ((ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig)settings).connection = connectionName;
+
+        for(JdbcConnection conn : connList){
+            if(conn.getName().equals(connectionName)){
+                ((ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig)settings).connectionDriverClass = conn.getDriverClass();
+            }
+        }
        ((ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig)settings).custom = createCustomAuditSInkRadioButton.isSelected();
     }
 
@@ -119,13 +129,12 @@ public class ExternalAuditStoreConfigJdbc extends WizardStepPanel {
     }
 
     private void populateConnectionCombobox() {
-        java.util.List<String> connNameList;
         JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin == null) {
             return;
         } else {
             try {
-                connNameList = admin.getAllJdbcConnectionNames();
+                connList = admin.getAllJdbcConnections();
             } catch (FindException e) {
                 logger.warning("Error getting JDBC connection names");
                 return;
@@ -133,15 +142,20 @@ public class ExternalAuditStoreConfigJdbc extends WizardStepPanel {
         }
 
         // Sort all default driver classes
-        Collections.sort(connNameList);
+        Collections.sort(connList,new Comparator<JdbcConnection>() {
+            @Override
+            public int compare(JdbcConnection o1, JdbcConnection o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
         // Add an empty driver class at the first position of the list
-        connNameList.add(0, "");
+        jdbcConnectionComboBox.addItem("");
 
         // Add all items into the combox box.
         jdbcConnectionComboBox.removeAllItems();
-        for (String connectionName: connNameList) {
-            if(ExternalAuditStoreConfigWizard.STRICT_CONNECTION_NAME_PATTERN.matcher(connectionName).matches())
-                jdbcConnectionComboBox.addItem(connectionName);
+        for (JdbcConnection connection: connList) {
+            if(ExternalAuditStoreConfigWizard.STRICT_CONNECTION_NAME_PATTERN.matcher(connection.getName()).matches())
+                jdbcConnectionComboBox.addItem(connection.getName());
         }
 
         jdbcConnectionComboBox.setSelectedItem(0);

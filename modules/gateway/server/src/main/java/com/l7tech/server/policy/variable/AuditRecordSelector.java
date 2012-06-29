@@ -66,7 +66,7 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
         }
         
         if(allAvaliableFields.contains(name))
-            return new Selection("");
+            return new Selection(null);
 
         return null;
     }
@@ -273,7 +273,7 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
                     final Component component = Component.fromId(sysrec.getComponentId());
                     return new Selection(component == null ? null : component.getName());
                 }
-                else  return new Selection("");
+                else  return new Selection(null);
             }
         });
 
@@ -310,6 +310,27 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
                     return new Selection(msgrec.getRequestXml()==null? new  byte[0]:getCompressedString(msgrec.getRequestXml()));
                 }
                 else  return new Selection(new  byte[0]);
+            }
+        });
+        baseFields.put("entity.class", new FieldGetter<AuditRecord>() {
+            @Override
+            public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
+                if (rec instanceof AdminAuditRecord) {
+                    AdminAuditRecord adminRec = (AdminAuditRecord) rec;
+                    String className = adminRec.getEntityClassname();
+                    return new Selection(className==null?"":className);
+                }
+                else  return new Selection("");
+            }
+        });
+        baseFields.put("entity.oid", new FieldGetter<AuditRecord>() {
+            @Override
+            public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
+                if (rec instanceof AdminAuditRecord) {
+                    AdminAuditRecord adminRec = (AdminAuditRecord) rec;
+                    return new Selection(adminRec.getEntityOid());
+                }
+                else  return new Selection("");
             }
         });
     }
@@ -349,21 +370,6 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
     private static final AuditRecordPropertiesDomMarshaller recordMarshaller = new AuditRecordPropertiesDomMarshaller();
     static Map<String, FieldGetter<AdminAuditRecord>> adminFields = new TreeMap<String, FieldGetter<AdminAuditRecord>>(String.CASE_INSENSITIVE_ORDER);
     static {
-        adminFields.put("entity.class", new FieldGetter<AdminAuditRecord>() {
-            @Override
-            public Selection getFieldValue(AdminAuditRecord rec, String baseAndRemainingName) {
-                String className = rec.getEntityClassname();
-                return new Selection(className==null?"":className);
-            }
-        });
-
-        adminFields.put("entity.oid", new FieldGetter<AdminAuditRecord>() {
-            @Override
-            public Selection getFieldValue(AdminAuditRecord rec, String baseAndRemainingName) {
-                return new Selection(rec.getEntityOid());
-            }
-        });
-
         adminFields.put("action", new FieldGetter<AdminAuditRecord>() {
             @Override
             public Selection getFieldValue(AdminAuditRecord rec, String baseAndRemainingName) {
@@ -429,7 +435,7 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
         messageFields.put("authenticated", new FieldGetter<MessageSummaryAuditRecord>() {
             @Override
             public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
-                return new Selection(rec.isAuthenticated());
+                return new Selection(rec.isAuthenticated()?1:0);
             }
         });
 

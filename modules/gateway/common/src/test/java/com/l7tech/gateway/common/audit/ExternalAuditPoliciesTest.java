@@ -17,6 +17,7 @@ import static com.l7tech.policy.wsp.WspReader.INCLUDE_DISABLED;
  */
 public class ExternalAuditPoliciesTest {
     private final String connectionName = "connection";
+    private final String connectionDriverClass = "mysql";
     private final String auditRecordTable = "audit_main";
     private final String auditDetailTable = "audit_detail";
     private final WspReader wspReader;
@@ -38,7 +39,7 @@ public class ExternalAuditPoliciesTest {
     @Test
     public void testCreateAuditLookupPolicy() throws IOException {
         Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Audit Lookup Policy]", null, false);
-        String theXml = ExternalAuditsCommonUtils.makeDefaultAuditLookupPolicyXml(connectionName,auditRecordTable,auditDetailTable);
+        String theXml = ExternalAuditsCommonUtils.makeDefaultAuditLookupPolicyXml(connectionName,connectionDriverClass,auditRecordTable,auditDetailTable);
         policy.setXml(theXml);
         Assertion assertionPolicy = wspReader.parsePermissively( theXml, INCLUDE_DISABLED);
     }
