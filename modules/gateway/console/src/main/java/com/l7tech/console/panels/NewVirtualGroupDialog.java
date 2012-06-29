@@ -200,26 +200,33 @@ public class NewVirtualGroupDialog extends JDialog {
     private boolean validateInput() {
         if(groupNameTextField.getText().length() < 3) {
             JOptionPane.showMessageDialog(this, resources.getString("groupIdTextField.error.empty"),
-                           resources.getString("groupIdTextField.error.title"),
-                           JOptionPane.ERROR_MESSAGE);
+                    resources.getString("groupIdTextField.error.title"),
+                    JOptionPane.ERROR_MESSAGE);
             return false;
         }
 
         String dn = x509DNPatternTextField.getText();
-        if ( dn != null && dn.trim().length() > 0 && !CertUtils.isValidDN(dn)) {
+        if(dn == null || dn.trim().isEmpty()){
+            JOptionPane.showMessageDialog(this,
+                    "X509 Subject DN can not be empty.",
+                    resources.getString("x509DNPatternTextField.warning.title"),
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        if (!CertUtils.isValidDN(dn)) {
             String message = CertUtils.getDNValidationMessage(dn);
             if ( message == null ) {
                 message = "";
             } else {
                 message = "\n" + message;
             }
-            return JOptionPane.showConfirmDialog(this,
-                            resources.getString("x509DNPatternTextField.warning.invalid") + message,
-                            resources.getString("x509DNPatternTextField.warning.title"),
-                            JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION;
+            JOptionPane.showMessageDialog(this,
+                    resources.getString("x509DNPatternTextField.warning.invalid") + message,
+                    resources.getString("x509DNPatternTextField.warning.title"),
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
         }
-
-         return true;
+        return true;
     }
 
     /**
