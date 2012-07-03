@@ -179,18 +179,18 @@ public class IdentityProviderPasswordPolicy extends PersistentEntityImp {
     public String getDescription(){
 
         StringBuilder desc = new StringBuilder();
-        desc.append("<html><body>Password changes must comply all of the following:<ul>");
+        desc.append("<html><body>The password must meet all of the following rules:<ul>");
         if (getIntegerProperty(MIN_PASSWORD_LENGTH)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} characters",getIntegerProperty(MIN_PASSWORD_LENGTH))); desc.append("</li>");}
         if (getIntegerProperty(MAX_PASSWORD_LENGTH)>0){desc.append("<li>"); desc.append(MessageFormat.format("less than {0} characters",getIntegerProperty(MAX_PASSWORD_LENGTH))); desc.append("</li>");}
-        if (getIntegerProperty(UPPER_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} upper case characters",getIntegerProperty(UPPER_MIN))); desc.append("</li>");}
-        if (getIntegerProperty(LOWER_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} lower case characters",getIntegerProperty(LOWER_MIN))); desc.append("</li>");}
-        if (getIntegerProperty(NUMBER_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} numbers",getIntegerProperty(NUMBER_MIN))); desc.append("</li>");}
-        if (getIntegerProperty(SYMBOL_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} special characters",getIntegerProperty(SYMBOL_MIN))); desc.append("</li>");}
-        if (getIntegerProperty(NON_NUMERIC_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} non-numeric characters",getIntegerProperty(NON_NUMERIC_MIN))); desc.append("</li>");}
-        if (getIntegerProperty(CHARACTER_DIFF_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} unique characters",getIntegerProperty(CHARACTER_DIFF_MIN))); desc.append("</li>");}
+        if (getIntegerProperty(UPPER_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} uppercase character(s)",getIntegerProperty(UPPER_MIN))); desc.append("</li>");}
+        if (getIntegerProperty(LOWER_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} lowercase character(s)",getIntegerProperty(LOWER_MIN))); desc.append("</li>");}
+        if (getIntegerProperty(NUMBER_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} number(s)",getIntegerProperty(NUMBER_MIN))); desc.append("</li>");}
+        if (getIntegerProperty(SYMBOL_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} special character(s)",getIntegerProperty(SYMBOL_MIN))); desc.append("</li>");}
+        if (getIntegerProperty(NON_NUMERIC_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} non-numeric character(s",getIntegerProperty(NON_NUMERIC_MIN))); desc.append("</li>");}
+        if (getIntegerProperty(CHARACTER_DIFF_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("if changing passwords, new password must differ from old password by {0} character(s)",getIntegerProperty(CHARACTER_DIFF_MIN))); desc.append("</li>");}
         if (getBooleanProperty(NO_REPEAT_CHARS)){desc.append("<li>"); desc.append("no consecutive repeating characters"); desc.append("</li>");}
-        if (getIntegerProperty(REPEAT_FREQUENCY)>0){desc.append("<li>"); desc.append(MessageFormat.format("passwords are not reused within {0} password changes",getIntegerProperty(REPEAT_FREQUENCY))); desc.append("</li>");}
-        if (getBooleanProperty(ALLOWABLE_CHANGES)){desc.append("<li>"); desc.append("allow one password change per 24 hours"); desc.append("</li>");}
+        if (getIntegerProperty(REPEAT_FREQUENCY)>0){desc.append("<li>"); desc.append(MessageFormat.format("if changing passwords,  and old password cannot be reused within {0} password change(s)",getIntegerProperty(REPEAT_FREQUENCY))); desc.append("</li>");}
+        if (getBooleanProperty(ALLOWABLE_CHANGES)){desc.append("<li>"); desc.append("if changing passwords, only one password change is permitted per 24 hours"); desc.append("</li>");}
 
         desc.append("</ul> </body></html>");
         return desc.toString();
