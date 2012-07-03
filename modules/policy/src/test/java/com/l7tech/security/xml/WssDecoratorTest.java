@@ -1841,4 +1841,29 @@ public class WssDecoratorTest {
             "        </tns:MailBoxValidator>\n" +
             "    </s:Body>\n" +
             "</s:Envelope>";
+
+    @Test(expected = DecoratorException.class) // currently throws (correctly) since signing a relative namespace URI is not meaningful
+    @BugNumber(12545)
+    public void testSignRelativeNamespaceUri() throws Exception {
+        runTest(getTestSignRelativeNamespaceUriTestDocument());
+    }
+
+    TestDocument getTestSignRelativeNamespaceUriTestDocument() throws Exception {
+        final Context c = new Context(XmlUtil.parse(soapMsgWithRelativeNamespace));
+        DecorationRequirements dreq = new DecorationRequirements();
+        dreq.setSenderMessageSigningCertificate(TestDocuments.getEttkServerCertificate());
+        dreq.setSenderMessageSigningPrivateKey(TestDocuments.getEttkServerPrivateKey());
+        dreq.addElementToSign(c.body);
+        return new TestDocument(c, dreq, TestDocuments.getDotNetServerPrivateKey(), null);
+    }
+
+    private String soapMsgWithRelativeNamespace = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+        "    <s:Body>\n" +
+        "        <tns:MailBoxValidator xmlns:tns=\"blah-relative\">\n" +
+        "            <tns:EMAIL>string</tns:EMAIL>\n" +
+        "            <tns:LICENSE>string</tns:LICENSE>\n" +
+        "        </tns:MailBoxValidator>\n" +
+        "    </s:Body>\n" +
+        "</s:Envelope>";
 }
