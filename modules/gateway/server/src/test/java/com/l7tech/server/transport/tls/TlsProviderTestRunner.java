@@ -1,7 +1,5 @@
 package com.l7tech.server.transport.tls;
 
-import com.l7tech.util.SyspropUtil;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,7 +15,7 @@ import java.util.regex.Pattern;
  * as these are expected to fail anyway.
  */
 public class TlsProviderTestRunner {
-    static boolean debug = SyspropUtil.getBoolean( "debug" );
+    static boolean debug = Boolean.getBoolean( "debug" );
     static boolean eccOnly = false;
     static boolean luna5Only = false;
     static boolean showSkips = true;

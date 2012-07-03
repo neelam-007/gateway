@@ -1,6 +1,5 @@
 package com.l7tech.server.transport.tls;
 
-import com.l7tech.util.SyspropUtil;
 import sun.misc.BASE64Decoder;
 
 import javax.net.ssl.*;
@@ -30,7 +29,7 @@ public class TlsProviderTestSuite {
     public String host = "127.0.0.1";
     public String port = "17443";
     public String tlsprov = null;
-    public String jceprov = "rsa";
+    public String jceprov = "default";
     public String tlsversions = null;
     public String ciphers = null;
     public String certtype = "rsa";
@@ -224,8 +223,8 @@ public class TlsProviderTestSuite {
                 "  client options:\n" +
                 "    clientcert <yes|no>             whether to present a client cert, if challenged by server\n\n" +
                 "Examples:\n" +
-                "  TlsProviderTestSuite server tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 clientcert optional &\n" +
-                "  TlsProviderTestSuite client tlsprov sun tlsversions TLSv1 clientcert no\n");
+                "  TlsProviderTestSuite server tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert optional &\n" +
+                "  TlsProviderTestSuite client tlsprov sun tlsversions TLSv1 certtype rsa clientcert no\n");
         System.exit(1);
     }
 
@@ -305,7 +304,7 @@ public class TlsProviderTestSuite {
     }
 
     private void start() throws Exception {
-        if (Boolean.valueOf(debug)) SyspropUtil.setProperty( "javax.net.debug", "ssl" );
+        if (Boolean.valueOf(debug)) System.setProperty( "javax.net.debug", "ssl" );
 
         if ("rsa".equals(jceprov)) {
             addProv("com.rsa.jsafe.provider.JsafeJCE", false);
@@ -350,7 +349,7 @@ public class TlsProviderTestSuite {
         X509KeyManager[] km = {new SingleCertX509KeyManager(getCertificate(certtype), getPrivateKey(certtype))};
         if (!server && !"yes".equals(clientcert)) km = null;
 
-        SecureRandom secRand = secureRandom != null ? SecureRandom.getInstance(secureRandom, "JsafeJCE") : new SecureRandom();
+        SecureRandom secRand = secureRandom != null ? SecureRandom.getInstance(secureRandom) : new SecureRandom();
         sslContext.init(
                 km,
                 new X509TrustManager[] { new TrustEverythingTrustManager(createAcceptedIssuersList()) },
