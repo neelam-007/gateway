@@ -128,7 +128,7 @@ public class FederatedGroupManagerImpl
                 if ( dnPattern != null && dnPattern.length() > 0 ) {
                     String userDn = user.getSubjectDn();
                     try {
-                        if ( userDn != null && userDn.length() > 0 && CertUtils.dnMatchesPattern( user.getSubjectDn(), dnPattern ) )
+                        if ( userDn != null && userDn.length() > 0 && CertUtils.dnMatchesPattern( user.getSubjectDn(), dnPattern, ((VirtualGroup)group).isUseRegex() ) )
                             return true;
                     } catch (IllegalArgumentException e) {
                         logger.warning("X.509 Subject DN pattern '" + dnPattern +"' is not a valid DN" );

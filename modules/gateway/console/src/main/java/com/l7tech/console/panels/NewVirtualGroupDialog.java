@@ -1,20 +1,20 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.identity.IdentityProviderLimits;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.gui.FilterDocument;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gui.FilterDocument;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.fed.VirtualGroup;
+import com.l7tech.identity.IdentityProviderLimits;
 import com.l7tech.identity.fed.NoTrustedCertsSaveException;
+import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.*;
-import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -25,8 +25,11 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.EventListener;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -46,6 +49,7 @@ public class NewVirtualGroupDialog extends JDialog {
     private JButton createButton;
     private JButton cancelButton;
     private JTextField groupDescriptionTextField;
+    private JCheckBox useRegularExpressionCheckBox;
 
     private IdentityProviderConfig ipc;
     private EventListenerList listenerList = new EventListenerList();
@@ -86,38 +90,38 @@ public class NewVirtualGroupDialog extends JDialog {
         setTitle(resources.getString("dialog.title"));
 
         addWindowListener(new WindowAdapter() {
-        @Override
-        public void windowClosing(WindowEvent event) {
-            // user hit window manager close button
-            windowAction(CMD_CANCEL);
-        }
+            @Override
+            public void windowClosing(WindowEvent event) {
+                // user hit window manager close button
+                windowAction(CMD_CANCEL);
+            }
         });
 
         Utilities.setEscKeyStrokeDisposes(this);
 
         groupNameTextField.setDocument(new FilterDocument(IdentityProviderLimits.MAX_GROUP_ID_LENGTH.getValue(),
-                        new FilterDocument.Filter() {
-                            @Override
-                            public boolean accept(String str) {
-                                return str != null;
-                            }
-                        }));
+                new FilterDocument.Filter() {
+                    @Override
+                    public boolean accept(String str) {
+                        return str != null;
+                    }
+                }));
 
         createButton.setActionCommand(CMD_OK);
         createButton.addActionListener(new ActionListener() {
-                   @Override
-                   public void actionPerformed(ActionEvent event) {
-                       windowAction(event.getActionCommand());
-                   }
-               });
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                windowAction(event.getActionCommand());
+            }
+        });
 
         cancelButton.setActionCommand(CMD_CANCEL);
         cancelButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent event) {
-                        windowAction(event.getActionCommand());
-                    }
-                });
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                windowAction(event.getActionCommand());
+            }
+        });
 
         // equalize buttons
         Utilities.equalizeButtonSizes(new JButton[]{createButton, cancelButton});
@@ -156,6 +160,7 @@ public class NewVirtualGroupDialog extends JDialog {
         vGroup.setX509SubjectDnPattern(x509DNPatternTextField.getText());
         vGroup.setSamlEmailPattern(emailPatternTextField.getText());
         vGroup.setDescription(groupDescriptionTextField.getText());
+        vGroup.setUseRegex(String.valueOf(useRegularExpressionCheckBox.isSelected()));
         SwingUtilities.invokeLater(
                 new Runnable() {
                     @Override
@@ -171,8 +176,8 @@ public class NewVirtualGroupDialog extends JDialog {
                             errorMessage = ExceptionUtils.getMessage(ntcse);
                         } catch (ObjectModelException e) {
                             ErrorManager.getDefault().
-                              notify(Level.WARNING, e, "Error encountered while adding a group\n"+
-                                     "The Group has not been created.");
+                                    notify(Level.WARNING, e, "Error encountered while adding a group\n"+
+                                            "The Group has not been created.");
                         } finally {
                             if (errorMessage != null) {
                                 DialogDisplayer.showMessageDialog(NewVirtualGroupDialog.this, null, errorMessage, null);
@@ -185,8 +190,8 @@ public class NewVirtualGroupDialog extends JDialog {
     }
 
     private void fireEventGroupAdded(EntityHeader header) {
-       EntityEvent event = new EntityEvent(this, header);
-       EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+        EntityEvent event = new EntityEvent(this, header);
+        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
         for (EventListener listener : listeners) {
             ((EntityListener) listener).entityAdded(event);
         }
@@ -225,6 +230,23 @@ public class NewVirtualGroupDialog extends JDialog {
                     resources.getString("x509DNPatternTextField.warning.title"),
                     JOptionPane.ERROR_MESSAGE);
             return false;
+        }
+        if(useRegularExpressionCheckBox.isSelected()){
+            final Map<String, java.util.List<String>> attributes = CertUtils.dnToAttributeMap(dn);
+            for(Map.Entry<String, java.util.List<String>> ent : attributes.entrySet()){
+                for(String s : ent.getValue()){
+                    try{
+                        Pattern.compile(s);
+                    }
+                    catch(PatternSyntaxException e){
+                        JOptionPane.showMessageDialog(this,
+                                "Error compiling regex for '" + ent.getKey() + "': " + e.getMessage(),
+                                resources.getString("x509DNPatternTextField.warning.title"),
+                                JOptionPane.ERROR_MESSAGE);
+                        return false;
+                    }
+                }
+            }
         }
         return true;
     }

@@ -5,17 +5,10 @@
 package com.l7tech.identity.fed;
 
 import com.l7tech.identity.IdentityProviderConfig;
-
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.AttributeOverride;
-import javax.persistence.Transient;
-import javax.persistence.Lob;
-
 import org.hibernate.annotations.Proxy;
+
+import javax.persistence.*;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * A "virtual" federated group.
@@ -59,6 +52,15 @@ public class VirtualGroup extends FederatedGroup {
         setProperty(PROP_X509_DN_PATTERN, x509SubjectDnPattern);
     }
 
+    @Transient
+    public Boolean isUseRegex(){
+        return Boolean.valueOf(getProperty(PROP_USE_REGEX));
+    }
+
+    public void setUseRegex(String useRegex){
+        setProperty(PROP_USE_REGEX, useRegex);
+    }
+
     @Override
     @Column(name="properties",length=Integer.MAX_VALUE)
     @Lob
@@ -97,4 +99,5 @@ public class VirtualGroup extends FederatedGroup {
 
     private static final String PROP_SAML_EMAIL_PATTERN = "samlEmailPattern";
     private static final String PROP_X509_DN_PATTERN = "x509SubjectDnPattern";
+    private static final String PROP_USE_REGEX = "useRegex";
 }

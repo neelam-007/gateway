@@ -1,21 +1,20 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.VirtualGroup;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.ObjectNotFoundException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.common.io.CertUtils;
+import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.Collections;
-import java.util.Set;
+import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * VirtualGroupPanel is the main entry point for Virtual Group Properties dialog.
@@ -26,7 +25,7 @@ import java.util.ResourceBundle;
 public class VirtualGroupPanel extends GroupPanel<VirtualGroup> {
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewVirtualGroupDialog");
-    
+
     private JPanel detailsPanel;
     private VirtualGroupDetailsPanel virtualGroupDetailsPanel = null;
     private VirtualGroupMembershipPanel virtualGroupMembershipPanel = null;
@@ -76,39 +75,39 @@ public class VirtualGroupPanel extends GroupPanel<VirtualGroup> {
             detailsPanel.setLayout(new GridBagLayout());
 
             detailsPanel.add(new JLabel(new ImageIcon(Utilities.loadImage(GROUP_ICON_RESOURCE))),
-              new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.NONE,
-                new Insets(5, 10, 0, 0), 0, 0));
+                    new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+                            GridBagConstraints.WEST,
+                            GridBagConstraints.NONE,
+                            new Insets(5, 10, 0, 0), 0, 0));
 
             detailsPanel.add(getNameLabel(),
-              new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.NONE,
-                new Insets(10, 15, 0, 0), 0, 0));
+                    new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                            GridBagConstraints.WEST,
+                            GridBagConstraints.NONE,
+                            new Insets(10, 15, 0, 0), 0, 0));
 
             detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
-              new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.BOTH,
-                new Insets(10, 10, 0, 10), 0, 0));
+                    new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
+                            GridBagConstraints.WEST,
+                            GridBagConstraints.BOTH,
+                            new Insets(10, 10, 0, 10), 0, 0));
 
             detailsPanel.add(getVirtualGroupPanel(),
-              new GridBagConstraints(0, 2, 2, 1, 0.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.BOTH,
-                new Insets(10, 10, 0, 10), 0, 0));
+                    new GridBagConstraints(0, 2, 2, 1, 0.0, 0.0,
+                            GridBagConstraints.WEST,
+                            GridBagConstraints.BOTH,
+                            new Insets(10, 10, 0, 10), 0, 0));
 
             Component strut = Box.createVerticalStrut(8);
 
             detailsPanel.add(strut,
-              new GridBagConstraints(0, 12, 2, 1, 1.0, 1.0,
-                GridBagConstraints.CENTER,
-                GridBagConstraints.BOTH,
-                new Insets(10, 0, 0, 0), 0, 0));
+                    new GridBagConstraints(0, 12, 2, 1, 1.0, 1.0,
+                            GridBagConstraints.CENTER,
+                            GridBagConstraints.BOTH,
+                            new Insets(10, 0, 0, 0), 0, 0));
 
             Utilities.equalizeLabelSizes(new JLabel[]{
-                getDescriptionLabel(),
+                    getDescriptionLabel(),
             });
         }
         // Return panel
@@ -135,6 +134,7 @@ public class VirtualGroupPanel extends GroupPanel<VirtualGroup> {
         virtualGroupDetailsPanel.getGroupDescTextField().setText(group.getDescription());
         virtualGroupDetailsPanel.getX509SubjectDNTextField().setText(((VirtualGroup)group).getX509SubjectDnPattern());
         virtualGroupDetailsPanel.getEmailTextField().setText(((VirtualGroup)group).getSamlEmailPattern());
+        virtualGroupDetailsPanel.getUseRegularExpressionCheckBox().setSelected(((VirtualGroup) group).isUseRegex().booleanValue());
         setModified(false);
     }
 
@@ -161,7 +161,23 @@ public class VirtualGroupPanel extends GroupPanel<VirtualGroup> {
                     JOptionPane.ERROR_MESSAGE);
             return false;
         }
-
+        if(virtualGroupDetailsPanel.getUseRegularExpressionCheckBox().isSelected()){
+            final Map<String, java.util.List<String>> attributes = CertUtils.dnToAttributeMap(dn);
+            for(Map.Entry<String, java.util.List<String>> ent : attributes.entrySet()){
+                for(String s : ent.getValue()){
+                    try{
+                        Pattern.compile(s);
+                    }
+                    catch(PatternSyntaxException e){
+                        JOptionPane.showMessageDialog(this,
+                                "Error compiling regex for '" + ent.getKey() + "': " + e.getMessage(),
+                                resources.getString("x509DNPatternTextField.warning.title"),
+                                JOptionPane.ERROR_MESSAGE);
+                        return false;
+                    }
+                }
+            }
+        }
         return true;
     }
 
@@ -176,6 +192,7 @@ public class VirtualGroupPanel extends GroupPanel<VirtualGroup> {
         vGroup.setDescription(virtualGroupDetailsPanel.getGroupDescTextField().getText());
         vGroup.setSamlEmailPattern(virtualGroupDetailsPanel.getEmailTextField().getText());
         vGroup.setX509SubjectDnPattern(virtualGroupDetailsPanel.getX509SubjectDNTextField().getText());
+        vGroup.setUseRegex(String.valueOf(virtualGroupDetailsPanel.getUseRegularExpressionCheckBox().isSelected()));
         return group;
     }
 

@@ -837,48 +837,72 @@ public class CertUtils {
     /**
      * Tests whether the provided DN matches the provided pattern.
      * <p>
-     * If the pattern has "*" for any
-     * attribute value, the DN will match if it has any value for the attribute with the same name.
-     * </p><p>
+     * There are two modes of matching and it is controlled by the <code>useRegex</code> parameter.
+     * </p>
+     * <p>When <code>useRegex</code> is false it will interpret the "*" as a wildcard character to match any string pattern.</p>
+     * <pre>
+     *  'Acme*' matches 'Acme Corp.', 'Acme Inc.', 'Acme Foo Acme'
+     *  'Acme*Acme' matches 'Acme Foo Acme' BUT NOT 'Acme Corp.', 'Acme Inc.'
+     *  '*cme*' matches 'Acme Corp.', 'Acme Inc.', 'Acme Foo Acme', 'FooAcme Bar'
+     * </pre>
+     * <p>When <code>useRegex</code> is true it will compile the attribute value as a regular expression.  This allows for more advance matching criteria by using regular expression.</p>
+     * <p>
      * The DN matches if and only if: <ul compact>
      * <li>Every attribute in the pattern is also present in the DN,
      *     <b>even if the pattern's value is "*"</b>;</li>
      * <li>Every attribute in the pattern whose value isn't "*" is present
      *     <b>with the same value</b> in the DN;</li>
      * </ul>
-     * </p><p>
-     * Note that the DN can have additional attributes that are not present
+     * </p>
+     * <p> Note that the DN can have additional attributes that are not present
      * in the pattern and can still be considered to match if the rules are met.</p>
      * @param dn the dn to be matched.  If this is invalid, this method will return false.
      * @param pattern the pattern to match against.  Must be a valid DN.
+     * @param useRegex true if attribute values contain a regular expression that needs to be compiled for matching.
      * @return true if the dn matches the pattern, false otherwise.
      * @throws IllegalArgumentException if the pattern is not a valid DN.
      */
-    public static boolean dnMatchesPattern(String dn, String pattern) {
+    public static boolean dnMatchesPattern(String dn, String pattern, boolean useRegex) {
         Map<String, List<String>> dnMap = dnToAttributeMap(dn);
         Map<String, List<String>> patternMap = dnToAttributeMap(pattern);
 
         boolean matches = true;
-        for (String oid : patternMap.keySet()) {
-            List<String> patternValues = patternMap.get(oid);
-            List<String> dnValues = dnMap.get(oid);
 
-            if (dnValues == null) {
+        for(Map.Entry<String, List<String>> ent : patternMap.entrySet()){
+            final String oid = ent.getKey();
+            List<String> patternValues = ent.getValue();
+            List<String> dnValues = dnMap.get(oid);
+            if(dnValues == null){
                 matches = false;
                 break;
             }
-
             for (String patternValue : patternValues) {
-                if (!dnValues.contains(patternValue)) {
-                    if (!("*".equals(patternValue))) {
-                        matches = false;
-                        break;
-                    }
+                Pattern p;
+                if(useRegex){
+                    p = Pattern.compile(patternValue);
+                }
+                else {
+                    //we need to escape all period as it's a regex wildcard which matches any char, we want a period to stay as a period
+                    //* is a wildcard, hence replacing it to .* in the regex world for substring matching
+                    p = Pattern.compile(patternValue.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*"));
+                }
+                boolean contains = containsMatch(p, dnValues);
+                if(!contains){
+                    matches = false;
+                    break;
                 }
             }
         }
-
         return matches;
+    }
+
+    private static boolean containsMatch(Pattern pattern, List<String> values){
+        for(String v : values){
+            if(pattern.matcher(v).matches()){
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

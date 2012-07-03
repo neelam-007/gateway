@@ -1,20 +1,18 @@
 package com.l7tech.common.io;
 
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-
 import com.l7tech.common.TestDocuments;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
-import org.junit.*;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.*;
 
 /**
  * The current CertUtilsTest is the merge of the original CertUtilsTest and ServerCertUtilsTest (Note: ServerCertUtilsTest has been removed.)
@@ -145,18 +143,18 @@ public class CertUtilsTest {
 
     private void doTestDnPatterns() throws Exception {
         assertTrue(CertUtils.dnMatchesPattern("O=ACME Inc., OU=Widgets, CN=joe",
-                               "O=ACME Inc., OU=Widgets, CN=*"));
+                               "O=ACME Inc., OU=Widgets, CN=*", false));
 
         assertFalse(CertUtils.dnMatchesPattern("O=ACME Inc., OU=Widgets, CN=joe",
-                                "O=ACME Inc., OU=Widgets, CN=bob"));
+                                "O=ACME Inc., OU=Widgets, CN=bob", false));
 
         assertTrue("Multi-valued attributes, case and whitespace are insignificant",
                    CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise",
-                               "dc=layer7-tech, DC=com, UID=*"));
+                               "dc=layer7-tech, DC=com, UID=*", false));
 
         assertFalse("Group value wildcards are required",
                     CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise",
-                                "dc=layer7-tech, DC=com, cn=*, UID=*"));
+                                "dc=layer7-tech, DC=com, cn=*, UID=*", false));
     }
 
     @Test
@@ -441,6 +439,34 @@ public class CertUtilsTest {
         String base64KI = CertUtils.getAKIKeyIdentifier(aki);
 
         assertEquals("KeyIdentifier not correctly processed", "VBXNnyz37A0f0qi+TAesiD77mwo=", base64KI);
+    }
+
+    @Test
+    @BugNumber(11302)
+    public void testMatchingWildCard() throws Exception {
+        assertTrue(CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise", "dc=layer7-*, DC=com, UID=*", false));
+        assertTrue(CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise", "dc=*layer7-*, DC=com, UID=*", false));
+        assertFalse(CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise", "dc=layer7-*.com, DC=com, UID=*", false));
+        assertTrue(CertUtils.dnMatchesPattern("dc=layer7-tech.com,dc=com, uid=acruise", "dc=layer7-*.com, DC=com, UID=*", false));
+        assertTrue(CertUtils.dnMatchesPattern("dc=layer7-tech.com,dc=com, uid=acruise", "dc=layer7-tech.com, DC=com, UID=*", false));
+        assertFalse(CertUtils.dnMatchesPattern("dc=layer7-tech-com,dc=com, uid=acruise", "dc=layer7-tech.com, DC=com, UID=*", false));
+        assertTrue(CertUtils.dnMatchesPattern("dc=layer7-tech.com,dc=com, uid=acruise", "dc=layer7*com, DC=com, UID=*", false));
+        assertTrue(CertUtils.dnMatchesPattern("dc=layer7-tech.com,dc=com, uid=acruise", "dc=*yer7*com, DC=com, UID=*", false));
+        assertTrue(CertUtils.dnMatchesPattern("dc=layer7-tech.com,dc=com, uid=acruise", "dc=*com, DC=com, UID=*", false));
+        assertTrue(CertUtils.dnMatchesPattern("dc=layer7-tech.com,dc=com, uid=acruise", "dc=*layer7-tech.com, DC=com", false));
+        assertFalse(CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com", "dc=layer7.*, DC=com, UID=a.*e", false));
+    }
+
+    @Test
+    @BugNumber(11302)
+    public void testMatchingRegex() throws Exception {
+        assertFalse(CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise", "dc=layer7*, DC=com", true));
+        assertTrue(CertUtils.dnMatchesPattern("dc=LaYer7Tech,dc=com, uid=acruise", "dc=(?i)layer7tech, DC=com", true));
+        assertTrue(CertUtils.dnMatchesPattern("dc=Layer7-tech.com,dc=com, uid=acruise", "dc=(?i)layer7-tech\\.(?:com|net), DC=com", true));
+        assertTrue(CertUtils.dnMatchesPattern("dc=Layer7-tech.net,dc=com, uid=acruise", "dc=(?i)layer7-tech\\.(?:com|net), DC=com", true));
+        assertTrue(CertUtils.dnMatchesPattern("dc=Layer7-tech.net,dc=com, uid=acruise", "DC=com", true));
+        assertTrue(CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise", "dc=layer7.*, DC=com, UID=a.*e", true));
+        assertFalse(CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com", "dc=layer7.*, DC=com, UID=a.*e", true));
     }
 
     /**

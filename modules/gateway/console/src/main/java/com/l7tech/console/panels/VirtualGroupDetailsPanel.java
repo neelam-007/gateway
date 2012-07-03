@@ -15,6 +15,7 @@ public class VirtualGroupDetailsPanel extends JPanel {
     private JTextField x509SubjectDNTextField;
     private JTextField emailTextField;
     private JLabel emailPatternLabel;
+    private JCheckBox useRegularExpressionCheckBox;
 
     private final boolean canUpdate;
 
@@ -31,6 +32,7 @@ public class VirtualGroupDetailsPanel extends JPanel {
         groupDescTextField.setEditable(canUpdate);
         x509SubjectDNTextField.setEditable(canUpdate);
         emailTextField.setEditable(canUpdate);
+        useRegularExpressionCheckBox.setEnabled(canUpdate);
     }
 
     /**
@@ -69,4 +71,7 @@ public class VirtualGroupDetailsPanel extends JPanel {
         this.emailTextField = emailTextField;
     }
 
+    public JCheckBox getUseRegularExpressionCheckBox() {
+        return useRegularExpressionCheckBox;
+    }
 }
