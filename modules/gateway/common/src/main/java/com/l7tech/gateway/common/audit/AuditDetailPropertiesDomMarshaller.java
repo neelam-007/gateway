@@ -13,7 +13,7 @@ import javax.xml.bind.MarshalException;
  *      "param" =  String[]  AuditDetail::params
  */
 public class AuditDetailPropertiesDomMarshaller {
-    private static final String NS = "http://l7tech.com/audit/detail";
+    public static final String NS = "http://l7tech.com/audit/detail";
 
     /**
      * Add the specified AuditRecord as a DOM element as a child of the specified parent element.
@@ -52,6 +52,4 @@ public class AuditDetailPropertiesDomMarshaller {
         parent.appendChild(e);
         return e;
     }
-
-
 }

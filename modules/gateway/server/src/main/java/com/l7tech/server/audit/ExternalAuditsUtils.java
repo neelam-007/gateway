@@ -14,20 +14,16 @@ import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.CompressedStringType;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
-import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
-import javax.sql.rowset.serial.SerialBlob;
-import javax.sql.rowset.serial.SerialClob;
-import javax.sql.rowset.serial.SerialException;
-import javax.xml.bind.MarshalException;
 import java.io.IOException;
-import java.math.BigDecimal;
+import java.io.StringReader;
 import java.security.*;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
-import java.sql.Blob;
-import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -265,7 +261,7 @@ public class ExternalAuditsUtils {
                             String action,
                             String properties)
     {
-        Map<String,Object> props =  getRecordPropertiesMap(properties);
+        AuditRecordPropertiesHandler  propsHandler = parseRecordProperties(properties);
 
         AuditRecord record = null;
         if(type.equals(AuditRecordUtils.TYPE_ADMIN)){
@@ -343,21 +339,23 @@ public class ExternalAuditsUtils {
         }
     }
 
-    private static Map<String,Object>  getRecordPropertiesMap(String props){
-        if(props == null || props.isEmpty())
-            return null;
+    private static AuditRecordPropertiesHandler  parseRecordProperties(String props){
         try {
-            Document doc = XmlUtil.parse(props);
-            AuditRecordPropertiesDomUnmarshaller recordUnmarshaller = new AuditRecordPropertiesDomUnmarshaller();
-            return recordUnmarshaller.unmarshal(doc.getDocumentElement());
+            AuditRecordPropertiesHandler handler = new AuditRecordPropertiesHandler();
+            XMLReader xr = XMLReaderFactory.createXMLReader();
+            xr.setContentHandler(handler);
+            xr.setErrorHandler(handler);
+            StringReader sr = new StringReader(props);
+            xr.parse(new InputSource(sr));
+            return handler;
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Error parsing audit detail properties: ", props);
         } catch (SAXException e) {
-            logger.log(Level.WARNING, "Error parsing audit record properties: ", props);
-
-        } catch (MarshalException e) {
-            logger.log(Level.WARNING, "Error parsing audit record properties: ", props);
+            logger.log(Level.WARNING, "Error parsing audit detail properties: ", props);
         }
         return null;
     }
+
 
     private static boolean verifyRetreievedAuditRecord( SqlRowSet resultSet, long originalOid,DefaultKey defaultKey) throws IOException, SignatureException, InvalidKeyException, KeyUsageException, NoSuchAlgorithmException, CertificateParsingException {
 

@@ -1,11 +1,17 @@
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.util.CompressedStringType;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import javax.xml.bind.MarshalException;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -336,17 +342,16 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
     }
 
     private static String getProperties(AuditRecord rec) {
-//        Document doc = XmlUtil.createEmptyDocument();
-//        try {
-//            Element element = recordMarshaller.marshal(doc, rec);
-//            doc.appendChild(element);
-//            return XmlUtil.nodeToFormattedString(element);
-//        } catch (MarshalException e) {
-//            //todo [wynne]
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//        }
+        Document doc = XmlUtil.createEmptyDocument();
+        try {
+            Element element = recordMarshaller.marshal(doc, rec);
+            doc.appendChild(element);
+            return XmlUtil.nodeToFormattedString(element);
+        } catch (MarshalException e) {
+            logger.warning("Unable to marshall properties");
+        } catch (IOException e) {
+            logger.warning("Unable to marshall properties");
+        }
         return null;
     }
 

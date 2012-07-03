@@ -1,7 +1,6 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.common.io.WhirlycacheFactory;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
@@ -15,11 +14,13 @@ import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.util.*;
 import com.whirlycott.cache.Cache;
-import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
-import javax.xml.bind.MarshalException;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,7 +37,7 @@ public class AuditLookupPolicyEvaluator  {
     private final Config config;
     private final PolicyCache policyCache;
     private final Cache auditRecordsCache;
-    private final AuditDetailPropertiesDomUnmarshaller detailUnmarshaller = new AuditDetailPropertiesDomUnmarshaller();
+//    private final AuditDetailPropertiesDomUnmarshaller detailUnmarshaller = new AuditDetailPropertiesDomUnmarshaller();
     private static final AtomicLong nextFakeOid = new AtomicLong(100);
 
     public AuditLookupPolicyEvaluator(Config config, PolicyCache policyCache) {
@@ -202,9 +203,9 @@ public class AuditLookupPolicyEvaluator  {
                 String message = (String)message_var[i];
                 String properties = (String)props_var[i];
 
-                Map<String,Object> props =  getDetailsPropertiesMap(properties);
+                AuditDetailPropertiesHandler handler =   parseDetailsProperties(properties);
 
-                String[] params = (props == null || props.get("params") == null )? null : (String [])props.get("params");
+                String[] params = (handler == null)? null : handler.getParameters();
                 AuditDetail detail = new AuditDetail( messageId, params ,  message,  time);
                 detail.setAuditGuid(audit_oid);
                 detail.setOrdinal(ordinal);
@@ -227,13 +228,18 @@ public class AuditLookupPolicyEvaluator  {
     }
 
 
-    private Map<String,Object>  getDetailsPropertiesMap(String props){
+    private AuditDetailPropertiesHandler  parseDetailsProperties(String props){
         try {
-            Document doc = XmlUtil.parse(props);
-            return detailUnmarshaller.unmarshal(doc.getDocumentElement());
-        } catch (SAXException e) {
+            AuditDetailPropertiesHandler handler = new AuditDetailPropertiesHandler();
+            XMLReader xr = XMLReaderFactory.createXMLReader();
+            xr.setContentHandler(handler);
+            xr.setErrorHandler(handler);
+            StringReader sr = new StringReader(props);
+            xr.parse(new InputSource(sr));
+            return handler;
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Error parsing audit detail properties: ", props);
-        } catch (MarshalException e) {
+        } catch (SAXException e) {
             logger.log(Level.WARNING, "Error parsing audit detail properties: ", props);
         }
         return null;
