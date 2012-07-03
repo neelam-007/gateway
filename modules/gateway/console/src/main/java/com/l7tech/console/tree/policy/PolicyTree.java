@@ -32,10 +32,7 @@ import org.springframework.context.ApplicationContext;
 import javax.swing.*;
 import javax.swing.Timer;
 import javax.swing.border.Border;
-import javax.swing.event.TreeModelEvent;
-import javax.swing.event.TreeModelListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
+import javax.swing.event.*;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.datatransfer.*;
@@ -112,6 +109,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         addKeyListener(new TreeKeyListener());
         addMouseListener(new TreeMouseListener());
+        addTreeExpansionListener(new ExpansionListener());
         setCellRenderer(new PolicyTreeCellRenderer());
 
         ToolTipManager.sharedInstance().registerComponent(this);
@@ -524,6 +522,36 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
     public void setPolicyEditor(PolicyEditorPanel pe) {
         policyEditorPanel = pe;
+    }
+
+    class ExpansionListener implements TreeExpansionListener{
+        @Override
+        public void treeExpanded(final TreeExpansionEvent event) {
+            setSelectedNode(event);
+        }
+
+        @Override
+        public void treeCollapsed(final TreeExpansionEvent event) {
+            setSelectedNode(event);
+        }
+
+        private void setSelectedNode(final TreeExpansionEvent event) {
+            // do on event dispatch thread
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    final Object source = event.getSource();
+                    if (source instanceof PolicyTree) {
+                        final PolicyTree policyTree = (PolicyTree) source;
+                        final Object selected = policyTree.getLastSelectedPathComponent();
+                        if (selected == null) {
+                            // select the node that was expanded/collapsed
+                            policyTree.setSelectionPath(event.getPath());
+                        }
+                    }
+                }
+            });
+        }
     }
 
     /**
