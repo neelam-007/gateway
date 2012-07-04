@@ -349,9 +349,9 @@ public class ExternalAuditsUtils {
             xr.parse(new InputSource(sr));
             return handler;
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Error parsing audit detail properties: ", props);
+            logger.log(Level.WARNING, "Error parsing audit record properties: ", props);
         } catch (SAXException e) {
-            logger.log(Level.WARNING, "Error parsing audit detail properties: ", props);
+            logger.log(Level.WARNING, "Error parsing audit record properties: ", props);
         }
         return null;
     }

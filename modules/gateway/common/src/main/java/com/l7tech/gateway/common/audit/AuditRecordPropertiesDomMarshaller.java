@@ -38,7 +38,6 @@ public class AuditRecordPropertiesDomMarshaller {
             addMessageRecordFields(e, messageSummaryAuditRecord);
         } else
             throw new MarshalException("Unsupported audit record type");
-        XmlUtil.nodeToFormattedOutputStream(e, System.out);
         return e;
     }
 

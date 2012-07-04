@@ -38,9 +38,9 @@ public class AuditDetailPropertiesHandler extends DefaultHandler
                     parameters.add(currentElementValue);
                 }
             }
+            currentPath.remove(currentPath.size()-1);
+            currentElementValue = null;
         }
-        currentPath.remove(currentPath.size()-1);
-        currentElementValue = null;
     }
 
     @Override

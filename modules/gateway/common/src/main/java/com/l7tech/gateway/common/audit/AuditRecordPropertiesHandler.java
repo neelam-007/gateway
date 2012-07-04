@@ -31,9 +31,10 @@ public class AuditRecordPropertiesHandler extends DefaultHandler {
         if(uri.equals(AuditDetailPropertiesDomMarshaller.NS))
         {
             property1 = currentElementValue;
+            currentPath.remove(currentPath.size()-1);
+            currentElementValue = null;
         }
-        currentPath.remove(currentPath.size()-1);
-        currentElementValue = null;
+
     }
 
     @Override
