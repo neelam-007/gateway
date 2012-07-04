@@ -37,7 +37,7 @@ public class RoundRobinFailoverStrategy<ST> extends AbstractFailoverStrategy<ST>
     public ST selectService() {
         if (!down.isEmpty()) {
             // Check if it's time to probe one of the downed servers
-            long now = System.currentTimeMillis();
+            long now = timeSource.currentTimeMillis();
             final Iterator<Map.Entry<ST, Long>> entryIterator = down.entrySet().iterator();
             while (entryIterator.hasNext()) {
                 Map.Entry<ST, Long> entry = entryIterator.next();
@@ -78,7 +78,7 @@ public class RoundRobinFailoverStrategy<ST> extends AbstractFailoverStrategy<ST>
     public void reportFailure(ST service) {
         if (up.isEmpty() || !up.containsKey(service)) return;
         up.remove(service);
-        down.put(service, System.currentTimeMillis());
+        down.put(service, timeSource.currentTimeMillis());
     }
 
     @Override

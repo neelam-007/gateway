@@ -62,7 +62,7 @@ public class OrderedStickyFailoverStrategy<ST> extends AbstractFailoverStrategy<
                 }
             } else {
                 // See if it is time to start probing to see if any higher-preference server has come back up.
-                final long now = System.currentTimeMillis();
+                final long now = timeSource.currentTimeMillis();
                 if (now - lastProbeTime > getProbeInterval()) {
                     lastProbeTime = now;
                     probing = 0;
@@ -96,7 +96,7 @@ public class OrderedStickyFailoverStrategy<ST> extends AbstractFailoverStrategy<
             } else {
                 current++;
                 if (lastProbeTime < 0)
-                    lastProbeTime = System.currentTimeMillis(); // suppress immediate re-probe of just-known-to-be-down server
+                    lastProbeTime = timeSource.currentTimeMillis(); // suppress immediate re-probe of just-known-to-be-down server
             }
         }
     }

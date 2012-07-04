@@ -1,9 +1,8 @@
 package com.l7tech.common.io.failover;
 
 import com.l7tech.util.SyspropUtil;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import com.l7tech.util.TimeSource;
+import org.junit.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -14,15 +13,6 @@ import static org.junit.Assert.*;
  * Test case for {@link FailoverStrategy} implementations.
  */
 public class FailoverStrategyTest {
-    @BeforeClass
-    public static void prepareRetryMillis() {
-        SyspropUtil.setProperty( "com.l7tech.common.io.failover.robin.retryMillis", "200" );
-    }
-
-    @AfterClass
-    public static void cleanupRetryMillis() {
-        SyspropUtil.clearProperties("com.l7tech.common.io.failover.robin.retryMillis");
-    }
 
     public static final String SA = "a";
     public static final String SB = "b";
@@ -62,22 +52,37 @@ public class FailoverStrategyTest {
 
     @Test
     public void testRoundRobinFailoverStrategy() throws Exception {
-        FailoverStrategy<String> s = new RoundRobinFailoverStrategy<String>(servers);
+        try {
+            SyspropUtil.setProperty( "com.l7tech.common.io.failover.robin.retryMillis", "200" );
 
-        // Strict round-robin must do blacklisting
-        assertEquals(SA, s.selectService());
-        s.reportSuccess(SA);
-        assertEquals(SB, s.selectService());
-        s.reportFailure(SB);
-        assertEquals(SC, s.selectService());
-        s.reportSuccess(SC);
-        assertEquals(SA, s.selectService());
-        s.reportFailure(SA);
-        assertEquals(SC, s.selectService());
-        s.reportSuccess(SC);
-        Thread.sleep(300);
-        assertEquals(SB, s.selectService());
-        s.reportSuccess(SB);
+            RoundRobinFailoverStrategy<String> s = new RoundRobinFailoverStrategy<String>(servers);
+            final long [] now = new long[]{System.currentTimeMillis()};
+            final TimeSource timeSource = new TimeSource(){
+                @Override
+                public long currentTimeMillis() {
+                    return now[0];
+                }
+            };
+            s.setTimeSource(timeSource);
+
+
+            // Strict round-robin must do blacklisting
+            assertEquals(SA, s.selectService());
+            s.reportSuccess(SA);
+            assertEquals(SB, s.selectService());
+            s.reportFailure(SB);
+            assertEquals(SC, s.selectService());
+            s.reportSuccess(SC);
+            assertEquals(SA, s.selectService());
+            s.reportFailure(SA);
+            assertEquals(SC, s.selectService());
+            s.reportSuccess(SC);
+            now[0] += 300;
+            assertEquals(SB, s.selectService());
+            s.reportSuccess(SB);
+        } finally {
+            SyspropUtil.clearProperty( "com.l7tech.common.io.failover.robin.retryMillis" );
+        }
     }
 
     @Test

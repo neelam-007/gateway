@@ -2,12 +2,16 @@ package com.l7tech.common.io.failover;
 
 
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.TimeSource;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Superclass for implementations of {@link FailoverStrategy}.
  */
 public abstract class AbstractFailoverStrategy<ST> implements FailoverStrategy<ST> {
     protected final ST[] servers;
+    @NotNull
+    protected TimeSource timeSource;
 
     /**
      * Create a new instance based on the specified server array, which must be non-null and non-empty.
@@ -19,6 +23,7 @@ public abstract class AbstractFailoverStrategy<ST> implements FailoverStrategy<S
         if (servers == null) throw new NullPointerException();
         if (servers.length < 1) throw new IllegalArgumentException("Must be at least one server");
         this.servers = servers;
+        this.timeSource = new TimeSource();
     }
 
     /**
@@ -33,6 +38,10 @@ public abstract class AbstractFailoverStrategy<ST> implements FailoverStrategy<S
         // backwards compatibility.
         final long interval = ConfigFactory.getLongProperty( "com.l7tech.common.io.failover.robin.retryMillis", defaultProbeMillis );
         return interval == 0 ? defaultProbeMillis : interval;
+    }
+
+    public void setTimeSource(TimeSource timeSource) {
+        this.timeSource = timeSource;
     }
 
     @Override
