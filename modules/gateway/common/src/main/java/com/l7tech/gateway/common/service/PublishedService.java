@@ -34,10 +34,7 @@ import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
@@ -743,7 +740,8 @@ public class PublishedService extends NamedEntityImp implements Flushable, HasFo
 
         private DefaultWsdlStrategy() {
             WsdlStrategy strategy = null;
-            Iterator providerIter = Service.providers(WsdlStrategy.class);
+            final ServiceLoader<WsdlStrategy> load = ServiceLoader.load(WsdlStrategy.class);
+            Iterator providerIter = load.iterator();
             if ( providerIter != null && providerIter.hasNext() ) {
                 strategy = (WsdlStrategy) providerIter.next();
             }

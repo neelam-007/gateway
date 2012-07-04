@@ -54,10 +54,12 @@ import com.l7tech.server.transport.SsgActiveConnectorManagerStub;
 import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
+import com.l7tech.server.util.ResourceClassLoader;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.UnaryVoidThrows;
 import com.l7tech.xml.soap.SoapUtil;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -69,7 +71,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.soap.SOAPConstants;
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
@@ -2136,8 +2140,8 @@ public class ServerGatewayManagementAssertionTest {
 
     //- PRIVATE
 
-    private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
-    private static ServerGatewayManagementAssertion managementAssertion;
+    private final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
+    private ServerGatewayManagementAssertion managementAssertion;
     private static final PolicyValidatorStub policyValidator = new PolicyValidatorStub();
     private static final String NS_WS_TRANSFER = "http://schemas.xmlsoap.org/ws/2004/09/transfer";
     private static final String NS_WS_ADDRESSING = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
@@ -2162,9 +2166,9 @@ public class ServerGatewayManagementAssertionTest {
         "http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates"
     };
 
-    @BeforeClass
+    @Before
     @SuppressWarnings({"serial"})
-    public static void init() throws Exception {
+    public void init() throws Exception {
         new AssertionRegistry(); // causes type mappings to be installed for assertions
         final Folder rootFolder = folder( -5002L, null, "Root Node");
         final Folder testFolder = folder( 1L, rootFolder, "Test Folder");
@@ -2222,8 +2226,41 @@ public class ServerGatewayManagementAssertionTest {
                 securePassword( 1L, "test", "password", true, SecurePassword.SecurePasswordType.PASSWORD )
         ) );
 
+        final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
+        final ResourceClassLoader resourceClassLoader = new ResourceClassLoader(
+                new FilterClassLoader(systemClassLoader, systemClassLoader,
+                        Arrays.asList("com.l7tech.gateway.common.service.PublishedService$DefaultWsdlStrategy"), true),
+                Arrays.asList("com.l7tech.gateway.common.service.PublishedService$DefaultWsdlStrategy")){
+
+            @Override
+            public Enumeration<URL> getResources(String name) throws IOException {
+                final Enumeration<URL> resources = super.getResources(name);
+                final List<URL> urls = new ArrayList<URL>();
+                while (resources.hasMoreElements()) {
+                    final URL url = resources.nextElement();
+                    if (!url.toString().contains("console")) {
+                         urls.add(url);
+                    }
+                }
+
+                return new Enumeration<URL>() {
+                    private int index = 0;
+                    @Override
+                    public boolean hasMoreElements() {
+                        return index != urls.size();
+                    }
+
+                    @Override
+                    public URL nextElement() {
+                        return urls.get(index++);
+                    }
+                };
+            }
+        };
+
+        Thread.currentThread().setContextClassLoader(resourceClassLoader);
         managementAssertion = new ServerGatewayManagementAssertion(
-                new GatewayManagementAssertion(), beanFactory, "testGatewayManagementContext.xml" );
+                new GatewayManagementAssertion(), beanFactory, "testGatewayManagementContext.xml", false );
 
     }
 

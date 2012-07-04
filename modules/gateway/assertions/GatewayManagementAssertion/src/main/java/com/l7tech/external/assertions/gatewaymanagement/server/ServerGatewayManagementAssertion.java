@@ -70,7 +70,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
 
     public ServerGatewayManagementAssertion( final GatewayManagementAssertion assertion,
                                              final BeanFactory context ) throws PolicyAssertionException {
-        this( assertion, context, "gatewayManagementContext.xml" );
+        this( assertion, context, "gatewayManagementContext.xml", true );
     }
 
     @Override
@@ -90,9 +90,11 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
 
         //
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader( assertion.getClass().getClassLoader() );
         try {
-            return handle( context, contentTypeHeader, contentType, request, response );
+            if (maskContextClassLoader) {
+                Thread.currentThread().setContextClassLoader(assertion.getClass().getClassLoader());
+            }
+            return handle(context, contentTypeHeader, contentType, request, response);
         } finally {
             Thread.currentThread().setContextClassLoader( contextClassLoader );
         }
@@ -102,10 +104,12 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
 
     protected ServerGatewayManagementAssertion( final GatewayManagementAssertion assertion,
                                                 final BeanFactory context,
-                                                final String assertionContextResource ) throws PolicyAssertionException {
+                                                final String assertionContextResource,
+                                                final boolean maskContextClassLoader ) throws PolicyAssertionException {
         super(assertion);
         this.agent = getAgent( getAudit(), logger, assertion );
         this.assertionContext = buildContext( context, assertionContextResource );
+        this.maskContextClassLoader = maskContextClassLoader;
     }
 
     //- PRIVATE
@@ -114,6 +118,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
 
     private final WSManAgent agent;
     private final XmlBeanFactory assertionContext;
+    private final boolean maskContextClassLoader;
 
     private static XmlBeanFactory buildContext( final BeanFactory context,
                                               final String assertionContextResource ) {
