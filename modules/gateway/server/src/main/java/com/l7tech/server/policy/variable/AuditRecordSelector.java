@@ -238,14 +238,6 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
             }
         });
 
-        // todo todo [wynne]
-        baseFields.put("numDetails", new FieldGetter<AuditRecord>() {
-            @Override
-            public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
-                return new Selection(rec.getDetailsInOrder().length);
-            }
-        });
-
         baseFields.put("details", new FieldGetter<AuditRecord>() {
             @Override
             public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
