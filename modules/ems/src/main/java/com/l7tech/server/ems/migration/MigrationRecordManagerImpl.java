@@ -8,29 +8,27 @@ import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.identity.User;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 
-import java.util.Date;
-import java.util.Collection;
-import java.util.List;
-import java.util.ArrayList;
+import java.lang.reflect.Constructor;
+import java.util.*;
 import java.sql.SQLException;
 
 import com.l7tech.util.Pair;
-import org.hibernate.criterion.Restrictions;
-import org.hibernate.criterion.Criterion;
+import org.hibernate.criterion.*;
 import org.hibernate.Session;
 import org.hibernate.HibernateException;
 import org.hibernate.Criteria;
+import org.hibernate.transform.AliasToBeanConstructorResultTransformer;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.dao.DataAccessException;
 
 /**
- * @Copyright: Layer 7 Tech. Inc.
- * @Author: ghuang
- * @Date: Nov 19, 2008
+ * @author ghuang
  */
 @Transactional(rollbackFor=Throwable.class)
 public class MigrationRecordManagerImpl extends HibernateEntityManager<MigrationRecord, EntityHeader> implements MigrationRecordManager {
@@ -112,12 +110,49 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
     }
 
     @Override
-    public Collection<MigrationRecord> findNamedMigrations(
+    public Collection<MigrationRecordHeader> findNamedMigrations(
                                            final User user,
                                            final int count,
                                            final Date start,
                                            final Date end) throws FindException {
-        return super.findPage(null, "name", true, 0, count, asCriterion( user, start, end, true ));
+
+
+        return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<MigrationRecordHeader>>() {
+            @SuppressWarnings({"unchecked"})
+            @Override
+            protected List<MigrationRecordHeader> doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                final Criteria criteria = session.createCriteria(getImpClass());
+
+                final ProjectionList projectionList = Projections.projectionList()
+                        .add(Property.forName("oid"))
+                        .add(Property.forName("name"))
+                        .add(Property.forName("version"));
+
+                criteria.setProjection(projectionList);
+
+                final Criterion[] criterions = asCriterion(user, start, end, true);
+                for (Criterion criterion : criterions) {
+                    criteria.add(criterion);
+                }
+
+                criteria.addOrder(Order.asc("name"));
+
+                criteria.setFirstResult(0);
+                criteria.setMaxResults(count);
+
+                final Constructor<MigrationRecordHeader> constructor;
+                try {
+                    constructor = MigrationRecordHeader.class.getConstructor(Long.TYPE, String.class, Integer.TYPE);
+                } catch (NoSuchMethodException e) {
+                    // unexpected - coding error
+                    throw new HibernateException(ExceptionUtils.getMessage(e));
+                }
+                criteria.setResultTransformer(new AliasToBeanConstructorResultTransformer(constructor));
+
+                return (List<MigrationRecordHeader>)criteria.list();
+            }
+        });
+
     }
 
     @Override

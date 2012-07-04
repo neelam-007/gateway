@@ -921,9 +921,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                 user = null;
             }
 
-            Collection<MigrationRecord> records = migrationRecordManager.findNamedMigrations( user, 100, null, null );
+            Collection<MigrationRecordHeader> records = migrationRecordManager.findNamedMigrations( user, 100, null, null );
             if ( records != null ) {
-                for ( MigrationRecord record : records ) {
+                for ( MigrationRecordHeader record : records ) {
                     previousMigrations.add( new PreviousMigrationModel( record.getOid(), record.getName() ) );
                 }
             }

@@ -16,9 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * @Copyright: Layer 7 Tech. Inc.
- * @Author: ghuang
- * @Date: Dec 10, 2008
+ * @author ghuang
  */
 public class MockMigrationRecordManager extends EntityManagerStub<MigrationRecord, EntityHeader> implements MigrationRecordManager {
 
@@ -43,7 +41,7 @@ public class MockMigrationRecordManager extends EntityManagerStub<MigrationRecor
     }
 
     @Override
-    public Collection<MigrationRecord> findNamedMigrations(User user, int count, Date start, Date end) {
+    public Collection<MigrationRecordHeader> findNamedMigrations(User user, int count, Date start, Date end) {
         return Collections.emptyList();
     }
 
