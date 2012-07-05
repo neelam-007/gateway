@@ -36,12 +36,17 @@ public class MockMigrationRecordManager extends EntityManagerStub<MigrationRecor
     }
 
     @Override
+    public MigrationRecord findByPrimaryKeyNoBundle(long oid) throws FindException {
+        return null;
+    }
+
+    @Override
     public Collection<MigrationRecord> findPage(User user, SortProperty sortProperty, boolean ascending, int offset, int count, Date start, Date end) throws FindException {
         return Collections.emptyList();
     }
 
     @Override
-    public Collection<MigrationRecordHeader> findNamedMigrations(User user, int count, Date start, Date end) {
+    public Collection<MigrationRecord> findNamedMigrations(User user, int count, Date start, Date end) {
         return Collections.emptyList();
     }
 

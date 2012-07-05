@@ -61,7 +61,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         selectedMigrationModel = new MigrationModel();
 
         // Create a form to select a migration record
-        add(buildSelectMigrationForm("migrationSelectForm"));
+        add(buildSearchMigrationForm("migrationSelectForm"));
 
         // Create a dynamic holder just in case for displaying warning dialog.
         initDynamicDialogHolder();
@@ -77,11 +77,11 @@ public class PolicyMapping extends EsmStandardWebPage {
     }
 
     /**
-     * Build a wicket form to select one of migration records from the migration table.
+     * Build a wicket form to search migration records and build a migration results table.
      * @param componentId: the wicket id.
      * @return a form for selecting a migration.
      */
-    private Form buildSelectMigrationForm(String componentId) {
+    private Form buildSearchMigrationForm(String componentId) {
         Form form = new Form(componentId);
 
         Date now = new Date();
@@ -336,6 +336,8 @@ public class PolicyMapping extends EsmStandardWebPage {
         MigrationRecord record = null;
 
         try {
+            //todo - Usages of this method can cause OOM as the bundleXml property can be very large.
+            //todo - to fix usages write new update methods which update the entities properties by id.
             record = migrationManager.findByPrimaryKey(Long.parseLong(migrationId));
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error loading migration record.", fe );
@@ -373,7 +375,7 @@ public class PolicyMapping extends EsmStandardWebPage {
 
                 if (value != null && value.length() > 0) {
                     try {
-                        MigrationRecord migration = migrationManager.findByPrimaryKey(Long.parseLong(value));
+                        MigrationRecord migration = migrationManager.findByPrimaryKeyNoBundle(Long.parseLong(value));
                         if ( migration != null ) {
                             selected = true;
                             if ( migration.getSize() > 0 ) {

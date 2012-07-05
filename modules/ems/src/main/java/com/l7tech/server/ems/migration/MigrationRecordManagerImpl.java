@@ -9,11 +9,9 @@ import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.identity.User;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 
-import java.lang.reflect.Constructor;
 import java.util.*;
 import java.sql.SQLException;
 
@@ -22,7 +20,7 @@ import org.hibernate.criterion.*;
 import org.hibernate.Session;
 import org.hibernate.HibernateException;
 import org.hibernate.Criteria;
-import org.hibernate.transform.AliasToBeanConstructorResultTransformer;
+import org.hibernate.transform.Transformers;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.dao.DataAccessException;
@@ -106,53 +104,101 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
                                            final int count,
                                            final Date start,
                                            final Date end) throws FindException {
-        return super.findPage(null, sortProperty.getPropertyName(), ascending, offset, count, asCriterion( user, start, end, false ));
+        return findRecords(user, sortProperty, ascending, offset, count, start, end, false);
     }
 
     @Override
-    public Collection<MigrationRecordHeader> findNamedMigrations(
+    public Collection<MigrationRecord> findNamedMigrations(
                                            final User user,
                                            final int count,
                                            final Date start,
                                            final Date end) throws FindException {
 
 
-        return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<MigrationRecordHeader>>() {
+        return findRecords(user, SortProperty.NAME, true, 0, count, start, end, true);
+
+    }
+
+    @Override
+    public MigrationRecord findByPrimaryKeyNoBundle(final long oid) throws FindException {
+        try {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<MigrationRecord>() {
+                @SuppressWarnings({ "unchecked" })
+                @Override
+                public MigrationRecord doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    final Criteria criteria = session.createCriteria(getImpClass(), "m");
+                    criteria.setProjection(getMigrationRecordNoBundleProjection());
+                    criteria.add( Restrictions.eq("oid", oid) );
+
+                    criteria.setResultTransformer(Transformers.aliasToBean(MigrationRecord.class));
+
+                    final Object o = criteria.uniqueResult();
+                    return (MigrationRecord) o;
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException(e.toString(), e);
+        }
+
+    }
+
+    private Collection<MigrationRecord> findRecords(
+            final User user,
+            final SortProperty sortProperty,
+            final boolean ascending,
+            final int offset,
+            final int count,
+            final Date start,
+            final Date end,
+            final boolean requireName) {
+        return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<MigrationRecord>>() {
             @SuppressWarnings({"unchecked"})
             @Override
-            protected List<MigrationRecordHeader> doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                final Criteria criteria = session.createCriteria(getImpClass());
+            protected List<MigrationRecord> doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                final Criteria criteria = session.createCriteria(getImpClass(), "m");
 
-                final ProjectionList projectionList = Projections.projectionList()
-                        .add(Property.forName("oid"))
-                        .add(Property.forName("name"))
-                        .add(Property.forName("version"));
+                final ProjectionList projectionList = getMigrationRecordNoBundleProjection();
 
                 criteria.setProjection(projectionList);
 
-                final Criterion[] criterions = asCriterion(user, start, end, true);
+                final Criterion[] criterions = asCriterion(user, start, end, requireName);
                 for (Criterion criterion : criterions) {
                     criteria.add(criterion);
                 }
 
-                criteria.addOrder(Order.asc("name"));
+                if (ascending) {
+                    criteria.addOrder(Order.asc("m." + sortProperty.getPropertyName()));
+                } else {
+                    criteria.addOrder(Order.desc("m." + sortProperty.getPropertyName()));
+                }
 
-                criteria.setFirstResult(0);
+                criteria.setFirstResult(offset);
                 criteria.setMaxResults(count);
 
-                final Constructor<MigrationRecordHeader> constructor;
-                try {
-                    constructor = MigrationRecordHeader.class.getConstructor(Long.TYPE, String.class, Integer.TYPE);
-                } catch (NoSuchMethodException e) {
-                    // unexpected - coding error
-                    throw new HibernateException(ExceptionUtils.getMessage(e));
-                }
-                criteria.setResultTransformer(new AliasToBeanConstructorResultTransformer(constructor));
+                criteria.setResultTransformer(Transformers.aliasToBean(MigrationRecord.class));
 
-                return (List<MigrationRecordHeader>)criteria.list();
+                return (List<MigrationRecord>) criteria.list();
             }
         });
+    }
 
+    /**
+     * The alias prefix used is 'm', any restrictions added must use this prefix.
+     * @return MigrationRecord projection with out bundleXml property.
+     */
+    private ProjectionList getMigrationRecordNoBundleProjection() {
+        return Projections.projectionList()
+                .add(Property.forName("m.oid"), "oid")
+                .add(Property.forName("m.name"), "name")
+                .add(Property.forName("m.version"), "version")
+                .add(Property.forName("m.timeCreated"), "timeCreated")
+                .add(Property.forName("m.provider"), "provider")
+                .add(Property.forName("m.userId"), "userId")
+                .add(Property.forName("m.targetCluster"), "targetCluster")
+                .add(Property.forName("m.sourceCluster"), "sourceCluster")
+                .add(Property.forName("m.summaryXml"), "summaryXml")
+                // bundle is excluded from this projection
+                .add(Property.forName("m.size"), "size");
     }
 
     @Override

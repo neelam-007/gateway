@@ -42,6 +42,11 @@ public class MigrationRecord extends NamedEntityImp {
     private SsgCluster sourceCluster;
     private SsgCluster targetCluster;
     private String summaryXml;
+    /**
+     * bundleXml may be very large when uncompressed e.g. 75MB when the compressed size is 5MB.
+     * This property should never be set by search methods e.g. a find method that returns a collection.
+     * This property should only be set when this entity is found via it's primary key.
+     */
     private String bundleXml;
     private int size;
 
@@ -135,6 +140,9 @@ public class MigrationRecord extends NamedEntityImp {
     @Column(name="bundle_zipxml", length=Integer.MAX_VALUE)
     @Type(type="com.l7tech.server.util.CompressedStringType")
     @Lob
+    /**
+     * Only required for off line policy migration
+     */
     public synchronized String getBundleXml() {
         if (bundleXml == null && bundle != null)
             bundleXml = bundle.serializeXml();
@@ -158,6 +166,10 @@ public class MigrationRecord extends NamedEntityImp {
     }
 
     // - Convenience accessors
+    // All accessors below are property accessors of the MigrationSummary, as this is the snap shot in time
+    // when the migration was performed. E.g. source and target cluster info is obtained from the summary and
+    // not the actual properties 'sourceCluster' and 'targetCluster', which I'm assuming was done as they may have been
+    // modified since the migration was done as they are values from another entity.
 
     @Transient
     public MigrationSummary getMigrationSummary() {

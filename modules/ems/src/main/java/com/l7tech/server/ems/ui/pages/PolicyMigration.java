@@ -386,7 +386,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         final PreviousMigrationModel model = (PreviousMigrationModel) form.get("reloadSelect").getDefaultModelObject();
         logger.fine( "Reloading migration '" + model + "'.");
         try {
-            final MigrationRecord record = migrationRecordManager.findByPrimaryKey( model.id );
+            final MigrationRecord record = migrationRecordManager.findByPrimaryKeyNoBundle( model.id );
             if ( record != null ) {
                 final MigrationSummary summary = record.getMigrationSummary();
 
@@ -422,7 +422,13 @@ public class PolicyMigration extends EsmStandardWebPage {
                 overwriteDependenciesModel.setObject( summary.isOverwrite() );
                 offlineDestinationModel.setObject( record.getTargetClusterGuid() == null && !offlineSource );
                 if ( offlineSource ) {
-                    final MigrationRecordModel migrationRecordModel = new MigrationRecordModel( migrationRecordManager, record );
+                    final MigrationRecord fullRecord = migrationRecordManager.findByPrimaryKey(model.id);
+                    if (fullRecord == null) {
+                        // unexpected as the record was just found above.
+                        throw new FindException("Could not find record with id " + model.id);
+                    }
+
+                    final MigrationRecordModel migrationRecordModel = new MigrationRecordModel( migrationRecordManager, fullRecord );
                     srcClusterSelector.setIncludedOfflineClusters( Collections.singleton( summary.getSourceClusterGuid() ) );
                     srcContentSelector.setProviderForCluster( summary.getSourceClusterGuid(), new OfflineMigrationContentProvider( migrationRecordModel ) );
                     detailProvidersByCluster.put( summary.getSourceClusterGuid(), new OfflineMigrationSource( migrationRecordModel ) );
@@ -921,9 +927,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                 user = null;
             }
 
-            Collection<MigrationRecordHeader> records = migrationRecordManager.findNamedMigrations( user, 100, null, null );
+            Collection<MigrationRecord> records = migrationRecordManager.findNamedMigrations( user, 100, null, null );
             if ( records != null ) {
-                for ( MigrationRecordHeader record : records ) {
+                for ( MigrationRecord record : records ) {
                     previousMigrations.add( new PreviousMigrationModel( record.getOid(), record.getName() ) );
                 }
             }
