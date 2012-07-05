@@ -93,9 +93,9 @@ class MqNativeListenerThread extends Thread {
                     if ( ++oopses < MqNativeListener.MAXIMUM_OOPSES ) {
                         // sleep for a short period of time before retrying
                         mqNativeListener.log(Level.FINE, "MQ listener on {0} sleeping for {1} milliseconds.",
-                                connectorInfo, MqNativeListener.OOPS_RETRY);
+                                connectorInfo, mqNativeListener.getOopsRetry());
                         try {
-                            Thread.sleep(MqNativeListener.OOPS_RETRY);
+                            Thread.sleep(mqNativeListener.getOopsRetry());
                         } catch ( InterruptedException e1 ) {
                             mqNativeListener.log(Level.INFO, MqNativeMessages.INFO_LISTENER_POLLING_INTERRUPTED, "retry interval");
                         }
