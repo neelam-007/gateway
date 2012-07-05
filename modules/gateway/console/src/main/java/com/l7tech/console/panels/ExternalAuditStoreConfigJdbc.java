@@ -172,7 +172,7 @@ public class ExternalAuditStoreConfigJdbc extends WizardStepPanel {
     @Override
     public String getDescription() {
         return
-            "<html>Blah blah blah English is hard!</html>";
+            "<html>Create the policies for audit storage and lookup</html>";
     }
 
     @Override

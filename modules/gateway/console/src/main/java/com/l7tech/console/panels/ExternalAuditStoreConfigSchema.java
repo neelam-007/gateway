@@ -229,7 +229,7 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
     @Override
     public String getDescription() {
         return
-            "<html>Words! More Words!!!</html>";
+            "<html>The schema that will be used to create audit tables in the specified datasource</html>";
     }
 
     @Override
