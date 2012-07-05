@@ -189,7 +189,7 @@ public class IdentityProviderPasswordPolicy extends PersistentEntityImp {
         if (getIntegerProperty(NON_NUMERIC_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} non-numeric character(s",getIntegerProperty(NON_NUMERIC_MIN))); desc.append("</li>");}
         if (getIntegerProperty(CHARACTER_DIFF_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("if changing passwords, new password must differ from old password by {0} character(s)",getIntegerProperty(CHARACTER_DIFF_MIN))); desc.append("</li>");}
         if (getBooleanProperty(NO_REPEAT_CHARS)){desc.append("<li>"); desc.append("no consecutive repeating characters"); desc.append("</li>");}
-        if (getIntegerProperty(REPEAT_FREQUENCY)>0){desc.append("<li>"); desc.append(MessageFormat.format("if changing passwords,  and old password cannot be reused within {0} password change(s)",getIntegerProperty(REPEAT_FREQUENCY))); desc.append("</li>");}
+        if (getIntegerProperty(REPEAT_FREQUENCY)>0){desc.append("<li>"); desc.append(MessageFormat.format("if changing passwords, an old password cannot be reused within {0} password change(s)",getIntegerProperty(REPEAT_FREQUENCY))); desc.append("</li>");}
         if (getBooleanProperty(ALLOWABLE_CHANGES)){desc.append("<li>"); desc.append("if changing passwords, only one password change is permitted per 24 hours"); desc.append("</li>");}
 
         desc.append("</ul> </body></html>");
