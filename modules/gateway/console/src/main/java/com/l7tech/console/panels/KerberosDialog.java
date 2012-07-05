@@ -67,6 +67,8 @@ public class KerberosDialog extends JDialog {
     private JButton uploadKeytab;
     private JButton deleteKeytabButton;
     private JTable keytabTable;
+    private JButton validateButton;
+    private JCheckBox performValidateCheckBox;
 
     private boolean validKeytab = false;
     private List<KeyTabEntryInfo> keyTabEntries = new ArrayList<KeyTabEntryInfo>();
@@ -77,6 +79,13 @@ public class KerberosDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
         setResizable(false);
         add(mainPanel);
+
+        validateButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doValidate();
+            }
+        });
 
         closeButton.addActionListener(new ActionListener(){
             @Override
@@ -103,10 +112,11 @@ public class KerberosDialog extends JDialog {
         });
         deleteKeytabButton.setEnabled(false);
         deleteKeytabButton.setText(label);
+        validateButton.setEnabled(false);
 
         initKeyTabTable();
         initData();
-        if (validKeytab) testConfiguration();
+        if (validKeytab && performValidateCheckBox.isSelected()) testConfiguration();
 
         pack();
         Utilities.centerOnScreen(this);
@@ -126,6 +136,7 @@ public class KerberosDialog extends JDialog {
 
             if ( keyTabEntries.size() != 0 || keytabInvalid ) {
                  deleteKeytabButton.setEnabled( uploadKeytab.isEnabled() );
+                 validateButton.setEnabled(uploadKeytab.isEnabled());
             }
 
             if ( keyTabEntries.size() == 0 ) {
@@ -144,7 +155,10 @@ public class KerberosDialog extends JDialog {
                 validKeytab = true;
 
                 validLabel.setText(" - ");
-                summaryLabel.setText("Checking configuration ...");
+                summaryLabel.setText("");
+                errorMessageLabel.setText("");
+                errorMessageLabel.setVisible( false );
+
 
                 ((KeyTabTableModel)keytabTable.getModel()).fireTableDataChanged();
 
@@ -158,6 +172,10 @@ public class KerberosDialog extends JDialog {
 
         keytabTable.setModel(new KeyTabTableModel());
 
+    }
+
+    private void createUIComponents() {
+        // TODO: place custom component creation code here
     }
 
     private class KeyTabTableModel extends AbstractTableModel {
@@ -316,8 +334,26 @@ public class KerberosDialog extends JDialog {
     private void showUpdating() {
         validLabel.setText(" - ");
         summaryLabel.setText("Updating configuration ...");
+        errorMessageLabel.setText("");
+        errorMessageLabel.setVisible( false );
         keyTabEntries = new ArrayList<KeyTabEntryInfo>();
         ((KeyTabTableModel)keytabTable.getModel()).fireTableDataChanged();
+    }
+
+    private void doValidate() {
+        showUpdating();
+        Background.scheduleOneShot( new TimerTask(){
+            @Override
+            public void run() {
+                SwingUtilities.invokeLater( new Runnable() {
+                    @Override
+                    public void run() {
+                        initData();
+                        if (validKeytab) testConfiguration();
+                    }
+                });
+            }
+        }, 1500 );
     }
 
     private void doUpload(  final File keytabFile  ) {
@@ -336,7 +372,7 @@ public class KerberosDialog extends JDialog {
                         @Override
                         public void run() {
                             initData();
-                            if (validKeytab) testConfiguration();
+                            if (validKeytab && performValidateCheckBox.isSelected()) testConfiguration();
                         }
                     });
                 }
@@ -433,6 +469,7 @@ public class KerberosDialog extends JDialog {
             kerberosAdmin.deleteKeytab();
 
             deleteKeytabButton.setEnabled( false );
+            validateButton.setEnabled(false);
             showUpdating();
 
             Background.scheduleOneShot( new TimerTask(){
@@ -442,7 +479,7 @@ public class KerberosDialog extends JDialog {
                         @Override
                         public void run() {
                             initData();
-                            if (validKeytab) testConfiguration(); // deletion could have failed
+                            if (validKeytab && performValidateCheckBox.isSelected()) testConfiguration(); // deletion could have failed
                         }
                     });
                 }
