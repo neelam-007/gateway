@@ -229,6 +229,11 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
 
     private void getFileAttributes(final int attrs, final SshFile file, final Buffer buffer) {
         boolean preserve = false;
+        String perm = null;
+        //exist regardless if -p is present or not
+        if((attrs & SSH_FILEXFER_ATTR_PERMISSIONS) == SSH_FILEXFER_ATTR_PERMISSIONS){
+            perm = Integer.toOctalString(buffer.getInt());
+        }
         //these are not available if the -p is not set
         if((attrs & SSH_FILEXFER_ATTR_ACMODTIME) == SSH_FILEXFER_ATTR_ACMODTIME){
             final long accessTime = buffer.getInt() * 1000L;
@@ -237,10 +242,9 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
             file.setLastModified(modificationTime);
             preserve = true;
         }
-        //exist regardless if -p is present or not.  check preserve flag.
-        if(preserve && ((attrs & SSH_FILEXFER_ATTR_PERMISSIONS) == SSH_FILEXFER_ATTR_PERMISSIONS)){
-            final String po = Integer.toOctalString(buffer.getInt());
-            ((VirtualSshFile) file).setPermission(Integer.valueOf(po));
+        //exist regardless if -p is present or not
+        if(preserve && perm != null){
+            ((VirtualSshFile) file).setPermission(Integer.valueOf(perm));
         }
     }
 
