@@ -201,21 +201,11 @@ public class KerberosRoutingClient extends KerberosClient {
 
                         KerberosGSSAPReqTicket apReq = new KerberosGSSAPReqTicket(bytes);
 
-                        KerberosEncData krbEncData = null;
-                        try {
-                            //get keys
-                            KerberosKey[] keys = getKeys(krbSubject.getPrivateCredentials());
-                            krbEncData = getKerberosAuthorizationData(keys, apReq);
-
-                        } catch (IllegalStateException e) {
-                            //ignore if no keys present
-                        }
-
                         return new KerberosServiceTicket(ticket.getClient().getName(),
                                                          accountName,
                                                          ticket.getSessionKey().getEncoded(),
                                                          System.currentTimeMillis() + (context.getLifetime() * 1000L),
-                                                         apReq, null, krbEncData);
+                                                         apReq, null);
                     }
                     finally {
                         if(context!=null) context.dispose();

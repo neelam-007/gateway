@@ -4,8 +4,7 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import org.ietf.jgss.*;
 import org.jaaslounge.decoding.DecodingException;
-import org.jaaslounge.decoding.kerberos.KerberosEncData;
-import org.jaaslounge.decoding.kerberos.KerberosToken;
+import org.jaaslounge.decoding.kerberos.*;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.ktab.KeyTab;
 import sun.security.krb5.internal.ktab.KeyTabEntry;
@@ -221,20 +220,11 @@ public class KerberosClient {
 
                         KerberosGSSAPReqTicket apReq = new KerberosGSSAPReqTicket(bytes);
 
-                        KerberosEncData krbEncData = null;
-                        try {
-                            //get keys
-                            KerberosKey[] keys = getKeys(krbSubject.getPrivateCredentials());
-                            krbEncData = getKerberosAuthorizationData(keys, apReq);
-                        } catch (IllegalStateException e) {
-                          //ignore if no keys present
-                        }
-
                         return new KerberosServiceTicket(ticket.getClient().getName(),
                                                          servicePrincipalName,
                                                          ticket.getSessionKey().getEncoded(),
                                                          System.currentTimeMillis() + (context.getLifetime() * 1000L),
-                                                         apReq, null, krbEncData);
+                                                         apReq, null);
                     }
                     finally {
                         if(context!=null) context.dispose();
@@ -319,14 +309,9 @@ public class KerberosClient {
                         // Extract the delegated kerberos ticket if one exists
                         EncryptionKey sessionKey = apReq.getCreds().getSessionKey();
                         KerberosTicket delegatedKerberosTicket = extractDelegatedServiceTicket(apReq.getChecksum(), sessionKey);
-                        
+
                         // get the key bytes
- 	 	                byte[] keyBytes;
- 	 	                if (apReq.getSubKey() != null) {
- 	 	                    keyBytes = apReq.getSubKey().getBytes();
-                        } else {
- 	 	                    keyBytes = sessionKey.getBytes();
-                        }
+ 	 	                byte[] keyBytes = sessionKey.getBytes();
 
                         // create the service ticket
                         return new KerberosServiceTicket(apReq.getCreds().getClient().getName(),
@@ -381,10 +366,13 @@ public class KerberosClient {
     protected KerberosEncData getKerberosAuthorizationData(KerberosKey[] keys, KerberosGSSAPReqTicket gssAPReqTicket) {
         KerberosEncData krbEncData = null;
         try {
-            KerberosToken krbToken = new KerberosToken(gssAPReqTicket.toByteArray(), keys);
+            KerberosKey[] krbKeys = new KerberosKey[keys.length];
+            System.arraycopy(keys,0,krbKeys, 0, keys.length);
+            KerberosToken krbToken = new KerberosToken(GSSSpnego.removeSpnegoWrapper(gssAPReqTicket.toByteArray()), krbKeys);
             krbEncData = krbToken.getTicket().getEncData(); //extract Kerberos Encripted Data
         } catch (DecodingException e) {
             //Not all tokens include authorization information that jaaslounge-decode library can extract
+            logger.log(Level.FINE, "Unable to extract kerberos authorization data from the kerberos ticket: " + e.getMessage());
         }
         return krbEncData;
     }
@@ -659,7 +647,7 @@ public class KerberosClient {
 
     private static final String KERBEROS_LIFETIME_PROPERTY = "com.l7tech.common.security.kerberos.lifetime";
     private static final Integer KERBEROS_LIFETIME_DEFAULT = 60 * 60; // in seconds, default ==> 1 hour
-    private static final Integer KERBEROS_LIFETIME = ConfigFactory.getIntProperty( KERBEROS_LIFETIME_PROPERTY, KERBEROS_LIFETIME_DEFAULT );
+    protected static final Integer KERBEROS_LIFETIME = ConfigFactory.getIntProperty( KERBEROS_LIFETIME_PROPERTY, KERBEROS_LIFETIME_DEFAULT );
 
     private static final String PASS_INETADDR_PROPERTY = "com.l7tech.common.security.kerberos.useaddr";
     private static final boolean PASS_INETADDR = ConfigFactory.getBooleanProperty( PASS_INETADDR_PROPERTY, true );
@@ -874,7 +862,7 @@ public class KerberosClient {
      * @param servicePrincipalName service principal name to be returned by the callback handler
  	 * @return CallbackHandler instance
      */
-    private static CallbackHandler getServerCallbackHandler(final String servicePrincipalName) {
+    protected static CallbackHandler getServerCallbackHandler(final String servicePrincipalName) {
         return new CallbackHandler() {
             @Override
             public void handle(Callback[] callbacks) {
