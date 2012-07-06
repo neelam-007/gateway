@@ -20,7 +20,6 @@ public class VirtualSshFile implements SshFile {
     private String fileName;
     private boolean file;
     private PipedOutputStream pipedOutputStream;
-    private PipedInputStream pipedInputStream;
 
     private Future<AssertionStatus> messageProcessStatus;
 
@@ -384,11 +383,4 @@ public class VirtualSshFile implements SshFile {
         this.accessTime = accessTime;
     }
 
-    public PipedInputStream getPipedInputStream() {
-        return pipedInputStream;
-    }
-
-    public void setPipedInputStream(final PipedInputStream pipedInputStream) {
-        this.pipedInputStream = pipedInputStream;
-    }
 }

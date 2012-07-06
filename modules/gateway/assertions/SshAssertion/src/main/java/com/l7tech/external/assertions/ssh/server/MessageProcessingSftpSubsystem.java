@@ -116,33 +116,18 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                     SshFile p = resolveFile(path);
                     sendPath(id, p);
                 } catch (FileNotFoundException e) {
+                    e.printStackTrace();
                     sendStatus(id, SSH_FX_NO_SUCH_FILE, e.getMessage());
                 } catch (IOException e) {
+                    e.printStackTrace();
                     sendStatus(id, SSH_FX_FAILURE, e.getMessage());
                 }
                 break;
             }
+            // return OK for these 2 commands as we don't support it.
+            case SSH_FXP_SETSTAT:
             case SSH_FXP_FSETSTAT: {
-                String handle = buffer.getString();
-                SshFile file = handles.get(handle).getFile();
-                if(handle == null || handle.trim().isEmpty()){
-                    sendStatus(id, SSH_FX_NO_SUCH_FILE, "File not found or insufficient privileges required for modifying file attribute(s)");
-                }
-                else if(file instanceof VirtualSshFile){
-                    int flags = buffer.getInt();
-                    if((flags & SSH_FILEXFER_ATTR_PERMISSIONS) == SSH_FILEXFER_ATTR_PERMISSIONS){
-                        String po = Integer.toOctalString(buffer.getInt());
-                        ((VirtualSshFile) file).setPermission(Integer.valueOf(po));
-                    }
-                    if((flags & SSH_FILEXFER_ATTR_ACMODTIME) == SSH_FILEXFER_ATTR_ACMODTIME){
-                        long accessTime = buffer.getInt() * 1000L;
-                        ((VirtualSshFile) file).setAccessTime(accessTime);
-                        long modificationTime = buffer.getInt() * 1000L;
-                        file.setLastModified(modificationTime);
-                    }
-
-                    sendStatus(id, SSH_FX_OK, "File attributes set successfully");
-                }
+                sendStatus(id, SSH_FX_OK, "");
                 break;
             }
             default:
@@ -163,11 +148,11 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
 
         if (version <= 4) {
             String path = buffer.getString();
-            int pflags = buffer.getInt();
             SshFile file = null;
-            // attrs
             try {
                 file = resolveFile(path);
+                //pflags
+                int pflags = buffer.getInt();
                 if (file.doesExist()) {
                     if (((pflags & SSH_FXF_CREAT) != 0) && ((pflags & SSH_FXF_EXCL) != 0)) {
                         sendStatus(id, SSH_FX_FILE_ALREADY_EXISTS, path);
@@ -187,22 +172,29 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 }
                 String handle = UUID.randomUUID().toString();
 
-                ((VirtualSshFile)file).setPipedInputStream(new PipedInputStream());
-                final PipedOutputStream pos = new PipedOutputStream(((VirtualSshFile) file).getPipedInputStream());
-                ((VirtualSshFile)file).setPipedOutputStream(pos);
+                //attrs
+                final int attrs = buffer.getInt();
+                getFileAttributes(attrs, file, buffer);
+
+                // start thread to process Gateway request message
+                submitMessageProcessingTask( connector, file );
 
                 handles.put(handle, new FileHandle(file, pflags)); // handle flags conversion
                 sendHandle(id, handle);
             } catch (IOException e) {
                 file.handleClose();
                 sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+            } catch ( ThreadPoolShutDownException e ) {
+                file.handleClose();
+                logger.warning("SFTP thread pool shutdown.");
+                sendStatus( id, SSH_FX_FAILURE, "Server error" );
             }
         } else {
             String path = buffer.getString();
             int acc = buffer.getInt();
             int flags = buffer.getInt();
             SshFile file = null;
-            // attrs
+            // pflags
             try {
                 file = resolveFile(path);
                 switch (flags & SSH_FXF_ACCESS_DISPOSITION) {
@@ -217,15 +209,38 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 }
                 String handle = UUID.randomUUID().toString();
 
-                ((VirtualSshFile)file).setPipedInputStream(new PipedInputStream());
-                final PipedOutputStream pos = new PipedOutputStream(((VirtualSshFile) file).getPipedInputStream());
-                ((VirtualSshFile)file).setPipedOutputStream(pos);
+                final int attr = buffer.getInt();
+                getFileAttributes(attr, file, buffer);
+                // start thread to process Gateway request message
+                submitMessageProcessingTask(connector, file);
+
                 handles.put(handle, new FileHandle(file, flags));
                 sendHandle(id, handle);
             } catch (IOException e) {
                 file.handleClose();
                 sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+            } catch ( ThreadPoolShutDownException e ) {
+                file.handleClose();
+                logger.warning("SFTP thread pool shutdown.");
+                sendStatus( id, SSH_FX_FAILURE, "Server error" );
             }
+        }
+    }
+
+    private void getFileAttributes(final int attrs, final SshFile file, final Buffer buffer) {
+        boolean preserve = false;
+        //these are not available if the -p is not set
+        if((attrs & SSH_FILEXFER_ATTR_ACMODTIME) == SSH_FILEXFER_ATTR_ACMODTIME){
+            final long accessTime = buffer.getInt() * 1000L;
+            ((VirtualSshFile) file).setAccessTime(accessTime);
+            final long modificationTime = buffer.getInt() * 1000L;
+            file.setLastModified(modificationTime);
+            preserve = true;
+        }
+        //exist regardless if -p is present or not.  check preserve flag.
+        if(preserve && ((attrs & SSH_FILEXFER_ATTR_PERMISSIONS) == SSH_FILEXFER_ATTR_PERMISSIONS)){
+            final String po = Integer.toOctalString(buffer.getInt());
+            ((VirtualSshFile) file).setPermission(Integer.valueOf(po));
         }
     }
 
@@ -255,19 +270,13 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
     protected void sshFxpClose(Buffer buffer, int id) throws IOException {
         String handle = buffer.getString();
         try {
-            Handle h = handles.remove(handle);
+            Handle h = handles.get(handle);
             if (h == null) {
                 sendStatus(id, SSH_FX_INVALID_HANDLE, handle, "");
             } else {
-                try{
-                    submitMessageProcessingTask(connector, h.getFile());
-                } catch ( ThreadPoolShutDownException e ) {
-                    logger.warning( "SFTP thread pool shutdown." );
-                    sendStatus( id, SSH_FX_FAILURE, "Server error" );
-                } finally {
-                    h.getFile().handleClose();
-                    h.close();
-                }
+                handles.remove(handle);
+                h.close();
+
                 AssertionStatus status = getStatusFromGatewayMessageProcess(h.getFile(),
                         connector.getLongProperty( SshServerModule.LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS, 60L ));
                 if (status == null || status == AssertionStatus.UNDEFINED) {
@@ -307,6 +316,10 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
             HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connector.getOid() ) );
             HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.CLIENT_IP, MessageProcessingSshUtil.getRemoteAddress(session) );
 
+            final PipedInputStream pis = new PipedInputStream();
+            final PipedOutputStream pos = new PipedOutputStream(pis);
+            virtualSshFile.setPipedOutputStream(pos);
+
             final String fileName = virtualSshFile.getName();
             String path = virtualSshFile.getAbsolutePath();
             int pathLastIndex = path.lastIndexOf('/');
@@ -318,7 +331,7 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
 
             SshKnob.FileMetadata metadata = new SshKnob.FileMetadata(virtualSshFile.getAccessTime(), virtualSshFile.getLastModified(), virtualSshFile.getPermission());
             final PolicyEnforcementContext context =
-                    buildPolicyExecutionContext( connector, session, stashManagerFactory, virtualSshFile.getPipedInputStream(), fileName, path, metadata );
+                    buildPolicyExecutionContext( connector, session, stashManagerFactory, pis, fileName, path, metadata );
 
             final CountDownLatch startedSignal = new CountDownLatch(1);
             final Future<AssertionStatus> future = threadPool.submitTask(new Callable<AssertionStatus>() {
@@ -345,7 +358,7 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                         if ( status != AssertionStatus.NONE ) {
                             faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
                         } else {
-                            prepareInputStreamForClosing(virtualSshFile.getPipedInputStream(), logger);
+                            prepareInputStreamForClosing(pis, logger);
                         }
                         if (faultXml != null) {
                             messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
@@ -353,7 +366,7 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                     } finally {
                         startedSignal.countDown();
                         ResourceUtils.closeQuietly(context);
-                        ResourceUtils.closeQuietly(virtualSshFile.getPipedInputStream());
+                        ResourceUtils.closeQuietly(pis);
                     }
                     return status;
                 }
