@@ -101,8 +101,10 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                     SshFile p = resolveFile(path);
                     sendAttrs(id, p);
                 } catch (FileNotFoundException e) {
+                    logger.log(Level.WARNING, "Error retrieving file attributes: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     sendStatus(id, SSH_FX_NO_SUCH_FILE, e.getMessage());
                 } catch (IOException e) {
+                    logger.log(Level.WARNING, "Error retrieving file attributes: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     sendStatus(id, SSH_FX_FAILURE, e.getMessage());
                 }
                 break;
@@ -116,15 +118,15 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                     SshFile p = resolveFile(path);
                     sendPath(id, p);
                 } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+                    logger.log(Level.WARNING, "Error canonicalizing server path name: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     sendStatus(id, SSH_FX_NO_SUCH_FILE, e.getMessage());
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.log(Level.WARNING, "Error canonicalizing server path name: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     sendStatus(id, SSH_FX_FAILURE, e.getMessage());
                 }
                 break;
             }
-            // return OK for these 2 commands as we don't support it.
+            // return OK for these 2 commands as we don't support it directly, see SSH_FXP_OPEN
             case SSH_FXP_SETSTAT:
             case SSH_FXP_FSETSTAT: {
                 sendStatus(id, SSH_FX_OK, "");
