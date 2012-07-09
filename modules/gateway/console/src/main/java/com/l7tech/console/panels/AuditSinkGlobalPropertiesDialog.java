@@ -94,20 +94,10 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
 
     private void enableDiableButtons() {
         okButton.setEnabled(isCommittable());
-        configureButton.setEnabled(cbOutputToPolicy.isSelected());
     }
 
     private void doConfigure() {
-        if(isUsingSinkPolicy() || isUsingLookupPolicy()){
-            DialogDisplayer.showMessageDialog(
-                    AuditSinkGlobalPropertiesDialog.this,
-                    "Audit Sink/Lookup policies already configured.",
-                    "Configuring",
-                    JOptionPane.INFORMATION_MESSAGE,
-                    null);
-            return;
-        }
-        final ExternalAuditStoreConfigWizard dialog = ExternalAuditStoreConfigWizard.getInstance(this);
+        final ExternalAuditStoreConfigWizard dialog = ExternalAuditStoreConfigWizard.getInstance(this,getSinkPolicyHeader(),getLookupPolicyHeader());
         dialog.pack();
         Utilities.centerOnScreen(dialog);
         DialogDisplayer.display(dialog, new Runnable() {
@@ -156,26 +146,34 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
         }
     }
 
-    private PolicyHeader getSinkPolicyHeader() throws FindException {
+    private PolicyHeader getSinkPolicyHeader()  {
         if(sinkPolicyHeader != null ) return sinkPolicyHeader;
-        Collection<PolicyHeader> allInternals = Registry.getDefault().getPolicyAdmin().findPolicyHeadersByType(PolicyType.INTERNAL);
-        for (PolicyHeader internal : allInternals) {
-            if (ExternalAuditStoreConfigWizard.INTERNAL_TAG_AUDIT_SINK.equals(internal.getDescription())) {
-                sinkPolicyHeader = internal;
-                break;
+        try {
+            Collection<PolicyHeader> allInternals = Registry.getDefault().getPolicyAdmin().findPolicyHeadersByType(PolicyType.INTERNAL);
+            for (PolicyHeader internal : allInternals) {
+                if (ExternalAuditStoreConfigWizard.INTERNAL_TAG_AUDIT_SINK.equals(internal.getDescription())) {
+                    sinkPolicyHeader = internal;
+                    break;
+                }
             }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to retrieve internal policies: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
         return sinkPolicyHeader;
     }
 
-    private PolicyHeader getLookupPolicyHeader() throws FindException {
+    private PolicyHeader getLookupPolicyHeader()  {
         if(lookupPolicyHeader != null ) return lookupPolicyHeader;
-        Collection<PolicyHeader> allInternals = Registry.getDefault().getPolicyAdmin().findPolicyHeadersByType(PolicyType.INTERNAL);
-        for (PolicyHeader internal : allInternals) {
-            if (ExternalAuditStoreConfigWizard.INTERNAL_TAG_AUDIT_LOOKUP.equals(internal.getDescription())) {
-                lookupPolicyHeader = internal;
-                break;
+        try {
+            Collection<PolicyHeader> allInternals = Registry.getDefault().getPolicyAdmin().findPolicyHeadersByType(PolicyType.INTERNAL);
+            for (PolicyHeader internal : allInternals) {
+                if (ExternalAuditStoreConfigWizard.INTERNAL_TAG_AUDIT_LOOKUP.equals(internal.getDescription())) {
+                    lookupPolicyHeader = internal;
+                    break;
+                }
             }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to retrieve internal policies: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
         return lookupPolicyHeader;
     }

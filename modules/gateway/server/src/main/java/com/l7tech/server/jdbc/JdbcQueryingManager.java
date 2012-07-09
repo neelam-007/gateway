@@ -23,6 +23,7 @@ public interface JdbcQueryingManager {
      *         a SqlRowSet representing disconnected java.sql.ResultSet data (the result of a select statement).
      */
     Object performJdbcQuery(String connectionName, String query, int maxRecords, List<Object> preparedStmtParams);
+    Object performJdbcQuery(DataSource dataSource, String query, int maxRecords, List<Object> preparedStmtParams);
 
     /**
      * Get a result set (SqlRowSet object) from the mock JDBC database.

@@ -3,6 +3,7 @@ package com.l7tech.server.audit;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.jdbc.InvalidPropertyException;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
@@ -25,6 +26,7 @@ import com.l7tech.server.security.sharedkey.SharedKeyRecord;
 import com.l7tech.server.sla.CounterRecord;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.apache.commons.collections.map.LRUMap;
 import org.hibernate.EntityMode;
 import org.hibernate.SessionFactory;
@@ -790,20 +792,32 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
     }
 
     @Override
-    public AsyncAdminMethods.JobId<String> createExternalAuditDatabase(final String connection,final  String auditRecordTableName, final String auditDetailTableName) {
+    public AsyncAdminMethods.JobId<String> createExternalAuditDatabaseTables(
+            final String connectionName,final  String auditRecordTableName, final String auditDetailTableName,final String username, final String  password) {
         final FutureTask<String> queryTask = new FutureTask<String>( find( false ).wrapCallable( new Callable<String>(){
             @Override
             public String call() throws Exception {
 
                 final JdbcQueryingManager jdbcQueryingManager = (JdbcQueryingManager)applicationContext.getBean("jdbcQueryingManager");
                 final JdbcConnectionPoolManager jdbcConnectionPoolManager = (JdbcConnectionPoolManager)applicationContext.getBean("jdbcConnectionPoolManager");
+                final JdbcConnectionManager jdbcConnectionManager = (JdbcConnectionManager)applicationContext.getBean("jdbcConnectionManager");
 
-                final String schema = getExternalAuditsSchema(connection,auditRecordTableName,auditDetailTableName);
-                DataSource ds ;
+
+                final String schema = getExternalAuditsSchema(connectionName,auditRecordTableName,auditDetailTableName);
+
+
+                final DataSource ds;
                 try{
-                    ds = jdbcConnectionPoolManager.getDataSource(connection);
-                }catch (NamingException e){
-                    return "Failed to retrieve connection data source.";
+                    // create temp datasource with new credentials
+                    JdbcConnection connection = jdbcConnectionManager.getJdbcConnection(connectionName);
+                    connection.setUserName(username);
+                    connection.setPassword(password);
+
+                    ds = jdbcConnectionPoolManager.getTestConnectionPool(connection);
+                }catch (FindException e){
+                    return "Failed to retrieve jdbc connection: "+e.getMessage();
+                }catch (InvalidPropertyException e){
+                    return "Invalid jdbc connection configuration: "+e.getMessage();
                 }
 
 
@@ -812,22 +826,22 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
                     @Override
                     public String doInTransaction(TransactionStatus transactionStatus) {
 
-                        int index = 0;
-                        int oldIndex = 0;
-                        while(schema.indexOf(";",index)>0){
-                            oldIndex = index+1;
-                            index = schema.indexOf(";",index);
+                    int index = 0;
+                    int oldIndex = 0;
+                    while(schema.indexOf(";",index)>0){
+                        oldIndex = index+1;
+                        index = schema.indexOf(";",index);
 
-                            String query = schema.substring(oldIndex-1,index);
-                            index++;
-                            Object result = jdbcQueryingManager.performJdbcQuery(connection,query,2,Collections.emptyList());
-                            if(result instanceof String){
-                                transactionStatus.setRollbackOnly();
-                                return (String)result;
+                        String query = schema.substring(oldIndex-1,index);
+                        index++;
+                        Object result = jdbcQueryingManager.performJdbcQuery(ds,query,2,Collections.emptyList());
+                        if(result instanceof String){
+                            transactionStatus.setRollbackOnly();
+                            return (String)result;
 
-                            }
                         }
-                        return "";
+                    }
+                    return "";
                     }
                 });
             }

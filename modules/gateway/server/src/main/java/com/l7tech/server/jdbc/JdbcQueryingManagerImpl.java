@@ -46,9 +46,6 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
         if (connectionName == null || connectionName.isEmpty()) {
             logger.warning("Failed to perform querying since the JDBC connection name is not specified.");
             return "JDBC Connection Name is not specified.";
-        } else if (query == null || query.isEmpty()) {
-            logger.warning("Failed to perform querying since the SQL query is not specified.");
-            return "SQL Query is not specified.";
         }
 
         // Get a DataSource for creating a JdbcTemplate.
@@ -59,7 +56,15 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
             logger.warning("Failed to perform querying since " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e)));
             return "Cannot retrieve a C3P0 DataSource.";
         }
+        return performJdbcQuery(dataSource, query, maxRecords, preparedStmtParams);
+    }
 
+    public Object performJdbcQuery(DataSource dataSource, String query, int maxRecords, List<Object> preparedStmtParams)
+    {
+        if (query == null || query.isEmpty()) {
+            logger.warning("Failed to perform querying since the SQL query is not specified.");
+            return "SQL Query is not specified.";
+        }
 
         // Create a JdbcTemplate and set the max rows.
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);

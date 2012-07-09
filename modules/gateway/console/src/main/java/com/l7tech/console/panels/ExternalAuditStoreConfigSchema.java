@@ -7,6 +7,11 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.OkCancelDialog;
+import com.l7tech.gui.widgets.OptionalCredentialsPanel;
+import com.l7tech.gui.widgets.ValidatedPanel;
+import com.l7tech.util.Either;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,12 +30,12 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
     private JButton testButton;
     private JButton getSchemaButton;
     private JTextArea schemaTextArea;
-    private JTextField auditRecordTextField;
-    private JTextField auditDetailTextField;
     private JButton createDatabaseButton;
 
     private static final Logger logger = Logger.getLogger(ExternalAuditStoreConfigSchema.class.getName());
     private String connection;
+    private String auditRecordTableName;
+    private String auditDetailTableName;
     private String schema;
 
     /**
@@ -57,9 +62,7 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
      */
     @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig config = (ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig)settings;
-        config.auditRecordTableName = auditRecordTextField.getText();
-        config.auditDetailTableName = auditDetailTextField.getText();
+        // None to store
     }
 
     /**
@@ -76,12 +79,16 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
         ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig config = (ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig)settings;
 
         connection = config.connection;
-        if(config.auditRecordTableName !=null){
-            auditRecordTextField.setText(config.auditRecordTableName);
-        }
-        if(config.auditDetailTableName != null){
-            auditDetailTextField.setText(config.auditDetailTableName);
-        }
+        auditRecordTableName = config.auditRecordTableName;
+        auditDetailTableName = config.auditDetailTableName;
+    }
+
+    @Override
+    public void notifyActive() {
+        // clear schema display
+        schemaTextArea.setText(null);
+
+        super.notifyActive();
     }
 
     private void initialize() {
@@ -111,8 +118,6 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
                 schemaTextArea.setCaretPosition(0);
             }
         });
-        auditRecordTextField.getDocument().addDocumentListener(changeListener);
-        auditDetailTextField.getDocument().addDocumentListener(changeListener);
 
         createDatabaseButton.addActionListener(new ActionListener() {
             @Override
@@ -125,7 +130,7 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
 
     private void doCreateDatabase() {
 
-        AuditAdmin admin = getAuditAdmin();
+        final AuditAdmin admin = getAuditAdmin();
 
         if(admin == null) {
             DialogDisplayer.showMessageDialog(
@@ -137,31 +142,52 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
 
             return ;
         }
-        boolean success = false;
-        String errorMessage = "";
-        try {
-            errorMessage = doAsyncAdmin(
-                    admin,
-                    ExternalAuditStoreConfigSchema.this.getOwner(),
-                    "Creating Database",
-                    "Creating Database",
-                    getAuditAdmin().createExternalAuditDatabase(connection, auditRecordTextField.getText(), auditDetailTextField.getText())).right();
 
-            success = errorMessage.isEmpty();
+        //get password
 
-        } catch (InterruptedException e) {
-            // do nothing, user cancelled operation
-        } catch (InvocationTargetException e) {
-            success = false;
-            errorMessage = e.getMessage();
-        }
+        final UsernamePasswordDialog pwdPanel = new UsernamePasswordDialog(this.getOwner(),"Enter credentials",null);
 
-        DialogDisplayer.showMessageDialog(
-                ExternalAuditStoreConfigSchema.this,
-                success ? "Database created successfully!" : "Failed to create database \n"+errorMessage ,
-                "Creating Database",
-                success ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
-                null);
+        pwdPanel.pack();
+        Utilities.centerOnScreen(pwdPanel);
+        DialogDisplayer.display(pwdPanel, new Runnable() {
+            @Override
+            public void run() {
+                if(!pwdPanel.isConfirmed())
+                    return;
+
+                String username,password ;
+                username = pwdPanel.getUsername();
+                password = new String(pwdPanel.getPassword());
+
+                boolean success = false;
+                String errorMessage = "";
+                try {
+                    Either<String,String> result = doAsyncAdmin(
+                            admin,
+                            ExternalAuditStoreConfigSchema.this.getOwner(),
+                            "Creating Database",
+                            "Creating Database",
+                            getAuditAdmin().createExternalAuditDatabaseTables(connection, auditRecordTableName, auditDetailTableName,username,password));
+                    errorMessage = result.isLeft() ? result.left(): result.right();
+
+                    success = errorMessage.isEmpty();
+
+                } catch (InterruptedException e) {
+                    // do nothing, user cancelled operation
+                } catch (InvocationTargetException e) {
+                    success = false;
+                    errorMessage = e.getMessage();
+                }
+
+                DialogDisplayer.showMessageDialog(
+                        ExternalAuditStoreConfigSchema.this,
+                        success ? "Database created successfully!" : "Failed to create database \n"+errorMessage ,
+                        "Creating Database",
+                        success ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
+                        null);
+            }
+        });
+
 
     }
 
@@ -186,7 +212,7 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
                     ExternalAuditStoreConfigSchema.this.getOwner(),
                     "Testing",
                     "Testing",
-                    admin.testAuditSinkSchema(connection,auditRecordTextField.getText(),auditDetailTextField.getText())).right();
+                    admin.testAuditSinkSchema(connection,auditRecordTableName,auditDetailTableName)).right();
 
             success = errorMessage.isEmpty();
 
@@ -210,7 +236,7 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
     }
 
     private String getSchema() {
-        return getAuditAdmin().getExternalAuditsSchema(connection,auditRecordTextField.getText(),auditDetailTextField.getText());
+        return getAuditAdmin().getExternalAuditsSchema(connection,auditRecordTableName,auditDetailTableName);
     }
 
     private AuditAdmin getAuditAdmin() {
@@ -222,14 +248,15 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
      */
     @Override
     public String getStepLabel() {
-        return "Configure database";
+        return "Test/Create database";
     }
 
 
     @Override
     public String getDescription() {
         return
-            "<html>The schema that will be used to create audit tables in the specified datasource</html>";
+            "<html>The schema that will be used to create audit tables in the specified JDBC connection.<br>" +
+                  "Test the existing schema.</html>";
     }
 
     @Override
@@ -239,6 +266,6 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
 
     @Override
     public boolean canFinish() {
-        return !auditDetailTextField.getText().isEmpty() && !auditRecordTextField.getText().isEmpty();
+        return true;
     }
 }

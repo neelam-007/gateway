@@ -16,10 +16,10 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -37,15 +37,14 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
     private PolicyHeader sinkPolicyHeader = null;
     private PolicyHeader lookupPolicyHeader = null;
 
-    public static ExternalAuditStoreConfigWizard getInstance(Window parent) {
-        ExternalAuditStoreConfigJdbc panel1 = new ExternalAuditStoreConfigJdbc(new ExternalAuditStoreConfigSchema(null));
-
-        ExternalAuditStoreConfigWizard output = new ExternalAuditStoreConfigWizard(parent, panel1);
+    public static ExternalAuditStoreConfigWizard getInstance(Window parent,PolicyHeader sinkPolicyHeader,PolicyHeader lookupPolicyHeader) {
+        ExternalAuditStoreConfigJdbc panel1 = new ExternalAuditStoreConfigJdbc(new ExternalAuditStoreConfigDatabase(new ExternalAuditStoreConfigSchema(null)));
+        ExternalAuditStoreConfigWizard output = new ExternalAuditStoreConfigWizard(parent, panel1,sinkPolicyHeader,lookupPolicyHeader);
 
         return output;
     }
 
-    public ExternalAuditStoreConfigWizard(Window parent, WizardStepPanel panel) {
+    protected ExternalAuditStoreConfigWizard(Window parent, WizardStepPanel panel,PolicyHeader sinkPolicyHeader,PolicyHeader lookupPolicyHeader) {
         super(parent, panel);
         setTitle("Configure External Audit Store Wizard");
 
@@ -57,19 +56,33 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         });
 
         wizardInput = new ExternalAuditStoreWizardConfig();
+        this.sinkPolicyHeader = sinkPolicyHeader;
+        this.lookupPolicyHeader = lookupPolicyHeader;
+
     }
 
     @Override
     protected void finish( final ActionEvent evt ) {
         getSelectedWizardPanel().storeSettings(wizardInput);
-        ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig config = (ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig)wizardInput;
-        // create policies
+        final ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig config = (ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig)wizardInput;
+
         if(!safetyCheckNames(config.connection,config.auditRecordTableName,config.auditDetailTableName))
             return;
 
+        // check if already exsist
+        PolicyHeader sinkHeader = getSinkPolicyHeader();
+        PolicyHeader lookupHeader = getLookupPolicyHeader();
+
+        if(sinkHeader !=null || lookupHeader !=null){
+            int result = JOptionPane.showConfirmDialog(this,"Existing audit sink and lookup policies would be overwritten",getTitle(), JOptionPane.OK_CANCEL_OPTION,JOptionPane.INFORMATION_MESSAGE,null);
+            if(result != JOptionPane.YES_OPTION)
+                return;
+        }
+
+        // create policies
         try {
-            sinkPolicyHeader = getOrCreateSinkPolicyHeader(config.connection,config.auditRecordTableName,config.auditDetailTableName, config.custom);
-            lookupPolicyHeader = getOrCreateLookupPolicyHeader(config.connection,config.connectionDriverClass,config.auditRecordTableName,config.auditDetailTableName, config.custom);
+            sinkPolicyHeader = createSinkPolicyHeader(config.connection, config.auditRecordTableName, config.auditDetailTableName, config.custom);
+            lookupPolicyHeader = createLookupPolicyHeader(config.connection, config.connectionDriverClass, config.auditRecordTableName, config.auditDetailTableName, config.custom);
 
             super.finish(evt);
         } catch (FindException e) {
@@ -80,37 +93,42 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
             logger.warning("Error creating external sink/lookup policies: "+e.getMessage());
         }
 
-
-
     }
 
     private boolean safetyCheckNames(String connection, String auditRecordTableName, String auditDetailTableName) {
         return STRICT_CONNECTION_NAME_PATTERN.matcher(connection).matches();
     }
 
-    private PolicyHeader getOrCreateLookupPolicyHeader(String connection, String connectionDriverClass, String recordTable, String detailTable, boolean createEmptyPolicy) throws FindException, PolicyAssertionException, SaveException {
-        PolicyHeader header = getLookupPolicyHeader();
-        if (header == null) {
-            // Create new lookup policy with default settings
-            Policy policy = makeDefaultAuditLookupPolicyEntity(connection, connectionDriverClass,recordTable,detailTable, createEmptyPolicy);
-            PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
-            policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyOid());
-            header = new PolicyHeader(policy);
+    private PolicyHeader createLookupPolicyHeader(String connection, String connectionDriverClass, String recordTable, String detailTable, boolean createEmptyPolicy) throws FindException, PolicyAssertionException, SaveException {
+        PolicyHeader header = getLookupPolicyHeader() ;
+        Policy policy;
 
-            // Refresh service tree
-            ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-            tree.refresh();
+        if(header == null){
+            policy = makeDefaultAuditLookupPolicyEntity();
         }
+        else {
+            policy =  Registry.getDefault().getPolicyAdmin().findPolicyByGuid(header.getGuid());
+        }
+        // Create new lookup policy with default settings
+        policy.setXml(getLookupPolicyXML(connection, connectionDriverClass,recordTable,detailTable, createEmptyPolicy));
+        PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
+        policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyOid());
+        header = new PolicyHeader(policy);
+
+        // Refresh service tree
+        ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+        tree.refresh();
         return header;
     }
 
-    private static Policy makeDefaultAuditLookupPolicyEntity(String connection, String connectionDriverClass, String recordTable, String detailTable, boolean createEmptyPolicy) {
+    private static Policy makeDefaultAuditLookupPolicyEntity() {
         Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Audit Lookup Policy]", null, false);
         policy.setInternalTag(INTERNAL_TAG_AUDIT_LOOKUP);
-        String theXml = createEmptyPolicy ? getDefaultPolicyXml(policy) : ExternalAuditsCommonUtils.makeDefaultAuditLookupPolicyXml(connection,recordTable,detailTable,getJdbcDbType(connectionDriverClass));
-
-        policy.setXml(theXml);
         return policy;
+    }
+
+    private static String getLookupPolicyXML(String connection, String connectionDriverClass, String recordTable, String detailTable, boolean createEmptyPolicy){
+        return  createEmptyPolicy ? getDefaultLookupPolicyXml() : ExternalAuditsCommonUtils.makeDefaultAuditLookupPolicyXml(connection,recordTable,detailTable,getJdbcDbType(connectionDriverClass));
     }
 
     private static String getJdbcDbType(String connectionDriverClass){
@@ -133,30 +151,37 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
     public PolicyHeader getSinkPolicyHeader() {
         return sinkPolicyHeader;
     }
-    private PolicyHeader getOrCreateSinkPolicyHeader(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) throws FindException, PolicyAssertionException, SaveException {
-        PolicyHeader header = getSinkPolicyHeader();
-        if (header == null) {
-            // Create new sink policy with default settings
-            Policy policy = makeDefaultAuditSinkPolicyEntity(connection,recordTable,detailTable,createEmptyPolicy);
-            PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
-            policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyOid());
-            header = new PolicyHeader(policy);
 
-            // Refresh service tree
-            ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-            tree.refresh();
+    private PolicyHeader createSinkPolicyHeader(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) throws FindException, PolicyAssertionException, SaveException {
+        PolicyHeader header = getSinkPolicyHeader();
+        Policy policy;
+        if(header == null){
+            // Create new sink policy with default settings
+            policy = makeDefaultAuditSinkPolicyEntity();
         }
+        else{
+            policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(header.getGuid());
+        }
+
+        policy.setXml(getSinkPolicyXML(connection, recordTable, detailTable, createEmptyPolicy));
+        PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
+        policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyOid());
+        header = new PolicyHeader(policy);
+
+        // Refresh service tree
+        ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+        tree.refresh();
         return header;
     }
 
-    private static Policy makeDefaultAuditSinkPolicyEntity(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) {
+    private static Policy makeDefaultAuditSinkPolicyEntity() {
         Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Audit Sink Policy]", null, false);
         policy.setInternalTag(INTERNAL_TAG_AUDIT_SINK);
-
-        String theXml = createEmptyPolicy ? getSendToHttpSinkPolicyXml() : ExternalAuditsCommonUtils.makeDefaultAuditSinkPolicyXml(connection,recordTable,detailTable);
-
-        policy.setXml(theXml);
         return policy;
+    }
+
+    private static String getSinkPolicyXML(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) {
+        return createEmptyPolicy ? getSendToHttpSinkPolicyXml() : ExternalAuditsCommonUtils.makeDefaultAuditSinkPolicyXml(connection, recordTable, detailTable);
     }
 
     private static String getSendToHttpSinkPolicyXml(){
@@ -177,11 +202,10 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         return WspWriter.getPolicyXml(all);
     }
 
-    private static String getDefaultPolicyXml(Policy policy){
-        String defaultPolicyXml =  Registry.getDefault().getPolicyAdmin().getDefaultPolicyXml(policy.getType(),policy.getInternalTag());
-        String xml = (defaultPolicyXml != null)? defaultPolicyXml: WspWriter.getPolicyXml(
-                new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Internal Policy: " + policy.getName()))));
-        return xml;
+    private static String getDefaultLookupPolicyXml(){
+        AllAssertion all = new AllAssertion();
+        all.addChild(new AuditDetailAssertion("Internal Policy: [Internal Audit Lookup Policy]"));
+        return WspWriter.getPolicyXml(all);
     }
 
 

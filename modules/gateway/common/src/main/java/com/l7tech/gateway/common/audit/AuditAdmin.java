@@ -12,6 +12,8 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import org.springframework.transaction.annotation.Propagation;
+
+import static com.l7tech.objectmodel.EntityType.LOG_SINK;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
@@ -285,6 +287,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @param auditDetailTableName  the audit detail table name
      * @return  the translated schema
      */
+    @Secured(types=LOG_SINK,  stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
     @Transactional(readOnly=true)
     String getExternalAuditsSchema(String connectionName, String auditRecordTableName, String auditDetailTableName);
 
@@ -297,6 +300,8 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @param auditDetailTableName  the audit detail table name
      * @return empty string if successful, error message if failed.
      */
+
+    @Secured(types=LOG_SINK,  stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
     @Transactional(readOnly=true)
     AsyncAdminMethods.JobId<String> testAuditSinkSchema(String connectionName, String auditRecordTableName, String auditDetailTableName);
 
@@ -306,9 +311,12 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @param connectionName    jdbc connection name
      * @param auditRecordTableName  the audit record table name
      * @param auditDetailTableName  the audit detail table name
+     * @param userName  username with create database table credentials
+     * @param password  password with create database table credentials
      * @return empty string if successful, error message if failed.
      */
-    @Transactional(readOnly = true)
-    AsyncAdminMethods.JobId<String> createExternalAuditDatabase(String connectionName, String auditRecordTableName, String auditDetailTableName);
+    @Secured(types=LOG_SINK,  stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
+    @Transactional(readOnly=true  )
+    AsyncAdminMethods.JobId<String> createExternalAuditDatabaseTables(String connectionName, String auditRecordTableName, String auditDetailTableName,String userName, String password);
 
 }

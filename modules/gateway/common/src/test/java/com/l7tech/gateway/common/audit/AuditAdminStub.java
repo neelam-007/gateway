@@ -157,7 +157,7 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
-    public AsyncAdminMethods.JobId<String> createExternalAuditDatabase(String connection, String auditRecordTableName, String auditDetailTableName) {
+    public JobId<String> createExternalAuditDatabaseTables(String connectionName, String auditRecordTableName, String auditDetailTableName, String userName, String password) {
         return null;
     }
 }
