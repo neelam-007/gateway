@@ -208,7 +208,7 @@ public class SslUtils {
         int status = result.getStatus();
         if ( status == 401 ) throw new BadCredentialsException("HTTP POST to certificate signer returned status " + status + " (bad credentials?)");
         if ( status == 403 ) throw new CertificateAlreadyIssuedException("HTTP POST to certificate signer returned status " + status + " (certificate already issued?)");
-        if ( status == 409 ) throw new CertificateAlreadyIssuedException("HTTP POST to certificate signer returned status " + status + " (multiple users with same credentials?)");
+        if ( status == 409 ) throw new CertificateException("HTTP POST to certificate signer returned status " + status + " (multiple users with same credentials?)");
         if ( status == 503 ) throw new ServerFeatureUnavailableException("HTTP POST to certificate signer returned status " + status + " (feature not available?)");
         if ( status != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + status );
 
