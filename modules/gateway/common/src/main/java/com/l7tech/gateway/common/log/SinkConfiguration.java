@@ -1,20 +1,9 @@
 package com.l7tech.gateway.common.log;
 
-import static com.l7tech.util.CollectionUtils.cast;
-import static com.l7tech.util.CollectionUtils.toList;
-import static com.l7tech.util.CollectionUtils.set;
-
-import com.l7tech.util.Functions;
-import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.map;
-import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.Pair;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.unmodifiableMap;
+import com.l7tech.util.*;
+import com.l7tech.util.Functions.Unary;
 import org.hibernate.annotations.Proxy;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,6 +15,11 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.logging.Level;
+
+import static com.l7tech.util.CollectionUtils.*;
+import static com.l7tech.util.Functions.map;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 
 /**
  * Describes the configuration of a logging sink.
@@ -99,10 +93,12 @@ public class SinkConfiguration extends NamedEntityImp {
     public static final String CATEGORY_GATEWAY_LOGS = "LOG";
     public static final String CATEGORY_TRAFFIC_LOGS = "TRAFFIC";
     public static final String CATEGORY_AUDITS = "AUDIT";
+    public static final String CATEGORY_SSPC_LOGS= "SSPC";
     public static final Set<String> CATEGORIES_SET = set(
             CATEGORY_AUDITS,
             CATEGORY_GATEWAY_LOGS,
-            CATEGORY_TRAFFIC_LOGS
+            CATEGORY_TRAFFIC_LOGS,
+            CATEGORY_SSPC_LOGS
     );
 
     // Log file sink property names

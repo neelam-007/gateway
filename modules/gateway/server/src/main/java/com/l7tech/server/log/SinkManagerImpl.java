@@ -6,11 +6,7 @@ import com.l7tech.gateway.common.log.*;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
@@ -27,11 +23,6 @@ import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryThrows;
-import static com.l7tech.util.Functions.grepFirst;
-import static com.l7tech.util.Functions.map;
-import static com.l7tech.util.Option.none;
-import static com.l7tech.util.Option.optional;
-import static java.util.Collections.singletonList;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -60,6 +51,11 @@ import java.util.zip.GZIPOutputStream;
 import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
 import static com.l7tech.objectmodel.EntityType.CLUSTER_INFO;
 import static com.l7tech.objectmodel.EntityType.LOG_SINK;
+import static com.l7tech.util.Functions.grepFirst;
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.optional;
+import static java.util.Collections.singletonList;
 
 /**
  *
@@ -1035,8 +1031,12 @@ public class SinkManagerImpl
             MessageSinkSupport sinkSupport = dispatchingSink.getMessageSink(sinkConfig);
             FileMessageSink fileSink = (FileMessageSink)sinkSupport;
             filePattern = fileSink.getFilePattern();
-        }else{
+        } else {
             String filepath = sinkConfig.getProperty( "file.logPath" );
+            String cat = sinkConfig.getCategories();
+            if(cat != null && cat.contains(SinkConfiguration.CATEGORY_SSPC_LOGS)){
+                filepath = ConfigFactory.getProperty("com.l7tech.server.base") + "/Controller/var/logs";
+            }
             filePattern = LogUtils.getLogFilePattern(serverConfig, sinkConfig.getName(), filepath, false);
         }
         return filePattern;

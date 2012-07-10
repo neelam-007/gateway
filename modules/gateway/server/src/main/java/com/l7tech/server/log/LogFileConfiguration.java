@@ -15,14 +15,14 @@ public class LogFileConfiguration implements Serializable {
 
     //- PUBLIC
 
-    public LogFileConfiguration( final String filepat,
+    public LogFileConfiguration( final String filepath,
                                  final int limit,
                                  final int count,
                                  final boolean append,
                                  final int level,
                                  final String formatPattern,
                                  final SerializableFilter filter ) {
-        this.filepat = filepat;
+        this.filepath = filepath;
         this.limit = limit;
         this.count = count;
         this.append = append;
@@ -33,7 +33,7 @@ public class LogFileConfiguration implements Serializable {
 
     public LogFileConfiguration( final LogFileConfiguration config,
                                  final int level ) {
-        this( config.getFilepat(),
+        this( config.getFilepath(),
               config.getLimit(),
               config.getCount(),
               config.isAppend(),
@@ -43,15 +43,15 @@ public class LogFileConfiguration implements Serializable {
     }
 
     public FileHandler buildFileHandler() throws IOException {
-        FileHandler fileHandler = new StartupAwareFileHandler( filepat, limit, count, append );
+        FileHandler fileHandler = new StartupAwareFileHandler( filepath, limit, count, append );
         fileHandler.setFormatter(new ConfigurableLogFormatter(formatPattern));
         fileHandler.setLevel(Level.parse(Integer.toString(level)));
         fileHandler.setFilter(filter);
         return fileHandler;
     }
 
-    public String getFilepat() {
-        return filepat;
+    public String getFilepath() {
+        return filepath;
     }
 
     public int getLimit() {
@@ -82,7 +82,7 @@ public class LogFileConfiguration implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final String filepat;
+    private final String filepath;
     private final int limit;
     private final int count;
     private final boolean append;

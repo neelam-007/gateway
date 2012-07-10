@@ -1,22 +1,18 @@
 package com.l7tech.server.log;
 
-import java.util.logging.LogRecord;
-import java.util.logging.FileHandler;
-import java.util.logging.ErrorManager;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.LogManager;
-import java.io.IOException;
-import java.io.Serializable;
-import java.io.ObjectStreamException;
-
 import com.l7tech.common.log.HybridDiagnosticContextFilter;
 import com.l7tech.common.log.HybridDiagnosticContextMatcher.MatcherRules;
 import com.l7tech.common.log.SerializableFilter;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+
+import java.io.IOException;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
+import java.util.logging.*;
 
 /**
  * MessageSink that writes to a log file.
@@ -48,7 +44,7 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
     }
 
     /**
-     * Threshold can be overridden locally. 
+     * Threshold can be overridden locally.
      */
     @Override
     int getThreshold() {
@@ -62,7 +58,7 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
     }
 
     public String getFilePattern(){
-        return logFileConfiguration.getFilepat();
+        return logFileConfiguration.getFilepath();
     }
 
     //- PRIVATE
@@ -98,6 +94,10 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
         String format = configuration.getProperty( SinkConfiguration.PROP_FILE_FORMAT );
 
         try {
+            String cat = configuration.getCategories();
+            if(cat != null && cat.contains(SinkConfiguration.CATEGORY_SSPC_LOGS)){
+                filepath = ConfigFactory.getProperty("com.l7tech.server.base") + "/Controller/var/logs";
+            }
             String filepat = LogUtils.getLogFilePattern( serverConfig, name, filepath, false );
             int limit = parseIntWithDefault( "log file limit for " + name, filelim, 1024 ) * 1024;
             int count = parseIntWithDefault( "log file count for " + name, filenum, 2 );
