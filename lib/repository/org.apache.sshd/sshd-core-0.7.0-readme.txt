@@ -4,4 +4,6 @@ l7p2
 	     - make SftpSubsystem extensible for customization
          - update ScpCommand to remove directory scanning (bug 11040)
          - add checks on buffer resizing to prevent looping/OOM (bug 11046)
+
+        Source from tag: svn checkout http://svn.apache.org/repos/asf/mina/sshd/tags/sshd-0.7.0 ApacheSshd0.7.0
 	    Use Maven to build and package: mvn package -Dmaven.test.skip=true

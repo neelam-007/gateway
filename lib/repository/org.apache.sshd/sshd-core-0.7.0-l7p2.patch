@@ -1,20 +1,11 @@
 Index: sshd-core/src/main/java/org/apache/sshd/server/command/ScpCommand.java
 ===================================================================
---- sshd-core/src/main/java/org/apache/sshd/server/command/ScpCommand.java	(revision 1178641)
+--- sshd-core/src/main/java/org/apache/sshd/server/command/ScpCommand.java	(revision 1356960)
 +++ sshd-core/src/main/java/org/apache/sshd/server/command/ScpCommand.java	(revision )
-@@ -25,7 +25,6 @@
- import java.io.OutputStream;
- import java.util.Arrays;
- 
--import org.apache.sshd.common.util.DirectoryScanner;
- import org.apache.sshd.server.Command;
- import org.apache.sshd.server.Environment;
- import org.apache.sshd.server.ExitCallback;
-@@ -173,33 +172,7 @@
-                 }
+@@ -178,32 +178,7 @@
              } else if (optF) {
                  String pattern = path;
--                int idx = pattern.indexOf('*');
+                 int idx = pattern.indexOf('*');
 -                if (idx >= 0) {
                      String basedir = "";
 -                    int lastSep = pattern.substring(0, idx).lastIndexOf('/');
@@ -44,21 +35,23 @@ Index: sshd-core/src/main/java/org/apache/sshd/server/command/ScpCommand.java
                      int lastSep = pattern.lastIndexOf('/');
                      if (lastSep >= 0) {
                          basedir = pattern.substring(0, lastSep);
-@@ -220,7 +193,6 @@
+@@ -223,8 +198,7 @@
+                         }
                      } else {
                          throw new IOException(file + ": unknown file type");
-                     }
+-                    }
 -                }
++                    }
              } else {
                  throw new IOException("Unsupported mode");
              }
 Index: sshd-core/src/main/java/org/apache/sshd/common/util/Buffer.java
 ===================================================================
---- sshd-core/src/main/java/org/apache/sshd/common/util/Buffer.java	(revision 1178641)
+--- sshd-core/src/main/java/org/apache/sshd/common/util/Buffer.java	(revision 1356960)
 +++ sshd-core/src/main/java/org/apache/sshd/common/util/Buffer.java	(revision )
 @@ -488,6 +488,8 @@
      }
- 
+
      private static int getNextPowerOf2(int i) {
 +        if ( i > 0x40000000 ) return Integer.MAX_VALUE;
 +
@@ -67,7 +60,7 @@ Index: sshd-core/src/main/java/org/apache/sshd/common/util/Buffer.java
              j <<= 1;
 Index: sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java
 ===================================================================
---- sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java	(revision 1178641)
+--- sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java	(revision 1356960)
 +++ sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java	(revision )
 @@ -223,13 +223,13 @@
      private OutputStream out;
@@ -86,7 +79,7 @@ Index: sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java
  
  
      protected static abstract class Handle {
-@@ -350,10 +350,11 @@
+@@ -374,10 +374,11 @@
      public void run() {
          DataInputStream dis = null;
          try {
@@ -99,7 +92,7 @@ Index: sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java
                      throw new IllegalArgumentException();
                  }
                  Buffer buffer = new Buffer(length + 4);
-@@ -997,7 +998,7 @@
+@@ -1044,7 +1045,7 @@
          closed = true;
      }
  
@@ -107,19 +100,19 @@ Index: sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java
 +    protected SshFile resolveFile(String path) {
      	return this.root.getFile(path);
      }
- 
+
 Index: sshd-core/src/main/java/org/apache/sshd/server/auth/UserAuthPublicKey.java
 ===================================================================
---- sshd-core/src/main/java/org/apache/sshd/server/auth/UserAuthPublicKey.java	(revision 1178641)
+--- sshd-core/src/main/java/org/apache/sshd/server/auth/UserAuthPublicKey.java	(revision 1356960)
 +++ sshd-core/src/main/java/org/apache/sshd/server/auth/UserAuthPublicKey.java	(revision )
 @@ -47,12 +47,15 @@
      }
- 
+
      public Boolean auth(ServerSession session, String username, Buffer buffer) throws Exception {
 +        final int maxReadSize = session.getIntProperty( "maximum-read-size-in-bytes", 128*1024 );
          boolean hasSig = buffer.getBoolean();
          String alg = buffer.getString();
- 
+
          int oldLim = buffer.wpos();
          int oldPos = buffer.rpos();
          int len = buffer.getInt();

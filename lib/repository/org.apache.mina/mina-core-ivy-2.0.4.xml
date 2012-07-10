@@ -2,9 +2,9 @@
 <ivy-module version="2.0">
 	<info organisation="org.apache.mina"
 		module="mina-core"
-		revision="2.0.2"
+		revision="2.0.4"
 		status="release"
-		publication="20111003103219"
+		publication="20120703144601"
 		default="true"
 	/>
 	<configurations>

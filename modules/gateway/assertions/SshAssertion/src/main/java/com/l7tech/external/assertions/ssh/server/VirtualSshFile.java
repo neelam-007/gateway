@@ -57,6 +57,11 @@ public class VirtualSshFile implements SshFile {
         return name;
     }
 
+    @Override
+    public String getOwner() {
+        return "";
+    }
+
     /**
      * Is it a directory?
      */

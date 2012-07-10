@@ -31,6 +31,7 @@ import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
 import org.apache.commons.lang.StringUtils;
 import org.apache.mina.core.session.IoSession;
+import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.client.future.DefaultOpenFuture;
 import org.apache.sshd.client.future.OpenFuture;
@@ -401,6 +402,15 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                 new SignatureDSA.Factory(),
                 new SignatureRSA.Factory()));
         sshd.setFileSystemFactory(new VirtualFileSystemFactory());   // customized for Gateway
+
+        ForwardingAcceptorFactory faf = new ForwardingAcceptorFactory() {
+            @Override
+            public NioSocketAcceptor createNioSocketAcceptor(ServerSession serverSession) {
+                return null;
+            }
+        };
+        sshd.setTcpipForwardNioSocketAcceptorFactory(faf);
+        sshd.setX11ForwardNioSocketAcceptorFactory(faf);
 
         configureSshServer( sshd, connector, maxSessions, maxChannels );
 
