@@ -10,6 +10,8 @@ import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.some;
+
+import com.l7tech.util.Triple;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -65,6 +67,18 @@ class MqNativeClient implements Closeable {
         }
     }
 
+    public Triple<MQQueueManager,MQQueue,MQQueue> getMqContext(String queueManagerName, Hashtable queueManagerProperties)
+            throws MQException, MqNativeConfigException {
+
+        MQQueueManager queueManager = new MQQueueManager( queueManagerName, queueManagerProperties);
+        MQQueue targetQueue = queueManager.accessQueue( queueName, QUEUE_OPEN_OPTIONS_INBOUND );
+        MQQueue specifiedReplyQueue = replyQueueName.isSome() ?
+                queueManager.accessQueue( replyQueueName.some(), QUEUE_OPEN_OPTIONS_INBOUND_REPLY_SPECIFIED_QUEUE ) :
+                null;
+
+        return new Triple<MQQueueManager,MQQueue,MQQueue>(queueManager,targetQueue,specifiedReplyQueue);
+    }
+
     private void checkConnect( final boolean reconnect ) throws MQException, MqNativeConfigException {
         if ( !clientBag.isSome() ||
              !clientBag.some().getQueueManager().isConnected() ||
@@ -81,11 +95,10 @@ class MqNativeClient implements Closeable {
             MQQueue targetQueue = null;
             MQQueue  specifiedReplyQueue = null;
             try {
-                queueManager = new MQQueueManager( queueManagerName, queueManagerProperties.call() );
-                targetQueue = queueManager.accessQueue( queueName, QUEUE_OPEN_OPTIONS_INBOUND );
-                specifiedReplyQueue = replyQueueName.isSome() ?
-                                queueManager.accessQueue( replyQueueName.some(), QUEUE_OPEN_OPTIONS_INBOUND_REPLY_SPECIFIED_QUEUE ) :
-                                null;
+                Triple<MQQueueManager,MQQueue,MQQueue> mqContext = getMqContext(queueManagerName,queueManagerProperties.call());
+                queueManager = mqContext.left;
+                targetQueue = mqContext.middle;
+                specifiedReplyQueue = mqContext.right;
 
                 clientBag = some( new ClientBag( queueManager, targetQueue, specifiedReplyQueue ) );
                 connectionListener.notifyConnected();
