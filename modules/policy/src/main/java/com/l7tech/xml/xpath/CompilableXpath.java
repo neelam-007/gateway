@@ -30,6 +30,15 @@ public abstract class CompilableXpath {
     public abstract Map<String,String> getNamespaces();
 
     /**
+     * Get the Xpath language version to use (eg, "1.0", "2.0" or "3.0").
+     *
+     * @return the language version.  Never null.
+     */
+    public String getXpathVersion() {
+        return "1.0";
+    }
+
+    /**
      * Get the version of this expression that is specially for use with Jaxen.  By default this is the same
      * as {@link #getExpression()}.  Subclasses can override this to provide a version of the expression that
      * is tweaked to work well with {@link org.jaxen.dom.DOMXPath}, and which may differ from the result of calling

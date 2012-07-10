@@ -1,20 +1,22 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.message.Message;
-import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
-import com.l7tech.common.TestDocuments;
+import com.l7tech.xml.xpath.XpathExpression;
+import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 import org.w3c.dom.Document;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the ServerRequestXpathAssertion class.
@@ -22,18 +24,33 @@ import java.util.Map;
  */
 public class RequestXpathAssertionTest {
 
+    private String xpathVersion;
+
+    @Before
+    public void setUp() {
+        xpathVersion = null;
+    }
+
+    @Test
+    public void testMatchesValueUsingNamespaces() throws Exception {
+        String xp = "/soap:Envelope/soap:Body/ware:placeOrder/productid";
+        assertXpathPasses(xp);
+    }
+
     @Test
     public void testOKExpression() throws Exception {
-        for (int i = 0 ; i < passingXpaths.length; i++) {
-            AssertionStatus ret = null;
-            final String xp = passingXpaths[i];
-            System.out.println("xpath should succeed: " + xp);
-            if (!xp.startsWith("/")) {
-                System.out.println("** note: xpath relative to root");
-            }
-            ret = getResultForXPath(xp);
-            assertTrue(ret == AssertionStatus.NONE);
+        for (final String xp : passingXpaths) {
+            assertXpathPasses(xp);
         }
+    }
+
+    private void assertXpathPasses(String xp) throws Exception {
+        System.out.println("xpath should succeed: " + xp);
+        if (!xp.startsWith("/")) {
+            System.out.println("** note: xpath relative to root");
+        }
+        final AssertionStatus ret = getResultForXPath(xp);
+        assertTrue(ret == AssertionStatus.NONE);
     }
 
     @Test
@@ -47,13 +64,26 @@ public class RequestXpathAssertionTest {
         }
     }
 
+    @Test
+    public void testXpath20() throws Exception {
+        xpathVersion = "2.0";
+        assertXpathPasses("(/soap:Envelope/soap:Body/ware:placeOrder/productid, /soap:Envelope[3=3])");
+    }
+
+    @Test
+    public void testXpathVariables() throws Exception {
+        AssertionStatus ret = getResultForXPath("$myvar");
+        assertEquals(AssertionStatus.NONE, ret);
+    }
+
     private AssertionStatus getResultForXPath(String expression) throws Exception {
-        ServerRequestXpathAssertion serverAssertion = getAssertion(new XpathExpression(expression, namespaces));
+        ServerRequestXpathAssertion serverAssertion = getAssertion(new XpathExpression(expression, xpathVersion, namespaces));
         Message m = new Message();
         Document testDoc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         m.initialize(testDoc);
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(m, new Message(), false);
+        pec.setVariable("myvar", "test123");
         return serverAssertion.checkRequest(pec);
     }
 

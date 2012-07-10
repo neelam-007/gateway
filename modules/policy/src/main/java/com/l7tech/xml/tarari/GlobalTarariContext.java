@@ -24,7 +24,7 @@ public interface GlobalTarariContext {
      * Prepare a {@link com.l7tech.xml.xpath.CompiledXpath} instance that will use Tarari hardware acceleration features.
      *
      * @param compilableXpath the CompilableXpath to compile.  Must not be null.
-     * @return A TarariCompiledXpath instance.  Never null.
+     * @return A TarariCompiledXpath instance, or null if the XPath version is unsupported by Tarari.
      * @throws InvalidXpathException if the XPath could not be parsed, even with Tarari direct XPath 1.0.
      */
     CompiledXpath compileXpath(CompilableXpath compilableXpath) throws InvalidXpathException;

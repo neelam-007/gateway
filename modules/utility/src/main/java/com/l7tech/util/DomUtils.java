@@ -1,15 +1,16 @@
 package com.l7tech.util;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
+import java.text.MessageFormat;
 import java.util.*;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * DomUtils collects helper methods for DOM manipulation.
@@ -1489,5 +1490,20 @@ public class DomUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Get the owner document of the specified node, unless it is a Document node, in which case it is assumed
+     * to be its own owner.
+     *
+     * @param node a node to examine.  Required.
+     * @return the owner document, or null.
+     */
+    public static Document getOwnerDocument(@NotNull Node node) {
+        if (node instanceof Document) {
+            return (Document) node;
+        } else {
+            return node.getOwnerDocument();
+        }
     }
 }

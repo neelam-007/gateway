@@ -1,18 +1,19 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.security.xml.SupportedDigestMethods;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.policy.wsp.WspUpgradeUtilFrom21;
-import com.l7tech.util.Functions;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.validator.ValidatorFlag;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.policy.wsp.WspUpgradeUtilFrom21;
+import com.l7tech.security.xml.SupportedDigestMethods;
+import com.l7tech.util.Functions;
+import com.l7tech.xml.xpath.XpathExpression;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -58,7 +59,7 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
         return variablePrefix;
     }
 
-    public void setVariablePrefix(String variablePrefix) {
+    public void setVariablePrefix(@Nullable String variablePrefix) {
         this.variablePrefix = variablePrefix;
     }
 

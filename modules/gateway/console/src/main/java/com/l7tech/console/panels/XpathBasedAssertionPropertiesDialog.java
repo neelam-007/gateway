@@ -56,6 +56,7 @@ import org.dom4j.DocumentException;
 import org.jaxen.JaxenException;
 import org.jaxen.XPathSyntaxException;
 import org.jaxen.saxpath.SAXPathException;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -170,6 +171,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private JRadioButton encryptEntireElementIncludingRadioButton;
     private JCheckBox aes128GcmCheckBox;
     private JCheckBox aes256GcmCheckBox;
+    private JComboBox xpathVersionComboBox;
     private List<JCheckBox> acceptedDigestCheckboxes;
     private final boolean showHardwareAccelStatus;
     private boolean wasOk = false;
@@ -288,6 +290,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 throw new IllegalStateException("Unable to determine the PolicyEntityNode for " + assertion);
             }
         }
+        String version = assertion.getXpathExpression().getXpathVersion();
+        if (version == null)
+            version = "1.0";
+        xpathVersionComboBox.setSelectedItem(version);
 
         if (assertion instanceof ResponseXpathAssertion) {
             final ResponseXpathAssertion ass = (ResponseXpathAssertion)assertion;
@@ -520,7 +526,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         });
     }
 
-    private void populateSampleMessages(String operationName, long whichToSelect) {
+    private void populateSampleMessages(@Nullable String operationName, long whichToSelect) {
         EntityHeader[] sampleMessages;
         ArrayList<SampleMessageComboEntry> messageEntries = new ArrayList<SampleMessageComboEntry>();
         messageEntries.add(USE_AUTOGEN);
@@ -653,7 +659,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 if (xpath == null || "".equals(xpath.trim())) {
                     assertion.setXpathExpression(null);
                 } else {
-                    assertion.setXpathExpression(new XpathExpression(xpath, namespaces));
+                    String version = (String) xpathVersionComboBox.getSelectedItem();
+                    assertion.setXpathExpression(new XpathExpression(xpath, version, namespaces));
                 }
 
                 if (assertion instanceof SimpleXpathAssertion) {

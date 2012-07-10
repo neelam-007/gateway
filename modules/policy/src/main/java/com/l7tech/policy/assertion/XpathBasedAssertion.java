@@ -9,9 +9,12 @@ import com.l7tech.xml.NamespaceMigratable;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.soap.SOAPConstants;
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
@@ -29,7 +32,7 @@ public abstract class XpathBasedAssertion extends Assertion implements UsesVaria
         return xpathExpression;
     }
 
-    public void setXpathExpression(XpathExpression xpathExpression) {
+    public void setXpathExpression(@Nullable XpathExpression xpathExpression) {
         this.xpathExpression = xpathExpression;
     }
     

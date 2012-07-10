@@ -5,6 +5,8 @@
 
 package com.l7tech.xml.xpath;
 
+import org.jetbrains.annotations.Nullable;
+
 import javax.xml.xpath.XPathExpressionException;
 import java.util.Map;
 
@@ -19,18 +21,24 @@ public abstract class CompiledXpath {
     public static final CompiledXpath ALWAYS_FALSE = new Contradiction();
 
     private final String expression;
-    private final Map nsmap;
+    private final Map<String, String> nsmap;
     private final boolean mightUseVariables;
     private final boolean requiresTargetDocument;
+    private final String xpathVersion;
 
     /**
      * Initialize the CompiledXpath superclass.
      *
      * @param expression  the generic xpath expression, not optimized for any particular implementation.  Must not be null.
+     * @param xpathVersion xpath version ("1.0", "2.0", or "3.0"), or null to assume "1.0".
      * @param nsmap       the namespace map, or null if no qualified names are used by expression.
+     *
      */
-    protected CompiledXpath(String expression, Map nsmap) {
+    protected CompiledXpath(String expression, @Nullable String xpathVersion, @Nullable Map<String, String> nsmap) {
         if (expression == null) throw new NullPointerException();
+        if (xpathVersion == null)
+            xpathVersion = "1.0";
+        this.xpathVersion = xpathVersion;
         this.expression = expression;
         this.nsmap = nsmap;
         boolean vars;
@@ -49,13 +57,20 @@ public abstract class CompiledXpath {
     }
 
     /** @return the namespace map, or null if no qualified names are used in the expression. */
-    protected Map getNamespaceMap() {
+    protected Map<String, String> getNamespaceMap() {
         return nsmap;
     }
 
     /** @return true if this compiled xpath might use any XPath variables. */
     public boolean usesVariables() {
         return mightUseVariables;
+    }
+
+    /**
+     * @return XPath version number, eg "1.0", "2.0" or "3.0".  Never null.
+     */
+    public String getXpathVersion() {
+        return xpathVersion;
     }
 
     /**
@@ -69,14 +84,14 @@ public abstract class CompiledXpath {
     /** A utility expression that is always true. */
     private static final class Tautology extends CompiledXpath {
         protected Tautology() {
-            super("0=0", null);
+            super("0=0", null, null);
         }
     }
 
     /** A utility expression that is always false. */
     private static final class Contradiction extends CompiledXpath {
         protected Contradiction() {
-            super("0=1", null);
+            super("0=1", null, null);
         }
     }
 

@@ -2,6 +2,7 @@ package com.l7tech.xml.xpath;
 
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.NamespaceMigratable;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.text.ParseException;
@@ -49,11 +50,24 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      * @param namespaces the namespaces map, may be null, it will result
      *                   in internal namespace map have zero elements.
      */
-    public XpathExpression(String expression, Map<String, String> namespaces) {
+    public XpathExpression(String expression, @Nullable Map<String, String> namespaces) {
+        this(expression, null, namespaces);
+    }
+
+    /**
+     * Construct an XPath expression with a language version and optional namespaces.
+     *
+     * @param expression the XPath expression
+     * @param xpathVersion an xpath version ("1.0", "2.0" or "3.0") or null.
+     * @param namespaces the namespaces map, may be null, it will result
+     *                   in internal namespace map have zero elements.
+     */
+    public XpathExpression(String expression, @Nullable String xpathVersion, @Nullable Map<String, String> namespaces) {
         this.expression = expression;
         if (namespaces != null) {
             this.namespaces.putAll(namespaces);
         }
+        this.xpathVersion = xpathVersion;
     }
 
     /**
@@ -94,6 +108,24 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
         }
     }
 
+    /**
+     * @return the XPath version hint ("1.0", "2.0", or "3.0"), or null to assume XPath 1.0.
+     */
+    public String getXpathVersion() {
+        return xpathVersion;
+    }
+
+    /**
+     * Specify an XPath language version this expression uses.  The specified value will be advertised via
+     * {@link #getXpathVersion()} where users of @{link CompilableXpath} may use it as a hint for which engine
+     * to use for processing the XPath.
+     *
+     * @param xpathVersion the XPath version to use when interpreting the expression ("1.0", "2.0" or "3.0") or null to assume XPath 1.0.
+     */
+    public void setXpathVersion(String xpathVersion) {
+        this.xpathVersion = xpathVersion;
+    }
+
     /** @noinspection RedundantIfStatement*/
     @Override
     public boolean equals(Object o) {
@@ -104,6 +136,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
 
         if (expression != null ? !expression.equals(xpathExpression.expression) : xpathExpression.expression != null) return false;
         if (!namespaces.equals(xpathExpression.namespaces)) return false;
+        if (xpathVersion != null ? !xpathVersion.equals(xpathExpression.xpathVersion) : xpathExpression.xpathVersion != null) return false;
 
         return true;
     }
@@ -112,6 +145,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
     public int hashCode() {
         int result;
         result = (expression != null ? expression.hashCode() : 0);
+        result = 29 * result + (xpathVersion != null ? xpathVersion.hashCode() : 0);
         result = 29 * result + namespaces.hashCode();
         return result;
     }
@@ -179,6 +213,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
     //- PRIVATE
 
     private String expression;
+    private String xpathVersion;
     private Map<String, String> namespaces = new LinkedHashMap<String, String>();
     private static final Logger logger = Logger.getLogger(XpathExpression.class.getName());
 }

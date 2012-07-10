@@ -285,7 +285,7 @@ public class XmlUtilTest {
         Document doc = XmlUtil.parse(new StringReader(PI_XML), false);
         DomElementCursor cursor = new DomElementCursor(doc);
         cursor.moveToRoot();
-        XpathResult res = cursor.getXpathResult(new DomCompiledXpath("processing-instruction('xml-stylesheet')", null) { });
+        XpathResult res = cursor.getXpathResult(new DomCompiledXpath(new XpathExpression("processing-instruction('xml-stylesheet')", null)) { });
         XpathResultNodeSet nodes = res.getNodeSet();
         assertTrue(nodes.size() > 0);
         assertEquals(nodes.getNodeName(0), "xml-stylesheet");

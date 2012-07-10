@@ -12,11 +12,11 @@ import com.l7tech.xml.xpath.CompilableXpath;
 import com.l7tech.xml.xpath.CompiledXpath;
 import com.l7tech.xml.xpath.FastXpath;
 import com.tarari.xml.XmlConfigException;
-import com.tarari.xml.xslt11.XsltSecurityManager;
 import com.tarari.xml.rax.fastxpath.XPathCompiler;
 import com.tarari.xml.rax.fastxpath.XPathCompilerException;
 import com.tarari.xml.rax.schema.SchemaLoader;
 import com.tarari.xml.rax.schema.SchemaResolver;
+import com.tarari.xml.xslt11.XsltSecurityManager;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
@@ -151,6 +151,8 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
 
     @Override
     public CompiledXpath compileXpath(CompilableXpath compilableXpath) throws InvalidXpathException {
+        if (!"1.0".equals(compilableXpath.getXpathVersion()))
+            return null;
         return new TarariCompiledXpath(compilableXpath, this);
     }
 

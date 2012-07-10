@@ -55,7 +55,7 @@ class TarariCompiledXpath extends DomCompiledXpath {
      * @param tarariContext the global tarari context.  Must not be null.
      */
     public TarariCompiledXpath(CompilableXpath compilableXpath, GlobalTarariContextImpl tarariContext) throws InvalidXpathException {
-        super(compilableXpath.getExpressionForJaxen(), compilableXpath.getNamespaces());
+        super(compilableXpath);
         if (tarariContext == null) throw new NullPointerException();
         this.fastXpath = setupSimultaneousXpath(tarariContext, compilableXpath);
         this.directxpath = setupDirectXpath(compilableXpath);
