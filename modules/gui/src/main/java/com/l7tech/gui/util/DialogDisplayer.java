@@ -484,7 +484,7 @@ public class DialogDisplayer {
      * @param throwable: an exception (may be null)
      */
     public static void showMessageDialog(final Component component,
-                                         final String title,
+                                         @Nullable final String title,
                                          final String message,
                                          @Nullable final Throwable throwable) {
         showMessageDialog(component, title, message, throwable, null);
