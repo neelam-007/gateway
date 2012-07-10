@@ -19,6 +19,7 @@ import static com.ibm.mq.constants.CMQC.MQGMO_WAIT;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MqNativeClientTest extends AbstractJUnit4SpringContextTests {
@@ -64,7 +65,6 @@ public class MqNativeClientTest extends AbstractJUnit4SpringContextTests {
                     public MQMessage call(final MqNativeClient.ClientBag bag) throws MQException {
                         final MQGetMessageOptions getOptions = new MQGetMessageOptions();
                         getOptions.options = MQGMO_WAIT | MQGMO_SYNCPOINT;
-                        // getOptions.waitInterval = pollInterval.get();
                         return mqMessage;
                     }
                 }, true);
@@ -78,13 +78,12 @@ public class MqNativeClientTest extends AbstractJUnit4SpringContextTests {
                     public MQMessage call( final MqNativeClient.ClientBag bag ) throws MQException {
                         final MQGetMessageOptions getOptions = new MQGetMessageOptions();
                         getOptions.options = MQGMO_WAIT | MQGMO_SYNCPOINT;
-                        // getOptions.waitInterval = pollInterval.get();
                         return mqMessage;
                     }
                 },false);
-            assert false;
+            assertFalse(true);
         } catch (MqNativeConfigException e) {
-
+            // In this context the MqNativeConfigException is expected!
         }
 
         verify(listener,times(1)).notifyConnected();
@@ -100,12 +99,11 @@ public class MqNativeClientTest extends AbstractJUnit4SpringContextTests {
                         public MQMessage call(final MqNativeClient.ClientBag bag) throws MQException {
                             final MQGetMessageOptions getOptions = new MQGetMessageOptions();
                             getOptions.options = MQGMO_WAIT | MQGMO_SYNCPOINT;
-                            // getOptions.waitInterval = pollInterval.get();
                             return mqMessage;
                         }
                     }, true);
         } catch ( MQException e ) {
-
+            // In this context the MQException is expected!
         }
 
         verify(listener,times(1)).notifyConnectionError(anyString());
@@ -120,12 +118,11 @@ public class MqNativeClientTest extends AbstractJUnit4SpringContextTests {
                         public MQMessage call(final MqNativeClient.ClientBag bag) throws MQException {
                             final MQGetMessageOptions getOptions = new MQGetMessageOptions();
                             getOptions.options = MQGMO_WAIT | MQGMO_SYNCPOINT;
-                            // getOptions.waitInterval = pollInterval.get();
                             return mqMessage;
                         }
                     }, true);
         } catch ( MqNativeConfigException e ) {
-
+            // In this context the MqNativeConfigException is expected!
         }
 
         verify(listener,times(2)).notifyConnectionError(anyString());

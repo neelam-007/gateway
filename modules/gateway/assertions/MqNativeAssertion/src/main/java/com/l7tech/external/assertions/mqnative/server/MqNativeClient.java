@@ -67,7 +67,7 @@ class MqNativeClient implements Closeable {
         }
     }
 
-    public Triple<MQQueueManager,MQQueue,MQQueue> getMqContext(String queueManagerName, Hashtable queueManagerProperties)
+    protected Triple<MQQueueManager,MQQueue,MQQueue> getMqContext(String queueManagerName, Hashtable queueManagerProperties)
             throws MQException, MqNativeConfigException {
 
         MQQueueManager queueManager = new MQQueueManager( queueManagerName, queueManagerProperties);
