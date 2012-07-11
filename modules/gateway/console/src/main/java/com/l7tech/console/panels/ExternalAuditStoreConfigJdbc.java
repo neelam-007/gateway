@@ -177,7 +177,8 @@ public class ExternalAuditStoreConfigJdbc extends WizardStepPanel {
 
     @Override
     public boolean canAdvance() {
-        return createDefaultAuditSinkRadioButton.isSelected() && jdbcConnectionComboBox.getSelectedIndex() > 0; // first entry empty;
+        String selectedConnection =(String)jdbcConnectionComboBox.getSelectedItem();
+        return createDefaultAuditSinkRadioButton.isSelected() && selectedConnection!=null && !selectedConnection.isEmpty();
     }
 
     @Override
