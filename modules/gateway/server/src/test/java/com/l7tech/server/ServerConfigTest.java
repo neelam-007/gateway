@@ -44,6 +44,42 @@ public class ServerConfigTest {
         }
     }
 
+    @Test
+    public void testDefaultCustomFormats() throws Exception {
+        final ServerConfig sc = ServerConfig.getInstance();
+
+        // Use SimplePropertyChangeHandler to obtain the values from ServerConfig. This is not strictly needed, but
+        // it allows this code to be reused. We care about the actual values defined in serverconfig.properties and their
+        // actual shipped values.
+        SimplePropertyChangeHandler spch = new SimplePropertyChangeHandler();
+        TestAudit testAudit = new TestAudit();
+        final AuditFactory factory = testAudit.factory();
+
+        ApplicationContexts.inject(spch, CollectionUtils.<String, Object>mapBuilder()
+                .put("serverConfig", sc)
+                .put("auditFactory", factory)
+                .put("dateParser", new DateTimeConfigUtils())
+                .unmodifiableMap()
+        );
+
+        final Set<String> customDateFormatSet = new HashSet<String>(spch.getCustomDateFormatsStrings());
+
+        assertEquals(12, customDateFormatSet.size());
+
+        assertTrue(customDateFormatSet.contains("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
+        assertTrue(customDateFormatSet.contains("yyyy-MM-dd'T'HH:mm:ss.SSXXX"));
+        assertTrue(customDateFormatSet.contains("yyyy-MM-dd'T'HH:mm:ss.SXXX"));
+        assertTrue(customDateFormatSet.contains("yyyy-MM-dd'T'HH:mm:ssXXX"));
+        assertTrue(customDateFormatSet.contains("yyyy-MM-dd'T'HH:mmXXX"));
+        assertTrue(customDateFormatSet.contains("yyyy-MM-dd"));
+        assertTrue(customDateFormatSet.contains("yyyy-MM"));
+        assertTrue(customDateFormatSet.contains("yyyy"));
+        assertTrue(customDateFormatSet.contains("EEE, dd MMM yyyy HH:mm:ss z"));
+        assertTrue(customDateFormatSet.contains("EEE, dd MMM yy HH:mm:ss Z"));
+        assertTrue(customDateFormatSet.contains("EEE, dd-MMM-yy HH:mm:ss z"));
+        assertTrue(customDateFormatSet.contains("EEE MMM dd HH:mm:ss yyyy"));
+    }
+
     /**
      * If this test fails it's likely that datetime.autoFormats has been modified.
      * This test validates the hardcoded list of formats and patterns in this property.

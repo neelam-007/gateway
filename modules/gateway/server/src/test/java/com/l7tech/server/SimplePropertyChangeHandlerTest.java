@@ -236,16 +236,21 @@ public class SimplePropertyChangeHandlerTest {
         assertEquals("yyyy-MM-dd'T'hh:mm:ss.SSSX", formats.get(0));
         assertFalse("No audits should have been created.", testAudit.iterator().hasNext());
 
-        properties.put(ServerConfigParams.PARAM_DATE_TIME_AUTO_FORMATS, "yyyy-MM-dd'T'hh:mm:ss.SSSX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$ " +
-                "yyyy-MM-dd'T'hh:mm:ss.SSX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{2}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$ " +
-                "yyyy-MM-dd'T'hh:mm:ss.SX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{1}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$" +
-                " yyyy-MM-dd'T'hh:mm:ssX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$ " +
-                "yyyy-MM-dd'T'hh:mmX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$ " +
-                "yyyy-MM-dd ^\\d{4}-\\d{2}-\\d{2}$ yyyy-MM ^\\d{4}-\\d{2}$ yyyy ^\\d{4}$ " +
-                "EEE, dd MMM yyyy HH:mm:ss z ^[a-zA-Z]{3},\\s\\d{2}\\s[a-zA-Z]{3}\\s\\d{4}\\s\\d{2}:\\d{2}:\\d{2}\\s(?:[a-zA-Z]{3}|(?:\\+|-)\\d{4})$ " +
-                "EEE, dd MMM yy HH:mm:ss Z ^[a-zA-Z]{3},\\s\\d{2}\\s[a-zA-Z]{3}\\s\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\s(?:[a-zA-Z]{3}|(?:\\+|-)\\d{4})$ " +
-                "EEE, dd-MMM-yy HH:mm:ss z ^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\\s\\d{2}-[a-zA-Z]{3}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\s(?:[a-zA-Z]{3}|(?:\\+|-)\\d{4})$ " +
-                "EEE MMM dd HH:mm:ss yyyy ^[a-zA-Z]{3}\\s[a-zA-Z]{3}\\s(\\d{2}|\\s\\d)\\s\\d{2}:\\d{2}:\\d{2}\\s\\d{4}$");
+        final String value = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$" +
+                "  \nyyyy-MM-dd'T'HH:mm:ss.SSXXX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{2}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$" +
+                "  \nyyyy-MM-dd'T'HH:mm:ss.SXXX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{1}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$" +
+                "  \nyyyy-MM-dd'T'HH:mm:ssXXX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$" +
+                "  \nyyyy-MM-dd'T'HH:mmXXX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$" +
+                "  \nyyyy-MM-dd ^\\d{4}-\\d{2}-\\d{2}$ " +
+                "  \nyyyy-MM ^\\d{4}-\\d{2}$ " +
+                "  \nyyyy ^\\d{4}$ " +
+                "  \nEEE, dd MMM yyyy HH:mm:ss z ^[a-zA-Z]{3},\\s\\d{2}\\s[a-zA-Z]{3}\\s\\d{4}\\s\\d{2}:\\d{2}:\\d{2}\\s(?:[a-zA-Z]{3}|(?:\\+|-)\\d{4})$" +
+                "  \nEEE, dd MMM yy HH:mm:ss Z ^[a-zA-Z]{3},\\s\\d{2}\\s[a-zA-Z]{3}\\s\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\s(?:[a-zA-Z]{3}|(?:\\+|-)\\d{4})$ " +
+                "  \nEEE, dd-MMM-yy HH:mm:ss z ^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\\s\\d{2}-[a-zA-Z]{3}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\s(?:[a-zA-Z]{3}|(?:\\+|-)\\d{4})$" +
+                "  \nEEE MMM dd HH:mm:ss yyyy ^[a-zA-Z]{3}\\s[a-zA-Z]{3}\\s(\\d{2}|\\s\\d)\\s\\d{2}:\\d{2}:\\d{2}\\s\\d{4}$";
+        
+        System.out.println(value);
+        properties.put(ServerConfigParams.PARAM_DATE_TIME_AUTO_FORMATS, value);
 
         formats = map(handler.getAutoDateFormatsStrings(), formatExtractorFunction);
         assertFalse("No audits should have been created.", testAudit.iterator().hasNext());
@@ -257,8 +262,8 @@ public class SimplePropertyChangeHandlerTest {
 
         assertEquals(12, formats.size());
 
-        String[] expectedFormats = {"yyyy-MM-dd'T'hh:mm:ss.SSSX", "yyyy-MM-dd'T'hh:mm:ss.SSX", "yyyy-MM-dd'T'hh:mm:ss.SX",
-                "yyyy-MM-dd'T'hh:mm:ssX", "yyyy-MM-dd'T'hh:mmX", "yyyy-MM-dd", "yyyy-MM", "yyyy", "EEE, dd MMM yyyy HH:mm:ss z",
+        String[] expectedFormats = {"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "yyyy-MM-dd'T'HH:mm:ss.SSXXX", "yyyy-MM-dd'T'HH:mm:ss.SXXX",
+                "yyyy-MM-dd'T'HH:mm:ssXXX", "yyyy-MM-dd'T'HH:mmXXX","yyyy-MM-dd","yyyy-MM","yyyy", "EEE, dd MMM yyyy HH:mm:ss z",
                 "EEE, dd MMM yy HH:mm:ss Z", "EEE, dd-MMM-yy HH:mm:ss z", "EEE MMM dd HH:mm:ss yyyy"};
 
         for (int i = 0, expectedFormatsLength = expectedFormats.length; i < expectedFormatsLength; i++) {
@@ -306,65 +311,20 @@ public class SimplePropertyChangeHandlerTest {
     }
 
     /**
-     * Test both date format cluster properties.
-     * Any formats from either property should be returned from {@link com.l7tech.server.SimplePropertyChangeHandler#getCustomDateFormatsStrings()}
-     *
-     * The returned list should not contain any duplicates.
-     */
-    @Test
-    public void testBothDateFormats() throws Exception {
-        properties.put(ServerConfigParams.PARAM_DATE_TIME_AUTO_FORMATS, "yyyy-MM-dd'T'hh:mm:ss.SSSX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$ " +
-                "yyyy-MM-dd'T'hh:mm:ss.SSX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{2}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$ " +
-                "yyyy-MM-dd'T'hh:mm:ss.SX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{1}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$" +
-                " yyyy-MM-dd'T'hh:mm:ssX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$ " +
-                "yyyy-MM-dd'T'hh:mmX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$ ");
-
-        // yyyy-MM-dd'T'hh:mmX is defined in both properties - so it will only appear once in output
-        properties.put(ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z';yyyy-MM-dd hh:mm:ss aaa;yyyy-MM-dd HH:mm:ss.SSS;yyyy-MM-dd'T'hh:mmX");
-
-        handler.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_DATE_TIME_AUTO_FORMATS , "", ""));
-        handler.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "", ""));
-
-        final List<String> configuredFormats = dateParser.getConfiguredDateFormats();
-        assertFalse("No audits should have been generated", testAudit.iterator().hasNext());
-
-        assertEquals("Incorrect number of date formats found", 8, configuredFormats.size());
-
-        //formats should be ordered by custom first and auto second
-
-        final String[] expectedFormats = {"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd hh:mm:ss aaa", "yyyy-MM-dd HH:mm:ss.SSS", "yyyy-MM-dd'T'hh:mmX", "yyyy-MM-dd'T'hh:mm:ss.SSSX"
-        , "yyyy-MM-dd'T'hh:mm:ss.SSX", "yyyy-MM-dd'T'hh:mm:ss.SX", "yyyy-MM-dd'T'hh:mm:ssX"};
-
-        assertEquals("Incorrect number of formats resolved from cluster properties", expectedFormats.length, configuredFormats.size());
-        for (int i = 0, configuredDateFormatsStringsSize = configuredFormats.size(); i < configuredDateFormatsStringsSize; i++) {
-            String formatsString = configuredFormats.get(i);
-            final String expectedFormat = expectedFormats[i];
-            assertEquals("Unexpected format found for index '" + i +"'", expectedFormat, formatsString);
-        }
-    }
-
-    /**
      * Tests that date formats are set correctly in DateTimeConfigUtils bean after a property change for each cluster properties.
      *
      */
     @Test
     public void testDateFormats_Integration() throws Exception {
-        properties.put(ServerConfigParams.PARAM_DATE_TIME_AUTO_FORMATS, "yyyy-MM-dd'T'hh:mm:ss.SSSX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$ " +
-                "yyyy-MM-dd'T'hh:mm:ss.SSX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{2}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$ " +
-                "yyyy-MM-dd'T'hh:mm:ss.SX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{1}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$" +
-                " yyyy-MM-dd'T'hh:mm:ssX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$ " +
-                "yyyy-MM-dd'T'hh:mmX ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(?:Z|(?:\\+|-)\\d{2}:\\d{2})$ ");
-
         properties.put(ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z';yyyy-MM-dd hh:mm:ss aaa;yyyy-MM-dd HH:mm:ss.SSS");
 
         handler.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_DATE_TIME_AUTO_FORMATS, "", ""));
         handler.propertyChange(new PropertyChangeEvent(this, ServerConfigParams.PARAM_DATE_TIME_CUSTOM_FORMATS, "", ""));
 
         final List<String> configuredFormats = dateParser.getConfiguredDateFormats();
-        assertEquals("Incorrect number of date formats registered", 8, configuredFormats.size());
+        assertEquals("Incorrect number of date formats registered", 3, configuredFormats.size());
 
-        final String[] expectedFormats = {"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd hh:mm:ss aaa", "yyyy-MM-dd HH:mm:ss.SSS", "yyyy-MM-dd'T'hh:mm:ss.SSSX"
-        , "yyyy-MM-dd'T'hh:mm:ss.SSX", "yyyy-MM-dd'T'hh:mm:ss.SX", "yyyy-MM-dd'T'hh:mm:ssX", "yyyy-MM-dd'T'hh:mmX"};
+        final String[] expectedFormats = {"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd hh:mm:ss aaa", "yyyy-MM-dd HH:mm:ss.SSS"};
 
         assertEquals("Incorrect number of formats resolved from cluster properties", expectedFormats.length, configuredFormats.size());
         for (int i = 0, configuredDateFormatsStringsSize = configuredFormats.size(); i < configuredDateFormatsStringsSize; i++) {

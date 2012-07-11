@@ -102,22 +102,13 @@ public class DateTimeConfigUtils {
     }
 
     /**
-     * Get all configured simple date formats. This combines the custom formats with the auto formats. Intended for
-     * display to user.
+     * Get all configured simple date formats. These are the values configured in the custom formats cluster property.
      *
-     * @return List of all configured date formats. List contains all configured custom formats, followed by all
-     * defined auto formats. Never null. May be empty.
+     * @return List of all configured date formats. List contains all configured custom formats. Never null. May be empty.
      */
     @NotNull
     public List<String> getConfiguredDateFormats(){
-        final LinkedHashSet<String> orderedSet = new LinkedHashSet<String>(customDateFormatsRef.get());
-        orderedSet.addAll(map(autoFormatsRef.get(), new Functions.Unary<String, Pair<String, Pattern>>() {
-            @Override
-            public String call(Pair<String, Pattern> o) {
-                return o.left;
-            }
-        }));
-        return CollectionUtils.toList(orderedSet);
+        return CollectionUtils.toList(customDateFormatsRef.get());
     }
 
     /**
