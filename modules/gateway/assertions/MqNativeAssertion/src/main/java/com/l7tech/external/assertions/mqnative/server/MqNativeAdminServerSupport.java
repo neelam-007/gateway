@@ -196,7 +196,7 @@ public class MqNativeAdminServerSupport {
      * @param e: the original MQ Exception
      * @return a meaningful error detail
      */
-    private String getMeaningfulMqErrorDetail(@NotNull MQException e) {
+    protected String getMeaningfulMqErrorDetail(@NotNull MQException e) {
         int errorCode = e.getReason();
 
         if (errorCode == MQRC_CONNECTION_BROKEN) {
