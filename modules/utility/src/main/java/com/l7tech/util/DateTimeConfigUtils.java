@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -18,6 +17,10 @@ import static com.l7tech.util.Functions.map;
  * on the beans configuration.
  */
 public class DateTimeConfigUtils {
+
+    public static final String TIMESTAMP = "<Timestamp>";
+    public static final String MILLISECOND_TIMESTAMP = "<Millisecond Timestamp>";
+    public static final String SECOND_TIMESTAMP = "<Second Timestamp>";
 
     /**
      * Parse a String into a Date object. The String may represent a string formatted date string or it may be a string
@@ -51,10 +54,7 @@ public class DateTimeConfigUtils {
         if (formatToUse == null) {
             // now it's safe to check if it's a timestamp as no format was matched
             if (isTimestamp(dateTimeString)) {
-                returnDate = getTimestampFromString(dateTimeString);
-                if (returnDate == null) {
-                    throw new UnknownDateFormatException("Invalid timestamp: " + dateTimeString);
-                }
+                returnDate = parseTimestamp(dateTimeString);
             } else {
                 throw new UnknownDateFormatException("Unknown date format: " + dateTimeString);
             }
@@ -81,6 +81,80 @@ public class DateTimeConfigUtils {
         }
 
         return returnDate;
+    }
+
+    /**
+     * Parse a timestamp. May be either milliseconds or seconds.
+     * @param timeStamp If timeStamp is a sequence of 10 or 13 digits, then it will be interpreted as being
+     * a long value of either seconds or milliseconds from epoch.
+     * @return parsed Date
+     * @throws UnknownDateFormatException if format is not a valid timestamp
+     */
+    @NotNull
+    public static Date parseTimestamp(final String timeStamp) throws UnknownDateFormatException {
+        return parseTimestamp(timeStamp, null);
+    }
+
+    /**
+     * Parse a timestamp. Must be milliseconds.
+     * @param timeStamp input timestamp string which must tbe of 13 digits.
+     * @return parsed Date
+     * @throws UnknownDateFormatException if format is not a valid millisecond timestamp
+     */
+    @NotNull
+    public static Date parseMilliTimestamp(final String timeStamp) throws UnknownDateFormatException {
+        return parseTimestamp(timeStamp, true);
+    }
+
+    /**
+     * Parse a timestamp. Must be seconds.
+     * @param timeStamp input timestamp string which must tbe of 10 digits.
+     * @return parsed Date
+     * @throws UnknownDateFormatException if format is not a valid second timestamp
+     */
+    @NotNull
+    public static Date parseSecondTimestamp(final String timeStamp) throws UnknownDateFormatException {
+        return parseTimestamp(timeStamp, false);
+    }
+
+    /**
+     * True if the format string is for timestamps.
+     *
+     * @param format String format
+     * @return true if format is one of {@link #TIMESTAMP}, {@link #MILLISECOND_TIMESTAMP} or {@link #SECOND_TIMESTAMP}
+     */
+    public static boolean isTimestampFormat(final String format) {
+        return format.equalsIgnoreCase(TIMESTAMP) ||
+                format.equalsIgnoreCase(MILLISECOND_TIMESTAMP) ||
+                format.equalsIgnoreCase(SECOND_TIMESTAMP);
+    }
+
+    /**
+     * Parse a timestamp according to a format. Only formats for which {@link #isTimestampFormat(String)} returns true
+     * can be parsed.
+     *
+     * @param timestampFormat format to use.
+     * @param input timestamp string
+     * @return date. Never null
+     * @throws UnknownDateFormatException
+     */
+    @NotNull
+    public static Date parseForTimestamp(final String timestampFormat, final String input) throws UnknownDateFormatException {
+
+        if (!isTimestampFormat(timestampFormat)) {
+            throw new UnknownDateFormatException("Unknown timestamp format: " + timestampFormat);
+        }
+
+        final Date date;
+        if (timestampFormat.equalsIgnoreCase(TIMESTAMP)) {
+            date = parseTimestamp(input);
+        } else if (timestampFormat.equalsIgnoreCase(MILLISECOND_TIMESTAMP)) {
+            date = parseMilliTimestamp(input);
+        } else {
+            date = parseSecondTimestamp(input);
+        }
+
+        return date;
     }
 
     /**
@@ -146,38 +220,47 @@ public class DateTimeConfigUtils {
 
     private Config config;
 
-    private boolean isTimestamp(final String timeString) {
+    private static boolean isTimestamp(final String timeString) {
         final int length = timeString.length();
         return (length == 10 || length == 13) && NumberUtils.isDigits(timeString);
     }
 
     /**
-     * Get a Date from a string which may represent a timestamp.
+     * Parse either a millisecond (13 digits) or second (10 digits) timestamp.
      *
-     * @param timeStamp If timeStamp is a sequence of 10 or 13 digits, then it will be interpreted as being
-     * a long value of either seconds or milliseconds from epoch.
-     * @return Date if the timeStamp represented a timestamp which could be interpreted, otherwise null.
+     * @param timeStamp String representation of a timestamp
+     * @param millis if null, then either seconds or milliseconds is supported. If true the only milliseconds is
+     * expected and if false then only seconds is supported.
+     * @return parsed date, never null.
+     * @throws UnknownDateFormatException if the timestamp is not valid or does not match requirements from millis parameter.
      */
-    @Nullable
-    private Date getTimestampFromString(final String timeStamp) {
-        Date returnDate = null;
+    @NotNull
+    private static Date parseTimestamp(final String timeStamp, @Nullable final Boolean millis) throws UnknownDateFormatException {
+        final boolean isMillis = millis == null || millis;
+        final boolean isSeconds = millis == null || !millis;
+
+        final String typeMsg = (isMillis && isSeconds) ? "" : (isMillis) ? " millisecond" : " second";
+        final String exceptionMsg = "Invalid" + typeMsg + " timestamp: " + timeStamp;
+
+        if (!isTimestamp(timeStamp)) {
+            throw new UnknownDateFormatException(exceptionMsg);
+        }
+
+        final Date returnDate;
         final Calendar calendar = Calendar.getInstance();
         try {
-            boolean validTimestamp = true;
             final Long maybeTimestamp = Long.valueOf(timeStamp);
-            if (timeStamp.length() == 13) {
+            if (timeStamp.length() == 13 && isMillis) {
                 calendar.setTimeInMillis(maybeTimestamp);
-            } else if (timeStamp.length() == 10) {
+            } else if (timeStamp.length() == 10 && isSeconds) {
                 // should not throw
                 calendar.setTimeInMillis(Long.valueOf(timeStamp + "000"));
             } else {
-                validTimestamp = false;
+                throw new UnknownDateFormatException(exceptionMsg);
             }
-            if (validTimestamp) {
-                returnDate = calendar.getTime();
-            }
+            returnDate = calendar.getTime();
         } catch (NumberFormatException e) {
-            // not a timestamp
+            throw new UnknownDateFormatException(exceptionMsg);
         }
 
         return returnDate;

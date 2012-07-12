@@ -118,7 +118,7 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
         final Unary<String, String> simpleDatePredicate = new Unary<String, String>() {
             @Override
             public String call(final String input) {
-                return (isValidDateFormat(input, new UnaryVoid<Exception>() {
+                return (isValidDateFormat(input, true, new UnaryVoid<Exception>() {
                     @Override
                     public void call(Exception e) {
                         audit.logAndAudit(SystemMessages.INVALID_CUSTOM_DATE_FORMAT, new String[]{input, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
@@ -129,12 +129,16 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
         return splitAndTransform(customFormats, DATE_FORMATS_SPLIT_PATTERN, simpleDatePredicate);
     }
 
-    private boolean isValidDateFormat(@NotNull String input, @Nullable UnaryVoid<Exception> auditCallback) {
+    private boolean isValidDateFormat(@NotNull String input, boolean allowTimestamps, @Nullable UnaryVoid<Exception> auditCallback) {
         boolean isValid = false;
         if (!input.isEmpty()) {
             try {
-                new SimpleDateFormat(input);
-                isValid = true;
+                if (allowTimestamps && DateTimeConfigUtils.isTimestampFormat(input)) {
+                    isValid = true;
+                } else {
+                    new SimpleDateFormat(input);
+                    isValid = true;
+                }
             } catch (Exception e) {
                 if (auditCallback != null) {
                     auditCallback.call(e);
@@ -154,7 +158,7 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
                 if (split.length == 2) {
                     // values need to be trimmed after local split
                     final String format = split[0].trim();
-                    final boolean isValidFormat = isValidDateFormat(format, new UnaryVoid<Exception>() {
+                    final boolean isValidFormat = isValidDateFormat(format, false, new UnaryVoid<Exception>() {
                         @Override
                         public void call(Exception o) {
                             audit.logAndAudit(SystemMessages.INVALID_AUTO_DATE_FORMAT, new String[]{format}, ExceptionUtils.getDebugException(o));

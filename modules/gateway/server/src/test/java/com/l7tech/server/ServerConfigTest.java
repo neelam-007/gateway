@@ -64,8 +64,11 @@ public class ServerConfigTest {
 
         final Set<String> customDateFormatSet = new HashSet<String>(spch.getCustomDateFormatsStrings());
 
-        assertEquals(12, customDateFormatSet.size());
+        assertEquals(15, customDateFormatSet.size());
 
+        assertTrue(customDateFormatSet.contains("<Timestamp>"));
+        assertTrue(customDateFormatSet.contains("<Millisecond Timestamp>"));
+        assertTrue(customDateFormatSet.contains("<Second Timestamp>"));
         assertTrue(customDateFormatSet.contains("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
         assertTrue(customDateFormatSet.contains("yyyy-MM-dd'T'HH:mm:ss.SSXXX"));
         assertTrue(customDateFormatSet.contains("yyyy-MM-dd'T'HH:mm:ss.SXXX"));

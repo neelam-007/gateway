@@ -38,7 +38,7 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
         super(assertion);
         varsUsed = assertion.getVariablesUsed();
         final String dateFormat = assertion.getDateFormat();
-        if (dateFormat != null && !Syntax.isAnyVariableReferenced(dateFormat)) {
+        if (dateFormat != null && !Syntax.isAnyVariableReferenced(dateFormat) && !DateTimeConfigUtils.isTimestampFormat(dateFormat)) {
             try {
                 //validate the format is valid
                 new SimpleDateFormat(dateFormat);
@@ -74,21 +74,29 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
                     final String dateFormat = assertion.getDateFormat();
                     if (dateFormat != null && !dateFormat.trim().isEmpty()) {
                         //assertion configured with a format
-                        final String dateFormatEvaled = ExpandVariables.process(dateFormat, vars, getAudit());
-                        if (dateFormatEvaled.trim().isEmpty()) {
-                            logAndAudit(AssertionMessages.SET_VARIABLE_UNRECOGNISED_DATE_FORMAT, dateFormatEvaled);
-                            return AssertionStatus.FALSIFIED;
+                        if (dateFormat.equalsIgnoreCase(DateTimeConfigUtils.TIMESTAMP)) {
+                            date = DateTimeConfigUtils.parseTimestamp(strValue);
+                        } else if (dateFormat.equalsIgnoreCase(DateTimeConfigUtils.MILLISECOND_TIMESTAMP)){
+                            date = DateTimeConfigUtils.parseMilliTimestamp(strValue);
+                        } else if (dateFormat.equalsIgnoreCase(DateTimeConfigUtils.SECOND_TIMESTAMP)) {
+                            date = DateTimeConfigUtils.parseSecondTimestamp(strValue);
+                        } else {
+                            final String dateFormatEvaled = ExpandVariables.process(dateFormat, vars, getAudit());
+                            if (dateFormatEvaled.trim().isEmpty()) {
+                                logAndAudit(AssertionMessages.SET_VARIABLE_UNRECOGNISED_DATE_FORMAT, dateFormatEvaled);
+                                return AssertionStatus.FALSIFIED;
+                            }
+                            final SimpleDateFormat simpleDateFormat;
+                            try {
+                                simpleDateFormat = new SimpleDateFormat(dateFormatEvaled);
+                            } catch (IllegalArgumentException e) {
+                                throw new DateTimeConfigUtils.InvalidDateFormatException(ExceptionUtils.getMessage(e));
+                            }
+                            simpleDateFormat.setLenient(config.getBooleanProperty("com.l7tech.util.lenientDateFormat", false));
+                            //time zone is overridden if the parsed string contains timezone information
+                            simpleDateFormat.setTimeZone(DateUtils.getZuluTimeZone());
+                            date = simpleDateFormat.parse(strValue);
                         }
-                        final SimpleDateFormat simpleDateFormat;
-                        try {
-                            simpleDateFormat = new SimpleDateFormat(dateFormatEvaled);
-                        } catch (IllegalArgumentException e) {
-                            throw new DateTimeConfigUtils.InvalidDateFormatException(ExceptionUtils.getMessage(e));
-                        }
-                        simpleDateFormat.setLenient(config.getBooleanProperty("com.l7tech.util.lenientDateFormat", false));
-                        //time zone is overridden if the parsed string contains timezone information
-                        simpleDateFormat.setTimeZone(DateUtils.getZuluTimeZone());
-                        date = simpleDateFormat.parse(strValue);
                     } else {
                         date = dateParser.parseDateFromString(strValue);
                     }

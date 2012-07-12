@@ -34,17 +34,47 @@ public class DateTimeConfigUtilsTest {
     }
 
     @Test
-    public void testParseMilliSecondTimestamp() throws Exception {
+    public void testParseMilliSecondTimestampAuto() throws Exception {
         //timestamp for 2012-05-07T14:12:24.567Z
         final Date date = dateConfigUtils.parseDateFromString("1336399944567");
         validateDate(date, true, true);
     }
 
     @Test
-    public void testParseSecondTimestamp() throws Exception {
+    public void testParseMilliSecondTimestamp() throws Exception {
+        //timestamp for 2012-05-07T14:12:24.567Z
+        final Date date = dateConfigUtils.parseMilliTimestamp("1336399944567");
+        validateDate(date, true, true);
+    }
+
+    @Test
+    public void testParseSecondTimestampAuto() throws Exception {
         //timestamp for 2012-05-07T14:12:24.567Z
         final Date date = dateConfigUtils.parseDateFromString("1336399944");
         validateDate(date, false, true);
+    }
+
+    @Test
+    public void testParseSecondTimestamp() throws Exception {
+        //timestamp for 2012-05-07T14:12:24.567Z
+        final Date date = dateConfigUtils.parseSecondTimestamp("1336399944");
+        validateDate(date, false, true);
+    }
+
+    /**
+     * Invalid timestamp - 9 digits
+     */
+    @Test(expected = DateTimeConfigUtils.UnknownDateFormatException.class)
+    public void testInvalidTimestamp() throws Exception {
+        dateConfigUtils.parseDateFromString("123456123");
+    }
+
+    /**
+     * Invalid timestamp - 14 digits
+     */
+    @Test(expected = DateTimeConfigUtils.UnknownDateFormatException.class)
+    public void testInvalidTimestampTooManyDigits() throws Exception {
+        dateConfigUtils.parseDateFromString("12345612332325");
     }
 
     /**
@@ -89,6 +119,57 @@ public class DateTimeConfigUtilsTest {
 
         final Date date = dateConfigUtils.parseDateFromString("Mon May 07 14:12:24 12");
         validateDate(date, false, true, true);
+    }
+
+    @Test
+    public void testParseTimestamp() throws Exception {
+       final Date date = DateTimeConfigUtils.parseTimestamp("1336399944000");
+        assertEquals(1336399944000L, date.getTime());
+    }
+
+    @Test
+    public void testParseTimestampInvalid() throws Exception {
+        final String timeStamp = "13363999";
+        try {
+            DateTimeConfigUtils.parseTimestamp(timeStamp);
+            fail("Exception expected");
+        } catch (DateTimeConfigUtils.UnknownDateFormatException e) {
+            assertEquals("Invalid timestamp: " + timeStamp, e.getMessage());
+        }
+    }
+
+    @Test
+    public void testParseTimestampMillis() throws Exception {
+       final Date date = DateTimeConfigUtils.parseTimestamp("1336399944000");
+        assertEquals(1336399944000L, date.getTime());
+    }
+
+    @Test
+    public void testParseTimestampInvalidMillis() throws Exception {
+        final String timeStamp = "13363999";
+        try {
+            DateTimeConfigUtils.parseMilliTimestamp(timeStamp);
+            fail("Exception expected");
+        } catch (DateTimeConfigUtils.UnknownDateFormatException e) {
+            assertEquals("Invalid millisecond timestamp: " + timeStamp, e.getMessage());
+        }
+    }
+
+    @Test
+    public void testParseTimestampSeconds() throws Exception {
+       final Date date = DateTimeConfigUtils.parseSecondTimestamp("1336399944");
+        assertEquals(1336399944000L, date.getTime());
+    }
+
+    @Test
+    public void testParseTimestampInvalidSeconds() throws Exception {
+        final String timeStamp = "13363999";
+        try {
+            DateTimeConfigUtils.parseSecondTimestamp(timeStamp);
+            fail("Exception expected");
+        } catch (DateTimeConfigUtils.UnknownDateFormatException e) {
+            assertEquals("Invalid second timestamp: " + timeStamp, e.getMessage());
+        }
     }
 
     // - PRIVATE

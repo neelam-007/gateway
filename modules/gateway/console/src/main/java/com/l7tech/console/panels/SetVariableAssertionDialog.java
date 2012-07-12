@@ -454,11 +454,13 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         } else if (!Syntax.isAnyVariableReferenced(dateInput) && !Syntax.isAnyVariableReferenced(dateFormat)) {
             try {
                 final Date date;
-                if (!AUTO_STRING.equals(dateFormat) && !dateFormat.isEmpty()) {
+                if (!AUTO_STRING.equals(dateFormat) && !dateFormat.isEmpty() && !DateTimeConfigUtils.isTimestampFormat(dateFormat)) {
                     SimpleDateFormat format = new SimpleDateFormat(dateFormat);
                     format.setTimeZone(DateUtils.getZuluTimeZone());
                     format.setLenient(ConfigFactory.getBooleanProperty("com.l7tech.util.lenientDateFormat", false));
                     date = format.parse(dateInput);
+                } else if (DateTimeConfigUtils.isTimestampFormat(dateFormat)) {
+                    date = DateTimeConfigUtils.parseForTimestamp(dateFormat, dateInput);
                 } else {
                     date = dateParser.parseDateFromString(dateInput);
                 }
@@ -535,7 +537,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         if (getSelectedDataType() == DataType.DATE_TIME) {
             try {
                 final String pattern = getDateFormat();
-                if (!Syntax.isAnyVariableReferenced(pattern) && !AUTO_STRING.equals(pattern) && !pattern.isEmpty()) {
+                if (!Syntax.isAnyVariableReferenced(pattern) && !AUTO_STRING.equals(pattern) && !pattern.isEmpty() && !DateTimeConfigUtils.isTimestampFormat(pattern)) {
                     new SimpleDateFormat(pattern);
                 }
                 nonExpressionInputStatusLabel.setIcon(OK_ICON);

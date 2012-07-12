@@ -192,6 +192,45 @@ public class ServerSetVariableAssertionTest {
     }
 
     @Test
+    public void testSetDateVariable_Timestamp() throws Exception {
+        final String inputDate = "1336432344567";
+        SetVariableAssertion assertion = new SetVariableAssertion("foo", inputDate);
+        assertion.setDataType(DataType.DATE_TIME);
+        assertion.setDateFormat(DateTimeConfigUtils.TIMESTAMP);
+
+        createServerAssertion(assertion);
+
+        final AssertionStatus assertionStatus = fixture.checkRequest(mockContext);
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+
+        final Date expectedDate = DateTimeConfigUtils.parseTimestamp(inputDate);
+        System.out.println(expectedDate.getTime());
+        verify(mockContext, times(1)).setVariable("foo", expectedDate);
+    }
+
+    @Test
+    public void testSetDateVariable_InvalidTimestamp() throws Exception {
+        final String inputDate = "13364323445670"; // 14 digits
+        SetVariableAssertion assertion = new SetVariableAssertion("foo", inputDate);
+        assertion.setDataType(DataType.DATE_TIME);
+        assertion.setDateFormat(DateTimeConfigUtils.TIMESTAMP);
+
+        createServerAssertion(assertion);
+
+        final AssertionStatus assertionStatus = fixture.checkRequest(mockContext);
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SET_VARIABLE_UNRECOGNISED_DATE_FORMAT));
+        assertTrue(testAudit.isAuditPresentContaining("Date string format is not recognized: Invalid timestamp: 13364323445670"));
+    }
+
+    @Test
     public void testDateTime_Auto() throws Exception {
         final long currentTime = System.currentTimeMillis();
         timeSource = new TimeSource(){
