@@ -707,7 +707,7 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
                 return "This database type is not supported.  Driver class:"+driverClass;
             }
 
-            final File configDir = serverConfig().getLocalDirectoryProperty( ServerConfigParams.PARAM_SSG_HOME_DIRECTORY, true);
+            final File configDir = serverConfig().getLocalDirectoryProperty( ServerConfigParams.PARAM_SSG_HOME_DIRECTORY, false);
             File schemaFile = new File(configDir,"../../config/etc/sql/externalAudits_"+type+".sql");
             fin = new FileInputStream(schemaFile);
             out = new ByteArrayOutputStream(16384);
