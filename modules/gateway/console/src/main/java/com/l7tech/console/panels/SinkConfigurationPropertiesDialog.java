@@ -10,31 +10,25 @@ import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.TextEntryPanel;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
+import com.l7tech.util.*;
 import com.l7tech.util.Functions.Binary;
-import com.l7tech.util.InetAddressUtil;
-import com.l7tech.util.Option;
-import static com.l7tech.util.Option.some;
-import com.l7tech.util.Pair;
-import com.l7tech.util.TextUtils;
-import com.l7tech.util.ValidationUtils;
-import static com.l7tech.gateway.common.log.SinkConfiguration.SeverityThreshold;
-import static com.l7tech.gateway.common.log.SinkConfiguration.SinkType;
-
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.gateway.common.log.SinkConfiguration.SeverityThreshold;
+import static com.l7tech.gateway.common.log.SinkConfiguration.SinkType;
+import static com.l7tech.util.Option.some;
 
 /**
  * This is the dialog for updating the properties of a log sink configuration.
@@ -88,6 +82,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     private JButton addFilterButton;
     private JButton removeFilterButton;
     private JList filtersList;
+    private JCheckBox rollingLogFileField;
+    private JComboBox rollingIntervalField;
 
     private final FilterContext filterContext;
     private final SinkConfiguration sinkConfiguration;
@@ -402,8 +398,20 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         fileFormatField.setRenderer(new Renderers.KeyedResourceRenderer(resources, "fileSettings.format.{0}.text"));
         fileFormatField.setSelectedIndex(1);
 
+        rollingIntervalField.setModel(new DefaultComboBoxModel(SinkConfiguration.RollingInterval.values()));
+        rollingIntervalField.setSelectedItem(SinkConfiguration.RollingInterval.DAILY.toString());
+        rollingLogFileField.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final boolean enabled = rollingLogFileField.isSelected();
+                rollingIntervalField.setEnabled(enabled);
+                fileMaxSizeField.setEnabled(!enabled);
+                fileLogCount.setEnabled(!enabled);
+            }
+        });
+        ;
         // add validation rule for maximum file use
-        inputValidator.addRule(new InputValidator.ValidationRule(){
+        inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
                 String error = null;
@@ -412,15 +420,15 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                 long reserved = getReservedLogFileSize();
 
                 // deduct space used for previous configuration
-                reserved -= getSpaceUsed( sinkConfiguration );
+                reserved -= getSpaceUsed(sinkConfiguration);
 
                 // add space used for this configuration
                 SinkConfiguration tempConfig = new SinkConfiguration();
-                viewToModel( tempConfig );
-                reserved +=  getSpaceUsed( tempConfig );
+                viewToModel(tempConfig);
+                reserved += getSpaceUsed(tempConfig);
 
-                if ( enabledField.isSelected() &&
-                     reserved > maximum ) {
+                if (enabledField.isSelected() &&
+                        reserved > maximum) {
                     return MessageFormat.format(
                             resources.getString("fileSettings.maxFileSize.errors.toolarge"),
                             maximum,
@@ -737,6 +745,15 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         } else {
             fileFormatField.setSelectedItem(value);
         }
+        rollingLogFileField.setSelected(Boolean.valueOf(sinkConfiguration.getProperty(SinkConfiguration.PROP_ENABLE_ROLLING_FILE)));
+
+        final boolean enabled = rollingLogFileField.isSelected();
+        rollingIntervalField.setEnabled(enabled);
+        fileMaxSizeField.setEnabled(!enabled);
+        fileLogCount.setEnabled(!enabled);
+
+        String interval = sinkConfiguration.getProperty(SinkConfiguration.PROP_ROLLING_INTERVAL);
+        rollingIntervalField.setSelectedItem(interval == null ? SinkConfiguration.RollingInterval.DAILY : SinkConfiguration.RollingInterval.valueOf(interval));
     }
 
     /**
@@ -838,6 +855,9 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         sinkConfiguration.setProperty( SinkConfiguration.PROP_FILE_MAX_SIZE, fileMaxSizeField.getValue().toString() );
         sinkConfiguration.setProperty(SinkConfiguration.PROP_FILE_LOG_COUNT, fileLogCount.getValue().toString());
         sinkConfiguration.setProperty( SinkConfiguration.PROP_FILE_FORMAT, (String) fileFormatField.getSelectedItem() );
+
+        sinkConfiguration.setProperty( SinkConfiguration.PROP_ENABLE_ROLLING_FILE, String.valueOf(rollingLogFileField.isSelected()) );
+        sinkConfiguration.setProperty( SinkConfiguration.PROP_ROLLING_INTERVAL, rollingIntervalField.getSelectedItem().toString() );
 
         if (!sinkConfiguration.syslogHostList().isEmpty())
             sinkConfiguration.syslogHostList().clear();

@@ -268,9 +268,14 @@ public class SinkManagerImpl
                     String pattern = getSinkFilePattern(config);
                     String folder = pattern.substring(0,pattern.lastIndexOf("/"));
                     String filePattern = pattern.substring(pattern.lastIndexOf("/")+1);
-                    filePattern = filePattern.replace("%u","[0-9]");
-                    filePattern = filePattern.replace("%g","[0-9]");
-                    filePattern = filePattern.replace("%%","%");
+                    if(config.isRollingEnabled()){
+                        filePattern = filePattern + "." + config.getRollingInterval().getPattern().replaceAll("\\w{2,4}", "\\\\d{2,4}") + ".log";
+                    }
+                    else {
+                        filePattern = filePattern.replace("%u","[0-9]");
+                        filePattern = filePattern.replace("%g","[0-9]");
+                        filePattern = filePattern.replace("%%","%");
+                    }
                     final Pattern p = Pattern.compile(filePattern);
                     File f = new File(folder);
                     if( f.isDirectory() ){
@@ -325,9 +330,12 @@ public class SinkManagerImpl
                 if( sinkConfig != null && SinkConfiguration.SinkType.FILE.equals(sinkConfig.getType()) ){
                     final File logFileWithPattern = new File(getSinkFilePattern(sinkConfig));
                     final String fileDirectory = logFileWithPattern.getParent();
-                    final String fileRegex = logFileWithPattern.getName()
+                    String fileRegex = logFileWithPattern.getName()
                             .replace( "%u", "[0-9]" )
                             .replace( "%g", "[0-9]" );
+                    if(sinkConfig.isRollingEnabled()){
+                        fileRegex = fileRegex + "." + sinkConfig.getRollingInterval().getPattern().replaceAll("\\w{2,4}", "\\\\d{2,4}") + ".log";
+                    }
                     if ( file.matches( fileRegex ) ) {
                         final File logFile = new File(fileDirectory, file);
                         boolean isRotated = isRotated(query.getLastRead(), file,fileDirectory,logFileWithPattern.getName());

@@ -1,11 +1,13 @@
 package com.l7tech.server.log;
 
 import com.l7tech.common.log.SerializableFilter;
+import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.util.ConfigurableLogFormatter;
 
-import java.io.Serializable;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.logging.FileHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 
 /**
@@ -21,7 +23,9 @@ public class LogFileConfiguration implements Serializable {
                                  final boolean append,
                                  final int level,
                                  final String formatPattern,
-                                 final SerializableFilter filter ) {
+                                 final SerializableFilter filter,
+                                 final boolean rollingEnabled,
+                                 final SinkConfiguration.RollingInterval rollingInterval) {
         this.filepath = filepath;
         this.limit = limit;
         this.count = count;
@@ -29,6 +33,8 @@ public class LogFileConfiguration implements Serializable {
         this.level = level;
         this.formatPattern = formatPattern;
         this.filter = filter;
+        this.rollingEnabled = rollingEnabled;
+        this.rollingInterval = rollingInterval;
     }
 
     public LogFileConfiguration( final LogFileConfiguration config,
@@ -39,11 +45,19 @@ public class LogFileConfiguration implements Serializable {
               config.isAppend(),
               level,
               config.getFormatPattern(),
-              config.getFilter() );
+              config.getFilter(),
+              config.isRollingEnabled(),
+              config.getRollingInterval());
     }
 
-    public FileHandler buildFileHandler() throws IOException {
-        FileHandler fileHandler = new StartupAwareFileHandler( filepath, limit, count, append );
+    public Handler buildFileHandler() throws IOException {
+        Handler fileHandler;
+        if(rollingEnabled){
+            fileHandler = new RollingFileHandler(filepath, rollingInterval);
+        }
+        else {
+            fileHandler = new StartupAwareFileHandler( filepath, limit, count, append );
+        }
         fileHandler.setFormatter(new ConfigurableLogFormatter(formatPattern));
         fileHandler.setLevel(Level.parse(Integer.toString(level)));
         fileHandler.setFilter(filter);
@@ -78,6 +92,14 @@ public class LogFileConfiguration implements Serializable {
         return filter;
     }
 
+    public boolean isRollingEnabled() {
+        return rollingEnabled;
+    }
+
+    public SinkConfiguration.RollingInterval getRollingInterval() {
+        return rollingInterval;
+    }
+
     //- PRIVATE
 
     private static final long serialVersionUID = 1L;
@@ -89,6 +111,8 @@ public class LogFileConfiguration implements Serializable {
     private final int level;
     private final String formatPattern;
     private final SerializableFilter filter;
+    private final boolean rollingEnabled;
+    private final SinkConfiguration.RollingInterval rollingInterval;
 
     private static final class StartupAwareFileHandler extends FileHandler implements StartupAwareHandler{
         private StartupAwareFileHandler(String pattern, int limit, int count, boolean append) throws IOException, SecurityException {

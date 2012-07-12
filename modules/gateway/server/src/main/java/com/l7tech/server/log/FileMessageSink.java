@@ -68,14 +68,14 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
     private static final String PROP_FILE_LOG_PATH = "file.logPath";
 
     private final LogFileConfiguration logFileConfiguration;
-    private final FileHandler handler;
+    private final Handler handler;
 
     /**
      * Construct a file handler for the given config
      */
-    private FileHandler buildHandler( final LogFileConfiguration logFileConfiguration ) throws ConfigurationException {
+    private Handler buildHandler( final LogFileConfiguration logFileConfiguration ) throws ConfigurationException {
 
-        FileHandler fileHandler;
+        Handler fileHandler;
         try {
             fileHandler = logFileConfiguration.buildFileHandler();
         } catch (IOException ioe) {
@@ -98,14 +98,21 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
             if(cat != null && cat.contains(SinkConfiguration.CATEGORY_SSPC_LOGS)){
                 filepath = ConfigFactory.getProperty("com.l7tech.server.base") + "/Controller/var/logs";
             }
-            String filepat = LogUtils.getLogFilePattern( serverConfig, name, filepath, false );
+            String filepat;
+            if(configuration.isRollingEnabled()){
+                filepat = LogUtils.getLogFilePattern( serverConfig, name, filepath, configuration.getRollingInterval());
+            }
+            else {
+                filepat = LogUtils.getLogFilePattern( serverConfig, name, filepath, false );
+            }
             int limit = parseIntWithDefault( "log file limit for " + name, filelim, 1024 ) * 1024;
             int count = parseIntWithDefault( "log file count for " + name, filenum, 2 );
             boolean append = true;
             String formatPattern = getFormatPattern(name, format);
             int level = getThreshold();
 
-            return new LogFileConfiguration( filepat, limit, count, append, level, formatPattern, buildFilter( configuration ) );
+            return new LogFileConfiguration( filepat, limit, count, append, level, formatPattern,
+                    buildFilter( configuration ), configuration.isRollingEnabled(), configuration.getRollingInterval() );
         } catch ( IOException ioe ) {
             throw new ConfigurationException( ExceptionUtils.getMessage(ioe), ioe );
         }

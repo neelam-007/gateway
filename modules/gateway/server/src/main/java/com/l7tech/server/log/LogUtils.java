@@ -1,5 +1,6 @@
 package com.l7tech.server.log;
 
+import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.CausedIOException;
@@ -7,8 +8,8 @@ import com.l7tech.util.CausedIOException;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.logging.LogManager;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 /**
@@ -31,6 +32,44 @@ class LogUtils {
                                      final String filenamepart,
                                      final String filepath,
                                      final boolean useDefaultTemplate ) throws IOException {
+        final String ssgLogs = getLogDirectory(serverConfig, filepath);
+
+        String filePatternTemplate = useDefaultTemplate ? null : serverConfig.getProperty( ServerConfigParams.PARAM_SSG_LOG_FILE_PATTERN_TEMPLATE );
+        if ( filePatternTemplate == null ) {
+            filePatternTemplate = DEFAULT_FILE_PATTERN_TEMPLATE;
+        }
+
+        try {
+            return ssgLogs + MessageFormat.format( filePatternTemplate , "default_", filenamepart, "%g", "%u" );
+        } catch (IllegalArgumentException iae) {
+            throw new CausedIOException("Invalid log file pattern '" + filePatternTemplate + "'.");
+        }
+    }
+
+    static String getLogFilePattern(final ServerConfig serverConfig,
+                                               final String filenamepart,
+                                               final String filepath,
+                                               final SinkConfiguration.RollingInterval interval) throws IOException{
+        final String logDirectory = getLogDirectory(serverConfig, filepath);
+        return String.format("%s%s", logDirectory, filenamepart);
+    }
+
+    static int readLoggingThreshold( final String propertyName ) {
+        int level = 0;
+
+        String levelStr = LogManager.getLogManager().getProperty( propertyName );
+        if ( levelStr != null ) {
+            try {
+                level = Level.parse( levelStr ).intValue();
+            } catch ( IllegalArgumentException iae ) {
+                logger.warning( "Ignoring invalid logging level value '"+levelStr+"' for '"+propertyName+"'." );
+            }
+        }
+
+        return level;
+    }
+
+    private static String getLogDirectory(final ServerConfig serverConfig, final String filepath) throws IOException{
         // get log directory, build from home if necessary
         String ssgLogs = filepath != null ?
                 filepath :
@@ -51,31 +90,6 @@ class LogUtils {
         if ( !ssgLogs.endsWith("/") ) {
             ssgLogs += "/";
         }
-
-        String filePatternTemplate = useDefaultTemplate ? null : serverConfig.getProperty( ServerConfigParams.PARAM_SSG_LOG_FILE_PATTERN_TEMPLATE );
-        if ( filePatternTemplate == null ) {
-            filePatternTemplate = DEFAULT_FILE_PATTERN_TEMPLATE;
-        }
-
-        try {
-            return ssgLogs + MessageFormat.format( filePatternTemplate , "default_", filenamepart, "%g", "%u" );
-        } catch (IllegalArgumentException iae) {
-            throw new CausedIOException("Invalid log file pattern '" + filePatternTemplate + "'.");
-        }
-    }
-
-    static int readLoggingThreshold( final String propertyName ) {
-        int level = 0;
-
-        String levelStr = LogManager.getLogManager().getProperty( propertyName );
-        if ( levelStr != null ) {
-            try {
-                level = Level.parse( levelStr ).intValue();
-            } catch ( IllegalArgumentException iae ) {
-                logger.warning( "Ignoring invalid logging level value '"+levelStr+"' for '"+propertyName+"'." );
-            }
-        }
-
-        return level;
+        return ssgLogs;
     }
 }

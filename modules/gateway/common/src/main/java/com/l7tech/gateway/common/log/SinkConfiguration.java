@@ -90,6 +90,21 @@ public class SinkConfiguration extends NamedEntityImp {
         }
     }
 
+    public static enum RollingInterval {
+        HOURLY("yyyy-MM-dd-HH"),
+        DAILY("yyyy-MM-dd");
+
+        private final String pattern;
+
+        private RollingInterval(@NotNull final String pattern){
+            this.pattern = pattern;
+        }
+
+        public String getPattern() {
+            return pattern;
+        }
+    }
+
     public static final String CATEGORY_GATEWAY_LOGS = "LOG";
     public static final String CATEGORY_TRAFFIC_LOGS = "TRAFFIC";
     public static final String CATEGORY_AUDITS = "AUDIT";
@@ -108,6 +123,9 @@ public class SinkConfiguration extends NamedEntityImp {
     public static final String PROP_FILE_LOG_COUNT = "file.logCount";
     /** the property name for the format */
     public static final String PROP_FILE_FORMAT = "file.format";
+
+    public static final String PROP_ENABLE_ROLLING_FILE = "file.rolling";
+    public static final String PROP_ROLLING_INTERVAL = "file.interval";
 
     public static final String FILE_FORMAT_RAW = "RAW";
     public static final String FILE_FORMAT_STANDARD = "STANDARD";
@@ -327,6 +345,18 @@ public class SinkConfiguration extends NamedEntityImp {
 
         // invalidate cached properties
         xmlProperties = null;
+    }
+
+    @Transient
+    public boolean isRollingEnabled(){
+        final String v = getProperty(PROP_ENABLE_ROLLING_FILE);
+        return v == null ? false : Boolean.valueOf(getProperty(PROP_ENABLE_ROLLING_FILE)).booleanValue();
+    }
+
+    @Transient
+    public RollingInterval getRollingInterval(){
+        final String v = getProperty(PROP_ROLLING_INTERVAL);
+        return v == null ? RollingInterval.DAILY : RollingInterval.valueOf(v);
     }
 
     public boolean equals(Object o) {

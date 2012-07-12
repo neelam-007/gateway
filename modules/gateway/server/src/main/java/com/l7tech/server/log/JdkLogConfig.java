@@ -1,28 +1,13 @@
 package com.l7tech.server.log;
 
-import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.FileInputStream;
-import java.io.OutputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.Handler;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.StreamHandler;
-import java.util.logging.LogRecord;
-import java.util.List;
-import java.util.ArrayList;
-
-import com.l7tech.server.ServerConfigParams;
-import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.*;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.*;
 
 /**
  * Configuration class for JDK logging on the Gateway.
@@ -178,7 +163,9 @@ public class JdkLogConfig {
                         SyspropUtil.getBoolean(PARAM_LOG_DEFAULT_APPEND, DEFAULT_APPEND),
                         level != 0 ? level : Level.INFO.intValue(),
                         LogUtils.DEFAULT_LOG_FORMAT_STANDARD,
-                        null )
+                        null,
+                        false,
+                        null)
                         );
             } catch ( IOException ioe ) {
                 // don't log while initializing logging, could use system.err?
