@@ -66,7 +66,8 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         getSelectedWizardPanel().storeSettings(wizardInput);
         final ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig config = (ExternalAuditStoreConfigWizard.ExternalAuditStoreWizardConfig)wizardInput;
 
-        if(!safetyCheckNames(config.connection,config.auditRecordTableName,config.auditDetailTableName))
+
+        if(!config.custom && !safetyCheckNames(config.connection,config.auditRecordTableName,config.auditDetailTableName))
             return;
 
         // check if already exsist
