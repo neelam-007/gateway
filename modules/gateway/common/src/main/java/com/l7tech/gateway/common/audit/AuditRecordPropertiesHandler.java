@@ -16,25 +16,23 @@ public class AuditRecordPropertiesHandler extends DefaultHandler {
     private ArrayList<String> currentPath = new ArrayList<String>();
     private String currentElementValue = null;
 
-
     private String property1;
     Object getProperty1(){return property1;}
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-        if(uri.equals(AuditDetailPropertiesDomMarshaller.NS))
+        if(uri.equals(AuditRecordPropertiesDomMarshaller.NS))
             currentPath.add(localName);
     }
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
-        if(uri.equals(AuditDetailPropertiesDomMarshaller.NS))
+        if(uri.equals(AuditRecordPropertiesDomMarshaller.NS))
         {
             property1 = currentElementValue;
             currentPath.remove(currentPath.size()-1);
             currentElementValue = null;
         }
-
     }
 
     @Override

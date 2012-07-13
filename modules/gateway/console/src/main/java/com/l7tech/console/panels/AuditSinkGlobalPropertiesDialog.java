@@ -181,7 +181,7 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
 
 
     private boolean isCommittable() {
-        return cbSaveToDb.isSelected() || ( cbOutputToPolicy.isSelected() && sinkPolicyHeader != null && lookupPolicyHeader != null );
+        return cbSaveToDb.isSelected() || ( cbOutputToPolicy.isSelected());
     }
 
     private void commit() {
@@ -196,6 +196,21 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
                 ClusterPropertyCrud.deleteClusterProperty(AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP);
                 ClusterPropertyCrud.deleteClusterProperty(AUDIT_LOOKUP_POLICY_GUID_CLUSTER_PROP);
                 dispose();
+                return;
+            }
+
+            if(sinkPolicyHeader==null){
+                // try to find sink policy
+                getSinkPolicyHeader();
+            }
+            if(lookupPolicyHeader == null){
+                // try to find lookup policy
+                getLookupPolicyHeader();
+            }
+
+            if(sinkPolicyHeader == null && lookupPolicyHeader == null){
+                logger.log(Level.WARNING, "Unable to find an audit sink or audit lookup policy");
+                DialogDisplayer.showMessageDialog(this, "Unable to find an audit sink or audit lookup policy", "Unable to Save", JOptionPane.ERROR_MESSAGE, null);
                 return;
             }
 

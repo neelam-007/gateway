@@ -107,7 +107,9 @@ public class ExternalAuditStoreConfigDatabase extends WizardStepPanel {
     @Override
     public String getDescription() {
         return
-            "<html>The database configurations</html>";
+            "<html>The database configurations<br><br>" +
+                    "Default audit record table: audit_main<br>" +
+                    "Default audit detail table: audit_detail</html>";
     }
 
     @Override

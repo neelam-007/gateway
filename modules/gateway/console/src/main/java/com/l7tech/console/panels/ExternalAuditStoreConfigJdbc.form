@@ -78,7 +78,7 @@
             </constraints>
             <properties>
               <selected value="true"/>
-              <text value="Create Default Audit Sink and Lookup Policy"/>
+              <text value="Create External JDBC Audit Sink and Lookup Policy"/>
             </properties>
           </component>
         </children>

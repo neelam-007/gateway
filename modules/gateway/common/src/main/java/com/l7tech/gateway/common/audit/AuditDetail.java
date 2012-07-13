@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 package com.l7tech.gateway.common.audit;
 
@@ -54,13 +53,6 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
             e.printStackTrace(new PrintWriter(sw));
             this.exception = sw.toString();
         }
-    }
-
-    public AuditDetail(int messageId, String[] params, String exceptionMessage, long time){
-        this.messageId = messageId;
-        this.params = params;
-        this.time = time;
-        this.exception = exceptionMessage;
     }
 
     public AuditRecord getAuditRecord() {
@@ -158,6 +150,7 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
 
         final AuditDetail that = (AuditDetail) o;
 
+        if (auditGuid != null ? !auditGuid.equals(that.auditGuid) : that.auditGuid != null) return false;
         if (componentId != that.componentId) return false;
         if (messageId != that.messageId) return false;
         if (ordinal != that.ordinal) return false;
@@ -172,6 +165,7 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
     @Override
     public int hashCode() {
         int result = super.hashCode();
+        result = 29 * result + (auditGuid != null ? auditGuid.hashCode() : 0);
         result = 29 * result + (int) (time ^ (time >>> 32));
         result = 29 * result + messageId;
         result = 29 * result + componentId;

@@ -72,7 +72,7 @@ public class DeleteAuditEventsAction extends SecureAction {
             final int age = auditAdmin.serverMinimumPurgeAge();
             String message = "You are about to cause this Gateway to delete\n" +
                     "all non-SEVERE audit events more than " + age + " hours\n" +
-                    "(approx. " + (double)(age/24) + " days) old.\n\n" +
+                    "(approx. " + (double)(age/24) + " days) old from the internal Gateway database.\n\n" +
                     "This action will result in a permanent audit entry,\n" +
                     "and cannot be undone.\n\nDo you wish to proceed?\n";
 

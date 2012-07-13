@@ -224,6 +224,16 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
                 if ( newAudits.size() > 0 ) {
                     newAuditTime = newAudits.iterator().next().getTimestamp();
                 }
+                else {
+                    // try external audits
+                    newAudits = auditLookupPolicyEvaluator.findHeaders(criteria);
+                    newAudits = filter.filter(newAudits, user, OperationType.READ, null );
+                    if ( newAudits.size() > 0 ) {
+                        newAuditTime = newAudits.iterator().next().getTimestamp();
+                    }
+                }
+
+
             } catch (FindException fe) {
                 logger.fine("Failed to find new audits for date " + date.toString() + " with level " + level.toString());
             }

@@ -14,7 +14,7 @@ public class AuditRecordHeader extends EntityHeader {
     private String signature;
     private byte[] signatureDigest;
     private String nodeId;
-    protected long timestamp;
+    private long timestamp;
     private Level level;
 
     public AuditRecordHeader(final AuditRecord auditRecord){

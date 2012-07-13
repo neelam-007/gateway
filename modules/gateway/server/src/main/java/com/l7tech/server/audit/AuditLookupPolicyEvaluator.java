@@ -64,6 +64,10 @@ public class AuditLookupPolicyEvaluator  {
                 }
             });
 
+            if(assertionStatus == null){
+                return Collections.emptyList();
+            }
+
             if(assertionStatus != AssertionStatus.NONE){
                 throw new FindException("Audit Lookup Policy Failed");
             }
@@ -84,14 +88,15 @@ public class AuditLookupPolicyEvaluator  {
         
 
     private List<AuditRecordHeader> makeAuditRecords(PolicyEnforcementContext context){
-        Object sizeObj = null;
         try {
 
             final String prefix = "recordQuery";
 
-            sizeObj = context.getVariable(prefix + ".queryresult.count");
+            Object sizeObj = context.getVariable(prefix + ".queryresult.count");
             List<AuditRecordHeader> recordHeaders = new ArrayList<AuditRecordHeader> ();
-
+            if((Integer)sizeObj == 0){
+                return new ArrayList<AuditRecordHeader>();
+            }
 
             Object[] id_var = (Object[])context.getVariable(prefix + ".id");
             Object[] nodeid_var = (Object[])context.getVariable(prefix+".nodeid");
@@ -122,7 +127,6 @@ public class AuditLookupPolicyEvaluator  {
             Object[] properties_var = (Object[])context.getVariable(prefix+".properties");
             Object[] componentId_var = (Object[])context.getVariable(prefix+".component_id");
             Object[] action_var = (Object[])context.getVariable(prefix+".action");
-
 
             for(int i = 0 ; i < (Integer)sizeObj ; ++i){
                 String id = (String)id_var[i];
@@ -182,10 +186,17 @@ public class AuditLookupPolicyEvaluator  {
     }
 
     private void makeAuditDetails(PolicyEnforcementContext context) {
+        String prefix = "detailQuery";
+        Integer numDetails = 0;
         try {
-            String prefix = "detailQuery";
             Object sizeObj = context.getVariable(prefix+".queryresult.count");
+            numDetails = (Integer)sizeObj;
+        } catch (NoSuchVariableException e) {
+            // do nothing, no audit details to get
+            return;
+        }
 
+        try{
             Object[] audit_oid_var = (Object[])context.getVariable(prefix+".audit_oid");
             Object[] time_var = (Object[])context.getVariable(prefix+".time");
             Object[] componentId_var = (Object[])context.getVariable(prefix+".component_id");
@@ -194,7 +205,7 @@ public class AuditLookupPolicyEvaluator  {
             Object[] message_var = (Object[])context.getVariable(prefix+".exception_message");
             Object[] props_var = (Object[])context.getVariable(prefix+".properties");
 
-            for(int i = 0 ; i < (Integer)sizeObj ; ++i){
+            for(int i = 0 ; i < numDetails ; ++i){
                 String audit_oid = (String)audit_oid_var[i];
                 Long time = (Long)time_var[i];
                 Integer componentId = (Integer)componentId_var[i];
@@ -206,7 +217,12 @@ public class AuditLookupPolicyEvaluator  {
                 AuditDetailPropertiesHandler handler =   parseDetailsProperties(properties);
 
                 String[] params = (handler == null)? null : handler.getParameters();
-                AuditDetail detail = new AuditDetail( messageId, params ,  message,  time);
+                AuditDetail detail = new AuditDetail();
+                detail.setMessageId(messageId);
+                detail.setParams(params);
+                detail.setTime(time);
+                detail.setException(message);
+
                 detail.setAuditGuid(audit_oid);
                 detail.setOrdinal(ordinal);
                 detail.setComponentId(componentId);
@@ -219,10 +235,10 @@ public class AuditLookupPolicyEvaluator  {
                 record.setDetails(details);
             }
         } catch (NoSuchVariableException e) {
-            // do nothing, end of trying to get details
+            logger.warning("Failed to retrieve audit details");
         }
     }
-    
+
     public AuditRecord findByGuid(String guid) throws FindException{
         return (AuditRecord)auditRecordsCache.retrieve(guid);
     }
@@ -250,7 +266,7 @@ public class AuditLookupPolicyEvaluator  {
      *
      * @param criteria  the audit record search criteria
      * @param   policyContext  context for the lookup policy to use
-     * @return
+     * @return  null if policy does not exsist, policy assertion status if policy exsists
      */
     private AssertionStatus executeAuditLookupPolicy(AuditSearchCriteria criteria, PolicyEnforcementContext policyContext) {
         ServerPolicyHandle sph = null;

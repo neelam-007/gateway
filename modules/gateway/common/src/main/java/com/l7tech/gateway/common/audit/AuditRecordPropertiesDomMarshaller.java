@@ -14,7 +14,7 @@ import java.io.IOException;
  *          None.
 */
 public class AuditRecordPropertiesDomMarshaller {
-    private static final String NS = "http://l7tech.com/audit/rec";
+    public static final String NS = "http://l7tech.com/audit/rec";
 
     /**
      * Add the specified AuditRecord as a DOM element as a child of the specified parent element.

@@ -152,7 +152,7 @@ public class ExternalAuditsCommonUtils {
                 "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "        <wsp:All wsp:Usage=\"Required\">\n" +
                 "            <L7p:CommentAssertion>\n" +
-                "                <L7p:Comment stringValue=\"Start Default Lookup Policy\"/>\n" +
+                "                <L7p:Comment stringValue=\"Start Auto-Generated Lookup Policy\"/>\n" +
                 "            </L7p:CommentAssertion>\n" +
                 "            <L7p:SetVariable>\n" +
                 "                <L7p:Base64Expression stringValue=\"JHthdWRpdC5yZWNvcmRRdWVyeS5zZXJ2aWNlTmFtZX0=\"/>\n" +
@@ -174,14 +174,6 @@ public class ExternalAuditsCommonUtils {
                 "                <L7p:Replacement stringValue=\"#]\"/>\n" +
                 "                <L7p:Target target=\"OTHER\"/>\n" +
                 "            </L7p:Regex>\n" +
-                "            <L7p:SetVariable>\n" +
-                "                <L7p:Base64Expression stringValue=\""+ HexUtils.encodeBase64(HexUtils.encodeUtf8("10000000000"), true)+"\"/>\n" +
-                "                <L7p:VariableToSet stringValue=\"entityIdMax\"/>\n" +
-                "            </L7p:SetVariable>\n" +
-                "            <L7p:SetVariable>\n" +
-                "                <L7p:Base64Expression stringValue=\""+HexUtils.encodeBase64(HexUtils.encodeUtf8("-10000000000"), true)+"\"/>\n" +
-                "                <L7p:VariableToSet stringValue=\"entityIdMin\"/>\n" +
-                "            </L7p:SetVariable>\n" +
                 "            <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
                 "                <L7p:ComparisonAssertion>\n" +
                 "                    <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
@@ -301,7 +293,10 @@ public class ExternalAuditsCommonUtils {
                 "                </L7p:JdbcQuery>\n" +
                 "            </wsp:OneOrMore>\n" +
                 "            <L7p:CommentAssertion>\n" +
-                "                <L7p:Comment stringValue=\"End Default Lookup Policy\"/>\n" +
+                "                <L7p:Comment stringValue=\"End Auto-Generated Lookup Policy\"/>\n" +
+                "            </L7p:CommentAssertion>\n" +
+                "            <L7p:CommentAssertion>\n" +
+                "                <L7p:Comment stringValue=\"Add Additional Assertions Here\"/>\n" +
                 "            </L7p:CommentAssertion>\n" +
                 "        </wsp:All>\n" +
                 "    </wsp:Policy>\n" +

@@ -382,6 +382,9 @@ public class LogPanel extends JPanel {
                     PolicyEntityNode node = new PolicyEntityNode(new PolicyHeader(policy));
                     Action editAction = new EditPolicyAction(node, true);
                     editAction.actionPerformed(null);
+                    // bring manager window to front
+                    TopComponents windowManager = TopComponents.getInstance();
+                    windowManager.getTopParent().toFront();
                 } catch (FindException e1) {
                     logger.warning("Failed to edit lookup policy");
                 }
