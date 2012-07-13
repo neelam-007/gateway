@@ -206,11 +206,13 @@ public class MqNativeAdminServerSupport {
         } else if (errorCode == MQRC_Q_MGR_NAME_ERROR) {
             return "Invalid queue manager name";
         } else if (errorCode == MQRC_Q_MGR_NOT_AVAILABLE) {
-            return "Invalid host name or port number";
+            return "Cannot connect to MQ Queue Manager";
         } else if (errorCode == MQRC_UNKNOWN_OBJECT_NAME) {
             return "Invalid queue name, reply queue name, or failure queue name";
         }  else if (errorCode == MQRC_JSSE_ERROR) {
             return "Invalid SSL setting";
+        } else if (errorCode == MQRC_HOST_NOT_AVAILABLE) {
+            return "Cannot communicate with MQ Queue Host";
         }
 
         return e.toString();
