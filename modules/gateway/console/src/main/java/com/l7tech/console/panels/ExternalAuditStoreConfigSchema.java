@@ -28,7 +28,6 @@ import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
     private JPanel mainPanel;
     private JButton testButton;
-    private JButton getSchemaButton;
     private JTextArea schemaTextArea;
     private JButton createDatabaseButton;
 
@@ -81,13 +80,13 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
         connection = config.connection;
         auditRecordTableName = config.auditRecordTableName;
         auditDetailTableName = config.auditDetailTableName;
+
+        schemaTextArea.setText(getSchema());
+        schemaTextArea.setCaretPosition(0);
     }
 
     @Override
     public void notifyActive() {
-        // clear schema display
-        schemaTextArea.setText(null);
-
         super.notifyActive();
     }
 
@@ -111,14 +110,6 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
                 doTest();
             }
         });
-        getSchemaButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                schemaTextArea.setText(getSchema());
-                schemaTextArea.setCaretPosition(0);
-            }
-        });
-
         createDatabaseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -229,10 +220,6 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
             "Testing",
             success ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
             null);
-
-        schema = success?"Schema is valid" : getSchema();
-        schemaTextArea.setText(schema);
-        schemaTextArea.setCaretPosition(0);
     }
 
     private String getSchema() {
@@ -255,8 +242,8 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
     @Override
     public String getDescription() {
         return
-            "<html>The schema that will be used to create audit tables in the specified JDBC connection.<br>" +
-                  "Test the existing schema.</html>";
+            "<html>The schema to create audit tables in the specified JDBC connection.<br><br>" +
+                  "Test the existing schema.<br><br></html>";
     }
 
     @Override
