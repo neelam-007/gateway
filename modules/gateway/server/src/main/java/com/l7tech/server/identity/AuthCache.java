@@ -69,6 +69,14 @@ public final class AuthCache {
         }
     }
 
+    public static int getDefaultAuthSuccessCacheTime() {
+        return ConfigFactory.getIntProperty(ServerConfigParams.PARAM_AUTH_CACHE_MAX_SUCCESS_TIME, 1000);
+    }
+
+    public static int getDefaultAuthFailureCacheTime() {
+        return ConfigFactory.getIntProperty(ServerConfigParams.PARAM_AUTH_CACHE_MAX_FAILURE_TIME, 1000);
+    }
+
     void dispose() {
         WhirlycacheFactory.shutdown(successCache);
         WhirlycacheFactory.shutdown(failureCache);    
@@ -116,6 +124,21 @@ public final class AuthCache {
 
     public static AuthCache getInstance() {
         return InstanceHolder.INSTANCE;
+    }
+
+    /**
+     * Gets a cached AuthenticationResult based on the supplied credentials, if one is available
+     * and its timestamp has not expired, or null if the authentication failed.
+     * <p/>
+     * This uses the current default success and failure cache lifetimes.
+     *
+     * @param creds         the credentials presented in the request
+     * @param idp           the IdentityProvider to use in case a re-authentication is required
+     * @return the cached AuthenticationResult if one was available from cache, or null if not.
+     * @throws AuthenticationException if the authentication could not be performed for some low-level reason
+     */
+    public AuthenticationResult getCachedAuthResult(LoginCredentials creds, IdentityProvider idp) throws AuthenticationException {
+        return getCachedAuthResult(creds, idp, getDefaultAuthSuccessCacheTime(), getDefaultAuthFailureCacheTime());
     }
 
     /**

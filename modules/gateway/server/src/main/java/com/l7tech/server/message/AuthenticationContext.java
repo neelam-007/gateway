@@ -2,11 +2,10 @@ package com.l7tech.server.message;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
-import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.identity.AuthCache;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.identity.User;
 import com.l7tech.message.CredentialContext;
-import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Pair;
 import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.token.SecurityToken;
@@ -200,11 +199,11 @@ public class AuthenticationContext extends CredentialContext {
     }
 
     public int getAuthSuccessCacheTime() {
-        return ConfigFactory.getIntProperty( ServerConfigParams.PARAM_AUTH_CACHE_MAX_SUCCESS_TIME, 1000 );
+        return AuthCache.getDefaultAuthSuccessCacheTime();
     }
 
     public int getAuthFailureCacheTime() {
-        return ConfigFactory.getIntProperty( ServerConfigParams.PARAM_AUTH_CACHE_MAX_FAILURE_TIME, 1000 );
+        return AuthCache.getDefaultAuthFailureCacheTime();
     }
 
     //- PRIVATE

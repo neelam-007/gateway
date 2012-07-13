@@ -19,7 +19,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.xml.processor.BadSecurityContextException;
 import com.l7tech.security.xml.processor.ProcessorException;
-import com.l7tech.server.identity.AuthenticatingIdentityProvider;
+import com.l7tech.server.identity.AuthCache;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -205,7 +205,7 @@ public class TokenServiceServlet extends HttpServlet {
                     providers = ipf.findAllIdentityProviders();
                     for (IdentityProvider provider : providers) {
                         try {
-                            AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
+                            AuthenticationResult authResult = AuthCache.getInstance().getCachedAuthResult(creds, provider);
                             if (authResult != null) {
                                 if (authenticatedUser != null) {
                                     throw new AuthenticationException("The cert used to sign this request is valid " +
