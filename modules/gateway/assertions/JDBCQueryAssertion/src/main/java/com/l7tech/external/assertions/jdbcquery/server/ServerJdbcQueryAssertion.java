@@ -80,7 +80,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                         affectedRows += setContextVariables(rowSet, context, resultCountVariable);
                     }
                     if (resultCount > 1) {
-                        context.setVariable(getVariablePrefix(context) + "." + JdbcQueryAssertion.MULTIPLE_VARIABLE_COUNT, resultCount);
+                        context.setVariable(getVariablePrefix(context) + "." + JdbcQueryAssertion.MULTIPLE_VARIABLE_COUNT, affectedRows);
                         context.setVariable(getVariablePrefix(context) + "." + JdbcQueryAssertion.MULTIPLE_RESULTSET_COUNT, listOfRowSet.size());
                     }
                 }

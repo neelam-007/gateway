@@ -20,6 +20,8 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Util for stored procedure calls and result processing using @{link SimpleJdbcCall}
@@ -37,6 +39,17 @@ public class JdbcCallHelper {
     private final SimpleJdbcCall simpleJdbcCall;//made simpleJdbcCall a class variable so we can mock it out during test
 
     protected final Log logger = LogFactory.getLog(getClass());
+
+    //using pattern instead of naked split, for splitting comma delimited parameters
+    private final Pattern p = Pattern.compile(
+            "(?x)          # enable comments                                      \n" +
+                    "(\"[^\"]*\")  # quoted data, and store in group #1                   \n" +
+                    "|             # OR                                                   \n" +
+                    "([^,]+)       # one or more chars other than ',', and store it in #2 \n" +
+                    "|             # OR                                                   \n" +
+                    "\\s*,\\s*     # a ',' optionally surrounded by space-chars           \n"
+    );
+
 
     public JdbcCallHelper(SimpleJdbcCall simpleJdbcCall1) {
         this.simpleJdbcCall = simpleJdbcCall1;
@@ -65,6 +78,7 @@ public class JdbcCallHelper {
         //SimpleJdbcCall will require a list of named parameters, let's build it dynamically
         final MapSqlParameterSource inParameters = new MapSqlParameterSource();
         List<String> queryParameters = getParametersFromQuery(query);
+        List<String> queryParametersRaw = getParametersFromQuery(query, false);
         List<String> parametersNames = getInParametersName(procName);
         if ((parametersNames.size() != queryParameters.size())) {
             throw new BadSqlGrammarException("", query, new SQLException("Incorrect number of arguments for " + procName + "; expected " + parametersNames.size() + ", got " + queryParameters.size() + "; query generated was " + query));
@@ -76,9 +90,13 @@ public class JdbcCallHelper {
                 Object paramValue = null;
                 if (paramIndex < queryParameters.size())
                     paramValue = queryParameters.get(paramIndex++);
-                if (paramValue != null && paramValue.equals("?"))
-                    paramValue = args[varArgIndex++];
-                else if (paramValue != null && ((String) paramValue).startsWith("@"))//special case if we want to verbose define INOUT param in MS SQL, see known issue
+                if (paramValue != null && paramValue.toString().equals("?") && !queryParametersRaw.get(paramIndex-1).equals("'?'") && !queryParametersRaw.get(paramIndex-1).equals("\"?\"")) {
+                    if (varArgIndex + 1 < args.length) {
+                        paramValue = args[varArgIndex++];
+                    } else {
+                        throw new BadSqlGrammarException("", query, new SQLException("invalid/bad query : @" + (varArgIndex + 1) + " - " + query));//Bug 12575 - user explicitly trying to use ? w/c is really an invalid query
+                    }
+                } else if (paramValue != null && ((String) paramValue).startsWith("@"))//special case if we want to verbose define INOUT param in MS SQL, see known issue
                     paramValue = "";
                 if (paramValue != null)
                     inParameters.addValue(paramName, paramValue);
@@ -152,12 +170,21 @@ public class JdbcCallHelper {
      * @param query
      * @return
      */
-    private String getName(final String query) {
-        String name = query.split(" ")[1];//should be able to extract the name from CALL proc_name ?,?
-        int marker = name.indexOf("("); //just in case the query was CALL proc_name(?,?
-        if (marker >= 0)
-            name = name.substring(0, marker);
-        return name;
+    public String getName(final String query) {
+        StringBuffer sb = new StringBuffer();
+        boolean keyword=false;
+        for(char c : query.toCharArray()){
+            if(c!=' ' && c!='(' && c!='\"' && c!='\''){
+                if(keyword)
+                    sb.append(c);
+            } else {
+                if(keyword)
+                    break;
+                else
+                    keyword=true;
+            }
+        }
+        return sb.toString().trim();
     }
 
     /**
@@ -167,33 +194,69 @@ public class JdbcCallHelper {
      * @return
      */
     public List<String> getParametersFromQuery(final String query) {
+        return getParametersFromQuery(query, true);
+    }
+
+    /**
+     * Allows us to extract the parameters from the given query
+     *
+     * @param query
+     * @return
+     */
+    public List<String> getParametersFromQuery(final String query, boolean stripQuote) {
         List<String> values = new ArrayList<String>();
-        int marker = query.indexOf("("); //just in case the query was CALL proc_name(?,?        
-        if (marker < 0) {
-            String name = getName(query);
-            marker = query.indexOf(name) + name.length();
-        }
+        final String name = getName(query);
+        int marker = query.indexOf(name, 1) + name.length();
         if (marker < query.length()) marker++;
-        final String query2 = query.substring(marker);
+        String query2 = query.substring(marker).trim();
+        if(query2.startsWith("(")){
+            if(!query2.endsWith(")")){
+                throw new BadSqlGrammarException("", query, new SQLException("invalid/bad query " + query));//non matching parenthesis
+            } else {
+                query2 = query2.substring(1,query2.length()-1);
+            }
+        } else if(query2.endsWith(")") || query2.endsWith(",")){
+            throw new BadSqlGrammarException("", query, new SQLException("invalid/bad query " + query));//non matching parenthesis
+        }
         if (query2 != null && (query2.trim().equals("") || query2.trim().equals(")"))) {
             return values;
         }
-        for (String param : query2.split(",")) {
-            param = param.trim();
-            while (param.startsWith("(")) {
-                param = param.substring(param.indexOf("(") + 1);
+        final Matcher m = p.matcher(query2);
+        int commaCount=0;
+        while (m.find()) {
+            // get the match
+            final String paramCopy = m.group();
+            String param = paramCopy.trim();
+            if(param.equals(",")){
+                commaCount++;
             }
-            while (param.endsWith(")")) {
-                param = param.substring(0, param.lastIndexOf(")"));
+            // it's a param if it's group #1 or #2, otherwise proceed to next match            
+            if(m.group(1) == null && m.group(2) == null) {
+                continue;
+            }            
+            if(param.equals("")){
+                throw new BadSqlGrammarException("", query, new SQLException("invalid/bad query - missing param value ;" + query));
+            } else if (param.startsWith("(") || param.endsWith(")")) {
+                throw new BadSqlGrammarException("", query, new SQLException("invalid/bad query - param:" + paramCopy + ";" + query));
             }
-            if (param.startsWith("'")) {
-                //trim string quote
-                param = param.substring(1);
-                param = param.substring(0, param.length() - 1);
-            } else if (param.startsWith("\"")) {
-                //trim string quote
-                param = param.substring(1);
-                param = param.substring(0, param.length() - 1);
+            if (stripQuote) {
+                if (param.startsWith("'")) {
+                    //trim string quote
+                    param = param.substring(1);
+                    if(!param.trim().endsWith("'")){
+                        throw new BadSqlGrammarException("", query, new SQLException("invalid/bad query - param:" + paramCopy + ";" + query));
+                    }
+                    param = param.substring(0, param.length() - 1);
+                } else if (param.startsWith("\"")) {
+                    //trim string quote
+                    param = param.substring(1);
+                    if(!param.trim().endsWith("\"")){
+                        throw new BadSqlGrammarException("", query, new SQLException("invalid/bad query - param:" + paramCopy + ";" + query));
+                    }
+                    param = param.substring(0, param.length() - 1);
+                } else if(param.endsWith("\'") || param.endsWith("\"")){
+                    throw new BadSqlGrammarException("", query, new SQLException("invalid/bad query - param:" + paramCopy + ";" + query));
+                }
             }
             values.add(param);
         }

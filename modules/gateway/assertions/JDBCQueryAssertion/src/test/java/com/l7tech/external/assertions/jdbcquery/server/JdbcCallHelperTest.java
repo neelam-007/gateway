@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
@@ -181,27 +182,8 @@ public class JdbcCallHelperTest {
         assertEquals(parameter.get(3), "?");
         assertEquals(parameter.get(4), "?");
 
-        //we are really not strict in requiring ( or ), a missing open or close parenthesis should be okay
-        query = "CALL GetSample ('value1','value2',99,?,?";
-        parameter = jdbcHelper.getParametersFromQuery(query);
-        assertEquals(parameter.size(), 5);
-        assertEquals(parameter.get(0), "value1");
-        assertEquals(parameter.get(1), "value2");
-        assertEquals(parameter.get(2), "99");
-        assertEquals(parameter.get(3), "?");
-        assertEquals(parameter.get(4), "?");
-
-        query = "CALL GetSample 'value1','value2',99,?,?)";
-        parameter = jdbcHelper.getParametersFromQuery(query);
-        assertEquals(parameter.size(), 5);
-        assertEquals(parameter.get(0), "value1");
-        assertEquals(parameter.get(1), "value2");
-        assertEquals(parameter.get(2), "99");
-        assertEquals(parameter.get(3), "?");
-        assertEquals(parameter.get(4), "?");
-
         //make sure we can still retrieve parenthesis if they are inside a string parameter
-        query = "CALL GetSample (('value1(','value2)',99,?,?))";
+        query = "CALL GetSample ('value1(','value2)',99,?,?)";
         parameter = jdbcHelper.getParametersFromQuery(query);
         assertEquals(parameter.size(), 5);
         assertEquals(parameter.get(0), "value1(");
@@ -210,7 +192,7 @@ public class JdbcCallHelperTest {
         assertEquals(parameter.get(3), "?");
         assertEquals(parameter.get(4), "?");
 
-        query = "CALL GetSample (('(value1',')value2',99,?,?))";
+        query = "CALL GetSample ('(value1',')value2',99,?,?)";
         parameter = jdbcHelper.getParametersFromQuery(query);
         assertEquals(parameter.size(), 5);
         assertEquals(parameter.get(0), "(value1");
@@ -218,6 +200,25 @@ public class JdbcCallHelperTest {
         assertEquals(parameter.get(2), "99");
         assertEquals(parameter.get(3), "?");
         assertEquals(parameter.get(4), "?");
+
+        //make sure comma's inside the string was not splitted
+        query = "CALL GetSample \"value1,\",\",value2\",99,?,?,\",\"";
+        parameter = jdbcHelper.getParametersFromQuery(query);
+        assertEquals(parameter.size(), 6);
+        assertEquals(parameter.get(0), "value1,");
+        assertEquals(parameter.get(1), ",value2");
+        assertEquals(parameter.get(2), "99");
+        assertEquals(parameter.get(3), "?");
+        assertEquals(parameter.get(4), "?");
+        assertEquals(parameter.get(5), ",");
+
+        try {
+            query = "CALL GetSample 'value1',";
+            jdbcHelper.getParametersFromQuery(query);
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
     }
 
     /**
@@ -301,6 +302,156 @@ public class JdbcCallHelperTest {
         } catch (Exception e) {
             //exception expected
         }
+    }
+
+    @BugNumber(12575)
+    @Test
+    public void testInvalidCharacter() throws Exception {
+        when(resultSet2.getString("COLUMN_NAME")).thenReturn("inparam");
+        when(resultSet2.getInt("COLUMN_TYPE")).thenReturn(1);
+        when(resultSet2.next()).thenReturn(true).thenReturn(false);
+        when(databaseMetaData.getProcedureColumns(anyString(), anyString(), anyString(), anyString())).thenReturn(resultSet2);
+        try {
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSamples (?)";
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+
+        //additional check for invalid quotes
+        try {
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSamples '?";
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+
+        try {
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSamples ?'";
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+
+        try {
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSamples \"?";
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+
+        try {
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSamples ?\"";
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+
+        //with proper closing quotes
+        try {
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSamples \"?\"";
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+        } catch (Exception e) {
+            fail("should not fail");
+        }
+
+        try {
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSamples '?'";
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+        } catch (Exception e) {
+            fail("should not fail");
+        }
+
+        //not properly closed )
+
+        try {
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSample ('value1','value2',99,?,?";
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+
+        try {
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSample 'value1','value2',99,?,?)";
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+
+        try {
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSample ('value1',('value2',99,?,?)";
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+
+        try {
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSample ('value1','value2',99,?),?)";
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+
+        //empty param in between commas or commas at the end of the query
+        try {
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSample 'value1','value2',99,?,?,";
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+
+        //empty param ,
+        try {
+            when(resultSet2.next()).thenReturn(true).thenReturn(false);
+            String query = "CALL GetSample 'value1','value2',,99,?,?";
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            fail("should have failed");
+        } catch (Exception e) {
+            //exception expected
+        }
+    }
+
+    /**
+     * Test how we can handle various query variations
+     */
+    @Test
+    public void testGetQueryName(){
+        String name = jdbcHelper.getName("CALL GetSamples1 (?)");
+        assertEquals("GetSamples1",name);
+        name = jdbcHelper.getName("CALL GetSamples2");
+        assertEquals("GetSamples2",name);
+        name = jdbcHelper.getName("CALL GetSamples3     ?");
+        assertEquals("GetSamples3",name);
+        name = jdbcHelper.getName("CALL GetSamples4");
+        assertEquals("GetSamples4",name);
+        name = jdbcHelper.getName("CALL GetSamples5()");
+        assertEquals("GetSamples5",name);
+        name = jdbcHelper.getName("CALL GetSamples6(        )");
+        assertEquals("GetSamples6",name);
+        name = jdbcHelper.getName("CALL GetSamples7           (        )");
+        assertEquals("GetSamples7",name);
     }
 
     private PolicyEnforcementContext makeContext(String req, String res) {
