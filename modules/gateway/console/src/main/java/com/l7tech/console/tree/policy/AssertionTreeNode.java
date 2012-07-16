@@ -366,6 +366,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         if (Registry.getDefault().getLicenseManager().isAssertionEnabled(ONEORMORE_PROTOTYPE)) {
             list.add(new AddOneOrMoreAssertionAction(ca, position));
         }
+        list.add(new CreateIncludeFragmentAction(this));
 
         try {
             // Case 1: if the node is associated to a published service
@@ -374,7 +375,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
 
             // Case 2: if the node is associated to a policy fragment
             if (svc == null && !hasPermission) {
-                Policy policy = getPolicy();                
+                Policy policy = getPolicy();
                 hasPermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.POLICY, policy));
             }
 

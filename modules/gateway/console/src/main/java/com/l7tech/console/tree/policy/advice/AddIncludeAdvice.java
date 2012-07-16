@@ -31,16 +31,18 @@ public class AddIncludeAdvice implements Advice {
         }
 
         final Include subject = (Include)assertions[0];
-        final Frame mw = TopComponents.getInstance().getTopParent();
-        final IncludeSelectionDialog includeSelectionDialog = new IncludeSelectionDialog(mw);
-        if ( includeSelectionDialog.includeFragmentsAvailable() ) {
-            DialogDisplayer.display(includeSelectionDialog, new Runnable() {
-                @Override
-                public void run() {
-                    PolicyHeader header = includeSelectionDialog.getSelectedPolicyFragment();
-                    if ( header != null ) {
-                        subject.setPolicyName( header.getName() );
-                        subject.setPolicyGuid( header.getGuid() );
+        // don't show selection dialog if the include is already associated with a policy fragment
+        if (subject.getPolicyGuid() == null) {
+            final Frame mw = TopComponents.getInstance().getTopParent();
+            final IncludeSelectionDialog includeSelectionDialog = new IncludeSelectionDialog(mw);
+            if ( includeSelectionDialog.includeFragmentsAvailable() ) {
+                DialogDisplayer.display(includeSelectionDialog, new Runnable() {
+                    @Override
+                    public void run() {
+                        PolicyHeader header = includeSelectionDialog.getSelectedPolicyFragment();
+                        if ( header != null ) {
+                            subject.setPolicyName( header.getName() );
+                            subject.setPolicyGuid( header.getGuid() );
 
                         try {
                             // Check for recursion
@@ -51,25 +53,28 @@ public class AddIncludeAdvice implements Advice {
                                 Registry.getDefault().getPolicyPathBuilderFactory().makePathBuilder().inlineIncludes( subject, policyGuids, true );
                             }
 
-                            pc.proceed();
-                        } catch(PolicyAssertionException e) {
-                            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                                             "Cannot add Included Policy Fragment due to circular policy include.",
-                                                             "Included Policy Fragment Error",
-                                                             JOptionPane.WARNING_MESSAGE,
-                                                             null );
-                        } catch (InterruptedException e) {
-                            // don't proceed
+                                pc.proceed();
+                            } catch(PolicyAssertionException e) {
+                                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                                                 "Cannot add Included Policy Fragment due to circular policy include.",
+                                                                 "Included Policy Fragment Error",
+                                                                 JOptionPane.WARNING_MESSAGE,
+                                                                 null );
+                            } catch (InterruptedException e) {
+                                // don't proceed
+                            }
                         }
                     }
-                }
-            });
+                });
+            } else {
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                                 "No Policy Include Fragments are currently available.",
+                                                 "Policy Include Fragments Not Available",
+                                                 JOptionPane.INFORMATION_MESSAGE,
+                                                 null );
+            }
         } else {
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                             "No Policy Include Fragments are currently available.",
-                                             "Policy Include Fragments Not Available",
-                                             JOptionPane.INFORMATION_MESSAGE,
-                                             null );
+            pc.proceed();
         }
     }
 }
