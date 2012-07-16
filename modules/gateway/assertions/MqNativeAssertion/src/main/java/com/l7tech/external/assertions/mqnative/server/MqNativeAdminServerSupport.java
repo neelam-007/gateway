@@ -213,6 +213,8 @@ public class MqNativeAdminServerSupport {
             return "Invalid SSL setting";
         } else if (errorCode == MQRC_HOST_NOT_AVAILABLE) {
             return "Cannot communicate with MQ Queue Host";
+        } else if (errorCode == MQRC_UNKNOWN_CHANNEL_NAME) {
+            return "Unknown MQ Channel Name";
         }
 
         return e.toString();

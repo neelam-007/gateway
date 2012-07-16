@@ -64,6 +64,7 @@ public class MqNativeAdminServerSupportTest extends AbstractJUnit4SpringContextT
                                    .thenReturn(MQRC_UNKNOWN_OBJECT_NAME)
                                    .thenReturn(MQRC_JSSE_ERROR)
                                    .thenReturn(MQRC_HOST_NOT_AVAILABLE)
+                                   .thenReturn(MQRC_UNKNOWN_CHANNEL_NAME)
                                    .thenReturn(0);
 
         assertEquals(mqNativeAdminServerSupport.getMeaningfulMqErrorDetail(exception),"Invalid channel name");
@@ -73,6 +74,7 @@ public class MqNativeAdminServerSupportTest extends AbstractJUnit4SpringContextT
         assertEquals(mqNativeAdminServerSupport.getMeaningfulMqErrorDetail(exception),"Invalid queue name, reply queue name, or failure queue name");
         assertEquals(mqNativeAdminServerSupport.getMeaningfulMqErrorDetail(exception),"Invalid SSL setting");
         assertEquals(mqNativeAdminServerSupport.getMeaningfulMqErrorDetail(exception),"Cannot communicate with MQ Queue Host");
+        assertEquals(mqNativeAdminServerSupport.getMeaningfulMqErrorDetail(exception),"Unknown MQ Channel Name");
         mqNativeAdminServerSupport.getMeaningfulMqErrorDetail(exception);  // covers last catchall case.
     }
 }
