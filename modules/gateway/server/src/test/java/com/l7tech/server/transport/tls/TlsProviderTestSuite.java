@@ -420,6 +420,8 @@ public class TlsProviderTestSuite {
                 }
             });
         }
+
+        shutdownExecutor(executorService);
     }
 
     private ExecutorService makePool() {
@@ -475,10 +477,20 @@ public class TlsProviderTestSuite {
             });
         }
 
+        shutdownExecutor(executorService);
+
         long endTime = System.currentTimeMillis();
 
         long totalTime = endTime - startTime;
         System.out.println("Total time: " + totalTime + " ms (" + (totalTime/totalRuns) + " ms/req)");
+    }
+
+    private void shutdownExecutor(ExecutorService executorService) throws InterruptedException {
+        executorService.shutdown();
+        if (!executorService.awaitTermination(120, TimeUnit.SECONDS)) {
+            System.err.println("Timed out awaiting executor shutdown");
+            System.exit(1);
+        }
     }
 
     private void sendRequest(boolean sout, SSLSocketFactory csf) throws IOException, InterruptedException {
