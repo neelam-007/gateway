@@ -472,4 +472,48 @@ public class ServerHttpRoutingAssertionTest {
 
         assertTrue("there should be no parameters forwarded", actualParameters.isEmpty());
     }
+
+    @BugNumber(11510)
+    @Test
+    public void testHttpVersion() throws Exception {
+        final HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
+        assertion.setProtectedServiceUrl("http://localhost:17380/testurl");
+        final TestAudit testAudit = new TestAudit();
+        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+        ApplicationContexts.inject(serverAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
+        final PolicyEnforcementContext policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+
+        final String expectedResponse = "<bar/>";
+        final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
+
+        final Map<String, String> actualParameters = new HashMap<String, String>();
+        mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
+            @Override
+            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                return mockClient.new MockGenericHttpRequest(){
+                    @Override
+                    public void addParameter(final String paramName, final String paramValue) throws IllegalArgumentException, IllegalStateException {
+                        actualParameters.put(paramName, paramValue);
+                    }
+                };
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        serverAssertion.checkRequest(policyContext);
+        assertEquals(mockClient.getParams().getHttpVersion(), GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
+
+        assertion.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_1);
+        serverAssertion.checkRequest(policyContext);
+        assertEquals(mockClient.getParams().getHttpVersion(), GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_1);
+
+        assertion.setHttpVersion(null);
+        serverAssertion.checkRequest(policyContext);
+        assertEquals(mockClient.getParams().getHttpVersion(), GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_1);
+
+    }
 }

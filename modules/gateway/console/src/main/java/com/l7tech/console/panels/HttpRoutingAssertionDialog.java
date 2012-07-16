@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.event.PolicyEvent;
@@ -56,14 +57,14 @@ import java.util.logging.Logger;
  * </ul>
  */
 public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
-    private static class MsgSrcComboBoxItem {
-        private final String _variableName;
+    private static class ComboBoxItem {
+        private final Object _value;
         private final String _displayName;
-        private MsgSrcComboBoxItem(String variableName, String displayName) {
-            _variableName = variableName;
+        private ComboBoxItem(Object value, String displayName) {
+            _value = value;
             _displayName = displayName;
         }
-        public String getVariableName() { return _variableName; }
+        public Object getValue() { return _value; }
         @Override
         public String toString() { return _displayName; }
     }
@@ -154,6 +155,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JComboBox tlsVersionComboBox;
     private ByteLimitPanel byteLimitPanel;
     private JCheckBox forceIncludeRequestBodyCheckBox;
+    private JComboBox httpVersionComboBox;
 
     private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
@@ -402,6 +404,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         });
 
         populateReqMsgSrcComboBox();
+        populateHttpVersionComboBox();
 
         resMsgDestVariableRadioButton.addItemListener(new ItemListener() {
             @Override
@@ -562,17 +565,34 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
      */
     private void populateReqMsgSrcComboBox() {
         reqMsgSrcComboBox.removeAllItems();
-        reqMsgSrcComboBox.addItem(new MsgSrcComboBoxItem(null, resources.getString("request.msgSrc.default.text")));
+        reqMsgSrcComboBox.addItem(new ComboBoxItem(null, resources.getString("request.msgSrc.default.text")));
         final MessageFormat displayFormat = new MessageFormat(resources.getString("request.msgSrc.contextVariable.format"));
         final Map<String, VariableMetadata> predecessorVariables = getVariablesSetByPredecessors();
         final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
         for (String variableName: predecessorVariableNames) {
             if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
-                final MsgSrcComboBoxItem item = new MsgSrcComboBoxItem(variableName, displayFormat.format(new Object[]{Syntax.SYNTAX_PREFIX, variableName, Syntax.SYNTAX_SUFFIX}));
+                final ComboBoxItem item = new ComboBoxItem(variableName, displayFormat.format(new Object[]{Syntax.SYNTAX_PREFIX, variableName, Syntax.SYNTAX_SUFFIX}));
                 reqMsgSrcComboBox.addItem(item);
                 if (variableName.equals(assertion.getRequestMsgSrc())) {
                     reqMsgSrcComboBox.setSelectedItem(item);
                 }
+            }
+        }
+    }
+
+    private void populateHttpVersionComboBox() {
+        httpVersionComboBox.removeAllItems();
+        ComboBoxItem item = new ComboBoxItem(null, resources.getString("request.httpVersion.default.text"));
+        httpVersionComboBox.addItem(item);
+        if (assertion.getHttpVersion() == null) {
+            httpVersionComboBox.setSelectedItem(item);
+        }
+        GenericHttpRequestParams.HttpVersion versions[] = GenericHttpRequestParams.HttpVersion.values();
+        for (int i = 0; i < versions.length; i++) {
+            item = new ComboBoxItem(versions[i], versions[i].getValue());
+            httpVersionComboBox.addItem(item);
+            if (assertion.getHttpVersion() != null && assertion.getHttpVersion() == versions[i] ) {
+                httpVersionComboBox.setSelectedItem(item);
             }
         }
     }
@@ -795,7 +815,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         if (RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER == assertion.getCurrentSecurityHeaderHandling())
             assertion.setXmlSecurityActorToPromote(wssPromoteActorCombo.getSelectedItem().toString());
 
-        assertion.setRequestMsgSrc(((MsgSrcComboBoxItem)reqMsgSrcComboBox.getSelectedItem()).getVariableName());
+        assertion.setRequestMsgSrc((String)((ComboBoxItem) reqMsgSrcComboBox.getSelectedItem()).getValue());
+        assertion.setHttpVersion((GenericHttpRequestParams.HttpVersion) ((ComboBoxItem) httpVersionComboBox.getSelectedItem()).getValue());
 
         if (resMsgDestDefaultRadioButton.isSelected()) {
             assertion.setResponseMsgDest(null);

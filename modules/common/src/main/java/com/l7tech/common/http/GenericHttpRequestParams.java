@@ -13,13 +13,21 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Bean that provides information about a pending HTTP request. 
+ * Bean that provides information about a pending HTTP request.
  */
 public class GenericHttpRequestParams {
 
     public static enum HttpVersion {
-        HTTP_VERSION_1_0,
-        HTTP_VERSION_1_1,
+        HTTP_VERSION_1_0("1.0"),
+        HTTP_VERSION_1_1("1.1");
+
+        private String value;
+        HttpVersion(String value) {
+            this.value = value;
+        }
+        public String getValue() {
+            return this.value;
+        }
     }
 
     // NOTE: Add any new fields to the copy constructor

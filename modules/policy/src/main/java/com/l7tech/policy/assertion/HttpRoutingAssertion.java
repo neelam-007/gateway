@@ -5,6 +5,7 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -108,6 +109,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     protected long nonDefaultKeystoreId;
     protected String keyId;
     private HttpMethod httpMethod;
+    private GenericHttpRequestParams.HttpVersion httpVersion;
     private boolean useKeepAlives = true;
     private String proxyHost = null;
     private int proxyPort = -1;
@@ -185,6 +187,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         this.setTlsVersion(source.getTlsVersion());
         this.setTlsTrustedCertOids(source.getTlsTrustedCertOids());
         this.setTlsTrustedCertNames(source.getTlsTrustedCertNames());
+        this.setHttpVersion(source.getHttpVersion());
     }
 
     @Override
@@ -557,6 +560,17 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     }
 
     /**
+     * @return The Http protocol version, or null to use the default http version.
+     */
+    public GenericHttpRequestParams.HttpVersion getHttpVersion() {
+        return httpVersion;
+    }
+
+    public void setHttpVersion(GenericHttpRequestParams.HttpVersion httpVersion) {
+        this.httpVersion = httpVersion;
+    }
+
+    /**
      * @return true if an entity body should be included with the request even if the HTTP method is one
      *          that would normally not include one (GET, HEAD, DELETE, etc).
      */
@@ -810,7 +824,8 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         meta.put(PROPERTIES_ACTION_NAME, "HTTP(S) Routing Properties");
 
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
-                new Java5EnumTypeMapping(HttpMethod.class, "httpMethod")
+                new Java5EnumTypeMapping(HttpMethod.class, "httpMethod"),
+                new Java5EnumTypeMapping(GenericHttpRequestParams.HttpVersion.class, "httpVersion")
         )));
 
         meta.put(META_INITIALIZED, Boolean.TRUE);

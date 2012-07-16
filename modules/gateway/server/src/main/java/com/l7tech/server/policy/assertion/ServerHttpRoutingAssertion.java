@@ -541,8 +541,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if ( !assertion.isUseKeepAlives()) {
                 routedRequestParams.setUseKeepAlives(false); // note that server config property is for NO Keep-Alives
             }
-            if ( "1.0".equals( ConfigFactory.getProperty( "ioHttpVersion", null ) ) ) {
-                routedRequestParams.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
+            if (assertion.getHttpVersion() == null) {
+                if ( "1.0".equals( ConfigFactory.getProperty( "ioHttpVersion", null ) ) ) {
+                    routedRequestParams.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
+                }
+            } else {
+                routedRequestParams.setHttpVersion(assertion.getHttpVersion());
             }
 
             if ( assertion.isGzipEncodeDownstream() ) {
