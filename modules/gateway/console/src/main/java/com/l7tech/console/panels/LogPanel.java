@@ -375,8 +375,10 @@ public class LogPanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String lookupPolicyGuid = getLookupPolicyGuid();
-                if(lookupPolicyGuid==null)
+                if(lookupPolicyGuid==null){
+                    DialogDisplayer.showMessageDialog(null, "Lookup policy not configured.","Configure Lookup Policy",JOptionPane.INFORMATION_MESSAGE, null);
                     return;
+                }
                 try {
                     Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(lookupPolicyGuid);
                     PolicyEntityNode node = new PolicyEntityNode(new PolicyHeader(policy));
@@ -386,6 +388,7 @@ public class LogPanel extends JPanel {
                     TopComponents windowManager = TopComponents.getInstance();
                     windowManager.getTopParent().toFront();
                 } catch (FindException e1) {
+                    DialogDisplayer.showMessageDialog(null, "Lookup policy cannot be found.","Configure Lookup Policy",JOptionPane.INFORMATION_MESSAGE, null);
                     logger.warning("Failed to edit lookup policy");
                 }
 
