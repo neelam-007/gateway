@@ -17,7 +17,7 @@ public class LogFileConfiguration implements Serializable {
 
     //- PUBLIC
 
-    public LogFileConfiguration( final String filepath,
+    public LogFileConfiguration( final String filepat,
                                  final int limit,
                                  final int count,
                                  final boolean append,
@@ -26,7 +26,7 @@ public class LogFileConfiguration implements Serializable {
                                  final SerializableFilter filter,
                                  final boolean rollingEnabled,
                                  final SinkConfiguration.RollingInterval rollingInterval) {
-        this.filepath = filepath;
+        this.filepat = filepat;
         this.limit = limit;
         this.count = count;
         this.append = append;
@@ -39,7 +39,7 @@ public class LogFileConfiguration implements Serializable {
 
     public LogFileConfiguration( final LogFileConfiguration config,
                                  final int level ) {
-        this( config.getFilepath(),
+        this( config.getFilepat(),
               config.getLimit(),
               config.getCount(),
               config.isAppend(),
@@ -53,10 +53,10 @@ public class LogFileConfiguration implements Serializable {
     public Handler buildFileHandler() throws IOException {
         Handler fileHandler;
         if(rollingEnabled){
-            fileHandler = new RollingFileHandler(filepath, rollingInterval);
+            fileHandler = new RollingFileHandler(filepat, rollingInterval);
         }
         else {
-            fileHandler = new StartupAwareFileHandler( filepath, limit, count, append );
+            fileHandler = new StartupAwareFileHandler( filepat, limit, count, append );
         }
         fileHandler.setFormatter(new ConfigurableLogFormatter(formatPattern));
         fileHandler.setLevel(Level.parse(Integer.toString(level)));
@@ -64,8 +64,8 @@ public class LogFileConfiguration implements Serializable {
         return fileHandler;
     }
 
-    public String getFilepath() {
-        return filepath;
+    public String getFilepat() {
+        return filepat;
     }
 
     public int getLimit() {
@@ -104,7 +104,7 @@ public class LogFileConfiguration implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final String filepath;
+    private final String filepat;
     private final int limit;
     private final int count;
     private final boolean append;

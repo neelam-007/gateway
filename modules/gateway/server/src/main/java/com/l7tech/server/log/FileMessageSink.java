@@ -58,7 +58,7 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
     }
 
     public String getFilePattern(){
-        return logFileConfiguration.getFilepath();
+        return logFileConfiguration.getFilepat();
     }
 
     //- PRIVATE
