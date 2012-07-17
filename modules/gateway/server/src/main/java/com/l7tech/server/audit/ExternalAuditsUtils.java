@@ -21,9 +21,12 @@ import org.xml.sax.helpers.XMLReaderFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.security.*;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -339,7 +342,60 @@ public class ExternalAuditsUtils {
         }
     }
 
+    public static byte[] getByteArrayData(Object blobRowSet) {
+        try {
+            if(blobRowSet instanceof byte[])
+                return (byte[])blobRowSet;
+            if(blobRowSet instanceof Blob){
+                return ((Blob)blobRowSet).getBytes(1,(int)((Blob) blobRowSet).length());
+            }
+        } catch (SQLException e) {
+            return null;
+        }
+        return null;
+    }
+
+    public static Long getLongData(Object o) {
+        if(o instanceof Long)
+            return (Long)o;
+        if(o instanceof BigDecimal)
+            return ((BigDecimal) o).longValue();
+        return null;
+    }
+
+    public static String getStringData(Object o) {
+        try {
+            if(o instanceof String)
+                return (String)o;
+            if(o instanceof Clob){
+                return ((Clob)o).getSubString(1, (int) ((Clob) o).length());
+            }
+        } catch (SQLException e) {
+            return null;
+        }
+        return null;
+    }
+
+
+    public static Boolean getBooleanData(Object o){
+        if(o instanceof Boolean)
+            return (Boolean) o;
+        if(o instanceof Integer)
+            return (Integer)o == 1 ;
+        return false;
+    }
+
+    public static Integer getIntegerData(Object o) {
+        if(o instanceof Integer)
+            return (Integer)o;
+        if(o instanceof BigDecimal)
+            return ((BigDecimal) o).intValue();
+        return null;
+    }
+
     private static AuditRecordPropertiesHandler  parseRecordProperties(String props){
+        if(props==null)
+            return null;
         try {
             AuditRecordPropertiesHandler handler = new AuditRecordPropertiesHandler();
             XMLReader xr = XMLReaderFactory.createXMLReader();

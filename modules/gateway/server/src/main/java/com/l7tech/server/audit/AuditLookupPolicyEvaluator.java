@@ -129,35 +129,35 @@ public class AuditLookupPolicyEvaluator  {
             Object[] action_var = (Object[])context.getVariable(prefix+".action");
 
             for(int i = 0 ; i < (Integer)sizeObj ; ++i){
-                String id = (String)id_var[i];
-                String nodeid = (String)nodeid_var[i];
-                Long time = (Long)time_var[i];
-                String type = (String)type_var[i];
-                String auditLevel = (String)auditLevel_var[i];
-                String name = (String)name_var[i];
-                String message = (String)message_var[i];
-                String ip_addr = (String)ip_addr_var[i];
-                String userName = (String)userName_var[i];
-                String userId = (String)userId_var[i];
-                String providerOid = (String)providerOid_var[i];
-                String signature = (String)signature_var[i];
-                String entityClass = (String)entityClass_var[i];
-                String entityId = (String)entityId_var[i];
-                Integer status = (Integer)status_var[i];
-                String requestId = (String)requestId_var[i];
-                String serviceOid = (String)serviceOid_var[i];
-                String operationName = (String)operationName_var[i];
-                Boolean authenticated = (Boolean)authenticated_var[i];
-                String authenticationType = (String)authenticationType_var[i];
-                Integer requestLength = (Integer)requestLength_var[i];
-                Integer responseLength = (Integer)responseLength_var[i];
-                byte[] requestZip = (byte[])requestZip_var[i];
-                byte[] responseZip = (byte[])responseZip_var[i];
-                Integer responseStatus = (Integer)responseStatus_var[i];
-                Integer latency = (Integer)latency_var[i];
-                String properties = (String)properties_var[i];
-                Integer componentId = (Integer)componentId_var[i];
-                String action = (String)action_var[i];
+                String id = ExternalAuditsUtils.getStringData(id_var[i]);
+                String nodeid = ExternalAuditsUtils.getStringData(nodeid_var[i]);
+                Long time = ExternalAuditsUtils.getLongData(time_var[i]);
+                String type = ExternalAuditsUtils.getStringData(type_var[i]);
+                String auditLevel = ExternalAuditsUtils.getStringData(auditLevel_var[i]);
+                String name = ExternalAuditsUtils.getStringData(name_var[i]);
+                String message = ExternalAuditsUtils.getStringData(message_var[i]);
+                String ip_addr = ExternalAuditsUtils.getStringData(ip_addr_var[i]);
+                String userName = ExternalAuditsUtils.getStringData(userName_var[i]);
+                String userId = ExternalAuditsUtils.getStringData(userId_var[i]);
+                String providerOid = ExternalAuditsUtils.getStringData(providerOid_var[i]);
+                String signature = ExternalAuditsUtils.getStringData(signature_var[i]);
+                String entityClass = ExternalAuditsUtils.getStringData(entityClass_var[i]);
+                String entityId = ExternalAuditsUtils.getStringData(entityId_var[i]);
+                Integer status = ExternalAuditsUtils.getIntegerData(status_var[i]);
+                String requestId = ExternalAuditsUtils.getStringData(requestId_var[i]);
+                String serviceOid = ExternalAuditsUtils.getStringData(serviceOid_var[i]);
+                String operationName = ExternalAuditsUtils.getStringData(operationName_var[i]);
+                Boolean authenticated =  ExternalAuditsUtils.getBooleanData(authenticated_var[i]);
+                String authenticationType = ExternalAuditsUtils.getStringData(authenticationType_var[i]);
+                Integer requestLength = ExternalAuditsUtils.getIntegerData(requestLength_var[i]);
+                Integer responseLength = ExternalAuditsUtils.getIntegerData(responseLength_var[i]);
+                byte[] requestZip = ExternalAuditsUtils.getByteArrayData(requestZip_var[i]);
+                byte[] responseZip =  ExternalAuditsUtils.getByteArrayData(responseZip_var[i]);
+                Integer responseStatus = ExternalAuditsUtils.getIntegerData(responseStatus_var[i]);
+                Integer latency = ExternalAuditsUtils.getIntegerData(latency_var[i]);
+                String properties = ExternalAuditsUtils.getStringData(properties_var[i]);
+                Integer componentId = ExternalAuditsUtils.getIntegerData(componentId_var[i]);
+                String action = ExternalAuditsUtils.getStringData(action_var[i]);
 
                 AuditRecord record = (AuditRecord) auditRecordsCache.retrieve(id) ;
                 if(record == null){
@@ -206,13 +206,13 @@ public class AuditLookupPolicyEvaluator  {
             Object[] props_var = (Object[])context.getVariable(prefix+".properties");
 
             for(int i = 0 ; i < numDetails ; ++i){
-                String audit_oid = (String)audit_oid_var[i];
-                Long time = (Long)time_var[i];
-                Integer componentId = (Integer)componentId_var[i];
-                Integer ordinal = (Integer)ordinal_var[i];
-                Integer messageId = (Integer)messageId_var[i];
-                String message = (String)message_var[i];
-                String properties = (String)props_var[i];
+                String audit_oid = ExternalAuditsUtils.getStringData(audit_oid_var[i]);
+                Long time = ExternalAuditsUtils.getLongData(time_var[i]);
+                Integer componentId = ExternalAuditsUtils.getIntegerData(componentId_var[i]);
+                Integer ordinal = ExternalAuditsUtils.getIntegerData(ordinal_var[i]);
+                Integer messageId = ExternalAuditsUtils.getIntegerData(messageId_var[i]);
+                String message = ExternalAuditsUtils.getStringData(message_var[i]);
+                String properties = ExternalAuditsUtils.getStringData(props_var[i]);
 
                 AuditDetailPropertiesHandler handler =   parseDetailsProperties(properties);
 
