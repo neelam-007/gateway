@@ -516,8 +516,7 @@ create table policy (
     guid varchar(255),
     name varchar(255),
     policy_type varchar(255),
--- TODO check for too small fields (i.e. change long varchar to clob where necessary)
-    "xml" long varchar,
+    "xml" clob(2147483647),
     soap smallint,
     internal_tag varchar(64),
     folder_oid bigint,
@@ -541,7 +540,7 @@ create table policy_version (
     time bigint,
     user_provider_oid bigint,
     user_login varchar(255),
-    "xml" long varchar,
+    "xml"  clob(2147483647),
     active smallint,
     primary key (objectid)
 );
@@ -551,7 +550,7 @@ create table published_service (
     version integer not null,
     name varchar(255),
     wsdl_url varchar(255),
-    wsdl_xml long varchar,
+    wsdl_xml clob(2147483647),
     disabled smallint,
     soap smallint,
     internal smallint,
@@ -684,7 +683,7 @@ create table sample_messages (
     name varchar(255),
     operation_name varchar(255),
     published_service_oid bigint,
-    "xml" long varchar,
+    "xml" clob(2147483647),
     primary key (objectid)
 );
 
