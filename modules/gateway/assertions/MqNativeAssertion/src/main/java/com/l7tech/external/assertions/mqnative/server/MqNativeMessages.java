@@ -10,7 +10,7 @@ class MqNativeMessages {
 
     /* Warning messages */
     static final String WARN_LISTENER_THREAD_ALIVE = "Listener thread did not shutdown on request ({0})";
-    static final String WARN_LISTENER_RECEIVE_ERROR = "Unable to receive message from MQ endpoint {0}";
+    static final String WARN_LISTENER_RECEIVE_ERROR = "Unable to receive message from MQ endpoint {0} with: {1}";
     static final String WARN_LISTENER_MAX_OOPS_REACHED = "Listener for endpoint {0} received too many errors ({1}) - will try again in {2} ms";
     static final String WARN_THREADPOOL_LIMIT_REACHED = "MQ ThreadPool size limit reached.  Unable to add new MqTask: {0}";
     static final String WARN_PROPERTY_CHANGE_IGNORE_SLEEPTIME = "";
