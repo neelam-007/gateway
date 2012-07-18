@@ -17,18 +17,22 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.variable.ServerVariables;
-import com.l7tech.server.util.CompressedStringType;
 import com.l7tech.util.*;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.sql.*;
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.*;
 import java.util.logging.Level;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 
 @Ignore
@@ -37,25 +41,12 @@ public class AuditSinkSchemaTest {
     private AuditRecordSigner signer;
     private AuditRecordVerifier verifier;
 
-    private String url = "jdbc:l7tech:sqlserver://127.0.0.1:57710;databaseName=audit";
-    private String username = "sa";
+    private String url = "jdbc:l7tech:db2://qadb2.l7tech.com:50000;databaseName=wyn";
+    private String username = "db2inst1";
     private String password = "7layer";
     private String auditRecordTable = "audit_main";
     private String auditDetailTable = "audit_detail";
     private boolean cleanup = false;
-
-    private static final String SAVE_DETAIL_QUERY = "insert into ${auditDetailTable}(id, audit_oid,time,component_id,ordinal,message_id,exception_message,properties) values " +
-            "(${i.current.id},${i.current.auditId},${i.current.time},${i.current.componentId},${i.current.ordinal},${i.current.messageId},${i.current.exception},${i.current.properties});";
-
-    private static final String SAVE_RECORD_QUERY = "insert into ${auditRecordTable} (id,nodeid,time,type,audit_level,name,message,ip_address,user_name,user_id,provider_oid,signature,properties," +
-            "entity_class,entity_id," +
-            "status,request_id,service_oid,operation_name,authenticated,authenticationType,request_length,response_length,request_xml,response_xml,response_status,routing_latency," +
-            "component_id,action)" +
-            " values " +
-            "(${record.guid},${audit.nodeId},${audit.time},${audit.type},${audit.level},${audit.name},${audit.message},${audit.ipAddress},${audit.user.name},${audit.user.id},${audit.user.idProv},${audit.signature},${audit.properties}," +
-            "${audit.entity.class},${audit.entity.oid}," +
-            "${audit.status},${audit.requestId},${audit.serviceOid},${audit.operationName},${audit.authenticated},${audit.authType},${audit.request.size},${audit.response.size},${audit.reqZip},${audit.resZip},${audit.responseStatus},${audit.routingLatency}," +
-            "${audit.componentId},${audit.action});";
 
     @Before
     public void setUp() throws Exception {
@@ -63,6 +54,52 @@ public class AuditSinkSchemaTest {
         signer =  new AuditRecordSigner(key.right);
         verifier = new AuditRecordVerifier(key.left);
     }
+
+    @Test
+    public void blah() throws Exception{
+
+        ComboPooledDataSource cpds = new ComboPooledDataSource();
+        cpds.setConnectionCustomizerClassName("com.l7tech.server.util.JdbcConnectionCustomizer");
+        cpds.setJdbcUrl(url);
+        cpds.setPassword(password);
+        cpds.setUser(username);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(cpds);
+
+        String query = "insert into audit_main (id,nodeid,time,type,audit_level,message,status,authenticated,request_xml,properties) values (?,?,?,?,?,?,?,?,?,?)";
+        byte[] byteArray = "aweaewgweag".getBytes();
+
+
+        Object[] preparedStatements = new Object[]{
+                "qwetqwetqt10", // id
+                "zxcvzcxvzxcv", // nodeid
+                12345678, // time
+                "ME", // type,
+                "900", // audit level
+                "message", // message
+                "12", // status
+                false,    // authenticated
+                byteArray, // request_xml
+                "awefaewf  properties" // properties
+        };
+
+
+
+        int result = jdbcTemplate.update(query,preparedStatements);
+
+//        query = "select * from audit_main";
+//        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(query);
+//        rowSet.next();
+//        rowSet.next();
+//        SerialBlob blah = (SerialBlob)rowSet.getObject(24);
+//        String ugh = new String(blah.getBytes(1,(int)blah.length()));
+
+        assertEquals(result, 1);
+        assertEquals(1, 1);
+
+
+
+    }
+
 
     @Test
     public void testAuditSinkSchema() throws Exception{
@@ -96,8 +133,7 @@ public class AuditSinkSchemaTest {
                 "adminId");
         signAuditRecord(sar);
         context = new AuditSinkPolicyEnforcementContext(sar, PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,null);
-        query = SAVE_RECORD_QUERY;
-        query = query.replace("${auditRecordTable}", auditRecordTable);
+        query = ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
         query = resolveContextVariables(context, query);
         result = performJdbcQuery(query);
         success = result==1;
@@ -125,7 +161,7 @@ public class AuditSinkSchemaTest {
                 "0.0.0.0");
         signAuditRecord(aar);
         context = new AuditSinkPolicyEnforcementContext(aar, PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,null);
-        query = SAVE_RECORD_QUERY;
+        query = ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
         query = query.replace("${auditRecordTable}", auditRecordTable);
         query = resolveContextVariables(context, query);
         result = performJdbcQuery(query);
@@ -146,7 +182,7 @@ public class AuditSinkSchemaTest {
         signAuditRecord(record);
 
         AuditSinkPolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(record,  PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,makeContext("<myrequest/>", "<myresponse/>"));
-        String query = SAVE_RECORD_QUERY;
+        String query = ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
         query = query.replace("${auditRecordTable}",auditRecordTable);
         query = query.replace("${record.guid}",guid);
         query = resolveContextVariables(context, query);
@@ -233,12 +269,5 @@ public class AuditSinkSchemaTest {
         return query;
     }
 
-    private List<AuditDetailMessage> messageList = Arrays.asList(
-            MessagesUtil.getAuditDetailMessageById(2200),
-            MessagesUtil.getAuditDetailMessageById(-5),
-            MessagesUtil.getAuditDetailMessageById(7245),
-            MessagesUtil.getAuditDetailMessageById(3007),
-            MessagesUtil.getAuditDetailMessageById(3214),
-            MessagesUtil.getAuditDetailMessageById(-1));
 
 }

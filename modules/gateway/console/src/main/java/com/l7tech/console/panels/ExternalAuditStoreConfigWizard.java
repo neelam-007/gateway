@@ -138,8 +138,8 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
             type = "sqlserver";
         else if(connectionDriverClass.contains("mysql"))
             type = "mysql";
-//        else if(connectionDriverClass.contains("db2"))
-//            type = "db2";
+        else if(connectionDriverClass.contains("db2"))
+            type = "db2";
 //        else if(connectionDriverClass.contains("oracle"))
 //            type = "oracle";
         return type;

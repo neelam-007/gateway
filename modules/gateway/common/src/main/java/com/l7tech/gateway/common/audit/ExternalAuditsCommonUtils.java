@@ -109,8 +109,8 @@ public class ExternalAuditsCommonUtils {
             return "select top 1024 * ";
 //        else if(dbType.equals("oracle"))
 //            return "select *  FROM ( select * ";
-//        else if(dbType.equals("db2"))
-//            return "select * ";
+        else if(dbType.equals("db2"))
+            return "select * ";
         return null;
     }
 
@@ -121,8 +121,8 @@ public class ExternalAuditsCommonUtils {
             return "";
 //        else if(dbType.equals("oracle"))
 //            return " ) temp WHERE rownum &lt;= 1024  ORDER BY rownum";
-//        else if(dbType.equals("db2"))
-//            return " fetch first 1024 rows only";
+        else if(dbType.equals("db2"))
+            return " fetch first 1024 rows only";
         return null;
     }
 
@@ -158,22 +158,7 @@ public class ExternalAuditsCommonUtils {
                 "                <L7p:Base64Expression stringValue=\"JHthdWRpdC5yZWNvcmRRdWVyeS5zZXJ2aWNlTmFtZX0=\"/>\n" +
                 "                <L7p:VariableToSet stringValue=\"serviceName\"/>\n" +
                 "            </L7p:SetVariable>\n" +
-                "            <L7p:Regex>\n" +
-                "                <L7p:AutoTarget booleanValue=\"false\"/>\n" +
-                "                <L7p:OtherTargetMessageVariable stringValue=\"serviceName\"/>\n" +
-                "                <L7p:Regex stringValue=\"\\[\"/>\n" +
-                "                <L7p:Replace booleanValue=\"true\"/>\n" +
-                "                <L7p:Replacement stringValue=\"#[\"/>\n" +
-                "                <L7p:Target target=\"OTHER\"/>\n" +
-                "            </L7p:Regex>\n" +
-                "            <L7p:Regex>\n" +
-                "                <L7p:AutoTarget booleanValue=\"false\"/>\n" +
-                "                <L7p:OtherTargetMessageVariable stringValue=\"serviceName\"/>\n" +
-                "                <L7p:Regex stringValue=\"\\]\"/>\n" +
-                "                <L7p:Replace booleanValue=\"true\"/>\n" +
-                "                <L7p:Replacement stringValue=\"#]\"/>\n" +
-                "                <L7p:Target target=\"OTHER\"/>\n" +
-                "            </L7p:Regex>\n" +
+                getServiceNameEscapingAssertions(dbType)+
                 "            <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
                 "                <L7p:ComparisonAssertion>\n" +
                 "                    <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
@@ -301,6 +286,29 @@ public class ExternalAuditsCommonUtils {
                 "        </wsp:All>\n" +
                 "    </wsp:Policy>\n" +
                 "</exp:Export>\n";
+    }
+
+    private static String getServiceNameEscapingAssertions(String dbType) {
+
+        if(dbType.equals("db2"))
+            return "";
+        return
+            "            <L7p:Regex>\n" +
+            "                <L7p:AutoTarget booleanValue=\"false\"/>\n" +
+            "                <L7p:OtherTargetMessageVariable stringValue=\"serviceName\"/>\n" +
+            "                <L7p:Regex stringValue=\"\\[\"/>\n" +
+            "                <L7p:Replace booleanValue=\"true\"/>\n" +
+            "                <L7p:Replacement stringValue=\"#[\"/>\n" +
+            "                <L7p:Target target=\"OTHER\"/>\n" +
+            "            </L7p:Regex>\n" +
+            "            <L7p:Regex>\n" +
+            "                <L7p:AutoTarget booleanValue=\"false\"/>\n" +
+            "                <L7p:OtherTargetMessageVariable stringValue=\"serviceName\"/>\n" +
+            "                <L7p:Regex stringValue=\"\\]\"/>\n" +
+            "                <L7p:Replace booleanValue=\"true\"/>\n" +
+            "                <L7p:Replacement stringValue=\"#]\"/>\n" +
+            "                <L7p:Target target=\"OTHER\"/>\n" +
+            "            </L7p:Regex>\n";
     }
 
 }

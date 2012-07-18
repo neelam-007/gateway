@@ -6,11 +6,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.widgets.OkCancelDialog;
-import com.l7tech.gui.widgets.OptionalCredentialsPanel;
-import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.util.Either;
 
 import javax.swing.*;
@@ -35,7 +31,6 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
     private String connection;
     private String auditRecordTableName;
     private String auditDetailTableName;
-    private String schema;
 
     /**
      * Creates new form AttributeStatementWizardStepPanel
@@ -97,13 +92,6 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);
 
-        // populate jdbc connections
-        final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
-            public void run() {
-                notifyListeners();
-                createDatabaseButton.setEnabled(canFinish());
-            }
-        });
         testButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -134,7 +122,7 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
             return ;
         }
 
-        //get password
+        //get new credentials
 
         final UsernamePasswordDialog pwdPanel = new UsernamePasswordDialog(this.getOwner(),"Enter credentials",null);
 
@@ -198,13 +186,13 @@ public class ExternalAuditStoreConfigSchema extends WizardStepPanel {
         boolean success = false;
         String errorMessage = "";
         try {
-            errorMessage = doAsyncAdmin(
+            Either<String,String> result = doAsyncAdmin(
                     admin,
                     ExternalAuditStoreConfigSchema.this.getOwner(),
                     "Testing",
                     "Testing",
-                    admin.testAuditSinkSchema(connection,auditRecordTableName,auditDetailTableName)).right();
-
+                    admin.testAuditSinkSchema(connection,auditRecordTableName,auditDetailTableName));
+            errorMessage = result.isLeft() ? result.left(): result.right();
             success = errorMessage.isEmpty();
 
         } catch (InterruptedException e) {

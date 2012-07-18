@@ -694,8 +694,8 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
             type = "sqlserver";
 //        else if(connectionDriverClass.contains("oracle"))
 //            type = "oracle";
-//        else if(connectionDriverClass.contains("db2"))
-//            type = "db2";
+        else if(connectionDriverClass.contains("db2"))
+            type = "db2";
         return type;
     }
 
@@ -766,7 +766,6 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
                     @Override
                     public String doInTransaction(TransactionStatus transactionStatus) {
                         try {
-
                             String result = ExternalAuditsUtils.testMessageSummaryRecord(connectionName, auditRecordTableName, auditDetailTableName, jdbcQueryingManager, defaultKey);
                             if(!result.isEmpty()){
                                 transactionStatus.setRollbackOnly();

@@ -437,8 +437,8 @@ public class ExternalAuditsUtils {
         String authenticationType = resultSet.getString("authenticationType");
         Integer requestLength = resultSet.getInt("request_length");
         Integer responseLength = resultSet.getInt("response_length");
-        byte[] requestZip = (byte[])resultSet.getObject("request_xml");
-        byte[] responseZip = (byte[])resultSet.getObject("response_xml");
+        byte[] requestZip = getByteArrayData(resultSet.getObject("request_xml"));
+        byte[] responseZip = getByteArrayData(resultSet.getObject("response_xml"));
         Integer responseStatus = resultSet.getInt("response_status");
         Integer latency = resultSet.getInt("routing_latency");
         String properties = resultSet.getString("properties");
