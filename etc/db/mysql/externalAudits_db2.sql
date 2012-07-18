@@ -29,7 +29,7 @@ CREATE TABLE audit_main (
     component_id INTEGER,
     action VARCHAR(32),
     PRIMARY KEY (id)
-) 
+);
 
 CREATE TABLE audit_detail  (
     audit_oid VARCHAR(40) NOT NULL,
@@ -40,4 +40,4 @@ CREATE TABLE audit_detail  (
     exception_message LONG VARCHAR,
     properties LONG VARCHAR,
     FOREIGN KEY (audit_oid) REFERENCES audit_main (id) ON DELETE CASCADE
-)
+);
