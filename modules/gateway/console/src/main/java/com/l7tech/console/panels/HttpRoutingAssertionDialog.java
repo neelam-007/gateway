@@ -11,6 +11,7 @@ import com.l7tech.console.table.HttpParamRuleTableHandler;
 import com.l7tech.console.table.HttpRuleTableHandler;
 import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.transport.http.HttpAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -28,6 +29,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ValidationUtils;
 import com.l7tech.wsdl.Wsdl;
@@ -41,9 +43,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -154,12 +158,14 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JButton trustedServerCertsButton;
     private JComboBox tlsVersionComboBox;
     private ByteLimitPanel byteLimitPanel;
+    private JButton testButton;
     private JCheckBox forceIncludeRequestBodyCheckBox;
     private JComboBox httpVersionComboBox;
 
     private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
     private final BaseAction okButtonAction;
+    private final BaseAction testButtonAction;
     private boolean confirmed = false;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.HttpRoutingAssertionDialog");
@@ -170,6 +176,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private InputValidator inputValidator;
     private String tlsCipherSuites;
     private Set<EntityHeader> tlsTrustedCerts;
+
+    private String testBodyMessage;
 
     /**
      * Creates new form ServicePanel
@@ -199,6 +207,23 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             @Override
             protected void performAction() {
                 ok();
+            }
+        };
+
+        testButtonAction = new BaseAction() {
+            @Override
+            public String getName() {
+                return resources.getString("testButton.text");
+            }
+
+            @Override
+            protected String iconResource() {
+                return null;
+            }
+
+            @Override
+            protected void performAction() {
+                test();
             }
         };
 
@@ -509,6 +534,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         initializeProxyTab();
 
         inputValidator.attachToButton(okButton, okButtonAction);
+        inputValidator.attachToButton(testButton, testButtonAction);
         okButton.setEnabled( !readOnly );
 
         cancelButton.addActionListener(new ActionListener() {
@@ -718,6 +744,10 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     }
 
     private void ok() {
+        ok(true);
+    }
+
+    private void ok(boolean disposeParam) {
         // Do checks before we start changing the assertion, so Cancel will work as expected
         if (wssPromoteRadio.isSelected() && null == wssPromoteActorCombo.getSelectedItem()) {
             JOptionPane.showMessageDialog(okButton, resources.getString("actorRequiredMessage"));
@@ -879,10 +909,13 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             assertion.setTlsTrustedCertNames(names);
         }
 
-        confirmed = true;
-        fireEventAssertionChanged(assertion);
+        assertion.setTestBodyMessage(testBodyMessage);
 
-        this.dispose();
+        if(disposeParam){
+            confirmed = true;
+            fireEventAssertionChanged(assertion);
+            this.dispose();
+        }
     }
 
     private void updateAuthMethod() {
@@ -1033,6 +1066,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             }
         }
         trustedServerCertsButton.setEnabled(!bra);
+        testBodyMessage=assertion.getTestBodyMessage();
 
         enableOrDisableProxyFields();
     }
@@ -1094,5 +1128,142 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     public boolean isConfirmed() {
         return confirmed;
+    }
+
+    private void test(){
+        ok(false);//ok button saves all the values into the assertion object that we need to pass in the test method
+
+        // check url before accepting
+        String url = urlPanel.getText();
+        String[] ipListToTest = null;
+
+        if (!ipListPanel.isURLsEnabled()) {
+            ipListToTest=new String[] {url};
+        } else {
+            ipListToTest=ipListPanel.getAddresses();
+        }
+
+        boolean hasContextVariables = false;
+        int totalNumOfContextVariablesUsed=0;
+        for(String ip: ipListToTest){
+            final int numOfContextVariablesUsed = Syntax.getReferencedNames(ip).length;
+            if (numOfContextVariablesUsed > 0) {
+                totalNumOfContextVariablesUsed+=numOfContextVariablesUsed;
+                hasContextVariables=true;
+            }
+        }
+        
+        if(hasContextVariables){
+            String msg = "Unable to test a URL containing context variable" + (totalNumOfContextVariablesUsed > 1 ? "s." : ".");
+            DialogDisplayer.showMessageDialog(
+                    HttpRoutingAssertionDialog.this,
+                    msg,
+                    resources.getString("dialog.test.title"),
+                    (msg == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
+                    null);
+            return;
+        }
+        final String[] ipListFinal = ipListToTest;//we need a final variable for the inner class
+
+        try {
+            // create and configure a text area - fill it with our initial text
+            final JTextArea textArea = new JTextArea();
+            textArea.setFont(mainPanel.getFont());
+            textArea.setEditable(true);
+            textArea.setText(testBodyMessage);
+
+            // stuff it in a scrollpane with a controlled size.
+            final JScrollPane scrollPane = new JScrollPane(textArea);
+            scrollPane.setPreferredSize(new Dimension(450, 150));
+
+            int button = JOptionPane.showConfirmDialog(mainPanel, scrollPane, resources.getString("dialog.test.message"), JOptionPane.OK_CANCEL_OPTION);
+            if(JOptionPane.OK_OPTION!=button){//don't proceed if OK button was not clicked
+                return;
+            }
+            final String inputMessage = textArea.getText(); //we need a final variable for the inner class
+            if(inputMessage!=null){
+                if(inputMessage.trim().equals("")){
+                    String msg = resources.getString("dialog.test.message.required");
+                    DialogDisplayer.showMessageDialog(
+                            HttpRoutingAssertionDialog.this,
+                            msg,
+                            resources.getString("dialog.test.title"),
+                            (msg == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
+                            null);
+                    return;
+                }
+                testBodyMessage=inputMessage;
+            } else {
+                return;//cancel button was selected
+            }
+            final HttpRoutingAssertion assertionTest = assertion.clone();//we need a final variable for the inner class
+                    
+            final JProgressBar progressBar = new JProgressBar();
+            progressBar.setIndeterminate(true);
+            final CancelableOperationDialog cancelDialog =
+                    new CancelableOperationDialog(null, resources.getString("dialog.test.title"), resources.getString("dialog.test.progress"), progressBar);
+            cancelDialog.pack();
+            cancelDialog.setModal(true);
+            Utilities.centerOnScreen(cancelDialog);
+
+            final Callable<Boolean> callable = new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    HttpAdmin admin = getHttpAdmin();
+                    admin.testConnection(ipListFinal,inputMessage,assertionTest);
+                    return Boolean.TRUE;
+                }
+            };
+
+            final Boolean result = Utilities.doWithDelayedCancelDialog(callable, cancelDialog, 500L);
+            if (result == Boolean.TRUE) {
+                JOptionPane.showMessageDialog(
+                        HttpRoutingAssertionDialog.this,
+                        resources.getString("dialog.test.result.gateway.success")+(ipListFinal.length > 1 ? "s." : "."),
+                        resources.getString("dialog.test.result.success"),
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (InterruptedException e) {
+            // Swing thread interrupted.
+        } catch (InvocationTargetException e) {
+            final Throwable cause = e.getCause();
+            if (cause != null) {
+                if (cause instanceof HttpAdmin.HttpAdminException) {
+                    final HttpAdmin.HttpAdminException fte = (HttpAdmin.HttpAdminException) cause;
+                    JPanel panel = new JPanel();
+                    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+                    panel.add(new JLabel(resources.getString("dialog.test.result.gateway.failure")+(ipListFinal.length > 1 ? "s." : ".")));
+                    panel.add(new JLabel(fte.getMessage()));
+                    if (fte.getSessionLog() != null && fte.getSessionLog().length() != 0) {
+                        panel.add(Box.createVerticalStrut(10));
+                        panel.add(new JLabel(resources.getString("dialog.test.detail.log")));
+                        JTextArea sessionLog = new JTextArea(fte.getSessionLog());
+                        sessionLog.setAlignmentX(Component.LEFT_ALIGNMENT);
+                        sessionLog.setBorder(BorderFactory.createEtchedBorder());
+                        sessionLog.setEditable(false);
+                        sessionLog.setEnabled(true);
+                        sessionLog.setFont(new Font(null, Font.PLAIN, 11));
+                        panel.add(sessionLog);
+                    }
+                    JOptionPane.showMessageDialog(
+                            HttpRoutingAssertionDialog.this,
+                            panel,
+                            resources.getString("dialog.test.result.failure"),
+                            JOptionPane.ERROR_MESSAGE);
+
+                } else {
+                    throw ExceptionUtils.wrap(cause);
+                }
+            }
+        }
+    }
+
+    private HttpAdmin getHttpAdmin() {
+        Registry reg = Registry.getDefault();
+        if (!reg.isAdminContextPresent()) {
+            //logger.warning("Cannot get HTTP Admin due to no Admin Context present.");
+            return null;
+        }
+        return reg.getHttpAdmin();
     }
 }

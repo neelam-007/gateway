@@ -17,6 +17,7 @@ import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
+import com.l7tech.gateway.common.transport.http.HttpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -65,6 +66,7 @@ public final class RegistryImpl extends Registry
     private JmsAdmin jmsAdmin;
     private FtpAdmin ftpAdmin;
     private JdbcAdmin jdbcAdmin;
+    private HttpAdmin httpAdmin;
     private TrustedCertAdmin trustedCertAdmin;
     private ResourceAdmin resourceAdmin;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
@@ -174,6 +176,19 @@ public final class RegistryImpl extends Registry
         }
         jdbcAdmin = adminContext.getJdbcConnectionAdmin();
         return jdbcAdmin;
+    }
+
+    /**
+     * @return the HTTP Admin
+     */
+    @Override
+    public synchronized HttpAdmin getHttpAdmin() {
+        checkAdminContext();
+        if (httpAdmin != null) {
+            return httpAdmin;
+        }
+        httpAdmin = adminContext.getHttpAdmin();
+        return httpAdmin;
     }
 
     /**
@@ -443,6 +458,7 @@ public final class RegistryImpl extends Registry
         uddiRegistryAdmin = null;
         emailListenerAdmin = null;
         emailAdmin = null;
+        httpAdmin = null;
     }
 
 

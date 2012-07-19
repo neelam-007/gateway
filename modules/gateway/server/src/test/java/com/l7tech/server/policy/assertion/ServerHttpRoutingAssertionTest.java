@@ -11,6 +11,7 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
+import com.l7tech.gateway.common.transport.http.HttpAdmin;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
@@ -23,6 +24,7 @@ import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.transport.http.HttpAdminImpl;
 import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
@@ -515,5 +517,72 @@ public class ServerHttpRoutingAssertionTest {
         serverAssertion.checkRequest(policyContext);
         assertEquals(mockClient.getParams().getHttpVersion(), GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_1);
 
+    }
+
+    @Test
+    @BugNumber(10829)
+    /**
+     * Test the http admin interface, we need to make sure it can be executed successfully and be able to catch exceptions since internally it uses @{link ServerHttpRoutingAssertion}
+     */
+    public void testHttpAdmin() throws Exception {
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        HttpAdminImpl admin = new HttpAdminImpl();
+        admin.setApplicationContext(appContext);
+        final String testUrl = "http://localhost:17380";
+        final String should_fail_url = "http://localhost-dummy:8443";
+        final String unknown_host_str = "Unknown Host";
+
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+
+        final String expectedResponse = "<ok/>";
+        final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        final HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        try {
+            final String message = "<test>message</test>";
+            admin.testConnection(new String[]{testUrl}, message, hra);
+        } catch (Exception e) {
+            fail("testConnection method should not fail");
+        }
+
+        try {
+            final String message = "invalid/non-xml message";
+            admin.testConnection(new String[]{testUrl}, message, hra);
+            fail("testConnection method should have fail");
+        } catch (HttpAdmin.HttpAdminException e) {
+            assertEquals(e.getSessionLog(),"Unable to parse 'invalid/non-xml message' as XML.");
+        } catch (Exception e){
+            fail("should not have this exception");
+        }
+
+        final MockGenericHttpClient mockClient2 = new MockGenericHttpClient(500, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
+
+        //let's simulate an unknown host error
+        mockClient2.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
+            @Override
+            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                return mockClient2.new MockGenericHttpRequest() {
+                    @Override
+                    public GenericHttpResponse getResponse() throws GenericHttpException {
+                        throw new GenericHttpException(unknown_host_str);
+                    }
+                };
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient2);
+
+        try {
+            final String message = "<test>message</test>";
+            admin.testConnection(new String[]{should_fail_url}, message, hra);
+            fail("testConnection method should have fail");
+        } catch (HttpAdmin.HttpAdminException e) {
+            //Problem routing to http://localhost-dummy:8443. Error msg: Unknown Host
+            assertTrue(e.getSessionLog().indexOf(unknown_host_str)>0);
+            assertTrue(e.getSessionLog().indexOf(should_fail_url)>0);
+        } catch (Exception e){
+            fail("should not have this exception");
+        }
     }
 }

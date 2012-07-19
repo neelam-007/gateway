@@ -121,6 +121,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     protected Long[] tlsTrustedCertOids;
     protected String[] tlsTrustedCertNames;
 
+    protected String testBodyMessage = "<request><message>Test</message></request>";
     private boolean forceIncludeRequestBody = false;
 
     // TODO WARNING
@@ -862,5 +863,13 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     public static String getVarHttpRoutingUrlBlacklist(){
         return VAR_HTTP_ROUTING_URL + "." + VAR_HTTP_ROUTING_URL_BLACKLIST;
+    }
+    
+    public String getTestBodyMessage() {
+        return testBodyMessage;
+    }
+
+    public void setTestBodyMessage(String testBodyMessage) {
+        this.testBodyMessage = testBodyMessage;
     }
 }
