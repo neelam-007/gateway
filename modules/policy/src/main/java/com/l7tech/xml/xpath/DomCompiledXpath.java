@@ -64,7 +64,7 @@ public class DomCompiledXpath extends CompiledXpath {
     public DomCompiledXpath(CompilableXpath xp) throws InvalidXpathException {
         super(xp.getExpressionForJaxen(), xp.getXpathVersion(), xp.getNamespaces());
         domXpath.set(makeJaxenXpathIfPossible());
-        saxonXpath.set(makeSaxonXpathIfPossible());
+        saxonXpath.set(makeSaxonXpathIfPossible(domXpath.get() == null));
         if (domXpath.get() == null && saxonXpath.get() == null)
             throw new InvalidXpathException("XPath version and/or syntax not supported by any available XPath processor");
     }
@@ -166,7 +166,7 @@ public class DomCompiledXpath extends CompiledXpath {
             synchronized (this) {
                 xpe = saxonXpath.get();
                 if (xpe == null) {
-                    xpe = makeSaxonXpathIfPossible();
+                    xpe = makeSaxonXpathIfPossible(true);
                     saxonXpath.set(xpe);
                 }
             }
@@ -174,12 +174,17 @@ public class DomCompiledXpath extends CompiledXpath {
         return xpe;
     }
 
-    private XPathExecutable makeSaxonXpathIfPossible() throws InvalidXpathException {
+    private XPathExecutable makeSaxonXpathIfPossible(boolean required) throws InvalidXpathException {
+        // For now, we will not use Saxon unless told to assume XPath version 2.0
+        if (!required && !"2.0".equals(getXpathVersion()))
+            return null;
         try {
             return makeSaxonXpath();
         } catch (InvalidXpathException e) {
             logger.log(Level.INFO, "Saxon support unavailable for xpath " + getExpression(), ExceptionUtils.getDebugException(e));
             skipSaxon.set(true);
+            if (required)
+                throw new InvalidXpathException(e);
             return null;
         }
     }
@@ -195,6 +200,7 @@ public class DomCompiledXpath extends CompiledXpath {
         if (namespaceMap != null) for (Map.Entry<String, String> ns : namespaceMap.entrySet()) {
             compiler.declareNamespace(ns.getKey(), ns.getValue());
         }
+        compiler.setAllowUndeclaredVariables(true);
         compiler.setLanguageVersion(getXpathVersion());
         try {
             return compiler.compile(expression);
@@ -498,6 +504,8 @@ public class DomCompiledXpath extends CompiledXpath {
             xdm = new XdmAtomicValue(((CharSequence)value).toString());
         } else if (value instanceof Long) {
             xdm = new XdmAtomicValue((Long) value);
+        } else if (value instanceof Integer) {
+            xdm = new XdmAtomicValue((Integer) value);
         } else if (value instanceof Double) {
             xdm = new XdmAtomicValue((Double) value);
         } else if (value instanceof BigDecimal) {

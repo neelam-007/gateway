@@ -1,6 +1,5 @@
 package com.l7tech.policy.assertion.xml;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
@@ -10,17 +9,12 @@ import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import org.apache.xalan.templates.ElemVariable;
-import org.apache.xalan.templates.StylesheetRoot;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.xslt.XsltUtil;
 
-import javax.xml.transform.*;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamSource;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -59,6 +53,7 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
     private String msgVarPrefix;
     private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
     private int whichMimePart = 0;
+    private String xsltVersion;
 
     public XslTransformation() {
         super(true);
@@ -139,6 +134,19 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
         this.varsUsed = null;
     }
 
+    public String getXsltVersion() {
+        return xsltVersion;
+    }
+
+    /**
+     * Specify an XSL language version that the stylesheet should be assumed to be written in.
+     *
+     * @param xsltVersion the language version, or null to assume XSLT 1.0.
+     */
+    public void setXsltVersion(String xsltVersion) {
+        this.xsltVersion = xsltVersion;
+    }
+
     @Override
     public VariablesUsed doGetVariablesUsed() {
         if (varsUsed != null) return super.doGetVariablesUsed().withVariables( varsUsed );
@@ -153,24 +161,10 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
             if (xslSrc == null || xslSrc.length() == 0) return super.doGetVariablesUsed();
 
             try {
-                TransformerFactory tf = TransformerFactory.newInstance();
-                tf.setURIResolver( new URIResolver(){
-                    public Source resolve( String href, String base ) throws TransformerException {
-                        return new StreamSource(new StringReader("<a xsl:version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"/>"));
-                    }
-                } );
-                Templates temp = tf.newTemplates(new DOMSource( XmlUtil.parse(new StringReader(xslSrc), false)));
-                if (temp instanceof StylesheetRoot) {
-                    StylesheetRoot stylesheetRoot = (StylesheetRoot)temp;
-                    Vector<ElemVariable> victor = stylesheetRoot.getVariablesAndParamsComposed();
-                    for (ElemVariable var : victor) {
-                        vars.add(var.getName().getLocalName());
-                    }
-                } else {
-                    logger.warning("XSLT was not a " + StylesheetRoot.class.getName() + ", can't get declared variables");
-                }
+                final List<String> xsltVars = XsltUtil.getVariablesUsedByStylesheet(xslSrc, xsltVersion);
+                vars.addAll(xsltVars);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Couldn't get declared variables from stylesheet", e);
+                logger.log(Level.WARNING, "Couldn't get declared variables from stylesheet: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
 

@@ -6,6 +6,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.AssertionResourceType;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -33,6 +34,7 @@ public class XslTransformationPropertiesDialog extends AssertionPropertiesOkCanc
     private JComboBox cbXslLocation;
     private TargetMessagePanel targetMessagePanel;
     private JPanel messageVariablePrefixTextFieldPanel;
+    private JComboBox xsltVersionComboBox;
     private TargetVariablePanel messageVariablePrefixTextField;
 
     private XslTransformation assertion;
@@ -163,7 +165,7 @@ public class XslTransformationPropertiesDialog extends AssertionPropertiesOkCanc
 
 
 
-    void displayError(String msg, String title) {
+    void displayError(String msg, @Nullable String title) {
         if (title == null) title = resources.getString("error.window.title");
         JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);
     }
@@ -183,6 +185,11 @@ public class XslTransformationPropertiesDialog extends AssertionPropertiesOkCanc
         messageVariablePrefixTextField.setSuffixes(new String[] {XslTransformation.VARIABLE_NAME});
 
         whichMimePartSpinner.setValue(new Integer(assertion.getWhichMimePart()));
+
+        String version = assertion.getXsltVersion();
+        if (version == null)
+            version = "1.0";
+        xsltVersionComboBox.setSelectedItem(version);
         
         AssertionResourceInfo ri = assertion.getResourceInfo();
         AssertionResourceType rit = ri.getType();
@@ -214,7 +221,7 @@ public class XslTransformationPropertiesDialog extends AssertionPropertiesOkCanc
         } else {
             // Assume specify XSL
             if (!MODE_SPECIFY_XSL.equals(mode)) log.warning("Unexpected fetch mode, assuming specify: " + mode);
-            err = specifyPanel.check();
+            err = specifyPanel.check((String)xsltVersionComboBox.getSelectedItem());
             if (err == null) specifyPanel.updateModel(assertion);
         }
 
@@ -229,6 +236,7 @@ public class XslTransformationPropertiesDialog extends AssertionPropertiesOkCanc
 
         assertion.setWhichMimePart(((Number)whichMimePartSpinner.getValue()).intValue());
         assertion.setMsgVarPrefix(messageVariablePrefixTextField.getVariable());
+        assertion.setXsltVersion((String) xsltVersionComboBox.getSelectedItem());
         return assertion;
     }
 

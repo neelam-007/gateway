@@ -6,16 +6,11 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContext;
 import com.l7tech.xml.tarari.TarariCompiledStylesheet;
-import net.sf.saxon.PreparedStylesheet;
-import net.sf.saxon.TransformerFactoryImpl;
-import net.sf.saxon.om.StructuredQName;
-import org.apache.xalan.templates.ElemVariable;
-import org.apache.xalan.templates.StylesheetRoot;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -41,23 +36,25 @@ public class StylesheetCompiler {
     /* Namespace attributes used for xalan extension */
     private static final String XALAN_EXTENSION_NS1 = "http://xml.apache.org/xalan";
     private static final String XALAN_EXTENSION_NS2 = "http://xml.apache.org/xslt";
+    private static final String SAXON_EXTENSION_NS = "http://icl.com/saxon";
     private static final String PROP_DISABLE_FORCE_ENCODING = "com.l7tech.xml.disableForceXsltEncoding";
-
-    private static final String PROP_USE_SAXON = "com.l7tech.xml.xslt.useSaxon";
 
     /**
      * Compile the specified XSLT stylesheet.
      *
      * @param xslt a String containing valid XSLT code.  Required.
+     * @param xsltVersion version of XSLT to use, ie "1.0" or "2.0", or null to assume "1.0".
      * @return a CompiledStylesheet instance ready to apply this stylesheet to TransformInput instances.  Never null.
      * @throws java.text.ParseException if this stylesheet cannot be compiled
      */
-    public static CompiledStylesheet compileStylesheet(String xslt) throws ParseException {
-        final GlobalTarariContext gtc = TarariLoader.getGlobalContext();
+    public static CompiledStylesheet compileStylesheet(String xslt, @Nullable String xsltVersion) throws ParseException {
+        if (xsltVersion == null)
+            xsltVersion = "1.0";
+        final GlobalTarariContext gtc = "1.0".equals(xsltVersion) ? TarariLoader.getGlobalContext() : null;
         final Document cleanXslt = preprocessStylesheet( xslt );
         TarariCompiledStylesheet tarariStylesheet =
                 gtc == null ? null : gtc.compileStylesheet(toString(cleanXslt));
-        final Templates templates = compileSoftware(cleanXslt);
+        final Templates templates = compileSoftware(cleanXslt, xsltVersion);
         return new CompiledStylesheet(templates, getVariablesUsed(templates), tarariStylesheet);
     }
 
@@ -74,46 +71,37 @@ public class StylesheetCompiler {
 
     /**
      * @param document the stylesheet to compile
+     * @param xsltVersion version of XSLT to assume, either "1.0" or "2.0"
      * @return successfully compiled stylesheet.  Never null
      * @throws java.text.ParseException if the stylesheet can't be parsed
      */
-    private static Templates compileSoftware( final Document document ) throws ParseException {
+    private static Templates compileSoftware( final Document document, String xsltVersion ) throws ParseException {
         // Prepare a software template
+        final List<TransformerException> fatals = new ArrayList<TransformerException>();
         try {
             // Configure transformer
-            final Class<TransformerFactoryImpl> factoryClass = ConfigFactory.getBooleanProperty(PROP_USE_SAXON, false) ? TransformerFactoryImpl.class : null;
-            TransformerFactory transfactory = factoryClass == null
-                    ? TransformerFactory.newInstance()
-                    : TransformerFactory.newInstance(factoryClass.getName(), factoryClass.getClassLoader());
-            transfactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            transfactory.setURIResolver(XmlUtil.getSafeURIResolver());
-            final List<TransformerException> fatals = new ArrayList<TransformerException>();
-            transfactory.setErrorListener(new ErrorListener(){
-                public void warning(TransformerException exception) throws TransformerException { }
-                public void error(TransformerException exception) throws TransformerException { }
-                public void fatalError(TransformerException exception) throws TransformerException { fatals.add(exception); }
-            });
+            TransformerFactory transfactory = XsltUtil.createTransformerFactory(xsltVersion, fatals);
 
             // create the XSL transform template
             Templates result = transfactory.newTemplates(new DOMSource(document));
             if (result == null) {
-                if (!fatals.isEmpty()) {
-                    TransformerException te = fatals.iterator().next();
-                    throw (ParseException)new ParseException(ExceptionUtils.getMessage(te), 0).initCause(te);
-                }
-                throw new ParseException("Unable to parse stylesheet: transformer factory returned null", 0);
+                XsltUtil.throwParseException("Unable to parse stylesheet: transformer factory returned null", null, fatals);
+                /* NOTREACHED */
+                return null;
             }
             
             return result;
         } catch (TransformerConfigurationException e) {
-            throw (ParseException)new ParseException(ExceptionUtils.getMessage(e), 0).initCause(e);
+            XsltUtil.throwParseException(ExceptionUtils.getMessage(e), e, fatals);
+            /* NOTREACHED */
+            return null;
         } catch (Exception e) {
             throw (ParseException)new ParseException(ExceptionUtils.getMessage(e), 0).initCause(e);
         }
     }
 
     /**
-     * Preprocess the given XSLT and remove any XALAN specifics, and ensure output encoding is UTF-8.
+     * Preprocess the given XSLT and remove any XALAN or Saxon specifics, and ensure output encoding is UTF-8.
      */
     private static Document preprocessStylesheet(String thing) throws ParseException {
         // Prepare a software template
@@ -125,9 +113,9 @@ public class StylesheetCompiler {
             Document document = db.parse(new InputSource(new StringReader(thing)));
 
             // remove any output elements that use xalan extensions from the stylesheet doc before compiling
-            removeOutputXalanExtensions(document);
+            removeOutputXalanAndSaxonExtensions(document);
 
-            // remove any output elements that use xalan extensions from the stylesheet doc before compiling
+            // Force output encoding to UTF-8
             if ( !ConfigFactory.getBooleanProperty( PROP_DISABLE_FORCE_ENCODING, false ) ) {
                 configureOutputEncoding(document);
             }
@@ -145,27 +133,8 @@ public class StylesheetCompiler {
     private static String[] getVariablesUsed(Templates temp) {
         String[] varsUsed;
         try {
-            if (temp instanceof StylesheetRoot) {
-                List<String> vars = new ArrayList<String>();
-                StylesheetRoot stylesheetRoot = (StylesheetRoot)temp;
-                List victor = stylesheetRoot.getVariablesAndParamsComposed();
-                for (Object aVictor : victor) {
-                    ElemVariable elemVariable = (ElemVariable)aVictor;
-                    vars.add(elemVariable.getName().getLocalName());
-                }
-                varsUsed = vars.toArray(new String[vars.size()]);
-            } else if (temp instanceof PreparedStylesheet) {
-                List<String> vars = new ArrayList<String>();
-                PreparedStylesheet ps = (PreparedStylesheet) temp;
-                List<StructuredQName> qns = ps.getGlobalVariableMap().getVariableMap();
-                for (StructuredQName qn : qns) {
-                    vars.add(qn.getLocalPart());
-                }
-                varsUsed = vars.toArray(new String[vars.size()]);
-            } else {
-                logger.warning("XSLT was not a " + StylesheetRoot.class.getName() + ", can't get declared variables");
-                varsUsed = EMPTY_STRING_ARRAY;
-            }
+            final List<String> tempVars = XsltUtil.getVariablesUsedByTemplates(temp);
+            varsUsed = tempVars.toArray(new String[tempVars.size()]);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Couldn't get declared variables from stylesheet", e);
             varsUsed = EMPTY_STRING_ARRAY;
@@ -174,7 +143,7 @@ public class StylesheetCompiler {
         return varsUsed;
     }
 
-    private static void removeOutputXalanExtensions(final Document document) {
+    private static void removeOutputXalanAndSaxonExtensions(final Document document) {
 
         // find the output elements that use xalan extensions
         NodeList nodes = document.getDocumentElement().getChildNodes();
@@ -190,7 +159,8 @@ public class StylesheetCompiler {
                 for (int j=0; j<map.getLength(); j++) {
 
                     if (XALAN_EXTENSION_NS1.equals(map.item(j).getNamespaceURI()) ||
-                        XALAN_EXTENSION_NS2.equals(map.item(j).getNamespaceURI()))
+                        XALAN_EXTENSION_NS2.equals(map.item(j).getNamespaceURI()) ||
+                        SAXON_EXTENSION_NS.equals(map.item(j).getNamespaceURI()))
                     {
                         if ( toRemove == null ) toRemove = new ArrayList<Node>();
                         // mark node for removal

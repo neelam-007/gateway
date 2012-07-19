@@ -10,6 +10,7 @@ import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
+import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
@@ -37,6 +38,7 @@ import com.l7tech.xml.xslt.CompiledStylesheet;
 import com.l7tech.xml.xslt.StylesheetCompiler;
 import com.l7tech.xml.xslt.TransformInput;
 import com.l7tech.xml.xslt.TransformOutput;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.BeanFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -85,7 +87,8 @@ public class ServerXslTransformation
                     public CompiledStylesheet createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) throws IOException {
                         String response = responseSource.getString(true);                        
                         try {
-                            return StylesheetCompiler.compileStylesheet(response);
+                            String xsltVersion = getXsltVersionFromUrl(url);
+                            return StylesheetCompiler.compileStylesheet(response, xsltVersion);
                         } catch (ParseException e) {
                             throw new CausedIOException(e);
                         }
@@ -112,7 +115,7 @@ public class ServerXslTransformation
                     @Override
                     public CompiledStylesheet createResourceObject(final String resourceString) throws ParseException {
                         try {
-                            return cacheObjectFactory.createUserObject("", new AbstractUrlObjectCache.UserObjectSource(){
+                            return cacheObjectFactory.createUserObject(decorateWithXsltVersion(""), new AbstractUrlObjectCache.UserObjectSource(){
                                 @Override
                                 public byte[] getBytes() throws IOException {
                                     throw new IOException("Not supported");
@@ -130,7 +133,7 @@ public class ServerXslTransformation
                             throw (ParseException)new ParseException("Unable to parse stylesheet: " +
                                     ExceptionUtils.getMessage(e), 0).initCause(e);
                         }
-                    }                    
+                    }
                     @Override
                     public void closeResourceObject( final CompiledStylesheet resourceObject ) {
                     }
@@ -162,6 +165,12 @@ public class ServerXslTransformation
         if (ri instanceof MessageUrlResourceInfo)
             muri = (MessageUrlResourceInfo)ri;
         allowMessagesWithNoProcessingInstruction = muri != null && muri.isAllowMessagesWithoutUrl();
+
+        if (ri instanceof SingleUrlResourceInfo) {
+            // Ensure XSLT version gets tacked onto URL string, so XSLT 2.0 uses the correct engine
+            SingleUrlResourceInfo resourceInfo = (SingleUrlResourceInfo) ri;
+            resourceInfo.setUrl(decorateWithXsltVersion(resourceInfo.getUrl()));
+        }
 
         this.resourceGetter = ResourceGetter.createResourceGetter(
                 assertion, ri, resourceObjectfactory, urlFinder, getCache(cacheObjectFactory, beanFactory), getAudit());
@@ -458,7 +467,8 @@ public class ServerXslTransformation
                     throw new InvalidDocumentFormatException();
                 }
                 String val = pis.getNodeValue(0);
-                return extractHref(val);
+                String url = extractHref(val);
+                return decorateWithXsltVersion(url);
             }
         }
         // No processing instructions
@@ -530,5 +540,18 @@ public class ServerXslTransformation
         } catch (NoSuchPartException e) {
             throw new IOException("MIME part has already been destructively read");
         }
+    }
+
+    private static String getXsltVersionFromUrl(@NotNull String urlString) {
+        if (urlString.endsWith("#xslt20")) {
+            return "2.0";
+        } else {
+            return null;
+        }
+    }
+
+    // Append "#xslt20" to the specified URL string if the current assertion is configured with an explicit XSLT 2.0 version.
+    private String decorateWithXsltVersion(@NotNull String urlString) {
+        return "2.0".equals(assertion.getXsltVersion()) ? (urlString + "#xslt20") : urlString;
     }
 }

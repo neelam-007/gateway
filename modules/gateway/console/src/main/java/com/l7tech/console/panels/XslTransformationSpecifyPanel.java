@@ -22,14 +22,11 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
-import org.apache.xml.utils.DefaultErrorHandler;
+import com.l7tech.xml.xslt.XsltUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -168,7 +165,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
             // check if it's a xslt
 
             try {
-                docIsXsl(doc);
+                docIsXsl(doc, "2.0");
                 // set the new xslt
                 String printedxml;
                 if (encoding == null) {
@@ -218,7 +215,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
 
         // check if it's a xslt
         try {
-            docIsXsl(doc);
+            docIsXsl(doc, "2.0");
             uiAccessibility.getEditor().setText(xslString);
             //okButton.setEnabled(true);
         } catch (SAXException e) {
@@ -226,10 +223,10 @@ public class XslTransformationSpecifyPanel extends JPanel {
         }
     }
 
-    String check() {
+    String check(String xsltVersion) {
         String contents = getEditorText();
         try {
-            docIsXsl(contents);
+            docIsXsl(contents, xsltVersion);
         } catch (SAXException e) {
             return resources.getString("error.notxslt") + " " + ExceptionUtils.getMessage(e);
         }
@@ -261,7 +258,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
         }
         editor.setLineNumber(1);
   
-        if (assertion != null && assertion.getTransformName() != null) {
+        if (assertion.getTransformName() != null) {
             nameField.setText(assertion.getTransformName());
         }
     }
@@ -287,25 +284,18 @@ public class XslTransformationSpecifyPanel extends JPanel {
         return xmlText != null ? xmlText : uiAccessibility.getEditor().getText();
     }
 
-    private static void docIsXsl(String str) throws SAXException {
+    private static void docIsXsl(String str, String xsltVersion) throws SAXException {
         if (str == null || str.length() < 1) {
             throw new SAXException("empty document");
         }
         Document doc = XmlUtil.stringToDocument(str);
         if (doc == null) throw new SAXException("null document");
-        docIsXsl(doc);
+        docIsXsl(doc, xsltVersion);
     }
 
-    private static void docIsXsl(Document doc) throws SAXException {
+    private static void docIsXsl(Document doc, String xsltVersion) throws SAXException {
         try {
-            TransformerFactory tf = TransformerFactory.newInstance();
-            tf.setErrorListener(new DefaultErrorHandler(true));
-            tf.setURIResolver( new URIResolver(){
-                public Source resolve( String href, String base ) throws TransformerException {
-                    return new StreamSource(new StringReader("<a xsl:version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"/>"));
-                }
-            } );
-            tf.newTemplates(new DOMSource(XmlUtil.parse(new StringReader(XmlUtil.nodeToString(doc)), false)));
+            XsltUtil.checkXsltSyntax(doc, xsltVersion);
         } catch (Exception e) {
             throw new SAXException(ExceptionUtils.getMessage(e), e);
         }

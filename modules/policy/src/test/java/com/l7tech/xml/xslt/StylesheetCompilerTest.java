@@ -60,7 +60,7 @@ public class StylesheetCompilerTest {
     public void testCompileWithXalanExtension() {
         try {
             Assert.assertTrue("Xalan XSLT present", isXalan());
-            CompiledStylesheet xsl = StylesheetCompiler.compileStylesheet(XALAN_TEST_XSL);
+            CompiledStylesheet xsl = StylesheetCompiler.compileStylesheet(XALAN_TEST_XSL, "1.0");
             Assert.assertNotNull(xsl);
         } catch (Exception ex) {
             Assert.fail("Unexpected exception encountered. " + ex);
@@ -75,7 +75,7 @@ public class StylesheetCompilerTest {
     public void testCompileWithXalanExtensionOutputNS() {
         try {
             Assert.assertTrue("Xalan XSLT present", isXalan());
-            CompiledStylesheet xsl = StylesheetCompiler.compileStylesheet(XALAN_TEST_XSL2);
+            CompiledStylesheet xsl = StylesheetCompiler.compileStylesheet(XALAN_TEST_XSL2, "1.0");
             Assert.assertNotNull(xsl);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -141,7 +141,7 @@ public class StylesheetCompilerTest {
     }
 
     private String doTransform(String xslt, String xml, boolean useSax) throws Exception {
-        CompiledStylesheet xsl = StylesheetCompiler.compileStylesheet(xslt);
+        CompiledStylesheet xsl = StylesheetCompiler.compileStylesheet(xslt, "1.0");
         TransformOutput to = new TransformOutput();
         final Message mess = useSax
                 ? new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)))
