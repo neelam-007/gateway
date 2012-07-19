@@ -91,11 +91,10 @@ public class JdbcCallHelper {
                 if (paramIndex < queryParameters.size())
                     paramValue = queryParameters.get(paramIndex++);
                 if (paramValue != null && paramValue.toString().equals("?") && !queryParametersRaw.get(paramIndex-1).equals("'?'") && !queryParametersRaw.get(paramIndex-1).equals("\"?\"")) {
-                    if (varArgIndex + 1 < args.length) {
-                        paramValue = args[varArgIndex++];
-                    } else {
+                    if (varArgIndex >= args.length || args.length==0) {
                         throw new BadSqlGrammarException("", query, new SQLException("invalid/bad query : @" + (varArgIndex + 1) + " - " + query));//Bug 12575 - user explicitly trying to use ? w/c is really an invalid query
                     }
+                    paramValue = args[varArgIndex++];
                 } else if (paramValue != null && ((String) paramValue).startsWith("@"))//special case if we want to verbose define INOUT param in MS SQL, see known issue
                     paramValue = "";
                 if (paramValue != null)
@@ -222,15 +221,11 @@ public class JdbcCallHelper {
             return values;
         }
         final Matcher m = p.matcher(query2);
-        int commaCount=0;
         while (m.find()) {
             // get the match
             final String paramCopy = m.group();
             String param = paramCopy.trim();
-            if(param.equals(",")){
-                commaCount++;
-            }
-            // it's a param if it's group #1 or #2, otherwise proceed to next match            
+            // it's a param if it's group #1 or #2, otherwise proceed to next match
             if(m.group(1) == null && m.group(2) == null) {
                 continue;
             }            

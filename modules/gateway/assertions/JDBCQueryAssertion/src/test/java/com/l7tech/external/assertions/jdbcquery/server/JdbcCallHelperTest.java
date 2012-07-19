@@ -314,7 +314,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples (?)";
-            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, new Object[]{});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
