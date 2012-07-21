@@ -22,11 +22,7 @@ import com.l7tech.external.assertions.saml2attributequery.DecryptElementAssertio
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.PauseListener;
-import com.l7tech.gui.util.PauseListenerAdapter;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.SpeedIndicator;
 import com.l7tech.gui.widgets.SquigglyField;
 import com.l7tech.objectmodel.DeleteException;
@@ -43,6 +39,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapMessageGenerator.Message;
 import com.l7tech.xml.soap.SoapUtil;
@@ -50,8 +47,8 @@ import com.l7tech.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.xml.xpath.*;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
-import org.jaxen.JaxenException;
 import org.jaxen.XPathSyntaxException;
+import org.jaxen.saxpath.SAXPathException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -976,6 +973,12 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
 
     };
 
+    private XpathVersion getXpathVersion() {
+        // For now, we will not expose the ability to use XPath 2.0 expressions with the Decrypt Element assertion.
+        // TODO update GUI to support selecting an XPath version
+        return XpathVersion.XPATH_1_0;
+    }
+
     private XpathFeedBack getFeedBackMessage(Map nsMap, JTextField xpathField) {
         String xpath = xpathField.getText();
         if (xpath == null) return new XpathFeedBack(-1, null, XpathFeedBack.EMPTY_MSG, XpathFeedBack.EMPTY_MSG);
@@ -983,20 +986,37 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
         if (xpath.length() < 1) return new XpathFeedBack(-1, null, XpathFeedBack.EMPTY_MSG, XpathFeedBack.EMPTY_MSG);
         try {
             final Set<String> variables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
-            XpathUtil.compileAndEvaluate(testEvaluator, xpath, namespaces, buildXpathVariableFinder(variables));
+            XpathUtil.testXpathExpression(testEvaluator, xpath, getXpathVersion(), namespaces, buildXpathVariableFinder(variables));
             XpathFeedBack feedback = new XpathFeedBack(-1, xpath, null, null);
             feedback.hardwareAccelFeedback = getHardwareAccelFeedBack(nsMap, xpath);
             return feedback;
-        } catch (XPathSyntaxException e) {
-            log.log(Level.FINE, e.getMessage(), e);
-            return new XpathFeedBack(e.getPosition(), xpath, e.getMessage(), e.getMultilineMessage());
-        } catch (JaxenException e) {
-            log.log(Level.FINE, e.getMessage(), e);
-            return new XpathFeedBack(-1, xpath, ExceptionUtils.getMessage( e ), ExceptionUtils.getMessage( e ));
+        } catch (InvalidXpathException e) {
+            return getXpathFeedBackForInvalidXpathException(xpath, e);
         } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
             log.log(Level.WARNING, e.getMessage(), e);
             return new XpathFeedBack(-1, xpath, "XPath expression error '" + xpath + "'", null);
         }
+    }
+
+    private static XpathFeedBack getXpathFeedBackForInvalidXpathException(String xpath, InvalidXpathException e) {
+        Exception c;
+
+        //noinspection ThrowableResultOfMethodCallIgnored
+        if ((c = ExceptionUtils.getCauseIfCausedBy(e, XPathSyntaxException.class)) != null) {
+            XPathSyntaxException xpe = (XPathSyntaxException)c;
+            log.log(Level.FINE, xpe.getMessage(), xpe);
+            return new XpathFeedBack(xpe.getPosition(), xpath, xpe.getMessage(), xpe.getMultilineMessage());
+        }
+
+        //noinspection ThrowableResultOfMethodCallIgnored
+        if ((c = ExceptionUtils.getCauseIfCausedBy(e, SAXPathException.class)) != null) {
+            SAXPathException spe = (SAXPathException)c;
+            log.log(Level.FINE, spe.getMessage(), spe);
+            return new XpathFeedBack(-1, xpath, ExceptionUtils.getMessage( spe ), ExceptionUtils.getMessage(spe));
+        }
+
+        log.log(Level.WARNING, e.getMessage(), e);
+        return new XpathFeedBack(-1, xpath, "XPath expression error '" + xpath + "'", null);
     }
 
     private XpathVariableFinder buildXpathVariableFinder( final Set<String> variables ) {
@@ -1019,6 +1039,11 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
      * @return feedback for hardware accel problems, or null if no hardware accel problems detected.
      */
     private XpathFeedBack getHardwareAccelFeedBack(Map nsMap, String xpath) {
+        final XpathVersion xpathVersion = getXpathVersion();
+        if (XpathVersion.XPATH_2_0.equals(xpathVersion)) {
+            return new XpathFeedBack(-1, xpath, "Parallel XPath processing not available for XPath 2.0 expression", null);
+        }
+
         XpathFeedBack hardwareFeedback;
         // Check if hardware accel is known not to work with this xpath
         String convertedXpath = xpath;
@@ -1026,14 +1051,12 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
             final Set<String> variables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
             FastXpath fastXpath = TarariXpathConverter.convertToFastXpath(nsMap, xpath);
             convertedXpath = fastXpath.getExpression();
-            XpathUtil.compileAndEvaluate(testEvaluator, convertedXpath, namespaces, buildXpathVariableFinder(variables));
+            XpathUtil.testXpathExpression(testEvaluator, convertedXpath, xpathVersion, namespaces, buildXpathVariableFinder(variables));
             hardwareFeedback = null;
         } catch (ParseException e) {
             hardwareFeedback = new XpathFeedBack(e.getErrorOffset(), convertedXpath, e.getMessage(), e.getMessage());
-        } catch (XPathSyntaxException e) {
-            hardwareFeedback = new XpathFeedBack(e.getPosition(), convertedXpath, e.getMessage(), e.getMultilineMessage());
-        } catch (JaxenException e) {
-            hardwareFeedback = new XpathFeedBack(-1, convertedXpath, e.getMessage(), e.getMessage());
+        } catch (InvalidXpathException e) {
+            return getXpathFeedBackForInvalidXpathException(xpath, e);
         } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
             hardwareFeedback = new XpathFeedBack(-1, convertedXpath, "XPath expression error '" + convertedXpath + "'", null);
         }

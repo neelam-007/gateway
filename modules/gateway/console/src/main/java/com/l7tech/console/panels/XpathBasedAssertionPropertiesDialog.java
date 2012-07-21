@@ -19,11 +19,7 @@ import com.l7tech.console.xmlviewer.util.DocumentUtilities;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.PauseListener;
-import com.l7tech.gui.util.PauseListenerAdapter;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.SpeedIndicator;
 import com.l7tech.gui.widgets.SquigglyField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
@@ -46,6 +42,7 @@ import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.security.xml.XencAlgorithm;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
@@ -53,7 +50,6 @@ import com.l7tech.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.xml.xpath.*;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
-import org.jaxen.JaxenException;
 import org.jaxen.XPathSyntaxException;
 import org.jaxen.saxpath.SAXPathException;
 import org.jetbrains.annotations.Nullable;
@@ -271,7 +267,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         return xpathBasedAssertion instanceof RequestXpathAssertion || xpathBasedAssertion instanceof ResponseXpathAssertion;
     }
 
-    private void construct(final XpathBasedAssertion assertion, final ActionListener okListener, final boolean readOnly) {
+    private void construct(final XpathBasedAssertion assertion, @Nullable final ActionListener okListener, final boolean readOnly) {
         okActionListener = okListener;
 
         this.assertion = assertion;
@@ -290,10 +286,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 throw new IllegalStateException("Unable to determine the PolicyEntityNode for " + assertion);
             }
         }
-        String version = assertion.getXpathExpression().getXpathVersion();
-        if (version == null)
-            version = "1.0";
-        xpathVersionComboBox.setSelectedItem(version);
+        XpathVersion version = assertion.getXpathExpression().getXpathVersion();
+        if (version == null || XpathVersion.UNSPECIFIED.equals(version))
+            version = XpathVersion.XPATH_1_0;
+        xpathVersionComboBox.setSelectedItem(version.getVersionString());
 
         if (assertion instanceof ResponseXpathAssertion) {
             final ResponseXpathAssertion ass = (ResponseXpathAssertion)assertion;
@@ -364,7 +360,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             }
         } else {
             try {
-                // policyNode is gurranteed not to be null, since it's been set up in the method construct(...).
+                // policyNode is guaranteed not to be null, since it's been set up in the method construct(...).
                 Policy policy = policyNode.getPolicy();
                 if (policy.isSoap()) {
                     blankMessage = SoapMessageGenerator.SOAP_1_1_TEMPLATE;
@@ -660,7 +656,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                     assertion.setXpathExpression(null);
                 } else {
                     String version = (String) xpathVersionComboBox.getSelectedItem();
-                    assertion.setXpathExpression(new XpathExpression(xpath, version, namespaces));
+                    assertion.setXpathExpression(new XpathExpression(xpath, XpathVersion.fromVersionString(version), namespaces));
                 }
 
                 if (assertion instanceof SimpleXpathAssertion) {
@@ -1112,7 +1108,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 // If possible, we'll try to add only the new declarations that ended up being used by the generated XPath.
                 Map<String,String> toAdd = new HashMap<String,String>(allOperationNamespaces);
                 try {
-                    Set<String> usedPrefixes = XpathUtil.getNamespacePrefixesUsedByXpath(newExpression, true);
+                    Set<String> usedPrefixes = XpathUtil.getNamespacePrefixesUsedByXpath(newExpression, getXpathVersion(), true);
                     toAdd.keySet().retainAll(usedPrefixes);
                 } catch (ParseException e) {
                     // Fallthrough and just add them all, to be safe
@@ -1124,6 +1120,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         messageViewerToolbarPanel.add(messageViewerToolBar, gridConstraints);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints2 = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
         messageViewerPanel.add(messageViewer, gridConstraints2);
+    }
+
+    private XpathVersion getXpathVersion() {
+        return XpathVersion.fromVersionString((String) xpathVersionComboBox.getSelectedItem());
     }
 
     private ExchangerDocument asExchangerDocument(String content)
@@ -1240,7 +1240,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         String xpath = xpathTextField.getText();
 
         try {
-            Set<String> used = XpathUtil.getNamespacePrefixesUsedByXpath(xpath, true);
+            Set<String> used = XpathUtil.getNamespacePrefixesUsedByXpath(xpath, getXpathVersion(), true);
             Set<String> declared = new HashSet<String>(namespaces.keySet());
             declared.removeAll(used);
             return declared;
@@ -1441,17 +1441,31 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         }
         try {
             final Set<String> variables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
-            XpathUtil.validate( xpath, namespaces );
-            XpathUtil.compileAndEvaluate(testEvaluator, xpath, namespaces, buildXpathVariableFinder(variables));
+            final XpathVersion xpathVersion = getXpathVersion();
+            XpathUtil.validate( xpath, xpathVersion, namespaces );
+            XpathUtil.testXpathExpression(testEvaluator, xpath, xpathVersion, namespaces, buildXpathVariableFinder(variables));
             XpathFeedBack feedback = new XpathFeedBack(-1, xpath, null, null);
             feedback.hardwareAccelFeedback = getHardwareAccelFeedBack(nsMap, xpath);
             return feedback;
-        } catch (XPathSyntaxException e) {
+        } catch (InvalidXpathException e) {
+            Exception c;
+
+            //noinspection ThrowableResultOfMethodCallIgnored
+            if ((c = ExceptionUtils.getCauseIfCausedBy(e, XPathSyntaxException.class)) != null) {
+                XPathSyntaxException xpe = (XPathSyntaxException)c;
+                log.log(Level.FINE, xpe.getMessage(), xpe);
+                return new XpathFeedBack(xpe.getPosition(), xpath, xpe.getMessage(), xpe.getMultilineMessage());
+            }
+
+            //noinspection ThrowableResultOfMethodCallIgnored
+            if ((c = ExceptionUtils.getCauseIfCausedBy(e, SAXPathException.class)) != null) {
+                SAXPathException spe = (SAXPathException)c;
+                log.log(Level.FINE, spe.getMessage(), spe);
+                return new XpathFeedBack(-1, xpath, ExceptionUtils.getMessage( spe ), ExceptionUtils.getMessage(spe));
+            }
+
             log.log(Level.FINE, e.getMessage(), e);
-            return new XpathFeedBack(e.getPosition(), xpath, e.getMessage(), e.getMultilineMessage());
-        } catch (SAXPathException e) {
-            log.log(Level.FINE, e.getMessage(), e);
-            return new XpathFeedBack(-1, xpath, ExceptionUtils.getMessage( e ), ExceptionUtils.getMessage( e ));
+            return new XpathFeedBack(-1, xpath, ExceptionUtils.getMessage( e ), ExceptionUtils.getMessage(e));
         } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
             log.log(Level.WARNING, e.getMessage(), e);
             return new XpathFeedBack(-1, xpath, "XPath expression error '" + xpath + "'", null);
@@ -1462,6 +1476,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
      * @return feedback for hardware accel problems, or null if no hardware accel problems detected.
      */
     private XpathFeedBack getHardwareAccelFeedBack(Map nsMap, String xpath) {
+        if (XpathVersion.XPATH_2_0.equals(getXpathVersion())) {
+            return new XpathFeedBack(-1, xpath, "Parallel XPath processing not available for XPath 2.0", null);
+        }
+
         XpathFeedBack hardwareFeedback;
         // Check if hardware accel is known not to work with this xpath
         String convertedXpath = xpath;
@@ -1469,14 +1487,18 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             final Set<String> variables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
             FastXpath fastXpath = TarariXpathConverter.convertToFastXpath(nsMap, xpath);
             convertedXpath = fastXpath.getExpression();
-            XpathUtil.compileAndEvaluate(testEvaluator, convertedXpath, namespaces, buildXpathVariableFinder(variables));
+            XpathUtil.testXpathExpression(testEvaluator, convertedXpath, XpathVersion.XPATH_1_0, namespaces, buildXpathVariableFinder(variables));
             hardwareFeedback = null;
         } catch (ParseException e) {
-            hardwareFeedback = new XpathFeedBack(e.getErrorOffset(), convertedXpath, e.getMessage(), e.getMessage());
-        } catch (XPathSyntaxException e) {
-            hardwareFeedback = new XpathFeedBack(e.getPosition(), convertedXpath, e.getMessage(), e.getMultilineMessage());
-        } catch (JaxenException e) {
-            hardwareFeedback = new XpathFeedBack(-1, convertedXpath, e.getMessage(), e.getMessage());
+            return new XpathFeedBack(e.getErrorOffset(), convertedXpath, e.getMessage(), e.getMessage());
+        } catch (InvalidXpathException e) {
+            @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
+            XPathSyntaxException pe = ExceptionUtils.getCauseIfCausedBy(e, XPathSyntaxException.class);
+            if (pe != null) {
+                return new XpathFeedBack(pe.getPosition(), convertedXpath, pe.getMessage(), pe.getMessage());
+            } else {
+                hardwareFeedback = new XpathFeedBack(-1, convertedXpath, "XPath expression error '" + convertedXpath + "'", null);
+            }
         } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
             hardwareFeedback = new XpathFeedBack(-1, convertedXpath, "XPath expression error '" + convertedXpath + "'", null);
         }

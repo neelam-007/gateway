@@ -8,6 +8,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathVersion;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -15,6 +16,8 @@ import org.w3c.dom.Document;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.l7tech.xml.xpath.XpathVersion.UNSPECIFIED;
+import static com.l7tech.xml.xpath.XpathVersion.XPATH_2_0;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -24,11 +27,11 @@ import static org.junit.Assert.assertTrue;
  */
 public class RequestXpathAssertionTest {
 
-    private String xpathVersion;
+    private XpathVersion xpathVersion;
 
     @Before
     public void setUp() {
-        xpathVersion = null;
+        xpathVersion = XpathVersion.UNSPECIFIED;
     }
 
     @Test
@@ -66,8 +69,15 @@ public class RequestXpathAssertionTest {
 
     @Test
     public void testXpath20() throws Exception {
-        xpathVersion = "2.0";
+        xpathVersion = XPATH_2_0;
         assertXpathPasses("(/soap:Envelope/soap:Body/ware:placeOrder/productid, /soap:Envelope[3=3])");
+    }
+
+    @Test
+    public void testXpath20_withWrongVersion() throws Exception {
+        xpathVersion = UNSPECIFIED;
+        final AssertionStatus ret = getResultForXPath("(/soap:Envelope/soap:Body/ware:placeOrder/productid, /soap:Envelope[3=3])");
+        assertEquals("XPath using XPath-2.0-only syntax currently expected to fail if XPath version is not specified explicitly as 2.0", AssertionStatus.FAILED, ret);
     }
 
     @Test

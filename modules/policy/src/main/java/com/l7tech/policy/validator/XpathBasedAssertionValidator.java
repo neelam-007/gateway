@@ -4,15 +4,11 @@
 
 package com.l7tech.policy.validator;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
-import org.jaxen.NamespaceContext;
-import org.jaxen.UnresolvableException;
-import org.jaxen.VariableContext;
-import org.jaxen.XPathFunctionContext;
-import org.jaxen.dom.DOMXPath;
+import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathUtil;
 
 import java.util.Map;
 import java.util.logging.Logger;
@@ -32,34 +28,17 @@ public class XpathBasedAssertionValidator extends NamespaceMigratableAssertionVa
         super(xpathBasedAssertion);
         assertion = xpathBasedAssertion;
         String pattern = null;
-        if (assertion.getXpathExpression() != null)
-            pattern = assertion.getXpathExpression().getExpression();
+        final XpathExpression xpathExpression = assertion.getXpathExpression();
+        if (xpathExpression != null)
+            pattern = xpathExpression.getExpression();
 
         if (pattern == null) {
             errString = "XPath pattern is missing";
             logger.info(errString);
         } else {
             try {
-                final Map namespaces = xpathBasedAssertion.namespaceMap();
-                DOMXPath xpath = new DOMXPath(pattern);
-
-                xpath.setFunctionContext(new XPathFunctionContext(false));
-                xpath.setNamespaceContext(new NamespaceContext(){
-                    @Override
-                    public String translateNamespacePrefixToUri(String prefix) {
-                        if (namespaces == null)
-                            return null;
-                        else
-                            return (String) namespaces.get(prefix);
-                    }
-                });
-                xpath.setVariableContext( new VariableContext(){
-                    @Override
-                    public Object getVariableValue( String ns, String prefix, String localName ) throws UnresolvableException {
-                        return ""; // this will always succeed, variable usage already has a validator
-                    }
-                } );
-                xpath.evaluate( XmlUtil.stringToDocument("<blah xmlns=\"http://bzzt.com\"/>"));
+                final Map<String,String> namespaces = xpathBasedAssertion.namespaceMap();
+                XpathUtil.testXpathExpression(null, pattern, xpathExpression.getXpathVersion(), namespaces, null);
             } catch (Exception e) {
                 errString = "XPath pattern is not valid";
                 errThrowable = e;

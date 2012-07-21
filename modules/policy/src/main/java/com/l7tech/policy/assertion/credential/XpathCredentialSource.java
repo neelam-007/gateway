@@ -87,7 +87,7 @@ public class XpathCredentialSource extends XpathBasedAssertion {
         if ( passwordExpression != null ) {
             final String passexpr = passwordExpression.getExpression();
             if ( passexpr != null ) {
-                used.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath(passexpr) );
+                used.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath(passexpr, passwordExpression.getXpathVersion()) );
             }
         }
         return used;

@@ -38,6 +38,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.xml.xpath.XpathVersion.XPATH_1_0;
+import static com.l7tech.xml.xpath.XpathVersion.XPATH_2_0;
+
 /**
  * A version of CompiledXpath that works with DOM.
  */
@@ -93,7 +96,7 @@ public class DomCompiledXpath extends CompiledXpath {
     }
 
     private DOMXPath makeJaxenXpathIfPossible() throws InvalidXpathException {
-        if (!"1.0".equals(getXpathVersion())) {
+        if (!XPATH_1_0.equals(getXpathVersion())) {
             // Not gonna work, has to be Saxon
             skipJaxen.set(true);
             return null;
@@ -176,7 +179,7 @@ public class DomCompiledXpath extends CompiledXpath {
 
     private XPathExecutable makeSaxonXpathIfPossible(boolean required) throws InvalidXpathException {
         // For now, we will not use Saxon unless told to assume XPath version 2.0
-        if (!required && !"2.0".equals(getXpathVersion()))
+        if (!required && !XPATH_2_0.equals(getXpathVersion()))
             return null;
         try {
             return makeSaxonXpath();
@@ -190,7 +193,7 @@ public class DomCompiledXpath extends CompiledXpath {
     }
 
     private XPathExecutable makeSaxonXpath() throws InvalidXpathException {
-            String expression = getExpression();
+        String expression = getExpression();
         Map<String, String> namespaceMap = getNamespaceMap();
 
         if (expression == null)
@@ -201,7 +204,7 @@ public class DomCompiledXpath extends CompiledXpath {
             compiler.declareNamespace(ns.getKey(), ns.getValue());
         }
         compiler.setAllowUndeclaredVariables(true);
-        compiler.setLanguageVersion(getXpathVersion());
+        compiler.setLanguageVersion(getXpathVersion().getVersionString());
         try {
             return compiler.compile(expression);
         } catch (SaxonApiException e) {

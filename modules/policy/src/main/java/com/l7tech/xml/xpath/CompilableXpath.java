@@ -8,6 +8,7 @@ package com.l7tech.xml.xpath;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContext;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
@@ -34,8 +35,9 @@ public abstract class CompilableXpath {
      *
      * @return the language version.  Never null.
      */
-    public String getXpathVersion() {
-        return "1.0";
+    @NotNull
+    public XpathVersion getXpathVersion() {
+        return XpathVersion.XPATH_1_0;
     }
 
     /**

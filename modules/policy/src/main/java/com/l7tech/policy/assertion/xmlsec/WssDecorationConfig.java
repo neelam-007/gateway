@@ -3,6 +3,8 @@
  */
 package com.l7tech.policy.assertion.xmlsec;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * 
  */
@@ -49,6 +51,7 @@ public interface WssDecorationConfig extends SecurityHeaderAddressable {
      *
      * @return the preferred digest algorithm name (ie, "SHA-384").  May be null.
      */
+    @Nullable
     String getDigestAlgorithmName();
 
     /**

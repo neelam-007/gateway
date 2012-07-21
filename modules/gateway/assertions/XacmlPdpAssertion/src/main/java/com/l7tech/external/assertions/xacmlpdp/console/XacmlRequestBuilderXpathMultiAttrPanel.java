@@ -12,12 +12,12 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ValidationUtils;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.NoSuchXpathVariableException;
 import com.l7tech.xml.xpath.XpathUtil;
 import com.l7tech.xml.xpath.XpathVariableFinder;
+import com.l7tech.xml.xpath.XpathVersion;
 import com.sun.xacml.attr.DateTimeAttribute;
-import org.jaxen.JaxenException;
-import org.jaxen.XPathSyntaxException;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
@@ -477,6 +477,11 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         return valid;
     }
 
+    private XpathVersion getXpathVersion() {
+        // For now, only XPath 1.0 is supported.
+        return XpathVersion.XPATH_1_0;
+    }
+
     private String validateXPath( final String xpath,
                                   final Map<String,String> namespaces,
                                   final XacmlRequestBuilderDialog builderDialog) {
@@ -486,10 +491,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                     SsmPolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
                     SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( builderDialog.getPreviousAssertion() );
 
-            XpathUtil.compileAndEvaluate(testDocument, xpath, namespaces, buildXpathVariableFinder(predecessorVariables.keySet()));
-        } catch ( XPathSyntaxException e) {
-            return ExceptionUtils.getMessage( e );
-        } catch ( JaxenException e) {
+            XpathUtil.testXpathExpression(testDocument, xpath, getXpathVersion(), namespaces, buildXpathVariableFinder(predecessorVariables.keySet()));
+        } catch (InvalidXpathException e) {
             return ExceptionUtils.getMessage( e );
         } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
             return "XPath expression error '" + xpath + "'";

@@ -2,6 +2,7 @@ package com.l7tech.xml.xpath;
 
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.NamespaceMigratable;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
@@ -21,7 +22,8 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
     /**
      * default constructor for XML serialization support
      */
-    public XpathExpression() {}
+    public XpathExpression() {
+    }
 
     /**
      * Construct the XPath expression with no namespaces
@@ -51,18 +53,18 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      *                   in internal namespace map have zero elements.
      */
     public XpathExpression(String expression, @Nullable Map<String, String> namespaces) {
-        this(expression, null, namespaces);
+        this(expression, XpathVersion.UNSPECIFIED, namespaces);
     }
 
     /**
      * Construct an XPath expression with a language version and optional namespaces.
      *
      * @param expression the XPath expression
-     * @param xpathVersion an xpath version ("1.0", "2.0" or "3.0") or null.
+     * @param xpathVersion an xpath version ("1.0", "2.0" or "3.0") or unspecified.  Required.
      * @param namespaces the namespaces map, may be null, it will result
      *                   in internal namespace map have zero elements.
      */
-    public XpathExpression(String expression, @Nullable String xpathVersion, @Nullable Map<String, String> namespaces) {
+    public XpathExpression(String expression, @NotNull XpathVersion xpathVersion, @Nullable Map<String, String> namespaces) {
         this.expression = expression;
         if (namespaces != null) {
             this.namespaces.putAll(namespaces);
@@ -109,9 +111,10 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
     }
 
     /**
-     * @return the XPath version hint ("1.0", "2.0", or "3.0"), or null to assume XPath 1.0.
+     * @return the XPath version hint ("1.0", "2.0", or "3.0"), or UNSPECIFIED to assume XPath 1.0.  Never null.
      */
-    public String getXpathVersion() {
+    @NotNull
+    public XpathVersion getXpathVersion() {
         return xpathVersion;
     }
 
@@ -122,7 +125,8 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      *
      * @param xpathVersion the XPath version to use when interpreting the expression ("1.0", "2.0" or "3.0") or null to assume XPath 1.0.
      */
-    public void setXpathVersion(String xpathVersion) {
+    @SuppressWarnings("UnusedDeclaration")
+    public void setXpathVersion(@NotNull XpathVersion xpathVersion) {
         this.xpathVersion = xpathVersion;
     }
 
@@ -136,7 +140,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
 
         if (expression != null ? !expression.equals(xpathExpression.expression) : xpathExpression.expression != null) return false;
         if (!namespaces.equals(xpathExpression.namespaces)) return false;
-        if (xpathVersion != null ? !xpathVersion.equals(xpathExpression.xpathVersion) : xpathExpression.xpathVersion != null) return false;
+        if (!xpathVersion.equals(xpathExpression.xpathVersion)) return false;
 
         return true;
     }
@@ -145,7 +149,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
     public int hashCode() {
         int result;
         result = (expression != null ? expression.hashCode() : 0);
-        result = 29 * result + (xpathVersion != null ? xpathVersion.hashCode() : 0);
+        result = 29 * result + (xpathVersion.hashCode());
         result = 29 * result + namespaces.hashCode();
         return result;
     }
@@ -199,7 +203,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
             return Collections.emptySet();
 
         try {
-            Set<String> usedPrefixes = XpathUtil.getNamespacePrefixesUsedByXpath(expr, lookForQnameLiterals);
+            Set<String> usedPrefixes = XpathUtil.getNamespacePrefixesUsedByXpath(expr, xpathVersion, lookForQnameLiterals);
             Map<String, String> nsmap = new HashMap<String, String>(namespaces);
             nsmap.keySet().retainAll(usedPrefixes);
             return new HashSet<String>(nsmap.values());
@@ -213,7 +217,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
     //- PRIVATE
 
     private String expression;
-    private String xpathVersion;
+    private @NotNull XpathVersion xpathVersion = XpathVersion.UNSPECIFIED;
     private Map<String, String> namespaces = new LinkedHashMap<String, String>();
     private static final Logger logger = Logger.getLogger(XpathExpression.class.getName());
 }

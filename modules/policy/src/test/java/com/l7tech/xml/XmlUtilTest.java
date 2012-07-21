@@ -374,11 +374,6 @@ public class XmlUtilTest {
         }
     }
 
-    @Test(expected = NullPointerException.class)
-    public void testCreateEmptyDocumentNullName() {
-        XmlUtil.createEmptyDocument(null, "s", "urn:blah");
-    }
-
     @Test
     public void testCreateEmptyDocumentNoPrefix() {
         Document doc = XmlUtil.createEmptyDocument("foo", null, "urn:blah");

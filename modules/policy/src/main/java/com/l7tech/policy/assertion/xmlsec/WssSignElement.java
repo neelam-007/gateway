@@ -6,6 +6,8 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.policy.assertion.*;
+import org.jetbrains.annotations.Nullable;
+
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -86,13 +88,14 @@ public class WssSignElement extends XmlSecurityAssertionBase implements WssDecor
         return true;
     }
 
+    @Nullable
     @Override
     public String getDigestAlgorithmName() {
         return digestAlgorithmName;
     }
 
     @Override
-    public void setDigestAlgorithmName(String digestAlgorithmName) {
+    public void setDigestAlgorithmName(@Nullable String digestAlgorithmName) {
         this.digestAlgorithmName = digestAlgorithmName;
     }
 
@@ -139,6 +142,6 @@ public class WssSignElement extends XmlSecurityAssertionBase implements WssDecor
     private boolean usesDefaultKeyStore = true;
     private long nonDefaultKeystoreId;
     private String keyId;
-    private String digestAlgorithmName;
+    private @Nullable String digestAlgorithmName;
     
 }

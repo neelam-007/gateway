@@ -35,7 +35,7 @@ public class ElementSelectingXpathValidator<AT extends XpathBasedAssertion> impl
         if (xpe != null) {
             String expression = xpe.getExpression();
             if (expression != null) {
-                List<String> varlist = XpathUtil.getUnprefixedVariablesUsedInXpath(expression);
+                List<String> varlist = XpathUtil.getUnprefixedVariablesUsedInXpath(expression, xpe.getXpathVersion());
                 if (varlist.size() == 1 && looksLikeAttemptToSelectSingleElementVariable(expression)) {
                     elementVar = varlist.get(0);
                 }

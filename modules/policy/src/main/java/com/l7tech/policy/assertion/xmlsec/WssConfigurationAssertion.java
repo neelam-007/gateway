@@ -6,6 +6,7 @@ import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.security.xml.WsSecurityVersion;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -105,7 +106,7 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
     }
 
     @Override
-    public void setDigestAlgorithmName(String digestAlgorithmName) {
+    public void setDigestAlgorithmName(@Nullable String digestAlgorithmName) {
         this.digestAlgorithmName = digestAlgorithmName;
     }
 

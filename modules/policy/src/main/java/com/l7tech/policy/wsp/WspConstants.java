@@ -40,6 +40,7 @@ import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathVersion;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -314,6 +315,7 @@ public class WspConstants {
         new ArrayTypeMapping(new FullQName[0], "fullQNameArray"),
         new BeanTypeMapping(XpathExpression.class, "xpathExpressionValue"),
         new ArrayTypeMapping(new XpathExpression[0], "xpathExpressionArray"),
+        new Java5EnumTypeMapping(XpathVersion.class, "xpathVersion"),
         new BeanTypeMapping(BindingInfo.class, "wsdlBindingInfo"),
         new BeanTypeMapping(BindingOperationInfo.class, "wsdlBindingOperationInfo"),
         new BeanTypeMapping(MimePartInfo.class, "wsdlMimePartInfo"),

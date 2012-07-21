@@ -110,7 +110,7 @@ public abstract class XpathBasedAssertion extends Assertion implements UsesVaria
         if (xpathExpression != null) {
             final String expr = xpathExpression.getExpression();
             if ( expr != null ) {
-                used.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath(expr) );
+                used.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath(expr, xpathExpression.getXpathVersion()) );
             }
         }
         return used;

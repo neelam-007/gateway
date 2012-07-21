@@ -2,12 +2,14 @@ package com.l7tech.xml.xpath;
 
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
 import org.jaxen.JaxenException;
-import org.jaxen.UnresolvableException;
-import org.jaxen.saxpath.SAXPathException;
+import org.jetbrains.annotations.Nullable;
+import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 import javax.xml.soap.MessageFactory;
 import javax.xml.soap.MimeHeaders;
@@ -17,6 +19,8 @@ import java.io.ByteArrayInputStream;
 import java.text.ParseException;
 import java.util.*;
 
+import static com.l7tech.xml.xpath.XpathVersion.XPATH_1_0;
+import static com.l7tech.xml.xpath.XpathVersion.XPATH_2_0;
 import static org.junit.Assert.*;
 
 /**
@@ -35,145 +39,238 @@ public class XpathUtilTest {
         namespaces.put("baz", "http://schemas.baz.org/");
     }
 
-    private List select(Document doc, Map<String, String> namespaces, String xpath) throws JaxenException {
-        return XpathUtil.compileAndSelect(doc, xpath, namespaces, null);
+    private XpathVersion xpathVersion = XpathVersion.UNSPECIFIED;
+
+    @Before
+    public void setUp() {
+        xpathVersion = XpathVersion.UNSPECIFIED;
     }
 
-    private List select(Document doc, String xpath) throws JaxenException {
-        return select(doc, namespaces, xpath);
+    private List<Node> select(Document doc, @Nullable Map<String, String> namespaces, String xpath, XpathVersion xpathVersion) throws InvalidXpathException {
+        XpathResult res = XpathUtil.testXpathExpression(doc, xpath, xpathVersion, namespaces, null);        
+        assertEquals(XpathResult.TYPE_NODESET, res.getType());
+        List<Node> ret = new ArrayList<Node>();
+        XpathResultNodeSet ns = res.getNodeSet();
+        XpathResultIterator it = ns.getIterator();
+        while (it.hasNext()) {
+            ElementCursor c = it.nextElementAsCursor();
+            ret.add(c.asDomElement());
+        }
+        return ret;
+    }
+
+    private List<Node> select(Document doc, String xpath, XpathVersion xpathVersion) throws InvalidXpathException {
+        return select(doc, namespaces, xpath, xpathVersion);
     }
 
     @Test
     public void testOtherFunctions() throws Exception {
+        doTestOtherFunctions(XpathVersion.UNSPECIFIED);
+    }
+
+    @Test
+    public void testOtherFunctionsXP10() throws Exception {
+        doTestOtherFunctions(XPATH_1_0);
+    }
+
+    @Test
+    public void testOtherFunctionsXP20() throws Exception {
+        doTestOtherFunctions(XpathVersion.XPATH_2_0);
+    }
+
+    private void doTestOtherFunctions(XpathVersion xpathVersion) throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
         System.out.println( XmlUtil.nodeToFormattedString(doc));
-        List nodes = select(doc, "string(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol)");
-        assertTrue("Size should have been >0", nodes.size() > 0);
-        for (Object node : nodes) {
-            String obj = (String) node;
-            assertTrue("Value must be DIS", obj.equals("DIS"));
-        }
+        XpathResult result = evaluate(doc, "string(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol)", xpathVersion);
+        assertEquals(XpathResult.TYPE_STRING, result.getType());
+        assertEquals("DIS", result.getString());
 
-        nodes = select(doc, "namespace-uri(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice)");
-        assertTrue("Size should have been >0", nodes.size() > 0);
-        for (Object node : nodes) {
-            String obj = (String) node;
-            assertTrue("Value must be Some-URI", obj.equals("Some-URI"));
-        }
+        result = evaluate(doc, "namespace-uri(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice)", xpathVersion);
+        assertEquals(XpathResult.TYPE_STRING, result.getType());
+        assertEquals("Some-URI", result.getString());
 
-        nodes = select(doc, "string-length(string(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol))");
-        assertTrue("Size should have been >0", nodes.size() > 0);
-        for (Object node : nodes) {
-            Double obj = (Double) node;
-            assertTrue("Value must be 3", obj.intValue() == 3);
-        }
+        result = evaluate(doc, "string-length(string(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol))", xpathVersion);
+        assertEquals(XpathResult.TYPE_NUMBER, result.getType());
+        assertEquals(3d, result.getNumber(), 0.01d);
     }
 
     @Test
     public void testContains() throws Exception {
+        doTestContains(XpathVersion.UNSPECIFIED);
+    }
+
+    @Test
+    public void testContainsXP10() throws Exception {
+        doTestContains(XPATH_1_0);
+    }
+
+    @Test
+    public void testContainsXP20() throws Exception {
+        doTestContains(XpathVersion.XPATH_2_0);
+    }
+
+    private void doTestContains(XpathVersion xpathVersion) throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
         System.out.println(XmlUtil.nodeToFormattedString(doc));
-        List nodes = select(doc, "contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol,'DI')");
-        assertTrue("Size should have been >0", nodes.size() > 0);
-        for (Object node : nodes) {
-            Boolean bool = (Boolean) node;
-            assertTrue("Should return true", bool);
-        }
+        XpathResult result = evaluate(doc, "contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol,'DI')", xpathVersion);
+        assertEquals(XpathResult.TYPE_BOOLEAN, result.getType());
+        assertTrue(result.getBoolean());
 
-        nodes = select(doc, "not(contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol,'BZZT'))");
-        assertTrue("Size should have been >0", nodes.size() > 0);
-        for (Object node : nodes) {
-            Boolean bool = (Boolean) node;
-            assertTrue("Should return true", bool);
-        }
+        result = evaluate(doc, "not(contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol,'BZZT'))", xpathVersion);
+        assertEquals(XpathResult.TYPE_BOOLEAN, result.getType());
+        assertTrue(result.getBoolean());
 
-        nodes = select(doc, "not(contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/elnotpresent,'BZZT'))");
-        assertTrue("Size should have been >0", nodes.size() > 0);
-        for (Object node : nodes) {
-            Boolean bool = (Boolean) node;
-            assertTrue("Should return true", bool);
-        }
+        result = evaluate(doc, "not(contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/elnotpresent,'BZZT'))", xpathVersion);
+        assertEquals(XpathResult.TYPE_BOOLEAN, result.getType());
+        assertTrue(result.getBoolean());
 
-        nodes = select(doc, "not(contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol,'DI'))");
-        assertTrue("Size should have been >0", nodes.size() > 0);
-        for (Object node1 : nodes) {
-            Boolean bool = (Boolean) node1;
-            assertTrue("Should return false", !bool);
-        }
+        result = evaluate(doc, "not(contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol,'DI'))", xpathVersion);
+        assertEquals(XpathResult.TYPE_BOOLEAN, result.getType());
+        assertFalse(result.getBoolean());
 
-        nodes = select(doc, "not(contains(translate(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol, 'dis', 'DIS'),'DI'))");
-        assertTrue("Size should have been >0", nodes.size() > 0);
-        for (Object node : nodes) {
-            Boolean bool = (Boolean) node;
-            assertTrue("Should return false", !bool);
-        }
+        result = evaluate(doc, "not(contains(translate(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol, 'dis', 'DIS'),'DI'))", xpathVersion);
+        assertEquals(XpathResult.TYPE_BOOLEAN, result.getType());
+        assertFalse(result.getBoolean());
     }
 
     @Test
     public void testBasicXmlMessage() throws Exception {
-        Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
-        List nodes = select(doc, null, "//*");
-        assertTrue("Size should have been >0", nodes.size() > 0);
-    }
-
-    private Object evaluate(Document doc, Map<String, String> namespaces, String xpath) throws JaxenException {
-        return XpathUtil.compileAndEvaluate(doc, xpath, namespaces, null);
-    }
-
-    private Object evaluate(Document doc, String xpath) throws JaxenException {
-        return evaluate(doc, namespaces, xpath);
+        doTestBasicXmlMessage(XpathVersion.UNSPECIFIED);
     }
 
     @Test
-    public void testValidate() throws Exception {
+    public void testBasicXmlMessageXP10() throws Exception {
+        doTestBasicXmlMessage(XPATH_1_0);
+    }
+
+    @Test
+    public void testBasicXmlMessageXP20() throws Exception {
+        doTestBasicXmlMessage(XpathVersion.XPATH_2_0);
+    }
+
+    private void doTestBasicXmlMessage(XpathVersion xpathVersion) throws Exception {
+        Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
+        List nodes = select(doc, null, "//*", xpathVersion);
+        assertTrue("Size should have been >0", nodes.size() > 0);
+    }
+
+    private XpathResult evaluate(Document doc, Map<String, String> namespaces, String xpath, XpathVersion xpathVersion) throws JaxenException, InvalidXpathException {
+        return XpathUtil.testXpathExpression(doc, xpath, xpathVersion, namespaces, null);
+    }
+
+    private XpathResult evaluate(Document doc, String xpath, XpathVersion xpathVersion) throws JaxenException, InvalidXpathException {
+        return evaluate(doc, namespaces, xpath, xpathVersion);
+    }
+
+    @Test
+    public void testValidateXPUnk() throws Exception {
+        doTestValidate(XpathVersion.UNSPECIFIED);
+    }
+
+    @Test
+    public void testValidateXP10() throws Exception {
+        doTestValidate(XPATH_1_0);
+    }
+
+    @Test
+    public void testValidateXP20() throws Exception {
+        doTestValidate(XPATH_2_0);
+    }
+
+    private void doTestValidate(XpathVersion xpathVersion) throws Exception {
         // OK, no namespaced used or provided
-        XpathUtil.validate( "/a/b/c/d/e", null );
+        XpathUtil.validate( "/a/b/c/d/e", xpathVersion, null );
 
         // OK, namespaced used and provided (includes a duplicate unused namespace which is fine)
-        XpathUtil.validate( "/a/prefix1:b/c/prefix2:d/e", new HashMap<String,String>(){{put("prefix1","urn:p1"); put("prefix2", "urn:p2"); put("prefix3", "urn:p2");}} );
+        XpathUtil.validate( "/a/prefix1:b/c/prefix2:d/e", xpathVersion, new HashMap<String,String>(){{put("prefix1","urn:p1"); put("prefix2", "urn:p2"); put("prefix3", "urn:p2");}} );
 
         // Fail, missing namespaces
         try {
-            XpathUtil.validate( "/prefix1:b/c/d/prefix2:f", null );
+            XpathUtil.validate( "/prefix1:b/c/d/prefix2:f", xpathVersion, null );
             fail("Expected validation exception");
-        } catch ( SAXPathException e ) {
+        } catch ( InvalidXpathException e ) {
             assertTrue( "Message identifies prefix1", e.getMessage().contains( "prefix1" ));
-            assertTrue( "Message identifies prefix2", e.getMessage().contains( "prefix2" ));
+            if (!XPATH_2_0.equals(xpathVersion)) {
+                // Jaxon apparently includes all missing prefixes in the exception message, but Saxon does not
+                assertTrue( "Message identifies prefix2", e.getMessage().contains( "prefix2" ));
+            }
         }
 
         // Fail, missing a namespace
         try {
-            XpathUtil.validate( "/prefix1:b/c/d/prefix2:f", new HashMap<String,String>(){{put("prefix1","urn:p1"); put("prefix3", "urn:p3");}} );
+            XpathUtil.validate( "/prefix1:b/c/d/prefix2:f", xpathVersion, new HashMap<String,String>(){{put("prefix1","urn:p1"); put("prefix3", "urn:p3");}} );
             fail("Expected validation exception");
-        } catch ( SAXPathException e ) {
+        } catch ( InvalidXpathException e ) {
             assertTrue( "Message identifies prefix2", e.getMessage().contains( "prefix2" ));
         }
     }
 
     @Test
     public void testSoapMessage() throws Exception {
+        doTestSoapMessage(XpathVersion.UNSPECIFIED);
+    }
+
+    @Test
+    public void testSoapMessageXP10() throws Exception {
+        doTestSoapMessage(XPATH_1_0);
+    }
+
+    @Test
+    public void testSoapMessageXP20() throws Exception {
+        doTestSoapMessage(XpathVersion.XPATH_2_0);
+    }
+
+    private void doTestSoapMessage(XpathVersion xpathVersion) throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
-        List nodes = select(doc, "//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice");
+        List nodes = select(doc, "//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice", xpathVersion);
         assertTrue("Size should have been >0", nodes.size() > 0);
-        Object ret = evaluate(doc, "//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol='DIS'");
-        Boolean bool = (Boolean)ret;
-        assertTrue("Should have returned true (element exists)", bool);
+        XpathResult result = evaluate(doc, "//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol='DIS'", xpathVersion);
+        assertEquals(XpathResult.TYPE_BOOLEAN, result.getType());
+        assertTrue("Should have returned true (element exists)", result.getBoolean());
     }
 
     @Test
     public void testNamespaceSoapMessage() throws Exception {
+        doTestNamespaceSoapMessage(XpathVersion.UNSPECIFIED);
+    }
+
+    @Test
+    public void testNamespaceSoapMessageXP10() throws Exception {
+        doTestNamespaceSoapMessage(XPATH_1_0);
+    }
+
+    @Test
+    public void testNamespaceSoapMessageXP20() throws Exception {
+        doTestNamespaceSoapMessage(XpathVersion.XPATH_2_0);
+    }
+
+    private void doTestNamespaceSoapMessage(XpathVersion xpathVersion) throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
-        select(doc, "//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/*");
-        evaluate(doc, "//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol='DIS'");
+        select(doc, "//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/*", xpathVersion);
+        evaluate(doc, "//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol='DIS'", xpathVersion);
     }
 
     @Test
     public void testNamespaceNonExistSoapMessage() throws Exception {
+        doTestNamespaceNonExistSoapMessage(XpathVersion.UNSPECIFIED);
+    }
+
+    @Test
+    public void testNamespaceNonExistSoapMessageXP10() throws Exception {
+        doTestNamespaceNonExistSoapMessage(XPATH_1_0);
+    }
+
+    @Test
+    public void testNamespaceNonExistSoapMessageXP20() throws Exception {
+        doTestNamespaceNonExistSoapMessage(XpathVersion.XPATH_2_0);
+    }
+
+    private void doTestNamespaceNonExistSoapMessage(XpathVersion xpathVersion) throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
         try {
-            select(doc, "//SOAP-ENVX:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/*");
+            select(doc, "//SOAP-ENVX:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/*", xpathVersion);
             fail("the UnresolvableException should have been thrown");
-        } catch (UnresolvableException e) {
+        } catch (InvalidXpathException e) {
             // ok
         }
     }
@@ -196,22 +293,50 @@ public class XpathUtilTest {
     }
 
     @Test
-    public void testMethodElementEnvelopeAcestor() throws Exception {
+    public void testMethodElementEnvelopeAncestor() throws Exception {
+        doTestMethodElementEnvelopeAncestor(XpathVersion.UNSPECIFIED);
+    }
+
+    @Test
+    public void testMethodElementEnvelopeAncestorXP10() throws Exception {
+        doTestMethodElementEnvelopeAncestor(XPATH_1_0);
+    }
+
+    @Test
+    public void testMethodElementEnvelopeAncestorXP20() throws Exception {
+        doTestMethodElementEnvelopeAncestor(XpathVersion.XPATH_2_0);
+    }
+
+    private void doTestMethodElementEnvelopeAncestor(XpathVersion xpathVersion) throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
-        List list = select(doc, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/ancestor::SOAP-ENV:Envelope");
+        List list = select(doc, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/ancestor::SOAP-ENV:Envelope", xpathVersion);
         assertTrue("Size should have been == 1, returned "+list.size(), list.size() == 1);
 
-        list = select(doc, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastBid/ancestor::SOAP-ENV:Envelope");
+        list = select(doc, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastBid/ancestor::SOAP-ENV:Envelope", xpathVersion);
         assertTrue("Size should have been == 0, returned "+list.size(), list.size() == 0);
     }
 
     @Test
     public void testNonSoap() throws Exception {
+        doTestNonSoap(XpathVersion.UNSPECIFIED);
+    }
+
+    @Test
+    public void testNonSoapXP10() throws Exception {
+        doTestNonSoap(XPATH_1_0);
+    }
+
+    @Test
+    public void testNonSoapXP20() throws Exception {
+        doTestNonSoap(XpathVersion.XPATH_2_0);
+    }
+
+    public void doTestNonSoap(XpathVersion xpathVersion) throws Exception {            
         Document doc = XmlUtil.stringToDocument("<s0:blah xmlns:s0=\"http://grrr.com/nsblah\"/>");
         System.out.println(XmlUtil.nodeToFormattedString(doc));
         Map<String, String> nsmap = new HashMap<String, String>();
         nsmap.put("s0", "http://grrr.com/nsblah");
-        List nodes = select(doc, nsmap, "//*[local-name()='blah']");
+        List nodes = select(doc, nsmap, "//*[local-name()='blah']", xpathVersion);
         assertTrue("Size should have been >0", nodes.size() > 0);
         for (Object obj : nodes) {
             System.out.println(obj);
@@ -220,64 +345,100 @@ public class XpathUtilTest {
 
     @Test
     public void testXPathStringNumber() throws Exception {
+        doTestXPathStringNumber(XpathVersion.UNSPECIFIED);
+    }
+
+    @Test
+    public void testXPathStringNumberXP10() throws Exception {
+        doTestXPathStringNumber(XPATH_1_0);
+    }
+
+    @Test
+    public void testXPathStringNumberXP20() throws Exception {
+        doTestXPathStringNumber(XpathVersion.XPATH_2_0);
+    }
+
+    private void doTestXPathStringNumber(XpathVersion xpathVersion) throws Exception {
         Document doc = XmlUtil.stringToDocument("<s0:blah xmlns:s0=\"http://grrr.com/nsblah\">123</s0:blah>");
         System.out.println(XmlUtil.nodeToFormattedString(doc));
         Map<String, String> nsmap = new HashMap<String, String>();
         nsmap.put("s0", "http://grrr.com/nsblah");
-        List nodes = select(doc, nsmap, "/s0:blah=\"123\"");
-        assertTrue("Size should have been > 0", nodes.size() > 0);
-        for (Object node : nodes) {
-            Boolean bool = (Boolean) node;
-            assertTrue(bool);
-        }
-        nodes = select(doc, nsmap, "/s0:blah=123");
-        assertTrue("Size should have been > 0", nodes.size() > 0);
-        for (Object node : nodes) {
-            Boolean bool = (Boolean) node;
-            assertTrue(bool);
-        }
+
+        XpathResult result = evaluate(doc, nsmap, "/s0:blah=\"123\"", xpathVersion);
+        assertEquals(XpathResult.TYPE_BOOLEAN, result.getType());
+        assertTrue(result.getBoolean());
+
+        result = evaluate(doc, nsmap, "/s0:blah=123", xpathVersion);
+        assertEquals(XpathResult.TYPE_BOOLEAN, result.getType());
+        assertTrue(result.getBoolean());
     }
 
     @Test
     public void testLongTextNodes() throws Exception {
+        doTestLongTextNodes(XpathVersion.UNSPECIFIED);
+    }
+
+    @Test
+    public void testLongTextNodesXP10() throws Exception {
+        doTestLongTextNodes(XPATH_1_0);
+    }
+
+    @Test
+    public void testLongTextNodesXP20() throws Exception {
+        doTestLongTextNodes(XpathVersion.XPATH_2_0);
+    }
+
+    private void doTestLongTextNodes(XpathVersion xpathVersion) throws Exception {
         Document doc = XmlUtil.stringToDocument("<s0:blah xmlns:s0=\"http://grrr.com/nsblah\">123</s0:blah>");
         Map<String, String> nsmap = new HashMap<String, String>();
         nsmap.put("s0", "http://grrr.com/nsblah");
-        List nodes = select(doc, nsmap, "(//*/text())[string-length() > 20]");
-        assertTrue(nodes.size() == 0);
-        doc = XmlUtil.stringToDocument("<s0:blah xmlns:s0=\"http://grrr.com/nsblah\">blahblahblahblahblahblahblahblahblahblahblahblahblah</s0:blah>");
-        nodes = select(doc, nsmap, "(//*/text())[string-length() > 20]");
-        assertTrue(nodes.size() == 1);
 
+        XpathResult result = evaluate(doc, nsmap, "(//*/text())[string-length() > 20]", xpathVersion);
+        assertEquals(XpathResult.TYPE_NODESET, result.getType());
+        assertTrue(result.getNodeSet().isEmpty());
+
+        doc = XmlUtil.stringToDocument("<s0:blah xmlns:s0=\"http://grrr.com/nsblah\">blahblahblahblahblahblahblahblahblahblahblahblahblah</s0:blah>");
+        result = evaluate(doc, nsmap, "(//*/text())[string-length() > 20]", xpathVersion);
+        assertEquals(XpathResult.TYPE_NODESET, result.getType());
+        assertFalse(result.getNodeSet().isEmpty());
+        final XpathResultIterator it = result.getNodeSet().getIterator();
+        assertTrue(it.hasNext());
+        it.next(new XpathResultNode());
+        assertFalse(it.hasNext());
     }
 
     @Test
     public void testLongAttributesValues() throws Exception {
+        doTestLongAttributesValues(XpathVersion.UNSPECIFIED);
+    }
+
+    @Test
+    public void testLongAttributesValuesXP10() throws Exception {
+        doTestLongAttributesValues(XPATH_1_0);
+    }
+
+    @Test
+    public void testLongAttributesValuesXP20() throws Exception {
+        doTestLongAttributesValues(XpathVersion.XPATH_2_0);
+    }
+
+    private void doTestLongAttributesValues(XpathVersion xpathVersion) throws Exception {            
         Document doc = XmlUtil.stringToDocument("<blah foo=\"blah\">123</blah>");
         Map<String, String> nsmap = new HashMap<String, String>();
         nsmap.put("s0", "http://grrr.com/nsblah");
-        List nodes = select(doc, nsmap, "count(//*/@*[string-length() > 20]) > 0");
-        System.out.println(nodes.size());
+        XpathResult result = evaluate(doc, nsmap, "count(//*/@*[string-length() > 20]) > 0", xpathVersion);
+        assertEquals(XpathResult.TYPE_BOOLEAN, result.getType());
+        assertFalse(result.getBoolean());
 
-        for (Object node : nodes) {
-            Boolean bool = (Boolean) node;
-            assertFalse(bool);
-        }
         doc = XmlUtil.stringToDocument("<s0:blah xmlns:s0=\"http://grrr.com/nsblah\" foo=\"blahblahblahblahblahblahblahblahblahblahblahblahblah\">123</s0:blah>");
-        nodes = select(doc, nsmap, "count(//*/@*[string-length() > 20]) > 0");
-
-        for (Object node : nodes) {
-            Boolean bool = (Boolean) node;
-            assertTrue(bool);
-        }
+        result = evaluate(doc, nsmap, "count(//*/@*[string-length() > 20]) > 0", xpathVersion);
+        assertEquals(XpathResult.TYPE_BOOLEAN, result.getType());
+        assertTrue(result.getBoolean());
 
         doc = XmlUtil.stringToDocument("<blah blahblahblahblahblahblahblahblahblahblahblahblahblah=\"foo\">123</blah>");
-        nodes = select(doc, nsmap, "count(//*/@*[string-length() > 20]) > 0");
-
-        for (Object node : nodes) {
-            Boolean bool = (Boolean) node;
-            assertFalse(bool);
-        }
+        result = evaluate(doc, nsmap, "count(//*/@*[string-length() > 20]) > 0", xpathVersion);
+        assertEquals(XpathResult.TYPE_BOOLEAN, result.getType());
+        assertFalse(result.getBoolean());
     }
 
     @Test
@@ -303,20 +464,43 @@ public class XpathUtilTest {
 
     @Test
     public void testDeepNested() throws Exception {
+        doTestDeepNested(XpathVersion.UNSPECIFIED);
+    }
+
+    @Test
+    public void testDeepNestedXP10() throws Exception {
+        doTestDeepNested(XPATH_1_0);
+    }
+
+    @Test
+    public void testDeepNestedXP20() throws Exception {
+        doTestDeepNested(XpathVersion.XPATH_2_0);
+    }
+
+    private void doTestDeepNested(XpathVersion xpathVersion) throws Exception {
         Document doc = XmlUtil.stringToDocument("<blah foo=\"blah\"><foo><bar/></foo></blah>");
         final Map<String, String> nsmap = new HashMap<String, String>();
-        List res = select(doc, nsmap, "count(/*/*/*) > 0");
-        Boolean bool = (Boolean)res.iterator().next();
-        assertTrue(bool);
+        XpathResult result = evaluate(doc, nsmap, "count(/*/*/*) > 0", xpathVersion);
+        assertEquals(XpathResult.TYPE_BOOLEAN, result.getType());
+        assertTrue(result.getBoolean());
+
         doc = XmlUtil.stringToDocument("<blah foo=\"blah\"><foo/></blah>");
-        res = select(doc, nsmap, "count(/*/*/*) > 0");
-        bool = (Boolean)res.iterator().next();
-        assertFalse(bool);
+        result = evaluate(doc, nsmap, "count(/*/*/*) > 0", xpathVersion);
+        assertEquals(XpathResult.TYPE_BOOLEAN, result.getType());
+        assertFalse(result.getBoolean());
     }
 
     @Test
     public void testGetUnprefixedVars() throws Exception {
-        List<String> got = XpathUtil.getUnprefixedVariablesUsedInXpath("$foo = $bar + $pfx:blat");
+        List<String> got = XpathUtil.getUnprefixedVariablesUsedInXpath("$foo = $bar + $pfx:blat", XPATH_1_0);
+        assertEquals(2, got.size());
+        assertEquals("foo", got.get(0));
+        assertEquals("bar", got.get(1));
+    }
+
+    @Test
+    public void testGetUnprefixedVarsXP20() throws Exception {
+        List<String> got = XpathUtil.getUnprefixedVariablesUsedInXpath("$foo = $bar + $pfx:blat", XpathVersion.XPATH_2_0);
         assertEquals(2, got.size());
         assertEquals("foo", got.get(0));
         assertEquals("bar", got.get(1));
@@ -324,31 +508,52 @@ public class XpathUtilTest {
 
     @Test
     public void testUsesTargetDocument() throws Exception {
-        assertTrue(XpathUtil.usesTargetDocument("//foo"));
-        assertTrue(XpathUtil.usesTargetDocument("/foo/bar/baz"));
-        assertTrue(XpathUtil.usesTargetDocument("*[namespace-uri() = $foo]"));
-        assertTrue(XpathUtil.usesTargetDocument("foo/bar"));
-        assertTrue(XpathUtil.usesTargetDocument("../$blah"));
-        assertTrue(XpathUtil.usesTargetDocument("count(//foo)"));
-        assertTrue(XpathUtil.usesTargetDocument("4 = sum(*)"));
-        assertTrue(XpathUtil.usesTargetDocument("id(foo)"));
-        assertTrue(XpathUtil.usesTargetDocument("id(\"A\")"));
+        assertTrue(XpathUtil.usesTargetDocument("//foo", XPATH_1_0));
+        assertTrue(XpathUtil.usesTargetDocument("/foo/bar/baz", XPATH_1_0));
+        assertTrue(XpathUtil.usesTargetDocument("*[namespace-uri() = $foo]", XPATH_1_0));
+        assertTrue(XpathUtil.usesTargetDocument("foo/bar", XPATH_1_0));
+        assertTrue(XpathUtil.usesTargetDocument("../$blah", XPATH_1_0));
+        assertTrue(XpathUtil.usesTargetDocument("count(//foo)", XPATH_1_0));
+        assertTrue(XpathUtil.usesTargetDocument("4 = sum(*)", XPATH_1_0));
+        assertTrue(XpathUtil.usesTargetDocument("id(foo)", XPATH_1_0));
+        assertTrue(XpathUtil.usesTargetDocument("id(\"A\")", XPATH_1_0));
     }
 
     @Test
     public void testUsesTargetDocument_inconclusive() throws Exception {
         // These are inconclusive and so report that it might indeed use the target document
-        assertTrue(XpathUtil.usesTargetDocument("$blah/bar/baz"));
-        assertTrue(XpathUtil.usesTargetDocument("5 + 4 / 4 + namespace-uri()"));
+        assertTrue(XpathUtil.usesTargetDocument("$blah/bar/baz", XPATH_1_0));
+        assertTrue(XpathUtil.usesTargetDocument("5 + 4 / 4 + namespace-uri()", XPATH_1_0));
     }
 
     @Test
     public void testUsesTargetDocument_neg() {
-        assertFalse(XpathUtil.usesTargetDocument("0=0"));
-        assertFalse(XpathUtil.usesTargetDocument("1=0"));
-        assertFalse(XpathUtil.usesTargetDocument("$blah"));
-        assertFalse(XpathUtil.usesTargetDocument("$blah > 4"));
-        assertFalse(XpathUtil.usesTargetDocument("count($blah)"));
+        assertFalse(XpathUtil.usesTargetDocument("0=0", XPATH_1_0));
+        assertFalse(XpathUtil.usesTargetDocument("1=0", XPATH_1_0));
+        assertFalse(XpathUtil.usesTargetDocument("$blah", XPATH_1_0));
+        assertFalse(XpathUtil.usesTargetDocument("$blah > 4", XPATH_1_0));
+        assertFalse(XpathUtil.usesTargetDocument("count($blah)", XPATH_1_0));
+    }
+    
+    @Test
+    public void testUsesTargetDocumentXP20() {
+        // For XPath 2.0, we currently don't even try to determin this, and just always assume the expression might use the target document.
+        assertTrue(XpathUtil.usesTargetDocument("//foo", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("/foo/bar/baz", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("*[namespace-uri() = $foo]", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("foo/bar", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("../$blah", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("count(//foo)", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("4 = sum(*)", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("id(foo)", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("id(\"A\")", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("$blah/bar/baz", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("5 + 4 / 4 + namespace-uri()", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("0=0", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("1=0", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("$blah", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("$blah > 4", XPATH_2_0));
+        assertTrue(XpathUtil.usesTargetDocument("count($blah)", XPATH_2_0));
     }
 
     @Test
@@ -403,29 +608,51 @@ public class XpathUtilTest {
         literalTest("aaaaaa\"aaaa'");
     }
 
+    @Test
+    public void testXpathLiteralXP10() throws Exception {
+        xpathVersion = XPATH_1_0;
+        testXpathLiteral();
+    }
+
+    @Test
+    public void testXpathLiteralXP20() throws Exception {
+        xpathVersion = XPATH_2_0;
+        testXpathLiteral();
+    }
+
     private void literalTest( final String value ) throws Exception {
-        String result = (String) evaluate( null, XpathUtil.literalExpression(value) );
-        assertEquals( value, result );
+        XpathResult result = evaluate( null, XpathUtil.literalExpression(value), xpathVersion );
+        assertEquals(XpathResult.TYPE_STRING, result.getType());
+        assertEquals( value, result.getString() );
     }
 
     @Test
     public void testGetNamespacesUsedByXpath() throws Exception {
-        Set<String> got = XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah=\'x:bleef\']", false);
+        Set<String> got = XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah=\'x:bleef\']", xpathVersion, false);
         assertEquals(1, got.size());
         assertTrue(got.contains("s"));
     }
 
     @Test
     public void testGetNamespacesUsedByXpath_withQnameLiterals() throws Exception {
-        Set<String> got = XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah=\'x:bleef\']", true);
+        Set<String> got = XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah=\'x:bleef\']", xpathVersion, true);
         assertEquals(2, got.size());
         assertTrue(got.contains("s"));
         assertTrue(got.contains("x"));
     }
 
     @Test
+    public void testGetNamespacesUsedByXpath_withQnameLiterals_XP20() throws Exception {
+        xpathVersion = XPATH_2_0;
+        // Currently the lookForQnameLiterals flag is ignored for XPath 2.0
+        Set<String> got = XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah=\'x:bleef\']", xpathVersion, true);
+        assertEquals(1, got.size());
+        assertTrue(got.contains("s"));
+    }
+
+    @Test
     public void testGetNamespacesUsedByXpath_complex() throws Exception {
-        Set<String> got = XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah=\'x:bleef\' and ack:myfunc()][@bloof = $vp:myvar]", true);
+        Set<String> got = XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah=\'x:bleef\' and ack:myfunc()][@bloof = $vp:myvar]", xpathVersion, true);
         assertEquals(4, got.size());
         assertTrue(got.contains("s"));
         assertTrue(got.contains("x"));
@@ -433,9 +660,26 @@ public class XpathUtilTest {
         assertTrue(got.contains("vp"));
     }
 
+    @Test
+    public void testGetNamespacesUsedByXpath_complex_XP20() throws Exception {
+        xpathVersion = XPATH_2_0;
+        // Omit "ack:myfunc()" since Saxon/XPath 2.0 won't compile references to undefined functions
+        // Omit "x" from expected result set since for Xpath 2.0 we currently ingore the "lookForQnameLiterals" flag
+        Set<String> got = XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah='x:bleef'][@bloof = $vp:myvar]", xpathVersion, false);
+        assertEquals(2, got.size());
+        assertTrue(got.contains("s"));
+        assertTrue(got.contains("vp"));
+    }
+
     @Test(expected = ParseException.class)
     public void testGetNamespacesUsedByXpath_invalidXpath() throws Exception {
-        XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah=\'x:bleef\'", false);
+        XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah=\'x:bleef\'", xpathVersion, false);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testGetNamespacesUsedByXpath_invalidXpath_XP20() throws Exception {
+        xpathVersion = XPATH_2_0;
+        testGetNamespacesUsedByXpath_invalidXpath();
     }
 
 }

@@ -1,20 +1,21 @@
 package com.l7tech.console.tree.policy.advice;
 
+import com.l7tech.console.tree.policy.PolicyChange;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
 import com.l7tech.wsdl.MimePartInfo;
-import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.InvalidXpathException;
+import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.xpath.XpathUtil;
-import com.l7tech.console.tree.policy.PolicyChange;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RequestSwAAssertion;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gui.util.DialogDisplayer;
-import org.jaxen.saxpath.SAXPathException;
+import com.l7tech.xml.xpath.XpathVersion;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Binding;
@@ -205,9 +206,9 @@ public class AddRequestSwAAssertionAdvice implements Advice {
                 final Map<String,String> namespaces = XpathUtil.getNamespaces(soapRequest.getSOAPMessage());
                 if (bo != null) {
                     try {
-                        XpathUtil.validate( xpathExpression, namespaces );
+                        XpathUtil.validate( xpathExpression, XpathVersion.XPATH_1_0, namespaces );
                         bo.setXpath(xpathExpression);
-                    } catch ( SAXPathException e ) {
+                    } catch (InvalidXpathException e) {
                         logger.warning("Ignoring invalid XPath expression '"+xpathExpression+"': " + ExceptionUtils.getMessage( e ));
                     }
                 }

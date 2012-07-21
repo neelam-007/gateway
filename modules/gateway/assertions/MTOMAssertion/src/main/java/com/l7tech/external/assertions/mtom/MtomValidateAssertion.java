@@ -112,7 +112,7 @@ public class MtomValidateAssertion extends MessageTargetableAssertion implements
 
                 final String expression = validationRule.getXpathExpression().getExpression();
                 if ( expression != null ) {
-                    variablesUsed.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath( expression ) );
+                    variablesUsed.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath( expression, validationRule.getXpathExpression().getXpathVersion() ) );
                 }
             }
         }

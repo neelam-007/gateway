@@ -125,7 +125,7 @@ public class MtomEncodeAssertion extends MessageTargetableAssertion implements U
 
                 final String expression = xpathExpression.getExpression();
                 if ( expression != null ) {
-                    variablesUsed.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath( expression ) );
+                    variablesUsed.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath( expression, xpathExpression.getXpathVersion() ) );
                 }
             }
         }

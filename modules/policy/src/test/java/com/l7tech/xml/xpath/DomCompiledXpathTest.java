@@ -11,6 +11,8 @@ import org.w3c.dom.Element;
 import javax.xml.xpath.XPathExpressionException;
 import java.util.Map;
 
+import static com.l7tech.xml.xpath.XpathVersion.XPATH_1_0;
+import static com.l7tech.xml.xpath.XpathVersion.XPATH_2_0;
 import static org.junit.Assert.*;
 
 /**
@@ -27,6 +29,8 @@ public class DomCompiledXpathTest {
                     return "stringvar_value";
                 if ("intvar".equals(variableName))
                     return 42;
+                if ("doublevar".equals(variableName))
+                    return 42d;
                 if ("booleanvar".equals(variableName))
                     return true;
             }
@@ -60,7 +64,7 @@ public class DomCompiledXpathTest {
 
     @Test
     public void testSelectNodeSetXP20Syntax() throws Exception {
-        final DomCompiledXpath dxp = new DomCompiledXpath(new XpathExpression("(//b/*[1], //b/d, //b/*[2]/following-sibling::*)", "2.0", (Map<String,String>)null));
+        final DomCompiledXpath dxp = new DomCompiledXpath(new XpathExpression("(//b/*[1], //b/d, //b/*[2]/following-sibling::*)", XPATH_2_0, (Map<String,String>)null));
         checkBStarResult(dxp);
     }
 
@@ -79,13 +83,31 @@ public class DomCompiledXpathTest {
 
     @Test
     public void testSelectNodeSetXP20Function() throws Exception {
-        final DomCompiledXpath dxp = new DomCompiledXpath(new XpathExpression("//b/*[matches(.,'')]", "2.0", (Map<String,String>)null));
+        final DomCompiledXpath dxp = new DomCompiledXpath(new XpathExpression("//b/*[matches(.,'')]", XPATH_2_0, (Map<String,String>)null));
         checkBStarResult(dxp);
     }
 
     @Test
+    public void testExpressionWithVariables() throws Exception {
+        final DomCompiledXpath dxp = new DomCompiledXpath(new XpathExpression("$doublevar + 100", XPATH_1_0, (Map<String,String>)null));
+        XpathResult xr = cursor.getXpathResult(dxp, varFinder, true);
+        assertTrue(xr.matches());
+        assertEquals(XpathResult.TYPE_NUMBER, xr.getType());
+        assertEquals(142, xr.getNumber(), 1);
+    }
+
+    @Test
     public void testExpressionWithVariablesXP20() throws Exception {
-        final DomCompiledXpath dxp = new DomCompiledXpath(new XpathExpression("$intvar + 100", "2.0", (Map<String,String>)null));
+        final DomCompiledXpath dxp = new DomCompiledXpath(new XpathExpression("$doublevar + 100", XPATH_2_0, (Map<String,String>)null));
+        XpathResult xr = cursor.getXpathResult(dxp, varFinder, true);
+        assertTrue(xr.matches());
+        assertEquals(XpathResult.TYPE_NUMBER, xr.getType());
+        assertEquals(142, xr.getNumber(), 1);
+    }
+
+    @Test
+    public void testExpressionWithVariablesIntXP20() throws Exception {
+        final DomCompiledXpath dxp = new DomCompiledXpath(new XpathExpression("$intvar + 100", XPATH_2_0, (Map<String,String>)null));
         XpathResult xr = cursor.getXpathResult(dxp, varFinder, true);
         assertTrue(xr.matches());
         assertEquals(XpathResult.TYPE_NUMBER, xr.getType());

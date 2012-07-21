@@ -53,7 +53,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                 loginXpath = null;
             } else {
                 String expr = loginExpr.getExpression();
-                if (!XpathUtil.usesTargetDocument(expr))
+                if (!XpathUtil.usesTargetDocument(expr, loginExpr.getXpathVersion()))
                     loginUsesTargetDoc = false;
                 loginXpath = new DOMXPath(expr);
                 loginXpath.setFunctionContext(XPATH_FUNCTIONS);
@@ -77,7 +77,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                 passwordXpath = null;
             } else {
                 String expr = passwordExpr.getExpression();
-                if (!XpathUtil.usesTargetDocument(expr))
+                if (!XpathUtil.usesTargetDocument(expr, passwordExpr.getXpathVersion()))
                     passwordUsesTargetDoc = false;
                 passwordXpath = new DOMXPath(expr);
                 passwordXpath.setFunctionContext(XPATH_FUNCTIONS);

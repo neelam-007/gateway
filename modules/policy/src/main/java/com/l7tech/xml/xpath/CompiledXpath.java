@@ -5,10 +5,14 @@
 
 package com.l7tech.xml.xpath;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.xml.xpath.XPathExpressionException;
 import java.util.Map;
+
+import static com.l7tech.xml.xpath.XpathVersion.UNSPECIFIED;
+import static com.l7tech.xml.xpath.XpathVersion.XPATH_1_0;
 
 /**
  * Represents an XPath expression that has been precompiled, and can be run against an ElementCursor.
@@ -24,7 +28,7 @@ public abstract class CompiledXpath {
     private final Map<String, String> nsmap;
     private final boolean mightUseVariables;
     private final boolean requiresTargetDocument;
-    private final String xpathVersion;
+    private final XpathVersion xpathVersion;
 
     /**
      * Initialize the CompiledXpath superclass.
@@ -34,21 +38,21 @@ public abstract class CompiledXpath {
      * @param nsmap       the namespace map, or null if no qualified names are used by expression.
      *
      */
-    protected CompiledXpath(String expression, @Nullable String xpathVersion, @Nullable Map<String, String> nsmap) {
+    protected CompiledXpath(String expression, @NotNull XpathVersion xpathVersion, @Nullable Map<String, String> nsmap) {
         if (expression == null) throw new NullPointerException();
-        if (xpathVersion == null)
-            xpathVersion = "1.0";
+        if (UNSPECIFIED.equals(xpathVersion))
+            xpathVersion = XPATH_1_0;
         this.xpathVersion = xpathVersion;
         this.expression = expression;
         this.nsmap = nsmap;
         boolean vars;
         try {
-            vars = XpathUtil.usesXpathVariables(expression);
+            vars = XpathUtil.usesXpathVariables(expression, xpathVersion);
         } catch (XPathExpressionException e) {
             vars = true;
         }
         this.mightUseVariables = vars;
-        this.requiresTargetDocument = XpathUtil.usesTargetDocument(expression);
+        this.requiresTargetDocument = XpathUtil.usesTargetDocument(expression, xpathVersion);
     }
 
     /** @return the generic xpath expression string.  Never null. */
@@ -69,7 +73,7 @@ public abstract class CompiledXpath {
     /**
      * @return XPath version number, eg "1.0", "2.0" or "3.0".  Never null.
      */
-    public String getXpathVersion() {
+    public XpathVersion getXpathVersion() {
         return xpathVersion;
     }
 
@@ -84,14 +88,14 @@ public abstract class CompiledXpath {
     /** A utility expression that is always true. */
     private static final class Tautology extends CompiledXpath {
         protected Tautology() {
-            super("0=0", null, null);
+            super("0=0", UNSPECIFIED, null);
         }
     }
 
     /** A utility expression that is always false. */
     private static final class Contradiction extends CompiledXpath {
         protected Contradiction() {
-            super("0=1", null, null);
+            super("0=1", UNSPECIFIED, null);
         }
     }
 

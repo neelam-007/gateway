@@ -27,6 +27,7 @@ import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathUtil;
+import com.l7tech.xml.xpath.XpathVersion;
 import org.jcp.xml.dsig.internal.dom.DOMReference;
 import org.jcp.xml.dsig.internal.dom.DOMSubTreeData;
 import org.junit.*;
@@ -1186,8 +1187,22 @@ public class WssProcessorTest {
         // Test proposed XPath for detecting this issue
         Map<String, String> nsmap = new HashMap<String, String>();
         nsmap.put("ds", SoapUtil.DIGSIG_URI);
-        assertEquals(Boolean.TRUE, XpathUtil.compileAndEvaluate(d, "count(/*/*[local-name()=\"Header\"]/*[local-name()=\"Security\"]/ds:Signature)=2", nsmap, null));
-        assertEquals(Boolean.FALSE, XpathUtil.compileAndEvaluate(d, "count(/*/*[local-name()=\"Header\"]/*[local-name()=\"Security\"]/ds:Signature)=1", nsmap, null));
+        assertTrue(XpathUtil.testXpathExpression(d, "count(/*/*[local-name()=\"Header\"]/*[local-name()=\"Security\"]/ds:Signature)=2", XpathVersion.XPATH_1_0, nsmap, null).matches());
+        assertFalse(XpathUtil.testXpathExpression(d, "count(/*/*[local-name()=\"Header\"]/*[local-name()=\"Security\"]/ds:Signature)=1", XpathVersion.XPATH_1_0, nsmap, null).matches());
+    }
+
+    @Test
+    @BugNumber(7157)
+    public void testMultipleSignaturesXP20() throws Exception {
+        Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "bug7157_signatureCombination.xml");
+        TestDocument td = new TestDocument("Multiple signatures", d, null, null, null, null, null);
+        doTest(td);
+
+        // Test proposed XPath for detecting this issue
+        Map<String, String> nsmap = new HashMap<String, String>();
+        nsmap.put("ds", SoapUtil.DIGSIG_URI);
+        assertTrue(XpathUtil.testXpathExpression(d, "count(/*/*[local-name()=\"Header\"]/*[local-name()=\"Security\"]/ds:Signature)=2", XpathVersion.XPATH_2_0, nsmap, null).matches());
+        assertFalse(XpathUtil.testXpathExpression(d, "count(/*/*[local-name()=\"Header\"]/*[local-name()=\"Security\"]/ds:Signature)=1", XpathVersion.XPATH_2_0, nsmap, null).matches());
     }
 
     /**

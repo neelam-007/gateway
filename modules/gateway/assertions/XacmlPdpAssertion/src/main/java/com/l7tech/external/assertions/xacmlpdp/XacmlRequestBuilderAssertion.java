@@ -11,6 +11,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.xpath.XpathUtil;
+import com.l7tech.xml.xpath.XpathVersion;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
@@ -753,6 +754,11 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         return variablesUsed;
     }
 
+    private XpathVersion getXpathVersion() {
+        // For now, only XPath 1.0 is supported.
+        return XpathVersion.XPATH_1_0;
+    }
+
     private void addAttributeTypeVariables(List<AttributeTreeNodeTag> attributeTreeNodeTags, List<String[]> variables) {
         for(AttributeTreeNodeTag attributeTreeNodeTag : attributeTreeNodeTags) {
             if(attributeTreeNodeTag instanceof Attribute) {
@@ -803,7 +809,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
                 for ( MultipleAttributeConfig.Field field : multiAttr.getAllFields()) {
                     String[] vars;
                     if ( field.getType().isXpath() ) {
-                        List<String> xpathVars = XpathUtil.getUnprefixedVariablesUsedInXpath(field.getValue());
+                        List<String> xpathVars = XpathUtil.getUnprefixedVariablesUsedInXpath(field.getValue(), getXpathVersion());
                         vars = xpathVars.toArray( new String[xpathVars.size()] );
                     } else {
                         vars = Syntax.getReferencedNames(field.getValue());
@@ -819,7 +825,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
                 }
 
                 if ( baseXpathUsed ) {
-                    List<String> xpathVars = XpathUtil.getUnprefixedVariablesUsedInXpath(multiAttr.getXpathBase());
+                    List<String> xpathVars = XpathUtil.getUnprefixedVariablesUsedInXpath(multiAttr.getXpathBase(), getXpathVersion());
                     String[] vars = xpathVars.toArray( new String[xpathVars.size()] );
                     if( vars.length > 0 ) {
                         variables.add(vars);

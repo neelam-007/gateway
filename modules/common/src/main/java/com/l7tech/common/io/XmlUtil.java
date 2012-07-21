@@ -6,6 +6,8 @@ import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
 import com.l7tech.util.*;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.*;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
@@ -17,12 +19,7 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.Location;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLReporter;
-import javax.xml.stream.XMLResolver;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.*;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
@@ -30,8 +27,8 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.*;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * XmlUtil extends DomUtils to provide parsing / io features.
@@ -299,7 +296,7 @@ public class XmlUtil extends DomUtils {
      *               the default namespace if rootPrefix is null.
      * @return a new DOM document contianing only a single empty document element.  Never null.
      */
-    public static Document createEmptyDocument(String rootElementName, String rootPrefix, String rootNs) {
+    public static Document createEmptyDocument(@NotNull String rootElementName, @Nullable String rootPrefix, @Nullable String rootNs) {
         if (rootElementName == null)
             throw new NullPointerException("rootElementName");
         Document doc = getDocumentBuilder().newDocument();

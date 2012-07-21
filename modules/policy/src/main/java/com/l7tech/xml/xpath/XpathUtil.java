@@ -1,9 +1,14 @@
 package com.l7tech.xml.xpath;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FullQName;
+import com.l7tech.xml.DomElementCursor;
+import com.l7tech.xml.ElementCursor;
+import com.l7tech.xml.InvalidXpathException;
+import com.l7tech.xml.SaxonUtils;
 import org.jaxen.JaxenException;
 import org.jaxen.JaxenHandler;
 import org.jaxen.NamespaceContext;
@@ -12,6 +17,8 @@ import org.jaxen.dom.DOMXPath;
 import org.jaxen.saxpath.SAXPathException;
 import org.jaxen.saxpath.XPathHandler;
 import org.jaxen.saxpath.base.XPathReader;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -21,6 +28,8 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.xml.xpath.XpathVersion.*;
 
 /**
  * Utility methods for dealing with XPaths.
@@ -35,9 +44,16 @@ public class XpathUtil {
      * such as "$var > 17".
      *
      * @param expr the expression to examine.  Required.
+     * @param xpathVersion XPath version to assume when parsing expr as an XPath.  Required but may be UNSPECIFIED.
      * @return true if this expression might make use of a target document.  False if this expression is known to not require a target document.
      */
-    public static boolean usesTargetDocument(String expr) {
+    public static boolean usesTargetDocument(@NotNull String expr, @NotNull XpathVersion xpathVersion) {
+        if (XPATH_2_0.equals(xpathVersion)) {
+            // TODO see if there is a reliable way of proving that an XPath 2.0 expression doesn't use the target document
+            // For now, just assume the safe result, that any XPath 2.0 expression might do so.
+            return true;
+        }
+
         final boolean[] nodeUse = { false };
         try {
             XPathHandler handler = new XPathHandlerAdapter() {
@@ -91,12 +107,21 @@ public class XpathUtil {
      * Determine which namespace prefixes appear to be used by the specified XPath expression.
      *
      * @param expr the expression to examine.  Required.
+     * @param xpathVersion XPath version to assume when parsing expr.  Required, but may be UNSPECIFIED.
      * @param lookForQnameLiterals if true, we will include the prefix of anything that looks like it might be a qname literal
-     *                             that appears within a string literal.
+     *                             that appears within a string literal.  Currently ignored if xpathVersion is XPATH_2_0
      * @return a set of prefixes which appear to be in use.  May be empty but never null.
      * @throws ParseException if the expression does not parse.
      */
-    public static Set<String> getNamespacePrefixesUsedByXpath(String expr, final boolean lookForQnameLiterals) throws ParseException {
+    public static Set<String> getNamespacePrefixesUsedByXpath(@NotNull String expr, @NotNull XpathVersion xpathVersion, final boolean lookForQnameLiterals) throws ParseException {
+        if (XPATH_2_0.equals(xpathVersion)) {
+            try {
+                return SaxonUtils.getNamespacePrefixesUsedByXpath(expr, xpathVersion);
+            } catch (InvalidXpathException e) {
+                throw (ParseException)new ParseException("Unable to parse XPath expression: " + ExceptionUtils.getMessage(e), 0).initCause(e);
+            }
+        }
+
         final Set<String> ret = new HashSet<String>();
         XPathHandler handler = new XPathHandlerAdapter() {
             @Override
@@ -144,22 +169,32 @@ public class XpathUtil {
      * If the expression cannot be parsed, this method returns an empty list. 
      *
      * @param expr the expression to examine.  Required.
+     * @param xpathVersion version of XPath to assume for parsing expr.  Required, but may be UNSPECIFIED.
      * @return a list of all unprefixed XPath variable references found in the expression.  May be empty but never null.
      */
-    public static List<String> getUnprefixedVariablesUsedInXpath(String expr) {
+    public static List<String> getUnprefixedVariablesUsedInXpath(@NotNull String expr, @NotNull XpathVersion xpathVersion) {
         final List<String> seenvars = new ArrayList<String>();
+
         try {
-            XPathHandler handler = new XPathHandlerAdapter() {
-                @Override
-                public void variableReference(String prefix, String localName) throws SAXPathException {
-                    if (prefix == null || prefix.length() < 1)
-                        seenvars.add(localName);
-                }
-            };
-            XPathReader reader = new XPathReader();
-            reader.setXPathHandler(handler);
-            reader.parse(expr);
+            if (XPATH_2_0.equals(xpathVersion)) {
+                seenvars.addAll(SaxonUtils.getUnprefixedVariablesUsedInXpath(expr, xpathVersion));
+            } else {
+
+                XPathHandler handler = new XPathHandlerAdapter() {
+                    @Override
+                    public void variableReference(String prefix, String localName) throws SAXPathException {
+                        if (prefix == null || prefix.length() < 1)
+                            seenvars.add(localName);
+                    }
+                };
+                XPathReader reader = new XPathReader();
+                reader.setXPathHandler(handler);
+                reader.parse(expr);
+            }
         } catch (SAXPathException e) {
+            logger.log(Level.INFO, "Unable to parse XPath expression to determine variables used: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            /* FALLTHROUGH and leave seenvars empty */
+        } catch (InvalidXpathException e) {
             logger.log(Level.INFO, "Unable to parse XPath expression to determine variables used: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             /* FALLTHROUGH and leave seenvars empty */
         }
@@ -168,14 +203,19 @@ public class XpathUtil {
 
     /**
      * Check if the specified XPath expression uses any variables.
-     * This counts variables with prefixes, and so will return true even if {@link #getUnprefixedVariablesUsedInXpath(String)}
+     * This counts variables with prefixes, and so will return true even if {@link #getUnprefixedVariablesUsedInXpath(String, XpathVersion)}
      * would return an empty list for the same expression.
      *
      * @param expr the expression to examine.  Required.
-     * @return true iff. the expression makes use of any XPath variables
+     * @return true if the expression might make use of any XPath variables
      * @throws XPathExpressionException if the expression cannot be parsed
      */
-    public static boolean usesXpathVariables(String expr) throws XPathExpressionException {
+    public static boolean usesXpathVariables(String expr, @NotNull XpathVersion xpathVersion) throws XPathExpressionException {
+        if (XPATH_2_0.equals(xpathVersion)) {
+            // Assume it might use variables for purposes of this method
+            return true;
+        }
+
         final boolean[] sawAny = { false };
         try {
             XPathHandler handler = new XPathHandlerAdapter() {
@@ -257,6 +297,8 @@ public class XpathUtil {
 
     /**
      * Remove requested unused namespaces from the given map.
+     * <p/>
+     * Note that this ethod only works with XPath 1.0 expressions.
      *
      * @param expression The xpath expression (required)
      * @param namespaces The namespace map (required)
@@ -306,7 +348,7 @@ public class XpathUtil {
      * @param namespaces a Map of prefix to namespace URI.  Required.
      * @return a Jaxen NamespaceContext that will look up the specified namespaces. Never null.
      */
-    public static NamespaceContext makeNamespaceContext(Map<String, String> namespaces) {
+    private static NamespaceContext makeNamespaceContext(Map<String, String> namespaces) {
         if (namespaces == null) throw new NullPointerException();
         SimpleNamespaceContext sn = new SimpleNamespaceContext();
         for (String prefix : namespaces.keySet())
@@ -360,7 +402,7 @@ public class XpathUtil {
      * @return The expression.
      */
     public static String literalExpression( final String text ) {
-        final StringBuffer expressionBuffer = new StringBuffer();
+        final StringBuilder expressionBuffer = new StringBuilder();
 
         if ( text.indexOf( '\'' ) < 0 ) {
             // use single quoted string literal
@@ -406,19 +448,33 @@ public class XpathUtil {
     }
 
     /**
-     * Use Jaxen to immediately compile and evaluate the specified XPath against the root of the specified document, using
+     * Immediately compile and evaluate the specified XPath against the root of the specified document, using
      * the specified namespace map and variable finder, and returning the evaluation result.
      *
-     * @param targetDocument the document against which to evaluate the XPath.  Required.
+     * @param targetDocument the document against which to evaluate the XPath, or null to use a placeholder/dummy document.
      * @param expression     the expression to compile and evaluate.  Required.
+     * @param xpathVersion   the XPath version to assume for compiling the expression.  Required, but may be UNSPECIFIED.
      * @param namespaceMap   the namespace map to use.  May be null if the expression uses no namespace prefixes.
      * @param variableFinder the variable finder to use to look up variable values.  May be null if the expression uses no XPath variables.
-     * @return The result of the evaluation.
-     * @throws JaxenException if the expression cannot be compiled, or if it returned a result other than a node list.
+     * @return the (cursor-enabled) result of evaluating the XPath, if evaluation was successful.
+     * @throws InvalidXpathException if the expression cannot be compiled.
      */
-    public static Object compileAndEvaluate(Document targetDocument, String expression, Map<String, String> namespaceMap, XpathVariableFinder variableFinder) throws JaxenException {
-        DOMXPath dx = compile(expression, namespaceMap, variableFinder);
-        return dx.evaluate(targetDocument);
+    public static XpathResult testXpathExpression(@Nullable Document targetDocument, @NotNull String expression, @NotNull XpathVersion xpathVersion,
+                                           @Nullable Map<String, String> namespaceMap, @Nullable XpathVariableFinder variableFinder)
+        throws InvalidXpathException
+    {
+        CompiledXpath cx = new DomCompiledXpath(new XpathExpression(expression, xpathVersion, namespaceMap));
+
+        ElementCursor cursor;
+        if (targetDocument != null)
+            cursor = new DomElementCursor(targetDocument, false);
+        else
+            cursor = new DomElementCursor(XmlUtil.createEmptyDocument("bogus", null, null));
+        try {
+            return cursor.getXpathResult(cx, variableFinder, true);
+        } catch (XPathExpressionException e) {
+            throw new InvalidXpathException(e);
+        }
     }
 
     /**
@@ -428,11 +484,18 @@ public class XpathUtil {
      * test document (such as unbound namespace prefixes)</p>
      *
      * @param expression     the expression to test.  Required.
+     * @param xpathVersion   XPath version to assume when compiling the expression.  Required, but may be UNSPECIFIED.
      * @param namespaceMap   the namespace map to use.  May be null if the expression uses no namespace prefixes.
-     * @throws JaxenException if the expression is invalid.
+     * @throws InvalidXpathException if the expression is invalid.
      */
     public static void validate( final String expression,
-                                 final Map<String, String> namespaceMap ) throws SAXPathException {
+                                 final XpathVersion xpathVersion,
+                                 @Nullable final Map<String, String> namespaceMap ) throws InvalidXpathException {
+        if (XPATH_2_0.equals(xpathVersion)) {
+            SaxonUtils.validateSyntaxAndNamespacePrefixes(expression, xpathVersion, namespaceMap);
+            return;
+        }
+
         final Set<String> invalidPrefixes = new LinkedHashSet<String>();
 
         final XPathHandler handler = new XPathHandlerAdapter() {
@@ -448,30 +511,18 @@ public class XpathUtil {
 
         XPathReader reader = new XPathReader();
         reader.setXPathHandler(handler);
-        reader.parse( expression );
+        try {
+            reader.parse( expression );
+        } catch (SAXPathException e) {
+            throw new InvalidXpathException(e);
+        }
 
         if ( !invalidPrefixes.isEmpty() ) {
-            throw new JaxenException("Namespace not found for prefix" + (invalidPrefixes.size()>1 ? "es " : " ") + invalidPrefixes);
+            throw new InvalidXpathException("Namespace not found for prefix" + (invalidPrefixes.size()>1 ? "es " : " ") + invalidPrefixes);
         }
     }
 
-    /**
-     * Use Jaxen to immediately compile and select nodes against the specified XPath against the root of the specified document, using
-     * the specified namespace map and variable finder, and returning the evaluation result.
-     *
-     * @param targetDocument the document against which to evaluate the XPath.  Required.
-     * @param expression     the expression to compile and evaluate.  Required.
-     * @param namespaceMap   the namespace map to use.  May be null if the expression uses no namespace prefixes.
-     * @param variableFinder the variable finder to use to look up variable values.  May be null if the expression uses no XPath variables.
-     * @return The result of the calling selectNodes().
-     * @throws JaxenException if the expression cannot be compiled, or if it returned a result other than a node list.
-     */
-    public static List compileAndSelect(Document targetDocument, String expression, Map<String, String> namespaceMap, XpathVariableFinder variableFinder) throws JaxenException {
-        DOMXPath dx = compile(expression, namespaceMap, variableFinder);
-        return dx.selectNodes(targetDocument);
-    }
-
-    private static DOMXPath compile(String expression, Map<String, String> namespaceMap, XpathVariableFinder variableFinder) throws JaxenException {
+    static DOMXPath compile(String expression, Map<String, String> namespaceMap, @Nullable XpathVariableFinder variableFinder) throws JaxenException {
         DOMXPath dx = new DOMXPath(expression);
         if (namespaceMap != null)
             dx.setNamespaceContext(makeNamespaceContext(namespaceMap));

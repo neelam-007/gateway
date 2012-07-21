@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
+import com.l7tech.xml.xpath.XpathVersion;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
@@ -142,11 +143,17 @@ public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionProper
         return assertionChanged;
     }
 
+    private XpathVersion getXpathVersion() {
+        // For now this assertion only exposes XPath 1.0 and does not provide any way to select XPath 2.0
+        // TODO update GUI to expose XPath version control
+        return XpathVersion.XPATH_1_0;
+    }
+
     private void updateButtons() {
         boolean ok;
         try {
-            XpathUtil.validate(loginXpathField.getText(), loginNamespaces);
-            XpathUtil.validate(passwordXpathField.getText(), passwordNamespaces);
+            XpathUtil.validate(loginXpathField.getText(), getXpathVersion(), loginNamespaces);
+            XpathUtil.validate(passwordXpathField.getText(), getXpathVersion(), passwordNamespaces);
             ok = !readOnly;
         } catch (Exception e) {
             ok = false;
