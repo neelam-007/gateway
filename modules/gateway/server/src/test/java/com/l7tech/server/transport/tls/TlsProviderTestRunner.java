@@ -141,7 +141,7 @@ public class TlsProviderTestRunner {
             //servers_SunJSSE_with_Luna4,
             servers_SunJSSE_with_Luna5,
             //servers_RsaJsse_with_CryptoJ,
-            clients_SunJSSE_with_BC,
+            servers_SunJSSE_with_BC,
     };
 
     //
