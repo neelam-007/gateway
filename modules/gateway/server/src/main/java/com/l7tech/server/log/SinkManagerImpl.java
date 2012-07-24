@@ -1,5 +1,7 @@
 package com.l7tech.server.log;
 
+import com.l7tech.common.io.ProcResult;
+import com.l7tech.common.io.ProcUtils;
 import com.l7tech.gateway.common.cluster.ClusterContext;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.log.*;
@@ -321,7 +323,7 @@ public class SinkManagerImpl
 
         if( isThisNodeMe(nodeId) )
         {
-            FileInputStream fin = null;
+            InputStream fin = null;
             TruncatingInputStream in = null;
             PoolByteArrayOutputStream bs = null;
             GZIPOutputStream out = null;
@@ -343,9 +345,26 @@ public class SinkManagerImpl
                         if( query.isFromEnd() ){
                             startPoint = Math.max(0L,logFile.length() - startPoint - 16384L);
                         }
-                        fin = new FileInputStream(logFile);
-                        final long skipped = fin.skip( startPoint );
-                        if ( skipped < startPoint ) {
+                        String cat = sinkConfig.getCategories();
+                        boolean skip = false;
+                        if(cat != null && cat.contains(SinkConfiguration.CATEGORY_SSPC_LOGS)){
+                            long toRead = query.isFromEnd() ? logFile.length() - startPoint : logFile.length();
+                            final String[] cmd = new String[]{"sudo", "/opt/SecureSpan/Appliance/libexec/ssg-viewlog.sh",
+                                    logFile.getAbsolutePath(),
+                                    String.valueOf(startPoint),
+                                    String.valueOf(toRead)};
+                            final ProcResult result = ProcUtils.exec(cmd);
+                            fin = new ByteArrayInputStream(result.getOutput());
+                            skip = true;
+                        }
+                        else {
+                            fin = new FileInputStream(logFile);
+                        }
+                        long skipped = 0;
+                        if(!skip){
+                            skipped = fin.skip( startPoint );
+                        }
+                        if (!skip && skipped < startPoint ) {
                             data = new LogSinkData(new byte[0],-1L,false,0,0);
                         } else {
                             in = new TruncatingInputStream(fin);
@@ -392,6 +411,7 @@ public class SinkManagerImpl
         if(lastRead == 0) return false;
         try{
             int start  = filePattern.indexOf("%g");
+            if(start < 0) return false;
             Pattern pattern = Pattern.compile("[0-9]");
             Matcher matcher = pattern.matcher(fileName);
             if(matcher.find(start))
@@ -623,24 +643,24 @@ public class SinkManagerImpl
      */
     private void installConnectionListener() {
         syslogManager.setConnectionListener(new
-                SyslogConnectionListener(){
-            @Override
-            public void notifyConnected(final SocketAddress address) {
-                fireEvent(address, true);
-            }
+                                            SyslogConnectionListener(){
+                                                @Override
+                                                public void notifyConnected(final SocketAddress address) {
+                                                    fireEvent(address, true);
+                                                }
 
-            @Override
-            public void notifyDisconnected(final SocketAddress address) {
-                fireEvent(address, false);
-            }
+                                                @Override
+                                                public void notifyDisconnected(final SocketAddress address) {
+                                                    fireEvent(address, false);
+                                                }
 
-            private void fireEvent(final SocketAddress address, final boolean connected) {
-                if ( applicationContext != null ) {
-                    applicationContext.publishEvent(
-                            new SyslogEvent(SinkManagerImpl.this, address.toString(), connected));
-                }
-            }
-        });
+                                                private void fireEvent(final SocketAddress address, final boolean connected) {
+                                                    if ( applicationContext != null ) {
+                                                        applicationContext.publishEvent(
+                                                                new SyslogEvent(SinkManagerImpl.this, address.toString(), connected));
+                                                    }
+                                                }
+                                            });
     }
 
     /**
@@ -700,7 +720,7 @@ public class SinkManagerImpl
             if ( sink instanceof FileMessageSink ) {
                 FileMessageSink fileSink = (FileMessageSink) sink;
                 if ( fileSink.isCategoryEnabled( MessageCategory.AUDIT ) ||
-                     fileSink.isCategoryEnabled( MessageCategory.LOG ) ) {
+                        fileSink.isCategoryEnabled( MessageCategory.LOG ) ) {
                     fileSinks.add( fileSink );
                 }
             }
@@ -981,7 +1001,7 @@ public class SinkManagerImpl
                 final Pair<String,String> hostAndPort = InetAddressUtil.getHostAndPort( hostPort, null );
 
                 if ( !ValidationUtils.isValidDomain( InetAddressUtil.stripIpv6Brackets( hostAndPort.left ) ) ||
-                     !ValidationUtils.isValidInteger( hostAndPort.right, false, 1, 0xFFFF ) ) {
+                        !ValidationUtils.isValidInteger( hostAndPort.right, false, 1, 0xFFFF ) ) {
                     valid = false;
                     break;
                 }
@@ -999,7 +1019,7 @@ public class SinkManagerImpl
         SinkConfiguration.SeverityThreshold threshold = defaultValue;
 
         try {
-            threshold = SinkConfiguration.SeverityThreshold.valueOf( value );
+            threshold = SinkConfiguration.SeverityThreshold.valueOf(value);
         } catch ( IllegalArgumentException iae ) {
             // use the default
         }
@@ -1063,14 +1083,14 @@ public class SinkManagerImpl
         }) : null;
         if ( clusterContextFactory != null && clusterNodeInfo != null ) {
             try {
-                 result = optional( Subject.doAs( null, new PrivilegedExceptionAction<R>() {
-                     @Override
-                     public R run() throws Exception {
-                         ClusterContext context = clusterContextFactory.buildClusterContext( clusterNodeInfo.getAddress(), getClusterPort() );
-                         LogAccessAdmin laa = context.getLogAccessAdmin();
-                         return callback.call( laa );
-                     }
-                 } ) );
+                result = optional( Subject.doAs( null, new PrivilegedExceptionAction<R>() {
+                    @Override
+                    public R run() throws Exception {
+                        ClusterContext context = clusterContextFactory.buildClusterContext( clusterNodeInfo.getAddress(), getClusterPort() );
+                        LogAccessAdmin laa = context.getLogAccessAdmin();
+                        return callback.call( laa );
+                    }
+                } ) );
             }
             catch(PrivilegedActionException e) {
                 Throwable cause = e.getCause();

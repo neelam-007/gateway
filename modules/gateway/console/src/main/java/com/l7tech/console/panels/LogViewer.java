@@ -12,12 +12,14 @@ import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.util.*;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.Timer;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -648,15 +650,15 @@ public class LogViewer extends JFrame {
                         try {
                             LogSinkQuery query = new LogSinkQuery(tail> 0,lastReadTime,startByte);
                             logData = logSinkAdmin.getSinkLogs(clusterNodeInfo.getNodeIdentifier(),sinkId,file, query );
+                            if(logData == null){
+                                DialogDisplayer.showMessageDialog(LogViewer.this, null,
+                                        resources.getString("load.error"), null);
+                                break;
+                            }
                             fileSize = logData.getFileSize();
                             lastReadTime = logData.getTimeRead();
                         } catch ( FindException e ) {
                             ErrorManager.getDefault().notify( Level.WARNING, e, "Error loading log data" );
-                            break;
-                        }
-                        if(logData == null){
-                            DialogDisplayer.showMessageDialog(LogViewer.this, null,
-                                resources.getString("load.error"), null);
                             break;
                         }
                         inStream =  new GZIPInputStream(new ByteArrayInputStream(logData.getData()),8192);
