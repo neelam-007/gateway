@@ -1,5 +1,7 @@
 package com.l7tech.xml.xpath;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.concurrent.Callable;
 
 /**
@@ -13,7 +15,7 @@ public class XpathVariableContext {
      *
      * @return  the current finder, or null if there isn't one.
      */
-    public static XpathVariableFinder getCurrentVariableFinder() {
+    public static @Nullable XpathVariableFinder getCurrentVariableFinder() {
         return currentFinder.get();
     }
 
@@ -25,7 +27,7 @@ public class XpathVariableContext {
      * @return the result of performing the action.
      * @throws Exception Any exception thrown by the action will be passed through uncaught.
      */
-    public static <RT> RT doWithVariableFinder(XpathVariableFinder variableFinder, Callable<RT> action) throws Exception {
+    public static <RT> RT doWithVariableFinder(@Nullable XpathVariableFinder variableFinder, Callable<RT> action) throws Exception {
         XpathVariableFinder previousFinder = currentFinder.get();
         try {
             currentFinder.set(variableFinder);

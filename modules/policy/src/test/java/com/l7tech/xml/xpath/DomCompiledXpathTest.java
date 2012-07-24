@@ -6,9 +6,11 @@ import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
 import org.junit.Before;
 import org.junit.Test;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.xpath.XPathExpressionException;
+import java.util.List;
 import java.util.Map;
 
 import static com.l7tech.xml.xpath.XpathVersion.XPATH_1_0;
@@ -157,5 +159,36 @@ public class DomCompiledXpathTest {
         assertNotNull(nc);
         de = nc.asDomElement();
         assertTrue("Strong element identity preserved", de == eEl);
+    }
+
+    @Test
+    public void testRawSelectElements() throws Exception {
+        Document doc = XmlUtil.stringAsDocument("<foo><bar/><baz/></foo>");
+        Element bar = XmlUtil.findFirstChildElement(doc.getDocumentElement());
+        assertEquals("bar", bar.getLocalName());
+        Element baz = (Element) bar.getNextSibling();
+        assertEquals("baz", baz.getLocalName());
+
+        DomCompiledXpath cx = new DomCompiledXpath(new XpathExpression("//bar", XPATH_1_0, null));
+        List<Element> elms = cx.rawSelectElements(doc, null);
+        assertNotNull(elms);
+        assertEquals(1, elms.size());
+        assertEquals(bar, elms.get(0));
+    }
+
+    @Test
+    public void testRawSelectElementsXP20() throws Exception {
+        Document doc = XmlUtil.stringAsDocument("<foo><bar/><baz/></foo>");
+        Element bar = XmlUtil.findFirstChildElement(doc.getDocumentElement());
+        assertEquals("bar", bar.getLocalName());
+        Element baz = (Element) bar.getNextSibling();
+        assertEquals("baz", baz.getLocalName());
+
+        DomCompiledXpath cx = new DomCompiledXpath(new XpathExpression("(//bar, //baz)", XPATH_2_0, null));
+        List<Element> elms = cx.rawSelectElements(doc, null);
+        assertNotNull(elms);
+        assertEquals(2, elms.size());
+        assertEquals(bar, elms.get(0));
+        assertEquals(baz, elms.get(1));
     }
 }

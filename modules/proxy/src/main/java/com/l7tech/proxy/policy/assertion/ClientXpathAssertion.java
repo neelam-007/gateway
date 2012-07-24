@@ -7,10 +7,10 @@
 package com.l7tech.proxy.policy.assertion;
 
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.DeferredFailureDomCompiledXpathHolder;
 import com.l7tech.xml.xpath.DomCompiledXpath;
 import com.l7tech.xml.xpath.XpathExpression;
-import org.jaxen.JaxenException;
 
 /**
  * Superclass for policy application xpath assertions (request and response xpath, with or without hardware).
@@ -27,7 +27,7 @@ public abstract class ClientXpathAssertion extends ClientAssertionWithMetaSuppor
         this.compiledXpath = new DeferredFailureDomCompiledXpathHolder(getXpathExpression());
     }
 
-    protected DomCompiledXpath getCompiledXpath() throws JaxenException {
+    protected DomCompiledXpath getCompiledXpath() throws InvalidXpathException {
         return compiledXpath.getCompiledXpath();
     }
 

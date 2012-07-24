@@ -11,9 +11,9 @@ import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.InvalidXpathException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -89,7 +89,7 @@ public class ClientResponseWssConfidentiality extends ClientDomXpathBasedAsserti
                                                         "encrypted");
         } catch (ProcessorException e) {
             throw new PolicyAssertionException(data, e);
-        } catch (JaxenException e) {
+        } catch (InvalidXpathException e) {
             throw new PolicyAssertionException(data, e);
         }
         switch (result.getResultCode()) {

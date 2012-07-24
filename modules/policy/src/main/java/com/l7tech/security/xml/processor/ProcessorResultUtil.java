@@ -5,9 +5,9 @@ package com.l7tech.security.xml.processor;
 
 import com.l7tech.security.token.ParsedElement;
 import com.l7tech.util.DomUtils;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.DomCompiledXpath;
 import com.l7tech.xml.xpath.XpathVariableFinder;
-import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -57,7 +57,7 @@ public class ProcessorResultUtil {
         List<Element> selectedNodes;
         try {
             selectedNodes = xpath.rawSelectElements(doc, variableFinder);
-        } catch (JaxenException e) {
+        } catch (InvalidXpathException e) {
             // this is thrown when there is an error in the expression
             // this is therefore a bad policy
             throw new ProcessorException(e);

@@ -21,14 +21,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
-import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.*;
 
 /**
  * Verifies that a specific element of the soap response was signed by the ssg.
@@ -139,7 +138,7 @@ public class ClientResponseWssIntegrity extends ClientDomXpathBasedAssertion<Wss
                                                         "signed");
         } catch (ProcessorException e) {
             throw new PolicyAssertionException(data, e);
-        } catch (JaxenException e) {
+        } catch (InvalidXpathException e) {
             throw new PolicyAssertionException(data, e);
         }
         switch (result.getResultCode()) {

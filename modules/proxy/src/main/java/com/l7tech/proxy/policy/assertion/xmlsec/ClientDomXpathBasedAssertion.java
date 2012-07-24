@@ -2,9 +2,9 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.proxy.policy.assertion.ClientAssertionWithMetaSupport;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.DeferredFailureDomCompiledXpathHolder;
 import com.l7tech.xml.xpath.DomCompiledXpath;
-import org.jaxen.JaxenException;
 
 /**
  * Code shared among client XpathBasedAssertions that need a single DomCompiledXpath instance.
@@ -21,7 +21,7 @@ public abstract class ClientDomXpathBasedAssertion<AT extends XpathBasedAssertio
         this.compiledXpath = new DeferredFailureDomCompiledXpathHolder(data.getXpathExpression());
     }
 
-    protected DomCompiledXpath getCompiledXpath() throws JaxenException {
+    protected DomCompiledXpath getCompiledXpath() throws InvalidXpathException {
         return compiledXpath.getCompiledXpath();
     }
 }

@@ -10,6 +10,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.ElementEncryptionConfig;
 import com.l7tech.security.xml.XencUtil;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.jaxen.JaxenException;
 import org.jetbrains.annotations.NotNull;
@@ -87,7 +88,7 @@ public class ClientRequestWssConfidentiality extends ClientDomXpathBasedAssertio
                 wssReqs.setKeyEncryptionAlgorithm(data.getKeyEncryptionAlgorithm());
             }
             return AssertionStatus.NONE;
-        } catch (JaxenException e) {
+        } catch (InvalidXpathException e) {
             throw new PolicyAssertionException(data, "ClientRequestWssConfidentiality: " +
                                                                           "Unable to execute xpath expression \"" +
                                                                           xpathExpression.getExpression() + "\"", e);

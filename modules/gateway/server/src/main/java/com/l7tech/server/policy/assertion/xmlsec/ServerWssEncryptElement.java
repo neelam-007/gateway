@@ -14,8 +14,8 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.DeferredFailureDomCompiledXpathHolder;
-import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -104,7 +104,7 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
             try {
                 selectedElements = compiledXpath.getCompiledXpath().rawSelectElements(soapmsg,
                         new PolicyEnforcementContextXpathVariableFinder(context));
-            } catch (JaxenException e) {
+            } catch (InvalidXpathException e) {
                 logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[] { "XPath evaluation error: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e) );
                 return AssertionStatus.SERVER_ERROR;
             }

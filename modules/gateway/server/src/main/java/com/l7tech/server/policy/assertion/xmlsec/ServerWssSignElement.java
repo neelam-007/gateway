@@ -11,11 +11,13 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.DeferredFailureDomCompiledXpathHolder;
 import org.jaxen.JaxenException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 
+import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.util.List;
 
@@ -55,7 +57,7 @@ public class ServerWssSignElement extends ServerAddWssSignature<WssSignElement> 
         try {
             selectedElements = compiledXpath.getCompiledXpath().rawSelectElements(soapmsg,
                     new PolicyEnforcementContextXpathVariableFinder(context));
-        } catch (JaxenException e) {
+        } catch (InvalidXpathException e) {
             logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[] { "XPath evaluation error: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e) );
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
         }

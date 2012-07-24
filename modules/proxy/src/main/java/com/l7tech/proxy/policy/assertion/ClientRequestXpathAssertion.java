@@ -10,8 +10,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.proxy.message.PolicyApplicationContext;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.XpathExpression;
-import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -46,7 +46,7 @@ public class ClientRequestXpathAssertion extends ClientXpathAssertion {
 
             log.info("XPath expression matched " + nodes.size() + " nodes in request; assertion succeeds");
             return AssertionStatus.NONE;
-        } catch (JaxenException e) {
+        } catch (InvalidXpathException e) {
             log.warning("Invalid expath expression: " + e.getMessage());
             throw new PolicyAssertionException(xpathBasedAssertion, "Unable to execute xpath expression \"" +
                                                xpathExpression.getExpression() + "\"", e);

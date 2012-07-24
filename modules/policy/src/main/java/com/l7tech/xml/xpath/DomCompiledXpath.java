@@ -242,11 +242,67 @@ public class DomCompiledXpath extends CompiledXpath {
      * against the root of the specified target document.
      *
      * @param targetDocument  the document to select against.  Required.
-     * @param variableFinder  the XpathVariableFinder to use during the selection.  Required if {@link #usesVariables()} is true.
+     * @param variableFinder  the XpathVariableFinder to use during the selection.  Should be provided if {@link #usesVariables()} is true.
      * @return a List of zero or more DOM Element instances matched by this compiled XPath.  May be empty but never null.
-     * @throws JaxenException if an exception occurred while matching.
+     * @throws InvalidXpathException if an exception occurred while matching.
      */
-    public List<Element> rawSelectElements(final Document targetDocument, XpathVariableFinder variableFinder) throws JaxenException {
+    public List<Element> rawSelectElements(final Document targetDocument, @Nullable XpathVariableFinder variableFinder) throws InvalidXpathException {
+        if (saxonXpath.get() != null) {
+            return rawSelectElementsWithSaxon(targetDocument, variableFinder);
+        } else {
+            return rawSelectElementsWithJaxen(targetDocument, variableFinder);
+        }
+    }
+
+    private List<Element> rawSelectElementsWithSaxon(Document targetDocument, @Nullable XpathVariableFinder variableFinder) throws InvalidXpathException {
+        try {
+            XPathExecutable xpe = getSaxonXpath();
+            XPathSelector selector = xpe.load();
+            selector.setURIResolver(new URIResolver() {
+                @Override
+                public Source resolve(String href, String base) throws TransformerException {
+                    throw new TransformerException("External ref not supported");
+                }
+            });
+
+            DocumentWrapper documentWrapper = new DocumentWrapper(targetDocument, "", SaxonUtils.getConfiguration());
+            NodeWrapper nodeWrapper = documentWrapper.wrap(targetDocument);
+            XdmNode xdmNode = new XdmNode(nodeWrapper);
+            selector.setContextItem(xdmNode);
+
+            loadSaxonVariables(xpe, selector, variableFinder);
+
+            final XdmValue result = selector.evaluate();
+            if (result == null || result.size() == 0)
+                return Collections.emptyList();
+
+            List<Element> ret = new ArrayList<Element>();
+
+            XdmSequenceIterator it = result.iterator();
+            //noinspection WhileLoopReplaceableByForEach
+            while (it.hasNext()) {
+                XdmItem item = it.next();
+                if (item.isAtomicValue())
+                    throw new InvalidXpathException("XPath evaluation resulted in non-Element atomic value");
+                Node node = xdmItemToDomNode(item);
+                if (node instanceof Element) {
+                    Element element = (Element) node;
+                    ret.add(element);
+                } else {
+                    throw new InvalidXpathException("XPath result included non-Element node type of " + node.getClass().getName());
+                }
+            }
+
+            return ret;
+
+        } catch (InvalidXpathException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new InvalidXpathException(e);
+        }
+    }
+
+    private List<Element> rawSelectElementsWithJaxen(final Document targetDocument, XpathVariableFinder variableFinder) throws InvalidXpathException {
         try {
             return XpathVariableContext.doWithVariableFinder(variableFinder, new Callable<List<Element>>() {
                 @Override
@@ -256,10 +312,10 @@ public class DomCompiledXpath extends CompiledXpath {
                     return XpathUtil.ensureAllResultsAreElements(nodes);
                 }
             });
-        } catch (JaxenException e) {
+        } catch (InvalidXpathException e) {
             throw e;
         } catch (Exception e) {
-            throw new JaxenException(e);
+            throw new InvalidXpathException(e);
         }
     }
 
@@ -279,7 +335,7 @@ public class DomCompiledXpath extends CompiledXpath {
             selector.setURIResolver(new URIResolver() {
                 @Override
                 public Source resolve(String href, String base) throws TransformerException {
-                    throw new TransformerException("Extrenal ref not supported");
+                    throw new TransformerException("External ref not supported");
                 }
             });
 
@@ -289,20 +345,7 @@ public class DomCompiledXpath extends CompiledXpath {
             XdmNode xdmNode = new XdmNode(nodeWrapper);
             selector.setContextItem(xdmNode);
 
-            XpathVariableFinder finder = XpathVariableContext.getCurrentVariableFinder();
-            if (finder != null) {
-                Iterator<QName> vars = xpe.iterateExternalVariables();
-                while (vars.hasNext()) {
-                    QName var = vars.next();
-                    try {
-                        final Object value = finder.getVariableValue(var.getNamespaceURI(), var.getLocalName());
-                        final XdmValue xdmValue = asXdmValue(value);
-                        selector.setVariable(var, xdmValue);
-                    } catch (NoSuchXpathVariableException e) {
-                        throw (XPathExpressionException)new XPathExpressionException("Unknown XPath variable: " + var).initCause(e);
-                    }
-                }
-            }
+            loadSaxonVariables(xpe, selector, XpathVariableContext.getCurrentVariableFinder());
 
             final XdmValue result = selector.evaluate();
 
@@ -365,7 +408,7 @@ public class DomCompiledXpath extends CompiledXpath {
                                             o = nextNode;
                                         } else {
                                             XdmItem item = i.next();
-                                            o = asDomNode(item);
+                                            o = xdmItemToDomNode(item);
                                         }
                                         nextNode = null;
 
@@ -392,7 +435,7 @@ public class DomCompiledXpath extends CompiledXpath {
                             }
 
                             private Node getNode(int ordinal) {
-                                return asDomNode(result.itemAt(ordinal));
+                                return xdmItemToDomNode(result.itemAt(ordinal));
                             }
 
                             @Override
@@ -425,21 +468,6 @@ public class DomCompiledXpath extends CompiledXpath {
                                 return node == null ? null : node.getTextContent();
                             }
                         };
-                    }
-
-                    private Node asDomNode(XdmItem item) {
-                        Node o;
-                        if (item instanceof XdmNode) {
-                            XdmNode node = (XdmNode) item;
-                            NodeInfo nodeInfo = node.getUnderlyingNode();
-                            if (nodeInfo instanceof NodeWrapper) {
-                                NodeWrapper nodeWrapper = (NodeWrapper) nodeInfo;
-                                o = (Node)nodeWrapper.getUnderlyingNode();
-                            } else
-                                throw new IllegalStateException("Saxon xpath result nodeset included XdmNode containing non-NodeWrapper object of type " + nodeInfo.getClass().getName());
-                        } else
-                            throw new IllegalStateException("Saxon xpath result nodeset included non-XdmNode object of type " + item.getClass().getName());
-                        return o;
                     }
                 };
             }
@@ -492,6 +520,39 @@ public class DomCompiledXpath extends CompiledXpath {
             throw new XPathExpressionException(e);
         } catch (RuntimeException rte) {
             throw new XPathExpressionException(rte);
+        }
+    }
+
+    private static Node xdmItemToDomNode(XdmItem item) {
+        Node o;
+        if (item instanceof XdmNode) {
+            XdmNode node = (XdmNode) item;
+            NodeInfo nodeInfo = node.getUnderlyingNode();
+            if (nodeInfo instanceof NodeWrapper) {
+                NodeWrapper nodeWrapper = (NodeWrapper) nodeInfo;
+                o = (Node)nodeWrapper.getUnderlyingNode();
+                if (o == null)
+                    throw new IllegalStateException("Saxon xpath result included NodeWrapper with a null node");
+            } else
+                throw new IllegalStateException("Saxon xpath result nodeset included XdmNode containing non-NodeWrapper object of type " + nodeInfo.getClass().getName());
+        } else
+            throw new IllegalStateException("Saxon xpath result nodeset included non-XdmNode object of type " + item.getClass().getName());
+        return o;
+    }
+
+    private static void loadSaxonVariables(XPathExecutable xpe, XPathSelector selector, @Nullable XpathVariableFinder finder) throws SaxonApiException, XPathExpressionException {
+        if (finder == null)
+            return;
+        Iterator<QName> vars = xpe.iterateExternalVariables();
+        while (vars.hasNext()) {
+            QName var = vars.next();
+            try {
+                final Object value = finder.getVariableValue(var.getNamespaceURI(), var.getLocalName());
+                final XdmValue xdmValue = asXdmValue(value);
+                selector.setVariable(var, xdmValue);
+            } catch (NoSuchXpathVariableException e) {
+                throw (XPathExpressionException)new XPathExpressionException("Unknown XPath variable: " + var).initCause(e);
+            }
         }
     }
 

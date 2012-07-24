@@ -1,7 +1,6 @@
 package com.l7tech.xml.xpath;
 
 import com.l7tech.xml.InvalidXpathException;
-import org.jaxen.JaxenException;
 
 /**
  * Creates and holds a DomCompiledXpath or else the reason why compilation failed.
@@ -36,11 +35,11 @@ public class DeferredFailureDomCompiledXpathHolder {
      * @return the DomCompiledXpath instance.  Never null.
      * @throws InvalidXpathException if the XPath did not compile.
      */
-    public DomCompiledXpath getCompiledXpath() throws JaxenException {
+    public DomCompiledXpath getCompiledXpath() throws InvalidXpathException {
         if (compileFailure != null)
-            throw new JaxenException(compileFailure);
+            throw new InvalidXpathException(compileFailure);
         if (compiledXpath == null)
-            throw new JaxenException("compiledXpath is null"); // can't happen
+            throw new InvalidXpathException("compiledXpath is null"); // can't happen
         return compiledXpath;
     }
 

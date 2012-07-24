@@ -15,8 +15,8 @@ import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.XpathExpression;
-import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -63,7 +63,7 @@ public class ClientResponseXpathAssertion extends ClientXpathAssertion {
 
             log.info("XPath expression matched " + nodes.size() + " nodes in response; assertion succeeds");
             return AssertionStatus.NONE;
-        } catch (JaxenException e) {
+        } catch (InvalidXpathException e) {
             log.warning("Invalid expath expression: " + e.getMessage());
             throw new PolicyAssertionException(xpathBasedAssertion, "Unable to execute xpath expression \"" +
                                                xpath.getExpression() + "\"", e);
