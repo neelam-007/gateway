@@ -50,19 +50,24 @@ public class ServerLookupDynamicContextVariablesAssertion extends AbstractServer
             logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_MISSING_SOURCE);
             return AssertionStatus.FAILED;
         }
-        final String targetVariable = assertion.getTargetOutputVariable();
-        if(targetVariable == null || targetVariable.trim().isEmpty()){
+        final String targetVariablePrefix = assertion.getTargetOutputVariablePrefix();
+        if(targetVariablePrefix == null || targetVariablePrefix.trim().isEmpty()){
             logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_MISSING_TARGET);
             return AssertionStatus.FAILED;
         }
         try{
+            //initialize default context var values.
+            context.setVariable(targetVariablePrefix + LookupDynamicContextVariablesAssertion.OUTPUT_SUFIX, null);
+            context.setVariable(targetVariablePrefix + LookupDynamicContextVariablesAssertion.FOUND_SUFIX, false);
+            context.setVariable(targetVariablePrefix + LookupDynamicContextVariablesAssertion.MULTIVALUED_SUFIX, false);
+
             //lookup the variable name
             final Map<String, Object> lookup = context.getVariableMap(Syntax.getReferencedNames(sourceVariable), getAudit());
             final String process = ExpandVariables.process(sourceVariable, lookup, getAudit());
 
             //retrieve the variable
             final Map<String, Object> actual = context.getVariableMap(new String[]{process}, getAudit());
-            if(actual.isEmpty()){
+            if(assertion.isFailOnNotFound() && actual.isEmpty()){
                 logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_NOT_FOUND, process);
                 return AssertionStatus.FAILED;
             }
@@ -70,22 +75,32 @@ public class ServerLookupDynamicContextVariablesAssertion extends AbstractServer
             if(o != null){
                 //check if the retrieved value is one of the supported class based on the valueClass of the data type object.
                 final String sourceName = o.getClass().getName();
-                if((targetType == DataType.MESSAGE && !(o instanceof Message))
-                        || (targetType == DataType.CERTIFICATE && !(o instanceof X509Certificate))
-                        || (targetType == DataType.ELEMENT && !(o instanceof Element))){
+                final boolean multivalued = o.getClass().isArray();
+                Object obj = o;
+                if(multivalued){
+                    obj = ((Object[])o)[0];
+                }
+                if((targetType == DataType.MESSAGE && !(obj instanceof Message))
+                        || (targetType == DataType.CERTIFICATE && !(obj instanceof X509Certificate))
+                        || (targetType == DataType.ELEMENT && !(obj instanceof Element))){
                     logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_TYPE_MISMATCH, targetType.getName(), sourceName);
                     return AssertionStatus.FAILED;
                 }
-                if(targetType == DataType.DATE_TIME && (!(o instanceof Date) || !(o instanceof Calendar) || !(o instanceof Long))){
+                if(targetType == DataType.DATE_TIME && (!(obj instanceof Date) || !(obj instanceof Calendar) || !(obj instanceof Long))){
                     logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_TYPE_MISMATCH, targetType.getName(), sourceName);
                     return AssertionStatus.FAILED;
                 }
-                if(targetType == DataType.STRING && !(o instanceof String || o instanceof BigInteger || o instanceof BigDecimal || o instanceof Number || o instanceof Boolean)){
+                if(targetType == DataType.STRING && !(obj instanceof String || obj instanceof BigInteger || obj instanceof BigDecimal || obj instanceof Number || obj instanceof Boolean)){
                     logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_TYPE_MISMATCH, targetType.getName(), sourceName);
                     return AssertionStatus.FAILED;
                 }
+
+                context.setVariable(targetVariablePrefix + LookupDynamicContextVariablesAssertion.MULTIVALUED_SUFIX, multivalued);
             }
-            context.setVariable(targetVariable, o);
+            // if the expression is ${foobar} and foobar does not exist and it is set to NOT fail the value of 'o' would be ${}
+            // it shouldn't be set...
+            context.setVariable(targetVariablePrefix + LookupDynamicContextVariablesAssertion.OUTPUT_SUFIX, actual.isEmpty() ? null : o);
+            context.setVariable(targetVariablePrefix + LookupDynamicContextVariablesAssertion.FOUND_SUFIX, !actual.isEmpty());
         }
         catch(VariableNameSyntaxException e){
             logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_INVALID_SYNTAX , e.getMessage());

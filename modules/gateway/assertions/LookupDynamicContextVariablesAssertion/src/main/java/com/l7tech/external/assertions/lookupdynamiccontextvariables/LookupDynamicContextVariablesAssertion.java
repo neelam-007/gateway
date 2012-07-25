@@ -12,6 +12,31 @@ import com.l7tech.policy.variable.VariableMetadata;
 public class LookupDynamicContextVariablesAssertion extends Assertion implements SetsVariables {
 
     /**
+     * The output variable suffix.
+     */
+    public static final String OUTPUT_SUFIX = ".output";
+
+    /**
+     * The found variable suffix.
+     */
+    public static final String FOUND_SUFIX = ".found";
+
+    /**
+     * The multivalued variable suffix.
+     */
+    public static final String MULTIVALUED_SUFIX = ".multivalued";
+
+    /**
+     * The default variable prefix.
+     */
+    public static final String DEFAULT_VARIABLE_PREFIX = "found";
+
+    /**
+     * All the available suffixes.
+     */
+    public static final String[] VARIABLE_SUFFIXES = new String[]{OUTPUT_SUFIX, FOUND_SUFIX, MULTIVALUED_SUFIX};
+
+    /**
      * The maximum user definable field length.  Any text exceeding this length will be truncated.
      */
     private static final int MAX_USER_DEFINABLE_FIELD_LENGTH = 60;
@@ -32,8 +57,9 @@ public class LookupDynamicContextVariablesAssertion extends Assertion implements
     private static final String BASE_NAME = "Look Up Context Variable";
 
     private String sourceVariable;
-    private String targetOutputVariable;
+    private String targetOutputVariablePrefix = DEFAULT_VARIABLE_PREFIX;
     private DataType targetDataType;
+    private boolean failOnNotFound = true;
 
     /**
      *
@@ -69,25 +95,42 @@ public class LookupDynamicContextVariablesAssertion extends Assertion implements
 
     /**
      *
-     * @return the target output variable name.
+     * @return the target output variable prefix.
      */
-    public String getTargetOutputVariable() {
-        return targetOutputVariable;
+    public String getTargetOutputVariablePrefix() {
+        return targetOutputVariablePrefix;
     }
 
     /**
      *
-     * @param targetOutputVariable the target output variable name to store the result to.
+     * @param targetOutputVariablePrefix the target output variable prefix.
      */
-    public void setTargetOutputVariable(final String targetOutputVariable) {
-        this.targetOutputVariable = targetOutputVariable;
+    public void setTargetOutputVariablePrefix(final String targetOutputVariablePrefix) {
+        this.targetOutputVariablePrefix = targetOutputVariablePrefix;
+    }
+
+    /**
+     *
+     * @return true if the assertion should fail if the lookup context variable does not exist, false otherwise.
+     */
+    public boolean isFailOnNotFound() {
+        return failOnNotFound;
+    }
+
+    /**
+     *
+     * @param failOnNotFound indicate if the assertion should fail when the lookup context variable does not exist.
+     */
+    public void setFailOnNotFound(final boolean failOnNotFound) {
+        this.failOnNotFound = failOnNotFound;
     }
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        if(getTargetOutputVariable() == null || getTargetOutputVariable().trim().isEmpty()) return new VariableMetadata[0];
         return new VariableMetadata[]{
-                new VariableMetadata(getTargetOutputVariable(), false, false, null, true, getTargetDataType())
+                new VariableMetadata(getTargetOutputVariablePrefix() + OUTPUT_SUFIX, false, false, null, true, getTargetDataType()),
+                new VariableMetadata(getTargetOutputVariablePrefix() + MULTIVALUED_SUFIX, false, false, null, true, DataType.BOOLEAN),
+                new VariableMetadata(getTargetOutputVariablePrefix() + FOUND_SUFIX, false, false, null, true, DataType.BOOLEAN)
         };
     }
 
@@ -115,7 +158,7 @@ public class LookupDynamicContextVariablesAssertion extends Assertion implements
                 if(source != null && source.length() > MAX_USER_DEFINABLE_FIELD_LENGTH){
                     source = source.substring(0, MAX_USER_DEFINABLE_FIELD_LENGTH) + "...";
                 }
-                String target = assertion.getTargetOutputVariable();
+                String target = assertion.getTargetOutputVariablePrefix() + OUTPUT_SUFIX;
                 if(target != null && target.length() > MAX_USER_DEFINABLE_FIELD_LENGTH){
                     target = target.substring(0, MAX_USER_DEFINABLE_FIELD_LENGTH) + "...";
                 }

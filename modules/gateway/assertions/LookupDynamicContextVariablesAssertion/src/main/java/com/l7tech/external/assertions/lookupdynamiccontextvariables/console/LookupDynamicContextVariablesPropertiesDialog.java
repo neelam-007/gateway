@@ -22,6 +22,7 @@ public class LookupDynamicContextVariablesPropertiesDialog extends AssertionProp
     private JTextField sourceVariable;
     private TargetVariablePanel targetVariablePanel;
     private JComboBox dataTypeDropDown;
+    private JCheckBox failOnNotFound;
 
     /**
      * Constructs a new dialog box.
@@ -37,8 +38,11 @@ public class LookupDynamicContextVariablesPropertiesDialog extends AssertionProp
     public void setData(final LookupDynamicContextVariablesAssertion assertion) {
         sourceVariable.setText(assertion.getSourceVariable());
         sourceVariable.setCaretPosition(0);
-        targetVariablePanel.setVariable(assertion.getTargetOutputVariable());
+        targetVariablePanel.setVariable(assertion.getTargetOutputVariablePrefix());
+        targetVariablePanel.setDefaultVariableOrPrefix(LookupDynamicContextVariablesAssertion.DEFAULT_VARIABLE_PREFIX);
+        targetVariablePanel.setSuffixes( LookupDynamicContextVariablesAssertion.VARIABLE_SUFFIXES);
         targetVariablePanel.setAssertion(assertion, getPreviousAssertion());
+        failOnNotFound.setSelected(assertion.isFailOnNotFound());
         DataType target = assertion.getTargetDataType();
         if(target == null){
             target = DataType.STRING;
@@ -49,8 +53,9 @@ public class LookupDynamicContextVariablesPropertiesDialog extends AssertionProp
     @Override
     public LookupDynamicContextVariablesAssertion getData(final LookupDynamicContextVariablesAssertion assertion) throws ValidationException {
         assertion.setSourceVariable(sourceVariable.getText().trim());
-        assertion.setTargetOutputVariable(targetVariablePanel.getVariable());
+        assertion.setTargetOutputVariablePrefix(targetVariablePanel.getVariable());
         assertion.setTargetDataType((DataType) dataTypeDropDown.getSelectedItem());
+        assertion.setFailOnNotFound(failOnNotFound.isSelected());
         return assertion;
     }
 

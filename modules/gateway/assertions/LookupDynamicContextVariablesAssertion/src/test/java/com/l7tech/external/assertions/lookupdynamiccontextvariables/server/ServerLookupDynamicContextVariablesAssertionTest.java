@@ -12,6 +12,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.StringReader;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Test the LookupDynamicContextVariablesAssertion.
@@ -43,9 +45,11 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
         try {
             assertion.setTargetDataType(DataType.STRING);
             assertion.setSourceVariable("${sugar}.${foo}");
-            assertion.setTargetOutputVariable("targetOutput");
+            assertion.setTargetOutputVariablePrefix("targetOutput");
             AssertionStatus actual = serverAssertion.checkRequest(pec);
-            Assert.assertEquals("goodness", pec.getVariable(assertion.getTargetOutputVariable()));
+            Assert.assertEquals(Boolean.TRUE, pec.getVariable(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.FOUND_SUFIX));
+            Assert.assertEquals("goodness", pec.getVariable(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.OUTPUT_SUFIX));
+            Assert.assertEquals(Boolean.FALSE, pec.getVariable(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.MULTIVALUED_SUFIX));
             Assert.assertEquals(AssertionStatus.NONE, actual);
         } catch (Exception e) {
             Assert.fail("testValidSource() failed: " + e.getMessage());
@@ -57,11 +61,11 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
         try {
             assertion.setTargetDataType(DataType.STRING);
             assertion.setSourceVariable("${sugar}.${foo22222}");
-            assertion.setTargetOutputVariable("targetOutput");
+            assertion.setTargetOutputVariablePrefix("targetOutput");
             AssertionStatus actual = serverAssertion.checkRequest(pec);
             Assert.assertEquals(AssertionStatus.FAILED, actual);
-            Assert.assertNull(pec.getVariable(assertion.getTargetOutputVariable()));
-            Assert.fail(assertion.getTargetOutputVariable() + " should NOT exist!");
+            Assert.assertNull(pec.getVariable(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.OUTPUT_SUFIX));
+            Assert.fail(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.OUTPUT_SUFIX + " should NOT exist!");
         } catch (Exception e) {
 
         }
@@ -72,11 +76,11 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
         try {
             assertion.setTargetDataType(DataType.STRING);
             assertion.setSourceVariable("${sugar}.${foo22222");
-            assertion.setTargetOutputVariable("targetOutput");
+            assertion.setTargetOutputVariablePrefix("targetOutput");
             AssertionStatus actual = serverAssertion.checkRequest(pec);
             Assert.assertEquals(AssertionStatus.FAILED, actual);
-            Assert.assertNull(pec.getVariable(assertion.getTargetOutputVariable()));
-            Assert.fail(assertion.getTargetOutputVariable() + " should NOT exist!");
+            Assert.assertNull(pec.getVariable(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.OUTPUT_SUFIX));
+            Assert.fail(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.OUTPUT_SUFIX + " should NOT exist!");
         } catch (Exception e) {
 
         }
@@ -89,10 +93,11 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
             pec.setVariable("output", new String[]{"one", "two", "three"});
             pec.setVariable("two", "Looked up value");
             assertion.setSourceVariable("${output[1]}");
-            assertion.setTargetOutputVariable("targetOutput");
+            assertion.setTargetOutputVariablePrefix("targetOutput");
             AssertionStatus actual = serverAssertion.checkRequest(pec);
             Assert.assertEquals(AssertionStatus.NONE, actual);
-            Assert.assertEquals("Looked up value", pec.getVariable(assertion.getTargetOutputVariable()));
+            Assert.assertEquals(Boolean.TRUE, pec.getVariable(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.FOUND_SUFIX));
+            Assert.assertEquals("Looked up value", pec.getVariable(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.OUTPUT_SUFIX));
         } catch (Exception e) {
             Assert.fail("testExpression() failed: " + e.getMessage());
         }
@@ -107,7 +112,7 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
 
     @Test
     public void testMissingTargetVariable(){
-        assertion.setTargetOutputVariable(null);
+        assertion.setTargetOutputVariablePrefix(null);
         AssertionStatus actual = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.FAILED, actual);
     }
@@ -115,7 +120,7 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
     @Test
     public void testUnsupportedDataType(){
         assertion.setSourceVariable("unsupported");
-        assertion.setTargetOutputVariable("output");
+        assertion.setTargetOutputVariablePrefix("output");
         pec.setVariable("unsupported", new StringReader("unsupported1234"));
         AssertionStatus actual = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.FAILED, actual);
@@ -124,7 +129,7 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
     @Test
     public void testUnsupportedDataTypeTarget(){
         assertion.setSourceVariable("foo");
-        assertion.setTargetOutputVariable("output");
+        assertion.setTargetOutputVariablePrefix("output");
         assertion.setTargetDataType(DataType.CLOB);
         AssertionStatus actual = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.FAILED, actual);
@@ -133,7 +138,7 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
     @Test
     public void testDataTypeMismatch(){
         assertion.setSourceVariable("foo");
-        assertion.setTargetOutputVariable("output");
+        assertion.setTargetOutputVariablePrefix("output");
         assertion.setTargetDataType(DataType.DATE_TIME);
         pec.setVariable("foo", true);
         AssertionStatus actual = serverAssertion.checkRequest(pec);
@@ -153,6 +158,46 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
         pec.setVariable("foo", DataType.FLOAT);
         actual = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.FAILED, actual);
+    }
+
+    @Test
+    public void testMultiValuedContextVariables(){
+        try {
+            assertion.setTargetDataType(DataType.STRING);
+            // test array
+            String[] val = new String[]{"one", "two", "three"};
+            pec.setVariable("output", val);
+
+            assertion.setSourceVariable("output");
+            assertion.setTargetOutputVariablePrefix("targetOutput");
+            AssertionStatus actual = serverAssertion.checkRequest(pec);
+            Assert.assertEquals(AssertionStatus.NONE, actual);
+            Assert.assertEquals(Boolean.TRUE, pec.getVariable(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.FOUND_SUFIX));
+            Assert.assertEquals(Boolean.TRUE, pec.getVariable(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.MULTIVALUED_SUFIX));
+            Assert.assertEquals(val, pec.getVariable(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.OUTPUT_SUFIX));
+
+            //test collection
+            List<String> values = Arrays.asList(val);
+            pec.setVariable("output", values);
+
+            assertion.setSourceVariable("output");
+            assertion.setTargetOutputVariablePrefix("targetOutput");
+            actual = serverAssertion.checkRequest(pec);
+            Assert.assertEquals(AssertionStatus.NONE, actual);
+            Assert.assertEquals(Boolean.TRUE, pec.getVariable(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.FOUND_SUFIX));
+            Assert.assertEquals(Boolean.TRUE, pec.getVariable(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.MULTIVALUED_SUFIX));
+
+            //when ExpandVariables is called, it would have changed Collection/List to an Object[] ExpandVariables#getAndFilter(...)
+            Object[] actualOutput = (Object[]) pec.getVariable(assertion.getTargetOutputVariablePrefix() + LookupDynamicContextVariablesAssertion.OUTPUT_SUFIX);
+
+            Assert.assertNotNull(actualOutput);
+            Assert.assertEquals(values.size(), actualOutput.length);
+            for(int i = 0; i < values.size(); i++){
+                Assert.assertEquals(values.get(i), actualOutput[i]);
+            }
+        } catch (Exception e) {
+            Assert.fail("testExpression() failed: " + e.getMessage());
+        }
     }
 }
 
