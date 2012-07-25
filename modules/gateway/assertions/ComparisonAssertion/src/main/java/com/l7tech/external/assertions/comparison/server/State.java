@@ -174,7 +174,10 @@ abstract class State<T> {
         } catch (ComparisonOperator.NotComparableException e) {
             // coding error
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, e.getMessage());
-            return false;
+            return bpred.isNegated();
+        } catch (ComparisonOperator.RightValueIsNullException e) {
+            auditor.logAndAudit(AssertionMessages.COMPARISON_RIGHT_IS_NULL, bpred.getOperator().getName());
+            return bpred.isNegated();
         }
     }
 

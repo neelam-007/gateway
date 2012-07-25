@@ -1,5 +1,8 @@
 package com.l7tech.util;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import javax.xml.bind.annotation.XmlEnum;
 
 /**
@@ -70,7 +73,7 @@ public enum ComparisonOperator {
      * @return true if comparison strategy is successful
      * @throws com.l7tech.util.ComparisonOperator.NotComparableException if the types are not comparable
      */
-    public <T extends Comparable> boolean compare(T left, T right, boolean ignoreCase) throws NotComparableException {
+    public <T extends Comparable> boolean compare(T left, @Nullable T right, boolean ignoreCase) throws NotComparableException, RightValueIsNullException {
         return strategy.compare(left, right, ignoreCase);
     }
 
@@ -78,6 +81,9 @@ public enum ComparisonOperator {
         public NotComparableException(String message) {
             super(message);
         }
+    }
+
+    public static class RightValueIsNullException extends Exception{
     }
 
     /**
@@ -153,7 +159,10 @@ public enum ComparisonOperator {
         }
 
         @Override
-        public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
+        public boolean compare(Comparable left, @Nullable Comparable right, boolean ignoreCase) throws RightValueIsNullException {
+            if (right == null) {
+                throw new RightValueIsNullException();
+            }
             String s1 = left.toString();
             String s2 = right.toString();
 
@@ -172,7 +181,7 @@ public enum ComparisonOperator {
             this.unary = unary;
         }
 
-        public abstract boolean compare(Comparable left, Comparable right, boolean ignoreCase) throws NotComparableException;
+        public abstract boolean compare(Comparable left, Comparable right, boolean ignoreCase) throws NotComparableException, RightValueIsNullException;
         public boolean isUnary() { return unary; }
     }
 

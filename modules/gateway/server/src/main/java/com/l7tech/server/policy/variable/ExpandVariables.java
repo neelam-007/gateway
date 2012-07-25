@@ -25,6 +25,24 @@ import java.util.regex.Matcher;
  * {@link ExpandVariables#process(String, Map, Audit)} method.
  */
 public final class ExpandVariables {
+
+    /**
+     * Process the input expression obtaining a single value for it. If expr contains a single variable reference, then
+     * the value of the object will be returned with no conversion into a String otherwise the expr value will be
+     * processed as if {@link #process(String, java.util.Map, com.l7tech.gateway.common.audit.Audit, boolean)} was called.
+     *
+     * Warning: If the intent is to obtain an Object value for expr then the caller should ensure that the value of expr
+     * is a single variable reference. If not then be aware that the caller of this method needs to support the two
+     * different behaviors exposed when this method is used.
+     *
+     * @param expr Input expression which may be intended to be a single variable reference or an expression
+     * @param vars available variables
+     * @param audit Audit
+     * @return result of processing, either the Object value of a single variable (which may be an array when the variable
+     * is multivalued) or the string result of processing the input expression.
+     * Value may be null when expr is a single variable reference otherwise the value will never be null.
+     */
+    @Nullable
     public static Object processSingleVariableAsObject(final String expr, final Map<String,?> vars, final Audit audit) {
         return processSingleVariableAsObject(expr, vars, audit, strict());
     }

@@ -24,6 +24,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.text.MessageFormat;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -148,6 +149,34 @@ public class ServerComparisonAssertionTest {
         comp.setPredicates(new BinaryPredicate(ComparisonOperator.EQ, "${nonexistent}", true, false));
         AssertionStatus stat = doit(context, comp);
         assertEquals(AssertionStatus.FALSIFIED, stat);
+    }
+
+    @Test
+    @BugNumber(12054)
+    public void testNullRightValueContainsNotNegated() throws Exception {
+        testContainsStrategy(false);
+    }
+
+    @Test
+    @BugNumber(12054)
+    public void testNullRightValueContainsNegated() throws Exception {
+        testContainsStrategy(true);
+    }
+
+    private void testContainsStrategy(boolean negate) throws Exception {
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        context.setVariable("asdf", "asdf");
+        ComparisonAssertion comp = new ComparisonAssertion();
+        comp.setExpression1("${asdf}");
+        final ComparisonOperator operator = ComparisonOperator.CONTAINS;
+        comp.setPredicates(new BinaryPredicate(operator, "${nonexistent}", true, negate));
+        AssertionStatus stat = doit(context, comp);
+        assertEquals(AssertionStatus.FALSIFIED, stat);
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.COMPARISON_RIGHT_IS_NULL));
+        assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.COMPARISON_RIGHT_IS_NULL.getMessage(), operator.getName())));
     }
 
     @Test

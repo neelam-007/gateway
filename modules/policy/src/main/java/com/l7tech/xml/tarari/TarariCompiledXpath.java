@@ -149,6 +149,8 @@ class TarariCompiledXpath extends DomCompiledXpath {
                     } catch (ComparisonOperator.NotComparableException e) {
                         // default behavior pre introduction of checked exception - should never happen here
                         return false;
+                    } catch (ComparisonOperator.RightValueIsNullException e) {
+                        return false;
                     }
                 }
             };

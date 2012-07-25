@@ -694,6 +694,7 @@ public class AssertionMessages extends Messages {
     public static final M COMPARISON_CONVERTING = m(7104, Level.FINE, "Converting {0} value into {1}");
     public static final M COMPARISON_CANT_CONVERT = m(7105, Level.INFO, "Value of type {0} cannot be converted to {1}");
     public static final M COMPARISON_NOT_COMPARABLE = m(7106, Level.INFO, "{0} Value for binary predicate ''{1}'' is not Comparable; using value.toString() instead");
+    public static final M COMPARISON_RIGHT_IS_NULL = m(7107, Level.INFO, "Right value of null is not supported by comparison ''{0}''");
 
     // CodeInjectionProtectionAssertion
     public static final M CODEINJECTIONPROTECTION_NOT_HTTP = m(7150, Level.FINE, "Request is not HTTP.");
