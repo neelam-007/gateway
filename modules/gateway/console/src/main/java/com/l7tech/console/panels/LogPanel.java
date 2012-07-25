@@ -620,8 +620,7 @@ public class LogPanel extends JPanel {
             (! isNullOrEmpty(requestId)) ||
             (! "<any>".equals(entityTypeName)) ||
             (entityId != null) ||
-            (messageId != null) ||
-            getFromPolicy    ;
+            (messageId != null)  ;
     }
 
     /**
