@@ -31,6 +31,8 @@ import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -59,6 +61,9 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
     private JCheckBoxMenuItem viewDetailsMenuItem = null;
     private JMenuItem viewRefreshMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
+    private JMenuItem downloadAuditMenuItem = null;
+    private JMenuItem deleteAuditEventsMenuItem = null;
+    private JMenuItem startAuditArchiverMenuItem = null;
     private JPanel frameContentPane = null;
     private LogPanel logPane = null;
     private boolean startConnected;
@@ -158,6 +163,16 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
               }
           });
 
+        // listen for source via lookup button value change
+        getLogPane().addPropertyChangeListener(new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if(evt.getPropertyName().equals("source_vialookup")){
+                    updateFileActions((Boolean)evt.getNewValue());
+                }
+            }
+        });
+
         pack();
 
         if (startConnected) {
@@ -175,6 +190,12 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
 
         // Load the last window status (size and location).
         Utilities.restoreWindowStatus(this, preferences.asProperties(), 900, 750);
+    }
+
+    private void updateFileActions(boolean isViaLookupSelected) {
+        getDownloadAuditEventsMenuItem().setEnabled(!isViaLookupSelected);
+        getDeleteAuditEventsMenuItem().setEnabled(!isViaLookupSelected);
+        getStartAuditArchiverMenuItem().setEnabled(!isViaLookupSelected);
     }
 
     /**
@@ -334,9 +355,9 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
             // indexes to enable and disable items.
             //
             if(startConnected) {
-                fileMenu.add(new JMenuItem(new DownloadAuditEventsAction()));
-                fileMenu.add(new JMenuItem(deleteAuditEventsAction));
-                fileMenu.add(new JMenuItem(new StartAuditArchiverAction()));
+                fileMenu.add(getDownloadAuditEventsMenuItem());
+                fileMenu.add(getDeleteAuditEventsMenuItem());
+                fileMenu.add(getStartAuditArchiverMenuItem());
                 fileMenu.addSeparator();
             }
             fileMenu.add(getSaveMenuItem());
@@ -344,6 +365,8 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
             fileMenu.add(getExitMenuItem());
             int mnemonic = fileMenu.getText().toCharArray()[0];
             fileMenu.setMnemonic(mnemonic);
+
+            updateFileActions(getLogPane().getViaAuditLookupPolicyRadioButton().isSelected());
         }
         return fileMenu;
     }
@@ -441,6 +464,28 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         }
         return helpTopicsMenuItem;
     }
+
+    private JMenuItem getDownloadAuditEventsMenuItem() {
+        if(downloadAuditMenuItem == null){
+            downloadAuditMenuItem =  new JMenuItem(new DownloadAuditEventsAction());
+        }
+        return downloadAuditMenuItem;
+    }
+    private JMenuItem getDeleteAuditEventsMenuItem() {
+        if(deleteAuditEventsMenuItem == null){
+            deleteAuditEventsMenuItem =  new JMenuItem(new DeleteAuditEventsAction());
+        }
+        return deleteAuditEventsMenuItem;
+    }
+    private JMenuItem getStartAuditArchiverMenuItem() {
+        if(startAuditArchiverMenuItem == null){
+            startAuditArchiverMenuItem =  new JMenuItem(new StartAuditArchiverAction());
+        }
+        return startAuditArchiverMenuItem;
+    }
+
+
+
 
     /**
      * Get the save as menu item.

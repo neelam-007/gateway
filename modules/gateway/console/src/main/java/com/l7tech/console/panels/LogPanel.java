@@ -31,6 +31,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
@@ -371,6 +373,12 @@ public class LogPanel extends JPanel {
             }
         };
 
+        controlPanel.viaAuditLookupPolicyRadioButton.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                firePropertyChange("source_vialookup",!controlPanel.viaAuditLookupPolicyRadioButton.isSelected(),controlPanel.viaAuditLookupPolicyRadioButton.isSelected());
+            }
+        });
         controlPanel.configureAuditLookupPolicyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -1581,6 +1589,9 @@ public class LogPanel extends JPanel {
         return controlPanel.mainPanel;
     }
 
+    public JRadioButton getViaAuditLookupPolicyRadioButton(){
+        return controlPanel.viaAuditLookupPolicyRadioButton;
+    }
     /**
      * @return the label that shows the total number of the messages being displayed.
      */
