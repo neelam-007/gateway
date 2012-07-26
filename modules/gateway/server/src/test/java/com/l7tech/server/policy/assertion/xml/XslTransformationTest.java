@@ -1,45 +1,50 @@
 package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
+import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
-import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.util.TestingHttpClientFactory;
-import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestStashManagerFactory;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.server.url.UrlResolver;
-import com.l7tech.server.url.AbstractUrlObjectCache;
+import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.server.util.TestingHttpClientFactory;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.xslt.CompiledStylesheet;
+import org.junit.*;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
-import org.junit.Assert;
-import org.junit.*;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamSource;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.io.ByteArrayInputStream;
 import java.net.URL;
+import java.text.ParseException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.logging.Logger;
-import java.text.ParseException;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests ServerXslTransformation and XslTransformation classes.
@@ -90,19 +95,55 @@ public class XslTransformationTest {
         );
     }
 
+    @Test(expected = ServerPolicyException.class)
+    public void testSimpleXS20withNoVersionSet() throws Exception {
+        XslTransformation ass = new XslTransformation();
+        ass.setTarget(TargetMessageType.REQUEST);
+        ass.setWhichMimePart(0);
+        ass.setResourceInfo(new StaticResourceInfo(PARSE_PHONE_NUMBER_REGEX_XSLT20));
+
+        // Tries to parse XSLT 2.0 stylesheet using Jaxon, which will fail (complaining about use of regex).
+        new TestStaticOnlyServerXslTransformation(ass);
+    }
+
+    @Test
+    public void testNonXmlInputParsePhoneNumberXS20() throws Exception {
+        XslTransformation ass = new XslTransformation();
+        ass.setTarget(TargetMessageType.REQUEST);
+        ass.setWhichMimePart(0);
+        ass.setResourceInfo(new StaticResourceInfo(PARSE_PHONE_NUMBER_REGEX_XSLT20));
+        ass.setXsltVersion("2.0");
+        ServerXslTransformation sass = new TestStaticOnlyServerXslTransformation(ass);
+
+        // An XML target message is currently still required in order to run an XSLT, so we will use a dummy value
+        Message req = new Message(XmlUtil.stringAsDocument("<dummy/>"));
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, null);
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        String after = toString(req);
+        assertEquals("num=555-2938,area=604", after);
+    }
+
+    private String toString(Message req) throws Exception {
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
+        try {
+            IOUtils.copyStream(req.getMimeKnob().getEntireMessageBodyAsInputStream(), baos);
+            return baos.toString(Charsets.UTF8);
+        } finally {
+            baos.close();
+        }
+    }
+
     @Test
     public void testServerAssertion() throws Exception {
         XslTransformation ass = new XslTransformation();
-        ass.setDirection(XslTransformation.APPLY_TO_REQUEST);
+        ass.setTarget(TargetMessageType.REQUEST);
         ass.setWhichMimePart(0);
         ass.setResourceInfo(new StaticResourceInfo(getResAsString(XSL_MASK_WSSE)));
 
-        ServerXslTransformation serverAss = new ServerXslTransformation(ass, null){
-            @Override
-            protected UrlResolver<CompiledStylesheet> getCache(HttpObjectCache.UserObjectFactory<CompiledStylesheet> cacheObjectFactory, BeanFactory spring) {
-                return null;
-            }
-        };
+        ServerXslTransformation serverAss = new TestStaticOnlyServerXslTransformation(ass);
 
         Message req = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
         Message res = new Message();
@@ -118,7 +159,7 @@ public class XslTransformationTest {
     public void testBenchmark() throws Exception {
         XslTransformation ass = new XslTransformation();
         ass.setResourceInfo(new StaticResourceInfo(getResAsString(XSL_MASK_WSSE)));
-        ass.setDirection(XslTransformation.APPLY_TO_REQUEST);
+        ass.setTarget(TargetMessageType.REQUEST);
         ass.setWhichMimePart(0);
 
         ServerXslTransformation serverAss = new ServerXslTransformation(ass, ApplicationContexts.getTestApplicationContext());
@@ -216,7 +257,7 @@ public class XslTransformationTest {
         ri.setDocument(ECF_MDE_ID_XSL);
 
         XslTransformation assertion = new XslTransformation();
-        assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
+        assertion.setTarget(TargetMessageType.REQUEST);
         assertion.setResourceInfo(ri);
         BeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("httpClientFactory", new TestingHttpClientFactory());
@@ -242,7 +283,7 @@ public class XslTransformationTest {
         ri.setDocument(ECF_MDE_ID_XSL);
 
         XslTransformation assertion = new XslTransformation();
-        assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
+        assertion.setTarget(TargetMessageType.REQUEST);
         assertion.setResourceInfo(ri);
         BeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("httpClientFactory", new TestingHttpClientFactory());
@@ -263,7 +304,7 @@ public class XslTransformationTest {
     @Test
     public void testContextVariablesRemote() throws Exception {
         XslTransformation assertion = new XslTransformation();
-        assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
+        assertion.setTarget(TargetMessageType.REQUEST);
         AssertionResourceInfo ri = new SingleUrlResourceInfo("http://bogus.example.com/blah.xsd");
         assertion.setResourceInfo(ri);
         ServerAssertion sa = new ServerXslTransformation(assertion, null){
@@ -301,7 +342,7 @@ public class XslTransformationTest {
 
         XslTransformation xsl = new XslTransformation();
         xsl.setResourceInfo(new SingleUrlResourceInfo(xslUrl));
-        xsl.setDirection(XslTransformation.APPLY_TO_REQUEST);
+        xsl.setTarget(TargetMessageType.REQUEST);
 
         Message request = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new URL(responseUrl).openStream());
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
@@ -343,4 +384,36 @@ public class XslTransformationTest {
             "    </xsl:template>\n" +
             "</xsl:transform>";
 
+    private static final String PARSE_PHONE_NUMBER_REGEX_XSLT20 =
+        "<?xml version=\"1.0\"?>\n" +
+            "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xdt=\"http://www.w3.org/2003/05/xpath-datatypes\" version=\"2.0\">\n" +
+            "<xsl:output method=\"text\"/>\n" +
+            "<xsl:param name=\"phone\" select=\"'604-555-2938'\"/>\n" +
+            "<xsl:template match=\"/\">\n" +
+            "  <xsl:analyze-string select=\"$phone\" \n" +
+            "       regex=\"([0-9]+)-([0-9]+)-([0-9]+)\">\n" +
+            "    <xsl:matching-substring>\n" +
+            "      <xsl:text>num=</xsl:text>\n" +
+            "      <xsl:number value=\"regex-group(2)\" format=\"01\"/>\n" +
+            "      <xsl:text>-</xsl:text>\n" +
+            "      <xsl:number value=\"regex-group(3)\" format=\"0001\"/>\n" +
+            "      <xsl:text>,area=</xsl:text>\n" +
+            "      <xsl:number value=\"regex-group(1)\" format=\"01\"/>\n" +
+            "    </xsl:matching-substring>\n" +
+            "  </xsl:analyze-string>\n" +
+            "</xsl:template>\n" +
+            "\n" +
+            "</xsl:stylesheet>\n";
+
+    private static class TestStaticOnlyServerXslTransformation extends ServerXslTransformation {
+        public TestStaticOnlyServerXslTransformation(XslTransformation ass) throws ServerPolicyException {
+            //noinspection NullableProblems
+            super(ass, null);
+        }
+
+        @Override
+        protected UrlResolver<CompiledStylesheet> getCache(HttpObjectCache.UserObjectFactory<CompiledStylesheet> cacheObjectFactory, BeanFactory spring) {
+            return null;
+        }
+    }
 }
