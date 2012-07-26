@@ -38,6 +38,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
     private JComboBox typeCombo;
     private JComboBox tagCombo;
     private JLabel unsavedWarningLabel;
+    private JTextField oidField;
     // TODO include a policy panel
 
     private final Policy policy;
@@ -166,6 +167,10 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         guidField.setText(policy.getGuid() == null ? "" : policy.getGuid());
         guidField.putClientProperty(Utilities.PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL, "true");
         Utilities.attachDefaultContextMenu(guidField);
+
+        oidField.setText(policy.getId());
+        oidField.putClientProperty(Utilities.PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL, "true");
+        Utilities.attachDefaultContextMenu(oidField);
 
         nameField.setEditable(nameField.isEditable() && canUpdate);
         soapCheckbox.setEnabled(soapCheckbox.isEnabled() && canUpdate);
