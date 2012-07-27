@@ -1,6 +1,5 @@
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
  */
 package com.l7tech.server.audit;
 
@@ -18,11 +17,9 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.*;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.security.*;
 import java.security.cert.X509Certificate;
@@ -32,7 +29,6 @@ import java.sql.Statement;
 import java.util.*;
 import java.util.logging.Level;
 
-import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 
 @Ignore
@@ -41,11 +37,11 @@ public class AuditSinkSchemaTest {
     private AuditRecordSigner signer;
     private AuditRecordVerifier verifier;
 
-    private String url = "jdbc:l7tech:db2://qadb2.l7tech.com:50000;databaseName=wyn";
-    private String username = "db2inst1";
+    private String url = "jdbc:datadirect:oracle://qaoracledb.l7tech.com:1521;Database=XE";
+    private String username = "TEST";
     private String password = "7layer";
-    private String auditRecordTable = "audit_main";
-    private String auditDetailTable = "audit_detail";
+    private String auditRecordTable = "wyn_main";
+    private String auditDetailTable = "wyn_detail";
     private boolean cleanup = false;
 
     @Before
@@ -56,55 +52,7 @@ public class AuditSinkSchemaTest {
     }
 
     @Test
-    public void blah() throws Exception{
-
-        ComboPooledDataSource cpds = new ComboPooledDataSource();
-        cpds.setConnectionCustomizerClassName("com.l7tech.server.util.JdbcConnectionCustomizer");
-        cpds.setJdbcUrl(url);
-        cpds.setPassword(password);
-        cpds.setUser(username);
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(cpds);
-
-        String query = "insert into audit_main (id,nodeid,time,type,audit_level,message,status,authenticated,request_xml,properties) values (?,?,?,?,?,?,?,?,?,?)";
-        byte[] byteArray = "aweaewgweag".getBytes();
-
-
-        Object[] preparedStatements = new Object[]{
-                "qwetqwetqt10", // id
-                "zxcvzcxvzxcv", // nodeid
-                12345678, // time
-                "ME", // type,
-                "900", // audit level
-                "message", // message
-                "12", // status
-                false,    // authenticated
-                byteArray, // request_xml
-                "awefaewf  properties" // properties
-        };
-
-
-
-        int result = jdbcTemplate.update(query,preparedStatements);
-
-//        query = "select * from audit_main";
-//        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(query);
-//        rowSet.next();
-//        rowSet.next();
-//        SerialBlob blah = (SerialBlob)rowSet.getObject(24);
-//        String ugh = new String(blah.getBytes(1,(int)blah.length()));
-
-        assertEquals(result, 1);
-        assertEquals(1, 1);
-
-
-
-    }
-
-
-    @Test
     public void testAuditSinkSchema() throws Exception{
-        boolean success = true;
-
         String guid = testMessageSummaryRecord();
         deleteRow(auditRecordTable,guid);
         guid = testAdminAuditRecord();
@@ -112,7 +60,6 @@ public class AuditSinkSchemaTest {
         guid = testSystemAuditRecord();
         deleteRow(auditRecordTable,guid);
     }
-
 
     private String testSystemAuditRecord() throws Exception {
         AuditSinkPolicyEnforcementContext context;
@@ -268,6 +215,4 @@ public class AuditSinkSchemaTest {
         }
         return query;
     }
-
-
 }

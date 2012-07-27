@@ -1,6 +1,5 @@
 package com.l7tech.gateway.common.audit;
 
-import com.l7tech.util.HexUtils;
 
 /**
  */
@@ -73,16 +72,17 @@ public class ExternalAuditsCommonUtils {
                 lookupPrefix(dbType)+" from "+recordTable+" where " +
                         "time>=${audit.recordQuery.minTime} and time&lt;${audit.recordQuery.maxTime} " +
                         "and audit_level in (${audit.recordQuery.levels}) " +
-                        "and  nodeid like ${audit.recordQuery.nodeId} " +
-                        "and type like ${audit.recordQuery.auditType} " +
-                        "and lower(name) like lower(${serviceName}) escape '#'  " +
-                        "and lower(user_name) like lower(${audit.recordQuery.userName}) " +
-                        "and lower(user_id) like lower(${audit.recordQuery.userIdOrDn}) " +
-                        "and lower(message) like lower(${audit.recordQuery.message}) " +
-                        "and lower(entity_class) like lower(${audit.recordQuery.entityClassName}) " +
-                        "and entity_id like ${audit.recordQuery.entityId} " +
-                        "and lower(request_id) like lower(${audit.recordQuery.requestId}) order by time desc "+lookupPostfix(dbType);
+                        "and "+ getColumnQuery("nodeid",dbType)+ " like ${audit.recordQuery.nodeId} " +
+                        "and "+ getColumnQuery("type",dbType)+ " like ${audit.recordQuery.auditType} " +
+                        "and lower("+ getColumnQuery("name",dbType)+ ") like lower(${serviceName}) escape '#'  " +
+                        "and lower("+ getColumnQuery("user_name",dbType)+ ") like lower(${audit.recordQuery.userName}) " +
+                        "and lower("+ getColumnQuery("user_id",dbType)+ ") like lower(${audit.recordQuery.userIdOrDn}) " +
+                        "and lower("+ getColumnQuery("message",dbType)+ ") like lower(${audit.recordQuery.message}) " +
+                        "and lower("+ getColumnQuery("entity_class",dbType)+ ") like lower(${audit.recordQuery.entityClassName}) " +
+                        "and "+ getColumnQuery("entity_id",dbType)+ " like ${audit.recordQuery.entityId} " +
+                        "and lower("+ getColumnQuery("request_id",dbType)+ ") like lower(${audit.recordQuery.requestId}) order by time desc "+lookupPostfix(dbType);
     }
+
 
     private static String lookupQueryWithAuditId(String recordTable,String dbType){
         return
@@ -90,25 +90,31 @@ public class ExternalAuditsCommonUtils {
                         "id in (${recordIdQuery.audit_oid}) " +
                         "and time>=${audit.recordQuery.minTime} and time&lt;=${audit.recordQuery.maxTime} " +
                         "and audit_level in (${audit.recordQuery.levels}) " +
-                        "and  nodeid like ${audit.recordQuery.nodeId} " +
-                        "and type like ${audit.recordQuery.auditType} " +
-                        "and lower(name) like lower(${serviceName}) escape '#'  " +
-                        "and lower(user_name) like lower(${audit.recordQuery.userName}) " +
-                        "and lower(user_id) like lower(${audit.recordQuery.userIdOrDn}) " +
-                        "and lower(message) like lower(${audit.recordQuery.message}) " +
-                        "and lower(entity_class) like lower(${audit.recordQuery.entityClassName}) " +
-                        "and entity_id like ${audit.recordQuery.entityId}  " +
-                        "and lower(request_id) like lower(${audit.recordQuery.requestId}) order by time desc "+lookupPostfix(dbType);
+                        "and "+ getColumnQuery("nodeid",dbType)+ " like ${audit.recordQuery.nodeId} " +
+                        "and "+ getColumnQuery("type",dbType)+ " like ${audit.recordQuery.auditType} " +
+                        "and lower("+ getColumnQuery("name",dbType)+ ") like lower(${serviceName}) escape '#'  " +
+                        "and lower("+ getColumnQuery("user_name",dbType)+ ") like lower(${audit.recordQuery.userName}) " +
+                        "and lower("+ getColumnQuery("user_id",dbType)+ ") like lower(${audit.recordQuery.userIdOrDn}) " +
+                        "and lower("+ getColumnQuery("message",dbType)+ ") like lower(${audit.recordQuery.message}) " +
+                        "and lower("+ getColumnQuery("entity_class",dbType)+ ") like lower(${audit.recordQuery.entityClassName}) " +
+                        "and "+ getColumnQuery("entity_id",dbType)+ " like ${audit.recordQuery.entityId}  " +
+                        "and lower("+ getColumnQuery("request_id",dbType)+ ") like lower(${audit.recordQuery.requestId}) order by time desc "+lookupPostfix(dbType);
     }
 
+    private static String getColumnQuery(String columnName, String dbType) {
+        if(dbType.equals("oracle")){
+            return "nvl("+columnName+",' ') ";
+        }
+        return columnName;
+    }
 
     private static String lookupPrefix(String dbType) {
         if(dbType.equals("mysql"))
             return "select * ";
         else if(dbType.equals("sqlserver"))
             return "select top 1024 * ";
-//        else if(dbType.equals("oracle"))
-//            return "select *  FROM ( select * ";
+        else if(dbType.equals("oracle"))
+            return "select *  FROM ( select * ";
         else if(dbType.equals("db2"))
             return "select * ";
         return null;
@@ -119,20 +125,17 @@ public class ExternalAuditsCommonUtils {
             return "limit 0,1024";
         else if(dbType.equals("sqlserver"))
             return "";
-//        else if(dbType.equals("oracle"))
-//            return " ) temp WHERE rownum &lt;= 1024  ORDER BY rownum";
+        else if(dbType.equals("oracle"))
+            return " ) temp WHERE rownum &lt;= 1024  ORDER BY rownum";
         else if(dbType.equals("db2"))
             return " fetch first 1024 rows only";
         return null;
     }
 
-
     private static String messaageIdLookupQuery ( String detailTable){
         return
                 "select distinct audit_oid,time from "+detailTable+" where message_id >=${messageIdMin}  and message_id &lt;=${messageIdMax} order by time desc" ;
     }
-
-
 
     private static String detailLookupQuery (String detailTable){
         return
@@ -290,7 +293,7 @@ public class ExternalAuditsCommonUtils {
 
     private static String getServiceNameEscapingAssertions(String dbType) {
 
-        if(dbType.equals("db2"))
+        if(dbType.equals("db2") || dbType.equals("oracle"))
             return "";
         return
             "            <L7p:Regex>\n" +
@@ -310,5 +313,4 @@ public class ExternalAuditsCommonUtils {
             "                <L7p:Target target=\"OTHER\"/>\n" +
             "            </L7p:Regex>\n";
     }
-
 }

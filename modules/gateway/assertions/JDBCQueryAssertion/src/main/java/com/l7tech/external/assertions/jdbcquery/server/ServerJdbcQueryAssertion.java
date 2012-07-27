@@ -62,8 +62,8 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                 } else {
                     context.setVariable(getVariablePrefix(context) + "." + JdbcQueryAssertion.VARIABLE_COUNT, result);
                 }
-            } else if (result instanceof SqlRowSet) {
-                int affectedRows = setContextVariables((SqlRowSet) result, context);
+            } else if (result instanceof Map) {
+                int affectedRows = setContextVariables((Map<String,List<Object>>) result, context);
                 if (affectedRows == 0 && assertion.isAssertionFailureEnabled()) {
                     logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
                     return AssertionStatus.FAILED;
@@ -105,8 +105,33 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     /**
      * To make sure we don't break any calls to the old signature
      */
-    int setContextVariables(SqlRowSet resultSet, PolicyEnforcementContext context) throws SQLException {
-        return setContextVariables(resultSet, context, EMPTY_STRING);
+    int setContextVariables(Map<String,List<Object>> resultSet, PolicyEnforcementContext context) throws SQLException {
+        if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
+
+        Map<String, String> namingMap = assertion.getNamingMap();
+        Map<String, String> newNamingMap = new TreeMap<String, String>();
+
+        // Get mappings of column names and context variable names
+        for (String columnName : resultSet.keySet()) {
+            if (namingMap.containsKey(columnName)) {
+                newNamingMap.put(columnName, namingMap.get(columnName));
+            } else {
+                newNamingMap.put(columnName, columnName);
+            }
+        }
+
+        // Assign the results to context variables
+        String varPrefix = getVariablePrefix(context);
+        int row = 0;
+        for (String columnName : resultSet.keySet()) {
+            if (logger.isLoggable(Level.FINER)) {
+                logger.log(Level.FINER, varPrefix  + "." + newNamingMap.get(columnName) + resultSet.get(columnName).toArray());
+            }
+            row = resultSet.get(columnName).size();
+            context.setVariable(varPrefix  + "." + newNamingMap.get(columnName), resultSet.get(columnName).toArray());
+        }
+        context.setVariable(varPrefix + "." + JdbcQueryAssertion.VARIABLE_COUNT, row);
+        return row;
     }
 
     int setContextVariables(SqlRowSet resultSet, PolicyEnforcementContext context, final String resultSetPrefix) throws SQLException {

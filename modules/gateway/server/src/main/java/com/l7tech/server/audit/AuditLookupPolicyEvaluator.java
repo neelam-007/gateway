@@ -181,7 +181,10 @@ public class AuditLookupPolicyEvaluator  {
 
         } catch (NoSuchVariableException e) {
             logger.warning("Error creating audit records, some fields not present: "+e.getMessage());
+        } catch (ClassCastException e){
+            logger.warning("Error creating audit records, field type mismatch: "+e.getMessage());
         }
+
         return new ArrayList<AuditRecordHeader>();
     }
 
@@ -191,6 +194,9 @@ public class AuditLookupPolicyEvaluator  {
         try {
             Object sizeObj = context.getVariable(prefix+".queryresult.count");
             numDetails = (Integer)sizeObj;
+            // no audit details to get
+            if(numDetails == 0)
+                return;
         } catch (NoSuchVariableException e) {
             // do nothing, no audit details to get
             return;
@@ -236,6 +242,8 @@ public class AuditLookupPolicyEvaluator  {
             }
         } catch (NoSuchVariableException e) {
             logger.warning("Failed to retrieve audit details");
+        } catch (ClassCastException e){
+            logger.warning("Error creating audit records, field type mismatch: "+e.getMessage());
         }
     }
 

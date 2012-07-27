@@ -692,8 +692,8 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
             type = "mysql";
         else if(connectionDriverClass.contains("sqlserver"))
             type = "sqlserver";
-//        else if(connectionDriverClass.contains("oracle"))
-//            type = "oracle";
+        else if(connectionDriverClass.contains("oracle"))
+            type = "oracle";
         else if(connectionDriverClass.contains("db2"))
             type = "db2";
         return type;

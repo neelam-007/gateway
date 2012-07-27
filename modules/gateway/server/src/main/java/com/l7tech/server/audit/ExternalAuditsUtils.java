@@ -67,11 +67,11 @@ public class ExternalAuditsUtils {
         // get data
         query = "select * from "+auditRecordTable+" where id='"+guid+"'";
         result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),context, new LoggingAudit(logger));
-        success = result instanceof SqlRowSet && ((SqlRowSet) result).next();
+        success = result instanceof Map && !((Map) result).isEmpty();
         if(!success)
             return "Failed to get a system audit record";
 
-        boolean verify = verifyRetreievedAuditRecord((SqlRowSet)result,sar.getOid(),defaultKey);
+        boolean verify = verifyRetreievedAuditRecord(result,sar.getOid(),defaultKey);
 
         // delete
         result =  deleteRow(jdbcQueryingManager,auditRecordTable,guid,connectionName);
@@ -113,11 +113,11 @@ public class ExternalAuditsUtils {
         // get data
         query = "select * from "+auditRecordTable+" where id='"+guid+"'";
         result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),context, new LoggingAudit(logger));
-        success = result instanceof SqlRowSet && ((SqlRowSet) result).next();
+        success = result instanceof Map && !((Map) result).isEmpty();
         if(!success)
             return "Failed to get an admin audit record";
 
-        boolean verify = verifyRetreievedAuditRecord((SqlRowSet)result,aar.getOid(),defaultKey);
+        boolean verify = verifyRetreievedAuditRecord(result,aar.getOid(),defaultKey);
 
         // delete
         result =  deleteRow(jdbcQueryingManager,auditRecordTable,guid,connectionName);
@@ -169,11 +169,11 @@ public class ExternalAuditsUtils {
         // get data
         query = "select * from "+auditRecordTable+" where id='"+guid+"'";
         result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),context, new LoggingAudit(logger));
-        success = result instanceof SqlRowSet && ((SqlRowSet) result).next();
+        success = result instanceof Map && !((Map) result).isEmpty();
         if(!success)
             return "Failed to get an message summary  audit record";
 
-        boolean verify = verifyRetreievedAuditRecord((SqlRowSet)result,record.getOid(),defaultKey);
+        boolean verify = verifyRetreievedAuditRecord(result,record.getOid(),defaultKey);
 
         // save detail
         AuditDetail detail = new AuditDetail(Messages.EXCEPTION_SEVERE,new String[]{"param1","param2"}, new RuntimeException("message"));
@@ -194,7 +194,7 @@ public class ExternalAuditsUtils {
 
         query = "select * from "+auditDetailTable+" where audit_oid='"+guid+"' and ordinal="+detail.getOrdinal();
         result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),context, new LoggingAudit(logger));
-        success = result instanceof SqlRowSet && ((SqlRowSet) result).next();
+        success = result instanceof Map && !((Map) result).isEmpty();
         if(!success)
             return "Failed to get an audit detail";
 
@@ -208,14 +208,15 @@ public class ExternalAuditsUtils {
 
         query = "select * from "+auditDetailTable+" where audit_oid ='"+detail.getAuditGuid()+"' " ;
         result = JdbcQueryUtils.performJdbcQuery( jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),null, new LoggingAudit(logger));
-        if(result instanceof Integer && (Integer)result!= 0){
+        success = result instanceof Map && ((Map) result).isEmpty();
+
+        if(!success){
             // try to clean up audit detail
             query = "delete from "+auditDetailTable+" where id='"+guid+"' and ordinal="+detail.getOrdinal();
             result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),context, new LoggingAudit(logger));
             return "Audit detail failed to delete with audit record";
         }
 
-        success = result instanceof SqlRowSet && !((SqlRowSet) result).next();
 
         if(!verify )
             return "Audit message signature verify failed";
@@ -342,55 +343,43 @@ public class ExternalAuditsUtils {
         }
     }
 
-    public static byte[] getByteArrayData(Object blobRowSet) {
-        try {
-            if(blobRowSet instanceof byte[])
-                return (byte[])blobRowSet;
-            if(blobRowSet instanceof Blob){
-                return ((Blob)blobRowSet).getBytes(1,(int)((Blob) blobRowSet).length());
-            }
-        } catch (SQLException e) {
-            return null;
-        }
-        return null;
+    public static byte[] getByteArrayData(Object o) throws ClassCastException {
+        if(o instanceof byte[])
+            return (byte[])o;
+        throw new ClassCastException("Unknown type:" + o.getClass());
     }
 
-    public static Long getLongData(Object o) {
+    public static Long getLongData(Object o)  throws ClassCastException{
         if(o instanceof Long)
             return (Long)o;
         if(o instanceof BigDecimal)
             return ((BigDecimal) o).longValue();
-        return null;
+        throw new ClassCastException("Unknown type:" + o.getClass());
     }
 
-    public static String getStringData(Object o) {
-        try {
-            if(o instanceof String)
-                return (String)o;
-            if(o instanceof Clob){
-                return ((Clob)o).getSubString(1, (int) ((Clob) o).length());
-            }
-        } catch (SQLException e) {
-            return null;
-        }
-        return null;
+    public static String getStringData(Object o)  throws ClassCastException {
+        if(o instanceof String)
+            return (String)o;
+        throw new ClassCastException("Unknown type:" + o.getClass());
     }
 
 
-    public static Boolean getBooleanData(Object o){
+    public static Boolean getBooleanData(Object o)  throws ClassCastException{
         if(o instanceof Boolean)
             return (Boolean) o;
         if(o instanceof Integer)
             return (Integer)o == 1 ;
-        return false;
+        if(o instanceof  String)
+            return o.equals("1");
+        throw new ClassCastException("Unknown type:" + o.getClass());
     }
 
-    public static Integer getIntegerData(Object o) {
+    public static Integer getIntegerData(Object o)  throws ClassCastException{
         if(o instanceof Integer)
             return (Integer)o;
         if(o instanceof BigDecimal)
             return ((BigDecimal) o).intValue();
-        return null;
+        throw new ClassCastException("Unknown type:" + o.getClass());
     }
 
     private static AuditRecordPropertiesHandler  parseRecordProperties(String props){
@@ -412,38 +401,38 @@ public class ExternalAuditsUtils {
         return null;
     }
 
+    private static boolean verifyRetreievedAuditRecord( Object resultSet, long originalOid,DefaultKey defaultKey) throws IOException, SignatureException, InvalidKeyException, KeyUsageException, NoSuchAlgorithmException, CertificateParsingException, ClassCastException {
+        Map<String,List<Object>> result = ( Map<String,List<Object>>) resultSet;
 
-    private static boolean verifyRetreievedAuditRecord( SqlRowSet resultSet, long originalOid,DefaultKey defaultKey) throws IOException, SignatureException, InvalidKeyException, KeyUsageException, NoSuchAlgorithmException, CertificateParsingException {
-
-        String id = resultSet.getString("id");
-        String nodeid = resultSet.getString("nodeid");
-        Long time = resultSet.getLong("time");
-        String type = resultSet.getString("type");
-        String auditLevel = resultSet.getString("audit_level");
-        String name = resultSet.getString("name");
-        String message = resultSet.getString("message");
-        String ip_addr = resultSet.getString("ip_address");
-        String userName = resultSet.getString("user_name");
-        String userId = resultSet.getString("user_id");
-        String providerOid = resultSet.getString("provider_oid");
-        String signature = resultSet.getString("signature");
-        String entityClass = resultSet.getString("entity_class");
-        String entityId = resultSet.getString("entity_id");
-        Integer status = resultSet.getInt("status");
-        String requestId = resultSet.getString("request_id");
-        String serviceOid = resultSet.getString("service_oid");
-        String operationName = resultSet.getString("operation_name");
-        Boolean authenticated = resultSet.getBoolean("authenticated");
-        String authenticationType = resultSet.getString("authenticationType");
-        Integer requestLength = resultSet.getInt("request_length");
-        Integer responseLength = resultSet.getInt("response_length");
-        byte[] requestZip = getByteArrayData(resultSet.getObject("request_xml"));
-        byte[] responseZip = getByteArrayData(resultSet.getObject("response_xml"));
-        Integer responseStatus = resultSet.getInt("response_status");
-        Integer latency = resultSet.getInt("routing_latency");
-        String properties = resultSet.getString("properties");
-        Integer componentId = resultSet.getInt("component_id");
-        String action = resultSet.getString("action");
+        String id = getStringData(result.get("id").get(0));
+        String nodeid = getStringData(result.get("nodeid").get(0));
+        Long time = getLongData(result.get("time").get(0));
+        String type = getStringData(result.get("type").get(0));
+        String auditLevel = getStringData(result.get("audit_level").get(0));
+        String name = getStringData(result.get("name").get(0));
+        String message = getStringData(result.get("message").get(0));
+        String ip_addr = getStringData(result.get("ip_address").get(0));
+        String userName = getStringData(result.get("user_name").get(0));
+        String userId = getStringData(result.get("user_id").get(0));
+        String providerOid = getStringData(result.get("provider_oid").get(0));
+        String signature = getStringData(result.get("signature").get(0));
+        String entityClass = getStringData(result.get("entity_class").get(0));
+        String entityId = getStringData(result.get("entity_id").get(0));
+        Integer status = getIntegerData(result.get("status").get(0));
+        String requestId = getStringData(result.get("request_id").get(0));
+        String serviceOid = getStringData(result.get("service_oid").get(0));
+        String operationName = getStringData(result.get("operation_name").get(0));
+        Boolean authenticated = getBooleanData(result.get("authenticated").get(0));
+        String authenticationType = getStringData(result.get("authenticationtype").get(0));
+        Integer requestLength = getIntegerData(result.get("request_length").get(0));
+        Integer responseLength = getIntegerData(result.get("response_length").get(0));
+        byte[] requestZip = getByteArrayData(result.get("request_xml").get(0));
+        byte[] responseZip = getByteArrayData(result.get("response_xml").get(0));
+        Integer responseStatus = getIntegerData(result.get("response_status").get(0));
+        Integer latency = getIntegerData(result.get("routing_latency").get(0));
+        String properties = getStringData(result.get("properties").get(0));
+        Integer componentId = getIntegerData(result.get("component_id").get(0));
+        String action = getStringData(result.get("action").get(0));
 
         AuditRecord record =
                 makeAuditRecord(id,nodeid, time, type, auditLevel, name, message ,ip_addr, userName, userId, providerOid, signature,entityClass, entityId, status, requestId, serviceOid,  operationName, authenticated, authenticationType, requestLength,  responseLength, requestZip, responseZip, responseStatus, latency, componentId, action, properties);

@@ -23,10 +23,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -248,7 +245,7 @@ public class ServerJdbcQueryAssertionTest {
         SqlRowSet resultSet = jdbcQueryingManager.getMockSqlRowSet();
 
         ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, appCtx);
-        int numOfRecords = serverAssertion.setContextVariables(resultSet, peCtx);
+        int numOfRecords = serverAssertion.setContextVariables(resultSet, peCtx,"");
 
         // Check the number of returned records by the query
         assertEquals("The number of returned numOfRecords matched", MockJdbcDatabaseManager.MOCK_MAX_ROWS, numOfRecords);

@@ -5,11 +5,16 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 
 import javax.sql.DataSource;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -77,8 +82,8 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
                     || query.toLowerCase().startsWith(EXEC)
                     || query.toLowerCase().startsWith(FUNC);
             if (isSelectQuery) {
-                // Return a SqlRowSet representing disconnected java.sql.ResultSet data.
-                return jdbcTemplate.queryForRowSet(query, preparedStmtParams.toArray(new Object[preparedStmtParams.size()]));
+                // Return a map of column names and arrays of values.
+                return jdbcTemplate.query(query, preparedStmtParams.toArray(new Object[preparedStmtParams.size()]),new QueryingManagerResultSetExtractor());
             } else if (isStoredProcedureQuery) {
                 // Return a List of SqlRowSet representing disconnected java.sql.ResultSet (s) and OUT parameters.
                 final SimpleJdbcCall simpleJdbcCall = new SimpleJdbcCall(jdbcTemplate);
@@ -110,5 +115,48 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
     @Override
     public SqlRowSet getMockSqlRowSet() {
         return null;
+    }
+
+
+    /**
+     *  extracts into a  map of column names and values as an ordered list
+        column "name" of row 5 ==> map key= "name", list index = 5
+        column names are all lower case
+     */
+    private static class QueryingManagerResultSetExtractor implements ResultSetExtractor< Map<String,List<Object>>> {
+        @Override
+        public  Map<String,List<Object>> extractData(ResultSet resultSet) throws SQLException, DataAccessException {
+            Map<String,List<Object>> result = new HashMap<String,List<Object>>();
+            ResultSetMetaData meta = resultSet.getMetaData();
+            int columnCount = meta.getColumnCount();
+            while(resultSet.next()){
+                for(int j = 1 ; j <= columnCount ; j++){
+                    String colName = meta.getColumnName(j).toLowerCase();
+                    List<Object> col  = result.get(colName);
+
+                    if(col == null){
+                        col = new ArrayList<Object>();
+                        result.put(colName,col);
+                    }
+
+                    Object o ;
+                    int type = resultSet.getMetaData().getColumnType(j);
+
+                    if(type == Types.CLOB){
+                        Clob clob = resultSet.getClob(j);
+                        o = clob == null? null:clob.getSubString(1,(int)clob.length());
+                    }
+                    else if (type == Types.BLOB){
+                        Blob blob = resultSet.getBlob(j);
+                        o = blob == null? null : blob.getBytes(1,(int)blob.length());
+                    }
+                    else
+                        o = resultSet.getObject(j);
+
+                    col.add(o);
+                }
+            }
+            return result;
+        }
     }
 }
