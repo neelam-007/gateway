@@ -26,15 +26,11 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.text.ParseException;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Utility methods for working with XSL transformations.
  */
 public class XsltUtil {
-    private static final Logger logger = Logger.getLogger(XsltUtil.class.getName());
-
     /**
      * Get the variables used by the specified XSLT transformation, expressed as an XML string.
      *
@@ -47,8 +43,7 @@ public class XsltUtil {
      * @throws SAXException if the stylesheet could not be parsed as XML.
      */
     public static List<String> getVariablesUsedByStylesheet(String xslSrc, String xsltVersion) throws TransformerConfigurationException, IOException, SAXException, ParseException {
-        final List<TransformerException> fatals = new ArrayList<TransformerException>();
-        TransformerFactory tf = createTransformerFactory(xsltVersion, fatals);
+        TransformerFactory tf = createTransformerFactory(xsltVersion);
         tf.setURIResolver( new URIResolver(){
             public Source resolve( String href, String base ) throws TransformerException {
                 return new StreamSource(new StringReader("<a xsl:version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"/>"));
@@ -56,17 +51,15 @@ public class XsltUtil {
         } );
 
         final DOMSource source = new DOMSource(XmlUtil.parse(new StringReader(xslSrc), false));
-        return getVariablesUsedByTemplates(compileStylesheet(tf, source, fatals));
+        return getVariablesUsedByTemplates(compileStylesheet(tf, source));
     }
 
-    private static Templates compileStylesheet(TransformerFactory tf, Source source, List<TransformerException> fatals) throws ParseException {
+    private static Templates compileStylesheet(TransformerFactory tf, Source source) throws ParseException {
         Templates templates;
         try {
             templates = tf.newTemplates(source);
         } catch (TransformerConfigurationException e) {
-            throwParseException(ExceptionUtils.getMessage(e), e, fatals);
-            /* NOTREACHED */
-            throw new IllegalStateException("NOTREACHED");
+            throw (ParseException)new ParseException(ExceptionUtils.getMessage(e), 0).initCause(e);
         }
         return templates;
     }
@@ -109,11 +102,10 @@ public class XsltUtil {
      * Create a TransformerFactory that can be used to compile a stylesheet.
      *
      * @param xsltVersion the XSLT version we expect to have to compile, or null if not known.  If null, the system default TransformerFactory will be used.
-     * @param collectFatals a List in which to collect fatal errors reported during stylesheet compilation, or null to set an error handler that immediately throws on error.
      * @return a new TransformerFactory configured for safety.  Its configuration can be overridden before it is used.  Never null.
      * @throws TransformerConfigurationException if a transformer factory could not be created.
      */
-    public static TransformerFactory createTransformerFactory(@Nullable String xsltVersion, @Nullable final List<TransformerException> collectFatals) throws TransformerConfigurationException {
+    public static TransformerFactory createTransformerFactory(@Nullable String xsltVersion) throws TransformerConfigurationException {
         final boolean useSaxon = shouldUseSaxon(xsltVersion);
         final Class<TransformerFactoryImpl> factoryClass = useSaxon ? TransformerFactoryImpl.class : null;
         TransformerFactory transfactory = factoryClass == null
@@ -126,11 +118,7 @@ public class XsltUtil {
 
         transfactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         transfactory.setURIResolver(XmlUtil.getSafeURIResolver());
-        if (collectFatals == null) {
-            transfactory.setErrorListener(new DefaultErrorHandler(true));
-        } else {
-            transfactory.setErrorListener(new FatalErrorCollectingErrorListener(collectFatals));
-        }
+        transfactory.setErrorListener(new DefaultErrorHandler(true));
         return transfactory;
     }
 
@@ -156,56 +144,14 @@ public class XsltUtil {
      * @throws SAXException if the stylesheet could not be parsed as XML.
      */
     public static void checkXsltSyntax(@NotNull Document doc, @Nullable String xsltVersion) throws TransformerConfigurationException, IOException, SAXException, ParseException {
-        final List<TransformerException> fatals = new ArrayList<TransformerException>();
-        TransformerFactory tf = createTransformerFactory(xsltVersion, fatals);
+        TransformerFactory tf = createTransformerFactory(xsltVersion);
+        tf.setErrorListener(new DefaultErrorHandler(true));
         tf.setURIResolver( new URIResolver(){
             public Source resolve( String href, String base ) throws TransformerException {
                 return new StreamSource(new StringReader("<a xsl:version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"/>"));
             }
         } );
         final DOMSource source = new DOMSource(XmlUtil.parse(new StringReader(XmlUtil.nodeToString(doc)), false));
-        compileStylesheet(tf, source, fatals);
-    }
-
-    /**
-     * Report a ParseException, including diagnostic information from the first fatal error, if any are provided.
-     *
-     * @param message exception message to use
-     * @param cause cause of this exception, or null
-     * @param fatals collected fatal errors, or null
-     * @throws java.text.ParseException always
-     */
-    static void throwParseException(String message, @Nullable Throwable cause, @Nullable List<TransformerException> fatals) throws ParseException {
-        if (fatals != null && !fatals.isEmpty()) {
-            TransformerException te = fatals.iterator().next();
-            throw (ParseException)new ParseException(message + ": " + ExceptionUtils.getMessage(te), 0).initCause(te);
-        }
-        throw (ParseException)new ParseException(message, 0).initCause(cause);
-    }
-
-    private static class FatalErrorCollectingErrorListener implements ErrorListener {
-        private final List<TransformerException> collectFatals;
-
-        public FatalErrorCollectingErrorListener(List<TransformerException> collectFatals) {
-            this.collectFatals = collectFatals;
-        }
-
-        public void warning(TransformerException exception) throws TransformerException {
-            maybeLog(exception);
-        }
-
-        public void error(TransformerException exception) throws TransformerException {
-            maybeLog(exception);
-        }
-
-        public void fatalError(TransformerException exception) throws TransformerException {
-            maybeLog(exception);
-            collectFatals.add(exception);
-        }
-
-        private void maybeLog(TransformerException exception) {
-            if (logger.isLoggable(Level.FINE))
-                logger.log(Level.FINE, ExceptionUtils.getMessage(exception), exception);
-        }
+        compileStylesheet(tf, source);
     }
 }

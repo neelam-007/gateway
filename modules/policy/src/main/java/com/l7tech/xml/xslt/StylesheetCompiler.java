@@ -77,24 +77,19 @@ public class StylesheetCompiler {
      */
     private static Templates compileSoftware( final Document document, String xsltVersion ) throws ParseException {
         // Prepare a software template
-        final List<TransformerException> fatals = new ArrayList<TransformerException>();
         try {
             // Configure transformer
-            TransformerFactory transfactory = XsltUtil.createTransformerFactory(xsltVersion, fatals);
+            TransformerFactory transfactory = XsltUtil.createTransformerFactory(xsltVersion);
 
             // create the XSL transform template
             Templates result = transfactory.newTemplates(new DOMSource(document));
             if (result == null) {
-                XsltUtil.throwParseException("Unable to parse stylesheet: transformer factory returned null", null, fatals);
-                /* NOTREACHED */
-                return null;
+                throw (ParseException)new ParseException("Unable to parse stylesheet: transformer factory returned null", 0);
             }
             
             return result;
         } catch (TransformerConfigurationException e) {
-            XsltUtil.throwParseException(ExceptionUtils.getMessage(e), e, fatals);
-            /* NOTREACHED */
-            return null;
+            throw (ParseException)new ParseException(ExceptionUtils.getMessage(e), 0);
         } catch (Exception e) {
             throw (ParseException)new ParseException(ExceptionUtils.getMessage(e), 0).initCause(e);
         }
