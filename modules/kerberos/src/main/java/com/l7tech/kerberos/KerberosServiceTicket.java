@@ -1,6 +1,7 @@
 package com.l7tech.kerberos;
 
 import org.jaaslounge.decoding.kerberos.KerberosEncData;
+import sun.security.krb5.internal.Ticket;
 
 import javax.security.auth.kerberos.KerberosTicket;
 
@@ -14,6 +15,7 @@ import javax.security.auth.kerberos.KerberosTicket;
  * @version $Revision$
  */
 public final class KerberosServiceTicket {
+
 
     //- PUBLIC
 
@@ -43,7 +45,7 @@ public final class KerberosServiceTicket {
     }
 
 
-        /**
+    /**
      * Create a new KerberosServiceTicket
      *
      * @param client the client principal name
@@ -53,6 +55,19 @@ public final class KerberosServiceTicket {
      * @param delegatedKerberosTicket the delegated ticket (may be null)
      */
     public KerberosServiceTicket(String client, String service, byte[] key, long expiry, KerberosGSSAPReqTicket ticket, KerberosTicket delegatedKerberosTicket, KerberosEncData encData) {
+        this(client, service, key, expiry, ticket, delegatedKerberosTicket, encData, null);
+    }
+
+    /**
+     * Create a new KerberosServiceTicket
+     *
+     * @param client the client principal name
+     * @param service the service principal name
+     * @param key the sub or session key
+     * @param ticket the ticket bytes
+     * @param delegatedKerberosTicket the delegated ticket (may be null)
+     */
+    public KerberosServiceTicket(String client, String service, byte[] key, long expiry, KerberosGSSAPReqTicket ticket, KerberosTicket delegatedKerberosTicket, KerberosEncData encData, Ticket serviceTicket) {
         clientPrincipalName = client;
         servicePrincipalName = service;
         sessionOrSubKey = key;
@@ -60,7 +75,9 @@ public final class KerberosServiceTicket {
         gssApReqTicket = ticket;
         this.delegatedKerberosTicket = delegatedKerberosTicket;
         this.encData = encData;
+        this.serviceTicket = serviceTicket;
     }
+
 
     /**
      * Get the name of the client.
@@ -125,13 +142,16 @@ public final class KerberosServiceTicket {
         return encData;
     }
 
+    public Ticket getServiceTicket() {
+        return serviceTicket;
+    }
+
     /**
      * Create a string representation of this ticket.
      */
     public String toString() {
         return "KerberosServiceTicket[client='"+clientPrincipalName+"'; service='"+servicePrincipalName+"'];";
     }
-
     //- PRIVATE
     private final String clientPrincipalName;
     private final String servicePrincipalName;
@@ -140,4 +160,5 @@ public final class KerberosServiceTicket {
     private final KerberosGSSAPReqTicket gssApReqTicket;
     private final KerberosTicket delegatedKerberosTicket;
     private final KerberosEncData encData;
+    private final Ticket serviceTicket;
 }

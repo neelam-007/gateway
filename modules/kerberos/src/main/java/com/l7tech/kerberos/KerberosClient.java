@@ -4,15 +4,16 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import org.ietf.jgss.*;
 import org.jaaslounge.decoding.DecodingException;
-import org.jaaslounge.decoding.kerberos.*;
+import org.jaaslounge.decoding.kerberos.KerberosEncData;
+import org.jaaslounge.decoding.kerberos.KerberosToken;
 import sun.security.krb5.*;
+import sun.security.krb5.internal.APReq;
 import sun.security.krb5.internal.ktab.KeyTab;
 import sun.security.krb5.internal.ktab.KeyTabEntry;
+import sun.security.util.DerValue;
 
 import javax.security.auth.Subject;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.*;
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
@@ -26,7 +27,10 @@ import java.net.URL;
 import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -220,11 +224,20 @@ public class KerberosClient {
 
                         KerberosGSSAPReqTicket apReq = new KerberosGSSAPReqTicket(bytes);
 
+                        KerberosEncData krbEncData = null;
+                        try {
+                            //get keys
+                            KerberosKey[] keys = getKeys(krbSubject.getPrivateCredentials());
+                            krbEncData = getKerberosAuthorizationData(keys, apReq);
+                        } catch (IllegalStateException e) {
+                          //ignore if no keys present
+                        }
+
                         return new KerberosServiceTicket(ticket.getClient().getName(),
                                                          servicePrincipalName,
                                                          ticket.getSessionKey().getEncoded(),
                                                          System.currentTimeMillis() + (context.getLifetime() * 1000L),
-                                                         apReq, null);
+                                                         apReq, null, krbEncData);
                     }
                     finally {
                         if(context!=null) context.dispose();
@@ -309,17 +322,20 @@ public class KerberosClient {
                         // Extract the delegated kerberos ticket if one exists
                         EncryptionKey sessionKey = apReq.getCreds().getSessionKey();
                         KerberosTicket delegatedKerberosTicket = extractDelegatedServiceTicket(apReq.getChecksum(), sessionKey);
-
+                        
                         // get the key bytes
  	 	                byte[] keyBytes = sessionKey.getBytes();
 
+                        //The original service ticket
+                        DerValue encoding = new DerValue(apReqBytes);
+                        APReq ap = new APReq(encoding);
                         // create the service ticket
                         return new KerberosServiceTicket(apReq.getCreds().getClient().getName(),
                                                          gssPrincipal,
                                                          keyBytes,
                                                          apReq.getCreds().getEndTime().getTime(),
                                                          gssAPReqTicket,
-                                                         delegatedKerberosTicket, krbEncData);
+                                                         delegatedKerberosTicket, krbEncData, ap.ticket);
                     }
                     finally {
                         if(scontext!=null) scontext.dispose();
@@ -877,6 +893,34 @@ public class KerberosClient {
             }
         };
     }
+
+    protected LoginContext loginGatewayConfiguredSubject(final String subject, final String accountName, final String accountPasswd)
+            throws LoginException
+    {
+        LoginContext loginCtx = new LoginContext(subject, kerberosSubject, new CallbackHandler() {
+
+            @Override
+            public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+
+                for( Callback cb : callbacks ) {
+
+                    if (cb instanceof NameCallback) {
+                        NameCallback name = (NameCallback) cb;
+                        name.setName( accountName );
+
+                    } else if (cb instanceof PasswordCallback) {
+                        PasswordCallback passwd = (PasswordCallback) cb;
+                        passwd.setPassword( accountPasswd.toCharArray() );
+                    }
+                }
+
+            }
+        });
+
+        loginCtx.login();
+        return loginCtx;
+    }
+
     /**
  	 * Parse the byte indexed by the offset into a short.
  	 *

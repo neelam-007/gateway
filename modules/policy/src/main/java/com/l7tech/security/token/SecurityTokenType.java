@@ -153,6 +153,8 @@ public class SecurityTokenType implements Serializable {
     public static final SecurityTokenType SSH_CREDENTIAL =
             new SecurityTokenType(n++, "SSH Credentials", "SSH", null, null, null, SshSecurityToken.class);
 
+    private static final SecurityTokenType KERBEROS =
+            new SecurityTokenType(n++, "Kerberos Credential", "Kerberos", null, null, null, KerberosAuthenticationSecurityToken.class);
     /**
      * NOTE: Order MUST equal declaration order above (see readResolve/getByNum)
      *       DO NOT reorder, these numbers must be the same between releases.
@@ -175,7 +177,8 @@ public class SecurityTokenType implements Serializable {
         FTP_CREDENTIAL,
         X509_ISSUER_SERIAL,
         HTTP_NTLM,
-        SSH_CREDENTIAL
+        SSH_CREDENTIAL,
+        KERBEROS,
     };
 
     private SecurityTokenType(int num, String name, String category, String tokenTypeUri, String prototypeElementNs, String prototypeElementName, Class<? extends SecurityToken> interfaceClass) {

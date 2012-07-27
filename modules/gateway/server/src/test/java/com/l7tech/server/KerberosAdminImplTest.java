@@ -1,15 +1,18 @@
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.admin.KerberosAdmin;
+import com.l7tech.kerberos.KerberosConfigConstants;
 import com.l7tech.kerberos.KerberosConfigTest;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.KerberosTestSetup;
 import com.l7tech.server.security.MasterPasswordManagerStub;
+import com.l7tech.util.FileUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.util.Map;
 
 import static junit.framework.Assert.*;
@@ -17,6 +20,7 @@ import static junit.framework.Assert.*;
 
 public class KerberosAdminImplTest {
 
+    private File tmpDir;
     private KerberosAdmin kerberosAdmin;
     private MockClusterPropertyManager clusterPropertyManager;
 
@@ -25,14 +29,15 @@ public class KerberosAdminImplTest {
         clusterPropertyManager = new MockClusterPropertyManager();
         kerberosAdmin = new KerberosAdminImpl(clusterPropertyManager,
                 new MasterPasswordManagerStub("password"));
-        KerberosTestSetup.init();
-        KerberosTestSetup.setUp();
+        tmpDir = FileUtils.createTempDirectory("kerberos", null, null, false);
+        KerberosTestSetup.init(tmpDir);
+        KerberosTestSetup.setUp(tmpDir);
 
     }
 
     @After
     public void tearDown() {
-        KerberosTestSetup.dispose();
+        FileUtils.deleteDir(tmpDir);
     }
 
 

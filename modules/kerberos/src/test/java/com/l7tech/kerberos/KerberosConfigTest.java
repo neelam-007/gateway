@@ -1,6 +1,8 @@
 package com.l7tech.kerberos;
 
+import com.l7tech.util.FileUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Before;
@@ -15,17 +17,13 @@ import static junit.framework.Assert.*;
 
 public class KerberosConfigTest {
 
-    private static final String TMPDIR = System.getProperty("java.io.tmpdir");
-    private static final String SEPARATOR = System.getProperty("file.separator");
-    private static final String KRB5_CONF = TMPDIR + SEPARATOR + "krb5.conf";
-    private static final String LOGIN_CONFIG = TMPDIR + SEPARATOR + "login.config";
-    private static final String KEYTAB = TMPDIR + SEPARATOR + "kerberos.keytab";
     private static long lastModified = Calendar.getInstance().getTime().getTime();
     public static final String DEFAULT_SERVICE_PRINCIPAL_NAME = "http/ssg1.qawin2003.com@QAWIN2003.COM";
     public static final String SERVICE_PRINCIPAL_NAME = "http/ssg3.l7tech.sup@L7TECH.SUP";
     public static final String SERVICE = "http";
     public static final String HOST = "ssg3.l7tech.sup";
     public static final String REALM = "L7TECH.SUP";
+    private File tmpDir;
 
     /*
      http/ssg1.qawin2003.com@QAWIN2003.COM
@@ -69,14 +67,8 @@ public class KerberosConfigTest {
      */
     @Before
     public void setUp() throws Exception {
-        //locate keytab file
-        System.setProperty(KerberosConfigConstants.SYSPROP_SSG_HOME, TMPDIR);
-        File file = new File(KEYTAB);
-        file.delete();
-        file = new File(KRB5_CONF);
-        file.delete();
-        file = new File(LOGIN_CONFIG);
-        file.delete();
+        tmpDir = FileUtils.createTempDirectory("kerberos", null, null, true);
+        SyspropUtil.setProperty(KerberosConfigConstants.SYSPROP_SSG_HOME, tmpDir.getPath());
         KerberosUtils.inetAddress = InetAddress.getLocalHost();
     }
 
@@ -84,7 +76,7 @@ public class KerberosConfigTest {
     @Ignore
     @Test
     public void generateKeyTab() throws IOException {
-        File file = new File("/home/awitrisna/tmp/kerberos.keytab.all3");
+        File file = new File("/home/awitrisna/tmp/kerberos.ssg6test.keytab");
         System.out.println(file.length());
         byte[] data = new byte[(int) file.length()];
         FileInputStream fis = new FileInputStream(file);
@@ -151,7 +143,7 @@ public class KerberosConfigTest {
     public void testInvalidRealm() throws IOException, KerberosException {
         KerberosUtils.inetAddress = null;
         writeKeyTab(INVALID_REALM, true);
-        File file = new File(KRB5_CONF);
+        File file = KerberosTestSetup.getKrb5Conf();
         assertFalse(file.exists());
     }
 
@@ -159,13 +151,13 @@ public class KerberosConfigTest {
     public void testInvalidRealms() throws IOException, KerberosException {
         KerberosUtils.inetAddress = null;
         writeKeyTab(INVALID_REALMS, true);
-        File file = new File(KRB5_CONF);
+        File file = KerberosTestSetup.getKrb5Conf();
         assertFalse(file.exists());
     }
 
 
     private void writeKeyTab(String keyTabData, boolean checkConfig) throws IOException, KerberosException {
-        File file = new File(KEYTAB);
+        File file = KerberosTestSetup.getKeyTab();
         if (file.exists()) {
             file.delete();
         }
@@ -188,23 +180,19 @@ public class KerberosConfigTest {
 
     @After
     public void tearDown() throws KerberosException {
-        KerberosConfig.deleteKerberosKeytab();
-        File file = new File(KRB5_CONF);
-        file.delete();
-        file = new File(LOGIN_CONFIG);
-        file.delete();
+//        FileUtils.deleteDir(tmpDir);
         KerberosUtils.inetAddress = null;
     }
 
     public void assertKerberosFileExists() {
-        File file = new File(KEYTAB);
+        File file = KerberosTestSetup.getKeyTab();
         assertTrue(file.exists());
-        file = new File(LOGIN_CONFIG);
+        file = KerberosTestSetup.getLoginConfig();
         assertTrue(file.exists());
     }
 
     private boolean hasRealm(String realm) throws IOException {
-        File file = new File(KRB5_CONF);
+        File file = KerberosTestSetup.getKrb5Conf();
         BufferedReader fr = null;
         try {
             fr = new BufferedReader(new FileReader(file));

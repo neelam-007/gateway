@@ -1,5 +1,6 @@
 package com.l7tech.kerberos;
 
+import com.l7tech.util.FileUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.ietf.jgss.*;
 import org.junit.AfterClass;
@@ -30,7 +31,8 @@ import static junit.framework.Assert.assertNull;
  */
 public class KerberosClientTest {
 
-    private static final String TMPDIR = System.getProperty("java.io.tmpdir");
+    private static File tmpDir;
+
     private static final String LOGIN_CONTEXT_OUT_KEYTAB = "com.l7tech.common.security.kerberos.outbound.keytab";
     //private static final String SERVICE_PRINCIPAL_NAME = "http/ssg1.qawin2003.com@QAWIN2003.COM";
     //private static final String SERVICE_PRINCIPAL_NAME = "http/ssg2.qawin2003.com@QAWIN2003.COM";
@@ -46,13 +48,15 @@ public class KerberosClientTest {
 
     @BeforeClass
     public static void init() throws IOException, KerberosException {
-        KerberosTestSetup.init();
+        tmpDir = FileUtils.createTempDirectory("kerberos", null, null, true);
+
+        KerberosTestSetup.init(tmpDir);
     }
 
-    @AfterClass
+/*    @AfterClass
     public static void dispose() {
-        KerberosTestSetup.dispose();
-    }
+        FileUtils.deleteDir(tmpDir);
+    }*/
 
     /**
      * Setup the Kerberos Client.
@@ -61,7 +65,7 @@ public class KerberosClientTest {
      * @throws Exception
      */
     public void setUp() throws Exception {
-        KerberosTestSetup.setUp();
+        KerberosTestSetup.setUp(tmpDir);
         client = KerberosTestSetup.client;
     }
 
@@ -181,7 +185,6 @@ public class KerberosClientTest {
     @Ignore("Needs connection to the KDC")
     @Test
     public void testValidateKerberosServiceTicket() throws Exception {
-        System.setProperty(KerberosConfigConstants.SYSPROP_SSG_HOME, TMPDIR);
         KerberosClient client = new KerberosClient();
         KerberosServiceTicket serviceTicket = client.getKerberosServiceTicket(SERVICE_PRINCIPAL_NAME, true);
         serviceTicket = client.getKerberosServiceTicket(SERVICE_PRINCIPAL_NAME, InetAddress.getByName("localhost"), serviceTicket.getGSSAPReqTicket());

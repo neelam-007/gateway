@@ -1,5 +1,6 @@
 package com.l7tech.kerberos;
 
+import com.l7tech.util.SyspropUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.ietf.jgss.GSSManager;
 
@@ -10,43 +11,23 @@ import java.io.*;
  */
 public class KerberosTestSetup {
 
-    private static final String TMPDIR = System.getProperty("java.io.tmpdir");
-    private static final String SEPARATOR = System.getProperty("file.separator");
-    private static final String KRB5_CONF = TMPDIR + SEPARATOR + "krb5.conf";
-    private static final String LOGIN_CONFIG = TMPDIR + SEPARATOR + "login.config";
-    private static final String KEYTAB = TMPDIR + SEPARATOR + "kerberos.keytab";
     public static KerberosClient client;
 
-    public static void init() throws IOException, KerberosException {
-        System.setProperty(KerberosConfigConstants.SYSPROP_SSG_HOME, TMPDIR);
+    public static void init(File tmpDir) throws IOException, KerberosException {
+        SyspropUtil.setProperty(KerberosConfigConstants.SYSPROP_SSG_HOME, tmpDir.getPath());
         setupKeytab();
-        setUpKrb5Conf();
+        setUpKrb5Conf(tmpDir);
     }
 
-    public static void dispose() {
-        File krb5Conf = new File(KRB5_CONF);
-        if (krb5Conf.exists()) {
-            krb5Conf.delete();
-        }
-        File loginConfig = new File(LOGIN_CONFIG);
-        if (loginConfig.exists()) {
-            loginConfig.delete();
-        }
-        File keyTabFile = new File(KEYTAB);
-        if (keyTabFile.exists()) {
-            keyTabFile.delete();
-        }
-    }
-
-    public static void setUp() throws Exception {
+    public static void setUp(File tmpDir) throws Exception {
         client = new KerberosClient() {
             @Override
             public GSSManager getGSSManager() {
                 return new MockGSSManagerImpl();
             }
         };
-        setUpLoginConfig();
-        System.setProperty(KerberosConfigConstants.SYSPROP_KRB5CFG_PATH, KRB5_CONF);
+        setUpLoginConfig(tmpDir);
+        SyspropUtil.setProperty(KerberosConfigConstants.SYSPROP_KRB5CFG_PATH, tmpDir.getPath() + File.separator + "krb5.conf");
     }
 
     /**
@@ -54,7 +35,7 @@ public class KerberosTestSetup {
      *
      * @throws IOException
      */
-    public static void setupKeytab() throws IOException, KerberosException {
+    private static void setupKeytab() throws IOException, KerberosException {
         String keytab = KerberosConfigTest.MULTIPLE_PRINCIPAL_KEYTAB;
         KerberosConfig.generateKerberosConfig(Base64.decodeBase64(keytab), null, null);
     }
@@ -69,7 +50,7 @@ public class KerberosTestSetup {
      *
      * @throws IOException
      */
-    private static void setUpKrb5Conf() throws IOException {
+    private static void setUpKrb5Conf(File tmpDir) throws IOException {
         String krb5 = "[libdefaults]\n" +
                 "default_realm = QAWIN2003.SUP\n" +
                 "default_tkt_enctypes = rc4-hmac,des-cbc-md5\n" +
@@ -82,7 +63,7 @@ public class KerberosTestSetup {
                 "kpasswd_server =  localhost:464\n" +
                 "default_domain = qawin2003.com\n" +
                 "}";
-        File krb5Conf = new File(KRB5_CONF);
+        File krb5Conf = new File(tmpDir.getPath() + File.separator + "krb5.conf");
         if (krb5Conf.exists()) {
             krb5Conf.delete();
         }
@@ -96,8 +77,8 @@ public class KerberosTestSetup {
      *
      * @throws IOException
      */
-    public static void setUpLoginConfig() throws IOException {
-        File file = new File(LOGIN_CONFIG);
+    public static void setUpLoginConfig(File tmpDir) throws IOException {
+        File file = new File(tmpDir.getPath() + File.separator + "login.config");
         BufferedReader fr = null;
         StringBuilder sb = new StringBuilder();
         try {
@@ -107,17 +88,33 @@ public class KerberosTestSetup {
                 if (line.contains("com.sun.security.auth.module.Krb5LoginModule")) {
                     line = line.replace("com.sun.security.auth.module.Krb5LoginModule", "com.l7tech.kerberos.MockKrb5LoginModule" );
                 }
+                if (line.contains("com.l7tech.kerberos.delegate.DelegateKrb5LoginModule")) {
+                    line = line.replace("com.l7tech.kerberos.delegate.DelegateKrb5LoginModule", "com.l7tech.kerberos.MockKrb5LoginModule" );
+                }
                 sb.append(line);
                 sb.append("\n");
             }
         } finally {
-            fr.close();
+           if(fr != null)
+              fr.close();
         }
         file.delete();
 
         FileWriter fos = new FileWriter(file);
         fos.write(sb.toString());
         fos.close();
+    }
+    
+    public static File getKeyTab() {
+        return new File(SyspropUtil.getProperty(KerberosConfigConstants.SYSPROP_SSG_HOME) + File.separator + "kerberos.keytab");
+    }
+    
+    public static File getLoginConfig() {
+        return new File(SyspropUtil.getProperty(KerberosConfigConstants.SYSPROP_SSG_HOME) + File.separator + "login.config");
+    }
+
+    public static File getKrb5Conf() {
+        return new File(SyspropUtil.getProperty(KerberosConfigConstants.SYSPROP_SSG_HOME) + File.separator + "krb5.conf");
     }
 
 }

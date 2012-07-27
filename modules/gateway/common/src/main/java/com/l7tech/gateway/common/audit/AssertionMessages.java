@@ -1147,5 +1147,15 @@ public class AssertionMessages extends Messages {
     public static final M SET_VARIABLE_INVALID_DATE_OFFSET = m(9682, Level.INFO, "Invalid integer date offset: {0}");
     public static final M SET_VARIABLE_INVALID_DATE_PATTERN = m(9683, Level.WARNING, "Invalid date format pattern: {0}");
 
+    //Kerberos Authentication assertion
+    public static final M KA_OPTION_NOT_SUPPORTED = m(9701, Level.WARNING, "{0} option does not support {1}");
+    public static final M KA_KERBEROS_EXCEPTION = m(9702, Level.WARNING, "Unable to obtain Kerberos Service Ticket: {0}");
+    public static final M KA_UNABLE_TO_FIND_PASSWORD = m(9703, Level.WARNING, "Unable to find stored gateway account password: {0}");
+    public static final M KA_FAILED_TO_OBTAIN_KERBEROS_TICKET = m(9704, Level.WARNING, "Unable to obtain kerberos service ticket for service principal: ''{0}''");
+    public static final M KA_LOGIN_CREDENTIALS_NOT_FOUND = m(9705, Level.WARNING, "Unable to find login credentials");
+    public static final M KA_ADDED_KERBEROS_CREDENTIALS = m(9706, Level.FINE, "Added Kerberos Credentials to Authentication Context. Service Principal: ''{0}'', Client Principal: ''{1}''");
+    public static final M KA_LOGIN_REALM_NOT_SUPPORT = m(9707, Level.WARNING, "Unable to handle Realm: {0}");
+    public static final M KA_KERBEROS_KDC_EXCEPTION = m(9708, Level.WARNING, "Error message returned from KDC: {0}");
+
     // Highest ID reserved for AssertionMessages = 99999
 }

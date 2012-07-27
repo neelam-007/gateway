@@ -174,7 +174,7 @@ public class KerberosRoutingClient extends KerberosClient {
             // authenticate for real if cached subject isn't found
             final Subject krbSubject;
             if (cacheSubject == null) {
-                loginContext = loginGatewayConfiguredSubject(accountName, accountPasswd);
+                loginContext = loginGatewayConfiguredSubject(LOGIN_CONTEXT_OUT_CONFIG_ACCT, accountName, accountPasswd);
                 krbSubject = kerberosSubject;
             } else {
                 krbSubject = cacheSubject;
@@ -244,31 +244,5 @@ public class KerberosRoutingClient extends KerberosClient {
         return ticket;
     }
 
-    private LoginContext loginGatewayConfiguredSubject(final String accountName, final String accountPasswd)
-        throws LoginException
-    {
-        LoginContext loginCtx = new LoginContext(LOGIN_CONTEXT_OUT_CONFIG_ACCT, kerberosSubject, new CallbackHandler() {
-
-            @Override
-            public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-
-                for( Callback cb : callbacks ) {
-
-                    if (cb instanceof NameCallback) {
-                        NameCallback name = (NameCallback) cb;
-                        name.setName( accountName );
-
-                    } else if (cb instanceof PasswordCallback) {
-                        PasswordCallback passwd = (PasswordCallback) cb;
-                        passwd.setPassword( accountPasswd.toCharArray() );
-                    }
-                }
-
-            }
-        });
-
-        loginCtx.login();
-        return loginCtx;
-    }
 
 }

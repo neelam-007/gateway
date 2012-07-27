@@ -378,7 +378,7 @@ public class KerberosTicketRepository {
     /**
      *
      */
-    public static enum KeyType { KEYTAB, DELEGATED, CREDENTIAL }
+    public static enum KeyType { KEYTAB, DELEGATED, CREDENTIAL, CONSTRAINED_DELEGATED }
 
     /**
      * Represents a Key object for the credentials cache.

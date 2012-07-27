@@ -72,6 +72,16 @@ public interface KerberosConfigConstants {
             "    keyTab=\"{0}\"\n" +
             "    refreshKrb5Config={1}\n" +
             "    storeKey=true;\n" +
+            "};\n"+
+            "\n" +
+            "// Login module for delegate with keytab\n" +
+            "com.l7tech.common.security.kerberos.delegate.keytab '{'\n" +
+            "    com.l7tech.kerberos.delegate.DelegateKrb5LoginModule required\n" +
+            "    keyTab=\"{0}\";\n" +
+            "};\n" +
+            "// Login module for delegate without keytab\n" +
+            "com.l7tech.common.security.kerberos.delegate.account '{'\n" +
+            "    com.l7tech.kerberos.delegate.DelegateKrb5LoginModule required;\n" +
             "};\n";
 
     /**

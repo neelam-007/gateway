@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SubjectStatement;
+import com.l7tech.security.token.KerberosAuthenticationSecurityToken;
 import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.KeyInfoInclusionType;
@@ -315,14 +316,16 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
         // first locate the Kerberos service ticket from the request
         final ProcessorResult wssResults = policyEnforcementContext.getRequest().getSecurityKnob().getProcessorResult();
         final AuthenticationContext context = policyEnforcementContext.getAuthenticationContext(policyEnforcementContext.getRequest());
-        
+        boolean isDelegated = false;
         KerberosServiceTicket kerberosServiceTicket = null;
         if (wssResults == null) {
             java.util.List<LoginCredentials> creds = context.getCredentials();
 
             for (LoginCredentials cred: creds) {
-                if ( cred.getPayload() instanceof KerberosServiceTicket )
+                if ( cred.getPayload() instanceof KerberosServiceTicket ){
                     kerberosServiceTicket = (KerberosServiceTicket) cred.getPayload();
+                    isDelegated = cred.getSecurityToken().getClass().isAssignableFrom(KerberosAuthenticationSecurityToken.class);
+                }
             }
 
         } else {
@@ -338,13 +341,20 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             }
         }
 
-        if (kerberosServiceTicket == null)
+        if (kerberosServiceTicket == null) {
             throw new KerberosException("No Kerberos service ticket found in the request");
-
-        // create the delegated service ticket
-        KerberosRoutingClient client = new KerberosRoutingClient();
-        delegatedServiceTicket =
-                client.getKerberosServiceTicket(KerberosRoutingClient.getGSSServiceName("http", server), kerberosServiceTicket);
+        }
+        else if(isDelegated) {
+            //the ticket is delegated. No need to call the routing client
+            delegatedServiceTicket =  kerberosServiceTicket;
+        }
+        else {
+            //TODO: this is a compatibility mode eventually all kerberos delegation functionality should be migrated to KerberosAuthentication assertion
+            // create the delegated service ticket
+            KerberosRoutingClient client = new KerberosRoutingClient();
+            delegatedServiceTicket =
+                    client.getKerberosServiceTicket(KerberosRoutingClient.getGSSServiceName("http", server), kerberosServiceTicket);
+        }
 
         return delegatedServiceTicket;
     }

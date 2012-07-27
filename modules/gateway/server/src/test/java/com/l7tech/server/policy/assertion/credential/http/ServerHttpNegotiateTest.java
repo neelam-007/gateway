@@ -12,12 +12,12 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.util.FileUtils;
 import com.l7tech.util.HexUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
@@ -30,6 +30,8 @@ public class ServerHttpNegotiateTest {
 
     private static final Logger log = Logger.getLogger(ServerHttpNegotiateTest.class.getName());
     public static final String CONNECTION_ID = "connectionID";
+    private static File tmpDir;
+
 
     private ServerHttpNegotiate fixture;
 
@@ -39,6 +41,12 @@ public class ServerHttpNegotiateTest {
     private Message requestMsg;
     private PolicyEnforcementContext context;
     private HttpRequestKnobStub httpRequestKnob;
+
+    @BeforeClass
+    public static void init() throws IOException, KerberosException {
+        tmpDir = FileUtils.createTempDirectory("kerberos", null, null, false);
+        KerberosTestSetup.init(tmpDir);
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -54,15 +62,13 @@ public class ServerHttpNegotiateTest {
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMsg, responseMsg);
 
         fixture = new ServerHttpNegotiate(assertion);
-        KerberosTestSetup.init();
 
     }
 
-    @After
-    public void tearDown() {
-        KerberosTestSetup.dispose();
+    @AfterClass
+    public static void dispose() {
+        FileUtils.deleteDir(tmpDir);
     }
-
 
     @Test
     public void testNoAuthentication() throws Exception {
