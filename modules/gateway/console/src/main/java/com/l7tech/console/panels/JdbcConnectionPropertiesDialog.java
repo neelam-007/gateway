@@ -105,6 +105,12 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
             }
         });
         ((JTextField)driverClassComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(docListener);
+        ((JTextField)driverClassComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+
+            }
+        }));
         jdbcUrlTextField.getDocument().addDocumentListener(docListener);
         usernameTextField.getDocument().addDocumentListener(docListener);
         passwordField.getDocument().addDocumentListener(docListener);
@@ -271,7 +277,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         String customDriverString = resources.getString("custom.driver.description");
         try{
             if(driverClassComboBox.getSelectedItem()!=null){
-                String driverClass = ((String) driverClassComboBox.getSelectedItem()).trim();
+                String driverClass = (((JTextField)driverClassComboBox.getEditor().getEditorComponent()).getText()).trim();
                 String description = resources.getString(driverClass+".description");
                 String tooltip = resources.getString(driverClass+".tooltip");
                 driverClassDescription.setText(description);
