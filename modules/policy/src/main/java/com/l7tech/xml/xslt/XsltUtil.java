@@ -6,6 +6,9 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.SaxonUtils;
 import net.sf.saxon.PreparedStylesheet;
 import net.sf.saxon.TransformerFactoryImpl;
+import net.sf.saxon.expr.Expression;
+import net.sf.saxon.expr.StringLiteral;
+import net.sf.saxon.expr.instruct.GlobalVariable;
 import net.sf.saxon.om.StructuredQName;
 import org.apache.xalan.templates.ElemVariable;
 import org.apache.xalan.templates.StylesheetRoot;
@@ -22,9 +25,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.StringReader;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -87,9 +88,16 @@ public class XsltUtil {
             }
         } else if (templates instanceof PreparedStylesheet) {
             PreparedStylesheet ps = (PreparedStylesheet) templates;
-            List<StructuredQName> qns = ps.getGlobalVariableMap().getVariableMap();
-            for (StructuredQName qn : qns) {
-                vars.add(qn.getLocalPart());
+            HashMap<StructuredQName, GlobalVariable> cgv = ps.getCompiledGlobalVariables();
+            for (Map.Entry<StructuredQName, GlobalVariable> gve : cgv.entrySet()) {
+                StructuredQName qn = gve.getKey();
+                GlobalVariable gv = gve.getValue();
+
+                // Only mark an xsl:param as needing an external value provided if it does not include an initializer of its own
+                Expression expr = gv.getSelectExpression();
+                final boolean isEmptyStringLiteral = expr instanceof StringLiteral && (expr.toString().isEmpty() || expr.toString().equals("\"\""));
+                if (isEmptyStringLiteral)
+                    vars.add(qn.getLocalPart());
             }
         } else {
             throw new IllegalArgumentException("Compiled XSLT was not a recognized Xalan or Saxon stylesheet class -- can't get declared variables");
