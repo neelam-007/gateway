@@ -344,12 +344,16 @@ public class ExternalAuditsUtils {
     }
 
     public static byte[] getByteArrayData(Object o) throws ClassCastException {
+        if(o==null)
+            return null;
         if(o instanceof byte[])
             return (byte[])o;
         throw new ClassCastException("Unknown type:" + o.getClass());
     }
 
     public static Long getLongData(Object o)  throws ClassCastException{
+        if(o==null)
+            return null;
         if(o instanceof Long)
             return (Long)o;
         if(o instanceof BigDecimal)
@@ -358,6 +362,8 @@ public class ExternalAuditsUtils {
     }
 
     public static String getStringData(Object o)  throws ClassCastException {
+        if(o==null)
+            return null;
         if(o instanceof String)
             return (String)o;
         throw new ClassCastException("Unknown type:" + o.getClass());
@@ -365,6 +371,8 @@ public class ExternalAuditsUtils {
 
 
     public static Boolean getBooleanData(Object o)  throws ClassCastException{
+        if(o==null)
+            return null;
         if(o instanceof Boolean)
             return (Boolean) o;
         if(o instanceof Integer)
@@ -375,6 +383,8 @@ public class ExternalAuditsUtils {
     }
 
     public static Integer getIntegerData(Object o)  throws ClassCastException{
+        if(o==null)
+            return null;
         if(o instanceof Integer)
             return (Integer)o;
         if(o instanceof BigDecimal)
