@@ -59,6 +59,26 @@ public class DomCompiledXpathTest {
     }
 
     @Test
+    public void testSimpleXpathSuccessXP20() throws Exception {
+        assertTrue(cursor.matches(new DomCompiledXpath(new XpathExpression("//b intersect //*", XPATH_2_0, null))));
+    }
+
+    @Test
+    public void testSimpleXpathSuccessUnionXP20() throws Exception {
+        assertTrue(cursor.matches(new DomCompiledXpath(new XpathExpression("//b union //nonexistent", XPATH_2_0, null))));
+    }
+
+    @Test
+    public void testSimpleXpathFailureXP20() throws Exception {
+        assertFalse(cursor.matches(new DomCompiledXpath(new XpathExpression("//b intersect //nonexistent", XPATH_2_0, null))));
+    }
+
+    @Test
+    public void testSimpleXpathFailureIntersectXP20() throws Exception {
+        assertFalse(cursor.matches(new DomCompiledXpath(new XpathExpression("//b intersect //a", XPATH_2_0, null))));
+    }
+
+    @Test
     public void testSelectNodeSet() throws Exception {
         final DomCompiledXpath dxp = new DomCompiledXpath(new XpathExpression("//b//*"));
         checkBStarResult(dxp);
