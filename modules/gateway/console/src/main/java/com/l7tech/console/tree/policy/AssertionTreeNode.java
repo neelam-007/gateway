@@ -366,7 +366,10 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         if (Registry.getDefault().getLicenseManager().isAssertionEnabled(ONEORMORE_PROTOTYPE)) {
             list.add(new AddOneOrMoreAssertionAction(ca, position));
         }
-        list.add(new CreateIncludeFragmentAction(this));
+
+        if(!isDescendantOfInclude(false)){
+            list.add(new CreateIncludeFragmentAction(this));
+        }
 
         try {
             // Case 1: if the node is associated to a published service
