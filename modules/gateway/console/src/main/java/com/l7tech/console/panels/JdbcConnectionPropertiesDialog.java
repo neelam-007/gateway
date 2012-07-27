@@ -105,12 +105,6 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
             }
         });
         ((JTextField)driverClassComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(docListener);
-        ((JTextField)driverClassComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
-            @Override
-            public void run() {
-
-            }
-        }));
         jdbcUrlTextField.getDocument().addDocumentListener(docListener);
         usernameTextField.getDocument().addDocumentListener(docListener);
         passwordField.getDocument().addDocumentListener(docListener);
