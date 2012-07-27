@@ -652,6 +652,10 @@ public class GatewayFeatureSets {
                 "The necessary assertions to enable the Look Up Dynamic Context Variables functionality",
                 mass("assertion:LookupDynamicContextVariables"));
 
+        GatewayFeatureSet generateOAuthSignatureBaseString = fsr("set:GenerateOAuthSignatureBaseStringAssertion:Assertions",
+                "The necessary assertions to enable generate of an OAuth 1.0 A Signature Base String",
+                mass("assertion:GenerateOAuthSignatureBaseString"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -697,6 +701,7 @@ public class GatewayFeatureSets {
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
             fs(lookupDynamicContextVariables),
+            fs(generateOAuthSignatureBaseString),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -717,6 +722,7 @@ public class GatewayFeatureSets {
             fs(esmAssertions),
             fs(evaluateJsonPathExpression),
             fs(lookupDynamicContextVariables),
+            fs(generateOAuthSignatureBaseString),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -746,7 +752,8 @@ public class GatewayFeatureSets {
             fs(samlpInboundAssertions),
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
-            fs(lookupDynamicContextVariables));
+            fs(lookupDynamicContextVariables),
+            fs(generateOAuthSignatureBaseString));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
             "Same features as XML Firewall for now.",
@@ -790,7 +797,8 @@ public class GatewayFeatureSets {
             fs(jsonTransformationAssertion),
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
-            fs(lookupDynamicContextVariables));
+            fs(lookupDynamicContextVariables),
+            fs(generateOAuthSignatureBaseString));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
             "Same features as Gateway for now.",
@@ -836,7 +844,8 @@ public class GatewayFeatureSets {
             fs(uiFw),
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
-            fs(lookupDynamicContextVariables));
+            fs(lookupDynamicContextVariables),
+            fs(generateOAuthSignatureBaseString));
 
         GatewayFeatureSet profileApi =
         fsp("set:Profile:Api", "Layer 7 API Proxy",
