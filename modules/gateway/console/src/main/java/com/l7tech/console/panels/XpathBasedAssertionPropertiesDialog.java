@@ -290,6 +290,12 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         if (version == null || XpathVersion.UNSPECIFIED.equals(version))
             version = XpathVersion.XPATH_1_0;
         xpathVersionComboBox.setSelectedItem(version.getVersionString());
+        xpathVersionComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateXpathFeedback(messageViewerToolBar.getxpathField());
+            }
+        });
 
         if (assertion instanceof ResponseXpathAssertion) {
             final ResponseXpathAssertion ass = (ResponseXpathAssertion)assertion;
@@ -312,6 +318,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             }
         } else {
             xmlMsgSrcPanel.setVisible(false);
+        }
+
+        if (!(assertion instanceof RequestXpathAssertion || assertion instanceof ResponseXpathAssertion)) {
+            xpathVersionComboBox.setEnabled(false);
         }
 
         final boolean isSignature = assertion instanceof WssSignElement;
@@ -1349,81 +1359,83 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     final PauseListener xpathFieldPauseListener = new PauseListenerAdapter() {
         @Override
         public void textEntryPaused(JTextComponent component, long msecs) {
-            final JTextField xpathField = (JTextField)component;
-            XpathFeedBack feedBack = getFeedBackMessage(getNamespacesWithOperationNamespaces(), xpathField);
-            processFeedBack(feedBack, xpathField);
+            updateXpathFeedback((JTextField)component);
+        }
+    };
+
+    private void updateXpathFeedback(JTextField xpathField) {
+        XpathFeedBack feedBack = getFeedBackMessage(getNamespacesWithOperationNamespaces(), xpathField);
+        processFeedBack(feedBack, xpathField);
+    }
+
+    private void processHardwareFeedBack(XpathFeedBack hardwareFeedBack, JTextField xpathField) {
+        if (!showHardwareAccelStatus) {
+            hardwareAccelStatusLabel.setVisible(false);
+            speedIndicator.setVisible(false);
+            return;
         }
 
-        private void processHardwareFeedBack(XpathFeedBack hardwareFeedBack, JTextField xpathField) {
-            if (!showHardwareAccelStatus) {
-                hardwareAccelStatusLabel.setVisible(false);
-                speedIndicator.setVisible(false);
-                return;
-            }
-
-            if (!haveTarari) {
-                hardwareAccelStatusLabel.setText("");
-                hardwareAccelStatusLabel.setToolTipText(null);
-                speedIndicator.setSpeed(SpeedIndicator.SPEED_FAST);
-                String n = hardwareFeedBack == null ? "" : " be too complex to";
-                speedIndicator.setToolTipText("Hardware accelerated XPath not present on Gateway, but if it were, this expression would" + n + " run in parallel at full speed");
-                return;
-            }
-
-            if (hardwareFeedBack == null) {
-                hardwareAccelStatusLabel.setText("");
-                hardwareAccelStatusLabel.setToolTipText(null);
-                speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTEST);
-                speedIndicator.setToolTipText("Expression will be hardware accelerated in parallel at full speed");
-            } else {
-                hardwareAccelStatusLabel.setText("");
-                hardwareAccelStatusLabel.setToolTipText(null);
-                speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTER);
-                speedIndicator.setToolTipText("Expression will be hardware accelerated, but is too complex to run in parallel at full speed");
-            }
+        if (!haveTarari) {
+            hardwareAccelStatusLabel.setText("");
+            hardwareAccelStatusLabel.setToolTipText(null);
+            speedIndicator.setSpeed(SpeedIndicator.SPEED_FAST);
+            String n = hardwareFeedBack == null ? "" : " be too complex to";
+            speedIndicator.setToolTipText("Hardware accelerated XPath not present on Gateway, but if it were, this expression would" + n + " run in parallel at full speed");
+            return;
         }
 
-        private void processFeedBack(XpathFeedBack feedBack, JTextField xpathField) {
-            if (feedBack == null) feedBack = new XpathFeedBack(-1, null, null, null); // NPE guard
+        if (hardwareFeedBack == null) {
+            hardwareAccelStatusLabel.setText("");
+            hardwareAccelStatusLabel.setToolTipText(null);
+            speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTEST);
+            speedIndicator.setToolTipText("Expression will be hardware accelerated in parallel at full speed");
+        } else {
+            hardwareAccelStatusLabel.setText("");
+            hardwareAccelStatusLabel.setToolTipText(null);
+            speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTER);
+            speedIndicator.setToolTipText("Expression will be hardware accelerated, but is too complex to run in parallel at full speed");
+        }
+    }
 
-            if (feedBack.valid() || feedBack.isEmpty()) {
-                if (xpathField instanceof SquigglyField) {
-                    SquigglyField squigglyField = (SquigglyField)xpathField;
-                    squigglyField.setNone();
-                }
-                xpathField.setToolTipText(null);
-                processHardwareFeedBack(feedBack.hardwareAccelFeedback, xpathField);
-                return;
-            }
+    private void processFeedBack(XpathFeedBack feedBack, JTextField xpathField) {
+        if (feedBack == null) feedBack = new XpathFeedBack(-1, null, null, null); // NPE guard
 
-            processHardwareFeedBack(feedBack.hardwareAccelFeedback, xpathField);
-            speedIndicator.setSpeed(0);
-            speedIndicator.setToolTipText(null);
-            StringBuffer tooltip = new StringBuffer();
-            boolean htmlOpenAdded = false;
-            if (feedBack.getErrorPosition() != -1) {
-                tooltip.append("<html><b>Position : ").append(feedBack.getErrorPosition()).append(", ");
-                htmlOpenAdded = true;
-            }
-            String msg = feedBack.getShortMessage();
-            if (msg != null) {
-                if (!htmlOpenAdded) {
-                    msg = "<html><b>" + msg;
-                }
-                tooltip.append(msg).append("</b></html>");
-            }
-
-            xpathField.setToolTipText(tooltip.toString());
-
+        if (feedBack.valid() || feedBack.isEmpty()) {
             if (xpathField instanceof SquigglyField) {
                 SquigglyField squigglyField = (SquigglyField)xpathField;
-                squigglyField.setAll();
-                squigglyField.setSquiggly();
-                squigglyField.setColor(Color.RED);
+                squigglyField.setNone();
             }
+            xpathField.setToolTipText(null);
+            processHardwareFeedBack(feedBack.hardwareAccelFeedback, xpathField);
+            return;
         }
 
-    };
+        processHardwareFeedBack(feedBack.hardwareAccelFeedback, xpathField);
+        speedIndicator.setSpeed(0);
+        speedIndicator.setToolTipText(null);
+        StringBuffer tooltip = new StringBuffer();
+        boolean htmlOpenAdded = false;
+        if (feedBack.getErrorPosition() != -1) {
+            tooltip.append("<html><b>Position : ").append(feedBack.getErrorPosition()).append(", ");
+            htmlOpenAdded = true;
+        }
+        String msg = feedBack.getShortMessage();
+        if (msg != null) {
+            if (!htmlOpenAdded) {
+                msg = "<html><b>" + msg;
+            }
+            tooltip.append(msg).append("</b></html>");
+        }
+
+        xpathField.setToolTipText(tooltip.toString());
+
+        if (xpathField instanceof SquigglyField) {
+            SquigglyField squigglyField = (SquigglyField)xpathField;
+            squigglyField.setAll();
+            squigglyField.setSquiggly();
+            squigglyField.setColor(Color.RED);
+        }
+    }
 
     private Map<String, String> getNamespacesWithOperationNamespaces() {
         Map<String, String> namespacesWithAuto = new HashMap<String, String>(namespaces);
