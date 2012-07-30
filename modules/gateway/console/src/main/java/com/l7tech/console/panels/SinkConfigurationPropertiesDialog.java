@@ -400,6 +400,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         rollingIntervalField.setModel(new DefaultComboBoxModel(SinkConfiguration.RollingInterval.values()));
         rollingIntervalField.setSelectedItem(SinkConfiguration.RollingInterval.DAILY.toString());
+        rollingIntervalField.setRenderer(new Renderers.KeyedResourceRenderer(resources, "fileSettings.rollingInterval.{0}.text"));
         rollingLogFileField.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
