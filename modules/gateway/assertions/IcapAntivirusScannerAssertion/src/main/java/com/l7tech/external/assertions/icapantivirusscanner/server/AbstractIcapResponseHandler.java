@@ -6,6 +6,7 @@ import com.l7tech.common.mime.PartInfo;
 import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * An extension of <tt>SimpleChannelUpstreamHandler</tt> to include two new methods for scanning contents and
@@ -34,5 +35,5 @@ public abstract class AbstractIcapResponseHandler extends IdleStateAwareChannelH
      * @throws NoSuchPartException if a part can not be retrieved from the given <tt>partInfo</tt>.
      * @throws IOException         if any IO error(s) occur while reading the part or if any network error(s) occur.
      */
-    public abstract IcapResponse scan(final String icapUri, final String host, PartInfo partInfo) throws NoSuchPartException, IOException;
+    public abstract IcapResponse scan(final String icapUri, final String host, PartInfo partInfo, Map<String, String> headers) throws NoSuchPartException, IOException;
 }

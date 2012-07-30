@@ -2,6 +2,9 @@ package com.l7tech.external.assertions.icapantivirusscanner.server;
 
 import org.jboss.netty.channel.Channel;
 
+import java.util.Collections;
+import java.util.Map;
+
 /**
  * <p>A bean to hold the request specific information that describe a {@link Channel} and the server information that it is connected to.</p>
  *
@@ -11,8 +14,9 @@ public final class ChannelInfo {
     private final String host;
     private final int port;
     private final String serviceName;
-    private final String serviceParameters;
     private final String failoverService;
+
+    private final Map<String, String> headers;
 
     private final Channel channel;
 
@@ -20,20 +24,20 @@ public final class ChannelInfo {
      * <p>
      *     Construct a new ChannelInfo with the given Channel and information that describe it's connection.
      * </p>
-     * @param channel
-     * @param failoverService
-     * @param host
-     * @param port
-     * @param serviceName
-     * @param serviceParameters
+     * @param channel the channel where communication is taking place.
+     * @param failoverService the failover service id.
+     * @param host the icap hostname.
+     * @param port the icap port.
+     * @param serviceName the path to the icap service including any query parameters.
+     * @param headers the headers being sent along with the request.
      */
-    public ChannelInfo(final Channel channel, final String failoverService, final String host, final int port, final String serviceName, final String serviceParameters){
+    public ChannelInfo(final Channel channel, final String failoverService, final String host, final int port, final String serviceName, Map<String, String> headers){
         this.channel = channel;
         this.failoverService = failoverService;
         this.host = host;
         this.port = port;
         this.serviceName = serviceName;
-        this.serviceParameters = serviceParameters;
+        this.headers = Collections.unmodifiableMap(headers);
     }
 
     /**
@@ -62,22 +66,6 @@ public final class ChannelInfo {
 
     /**
      *
-     * @return the service name to send request to for the connected Channel.
-     */
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    /**
-     *
-     * @return the optional service parameters to attach to the target service.
-     */
-    public String getServiceParameters() {
-        return serviceParameters;
-    }
-
-    /**
-     *
      * @return the current failover service.
      */
     public String getFailoverService() {
@@ -97,7 +85,7 @@ public final class ChannelInfo {
      * @return the full ICAP uri including the protocol, host, port, service name and service parameters (if available).
      */
     public String getIcapUri(){
-        return String.format("icap://%s:%s/%s%s", host, port, serviceName, serviceParameters);
+        return String.format("icap://%s:%s/%s", host, port, serviceName);
     }
 
     /**

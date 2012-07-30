@@ -39,11 +39,9 @@ import org.springframework.context.ApplicationContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -219,7 +217,11 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                 final String portText = String.valueOf(port);
                 final String hostAndPort = String.format("%s:%s", hostname, portText);
 
-                final String serviceName = getServiceName(url.getPath());
+                String serviceName = getServiceName(url.getPath());
+                String query = url.getQuery();
+                if(query != null && !query.isEmpty()){
+                    serviceName = serviceName + "?" + query;
+                }
                 //its possible the context variable itself has a leading '/' - if this is the case it will show in logs and the user will need to fix the variable value.
 
                 Channel channel = getChannelForEndpoint(hostAndPort);
@@ -235,7 +237,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                     }
                 }
                 return new ChannelInfo(channel, selectedService, hostname,  Integer.parseInt(portText),
-                        serviceName, getServiceQueryString(context));
+                        serviceName, getHeaders(context));
             } else {
                 logAndAudit(AssertionMessages.ICAP_INVALID_URI, selectedService);
                 failoverStrategy.reportFailure(selectedService);
@@ -331,7 +333,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
             } else {
                 try {
                     AbstractIcapResponseHandler handler = (AbstractIcapResponseHandler) channel.getChannel().getPipeline().get("handler");
-                    IcapResponse response = handler.scan(channel.getIcapUri(), channel.getHost(), partInfo);
+                    IcapResponse response = handler.scan(channel.getIcapUri(), channel.getHost(), partInfo, getHeaders(context));
                     if (response == null) {
                         logAndAudit(AssertionMessages.ICAP_NO_RESPONSE);
                         failoverStrategy.reportFailure(channel.getFailoverService());
@@ -403,21 +405,6 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         });
     }
 
-    private String getServiceQueryString(final PolicyEnforcementContext context) {
-        StringBuilder sb = new StringBuilder("?");
-        try {
-            for (Map.Entry<String, String> ent : assertion.getServiceParameters().entrySet()) {
-                String key = getContextVariableValue(context, ent.getKey());
-                String value = getContextVariableValue(context, ent.getValue());
-                sb.append(URLEncoder.encode(key, URL_ENCODING)).append("=").append(URLEncoder.encode(value, URL_ENCODING)).append("&");
-            }
-            sb = sb.delete(sb.length() - 1, sb.length());
-        } catch (UnsupportedEncodingException e) {
-            logAndAudit(AssertionMessages.ICAP_UNSUPPORTED_ENCODING, ExceptionUtils.getMessage(e));
-        }
-        return sb.toString();
-    }
-
     private String prefix( final String name ) {
         String prefixed = name;
 
@@ -428,4 +415,13 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         return prefixed;
     }
 
+    private Map<String, String> getHeaders(final PolicyEnforcementContext context){
+        Map<String, String> ret = new HashMap<String, String>();
+        for (Map.Entry<String, String> ent : assertion.getServiceParameters().entrySet()) {
+            String key = getContextVariableValue(context, ent.getKey());
+            String value = getContextVariableValue(context, ent.getValue());
+            ret.put(key, value);
+        }
+        return ret;
+    }
 }

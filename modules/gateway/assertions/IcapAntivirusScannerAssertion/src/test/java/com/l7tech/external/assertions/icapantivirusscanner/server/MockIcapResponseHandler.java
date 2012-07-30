@@ -9,6 +9,7 @@ import com.l7tech.common.mime.PartInfo;
 import com.l7tech.util.IOUtils;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * A mock implementation of the {@link AbstractIcapResponseHandler} to mimic an ICAP server.  This return
@@ -27,7 +28,7 @@ public class MockIcapResponseHandler extends AbstractIcapResponseHandler {
     }
 
     @Override
-    public IcapResponse scan(final String icapUri, final String host, PartInfo partInfo) throws NoSuchPartException, IOException {
+    public IcapResponse scan(final String icapUri, final String host, PartInfo partInfo, Map<String, String> headers) throws NoSuchPartException, IOException {
         byte[] test = IOUtils.slurpStream(partInfo.getInputStream(false));
         String string = new String(test);
         IcapResponseStatus status;

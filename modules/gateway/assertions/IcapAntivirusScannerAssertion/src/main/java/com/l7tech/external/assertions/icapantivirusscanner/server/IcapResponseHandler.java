@@ -5,13 +5,11 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.util.Functions.UnaryVoid;
 import org.jboss.netty.channel.*;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.codec.http.*;
 import org.jboss.netty.handler.timeout.IdleStateEvent;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -74,16 +72,21 @@ public final class IcapResponseHandler extends AbstractIcapResponseHandler {
     }
 
     @Override
-    public IcapResponse scan(final String icapUri, final String host, PartInfo partInfo) throws NoSuchPartException, IOException {
+    public IcapResponse scan(final String icapUri, final String host, PartInfo partInfo, final Map<String, String> headers) throws NoSuchPartException, IOException {
 
         final IcapRequest request = new DefaultIcapRequest(IcapVersion.ICAP_1_0, IcapMethod.RESPMOD,
                 icapUri,
                 host);
         request.addHeader(HttpHeaders.Names.ALLOW, "204");
+        for(Map.Entry<String, String> ent : headers.entrySet()){
+            request.addHeader(ent.getKey(), ent.getValue());
+        }
         final HttpResponse httpResponse = new StreamedHttpResponse(HttpVersion.HTTP_1_0, HttpResponseStatus.OK);
         ((StreamedHttpResponse)httpResponse).setContent(partInfo.getInputStream(false));
         httpResponse.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
         request.setHttpResponse(httpResponse);
+        final HttpRequest httpRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, HttpMethod.GET, "/");
+        request.setHttpRequest(httpRequest);
         return sendRequest(request);
     }
 
