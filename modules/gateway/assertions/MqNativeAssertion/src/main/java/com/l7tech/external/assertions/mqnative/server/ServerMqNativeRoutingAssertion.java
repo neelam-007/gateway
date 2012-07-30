@@ -194,7 +194,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                         iSetAConnectionAttempt = true;
                         if(attempts>=10){
                             //10 failed attempts made to make a connection, fail!
-                            logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion.", e);
+                            logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion.", getDebugExceptionForExpectedReasonCode(e));
                             context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, e.completionCode);
                             context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, e.reasonCode);
                             return AssertionStatus.FALSIFIED;
@@ -230,14 +230,15 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             logAndAudit( EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ "Interrupted when retrying connection" }, getDebugException( e ) );
             if (cfg!=null) mqNativeResourceManager.invalidate(cfg);
             return AssertionStatus.FAILED;
+        } catch (MQException e ) {
+            context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, e.completionCode);
+            context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, e.reasonCode);
+            logAndAudit(EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound MQ request processing: " + getMessage( e )},
+                    getDebugExceptionForExpectedReasonCode( e ) );
+            if (cfg!=null) mqNativeResourceManager.invalidate(cfg);
+            return AssertionStatus.SERVER_ERROR;
         } catch ( Throwable t ) {
-            if(t instanceof MQException){
-                context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, ((MQException)t).completionCode);
-                context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, ((MQException)t).reasonCode);
-            }
-
-            logAndAudit(EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound MQ request processing: " + getMessage( t )}, getDebugException( t ) );
-
+            logAndAudit(EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound MQ request processing: " + getMessage( t )}, t);
             if (cfg!=null) mqNativeResourceManager.invalidate(cfg);
             return AssertionStatus.SERVER_ERROR;
         } finally {
