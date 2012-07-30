@@ -242,21 +242,6 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
         return null;
     }
 
-    private LoginCredentials getUserLoginCredentials(AuthenticationContext authContext, String authenticatedUser, boolean lastAuthenticatedUser) {
-        for(LoginCredentials pc : authContext.getCredentials()) {
-           if(!lastAuthenticatedUser){
-               for(AuthenticationResult result : authContext.getAllAuthenticationResults()) {
-                    if(result.getUser() != null && result.getUser().getName().equals(authenticatedUser)) {
-                        if (matchLoginCredentials(pc, result)) return pc;
-                    }
-               }
-           }
-           else {
-               if(matchLoginCredentials(pc, authContext.getLastAuthenticationResult())) return pc;
-           }
-        }
-        return null;
-    }
 
     private boolean matchLoginCredentials(LoginCredentials pc, AuthenticationResult result) {
         boolean match = true;
