@@ -195,18 +195,18 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                         continue allServers;
                     }
                 }
-
-                final String testUrl = "http" + getContextVariableValue(context, fullExpression);
+                final String icapUrl = getContextVariableValue(context, fullExpression);
+                final String testUrl = "http" + icapUrl;
                 final URL url;
                 try {
                     url = new URL(testUrl);
                     //We assume a service name e.g. a path, this requirement could be removed later.
-                    if (url.getPath().isEmpty()) {
-                        throw new MalformedURLException("A service name is required.");
+                    if (url.getPath().isEmpty() || url.getPath().equals("/")) {
+                        throw new MalformedURLException("A service name is required");
                     }
 
                 } catch (MalformedURLException e) {
-                    logAndAudit(AssertionMessages.ICAP_INVALID_URI, "Invalid resolved URI for ICAP Server: '" + testUrl + "'");
+                    logAndAudit(AssertionMessages.ICAP_INVALID_URI, "Invalid resolved URI for ICAP Server: icap'" + icapUrl + "': " + e.getMessage());
                     failoverStrategy.reportFailure(selectedService);
                     continue;
                 }

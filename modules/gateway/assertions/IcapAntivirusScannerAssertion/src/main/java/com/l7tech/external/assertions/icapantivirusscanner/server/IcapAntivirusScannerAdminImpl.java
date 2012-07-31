@@ -1,8 +1,5 @@
 package com.l7tech.external.assertions.icapantivirusscanner.server;
 
-import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.ICAP_DEFAULT_PORT;
-import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.ICAP_URI;
-
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAdmin;
 import com.l7tech.util.ExceptionUtils;
 
@@ -15,6 +12,9 @@ import java.net.Socket;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.ICAP_DEFAULT_PORT;
+import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.ICAP_URI;
 
 /**
  * <p>An implementation to test the ICAP connection.</p>
@@ -45,6 +45,9 @@ public class IcapAntivirusScannerAdminImpl implements IcapAntivirusScannerAdmin 
             sock.connect(new InetSocketAddress(icapUrl.getHost(), port), 30000);
             out = sock.getOutputStream();
             String icapUri = "icap://" + icapUrl.getHost() + ":" + Integer.toString(port) + icapUrl.getPath();
+            if(icapUrl.getPath().isEmpty() || icapUrl.getPath().equals("/")){
+                throw new IcapAntivirusScannerTestException("A service name is required.");
+            }
             out.write(String.format("OPTIONS %1$s %2$s %3$s%3$s", icapUri, "ICAP/1.0", "\r\n").getBytes());
             br = new BufferedReader(new InputStreamReader(sock.getInputStream()));
             String line = br.readLine();
