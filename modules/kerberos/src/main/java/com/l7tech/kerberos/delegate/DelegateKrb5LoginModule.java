@@ -42,7 +42,7 @@ public class DelegateKrb5LoginModule implements LoginModule {
     private Credentials tgtCreds = null;
     private KerberosTicket tgt = null;
     private PrincipalName clientPrincipal = null;
-    private EncryptionKey[] ekeys = null;
+    //private EncryptionKey[] ekeys = null;
 
     @Override
     public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState, Map<String, ?> options) {
@@ -82,9 +82,13 @@ public class DelegateKrb5LoginModule implements LoginModule {
             o.set(KDCOptions.FORWARDABLE, true);
             reqBuilder.setOptions(o);
             tgtCreds = reqBuilder.action().getCreds();
+            //For S4U2Self and S4U2Proxy, the encryption key cannot be used for decrypt the authorization data
+            //therefore, we don't need it for now.
+            /*
             if (keyTab == null) {
                 ekeys = reqBuilder.getKeys();
             }
+            */
             reqBuilder.destroy();
 
             if (tgtCreds == null) {
@@ -115,6 +119,9 @@ public class DelegateKrb5LoginModule implements LoginModule {
                 subject.getPrivateCredentials().add(tgt);
         }
 
+        //For S4U2Self and S4U2Proxy, the encryption key cannot be used for decrypt the authorization data
+        //therefore, we don't need it for now.
+        /*
         if (ekeys != null) {
             for (int i = 0; i < ekeys.length; i++) {
                 EncryptionKey ekey = ekeys[i];
@@ -135,6 +142,7 @@ public class DelegateKrb5LoginModule implements LoginModule {
                 }
             }
         }
+        */
         return true;
 
     }
