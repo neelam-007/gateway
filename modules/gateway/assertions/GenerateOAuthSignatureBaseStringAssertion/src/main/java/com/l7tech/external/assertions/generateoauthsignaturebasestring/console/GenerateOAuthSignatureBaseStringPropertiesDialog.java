@@ -11,6 +11,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionPropertiesOkCancelSupport<GenerateOAuthSignatureBaseStringAssertion> {
     private JPanel contentPane;
@@ -39,6 +41,7 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
     private JComboBox oauthTimestampComboBox;
     private JComboBox oauthNonceComboBox;
     private InputValidator validators;
+    private List<InputValidator.ValidationRule> requiredFields;
 
     public GenerateOAuthSignatureBaseStringPropertiesDialog(final Window owner, final GenerateOAuthSignatureBaseStringAssertion assertion) {
         super(GenerateOAuthSignatureBaseStringAssertion.class, owner, assertion, true);
@@ -49,16 +52,10 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
     @Override
     protected void initComponents() {
         super.initComponents();
+        requiredFields = new ArrayList<InputValidator.ValidationRule>();
         validators = new InputValidator(this, getTitle());
         validators.constrainTextFieldToBeNonEmpty("Request URL", requestUrlTextField, null);
-        final InputValidator.ValidationRule methodValidationRule = new InputValidator.ValidationRule() {
-            @Override
-            public String getValidationError() {
-                return (methodComboBox.getSelectedItem() == null || methodComboBox.getSelectedItem().toString().trim().isEmpty()) ?
-                        "The HTTP Method field must not be empty." : null;
-            }
-        };
-        validators.addRule(methodValidationRule);
+        validators.addRule(new NonEmptyEditableComboBoxRule("HTTP Method", methodComboBox));
         targetVariablePanel.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(final ChangeEvent e) {
@@ -75,6 +72,7 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
         clientParametersCheckBox.addActionListener(runOnChangeListener);
         authHeaderCheckBox.addActionListener(runOnChangeListener);
         oauthVersionCheckBox.addActionListener(runOnChangeListener);
+        useMessageTargetAsCheckBox.addActionListener(runOnChangeListener);
     }
 
     private void enableDisableComponents() {
@@ -96,6 +94,22 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
         oauthCallbackTextField.setEnabled(clientParams);
         oauthVerifierLabel.setEnabled(clientParams);
         oauthVerifierTextField.setEnabled(clientParams);
+
+        if (clientParams && !authHeaderCheckBox.isSelected() && !useMessageTargetAsCheckBox.isSelected() && requiredFields.isEmpty()) {
+            requiredFields.add(validators.constrainTextFieldToBeNonEmpty("oauth_consumer_key", oauthConsumerKeyTextField, null));
+            requiredFields.add(validators.ensureComboBoxSelection("oauth_signature_method", oauthSignatureMethodComboBox));
+            final NonEmptyEditableComboBoxRule timestamp = new NonEmptyEditableComboBoxRule("oauth_timestamp", oauthTimestampComboBox);
+            validators.addRule(timestamp);
+            requiredFields.add(timestamp);
+            final NonEmptyEditableComboBoxRule nonce = new NonEmptyEditableComboBoxRule("oauth_nonce", oauthNonceComboBox);
+            validators.addRule(nonce);
+            requiredFields.add(nonce);
+        } else {
+            for (final InputValidator.ValidationRule requiredField : requiredFields) {
+                validators.removeRule(requiredField);
+            }
+            requiredFields.clear();
+        }
     }
 
     @Override
@@ -169,5 +183,21 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
             value = textField.getText().trim();
         }
         return value;
+    }
+
+    private class NonEmptyEditableComboBoxRule implements InputValidator.ValidationRule {
+        private final String fieldName;
+        private final JComboBox comboBox;
+
+        private NonEmptyEditableComboBoxRule(final String fieldName, final JComboBox comboBox) {
+            this.fieldName = fieldName;
+            this.comboBox = comboBox;
+        }
+
+        @Override
+        public String getValidationError() {
+            return (comboBox.getSelectedItem() == null || comboBox.getSelectedItem().toString().trim().isEmpty()) ?
+                    "The " + fieldName + " field must not be empty." : null;
+        }
     }
 }
