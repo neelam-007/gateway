@@ -132,6 +132,8 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
                 logAndAudit(AssertionMessages.SET_VARIABLE_INVALID_DATE_PATTERN, e.getMessage());
                 return AssertionStatus.FALSIFIED;
             }
+        } else if (dataType == DataType.INTEGER){
+            context.setVariable(assertion.getVariableToSet(), Integer.parseInt(strValue));
         } else {
             throw new RuntimeException("Not implemented yet for data type " + dataType.getName() + " (variable name=\"" + assertion.getVariableToSet() + "\").");
         }

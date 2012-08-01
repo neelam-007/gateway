@@ -124,6 +124,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.STRING));
         _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.MESSAGE));
         _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.DATE_TIME));
+        _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.INTEGER));
         _dataTypeComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -381,11 +382,13 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         _contentTypeComboBox.setEnabled(isMessageSelected);
 
         final boolean isDateSelected = dataType == DataType.DATE_TIME;
-        _contentTypeComboBox.setVisible(!isDateSelected);
-        contentTypeLabel.setVisible(!isDateSelected);
-        _contentTypeComboBox.setVisible(!isDateSelected);
+        final boolean isStringMessageSelected = dataType == DataType.STRING ||dataType == DataType.MESSAGE;
+
+        _contentTypeComboBox.setVisible(isStringMessageSelected);
+        contentTypeLabel.setVisible(isStringMessageSelected);
+        _contentTypeComboBox.setVisible(isStringMessageSelected);
         nonExpressionInputStatusLabel.setVisible(isDateSelected || isMessageSelected);
-        saveLineBreaksPanel.setVisible(!isDateSelected);
+        saveLineBreaksPanel.setVisible(isStringMessageSelected);
 
         formatLabel.setVisible(isDateSelected);
         dateFormatComboBox.setVisible(isDateSelected);
@@ -532,6 +535,31 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         } else {
             _contentTypeComboBox.setEnabled(false);
             clearContentTypeStatus();
+        }
+
+        if (getSelectedDataType() == DataType.INTEGER) {
+            String text = _expressionTextArea.getText();
+
+            try{
+                Integer val = Integer.parseInt(text);
+                if(val <= Integer.MAX_VALUE && val >= Integer.MIN_VALUE)
+                {
+                    _expressionStatusLabel.setIcon(OK_ICON);
+                    _expressionStatusLabel.setText("OK");
+                    _okButton.setEnabled(!readOnly);
+                }
+                else {
+                    _expressionStatusLabel.setIcon(WARNING_ICON);
+                    _expressionStatusLabel.setText("Number out of range");
+                    _okButton.setEnabled(false);
+                }
+            } catch (NumberFormatException e) {
+                ok = false;
+                _expressionStatusLabel.setIcon(WARNING_ICON);
+                _expressionStatusLabel.setText("Incorrect syntax");
+                _okButton.setEnabled(false);
+            }
+            return;
         }
 
         if (getSelectedDataType() == DataType.DATE_TIME) {
