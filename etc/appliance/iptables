@@ -84,8 +84,8 @@ COMMIT
 # By exclusion, not allowed on eth1
 
 # Remote Assertion Server (uses loopback)
-[0:0] -A INPUT -i ! lo -p tcp -m tcp --dport 7001 -j portdrop
-[0:0] -A INPUT -i ! lo -p tcp -m tcp --dport 7100 -j portdrop
+[0:0] -A INPUT ! -i lo -p tcp -m tcp --dport 7001 -j portdrop
+[0:0] -A INPUT ! -i lo -p tcp -m tcp --dport 7100 -j portdrop
 
 # Allow in the cluster protocol, only for multicast destinations
 # ONLY on eth0. This means that you MUST use eth0 when running
