@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.generatesecurityhash;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.annotation.Base64Value;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -135,6 +136,7 @@ public class GenerateSecurityHashAssertion extends Assertion implements UsesVari
      *
      * @return the base 64 encoded data.
      */
+    @Base64Value(decodeMethodName = "dataToSignText")
     public String getBase64Data() {
         return base64Data;
     }

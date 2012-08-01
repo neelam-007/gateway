@@ -3,6 +3,7 @@ package com.l7tech.policy.assertion;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.annotation.Base64Value;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
@@ -70,6 +71,7 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
         return Syntax.getReferencedNames(responseBodyString(), responseContentType, responseStatus);
     }
 
+    @Base64Value(decodeMethodName = "responseBodyString")
     public String getBase64ResponseBody() {
         return base64ResponseBody;
     }

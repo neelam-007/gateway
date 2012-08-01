@@ -90,7 +90,9 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         //ignorning folder assertions now as they have no interesting props of their own to search and copying them
         //just to remove their children for their props xml would likely be expensive
         if (!(assertion instanceof CompositeAssertion) && !(assertion instanceof Include)) {
-            props = WspWriter.getPolicyXml(assertion);
+            final StringBuilder sb = new StringBuilder(WspWriter.getPolicyXml(assertion));
+            sb.append(AssertionUtils.getBase64EncodedPropsDecoded(assertion));
+            props = sb.toString();
             assertionPropsAsString = new SoftReference<String>(props);
             return props;
         }

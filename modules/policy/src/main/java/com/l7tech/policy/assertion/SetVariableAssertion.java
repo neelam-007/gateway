@@ -3,6 +3,7 @@ package com.l7tech.policy.assertion;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.annotation.Base64Value;
 import com.l7tech.policy.variable.*;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
@@ -164,6 +165,7 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
         return _contentType;
     }
 
+    @Base64Value(decodeMethodName = "expression")
     public String getBase64Expression() {
         return _base64Expression;
     }

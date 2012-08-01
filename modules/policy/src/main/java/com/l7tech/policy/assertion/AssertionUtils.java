@@ -1,8 +1,17 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.assertion.annotation.Base64Value;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.util.BeanUtils;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
+
+import javax.validation.constraints.NotNull;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
+import java.util.Set;
 
 /**
  * Assertion utility methods
@@ -153,6 +162,61 @@ public class AssertionUtils {
         }
 
         return targetName;
+    }
+
+    /**
+     * Retrieve a String which contains the concatenated value of all (if any) base64 property values after they
+     * have been decoded.
+     *
+     * @param assertion Assertion to search for base64 property values
+     * @return String of decoded property values. Empty if no values were decoded.
+     * @see com.l7tech.policy.assertion.annotation.Base64Value
+     */
+    @NotNull
+    public static String getBase64EncodedPropsDecoded(final Assertion assertion) {
+        final StringBuilder sb = new StringBuilder();
+
+        final Set<PropertyDescriptor> properties = BeanUtils.getProperties(assertion.getClass(), true, false);
+        for (PropertyDescriptor property : properties) {
+            final Method method = property.getReadMethod();
+
+            final Base64Value annotation = method.getAnnotation(Base64Value.class);
+            if (annotation != null) {
+                // method is annotated as containing base64. Get the base64 value, then find decode method or decode manually.
+                String decoded = null;
+                if (!annotation.decodeMethodName().trim().isEmpty()) {
+                    try {
+                        final Method decodeMethod = assertion.getClass().getDeclaredMethod(annotation.decodeMethodName());
+                        if (decodeMethod != null) {
+                            final Object invoke = decodeMethod.invoke(assertion);
+                            if (invoke != null) {
+                                decoded = invoke.toString();
+                            }
+                        }
+                    } catch (Exception e) {
+                        // can't find method or invoke
+                    }
+                }
+
+                if (decoded == null) {
+                    // just try to convert
+                    try {
+                        Object propertyValue = method.invoke(assertion);
+                        if (propertyValue != null) {
+                            decoded = new String(HexUtils.decodeBase64(propertyValue.toString(), true), Charsets.UTF8);
+                        }
+                    } catch (Exception e) {
+                        // couldn't invoke
+                    }
+                }
+
+                if (decoded != null) {
+                    sb.append(decoded);
+                }
+            }
+        }
+
+        return sb.toString();
     }
 
     private static String getActor( final Assertion assertion ) {
