@@ -1,4 +1,4 @@
-Summary: Layer 7 Gateway, Copyright Layer 7 Technologies 2003-2011
+Summary: Layer 7 Gateway, Copyright Layer 7 Technologies 2003-2012
 Name: ssg-appliance
 Version: 0.0
 Release: 0
