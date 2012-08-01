@@ -42,6 +42,8 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
     private String[] variablesUsed = new String[0];
     private NameValuePair[] extraHeaders = null;
 
+    private boolean useClientFault = false;
+
     public SoapFaultLevel() {
     }
 
@@ -188,7 +190,7 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
 
     @Override
     public void setKeyAlias( final String keyAlias ) {
-        privatekeyableSupport.setKeyAlias( keyAlias );
+        privatekeyableSupport.setKeyAlias(keyAlias);
     }
 
     @Override
@@ -199,7 +201,7 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
 
     @Override
     public void setNonDefaultKeystoreId( final long nonDefaultKeystoreId ) {
-        privatekeyableSupport.setNonDefaultKeystoreId( nonDefaultKeystoreId );
+        privatekeyableSupport.setNonDefaultKeystoreId(nonDefaultKeystoreId);
     }
 
     @Override
@@ -251,5 +253,13 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
             ret.add(new NameValuePair(header.getKey(), header.getValue()));
         }
         return ret.toArray(new NameValuePair[ret.size()]);
+    }
+
+    public boolean isUseClientFault() {
+        return useClientFault;
+    }
+
+    public void setUseClientFault(final boolean useClientFault) {
+        this.useClientFault = useClientFault;
     }
 }

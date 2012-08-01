@@ -101,7 +101,8 @@ public class SoapFaultManager implements ApplicationContextAware {
      */
     public FaultResponse constructReturningFault( final SoapFaultLevel inFaultLevelInfo,
                                                   final PolicyEnforcementContext pec ) {
-        return constructFault( inFaultLevelInfo, pec, false, "Policy Falsified", null );
+        final boolean faultType = inFaultLevelInfo == null ? false: inFaultLevelInfo.isUseClientFault();
+        return constructFault( inFaultLevelInfo, pec, faultType, "Policy Falsified", null );
     }
 
     /**
@@ -378,7 +379,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 } else {
                     if (output.contains(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE))
                         contentTypeHeader = ContentTypeHeader.SOAP_1_2_DEFAULT;
-                }
+                    }
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 try {

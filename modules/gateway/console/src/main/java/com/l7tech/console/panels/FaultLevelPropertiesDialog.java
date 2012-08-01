@@ -182,6 +182,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
     private JButton helpButton;
     private JCheckBox signSoapFaultCheckBox;
     private JCheckBox alwaysReturnSoapFaultCheckBox;
+    private JCheckBox useClientFault;
 
     public FaultLevelPropertiesDialog(Frame owner, FaultLevel subject, boolean readOnly) {
         super(owner, subject, true);
@@ -276,6 +277,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
         urlCheckBox.setSelected(assertion.getLevelInfo().isIncludePolicyDownloadURL());
         signSoapFaultCheckBox.setSelected(assertion.getLevelInfo().isSignSoapFault());
         alwaysReturnSoapFaultCheckBox.setSelected(assertion.getLevelInfo().isAlwaysReturnSoapFault());
+        useClientFault.setSelected(assertion.getLevelInfo().isUseClientFault());
     }
 
     private void ok() {
@@ -306,6 +308,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
         assertion.getLevelInfo().setIncludePolicyDownloadURL(urlCheckBox.isEnabled() && urlCheckBox.isSelected());
         assertion.getLevelInfo().setSignSoapFault(signSoapFaultCheckBox.isEnabled() && signSoapFaultCheckBox.isSelected());
         assertion.getLevelInfo().setAlwaysReturnSoapFault(alwaysReturnSoapFaultCheckBox.isEnabled() && alwaysReturnSoapFaultCheckBox.isSelected());
+        assertion.getLevelInfo().setUseClientFault(useClientFault.isEnabled() && useClientFault.isSelected());
         oked = true;
         cancel();
     }
@@ -349,6 +352,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
         boolean enableUrlCheckBox = true;
         boolean enableSignSoapFaultCheckBox = true;
         boolean enableAlwaysReturnSoapFaultCheckBox = true;
+        boolean enableUseClientFault = true;
         switch (currentselection.level) {
             case SoapFaultLevel.DROP_CONNECTION:
                 description = DROP_LEVEL_DESCRIPTION;
@@ -357,6 +361,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
                 enableUrlCheckBox = false;
                 enableSignSoapFaultCheckBox = false;
                 enableAlwaysReturnSoapFaultCheckBox = false;
+                enableUseClientFault = false;
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 description = GEN_LEVEL_DESCRIPTION;
@@ -377,6 +382,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
                 description = TEMPLATE_LEVEL_DESCRIPTION;
                 xmlContainer.setEditable(true);
                 showCustomFault();
+                enableUseClientFault = false;
                 break;
             default:
                 // can't happen (unless bug)
@@ -387,6 +393,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
         signSoapFaultCheckBox.setEnabled(enableSignSoapFaultCheckBox);
         alwaysReturnSoapFaultCheckBox.setEnabled(enableAlwaysReturnSoapFaultCheckBox);
         descriptionPane.setText(description);
+        useClientFault.setEnabled(enableUseClientFault);
     }
 
     private void showCustomFault() {
