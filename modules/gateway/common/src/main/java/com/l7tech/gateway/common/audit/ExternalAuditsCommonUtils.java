@@ -69,7 +69,7 @@ public class ExternalAuditsCommonUtils {
 
     private static String defaultLookupQuery(String recordTable,String dbType) {
         return
-                lookupPrefix(dbType)+" from "+recordTable+" where " +
+                lookupPrefix(dbType)+" * from "+recordTable+" where " +
                         "time>=${audit.recordQuery.minTime} and time&lt;${audit.recordQuery.maxTime} " +
                         "and audit_level in (${audit.recordQuery.levels}) " +
                         "and "+ getColumnQuery("nodeid",dbType)+ " like ${audit.recordQuery.nodeId} " +
@@ -86,7 +86,7 @@ public class ExternalAuditsCommonUtils {
 
     private static String lookupQueryWithAuditId(String recordTable,String dbType){
         return
-                lookupPrefix(dbType)+ " from "+recordTable+" where " +
+                lookupPrefix(dbType)+ " * from "+recordTable+" where " +
                         "id in (${recordIdQuery.audit_oid}) " +
                         "and time>=${audit.recordQuery.minTime} and time&lt;=${audit.recordQuery.maxTime} " +
                         "and audit_level in (${audit.recordQuery.levels}) " +
@@ -110,31 +110,31 @@ public class ExternalAuditsCommonUtils {
 
     private static String lookupPrefix(String dbType) {
         if(dbType.equals("mysql"))
-            return "select * ";
+            return "SELECT";
         else if(dbType.equals("sqlserver"))
-            return "select top 1024 * ";
+            return "SET ROWCOUNT ${recordQueryLimit} SELECT";
         else if(dbType.equals("oracle"))
-            return "select *  FROM ( select * ";
+            return "SELECT *  FROM ( SELECT";
         else if(dbType.equals("db2"))
-            return "select * ";
+            return "SELECT";
         return null;
     }
 
     private static String lookupPostfix(String dbType) {
         if(dbType.equals("mysql"))
-            return "limit 0,1024";
+            return "limit ${recordQueryLimit}";
         else if(dbType.equals("sqlserver"))
             return "";
         else if(dbType.equals("oracle"))
-            return " ) temp WHERE rownum &lt;= 1024  ORDER BY rownum";
+            return " ) temp WHERE rownum &lt;= ${recordQueryLimit}  ORDER BY rownum";
         else if(dbType.equals("db2"))
-            return " fetch first 1024 rows only";
+            return "limit ${recordQueryLimit}";
         return null;
     }
 
-    private static String messaageIdLookupQuery ( String detailTable){
+    private static String messaageIdLookupQuery ( String detailTable, String dbType){
         return
-                "select distinct audit_oid,time from "+detailTable+" where message_id >=${messageIdMin}  and message_id &lt;=${messageIdMax} order by time desc" ;
+                lookupPrefix(dbType)+ " distinct audit_oid,time from "+detailTable+" where message_id >=${messageIdMin}  and message_id &lt;=${messageIdMax} and time>=${audit.recordQuery.minTime} and time&lt;=${audit.recordQuery.maxTime}  order by time desc "+lookupPostfix(dbType);
     }
 
     private static String detailLookupQuery (String detailTable){
@@ -160,6 +160,11 @@ public class ExternalAuditsCommonUtils {
                 "            <L7p:SetVariable>\n" +
                 "                <L7p:Base64Expression stringValue=\"JHthdWRpdC5yZWNvcmRRdWVyeS5zZXJ2aWNlTmFtZX0=\"/>\n" +
                 "                <L7p:VariableToSet stringValue=\"serviceName\"/>\n" +
+                "            </L7p:SetVariable>\n" +
+                "            <L7p:SetVariable>\n" +
+                "                <L7p:Base64Expression stringValue=\"MTAw\"/>\n" +
+                "                <L7p:DataType variableDataType=\"int\"/>\n" +
+                "                <L7p:VariableToSet stringValue=\"recordQueryLimit\"/>\n" +
                 "            </L7p:SetVariable>\n" +
                 getServiceNameEscapingAssertions(dbType)+
                 "            <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
@@ -229,6 +234,7 @@ public class ExternalAuditsCommonUtils {
                 "                        <L7p:VariableToSet stringValue=\"messageIdMin\"/>\n" +
                 "                    </L7p:SetVariable>\n" +
                 "                    <L7p:JdbcQuery>\n" +
+                "                        <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
                 "                        <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
                 "                        <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
                 "                        <L7p:MaxRecords intValue=\"1000\"/>\n" +
@@ -238,7 +244,7 @@ public class ExternalAuditsCommonUtils {
                 "                                <L7p:value stringValue=\"audit_oid\"/>\n" +
                 "                            </L7p:entry>\n" +
                 "                        </L7p:NamingMap>\n" +
-                "                        <L7p:SqlQuery stringValue=\""+messaageIdLookupQuery(detailTable)+" \"/>\n" +
+                "                        <L7p:SqlQuery stringValue=\""+messaageIdLookupQuery(detailTable,dbType)+" \"/>\n" +
                 "                        <L7p:VariablePrefix stringValue=\"recordIdQuery\"/>\n" +
                 "                    </L7p:JdbcQuery>\n" +
                 "                    <L7p:JdbcQuery>\n" +
@@ -275,7 +281,7 @@ public class ExternalAuditsCommonUtils {
                 "                    <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
                 "                    <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
                 "                    <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
-                "                    <L7p:MaxRecords intValue=\"1000\"/>\n" +
+                "                    <L7p:MaxRecords intValue=\"10000\"/>\n" +
                 "                    <L7p:SqlQuery stringValue=\""+detailLookupQuery(detailTable)+"\"/>\n" +
                 "                    <L7p:VariablePrefix stringValue=\"detailQuery\"/>\n" +
                 "                </L7p:JdbcQuery>\n" +

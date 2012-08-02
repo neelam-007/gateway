@@ -162,7 +162,10 @@ public class AuditLookupPolicyEvaluator  {
                 AuditRecord record = (AuditRecord) auditRecordsCache.retrieve(id) ;
                 if(record == null){
                     // response length may be null
-                    responseLength = responseLength == null? 0:responseLength;
+                    if(responseLength == null)
+                        responseLength = -1;
+                    if(requestLength == null)
+                        requestLength = -1;
 
                     record = ExternalAuditsUtils.makeAuditRecord(
                             id,nodeid,time,type,auditLevel,name,message,ip_addr,userName,userId,providerOid,signature,
