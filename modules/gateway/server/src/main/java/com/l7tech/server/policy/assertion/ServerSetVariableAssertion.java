@@ -136,7 +136,7 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
             try{
                 context.setVariable(assertion.getVariableToSet(), Integer.parseInt(strValue));
             } catch (NumberFormatException e){
-                logAndAudit(AssertionMessages.SET_VARIABLE_UNABLE_TO_INTEGER, strValue);
+                logAndAudit(AssertionMessages.SET_VARIABLE_UNABLE_TO_PARSE_INTEGER, strValue);
                 return AssertionStatus.FALSIFIED;
             }
         } else {
