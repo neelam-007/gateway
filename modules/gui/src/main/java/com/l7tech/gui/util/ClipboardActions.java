@@ -197,11 +197,19 @@ public class ClipboardActions {
         }
     }
 
-    private static DataFlavor[] getFlavors(final Clipboard clip) throws IllegalStateException {
+    public static DataFlavor[] getFlavors(final Clipboard clip) throws IllegalStateException {
         return (DataFlavor[])AccessController.doPrivileged(new PrivilegedAction() {
             @Override
             public Object run() {
-                return clip == null ? null : clip.getAvailableDataFlavors();
+                try {
+                    return clip == null ? null : clip.getAvailableDataFlavors();
+                } catch (IllegalArgumentException iae) {
+                    if (iae.getMessage() != null && iae.getMessage().contains("Comparison method violates its general contract")) {
+                        // Appears to be a JDK bug.  Assume clipboard contains junk and give up for now
+                        return null;
+                    }
+                    throw iae;
+                }
             }
         });
     }

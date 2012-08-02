@@ -113,12 +113,12 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                         Clipboard clip = (Clipboard)e.getSource();
                         DataFlavor[] flavours;
                         try {
-                            flavours = clip.getAvailableDataFlavors();
+                            flavours = ClipboardActions.getFlavors(clip);
                         } catch (IllegalStateException ise) {
                             // Clipboard busy, give up for now
                             return;
                         }
-                        if(!ArrayUtils.contains(flavours, FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR)){
+                        if(flavours == null || !ArrayUtils.contains(flavours, FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR)){
                             setAllChildrenUnCut();
                             setIgnoreCurrentClipboard(true);
                         }
