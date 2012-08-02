@@ -135,7 +135,7 @@ public class ScriptPropertiesDialog extends AssertionPropertiesEditorSupport<Scr
 
                 try {
                     byte[] bsfjarBytes = getResource("AAR-INF/lib/bsf-2.4.0-l7p1.jar");
-                    byte[] jsJarBytes = getResource("AAR-INF/lib/js-1.6R7.jar");
+                    byte[] jsJarBytes = getResource("AAR-INF/lib/js-1.7R3.jar");
                     byte[] ssaSupportClassBytes = getResource("com/l7tech/external/assertions/script/server/ServerScriptAssertionSupport.class");
                     byte[] ssaSupportCssaClassBytes = getResource("com/l7tech/external/assertions/script/server/ServerScriptAssertionSupport$CompiledScriptServerAssertion.class");
 

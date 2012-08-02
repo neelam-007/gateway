@@ -54,7 +54,7 @@ ModularAssertion-Private-Libraries: AAR-INF/lib/CompiledScriptSupport.jar
      * @param bsfLanguageName   bsf language id, ie "javascript".  Required.
      * @param script            text of script to bake into the .aar file
      * @param bsfJarBytes       byte contents of file "bsf-2.4.0-l7p1.jar". Required.
-     * @param jsJarBytes        byte contents of file "js-1.6R7.jar".  Required.
+     * @param jsJarBytes        byte contents of file "js-1.7R3.jar".  Required.
      * @param ssaSupportClassBytes       byte contents of file "com/l7tech/external/assertions/script/server/ServerScriptAssertionSupport.class".  Required.
      * @param ssaSupportCssaClassBytes   byte contents of file "com/l7tech/external/assertions/script/server/ServerScriptAssertionSupport$CompiledScriptServerAssertion.class". Required.
      * @return the bytes of the .aar file.  Never null.
