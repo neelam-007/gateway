@@ -11,6 +11,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.ValidatedPanel;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.Resolver;
@@ -168,7 +169,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         guidField.putClientProperty(Utilities.PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL, "true");
         Utilities.attachDefaultContextMenu(guidField);
 
-        oidField.setText(policy.getId());
+        oidField.setText(policy.getOid() == PersistentEntity.DEFAULT_OID ? "" : policy.getId());
         oidField.putClientProperty(Utilities.PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL, "true");
         Utilities.attachDefaultContextMenu(oidField);
 
