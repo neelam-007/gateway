@@ -1,13 +1,16 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.logging.PermissionDeniedErrorHandler;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
@@ -64,30 +67,39 @@ public class DefaultAssertionPropertiesAction
 
     @Override
     protected void performAction() {
-        final AT ass = subject.asAssertion();
-        final AssertionPropertiesEditor<AT> ape = apeFactory.call(TopComponents.getInstance().getTopParent(), ass);
-        ape.setParameter( AssertionPropertiesEditor.PARAM_READONLY, !subject.canEdit() );
-        ape.setData(ass);
-        final JDialog dlg = ape.getDialog();
-        if (Boolean.TRUE.equals(ass.meta().get(AssertionMetadata.PROPERTIES_EDITOR_SUPPRESS_SHEET_DISPLAY)))
-            DialogDisplayer.suppressSheetDisplay(dlg);
-        dlg.pack();
-        Utilities.centerOnParentWindow(dlg);
-        Frame f = TopComponents.getInstance().getTopParent();
-        DialogDisplayer.display(dlg, f, new Runnable() {
-            public void run() {
-                if (ape.isConfirmed()) {
-                    subject.setUserObject(ape.getData(ass));
-                    JTree tree = TopComponents.getInstance().getPolicyTree();
-                    if (tree != null) {
-                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                        model.assertionTreeNodeChanged(subject);
-                    } else {
-                        log.log(Level.WARNING, "Unable to reach the policy tree.");
+        try {
+            final AT ass = subject.asAssertion();
+            final AssertionPropertiesEditor<AT> ape = apeFactory.call(TopComponents.getInstance().getTopParent(), ass);
+            ape.setParameter( AssertionPropertiesEditor.PARAM_READONLY, !subject.canEdit() );
+            ape.setData(ass);
+            final JDialog dlg = ape.getDialog();
+            if (Boolean.TRUE.equals(ass.meta().get(AssertionMetadata.PROPERTIES_EDITOR_SUPPRESS_SHEET_DISPLAY)))
+                DialogDisplayer.suppressSheetDisplay(dlg);
+            dlg.pack();
+            Utilities.centerOnParentWindow(dlg);
+            Frame f = TopComponents.getInstance().getTopParent();
+            DialogDisplayer.display(dlg, f, new Runnable() {
+                public void run() {
+                    if (ape.isConfirmed()) {
+                        subject.setUserObject(ape.getData(ass));
+                        JTree tree = TopComponents.getInstance().getPolicyTree();
+                        if (tree != null) {
+                            PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                            model.assertionTreeNodeChanged(subject);
+                        } else {
+                            log.log(Level.WARNING, "Unable to reach the policy tree.");
+                        }
                     }
                 }
+            });
+        } catch (RuntimeException re) {
+            final PermissionDeniedException pde = ExceptionUtils.getCauseIfCausedBy(re, PermissionDeniedException.class);
+            if (pde != null) {
+                PermissionDeniedErrorHandler.showMessageDialog(pde, log);
+            } else {
+                throw re;
             }
-        });
+        }
     }
 
 }
