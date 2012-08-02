@@ -1146,6 +1146,8 @@ public class AssertionMessages extends Messages {
     public static final M SET_VARIABLE_UNRECOGNISED_DATE_FORMAT = m(9681, Level.INFO, "Date string format is not recognized: {0}");
     public static final M SET_VARIABLE_INVALID_DATE_OFFSET = m(9682, Level.INFO, "Invalid integer date offset: {0}");
     public static final M SET_VARIABLE_INVALID_DATE_PATTERN = m(9683, Level.WARNING, "Invalid date format pattern: {0}");
+    public static final M SET_VARIABLE_UNABLE_TO_INTEGER = m(9684, Level.INFO, "Unable to parse integer string: {0}");
+
 
     // Generate OAuth signature base string assertion
     public static final M OAUTH_DUPLICATE_PARAMETER = m(9670, Level.WARNING, "Found duplicate oauth parameter: {0}");

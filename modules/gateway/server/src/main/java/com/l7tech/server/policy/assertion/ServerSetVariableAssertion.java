@@ -133,7 +133,12 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
                 return AssertionStatus.FALSIFIED;
             }
         } else if (dataType == DataType.INTEGER){
-            context.setVariable(assertion.getVariableToSet(), Integer.parseInt(strValue));
+            try{
+                context.setVariable(assertion.getVariableToSet(), Integer.parseInt(strValue));
+            } catch (NumberFormatException e){
+                logAndAudit(AssertionMessages.SET_VARIABLE_UNABLE_TO_INTEGER, strValue);
+                return AssertionStatus.FALSIFIED;
+            }
         } else {
             throw new RuntimeException("Not implemented yet for data type " + dataType.getName() + " (variable name=\"" + assertion.getVariableToSet() + "\").");
         }
