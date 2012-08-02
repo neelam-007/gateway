@@ -1,15 +1,8 @@
 package com.l7tech.server.admin;
 
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.InvalidPasswordException;
-import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.SecurityTokenType;
@@ -27,17 +20,11 @@ import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.identity.internal.InternalUserPasswordManager;
 import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.security.PasswordEnforcerManager;
+import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.security.rbac.RoleManagerIdentitySourceSupport;
 import com.l7tech.server.util.PostStartupApplicationListener;
-import com.l7tech.util.Background;
-import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.TimeUnit;
-import com.l7tech.util.ValidatedConfig;
-import com.l7tech.util.Functions;
+import com.l7tech.util.*;
 import org.apache.commons.collections.map.LRUMap;
 import org.springframework.context.ApplicationEvent;
 
@@ -88,6 +75,10 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     public void setPasswordEnforcerManager(final PasswordEnforcerManager passwordEnforcerManager) {
         this.passwordEnforcerManager = passwordEnforcerManager;
+    }
+
+    public void setRbacServices(final RbacServices rbacServices) {
+        this.rbacServices = rbacServices;
     }
 
     /**
@@ -531,23 +522,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     }
 
     public boolean isAdministrativeUser(final User user) throws FindException {
-        boolean hasPermission = false;
-        try {
-            Collection<Role> roles = roleManager.getAssignedRoles(user, false, true);
-            roles:
-            for (Role role : roles) {
-                for (Permission perm : role.getPermissions()) {
-                    if (perm.getEntityType() != null && perm.getOperation() != OperationType.NONE) {
-                        hasPermission = true;
-                        break roles;
-                    }
-                }
-            }
-        } catch ( RoleManager.DisabledGroupRolesException e ) {
-            logger.info( "Administrative access for '"+user.getLogin()+"' denied due to: " + ExceptionUtils.getMessage( e ) );
-        }
-
-        return hasPermission;
+        return rbacServices.isAdministrativeUser(new Pair<Long, String>(user.getProviderId(), user.getId()), user);
     }
 
     public static void setCertRequirementWavedChecker(Functions.Nullary<Boolean> certReqWavedChecker) {
@@ -588,6 +563,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private final Config config;
     private final LogonService logonService;
     private final Timer timer;
+    private RbacServices rbacServices;
     private IdentityProviderFactory identityProviderFactory;
     private PasswordEnforcerManager passwordEnforcerManager;
     private final ClusterMaster clusterMaster;

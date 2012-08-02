@@ -3,12 +3,14 @@ package com.l7tech.server.security.rbac;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import static com.l7tech.objectmodel.EntityType.ANY;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 
@@ -17,6 +19,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.EntityType.ANY;
 
 /** @author alex */
 public class RbacServicesImpl implements RbacServices, InitializingBean, PostStartupApplicationListener {
@@ -46,7 +50,7 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
 
         final Map<EntityType, Boolean> permittedTypes = new HashMap<EntityType, Boolean>();
 
-        for (Role role : roleManager.getAssignedRoles(authenticatedUser)) {
+        for (Role role : roleManager.getAssignedRoles(makeKey(authenticatedUser), authenticatedUser)) {
             for (Permission perm : role.getPermissions()) {
                 if (perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
                 if (perm.getOperation() != requiredOperation) continue; // This permission is for a different operation
@@ -87,7 +91,7 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
                                                 final OperationType requiredOperation,
                                                 final EntityType requiredType,
                                                 final boolean allEntities ) throws FindException {
-        for ( final Role role : roleManager.getAssignedRoles(authenticatedUser)) {
+        for ( final Role role : roleManager.getAssignedRoles(makeKey(authenticatedUser), authenticatedUser)) {
             for ( final Permission perm : role.getPermissions() ) {
                 if (allEntities && perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
                 if (perm.getOperation() != requiredOperation) continue; // This permission is for a different operation
@@ -105,7 +109,7 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
         if (operation == OperationType.OTHER && otherOperationName == null) throw new IllegalArgumentException("otherOperationName must be specified when operation == OTHER");
         logger.log(Level.FINE, String.format("Checking for permission to %s %s #%s", operation.getName(), entity.getClass().getSimpleName(), entity.getId()));
 
-        return isPermitted(roleManager.getAssignedRoles(user), entity, operation, otherOperationName);
+        return isPermitted(roleManager.getAssignedRoles(makeKey(user), user), entity, operation, otherOperationName);
     }
 
     @Override
@@ -121,7 +125,7 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
                 && isPermittedForAnyEntityOfType(authenticatedUser, requiredOperation, EntityType.POLICY)) return headers;
 
         // Do this outside the loop so performance isn't appalling
-        final Collection<Role> userRoles = roleManager.getAssignedRoles(authenticatedUser);
+        final Collection<Role> userRoles = roleManager.getAssignedRoles(makeKey(authenticatedUser), authenticatedUser);
         if (userRoles.isEmpty()) return Collections.emptyList();
 
         final List<T> result = new LinkedList<T>();
@@ -140,6 +144,50 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
         }
 
         return result;
+    }
+
+    @Override
+    public boolean isAdministrativeUser(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+        if (user.getId() == null)
+            throw new NullPointerException("user ID");
+        if (!user.getId().equals(providerAndUserId.right))
+            throw new IllegalArgumentException("user ID mismatch");
+        if (!((Long)user.getProviderId()).equals(providerAndUserId.left))
+            throw new IllegalArgumentException("provider ID mismatch");
+
+        boolean hasPermission = false;
+        try {
+            Collection<Role> roles = roleManager.getAssignedRoles(user, false, true);
+            roles:
+            for (Role role : roles) {
+                for (Permission perm : role.getPermissions()) {
+                    if (perm.getEntityType() != null && perm.getOperation() != OperationType.NONE) {
+                        hasPermission = true;
+                        break roles;
+                    }
+                }
+            }
+        } catch ( RoleManager.DisabledGroupRolesException e ) {
+            logger.log(Level.INFO, "Administrative access for '" + user.getLogin() + "' denied due to: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+
+        return hasPermission;
+    }
+
+    @Override
+    public Collection<Role> getAssignedRoles(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+        if (user.getId() == null)
+            throw new NullPointerException("user ID");
+        if (!user.getId().equals(providerAndUserId.right))
+            throw new IllegalArgumentException("user ID mismatch");
+        if (!((Long)user.getProviderId()).equals(providerAndUserId.left))
+            throw new IllegalArgumentException("provider ID mismatch");
+
+        return Collections.unmodifiableCollection(roleManager.getAssignedRoles(user));
+    }
+
+    private static Pair<Long, String> makeKey(User user) {
+        return new Pair<Long, String>(user.getProviderId(), user.getId());
     }
 
     private boolean isPermitted(final Collection<Role> assignedRoles,

@@ -18,6 +18,7 @@ import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -375,6 +376,16 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
             throws FindException
     {
         return rbacServices.filterPermittedHeaders(authenticatedUser, requiredOperation, headers, entityFinder);
+    }
+
+    @Override
+    public boolean isAdministrativeUser(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+        return rbacServices.isAdministrativeUser(providerAndUserId, user);
+    }
+
+    @Override
+    public Collection<Role> getAssignedRoles(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+        return rbacServices.getAssignedRoles(providerAndUserId, user);
     }
 
     @Override

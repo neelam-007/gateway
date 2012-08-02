@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -171,5 +172,15 @@ public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implem
     public <T extends OrganizationHeader> Iterable<T> filterPermittedHeaders(User authenticatedUser, OperationType requiredOperation, Iterable<T> headers, EntityFinder entityFinder)
         throws FindException {
         return rbacServices.filterPermittedHeaders(authenticatedUser, requiredOperation, headers, entityFinder);
+    }
+
+    @Override
+    public boolean isAdministrativeUser(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+        return rbacServices.isAdministrativeUser(providerAndUserId, user);
+    }
+
+    @Override
+    public Collection<Role> getAssignedRoles(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException {
+        return getAssignedRoles(user, false, true);
     }
 }

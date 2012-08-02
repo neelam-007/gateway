@@ -547,9 +547,18 @@
             </bean>
          </property>
     </bean>
-    <bean id="rbacServices" class="com.l7tech.server.security.rbac.RbacServicesImpl">
-        <property name="roleManager" ref="roleManager"/>
-        <property name="entityFinder" ref="entityFinder"/>
+    <bean id="rbacServices" class="com.l7tech.server.util.EntityCachingFactoryBean">
+        <constructor-arg>
+            <null/>
+        </constructor-arg>
+        <constructor-arg value="RbacServices"/>
+        <constructor-arg value="com.l7tech.server.security.rbac.RbacServices"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.security.rbac.RbacServicesImpl">
+                <property name="roleManager" ref="roleManager"/>
+                <property name="entityFinder" ref="entityFinder"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <!-- server side identity provider factory -->

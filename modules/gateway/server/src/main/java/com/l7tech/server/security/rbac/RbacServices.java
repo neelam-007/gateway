@@ -1,14 +1,19 @@
 package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.util.Cacheable;
+import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -86,4 +91,28 @@ public interface RbacServices {
                                                                        Iterable<T> headers,
                                                                        EntityFinder entityFinder)
             throws FindException;
+
+    /**
+     * Check whether the specified user is in at least one role with at least one permission with an operation type other than NONE.
+     * The result of this method call may be cached.
+     *
+     * @param providerAndUserId user ID and provider ID in a Pair, to serve as a cache key.  Required.
+     * @param user user to examine.  Required.  User ID and provider ID must match that provided as cache key.
+     * @return true if this user has at least one role with at least one permission with an operation type other than NONE.
+     * @throws com.l7tech.objectmodel.FindException if there is a problem looking up the necessary information.
+     */
+    @Cacheable(relevantArg=0,maxAge=5000)
+    boolean isAdministrativeUser(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException;
+
+    /**
+     * Get the roles for the specified user, with default values for skipAccountValidation and disabledGroupIsError.
+     * The result of this method may be cached.
+     *
+     * @param providerAndUserId user ID and provider ID in a Pair, to serve as a cache key.  Required.
+     * @param user user to examine.  Required.  User ID and provider ID must match that provided as cache key.
+     * @return the roles for this user.  May be empty but never null.
+     * @throws com.l7tech.objectmodel.FindException if there is a problem looking up the necessary information.
+     */
+    @Cacheable(relevantArg=0,maxAge=5000)
+    Collection<Role> getAssignedRoles(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException;
 }
