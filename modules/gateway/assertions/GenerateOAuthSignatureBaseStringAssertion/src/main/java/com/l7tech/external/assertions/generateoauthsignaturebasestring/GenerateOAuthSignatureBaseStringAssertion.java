@@ -3,6 +3,12 @@ package com.l7tech.external.assertions.generateoauthsignaturebasestring;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
+import org.apache.commons.lang.StringUtils;
+
+import java.util.Arrays;
 
 /**
  * Assertion which generates an OAuth signature base string that conforms to the OAuth 1.0 spec.
@@ -10,6 +16,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 public class GenerateOAuthSignatureBaseStringAssertion extends Assertion implements UsesVariables, SetsVariables {
     public static final String SIG_BASE_STRING = "sigBaseString";
     public static final String REQUEST_TYPE = "requestType";
+    public static final String OAUTH_1_0 = "1.0";
     public static final String OAUTH_CALLBACK = "oauth_callback";
     public static final String OAUTH_CONSUMER_KEY = "oauth_consumer_key";
     public static final String OAUTH_NONCE = "oauth_nonce";
@@ -19,7 +26,32 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
     public static final String OAUTH_VERIFIER = "oauth_verifier";
     public static final String OAUTH_VERSION = "oauth_version";
     public static final String AUTH_HEADER = "authHeader";
-    public static final String AUTO = "<auto>";
+    public static final String REQUEST_TOKEN = "request token";
+    public static final String AUTHORIZED_REQUEST_TOKEN = "authorized request token";
+    public static final String ACCESS_TOKEN = "access token";
+    private static final String GENERATE_OAUTH_SIGNATURE_BASE_STRING = "Generate OAuth Signature Base String";
+
+    public static enum UsageMode {
+        /**
+         * Sending an OAuth request.
+         */
+        CLIENT("Client"),
+
+        /**
+         * Receiving an OAuth request.
+         */
+        SERVER("Server");
+
+        UsageMode(final String description) {
+            this.description = description;
+        }
+
+        private String description;
+
+        public String getDescription() {
+            return description;
+        }
+    }
 
     @Override
     public VariableMetadata[] getVariablesSet() {
@@ -39,7 +71,7 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
     @Override
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames(requestUrl, httpMethod, queryString, authorizationHeader, oauthConsumerKey,
-                oauthTimestamp, oauthNonce, oauthToken, oauthCallback, oauthVerifier, oauthVersion);
+                oauthToken, oauthCallback, oauthVerifier);
     }
 
     @Override
@@ -48,7 +80,7 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED))) {
             return meta;
         }
-        meta.put(AssertionMetadata.SHORT_NAME, "Generate OAuth Signature Base String");
+        meta.put(AssertionMetadata.SHORT_NAME, GENERATE_OAUTH_SIGNATURE_BASE_STRING);
         meta.put(AssertionMetadata.LONG_NAME, "Generate OAuth Signature Base String for use in OAuth 1.0 A Signature generation");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
@@ -56,6 +88,10 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+                new Java5EnumTypeMapping(UsageMode.class, "usageMode")
+        )));
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new NodeNameFactory());
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
@@ -90,14 +126,6 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
 
     public void setUseMessageTarget(final boolean useMessageTarget) {
         this.useMessageTarget = useMessageTarget;
-    }
-
-    public boolean isUseManualParameters() {
-        return useManualParameters;
-    }
-
-    public void setUseManualParameters(final boolean useManualParameters) {
-        this.useManualParameters = useManualParameters;
     }
 
     public boolean isUseAuthorizationHeader() {
@@ -140,30 +168,6 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
         this.oauthSignatureMethod = oauthSignatureMethod;
     }
 
-    public String getOauthTimestamp() {
-        return oauthTimestamp;
-    }
-
-    public void setOauthTimestamp(final String oauthTimestamp) {
-        this.oauthTimestamp = oauthTimestamp;
-    }
-
-    public String getOauthNonce() {
-        return oauthNonce;
-    }
-
-    public void setOauthNonce(final String oauthNonce) {
-        this.oauthNonce = oauthNonce;
-    }
-
-    public String getOauthVersion() {
-        return oauthVersion;
-    }
-
-    public void setOauthVersion(final String oauthVersion) {
-        this.oauthVersion = oauthVersion;
-    }
-
     public String getOauthToken() {
         return oauthToken;
     }
@@ -200,35 +204,64 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
         return messageTargetableSupport;
     }
 
+    public UsageMode getUsageMode() {
+        return usageMode;
+    }
+
+    public void setUsageMode(final UsageMode usageMode) {
+        this.usageMode = usageMode;
+    }
+
     private static final String META_INITIALIZED = GenerateOAuthSignatureBaseStringAssertion.class.getName() + ".metadataInitialized";
+
+    private UsageMode usageMode = UsageMode.CLIENT;
+
+    // applies to both CLIENT and SERVER
     private String requestUrl = "${request.url}";
     private String httpMethod = "${request.http.method}";
-    private String queryString;
-    /**
-     * True if request parameters should be included in the signature base string.
-     */
+    private String queryString = "${request.url.query}";
+    private String variablePrefix = "oauth";
+    // end applies to both CLIENT and SERVER
+
+    // applies to SERVER
     private boolean useMessageTarget = true;
-    /**
-     * True if the assertion fields should be included in the signature base string.
-     */
-    private boolean useManualParameters = true;
-    /**
-     * True if authorization header parameters should be included in the signature base string.
-     */
     private boolean useAuthorizationHeader = true;
-    /**
-     * True if the oauth version field should be included in the signature base string (only applies if useManualParameters=true).
-     */
-    private boolean useOAuthVersion = true;
     private String authorizationHeader = "${request.http.header.Authorization}";
+    private MessageTargetableSupport messageTargetableSupport = new MessageTargetableSupport();
+    // end applies to SERVER
+
+    // applies to CLIENT
+    private boolean useOAuthVersion = true;
     private String oauthConsumerKey;
     private String oauthSignatureMethod = "HMAC-SHA1";
-    private String oauthTimestamp = "<auto>";
-    private String oauthNonce = AUTO;
-    private String oauthVersion = "1.0";
     private String oauthToken;
     private String oauthCallback;
     private String oauthVerifier;
-    private String variablePrefix = "oauth";
-    private MessageTargetableSupport messageTargetableSupport = new MessageTargetableSupport();
+    // end applies to CLIENT
+
+    static class NodeNameFactory implements AssertionNodeNameFactory<GenerateOAuthSignatureBaseStringAssertion> {
+        @Override
+        public String getAssertionName(final GenerateOAuthSignatureBaseStringAssertion assertion, final boolean decorate) {
+            String assertionName = GENERATE_OAUTH_SIGNATURE_BASE_STRING;
+            if (decorate) {
+                if (UsageMode.CLIENT.equals(assertion.getUsageMode())) {
+                    String requestType;
+                    if (StringUtils.isNotBlank(assertion.getOauthToken())) {
+                        if (StringUtils.isNotBlank(assertion.getOauthVerifier())) {
+                            requestType = AUTHORIZED_REQUEST_TOKEN;
+                        } else {
+                            requestType = ACCESS_TOKEN;
+                        }
+                    } else {
+                        requestType = REQUEST_TOKEN;
+                    }
+                    assertionName = assertion.getUsageMode().getDescription() + " " + GENERATE_OAUTH_SIGNATURE_BASE_STRING + ": " + requestType;
+                } else {
+                    // cannot determine request type
+                    assertionName = assertion.getUsageMode().getDescription() + " " + GENERATE_OAUTH_SIGNATURE_BASE_STRING;
+                }
+            }
+            return assertionName;
+        }
+    }
 }

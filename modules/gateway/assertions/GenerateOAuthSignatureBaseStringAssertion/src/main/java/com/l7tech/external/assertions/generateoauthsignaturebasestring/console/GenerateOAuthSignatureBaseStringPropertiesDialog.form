@@ -3,7 +3,7 @@
   <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="48" y="54" width="986" height="525"/>
+      <xy x="48" y="54" width="986" height="604"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -11,7 +11,7 @@
       <grid id="b0faf" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
         <border type="none"/>
@@ -32,15 +32,10 @@
           </component>
         </children>
       </grid>
-      <vspacer id="6577b">
-        <constraints>
-          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-        </constraints>
-      </vspacer>
       <grid id="968a" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
         <border type="none" title="Endpoint"/>
@@ -101,23 +96,14 @@
           </grid>
         </children>
       </grid>
-      <grid id="f98a8" layout-manager="GridLayoutManager" row-count="4" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="f98a8" layout-manager="GridLayoutManager" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
         <border type="none" title="Parameter Sources"/>
         <children>
-          <component id="c8b5b" class="javax.swing.JCheckBox" binding="useMessageTargetAsCheckBox" default-binding="true">
-            <constraints>
-              <grid row="1" column="0" row-span="1" col-span="3" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <selected value="true"/>
-              <text value="Use message target as parameter source"/>
-            </properties>
-          </component>
           <component id="1314c" class="javax.swing.JLabel">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
@@ -136,17 +122,17 @@
               <text value=""/>
             </properties>
           </component>
-          <grid id="315f7" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="315f7" binding="serverPanel" layout-manager="GridLayoutManager" row-count="2" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="2" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <grid row="1" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
               <component id="5e3e3" class="javax.swing.JCheckBox" binding="authHeaderCheckBox">
                 <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <text value="Authorization Header"/>
@@ -154,7 +140,7 @@
               </component>
               <component id="e8fee" class="javax.swing.JTextField" binding="authHeaderTextField">
                 <constraints>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                  <grid row="1" column="1" row-span="1" col-span="4" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                     <preferred-size width="150" height="-1"/>
                   </grid>
                 </constraints>
@@ -162,17 +148,26 @@
                   <text value="${request.http.header.Authorization}"/>
                 </properties>
               </component>
+              <component id="c8b5b" class="javax.swing.JCheckBox" binding="useMessageTargetAsCheckBox" default-binding="true">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="5" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <selected value="true"/>
+                  <text value="Use message target as parameter source"/>
+                </properties>
+              </component>
             </children>
           </grid>
-          <grid id="c0907" layout-manager="GridLayoutManager" row-count="8" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="c0907" binding="clientPanel" layout-manager="GridLayoutManager" row-count="8" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="3" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <grid row="2" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
-              <component id="6a0a0" class="javax.swing.JLabel" binding="oauthConsumerKeyLabel">
+              <component id="6a0a0" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -188,7 +183,7 @@
                 </constraints>
                 <properties/>
               </component>
-              <component id="f8ff3" class="javax.swing.JLabel" binding="oauthSigMethodLabel">
+              <component id="f8ff3" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -209,7 +204,7 @@
                   </model>
                 </properties>
               </component>
-              <component id="f1c76" class="javax.swing.JLabel" binding="oauthTimestampLabel">
+              <component id="f1c76" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -217,7 +212,7 @@
                   <text value="oauth_timestamp:"/>
                 </properties>
               </component>
-              <component id="32bf4" class="javax.swing.JLabel" binding="oauthNonceLabel">
+              <component id="32bf4" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -233,17 +228,7 @@
                   <text value="oauth_version:"/>
                 </properties>
               </component>
-              <component id="abe76" class="javax.swing.JTextField" binding="oauthVersionTextField">
-                <constraints>
-                  <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <preferred-size width="150" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties>
-                  <text value="1.0"/>
-                </properties>
-              </component>
-              <component id="89c6e" class="javax.swing.JLabel" binding="oauthTokenLabel">
+              <component id="89c6e" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -259,7 +244,7 @@
                 </constraints>
                 <properties/>
               </component>
-              <component id="f688c" class="javax.swing.JLabel" binding="oauthCallbackLabel">
+              <component id="f688c" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -275,7 +260,7 @@
                 </constraints>
                 <properties/>
               </component>
-              <component id="739f9" class="javax.swing.JLabel" binding="oauthVerifierLabel">
+              <component id="739f9" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -291,36 +276,61 @@
                 </constraints>
                 <properties/>
               </component>
-              <component id="c191d" class="javax.swing.JComboBox" binding="oauthTimestampComboBox">
+              <component id="d4925" class="javax.swing.JLabel">
                 <constraints>
-                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <editable value="true"/>
-                  <model>
-                    <item value="&lt;auto&gt;"/>
-                  </model>
+                  <text value="&lt;auto&gt;"/>
+                  <toolTipText value="oauth_timestamp will be auto-generated at runtime"/>
                 </properties>
               </component>
-              <component id="2c72d" class="javax.swing.JComboBox" binding="oauthNonceComboBox">
+              <component id="c0ff3" class="javax.swing.JLabel">
                 <constraints>
-                  <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                  <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <editable value="true"/>
-                  <model>
-                    <item value="&lt;auto&gt;"/>
-                  </model>
+                  <text value="&lt;auto&gt;"/>
+                  <toolTipText value="oauth_nonce will be auto-generated at runtime"/>
+                </properties>
+              </component>
+              <component id="be1de" class="javax.swing.JLabel" binding="oauthVersionLabel">
+                <constraints>
+                  <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="1.0"/>
                 </properties>
               </component>
             </children>
           </grid>
-          <component id="a6d2f" class="javax.swing.JCheckBox" binding="clientParametersCheckBox" default-binding="true">
+        </children>
+      </grid>
+      <grid id="692a" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none" title="Usage"/>
+        <children>
+          <component id="7a7e9" class="javax.swing.JRadioButton" binding="clientRadioButton">
             <constraints>
-              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Client Parameters"/>
+              <selected value="true"/>
+              <text value="Client"/>
+              <toolTipText value=""/>
+            </properties>
+          </component>
+          <component id="6fc13" class="javax.swing.JRadioButton" binding="serverRadioButton">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Server"/>
+              <toolTipText value=""/>
             </properties>
           </component>
         </children>
@@ -334,6 +344,10 @@
       <member id="8e6d6"/>
       <member id="4c9c7"/>
       <member id="14623"/>
+    </group>
+    <group name="usage">
+      <member id="7a7e9"/>
+      <member id="6fc13"/>
     </group>
   </buttonGroups>
 </form>

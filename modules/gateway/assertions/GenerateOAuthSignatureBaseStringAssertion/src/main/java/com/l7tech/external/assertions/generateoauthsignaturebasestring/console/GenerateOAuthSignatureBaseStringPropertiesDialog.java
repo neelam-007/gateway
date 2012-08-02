@@ -11,8 +11,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.List;
 
 public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionPropertiesOkCancelSupport<GenerateOAuthSignatureBaseStringAssertion> {
     private JPanel contentPane;
@@ -25,23 +23,18 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
     private JTextField oauthConsumerKeyTextField;
     private JComboBox oauthSignatureMethodComboBox;
     private JCheckBox oauthVersionCheckBox;
-    private JTextField oauthVersionTextField;
     private JTextField oauthTokenTextField;
     private JTextField oauthCallbackTextField;
-    private JLabel oauthConsumerKeyLabel;
-    private JLabel oauthSigMethodLabel;
-    private JLabel oauthTimestampLabel;
-    private JLabel oauthNonceLabel;
-    private JLabel oauthTokenLabel;
-    private JLabel oauthCallbackLabel;
-    private JCheckBox clientParametersCheckBox;
     private TargetVariablePanel targetVariablePanel;
     private JTextField oauthVerifierTextField;
-    private JLabel oauthVerifierLabel;
-    private JComboBox oauthTimestampComboBox;
-    private JComboBox oauthNonceComboBox;
+    private JRadioButton clientRadioButton;
+    private JRadioButton serverRadioButton;
+    private JPanel serverPanel;
+    private JPanel clientPanel;
+    private JLabel oauthVersionLabel;
     private InputValidator validators;
-    private List<InputValidator.ValidationRule> requiredFields;
+    private InputValidator.ValidationRule consumerKeyRule;
+    private InputValidator.ValidationRule authHeaderRule;
 
     public GenerateOAuthSignatureBaseStringPropertiesDialog(final Window owner, final GenerateOAuthSignatureBaseStringAssertion assertion) {
         super(GenerateOAuthSignatureBaseStringAssertion.class, owner, assertion, true);
@@ -52,7 +45,6 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
     @Override
     protected void initComponents() {
         super.initComponents();
-        requiredFields = new ArrayList<InputValidator.ValidationRule>();
         validators = new InputValidator(this, getTitle());
         validators.constrainTextFieldToBeNonEmpty("Request URL", requestUrlTextField, null);
         validators.addRule(new NonEmptyEditableComboBoxRule("HTTP Method", methodComboBox));
@@ -69,46 +61,38 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
             }
         });
 
-        clientParametersCheckBox.addActionListener(runOnChangeListener);
+        clientRadioButton.addActionListener(runOnChangeListener);
+        serverRadioButton.addActionListener(runOnChangeListener);
         authHeaderCheckBox.addActionListener(runOnChangeListener);
         oauthVersionCheckBox.addActionListener(runOnChangeListener);
-        useMessageTargetAsCheckBox.addActionListener(runOnChangeListener);
     }
 
     private void enableDisableComponents() {
-        authHeaderTextField.setEnabled(authHeaderCheckBox.isSelected());
-        final boolean clientParams = clientParametersCheckBox.isSelected();
-        oauthConsumerKeyLabel.setEnabled(clientParams);
-        oauthConsumerKeyTextField.setEnabled(clientParams);
-        oauthSigMethodLabel.setEnabled(clientParams);
-        oauthSignatureMethodComboBox.setEnabled(clientParams);
-        oauthTimestampLabel.setEnabled(clientParams);
-        oauthTimestampComboBox.setEnabled(clientParams);
-        oauthNonceLabel.setEnabled(clientParams);
-        oauthNonceComboBox.setEnabled(clientParams);
-        oauthVersionCheckBox.setEnabled(clientParams);
-        oauthVersionTextField.setEnabled(clientParams && oauthVersionCheckBox.isSelected());
-        oauthTokenLabel.setEnabled(clientParams);
-        oauthTokenTextField.setEnabled(clientParams);
-        oauthCallbackLabel.setEnabled(clientParams);
-        oauthCallbackTextField.setEnabled(clientParams);
-        oauthVerifierLabel.setEnabled(clientParams);
-        oauthVerifierTextField.setEnabled(clientParams);
+        clientPanel.setEnabled(clientRadioButton.isSelected());
+        final Component[] clientChildren = clientPanel.getComponents();
+        for (final Component clientChild : clientChildren) {
+            clientChild.setEnabled(clientRadioButton.isSelected());
+        }
+        serverPanel.setEnabled(serverRadioButton.isSelected());
+        final Component[] serverChildren = serverPanel.getComponents();
+        for (final Component serverChild : serverChildren) {
+            serverChild.setEnabled(serverRadioButton.isSelected());
+        }
+        authHeaderTextField.setEnabled(serverRadioButton.isSelected() && authHeaderCheckBox.isSelected());
+        oauthVersionLabel.setEnabled(clientRadioButton.isSelected() && oauthVersionCheckBox.isSelected());
 
-        if (clientParams && !authHeaderCheckBox.isSelected() && !useMessageTargetAsCheckBox.isSelected() && requiredFields.isEmpty()) {
-            requiredFields.add(validators.constrainTextFieldToBeNonEmpty("oauth_consumer_key", oauthConsumerKeyTextField, null));
-            requiredFields.add(validators.ensureComboBoxSelection("oauth_signature_method", oauthSignatureMethodComboBox));
-            final NonEmptyEditableComboBoxRule timestamp = new NonEmptyEditableComboBoxRule("oauth_timestamp", oauthTimestampComboBox);
-            validators.addRule(timestamp);
-            requiredFields.add(timestamp);
-            final NonEmptyEditableComboBoxRule nonce = new NonEmptyEditableComboBoxRule("oauth_nonce", oauthNonceComboBox);
-            validators.addRule(nonce);
-            requiredFields.add(nonce);
+        if (clientRadioButton.isSelected()) {
+            consumerKeyRule = validators.constrainTextFieldToBeNonEmpty("oauth_consumer_key", oauthConsumerKeyTextField, null);
         } else {
-            for (final InputValidator.ValidationRule requiredField : requiredFields) {
-                validators.removeRule(requiredField);
-            }
-            requiredFields.clear();
+            validators.removeRule(consumerKeyRule);
+            consumerKeyRule = null;
+        }
+
+        if (serverRadioButton.isSelected() && authHeaderCheckBox.isSelected()) {
+            authHeaderRule = validators.constrainTextFieldToBeNonEmpty("Authorization Header", authHeaderTextField, null);
+        } else {
+            validators.removeRule(authHeaderRule);
+            authHeaderRule = null;
         }
     }
 
@@ -119,17 +103,15 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
         queryStringTextField.setText(assertion.getQueryString());
         useMessageTargetAsCheckBox.setSelected(assertion.isUseMessageTarget());
         authHeaderCheckBox.setSelected(assertion.isUseAuthorizationHeader());
-        clientParametersCheckBox.setSelected(assertion.isUseManualParameters());
         authHeaderTextField.setText(assertion.getAuthorizationHeader());
         oauthConsumerKeyTextField.setText(assertion.getOauthConsumerKey());
         oauthSignatureMethodComboBox.setSelectedItem(assertion.getOauthSignatureMethod());
-        oauthTimestampComboBox.setSelectedItem(assertion.getOauthTimestamp());
-        oauthNonceComboBox.setSelectedItem(assertion.getOauthNonce());
         oauthVersionCheckBox.setSelected(assertion.isUseOAuthVersion());
-        oauthVersionTextField.setText(assertion.getOauthVersion());
         oauthTokenTextField.setText(assertion.getOauthToken());
         oauthCallbackTextField.setText(assertion.getOauthCallback());
         oauthVerifierTextField.setText(assertion.getOauthVerifier());
+        clientRadioButton.setSelected(assertion.getUsageMode().equals(GenerateOAuthSignatureBaseStringAssertion.UsageMode.CLIENT));
+        serverRadioButton.setSelected(assertion.getUsageMode().equals(GenerateOAuthSignatureBaseStringAssertion.UsageMode.SERVER));
         targetVariablePanel.setVariable(assertion.getVariablePrefix());
         enableDisableComponents();
     }
@@ -141,23 +123,25 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
             throw new ValidationException(error);
         }
 
-        // required fields
+        final GenerateOAuthSignatureBaseStringAssertion.UsageMode usageMode = clientRadioButton.isSelected() ?
+                GenerateOAuthSignatureBaseStringAssertion.UsageMode.CLIENT : GenerateOAuthSignatureBaseStringAssertion.UsageMode.SERVER;
+        assertion.setUsageMode(usageMode);
+
+        // server or client side
         assertion.setRequestUrl(requestUrlTextField.getText().trim());
         assertion.setHttpMethod(methodComboBox.getSelectedItem().toString());
+        assertion.setVariablePrefix(targetVariablePanel.getVariable().trim());
+        assertion.setQueryString(getTrimmedValueOrNull(queryStringTextField));
+
+        // server side only
         assertion.setUseMessageTarget(useMessageTargetAsCheckBox.isSelected());
         assertion.setUseAuthorizationHeader(authHeaderCheckBox.isSelected());
-        assertion.setUseManualParameters(clientParametersCheckBox.isSelected());
+        assertion.setAuthorizationHeader(getTrimmedValueOrNull(authHeaderTextField));
+
+        // client side only
         assertion.setUseOAuthVersion(oauthVersionCheckBox.isSelected());
         assertion.setOauthSignatureMethod(oauthSignatureMethodComboBox.getSelectedItem().toString());
-        assertion.setVariablePrefix(targetVariablePanel.getVariable().trim());
-
-        // optional fields
-        assertion.setQueryString(getTrimmedValueOrNull(queryStringTextField));
-        assertion.setAuthorizationHeader(getTrimmedValueOrNull(authHeaderTextField));
         assertion.setOauthConsumerKey(getTrimmedValueOrNull(oauthConsumerKeyTextField));
-        assertion.setOauthTimestamp(getTrimmedValueOrNull(oauthTimestampComboBox));
-        assertion.setOauthNonce(getTrimmedValueOrNull(oauthNonceComboBox));
-        assertion.setOauthVersion(getTrimmedValueOrNull(oauthVersionTextField));
         assertion.setOauthToken(getTrimmedValueOrNull(oauthTokenTextField));
         assertion.setOauthCallback(getTrimmedValueOrNull(oauthCallbackTextField));
         assertion.setOauthVerifier(getTrimmedValueOrNull(oauthVerifierTextField));
@@ -167,14 +151,6 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
     @Override
     protected JPanel createPropertyPanel() {
         return this.contentPane;
-    }
-
-    private String getTrimmedValueOrNull(final JComboBox comboBox) {
-        String value = null;
-        if (!comboBox.getSelectedItem().toString().trim().isEmpty()) {
-            value = comboBox.getSelectedItem().toString().trim();
-        }
-        return value;
     }
 
     private String getTrimmedValueOrNull(final JTextField textField) {

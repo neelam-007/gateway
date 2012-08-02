@@ -32,9 +32,9 @@ import static com.l7tech.external.assertions.generateoauthsignaturebasestring.Ge
  * See http://tools.ietf.org/html/rfc5849.
  * <p/>
  * There are three ways that this assertion can retrieve oauth parameters in order to build the signature base string:<br />
- * 1. parsing the authorization header<br />
- * 2. request parameters<br />
- * 3. 'manually' through the assertion fields
+ * 1. parsing the authorization header (UsageMode.SERVER only)<br />
+ * 2. request parameters (UsageMode.SERVER only)<br />
+ * 3. 'manually' through the assertion fields (UsageMode.CLIENT only)
  */
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
 public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractServerAssertion<GenerateOAuthSignatureBaseStringAssertion> {
@@ -57,7 +57,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         AssertionStatus assertionStatus = AssertionStatus.NONE;
         final Audit audit = getAudit();
         final Map<String, Object> variableMap = context.getVariableMap(assertion.getVariablesUsed(), audit);
-        final String httpMethod = ExpandVariables.process(assertion.getHttpMethod(), variableMap, audit);
+        final String httpMethod = ExpandVariables.process(assertion.getHttpMethod(), variableMap, audit).toUpperCase();
         if (StringUtils.isBlank(httpMethod)) {
             logAndAudit(AssertionMessages.OAUTH_MISSING_HTTP_METHOD);
             assertionStatus = AssertionStatus.FALSIFIED;
@@ -169,10 +169,15 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
     private TreeMap<String, String> getSortedParameters(final Map<String, Object> variableMap, final Audit audit, final PolicyEnforcementContext context)
             throws IOException, NoSuchVariableException, DuplicateParameterException {
         final List<Pair<String, String>> unsortedParameters = new ArrayList<Pair<String, String>>();
-        addHeaderParams(variableMap, audit, context, unsortedParameters);
-        addRequestParams(unsortedParameters, context);
         addParams(unsortedParameters, getQueryString(variableMap));
-        addManualParams(variableMap, audit, unsortedParameters);
+        switch (assertion.getUsageMode()) {
+            case CLIENT:
+                addManualParams(variableMap, audit, unsortedParameters);
+                break;
+            case SERVER:
+                addHeaderParams(variableMap, audit, context, unsortedParameters);
+                addRequestParams(unsortedParameters, context);
+        }
 
         logAndAudit(AssertionMessages.OAUTH_PARAMETERS, unsortedParameters.toString());
 
@@ -195,16 +200,16 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
      */
     @SuppressWarnings({"JavaDoc"})
     private void addManualParams(final Map<String, Object> variableMap, final Audit audit, final List<Pair<String, String>> parameters) {
-        if (assertion.isUseManualParameters()) {
+        if (assertion.getUsageMode().equals(UsageMode.CLIENT)) {
             addManualParam(parameters, OAUTH_CALLBACK, assertion.getOauthCallback(), variableMap, audit);
             addManualParam(parameters, OAUTH_CONSUMER_KEY, assertion.getOauthConsumerKey(), variableMap, audit);
-            addManualParam(parameters, OAUTH_NONCE, assertion.getOauthNonce(), variableMap, audit);
+            addManualParam(parameters, OAUTH_NONCE, generateNonce());
             addManualParam(parameters, OAUTH_SIGNATURE_METHOD, assertion.getOauthSignatureMethod(), variableMap, audit);
-            addManualParam(parameters, OAUTH_TIMESTAMP, assertion.getOauthTimestamp(), variableMap, audit);
+            addManualParam(parameters, OAUTH_TIMESTAMP, String.valueOf(timeSource.currentTimeMillis() / MILLIS_PER_SEC));
             addManualParam(parameters, OAUTH_TOKEN, assertion.getOauthToken(), variableMap, audit);
             addManualParam(parameters, OAUTH_VERIFIER, assertion.getOauthVerifier(), variableMap, audit);
             if (assertion.isUseOAuthVersion()) {
-                addManualParam(parameters, OAUTH_VERSION, assertion.getOauthVersion(), variableMap, audit);
+                addManualParam(parameters, OAUTH_VERSION, OAUTH_1_0, variableMap, audit);
             }
         }
     }
@@ -260,23 +265,13 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
 
     private void addManualParam(final List<Pair<String, String>> parameters, final String name, final String unexpandedValue, final Map<String, Object> variableMap, final Audit audit) {
         if (unexpandedValue != null) {
-            if (unexpandedValue.equals(AUTO)) {
-                boolean alreadyExists = false;
-                for (final Pair<String, String> parameter : parameters) {
-                    if (name.equals(parameter.getKey())) {
-                        alreadyExists = true;
-                        break;
-                    }
-                }
-                if (!alreadyExists && name.equals(OAUTH_TIMESTAMP)) {
-                    final long currentTimeSeconds = timeSource.currentTimeMillis() / MILLIS_PER_SEC;
-                    parameters.add(new Pair<String, String>(name, String.valueOf(currentTimeSeconds)));
-                } else if (!alreadyExists && name.equals(OAUTH_NONCE)) {
-                    parameters.add(new Pair<String, String>(name, generateNonce()));
-                }
-            } else {
-                parameters.add(new Pair<String, String>(name, ExpandVariables.process(unexpandedValue, variableMap, audit)));
-            }
+            addManualParam(parameters, name, ExpandVariables.process(unexpandedValue, variableMap, audit));
+        }
+    }
+
+    private void addManualParam(final List<Pair<String, String>> parameters, final String name, final String value) {
+        if (value != null) {
+            parameters.add(new Pair<String, String>(name, value));
         }
     }
 
@@ -379,9 +374,6 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         }
     }
 
-    static final String REQUEST_TOKEN = "request token";
-    static final String AUTHORIZED_REQUEST_TOKEN = "authorized request token";
-    static final String ACCESS_TOKEN = "access token";
     private static final String OAUTH_CALLBACK = "oauth_callback";
     private static final String OAUTH_CONSUMER_KEY = "oauth_consumer_key";
     private static final String OAUTH_NONCE = "oauth_nonce";
@@ -411,6 +403,9 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
     private static final List<String> REQUIRED_PARAMETERS;
     private TimeSource timeSource;
 
+    /**
+     * These oauth parameters are required regardless of CLIENT/SERVER or request type.
+     */
     static {
         REQUIRED_PARAMETERS = new ArrayList<String>(4);
         REQUIRED_PARAMETERS.add(OAUTH_CONSUMER_KEY);
