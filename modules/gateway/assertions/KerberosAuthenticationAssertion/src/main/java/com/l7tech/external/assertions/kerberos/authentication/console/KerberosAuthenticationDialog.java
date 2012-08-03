@@ -37,11 +37,11 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
     private JRadioButton lastAuthenticatedUserRadioButton;
     private JRadioButton specifyUserRadioButton;
     private JTextField authenticatedUserTextField;
-    private JLabel authenticatedUserLabel;
     private JRadioButton protocolTransitionRadioButton;
     private JRadioButton constrainedProxyRadioButton;
     private JPanel authenticatedUserPanel;
     private JLabel servicePrincipalLabel;
+    private JLabel passwordLabel;
     private final InputValidator inputValidator;
 
     public KerberosAuthenticationDialog(final Frame owner, final KerberosAuthenticationAssertion assertion){
@@ -80,8 +80,9 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
 
         useConfiguredCredentialsRadioButton.addChangeListener(enableDisableComponentsListener);
         inputValidator.constrainTextFieldToBeNonEmpty(gatewayAccountNameLabel.getText(), gatewayAccountName, null);
-        inputValidator.constrainTextFieldToBeNonEmpty(authenticatedUserLabel.getText(), authenticatedUserTextField, null );
+        inputValidator.constrainTextFieldToBeNonEmpty(specifyUserRadioButton.getText(), authenticatedUserTextField, null );
         inputValidator.constrainTextFieldToBeNonEmpty(servicePrincipalLabel.getText(), servicePrincipalTextField, null);
+        inputValidator.ensureComboBoxSelection(passwordLabel.getText(), securePasswordComboBox);
         inputValidator.attachToButton(getOkButton(), super.createOkAction());
 
         RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
@@ -107,8 +108,6 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         lastAuthenticatedUserRadioButton.setEnabled(protocolTransitionRadioButton.isSelected());
         specifyUserRadioButton.setEnabled(protocolTransitionRadioButton.isSelected());
         authenticatedUserTextField.setEnabled(specifyUserRadioButton.isSelected() && protocolTransitionRadioButton.isSelected());
-
-        authenticatedUserLabel.setEnabled(specifyUserRadioButton.isSelected() && protocolTransitionRadioButton.isSelected());
         authenticatedUserPanel.setEnabled(protocolTransitionRadioButton.isSelected());
 
     }
@@ -129,6 +128,9 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
                     enableDisableComponents();
                     DialogDisplayer.pack(KerberosAuthenticationDialog.this);
                 }
+                else {
+                    securePasswordComboBox.setSelectedItem(null);
+                }
             }
         });
     }
@@ -148,7 +150,12 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         useGatewayKeytabRadioButton.setSelected(assertion.isKrbUseGatewayKeytab());
         useConfiguredCredentialsRadioButton.setSelected(!assertion.isKrbUseGatewayKeytab());
         gatewayAccountName.setText(assertion.getKrbConfiguredAccount());
-        securePasswordComboBox.setSelectedSecurePassword(assertion.getKrbSecurePasswordReference());
+        if(securePasswordComboBox.containsItem(assertion.getKrbSecurePasswordReference())) {
+            securePasswordComboBox.setSelectedSecurePassword(assertion.getKrbSecurePasswordReference());
+        }
+        else {
+            securePasswordComboBox.setSelectedItem(null);
+        }
         protocolTransitionRadioButton.setSelected(assertion.isS4U2Self());
         constrainedProxyRadioButton.setSelected(assertion.isS4U2Proxy());
         lastAuthenticatedUserRadioButton.setSelected(assertion.isLastAuthenticatedUser());

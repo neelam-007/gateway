@@ -23,7 +23,7 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
     protected boolean krbDelegatedAuthentication = true;
     protected boolean krbUseGatewayKeytab = true;
     protected String krbConfiguredAccount;
-    protected long krbSecurePasswordReference;
+    protected long krbSecurePasswordReference = -1L;
     protected boolean s4U2Self;
     protected boolean s4U2Proxy;
 

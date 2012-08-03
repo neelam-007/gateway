@@ -71,4 +71,13 @@ public class SecurePasswordComboBox extends JComboBox {
             }
         }
     }
+
+    public boolean containsItem(long oid) {
+        for(int i = 0; i< securePasswords.size(); i++) {
+            if(securePasswords.get(i).getOid() == oid) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

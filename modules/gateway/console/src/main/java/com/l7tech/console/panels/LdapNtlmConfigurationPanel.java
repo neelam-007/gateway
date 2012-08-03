@@ -56,6 +56,7 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
     private JLabel domainNetbiosNameLabel;
     private JLabel hostNetbiosNameLabel;
     private JLabel serverNameLabel;
+    private JLabel servicePasswordLabel;
 
     private boolean isValid = false;
 
@@ -93,7 +94,7 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
 
     @Override
     public boolean canTest() {
-        return true;
+        return false;
     }
 
     @Override
@@ -131,11 +132,17 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
         }
         if(props.containsKey("service.passwordOid")) {
             SecurePasswordComboBox securePasswordComboBox = (SecurePasswordComboBox)passwordComboBox;
+            long oid = -1L;
             try {
-                long oid = Long.parseLong(props.remove("service.passwordOid"));
-                securePasswordComboBox.setSelectedSecurePassword(oid);
+               oid = Long.parseLong(props.remove("service.passwordOid"));
             } catch (NumberFormatException e) {
-                //TODO: display error
+                //this shouldn't happen; swallow the exception
+            }
+            if(oid != -1L && securePasswordComboBox.containsItem(oid)) {
+                securePasswordComboBox.setSelectedSecurePassword(oid);
+            }
+            else {
+                securePasswordComboBox.setSelectedItem(null);
             }
         }
         if(props.containsKey("domain.dns.name")) {
@@ -251,6 +258,14 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
         inputValidator.constrainTextFieldToBeNonEmpty(serviceAccountLabel.getText(), serviceAccountTextField, null) ;
         inputValidator.constrainTextFieldToBeNonEmpty(domainNetbiosNameLabel.getText(), domainNetbiosTextField, null);
         inputValidator.constrainTextFieldToBeNonEmpty(hostNetbiosNameLabel.getText(), hostNetbiosTextField, null);
+        inputValidator.ensureComboBoxSelection(servicePasswordLabel.getText(), passwordComboBox);
+
+        passwordComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableAndDisableComponents();
+            }
+        });
 
         enableNtlmCheckBox.addActionListener(new ActionListener() {
             @Override
@@ -411,6 +426,9 @@ public class LdapNtlmConfigurationPanel extends IdentityProviderStepPanel {
                 if ( password != null ) {
                     password.getName();
                     passwordComboBox.setSelectedSecurePassword( password.getOid() );
+                }
+                else {
+                    passwordComboBox.setSelectedItem(null);
                 }
             }
         });
