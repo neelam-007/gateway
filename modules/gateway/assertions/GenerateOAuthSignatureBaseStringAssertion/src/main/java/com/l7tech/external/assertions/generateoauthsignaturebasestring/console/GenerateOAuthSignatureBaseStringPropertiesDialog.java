@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.generateoauthsignaturebasestring.console;
 
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.generateoauthsignaturebasestring.GenerateOAuthSignatureBaseStringAssertion;
@@ -33,7 +34,6 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
     private JPanel clientPanel;
     private JLabel oauthVersionLabel;
     private InputValidator validators;
-    private InputValidator.ValidationRule consumerKeyRule;
     private InputValidator.ValidationRule authHeaderRule;
 
     public GenerateOAuthSignatureBaseStringPropertiesDialog(final Window owner, final GenerateOAuthSignatureBaseStringAssertion assertion) {
@@ -48,6 +48,7 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
         validators = new InputValidator(this, getTitle());
         validators.constrainTextFieldToBeNonEmpty("Request URL", requestUrlTextField, null);
         validators.addRule(new NonEmptyEditableComboBoxRule("HTTP Method", methodComboBox));
+        validators.addRule(new QueryStringConsumerKeyRule());
         targetVariablePanel.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(final ChangeEvent e) {
@@ -80,13 +81,6 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
         }
         authHeaderTextField.setEnabled(serverRadioButton.isSelected() && authHeaderCheckBox.isSelected());
         oauthVersionLabel.setEnabled(clientRadioButton.isSelected() && oauthVersionCheckBox.isSelected());
-
-        if (clientRadioButton.isSelected()) {
-            consumerKeyRule = validators.constrainTextFieldToBeNonEmpty("oauth_consumer_key", oauthConsumerKeyTextField, null);
-        } else {
-            validators.removeRule(consumerKeyRule);
-            consumerKeyRule = null;
-        }
 
         if (serverRadioButton.isSelected() && authHeaderCheckBox.isSelected()) {
             authHeaderRule = validators.constrainTextFieldToBeNonEmpty("Authorization Header", authHeaderTextField, null);
@@ -159,6 +153,18 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
             value = textField.getText().trim();
         }
         return value;
+    }
+
+    private class QueryStringConsumerKeyRule implements InputValidator.ValidationRule {
+        @Override
+        public String getValidationError() {
+            String error = null;
+            if(clientRadioButton.isSelected() && queryStringTextField.getText().trim().isEmpty() &&
+                    oauthConsumerKeyTextField.getText().isEmpty()){
+                error = "Must specify Query string and/or oauth_consumer_key.";
+            }
+            return error;
+        }
     }
 
     private class NonEmptyEditableComboBoxRule implements InputValidator.ValidationRule {

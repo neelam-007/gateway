@@ -29,7 +29,6 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
     public static final String REQUEST_TOKEN = "request token";
     public static final String AUTHORIZED_REQUEST_TOKEN = "authorized request token";
     public static final String ACCESS_TOKEN = "access token";
-    private static final String GENERATE_OAUTH_SIGNATURE_BASE_STRING = "Generate OAuth Signature Base String";
 
     public static enum UsageMode {
         /**
@@ -213,6 +212,7 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
     }
 
     private static final String META_INITIALIZED = GenerateOAuthSignatureBaseStringAssertion.class.getName() + ".metadataInitialized";
+    private static final String GENERATE_OAUTH_SIGNATURE_BASE_STRING = "Generate OAuth Signature Base String";
 
     private UsageMode usageMode = UsageMode.CLIENT;
 

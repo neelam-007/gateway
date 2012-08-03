@@ -15,6 +15,15 @@ public class GenerateOAuthSignatureBaseStringTest {
     }
 
     @Test
+    public void getAssertionNameDoNotDecorate(){
+        assertion.setUsageMode(GenerateOAuthSignatureBaseStringAssertion.UsageMode.SERVER);
+
+        final String assertionName = nodeNameFactory.getAssertionName(assertion, false);
+
+        assertEquals("Generate OAuth Signature Base String", assertionName);
+    }
+
+    @Test
     public void getAssertionNameServer(){
         assertion.setUsageMode(GenerateOAuthSignatureBaseStringAssertion.UsageMode.SERVER);
 
