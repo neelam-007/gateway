@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<exp:Export Version="3.0"
+    xmlns:L7p="http://www.layer7tech.com/ws/policy"
+    xmlns:exp="http://www.layer7tech.com/ws/policy/export" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <exp:References>
+        <ExternalSchema
+            RefType="com.l7tech.console.policy.exporter.ExternalSchemaReference" schemaLocation="http://schemas.xmlsoap.org/soap/envelope/"/>
+        <PrivateKeyReference RefType="com.l7tech.console.policy.exporter.PrivateKeyReference">
+            <IsDefaultKey>false</IsDefaultKey>
+            <KeystoreOID>2</KeystoreOID>
+            <KeyAlias>awskey</KeyAlias>
+        </PrivateKeyReference>
+    </exp:References>
+    <wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+        <wsp:All wsp:Usage="Required">
+            <L7p:SslAssertion/>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="bmFzZzE1"/>
+                <L7p:VariableToSet stringValue="autoScaleGroupName"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="PHNvYXBlbnY6RW52ZWxvcGUgeG1sbnM6c29hcGVudj0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvc29hcC9lbnZlbG9wZS8iPg0KICAgPHNvYXBlbnY6SGVhZGVyLz4NCiAgIDxzb2FwZW52OkJvZHk+DQogICAgICA8bnMxOkRlc2NyaWJlSW5zdGFuY2VzIHhtbG5zOm5zMT0iaHR0cDovL2VjMi5hbWF6b25hd3MuY29tL2RvYy8yMDExLTA3LTE1LyI+DQogICAgICAgICA8bnMxOmluc3RhbmNlc1NldD4gICAgICAgICAgICANCiAgICAgICAgIDwvbnMxOmluc3RhbmNlc1NldD4NCgkgPG5zMTpmaWx0ZXJTZXQ+DQogICAgICAgIAk8bnMxOml0ZW0+DQogICAgICAgICAgCSAgPG5zMTpuYW1lPnRhZzphd3M6YXV0b3NjYWxpbmc6Z3JvdXBOYW1lPC9uczE6bmFtZT4NCgkgICAgICAgICAgPG5zMTp2YWx1ZVNldD4NCgkgICAgICAgICAgICA8bnMxOml0ZW0+DQoJICAgICAgICAgICAgICA8bnMxOnZhbHVlPiR7YXV0b1NjYWxlR3JvdXBOYW1lfTwvbnMxOnZhbHVlPg0KCSAgICAgICAgICAgIDwvbnMxOml0ZW0+DQogICAgICAgIAkgIDwvbnMxOnZhbHVlU2V0Pg0KCSAgICAgICAgPC9uczE6aXRlbT4NCgkgICAgICAgIDxuczE6aXRlbT4NCiAgICAgICAgCSAgPG5zMTpuYW1lPnByaXZhdGUtaXAtYWRkcmVzczwvbnMxOm5hbWU+DQogICAgICAgICAgICAgICAgICA8bnMxOnZhbHVlU2V0Pg0KICAgICAgICAgICAgICAgICAgIDxuczE6aXRlbT4NCiAgICAgICAgICAgICAgICAgICAgIDxuczE6dmFsdWU+JHtyZXF1ZXN0LnRjcC5yZW1vdGVJUH08L25zMTp2YWx1ZT4NCiAgICAgICAgICAgICAgICAgIDwvbnMxOml0ZW0+DQogICAgICAgICAgICAgICAgPC9uczE6dmFsdWVTZXQ+DQogICAgICAgICAgICAgICAgPC9uczE6aXRlbT4NCiAgICAgICAgIDwvbnMxOmZpbHRlclNldD4NCiAgICAgIDwvbnMxOkRlc2NyaWJlSW5zdGFuY2VzPg0KICAgPC9zb2FwZW52OkJvZHk+DQo8L3NvYXBlbnY6RW52ZWxvcGU+"/>
+                <L7p:ContentType stringValue="text/xml; charset=utf-8"/>
+                <L7p:DataType variableDataType="message"/>
+                <L7p:VariableToSet stringValue="InstanceIDOutput"/>
+            </L7p:SetVariable>
+            <L7p:SchemaValidation>
+                <L7p:OtherTargetMessageVariable stringValue="InstanceIDOutput"/>
+                <L7p:ResourceInfo globalResourceInfo="included">
+                    <L7p:Id stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                </L7p:ResourceInfo>
+                <L7p:Target target="OTHER"/>
+                <L7p:ValidationTarget validationTarget="ENVELOPE"/>
+            </L7p:SchemaValidation>
+            <L7p:AuditDetailAssertion>
+                <L7p:Detail stringValueReference="inline"><![CDATA[your request came from:
+${request.tcp.remoteIP}
+
+you sent:
+${InstanceIDOutput.mainpart}]]></L7p:Detail>
+            </L7p:AuditDetailAssertion>
+            <L7p:WssSignElement>
+                <L7p:KeyAlias stringValue="awskey"/>
+                <L7p:NonDefaultKeystoreId longValue="2"/>
+                <L7p:OtherTargetMessageVariable stringValue="InstanceIDOutput"/>
+                <L7p:Target target="OTHER"/>
+                <L7p:UsesDefaultKeyStore booleanValue="false"/>
+                <L7p:XpathExpression xpathExpressionValue="included">
+                    <L7p:Expression stringValue="/s:Envelope/s:Body"/>
+                    <L7p:Namespaces mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="s"/>
+                            <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                        </L7p:entry>
+                    </L7p:Namespaces>
+                </L7p:XpathExpression>
+            </L7p:WssSignElement>
+            <L7p:AddWssTimestamp>
+                <L7p:ExpiryMilliseconds longValue="300000"/>
+                <L7p:KeyAlias stringValue="awskey"/>
+                <L7p:NonDefaultKeystoreId longValue="2"/>
+                <L7p:OtherTargetMessageVariable stringValue="InstanceIDOutput"/>
+                <L7p:Target target="OTHER"/>
+                <L7p:UsesDefaultKeyStore booleanValue="false"/>
+            </L7p:AddWssTimestamp>
+            <L7p:CustomizeErrorResponse>
+                <L7p:ExtraHeaders nameValuePairArray="included"/>
+            </L7p:CustomizeErrorResponse>
+            <L7p:WsSecurity>
+                <L7p:OtherTargetMessageVariable stringValue="InstanceIDOutput"/>
+                <L7p:Target target="OTHER"/>
+            </L7p:WsSecurity>
+            <L7p:HttpRoutingAssertion>
+                <L7p:FailOnErrorStatus booleanValue="false"/>
+                <L7p:ProtectedServiceUrl stringValue="https://ec2.amazonaws.com"/>
+                <L7p:ProxyPassword stringValueNull="null"/>
+                <L7p:ProxyUsername stringValueNull="null"/>
+                <L7p:RequestHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included">
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="Cookie"/>
+                        </L7p:item>
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:CustomizeValue stringValue="DescribeInstances"/>
+                            <L7p:Name stringValue="SOAPAction"/>
+                            <L7p:UsesCustomizedValue booleanValue="true"/>
+                        </L7p:item>
+                    </L7p:Rules>
+                </L7p:RequestHeaderRules>
+                <L7p:RequestMsgSrc stringValue="InstanceIDOutput"/>
+                <L7p:RequestParamRules httpPassthroughRuleSet="included">
+                    <L7p:ForwardAll booleanValue="true"/>
+                    <L7p:Rules httpPassthroughRules="included"/>
+                </L7p:RequestParamRules>
+                <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included">
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="Set-Cookie"/>
+                        </L7p:item>
+                    </L7p:Rules>
+                </L7p:ResponseHeaderRules>
+                <L7p:SamlAssertionVersion intValue="2"/>
+                <L7p:TlsVersion stringValue="SSLv3"/>
+            </L7p:HttpRoutingAssertion>
+            <L7p:ResponseXpathAssertion>
+                <L7p:VariablePrefix stringValue="IPs"/>
+                <L7p:XpathExpression xpathExpressionValue="included">
+                    <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Body/ns:DescribeInstancesResponse/ns:reservationSet/ns:item/ns:instancesSet/ns:item/ns:privateIpAddress"/>
+                    <L7p:Namespaces mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="ns"/>
+                            <L7p:value stringValue="http://ec2.amazonaws.com/doc/2011-07-15/"/>
+                        </L7p:entry>
+                        <L7p:entry>
+                            <L7p:key stringValue="soapenv"/>
+                            <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                        </L7p:entry>
+                        <L7p:entry>
+                            <L7p:key stringValue="s"/>
+                            <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                        </L7p:entry>
+                    </L7p:Namespaces>
+                </L7p:XpathExpression>
+            </L7p:ResponseXpathAssertion>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="bG9jYWxob3N0"/>
+                <L7p:VariableToSet stringValue="clusterHostname"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="JHtzZWNwYXNzLmNsdXN0ZXJQYXNzd29yZC5wbGFpbnRleHR9"/>
+                <L7p:VariableToSet stringValue="clusterPassword"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="JHtzZWNwYXNzLmRhdGFiYXNlQWRtaW5QYXNzd29yZC5wbGFpbnRleHR9"/>
+                <L7p:VariableToSet stringValue="databaseAdminPassword"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="Z2F0ZXdheQ=="/>
+                <L7p:VariableToSet stringValue="databaseAdminUsername"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="c3NnYXV0b3NjYWxldGVzdC5jOHpweTMweXo5MDAudXMtZWFzdC0xLnJkcy5hbWF6b25hd3MuY29t"/>
+                <L7p:VariableToSet stringValue="databaseHost"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="c3Nn"/>
+                <L7p:VariableToSet stringValue="databaseName"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="JHtzZWNwYXNzLmRhdGFiYXNlTm9kZVBhc3N3b3JkLnBsYWludGV4dH0="/>
+                <L7p:VariableToSet stringValue="databaseNodePassword"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="Z2F0ZXdheQ=="/>
+                <L7p:VariableToSet stringValue="databaseNodeUsername"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="MzMwNg=="/>
+                <L7p:VariableToSet stringValue="databasePort"/>
+            </L7p:SetVariable>
+            <L7p:HardcodedResponse>
+                <L7p:Base64ResponseBody stringValue="PHNvYXA6RW52ZWxvcGUgeG1sbnM6c29hcD0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvc29hcC9lbnZlbG9wZS8iPgogIDxzb2FwOkhlYWRlci8+CiAgPHNvYXA6Qm9keT4KICAgIDxuczE6Y3JlYXRlTm9kZSB4bWxuczpuczE9Imh0dHA6Ly9ub2RlLmFwaS5tYW5hZ2VtZW50LnNlcnZlci5sN3RlY2guY29tLyI+CiAgICAgIDxhcmcwIHhtbG5zOm5zMj0iaHR0cDovL25vZGUuYXBpLm1hbmFnZW1lbnQuc2VydmVyLmw3dGVjaC5jb20vIj4KICAgICAgICA8bmFtZT5kZWZhdWx0PC9uYW1lPgogICAgICAgIDxjbHVzdGVySG9zdG5hbWU+JHtjbHVzdGVySG9zdG5hbWV9PC9jbHVzdGVySG9zdG5hbWU+CiAgICAgICAgPGNsdXN0ZXJQYXNzcGhyYXNlPiR7Y2x1c3RlclBhc3N3b3JkfTwvY2x1c3RlclBhc3NwaHJhc2U+CiAgICAgICAgPGRhdGFiYXNlcz4KICAgICAgICAgIDxkYXRhYmFzZT4KICAgICAgICAgICAgPGNsdXN0ZXJUeXBlPlNUQU5EQUxPTkU8L2NsdXN0ZXJUeXBlPgogICAgICAgICAgICA8ZGF0YWJhc2VBZG1pblBhc3N3b3JkPiR7ZGF0YWJhc2VBZG1pblBhc3N3b3JkfTwvZGF0YWJhc2VBZG1pblBhc3N3b3JkPgogICAgICAgICAgICA8ZGF0YWJhc2VBZG1pblVzZXJuYW1lPiR7ZGF0YWJhc2VBZG1pblVzZXJuYW1lfTwvZGF0YWJhc2VBZG1pblVzZXJuYW1lPgogICAgICAgICAgICA8aG9zdD4ke2RhdGFiYXNlSG9zdH08L2hvc3Q+CiAgICAgICAgICAgIDxuYW1lPiR7ZGF0YWJhc2VOYW1lfTwvbmFtZT4KICAgICAgICAgICAgPG5vZGVQYXNzd29yZD4ke2RhdGFiYXNlTm9kZVBhc3N3b3JkfTwvbm9kZVBhc3N3b3JkPgogICAgICAgICAgICA8bm9kZVVzZXJuYW1lPiR7ZGF0YWJhc2VOb2RlVXNlcm5hbWV9PC9ub2RlVXNlcm5hbWU+CiAgICAgICAgICAgIDxwb3J0PiR7ZGF0YWJhc2VQb3J0fTwvcG9ydD4KICAgICAgICAgICAgPHR5cGU+Tk9ERV9BTEw8L3R5cGU+CiAgICAgICAgICAgIDx2ZW5kb3I+TVlTUUw8L3ZlbmRvcj4KICAgICAgICAgIDwvZGF0YWJhc2U+CiAgICAgICAgPC9kYXRhYmFzZXM+CiAgICAgICAgPGVuYWJsZWQ+dHJ1ZTwvZW5hYmxlZD4KICAgICAgPC9hcmcwPgogICAgPC9uczE6Y3JlYXRlTm9kZT4KICA8L3NvYXA6Qm9keT4KPC9zb2FwOkVudmVsb3BlPg=="/>
+            </L7p:HardcodedResponse>
+        </wsp:All>
+    </wsp:Policy>
+</exp:Export>
