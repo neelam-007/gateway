@@ -77,10 +77,11 @@ public class AuditSearchCriteriaSelector implements ExpandVariables.Selector<Aud
             return new Selection(criteria.entityId==null?"%":criteria.entityId);
         } else if( name.equals("requestId")){
             return new Selection(criteria.requestId==null?"%":criteria.requestId);
-        }else if (name.equals("messageId")){
+        } else if (name.equals("messageId")){
             return new Selection(criteria.messageId);
-        }
-        else {
+        } else if( name.equals("operation")){
+            return new Selection(criteria.operation==null?"%":criteria.operation);
+        } else {
             return null;
         }
 

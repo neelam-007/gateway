@@ -149,6 +149,9 @@ public class AuditRecordManagerImpl
                 if (hasRequestIdProperty) {
                     projectionList.add(Property.forName(PROP_REQUEST_ID));
                 }
+                if (criteria.operation !=null ) {
+                    projectionList.add(Property.forName(PROP_OPERATION));
+                }
 
                 if (criteria.messageId != null) {
                     //ensure distinct results only - only an issue when joining with audit_detail
@@ -485,6 +488,7 @@ public class AuditRecordManagerImpl
     private static final String PROP_SIGNATURE = "signature";
     private static final String PROP_SERVICE_NAME = "name";
     private static final String PROP_REQUEST_ID = "strRequestId";
+    private static final String PROP_OPERATION = "operationName";
     private static final String PROP_NAME = "name";
     private static final String PROP_PROV_ID = "identityProviderOid";
     private static final String PROP_USER_ID = "userId";
@@ -561,6 +565,7 @@ public class AuditRecordManagerImpl
         }
 
         if (criteria.requestId != null) criterion.add(Restrictions.ilike(PROP_REQUEST_ID, criteria.requestId));
+        if (criteria.operation != null) criterion.add(Restrictions.ilike(PROP_OPERATION, criteria.operation));
         if (criteria.serviceName != null) criterion.add(Restrictions.ilike(PROP_SERVICE_NAME, criteria.serviceName));
 
         if (criteria.message != null) criterion.add(Restrictions.ilike(PROP_MESSAGE, criteria.message));

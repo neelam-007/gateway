@@ -33,6 +33,7 @@ public final class LogRequest {
     private final Long entityId; // null = any
     private int retrievedLogCount;
     private final boolean getFromPolicy;
+    private final String operation;
     private final Map<String, Long> nodeIdToStartMsg = new HashMap<String, Long>();
     private final Map<String, Long> nodeIdToEndMsg = new HashMap<String, Long>();
 
@@ -54,6 +55,7 @@ public final class LogRequest {
         entityClassName = builder.entityClassName;
         entityId = builder.entityId;
         getFromPolicy = builder.getFromPolicy;
+        operation = builder.operation;
         retrievedLogCount = 0;
     }
 
@@ -75,6 +77,7 @@ public final class LogRequest {
         private String paramValue; //not currently supported. Will be ignored.
         private String entityClassName; // null = any
         private Long entityId; // null = any
+        private String operation = null;
 
         public Builder(){
         }
@@ -155,6 +158,11 @@ public final class LogRequest {
 
         public Builder entityId(Long value) {
             entityId = value;
+            return this;
+        }
+
+        public Builder operation(String value) {
+            operation = value;
             return this;
         }
 
@@ -338,4 +346,9 @@ public final class LogRequest {
     public boolean isGetFromPolicy() {
         return getFromPolicy;
     }
+
+    public String getOperation() {
+        return operation;
+    }
+
 }

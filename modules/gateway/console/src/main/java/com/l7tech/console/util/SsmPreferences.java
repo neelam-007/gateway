@@ -95,6 +95,7 @@ public interface SsmPreferences {
     String AUDIT_WINDOW_ENTITY_TYPE = "auditWindow.search.entityType";
     String AUDIT_WINDOW_ENTITY_ID = "auditWindow.search.entityId";
     String AUDIT_WINDOW_USE_LOOKUP_POLICY = "auditWindow.search.useAuditLookup";
+    String AUDIT_WINDOW_OPERATION = "auditWindow.search.operation";
 
     int MAX_RIGHT_COMMENT_SIZE = 4000;
     int MAX_LEFT_COMMENT_SIZE = 100;

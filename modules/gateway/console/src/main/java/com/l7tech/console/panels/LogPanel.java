@@ -246,6 +246,9 @@ public class LogPanel extends JPanel {
     // Entity ID
     private Long entityId;
 
+    // Operation
+    private String operation;
+
     // Use audit lookup policy
     private boolean getFromPolicy = false;
 
@@ -579,6 +582,7 @@ public class LogPanel extends JPanel {
 
         controlPanel.entityIdTextField.setText("");
         controlPanel.auditCodeTextField.setText("");
+        controlPanel.operationTextField.setText("");
         controlPanel.entityTypeComboBox.setSelectedItem(EntityType.ANY.getName());
     }
 
@@ -628,7 +632,8 @@ public class LogPanel extends JPanel {
             (! isNullOrEmpty(requestId)) ||
             (! "<any>".equals(entityTypeName)) ||
             (entityId != null) ||
-            (messageId != null)  ;
+            (messageId != null) ||
+            (! isNullOrEmpty(operation))  ;
     }
 
     /**
@@ -708,6 +713,8 @@ public class LogPanel extends JPanel {
 
             controlPanel.requestIdLabel.setEnabled(messageAuditSearchEnabled);
             controlPanel.requestIdTextField.setEnabled(messageAuditSearchEnabled);
+            controlPanel.operationLabel.setEnabled(messageAuditSearchEnabled);
+            controlPanel.operationTextField.setEnabled(messageAuditSearchEnabled);
 
             // prevent auto refresh from happening if user switches to time range instead of duration
             if(controlPanel.durationButton.isSelected()){
@@ -790,6 +797,10 @@ public class LogPanel extends JPanel {
         } else {
             entityId = null;
         }
+
+
+        // Special case: if the operation search field is disabled, this means the search criterion is not applied.
+        operation = controlPanel.operationTextField.isEnabled()? controlPanel.operationTextField.getText() : null;
     }
 
     /**
@@ -831,6 +842,8 @@ public class LogPanel extends JPanel {
             String entityIdTxt = entityId.equals(Long.MIN_VALUE)? preferences.getString(SsmPreferences.AUDIT_WINDOW_ENTITY_ID) : entityId.toString();
             controlPanel.entityIdTextField.setText(entityIdTxt);
         }
+
+        controlPanel.operationTextField.setText(operation);
 
         controlPanel.viaAuditLookupPolicyRadioButton.setSelected(getFromPolicy && controlPanel.viaAuditLookupPolicyRadioButton.isEnabled());
         enableOrDisableComponents();
@@ -966,6 +979,11 @@ public class LogPanel extends JPanel {
             entityId = null; // null = Any
         }
 
+        final String operationProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_OPERATION);
+        if (requestIdProperty != null) {
+            operation = operationProperty;
+        }
+
         final String useLookupString = preferences.getString(SsmPreferences.AUDIT_WINDOW_USE_LOOKUP_POLICY);
         if(useLookupString!=null){
             getFromPolicy = Boolean.valueOf(useLookupString);
@@ -1036,6 +1054,11 @@ public class LogPanel extends JPanel {
             preferences.putProperty(SsmPreferences.AUDIT_WINDOW_ENTITY_ID, entityIdPreference);
         } else {
             preferences.remove(SsmPreferences.AUDIT_WINDOW_ENTITY_ID);
+        }
+        if (operation != null) {
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_OPERATION, operation);
+        } else {
+            preferences.remove(SsmPreferences.AUDIT_WINDOW_OPERATION);
         }
         preferences.putProperty(SsmPreferences.AUDIT_WINDOW_USE_LOOKUP_POLICY,Boolean.toString(controlPanel.viaAuditLookupPolicyRadioButton.isSelected()));
     }
@@ -2232,6 +2255,7 @@ public class LogPanel extends JPanel {
                 paramValue(paramValue).
                 entityClassName(entityTypeName == null? null : getAllEntities().get(entityTypeName)).
                 entityId(entityId).
+                operation(operation).
                 getFromPolicy(getFromPolicy).
                 build();
 
@@ -2281,6 +2305,7 @@ public class LogPanel extends JPanel {
                 entityClassName(entityTypeName == null? null : getAllEntities().get(entityTypeName)).
                 entityId(entityId).
                 getFromPolicy(getFromPolicy).
+                operation(operation).
                 build();
 
             //save the log request
@@ -2748,5 +2773,8 @@ public class LogPanel extends JPanel {
         private JRadioButton internalDatabaseRadioButton;
         private JRadioButton viaAuditLookupPolicyRadioButton;
         private JButton configureAuditLookupPolicyButton;
+        private JPanel messagePropertySearchingPane;
+        private JTextField operationTextField;
+        private JLabel operationLabel;
     }
 }

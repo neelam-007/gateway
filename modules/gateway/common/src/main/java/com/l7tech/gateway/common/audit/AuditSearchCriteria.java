@@ -48,6 +48,7 @@ public final class AuditSearchCriteria implements Serializable {
         serviceName = builder.serviceName;
         message = builder.message;
         requestId = builder.requestId;
+        operation = builder.operation;
         user = builder.user; // For ESM Audits Page
         userName = builder.userName;
         userIdOrDn = builder.userIdOrDn;
@@ -133,6 +134,7 @@ public final class AuditSearchCriteria implements Serializable {
     public final Integer messageId; // null = any
     public final String entityClassName; // Initial value: null, which means Entity Type Search Criterion is not set.
     public final Long entityId; // null = any
+    public final String operation;
     public final boolean getFromPolicy;
 
     /**
@@ -189,6 +191,9 @@ public final class AuditSearchCriteria implements Serializable {
         //construct request ID
         if (requestId != null) fullDetailsOnSearchCriteria.append("{Request ID: " + requestId + "} ");
 
+        //construct operation
+        if (operation != null) fullDetailsOnSearchCriteria.append("{Operation: " + operation + "} ");
+
         //construct service name
         if (serviceName != null) fullDetailsOnSearchCriteria.append("{Service name: " + serviceName + "} ");
 
@@ -239,6 +244,9 @@ public final class AuditSearchCriteria implements Serializable {
 
         if ((requestId == null && criteria.requestId != null)
             || (requestId != null && !requestId.equals(criteria.requestId))) return false;
+
+        if ((operation == null && criteria.operation != null)
+                || (operation != null && !operation.equals(criteria.operation))) return false;
 
         if ((serviceName == null && criteria.serviceName != null)
             || (serviceName != null && !serviceName.equals(criteria.serviceName))) return false;
@@ -292,6 +300,7 @@ public final class AuditSearchCriteria implements Serializable {
         private Integer messageId; // null == any
         private String entityClassName; // null == any
         private Long entityId; // null == any
+        private String operation = null; // null == any
 
         public Builder() {
             nodeIdToStartMsg = Collections.emptyMap();
@@ -311,6 +320,7 @@ public final class AuditSearchCriteria implements Serializable {
             messageId(logRequest.getMessageId());
             entityClassName(logRequest.getEntityClassName());
             entityId(logRequest.getEntityId());
+            operation(logRequest.getOperation());
             getFromPolicy(logRequest.isGetFromPolicy());
             //String and Long are immutable - can just add all to Map.
             nodeIdToStartMsg = Collections.unmodifiableMap(new HashMap<String, Long>(logRequest.getNodeIdToStartMsg()));
@@ -378,6 +388,16 @@ public final class AuditSearchCriteria implements Serializable {
             }
             return this;
         }
+
+        public Builder operation(String value) {
+            if (value != null && value.length() > 0) {
+                operation = value.replace("*", "%");//translate any wildcard chars from GUI to mysql format
+            } else {
+                operation = null;
+            }
+            return this;
+        }
+
 
         public Builder user(User user) {
             this.user = user;

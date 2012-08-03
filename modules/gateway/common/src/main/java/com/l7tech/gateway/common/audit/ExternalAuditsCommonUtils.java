@@ -80,6 +80,7 @@ public class ExternalAuditsCommonUtils {
                         "and lower("+ getColumnQuery("message",dbType)+ ") like lower(${audit.recordQuery.message}) " +
                         "and lower("+ getColumnQuery("entity_class",dbType)+ ") like lower(${audit.recordQuery.entityClassName}) " +
                         "and "+ getColumnQuery("entity_id",dbType)+ " like ${audit.recordQuery.entityId} " +
+                        "and lower("+ getColumnQuery("operation_name",dbType)+ ") like lower(${audit.recordQuery.operation}) " +
                         "and lower("+ getColumnQuery("request_id",dbType)+ ") like lower(${audit.recordQuery.requestId}) order by time desc "+lookupPostfix(dbType);
     }
 
@@ -98,6 +99,7 @@ public class ExternalAuditsCommonUtils {
                         "and lower("+ getColumnQuery("message",dbType)+ ") like lower(${audit.recordQuery.message}) " +
                         "and lower("+ getColumnQuery("entity_class",dbType)+ ") like lower(${audit.recordQuery.entityClassName}) " +
                         "and "+ getColumnQuery("entity_id",dbType)+ " like ${audit.recordQuery.entityId}  " +
+                        "and lower("+ getColumnQuery("operation_name",dbType)+ ") like lower(${audit.recordQuery.operation}) " +
                         "and lower("+ getColumnQuery("request_id",dbType)+ ") like lower(${audit.recordQuery.requestId}) order by time desc "+lookupPostfix(dbType);
     }
 
