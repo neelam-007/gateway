@@ -246,7 +246,11 @@ if [ -z "${CONNTRACK}" ]; then
 fi
 
 # Chown any files that have been left behind by a previous installation
-[ ! -d /opt/SecureSpan/Appliance/config ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/config
+# except the files in orig_conf_files that needs to keep their attributes
+# this fix should be later replaced by a fix using tar archives for the files in
+# orig_conf_files
+[ ! -d /opt/SecureSpan/Appliance/config ] || find /opt/SecureSpan/Appliance/config -name orig_conf_files -prune -o -print0 | xargs -0 chown layer7.layer7
+#[ ! -d /opt/SecureSpan/Appliance/config ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/config
 
 %post
 [ ! -f %{prefix}/config/appliance-upgrade.log ] || mv %{prefix}/config/appliance-upgrade.log %{prefix}/config/logs/appliance-upgrade.log 2>/dev/null
