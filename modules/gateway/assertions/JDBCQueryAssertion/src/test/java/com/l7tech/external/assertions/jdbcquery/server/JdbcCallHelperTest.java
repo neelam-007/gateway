@@ -144,7 +144,7 @@ public class JdbcCallHelperTest {
         assertEquals("function result", obj);
 
         when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyOutParameterResults());
-        query = "CALL GetSampleOut";
+        query = "CALL GetSampleOut    ()";
         results = jdbcHelper.queryForRowSet(query, new Object[0]);
         rowSet = results.get(0);
         rowSet.next();//out parameter result
@@ -153,7 +153,7 @@ public class JdbcCallHelperTest {
         assertEquals("output param1", obj);
 
         when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyEmptyResult());
-        query = "CALL GetSamples3";//no results
+        query = "CALL GetSamples3()";//no results
         results = jdbcHelper.queryForRowSet(query, new Object[0]);
         assertEquals(0, results.size());
     }

@@ -206,7 +206,7 @@ public class JdbcCallHelper {
         List<String> values = new ArrayList<String>();
         final String name = getName(query);
         int marker = query.indexOf(name, 1) + name.length();
-        if (marker < query.length()) marker++;
+        //if (marker < query.length()) marker++;
         String query2 = query.substring(marker).trim();
         if(query2.startsWith("(")){
             if(!query2.endsWith(")")){
@@ -506,7 +506,8 @@ public class JdbcCallHelper {
 
         @Override
         public boolean first() throws InvalidResultSetAccessException {
-            throw new UnsupportedOperationException("first not implemented in OutParameterResult.");
+            cursor = 0;
+            return true;
         }
 
         @Override

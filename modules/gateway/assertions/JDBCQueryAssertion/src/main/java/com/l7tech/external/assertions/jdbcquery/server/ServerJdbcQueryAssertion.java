@@ -28,6 +28,13 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     private final String[] variablesUsed;
     private final JdbcQueryingManager jdbcQueryingManager;
     private final static String EMPTY_STRING = "";
+    private final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\">";
+    private final static String XML_RESULT_TAG_CLOSE = "</L7j:jdbcQueryResult>";
+    private final static String XML_RESULT_COL_OPEN = "<L7j:col ";
+    private final static String XML_RESULT_COL_CLOSE = "</L7j:col>";
+    private final static String XML_RESULT_ROW_OPEN = "<L7j:row>";
+    private final static String XML_RESULT_ROW_CLOSE = "</L7j:row>";
+    private final static String XML_CDATA_TAG_OPEN = "<![CDATA[";
 
     public ServerJdbcQueryAssertion(JdbcQueryAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
@@ -42,6 +49,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
 
+        final StringBuffer xmlResult = new StringBuffer(XML_RESULT_TAG_OPEN);
         final List<Object> preparedStmtParams = new ArrayList<Object>();
         try {
             final String plainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), preparedStmtParams, context, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(), getAudit());
@@ -68,16 +76,25 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                     logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
                     return AssertionStatus.FAILED;
                 }
+                if(assertion.isGenerateXmlResult()){
+                    buildXmlResultString((Map<String,List<Object>>) result, xmlResult);
+                }
             } else if (result instanceof List) {
                 List<SqlRowSet> listOfRowSet = (List<SqlRowSet>) result;
                 int affectedRows = 0;
                 if (listOfRowSet.size() == 1) {
                     affectedRows = setContextVariables(listOfRowSet.get(0), context, EMPTY_STRING);
+                    if(assertion.isGenerateXmlResult()){
+                        buildXmlResultString(0, listOfRowSet.get(0), xmlResult);
+                    }
                 } else {
                     int resultCount = 1;
                     for (SqlRowSet rowSet : listOfRowSet) {
                         String resultCountVariable = JdbcQueryAssertion.VARIABLE_RESULTSET + (resultCount++);
                         affectedRows += setContextVariables(rowSet, context, resultCountVariable);
+                        if(assertion.isGenerateXmlResult()){
+                            buildXmlResultString(resultCount-1, rowSet, xmlResult);
+                        }
                     }
                     if (resultCount > 1) {
                         context.setVariable(getVariablePrefix(context) + "." + JdbcQueryAssertion.MULTIPLE_VARIABLE_COUNT, affectedRows);
@@ -99,15 +116,79 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, e.getMessage());
             return AssertionStatus.FAILED;
         }
+        if (assertion.isGenerateXmlResult()) {
+            xmlResult.append(XML_RESULT_TAG_CLOSE);
+            context.setVariable(getVariablePrefix(context) + assertion.VARIABLE_XML_RESULT, xmlResult.toString());
+        }
         return AssertionStatus.NONE;
     }
 
     /**
-     * To make sure we don't break any calls to the old signature
+     * process stored procedure results
      */
-    int setContextVariables(Map<String,List<Object>> resultSet, PolicyEnforcementContext context) throws SQLException {
-        if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
+    void buildXmlResultString(int resultSetNumber, final SqlRowSet resultSet, final StringBuffer xmlResult) {
+        Map<String, String> newNamingMap = getNewMapping(resultSet);
+        int maxRecords = assertion.getMaxRecords();
+        int row = 0;
+        resultSet.first();
+        StringBuffer records = new StringBuffer();
+        while (resultSet.next() && row < maxRecords) {
+            records.append(XML_RESULT_ROW_OPEN);
+            for (String columnName : newNamingMap.keySet()) {
+                records.append(XML_RESULT_COL_OPEN + " name=\"" + columnName + "\" type=\"" + resultSet.getObject(columnName).getClass().getName() + "\">");
+                records.append(handleSpecialXmlChar(resultSet.getObject(columnName).toString()));
+                records.append(XML_RESULT_COL_CLOSE);
+            }
+            records.append(XML_RESULT_ROW_CLOSE);
+        }
+        if (resultSetNumber > 0) {
+            xmlResult.append("<resultSet" + resultSetNumber + ">");
+            xmlResult.append(records);
+            xmlResult.append("</resultSet" + resultSetNumber + ">");
+        } else {
+            xmlResult.append(records);
+        }
+    }
 
+    /**
+     * process standard SQL select results
+     */
+    void buildXmlResultString(Map<String, List<Object>> resultSet, final StringBuffer xmlResult) {
+        Map<String, String> newNamingMap = getNewMapping(resultSet);
+        int row = 0;
+        //try to check how many rows we need
+        for (String columnName : resultSet.keySet()) {
+            row = resultSet.get(columnName).toArray().length;
+            break;
+        }
+        StringBuffer records = new StringBuffer();
+        for (int i = 0; i < row; i++) {
+            records.append(XML_RESULT_ROW_OPEN);
+            for (String columnName : newNamingMap.keySet()) {
+                records.append(XML_RESULT_COL_OPEN + " name=\"" + columnName + "\" type=\"" + resultSet.get(columnName).get(i).getClass().getName() + "\">");
+                records.append(handleSpecialXmlChar(resultSet.get(columnName).get(i).toString()));
+                records.append(XML_RESULT_COL_CLOSE);
+            }
+            records.append(XML_RESULT_ROW_CLOSE);
+        }
+        xmlResult.append(records);
+    }
+    
+    String handleSpecialXmlChar(String inputStr){
+        if(!inputStr.startsWith(XML_CDATA_TAG_OPEN) && (inputStr.indexOf('>') >=0 || inputStr.indexOf('<') >=0 || inputStr.indexOf('&') >=0)){
+            StringBuffer sb = new StringBuffer(XML_CDATA_TAG_OPEN);
+            sb.append(inputStr);
+            sb.append("]]>");
+            return sb.toString();
+        } else {
+            return inputStr;
+        }
+    }
+
+    /**
+     * build newNameMapping from map type resultSet
+     */
+    Map<String, String> getNewMapping(Map<String, List<Object>> resultSet) {
         Map<String, String> namingMap = assertion.getNamingMap();
         Map<String, String> newNamingMap = new TreeMap<String, String>();
 
@@ -119,6 +200,36 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                 newNamingMap.put(columnName, columnName);
             }
         }
+        return newNamingMap;
+    }
+
+    /**
+     * build newNameMapping from SqlRowSet type resultSet
+     */
+    Map<String, String> getNewMapping(SqlRowSet resultSet) {
+        Map<String, String> namingMap = assertion.getNamingMap();
+        Map<String, String> newNamingMap = new TreeMap<String, String>();
+
+        // Get mappings of column names and context variable names
+        SqlRowSetMetaData metaData = resultSet.getMetaData();
+        for (int i = 1; i <= metaData.getColumnCount(); i++) {
+            String columnName = metaData.getColumnName(i);
+            if (namingMap.containsKey(columnName)) {
+                newNamingMap.put(columnName, namingMap.get(columnName));
+            } else {
+                newNamingMap.put(columnName, columnName);
+            }
+        }
+        return newNamingMap;
+    }
+
+    /**
+     * To make sure we don't break any calls to the old signature
+     */
+    int setContextVariables(Map<String,List<Object>> resultSet, PolicyEnforcementContext context) throws SQLException {
+        if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
+
+        Map<String, String> newNamingMap = getNewMapping(resultSet);
 
         // Assign the results to context variables
         String varPrefix = getVariablePrefix(context);
@@ -137,19 +248,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     int setContextVariables(SqlRowSet resultSet, PolicyEnforcementContext context, final String resultSetPrefix) throws SQLException {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
 
-        Map<String, String> namingMap = assertion.getNamingMap();
-        Map<String, String> newNamingMap = new TreeMap<String, String>();
-
-        // Get mappings of column names and context variable names
-        SqlRowSetMetaData metaData = resultSet.getMetaData();
-        for (int i = 1; i <= metaData.getColumnCount(); i++) {
-            String columnName = metaData.getColumnName(i);
-            if (namingMap.containsKey(columnName)) {
-                newNamingMap.put(columnName, namingMap.get(columnName));
-            } else {
-                newNamingMap.put(columnName, columnName);
-            }
-        }
+        Map<String, String> newNamingMap = getNewMapping(resultSet);
 
         // Get results
         Map<String, List<Object>> results = new HashMap<String, List<Object>>(newNamingMap.size());

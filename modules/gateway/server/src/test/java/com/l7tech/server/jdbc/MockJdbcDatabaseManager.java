@@ -281,7 +281,8 @@ public class MockJdbcDatabaseManager {
 
         @Override
         public boolean first() throws InvalidResultSetAccessException {
-            throw new UnsupportedOperationException("first not implemented in MockJdbcDatabaseManager.");
+            cursor = 0;
+            return true;
         }
 
         @Override

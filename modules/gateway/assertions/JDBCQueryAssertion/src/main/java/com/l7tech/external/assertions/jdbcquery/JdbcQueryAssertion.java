@@ -27,6 +27,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     public static final String MULTIPLE_VARIABLE_COUNT = "multipleResultSet.queryresult.count";
     public static final String DEFAULT_VARIABLE_PREFIX = "jdbcQuery";
     public static final String ASSERTION_SHORT_NAME = "Perform JDBC Query";
+    public static final String VARIABLE_XML_RESULT = ".xmlResult";
 
     private static final String META_INITIALIZED = JdbcQueryAssertion.class.getName() + ".metadataInitialized";
 
@@ -38,6 +39,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     private boolean assertionFailureEnabled = true;
     private Map<String, String> namingMap = new TreeMap<String, String>();
     private List<String> resolveAsObjectList = new ArrayList<String>();
+    private boolean generateXmlResult = false;
 
     private boolean allowMultiValuedVariables = false;
 
@@ -137,6 +139,14 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         this.allowMultiValuedVariables = allowMultiValuedVariables;
     }
 
+    public boolean isGenerateXmlResult() {
+        return generateXmlResult;
+    }
+
+    public void setGenerateXmlResult(boolean generateXmlResult) {
+        this.generateXmlResult = generateXmlResult;
+    }
+
     // hidden properties
     public List<String> getResolveAsObjectList() {
         return resolveAsObjectList;
@@ -156,6 +166,10 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
             String varName = namingMap.get(key);
             boolean multi_valued = !key.endsWith(VARIABLE_COUNT);
             varMeta.add(new VariableMetadata(variablePrefix + "." + varName, false, multi_valued, null, false, DataType.STRING));
+        }
+        
+        if(generateXmlResult){
+            varMeta.add(new VariableMetadata(variablePrefix + VARIABLE_XML_RESULT, false, false, null, false, DataType.STRING));
         }
         return varMeta.toArray(new VariableMetadata[varMeta.size()]);
     }

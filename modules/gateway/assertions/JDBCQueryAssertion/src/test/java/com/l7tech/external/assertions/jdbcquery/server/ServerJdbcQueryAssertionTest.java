@@ -4,20 +4,28 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.Message;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.jdbc.JdbcQueryUtils;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.jdbc.MockJdbcDatabaseManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.util.MockInjector;
+import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.CollectionUtils;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.internal.runners.JUnit38ClassRunner;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -26,9 +34,12 @@ import java.sql.SQLException;
 import java.util.*;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.when;
 
 /**
  * @author ghuang
+ * @author rraquepo
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "/com/l7tech/server/resources/testApplicationContext.xml")
@@ -268,4 +279,135 @@ public class ServerJdbcQueryAssertionTest {
         response.initialize( XmlUtil.stringAsDocument(res));
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
     }
+
+    //really test from ServerJdbcQueryAssertion
+    //by @author rraquepo
+
+    private ServerPolicyFactory serverPolicyFactory;
+    @Mock
+    private JdbcQueryingManager jdbcQueryingManager;
+
+    @BugNumber(12512)
+    @Test
+    public void testXmlResult() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        final AssertionRegistry assertionRegistry = new AssertionRegistry();
+        assertionRegistry.afterPropertiesSet();
+        serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockResults());
+        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("jdbcQueryingManager", jdbcQueryingManager);
+        }}));
+        serverPolicyFactory.setApplicationContext(applicationContext);
+        assertion.setSqlQuery("SELECT * FROM myTest");
+        assertion.setGenerateXmlResult(true);
+        assertion.setConnectionName("mockDb");
+
+        //test/touch SELECT query related code
+        ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        sass.checkRequest(peCtx);
+        String xmlResult = peCtx.getVariable("jdbcQuery.xmlResult").toString();
+        assertNotNull(xmlResult);
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"id\" type=\"java.lang.Integer\">1</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">name1</L7j:col><L7j:col  name=\"value\" type=\"java.lang.String\">value1</L7j:col></L7j:row></L7j:jdbcQueryResult>";
+        assertEquals(expected, xmlResult);
+        Object[] idObj = (Object[]) peCtx.getVariable("jdbcQuery.id");
+        Object[] nameObj = (Object[]) peCtx.getVariable("jdbcQuery.name");
+        Object[] valueObj = (Object[]) peCtx.getVariable("jdbcQuery.value");
+        assertEquals(1, idObj[0]);
+        assertEquals("name1", nameObj[0]);
+        assertEquals("value1", valueObj[0]);
+
+        //test/touch SELECT query related code, with special character result
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockSpecialResults());
+        applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("jdbcQueryingManager", jdbcQueryingManager);
+        }}));
+        serverPolicyFactory.setApplicationContext(applicationContext);
+        sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        sass.checkRequest(peCtx);
+        xmlResult = peCtx.getVariable("jdbcQuery.xmlResult").toString();
+        assertNotNull(xmlResult);
+        expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"id\" type=\"java.lang.Integer\">2</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\"><![CDATA[name2]]></L7j:col><L7j:col  name=\"value\" type=\"java.lang.String\"><![CDATA[value2&'<\">]]></L7j:col></L7j:row></L7j:jdbcQueryResult>";
+        assertEquals(expected, xmlResult);
+        idObj = (Object[]) peCtx.getVariable("jdbcQuery.id");
+        nameObj = (Object[]) peCtx.getVariable("jdbcQuery.name");
+        valueObj = (Object[]) peCtx.getVariable("jdbcQuery.value");
+        assertEquals(2, idObj[0]);
+        assertEquals("<![CDATA[name2]]>", nameObj[0]);
+        assertEquals("value2&'<\">", valueObj[0]);
+
+        //test/touch Stored Procedure related code
+        assertion.setSqlQuery("CALL mockStoredProcedure()");
+        assertion.setMaxRecords(12);
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockSqlRowResults());
+        applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("jdbcQueryingManager", jdbcQueryingManager);
+        }}));
+        serverPolicyFactory.setApplicationContext(applicationContext);
+        sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        sass.checkRequest(peCtx);
+        xmlResult = peCtx.getVariable("jdbcQuery.xmlResult").toString();
+        assertNotNull(xmlResult);
+        expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">45</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Production</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">John</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">26</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Sales</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Darcy</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">22</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Admin</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Alice</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">32</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Production</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Mary</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">50</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Marketing</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Oliver</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">40</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Development</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Bob</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">38</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Development</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Ahmad</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">19</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Admin</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Amy</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">25</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Sales</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Carmen</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">28</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Sales</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">David</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">37</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Marketing</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Carlo</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">29</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Production</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Kan</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row></L7j:jdbcQueryResult>";
+        assertEquals(expected, xmlResult);
+        // Check context variables creation
+        assertArrayEquals("All names matched", MockJdbcDatabaseManager.MOCK_NAMES, (Object[])peCtx.getVariable("jdbcQuery.name"));
+        assertArrayEquals("All departments matched", MockJdbcDatabaseManager.MOCK_DEPTS, (Object[])peCtx.getVariable("jdbcQuery.department"));
+        assertArrayEquals("All sexes matched", MockJdbcDatabaseManager.MOCK_SEXES, (Object[])peCtx.getVariable("jdbcQuery.sex"));
+        assertArrayEquals("All ages matched", MockJdbcDatabaseManager.MOCK_AGES, (Object[])peCtx.getVariable("jdbcQuery.age"));
+
+        //generateXmlResult is false
+        assertion.setGenerateXmlResult(false);
+        sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        peCtx = makeContext("<myrequest/>", "<myresponse/>");//fresh context
+        sass.checkRequest(peCtx);
+        try {
+            peCtx.getVariable("jdbcQuery.xmlResult");
+            fail("Should have failed");
+        } catch (NoSuchVariableException e) {
+            //expected
+        }
+    }
+
+    private Object getMockResults() {
+        Map<String, List<Object>> row1 = new HashMap<String, List<Object>>();
+        List<Object> list1 = new ArrayList<Object>();
+        List<Object> list2 = new ArrayList<Object>();
+        List<Object> list3 = new ArrayList<Object>();
+        list1.add(1);
+        list2.add("name1");
+        list3.add("value1");
+        row1.put("id", list1);
+        row1.put("name", list2);
+        row1.put("value", list3);
+        return row1;
+    }
+
+    private Object getMockSpecialResults() {
+        Map<String, List<Object>> row1 = new HashMap<String, List<Object>>();
+        List<Object> list1 = new ArrayList<Object>();
+        List<Object> list2 = new ArrayList<Object>();
+        List<Object> list3 = new ArrayList<Object>();
+        list1.add(2);
+        list2.add("<![CDATA[name2]]>");
+        list3.add("value2&'<\">");
+        row1.put("id", list1);
+        row1.put("name", list2);
+        row1.put("value", list3);
+        return row1;
+    }
+
+    private Object getMockSqlRowResults() {
+        MockJdbcDatabaseManager dbm = new MockJdbcDatabaseManager();
+        List<SqlRowSet> list = new ArrayList<SqlRowSet>();
+        list.add(dbm.getMockSqlRowSet());
+        return list;
+    }
+
 }
