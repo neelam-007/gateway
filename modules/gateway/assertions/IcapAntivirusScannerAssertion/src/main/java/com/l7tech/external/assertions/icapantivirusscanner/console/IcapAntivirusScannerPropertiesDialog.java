@@ -5,24 +5,27 @@ import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion;
+import com.l7tech.external.assertions.icapantivirusscanner.IcapServiceParameter;
 import com.l7tech.external.assertions.icapantivirusscanner.server.ServerIcapAntivirusScannerAssertion;
+import com.l7tech.gui.SimpleTableModel;
+import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.Functions;
 import com.l7tech.util.ValidationUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+
+import static com.l7tech.util.Functions.propertyTransform;
 
 /**
  * <p>
@@ -42,6 +45,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
 
     private static final String PARAMETER_NAME = "Parameter Name";
     private static final String PARAMETER_VALUE = "Parameter Value";
+    private static final String PARAMETER_TYPE = "Parameter Type";
 
     private JPanel contentPane;
     private JButton addServer;
@@ -60,7 +64,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
     private TargetVariablePanel varPrefixPanel;
 
     private DefaultListModel serverListModel;
-    private DefaultTableModel serviceParamTableModel;
+    private SimpleTableModel<IcapServiceParameter> serviceParamTableModel;
 
     public IcapAntivirusScannerPropertiesDialog(final Window owner, final IcapAntivirusScannerAssertion assertion) {
         super(IcapAntivirusScannerAssertion.class, owner, DIALOG_TITLE, true);
@@ -143,7 +147,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
                 Utilities.centerOnScreen(dspd);
                 dspd.setVisible(true);
                 if (dspd.isConfirmed()) {
-                    serviceParamTableModel.addRow(new String[]{dspd.getParameterName(), dspd.getParameterValue()});
+                    serviceParamTableModel.addRow(dspd.getParameter());
                 }
             }
         });
@@ -162,7 +166,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
                 int selectedIndex = serviceParams.getSelectedRow();
                 if (selectedIndex >= 0) {
                     int index = serviceParams.getRowSorter().convertRowIndexToModel(selectedIndex);
-                    serviceParamTableModel.removeRow(index);
+                    serviceParamTableModel.removeRowAt(index);
                 }
             }
         });
@@ -205,17 +209,15 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         final int selectedIndex = serviceParams.getSelectedRow();
         if (selectedIndex >= 0) {
             int index = serviceParams.getRowSorter().convertRowIndexToModel(selectedIndex);
-            String name = serviceParamTableModel.getValueAt(index, 0).toString();
-            String value = serviceParamTableModel.getValueAt(index, 1).toString();
             IcapServerParametersDialog dspd = new IcapServerParametersDialog(owner, DIALOG_TITLE_EDIT_PARAMETER, serviceParamTableModel);
             dspd.pack();
             Utilities.centerOnScreen(dspd);
-            dspd.setParameterName(name);
-            dspd.setParameterValue(value);
+
+            IcapServiceParameter param = serviceParamTableModel.getRowObject(index);
+            dspd.setParameter(param);
             dspd.setVisible(true);
             if (dspd.isConfirmed()) {
-                serviceParamTableModel.setValueAt(dspd.getParameterName(), index, 0);
-                serviceParamTableModel.setValueAt(dspd.getParameterValue(), index, 1);
+                serviceParamTableModel.setRowObject(index, dspd.getParameter());
             }
         }
     }
@@ -235,13 +237,15 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         for (String icd : assertion.getIcapServers()) {
             serverListModel.addElement(icd);
         }
-        serviceParamTableModel = new DefaultTableModel() {
-            @Override
-            public boolean isCellEditable(final int row, final int column) {
-                return false;
-            }
-        };
-        serviceParamTableModel.setColumnIdentifiers(new String[]{PARAMETER_NAME, PARAMETER_VALUE});
+        serviceParamTableModel = TableUtil.configureTable(
+                serviceParams,
+                // Update column indexes above if changing or reordering (COLUMN_FILE_NAME, etc)
+                TableUtil.column(PARAMETER_NAME, 40, 80, 999999, stringProperty("name")),
+                TableUtil.column(PARAMETER_VALUE, 40, 80, 999999, stringProperty("value")),
+                TableUtil.column(PARAMETER_TYPE, 40, 80, 999999, stringProperty("type"))
+        );
+
+
         TableRowSorter sorter = new TableRowSorter<TableModel>(serviceParamTableModel);
         sorter.setSortsOnUpdates(true);
         sorter.setComparator(0, new Comparator<String>() {
@@ -261,8 +265,8 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         readTimeoutField.setText(assertion.getReadTimeout());
         maxMimeDepth.setValue(assertion.getMaxMimeDepth());
 
-        for (Map.Entry<String, String> ent : assertion.getServiceParameters().entrySet()) {
-            serviceParamTableModel.addRow(new String[]{ent.getKey(), ent.getValue()});
+        for (IcapServiceParameter row : assertion.getParameters()) {
+            serviceParamTableModel.addRow(row);
         }
 
         varPrefixPanel.setAssertion( assertion, getPreviousAssertion() );
@@ -290,13 +294,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         for (int i = 0; i < serverListModel.size(); ++i) {
             assertion.getIcapServers().add((String) serverListModel.get(i));
         }
-        Map<String, String> serviceParams = new HashMap<String, String>();
-        for (int i = 0; i < serviceParamTableModel.getRowCount(); ++i) {
-            String key = (String) serviceParamTableModel.getValueAt(i, 0);
-            String value = (String) serviceParamTableModel.getValueAt(i, 1);
-            serviceParams.put(key, value);
-        }
-        assertion.setServiceParameters(serviceParams);
+        assertion.setParameters(serviceParamTableModel.getRows());
         assertion.setConnectionTimeout(connectionTimeoutField.getText());
         assertion.setReadTimeout(readTimeoutField.getText());
         assertion.setMaxMimeDepth(Integer.valueOf(maxMimeDepth.getModel().getValue().toString()));
@@ -311,5 +309,9 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
     @Override
     protected JPanel createPropertyPanel() {
         return contentPane;
+    }
+
+    private static Functions.Unary<String, IcapServiceParameter> stringProperty(final String propName) {
+        return propertyTransform( IcapServiceParameter.class, propName );
     }
 }

@@ -49,7 +49,7 @@
           </grid>
         </children>
       </grid>
-      <grid id="e3588" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="e3588" layout-manager="GridLayoutManager" row-count="6" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -59,7 +59,7 @@
         <children>
           <component id="62f59" class="javax.swing.JLabel" binding="paramNameLabel">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/external/assertions/icapantivirusscanner/console/resources/IcapServerResources" key="param.label.name"/>
@@ -67,7 +67,7 @@
           </component>
           <component id="4147d" class="javax.swing.JLabel" binding="paramValueLabel">
             <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/external/assertions/icapantivirusscanner/console/resources/IcapServerResources" key="param.label.value"/>
@@ -75,7 +75,7 @@
           </component>
           <component id="471c" class="javax.swing.JTextField" binding="paramNameField">
             <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="9" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
@@ -83,14 +83,52 @@
           </component>
           <component id="be77d" class="javax.swing.JTextField" binding="paramValueField">
             <constraints>
-              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+              <grid row="1" column="1" row-span="2" col-span="1" vsize-policy="0" hsize-policy="6" anchor="9" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
             <properties/>
           </component>
+          <component id="74236" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="2" column="0" row-span="2" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/icapantivirusscanner/console/resources/IcapServerResources" key="param.label.type"/>
+            </properties>
+          </component>
+          <component id="54f3f" class="javax.swing.JRadioButton" binding="header">
+            <constraints>
+              <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <selected value="false"/>
+              <text resource-bundle="com/l7tech/external/assertions/icapantivirusscanner/console/resources/IcapServerResources" key="param.type.header"/>
+            </properties>
+          </component>
+          <component id="682c2" class="javax.swing.JRadioButton" binding="query">
+            <constraints>
+              <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <selected value="true"/>
+              <text resource-bundle="com/l7tech/external/assertions/icapantivirusscanner/console/resources/IcapServerResources" key="param.type.query"/>
+            </properties>
+          </component>
+          <vspacer id="f39f5">
+            <constraints>
+              <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+            </constraints>
+          </vspacer>
         </children>
       </grid>
     </children>
   </grid>
+  <buttonGroups>
+    <group name="paramTypeGroup">
+      <member id="682c2"/>
+      <member id="682c2"/>
+      <member id="54f3f"/>
+    </group>
+  </buttonGroups>
 </form>

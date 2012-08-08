@@ -1,11 +1,12 @@
 package com.l7tech.external.assertions.icapantivirusscanner.console;
 
+import com.l7tech.external.assertions.icapantivirusscanner.IcapServiceParameter;
+import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -24,13 +25,17 @@ public class IcapServerParametersDialog extends JDialog {
     private JTextField paramValueField;
     private JLabel paramNameLabel;
     private JLabel paramValueLabel;
+    private JRadioButton header;
+    private JRadioButton query;
 
     private boolean confirmed;
 
-    private String previousName = null;
-    private DefaultTableModel serviceParamTableModel;
+    private SimpleTableModel<IcapServiceParameter> serviceParamTableModel;
 
-    public IcapServerParametersDialog(final Window owner, final String title, final DefaultTableModel serviceParamTableModel) {
+    private IcapServiceParameter previousParameter;
+    private IcapServiceParameter parameter;
+
+    public IcapServerParametersDialog(final Window owner, final String title, final SimpleTableModel<IcapServiceParameter> serviceParamTableModel) {
         super(owner, title);
         initializeComponents();
         setContentPane(contentPane);
@@ -64,10 +69,10 @@ public class IcapServerParametersDialog extends JDialog {
         });
     }
 
-    private boolean serviceParamExists(@NotNull final String name){
+    private boolean serviceParamExists(@NotNull final IcapServiceParameter parameter){
         for (int i = 0; i < serviceParamTableModel.getRowCount(); ++i) {
-            String tableValue = (String) serviceParamTableModel.getValueAt(i, 0);
-            if (name.equalsIgnoreCase(tableValue)) {
+            final IcapServiceParameter p = serviceParamTableModel.getRowObject(i);
+            if (p.equals(parameter)) {
                 return true;
             }
         }
@@ -82,24 +87,23 @@ public class IcapServerParametersDialog extends JDialog {
                     JOptionPane.ERROR_MESSAGE, null);
             return;
         }
-        if (serviceParamExists(getParameterName())) {
-            //adding a new param
-            if (previousName == null) {
+
+        IcapServiceParameter parameter = new IcapServiceParameter(
+                paramNameField.getText().trim(),
+                paramValueField.getText().trim(),
+                header.isSelected() ? IcapServiceParameter.HEADER: IcapServiceParameter.QUERY
+        );
+
+        if (serviceParamExists(parameter)) {
+            if(previousParameter == null || !previousParameter.equals(parameter)){
                 DialogDisplayer.showMessageDialog(this,
-                    "The parameter '" + getParameterName() + "' already exists.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE, null);
-                return;
-            }
-            //editting an existing param
-            else if (!previousName.equalsIgnoreCase(getParameterName())) {
-                DialogDisplayer.showMessageDialog(this,
-                    "The parameter '" + getParameterName() + "' already exists.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE, null);
+                        "The parameter '" + paramNameField.getText().trim() + "' already exists.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE, null);
                 return;
             }
         }
+        this.parameter = parameter;
         confirmed = true;
         dispose();
     }
@@ -116,32 +120,17 @@ public class IcapServerParametersDialog extends JDialog {
         return confirmed;
     }
 
-    /**
-     * @return the parameter name.
-     */
-    public String getParameterName() {
-        return paramNameField.getText().trim();
+    public IcapServiceParameter getParameter(){
+        return parameter;
     }
 
-    /**
-     * @return the parameter value.
-     */
-    public String getParameterValue() {
-        return paramValueField.getText().trim();
-    }
-
-    /**
-     * @param parameterName the parameter name to set.
-     */
-    public void setParameterName(String parameterName) {
-        this.paramNameField.setText(parameterName);
-        previousName = parameterName;
-    }
-
-    /**
-     * @param parameterValue the parameter value to set.
-     */
-    public void setParameterValue(String parameterValue) {
-        this.paramValueField.setText(parameterValue);
+    public void setParameter(final IcapServiceParameter parameter){
+        this.previousParameter = new IcapServiceParameter(parameter.getName(), parameter.getValue(), parameter.getType());
+        this.parameter = parameter;
+        paramNameField.setText(parameter.getName());
+        paramValueField.setText(parameter.getValue());
+        boolean isHeader = parameter.getType().equals(IcapServiceParameter.HEADER);
+        header.setSelected(isHeader);
+        query.setSelected(!isHeader);
     }
 }

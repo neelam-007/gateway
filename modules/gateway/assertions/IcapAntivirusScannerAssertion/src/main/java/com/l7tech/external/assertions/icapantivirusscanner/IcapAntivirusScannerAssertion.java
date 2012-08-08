@@ -8,12 +8,9 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.wsp.CollectionTypeMapping;
-import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
-import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.policy.wsp.*;
 import com.l7tech.util.Functions;
 import com.l7tech.util.InetAddressUtil;
-import com.l7tech.util.Triple;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
@@ -94,7 +91,10 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
 
     private List<String> icapServers = new ArrayList<String>();
 
+    //deprecated
     private Map<String, String> serviceParameters = new HashMap<String, String>();
+
+    private List<IcapServiceParameter> parameters = new ArrayList<IcapServiceParameter>();
 
     private boolean continueOnVirusFound = false;
 
@@ -160,6 +160,8 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         //add custom type mapping
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
         othermappings.add(new CollectionTypeMapping(List.class, String.class, ArrayList.class, "icapConnections"));
+        othermappings.add(new CollectionTypeMapping(List.class, IcapServiceParameter.class, ArrayList.class, "serviceParameters"));
+        othermappings.add(new BeanTypeMapping(IcapServiceParameter.class, "parameter"));
 
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
 
@@ -242,7 +244,20 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
      * @param serviceParameters the server parameters to use.
      */
     public void setServiceParameters(final Map<String, String> serviceParameters) {
-        this.serviceParameters = serviceParameters;
+        //for backward compatibility
+        for(Map.Entry<String, String> ent : serviceParameters.entrySet()){
+            //default to query as it was being added in the query string previously
+            IcapServiceParameter p = new IcapServiceParameter(ent.getKey(), ent.getValue(), "Query");
+            parameters.add(p);
+        }
+    }
+
+    public List<IcapServiceParameter> getParameters() {
+        return parameters;
+    }
+
+    public void setParameters(final List<IcapServiceParameter> parameters) {
+        this.parameters = parameters;
     }
 
     /**
@@ -297,6 +312,7 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         copy.setReadTimeout(readTimeout);
         copy.setConnectionTimeout(connectionTimeout);
         copy.setVariablePrefix(variablePrefix);
+        copy.setParameters(parameters);
         return copy;
     }
 
@@ -370,8 +386,8 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
                 vars.withExpressions(matcher.group(1));
             }
         }
-        for (Map.Entry<String, String> ent : serviceParameters.entrySet()) {
-            vars.withExpressions(ent.getKey(), ent.getValue());
+        for(IcapServiceParameter p : parameters){
+            vars.withExpressions(p.getName(), p.getValue());
         }
         return vars;
     }

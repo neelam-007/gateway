@@ -10,6 +10,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion;
+import com.l7tech.external.assertions.icapantivirusscanner.IcapServiceParameter;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -39,9 +40,11 @@ import org.springframework.context.ApplicationContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -217,11 +220,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                 final String portText = String.valueOf(port);
                 final String hostAndPort = String.format("%s:%s", hostname, portText);
 
-                String serviceName = getServiceName(url.getPath());
-                String query = url.getQuery();
-                if(query != null && !query.isEmpty()){
-                    serviceName = serviceName + "?" + query;
-                }
+                String serviceName = getServiceName(url.getPath()) + getServiceQueryString(context, url.getQuery());
                 //its possible the context variable itself has a leading '/' - if this is the case it will show in logs and the user will need to fix the variable value.
 
                 Channel channel = getChannelForEndpoint(hostAndPort);
@@ -417,11 +416,45 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
 
     private Map<String, String> getHeaders(final PolicyEnforcementContext context){
         Map<String, String> ret = new HashMap<String, String>();
-        for (Map.Entry<String, String> ent : assertion.getServiceParameters().entrySet()) {
-            String key = getContextVariableValue(context, ent.getKey());
-            String value = getContextVariableValue(context, ent.getValue());
-            ret.put(key, value);
+        for (IcapServiceParameter p : assertion.getParameters()) {
+            if(p.getType().equals(IcapServiceParameter.HEADER)){
+                String key = getContextVariableValue(context, p.getName());
+                String value = getContextVariableValue(context, p.getValue());
+                ret.put(key, value);
+            }
         }
         return ret;
+    }
+
+    private String getServiceQueryString(final PolicyEnforcementContext context, final String query) {
+        StringBuilder sb = new StringBuilder();
+        if(query != null && !query.isEmpty()){
+            if(query.startsWith("?")){
+                sb.append(query).append("&");
+            }
+            else {
+                sb.append("?").append(query).append("&");
+            }
+        }
+        else {
+            sb.append("?");
+        }
+        try {
+            StringBuilder s = new StringBuilder();
+            for (IcapServiceParameter p : assertion.getParameters()) {
+                if(p.getType().equals(IcapServiceParameter.QUERY)){
+                    String key = getContextVariableValue(context, p.getName());
+                    String value = getContextVariableValue(context, p.getValue());
+                    s.append(URLEncoder.encode(key, URL_ENCODING)).append("=").append(URLEncoder.encode(value, URL_ENCODING)).append("&");
+                }
+            }
+            if(s.length() > 0){
+                s = s.delete(s.length() - 1, s.length());
+            }
+            sb.append(s);
+        } catch (UnsupportedEncodingException e) {
+            logAndAudit(AssertionMessages.ICAP_UNSUPPORTED_ENCODING, ExceptionUtils.getMessage(e));
+        }
+        return sb.toString();
     }
 }
