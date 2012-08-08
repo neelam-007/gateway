@@ -2,9 +2,9 @@
 <ivy-module version="2.0">
 	<info organisation="com.l7tech.ddtek"
 		module="L7oracle"
-		revision="4.2.1"
+		revision="5.0.1"
 		status="release"
-		publication="20111206155635"
+		publication="201208071510606"
 		default="true"
 	/>
 	<configurations>
