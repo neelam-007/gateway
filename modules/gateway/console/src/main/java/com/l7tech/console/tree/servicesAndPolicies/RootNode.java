@@ -13,13 +13,14 @@ import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
-import static com.l7tech.policy.PolicyType.*;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
 import java.io.Serializable;
 import java.util.*;
 import java.util.logging.Logger;
+
+import static com.l7tech.policy.PolicyType.*;
 
 /**
  * This class IS the root node in the services and policies tree; it loads all children shown in this tree and has no
@@ -193,6 +194,7 @@ public final class RootNode extends FolderNode {
         new PublishServiceAction(),
         new CreateServiceWsdlAction(),
         new PublishNonSoapServiceAction(),
+        new PublishRestServiceAction(),
         new PublishInternalServiceAction(),
         new CreatePolicyAction(),
         new CreateFolderAction(getFolder(), this, Registry.getDefault().getFolderAdmin()),

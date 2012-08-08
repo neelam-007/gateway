@@ -158,6 +158,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ChangePasswordAction changePasswordAction = null;
     private PublishServiceAction publishServiceAction = null;
     private PublishNonSoapServiceAction publishNonSoapServiceAction = null;
+    private PublishRestServiceAction publishRestServiceAction = null;
     private PublishInternalServiceAction publishInternalServiceAction;
     private CreateServiceWsdlAction createServiceAction = null;
     private CreatePolicyAction createPolicyAction;
@@ -993,6 +994,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getCreateServiceAction());
             menu.add(getCreatePolicyAction());
             menu.add(getPublishNonSoapServiceAction());
+            menu.add(getPublishRestServiceAction());
             menu.add(getPublishInternalServiceAction());
             menu.addSeparator();
 
@@ -1351,6 +1353,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         return publishNonSoapServiceAction;
     }
 
+    private PublishRestServiceAction getPublishRestServiceAction() {
+        if (publishRestServiceAction != null) {
+            return publishRestServiceAction;
+        }
+        publishRestServiceAction = new PublishRestServiceAction();
+        disableUntilLogin(publishRestServiceAction);
+        return publishRestServiceAction;
+    }
 
     /**
      * @return the <code>Action</code> for the create service
