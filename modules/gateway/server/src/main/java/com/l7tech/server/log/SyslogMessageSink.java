@@ -1,5 +1,6 @@
 package com.l7tech.server.log;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.server.ServerConfig;
@@ -35,6 +36,9 @@ class SyslogMessageSink extends MessageSinkSupport {
      */
     public static final String LOG_PATTERN_NO_HOST = "<{2}>{3} {7}[{8}]: {9}";
 
+    // TODO temporary code for CBP, look to replace with something more configurable
+    private static final String SYSTEM_PROP_SYSLOG_CBP_VERBOSE = "com.l7tech.server.log.syslogCbpVerbose";
+
     @Override
     public void close() throws IOException {
         syslog.close();
@@ -60,12 +64,21 @@ class SyslogMessageSink extends MessageSinkSupport {
 
     @Override
     void processMessage(final MessageCategory category, final LogRecord record) {
+        // TODO temporary code for CBP, look to replace with something more configurable
+        String formattedMessage;
+        if (ConfigFactory.getBooleanProperty(SYSTEM_PROP_SYSLOG_CBP_VERBOSE, false)) {
+            formattedMessage = getFormattedMessage(getConfiguration().getName() + ": " + record.getLoggerName() + ": " +
+                    record.getMessage(), record.getResourceBundle(), record.getParameters());
+        } else {
+            formattedMessage = getFormattedMessage(record.getMessage(), record.getResourceBundle(), record.getParameters());
+        }
+
         syslog.log(
                 getSeverity(record.getLevel()),
                 process,
                 record.getThreadID(),
                 record.getMillis(),
-                getFormattedMessage(record.getLoggerName()+": "+record.getMessage(), record.getResourceBundle(), record.getParameters())
+                formattedMessage
         );
     }
 
