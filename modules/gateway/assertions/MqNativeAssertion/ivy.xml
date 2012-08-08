@@ -14,11 +14,14 @@
 	<dependencies>
         <!-- Don't package jars with modular assertion aar (due to licensing restriction) -->
         <dependency org="com.ibm.mq" name="com.ibm.mq" rev="7.1.0.1" force="true" conf="compile"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.headers" rev="7.1.0.1" force="true" conf="compile"/>
         <dependency org="com.ibm.mq" name="com.ibm.mq.jmqi" rev="7.1.0.1" force="true" conf="compile"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.pcf" rev="7.1.0.1" force="true" conf="compile"/>
 
         <!-- Package MQ jars with modular assertion aar (make sure there's no licensing restriction)
         <dependency org="com.ibm.mq" name="com.ibm.mq" rev="7.1.0.1" force="true" conf="core"/>
         <dependency org="com.ibm.mq" name="com.ibm.mq.jmqi" rev="7.1.0.1" force="true" conf="core"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.pcf" rev="7.1.0.1" force="true" conf="core"/>
 
         <dependency org="com.ibm.mq" name="com.ibm.mq.commonservices" rev="7.1.0.1" force="true" conf="runtime"/>
         <dependency org="com.ibm.mq" name="com.ibm.mq.headers" rev="7.1.0.1" force="true" conf="runtime"/>

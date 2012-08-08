@@ -7,6 +7,7 @@ Jar sources (as of 2012/06/05):
                 com.ibm.mq.commonservices.jar
                 com.ibm.mq.headers.jar
                 com.ibm.mq.jmq.jar
+                com.ibm.mq.pcf.jar
                 com.ibm.mqjms.jar
                 connector.jar
                 dhbcore.jar

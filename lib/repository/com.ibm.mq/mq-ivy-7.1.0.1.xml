@@ -16,6 +16,7 @@
         <dependency org="com.ibm.mq" name="com.ibm.mq" rev="7.1.0.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
         <dependency org="com.ibm.mq" name="com.ibm.mqjms" rev="7.1.0.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
         <dependency org="com.ibm.mq" name="com.ibm.mq.jmqi" rev="7.1.0.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.pcf" rev="7.1.0.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 
         <dependency org="com.ibm.mq" name="com.ibm.mq.commonservices" rev="7.1.0.1" force="true" conf="optional->compile(*),master(*);runtime->runtime(*)"/>
         <dependency org="com.ibm.mq" name="com.ibm.mq.headers" rev="7.1.0.1" force="true" conf="optional->compile(*),master(*);runtime->runtime(*)"/>
