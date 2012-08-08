@@ -38,5 +38,5 @@ CREATE TABLE audit_detail  (
     message_id int NOT NULL,
     exception_message CLOB,
     properties CLOB,
-    CONSTRAINT audit_oidk FOREIGN KEY (audit_oid) REFERENCES audit_main (id) ON DELETE CASCADE
+    FOREIGN KEY (audit_oid) REFERENCES audit_main (id) ON DELETE CASCADE
 );
