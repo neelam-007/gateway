@@ -887,7 +887,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
 
             if (psurl == null) {
-                logger.info("assertion's url was null, falling back on service's url value");
+                logAndAudit(AssertionMessages.HTTPROUTE_BAD_ORIGINAL_URL);
                 if (service == null) {
                     throw new MalformedURLException("Routing assertion specified no URL, and no resolved service is available to provide one");
                 }
