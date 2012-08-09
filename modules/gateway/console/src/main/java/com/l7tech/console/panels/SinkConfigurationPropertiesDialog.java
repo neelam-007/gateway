@@ -252,6 +252,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         if (nameField.getText().length() < 1)
             nameField.requestFocusInWindow();
         Utilities.setMinimumSize(this);
+        disableTabsForSSPC();
     }
 
     /**
@@ -321,6 +322,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                     for(Object sel :filtersList.getSelectedValues() )
                         filterList.remove(sel);
                     filtersList.setModel( Utilities.listModel( filterList ) );
+                    disableTabsForSSPC();
                 }
             }
         }));
@@ -343,6 +345,23 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         // Description field must not be longer than 1000 characters
         ((AbstractDocument)descriptionField.getDocument()).setDocumentFilter(new DocumentSizeFilter(1000));
+    }
+
+    private void disableTabsForSSPC(){
+        boolean found = false;
+        for(FilterInfo fi : filterList){
+            if(fi.filterItemId.equals("SSPC")){
+                found = true;
+                break;
+            }
+        }
+        if(found && filterList.size() == 1){
+            tabbedPane.setEnabledAt(1, false);
+            tabbedPane.setEnabledAt(2, false);
+        }
+        else {
+            enableDisableTabs();
+        }
     }
 
     private void addFilter() {
@@ -371,6 +390,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                         @Override
                         public void run() {
                             filtersList.setModel( Utilities.listModel( filterList ) );
+                            disableTabsForSSPC();
                         }
                     } );
                 }

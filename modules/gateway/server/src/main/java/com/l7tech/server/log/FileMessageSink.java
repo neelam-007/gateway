@@ -95,7 +95,7 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
 
         try {
             String cat = configuration.getCategories();
-            if(cat != null && cat.contains(SinkConfiguration.CATEGORY_SSPC_LOGS)){
+            if(cat != null && cat.equals(SinkConfiguration.CATEGORY_SSPC_LOGS)){
                 filepath = ConfigFactory.getProperty("com.l7tech.server.base") + "/Controller/var/logs";
             }
             String filepat;

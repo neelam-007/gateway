@@ -347,8 +347,8 @@ public class SinkManagerImpl
                         }
                         String cat = sinkConfig.getCategories();
                         boolean skip = false;
-                        if(cat != null && cat.contains(SinkConfiguration.CATEGORY_SSPC_LOGS)){
-                            long toRead = query.isFromEnd() ? logFile.length() - startPoint : logFile.length();
+                        if(cat != null && cat.equals(SinkConfiguration.CATEGORY_SSPC_LOGS)){
+                            long toRead = query.isFromEnd() ? logFile.length() - startPoint : (TruncatingInputStream.DEFAULT_SIZE_LIMIT / 4L);
                             final String[] cmd = new String[]{"sudo", "/opt/SecureSpan/Appliance/libexec/ssg-viewlog.sh",
                                     logFile.getAbsolutePath(),
                                     String.valueOf(startPoint),
@@ -934,7 +934,10 @@ public class SinkManagerImpl
         try {
             switch ( type ) {
                 case FILE:
-                    sink = new FileMessageSink( serverConfig, configuration );
+                    String cat = configuration.getCategories();
+                    if(cat != null && !cat.equals(SinkConfiguration.CATEGORY_SSPC_LOGS)){
+                        sink = new FileMessageSink( serverConfig, configuration );
+                    }
                     break;
                 case SYSLOG:
                     sink = new SyslogMessageSink( serverConfig, configuration, syslogManager );
@@ -1055,14 +1058,14 @@ public class SinkManagerImpl
 
     private String getSinkFilePattern( final SinkConfiguration sinkConfig ) throws IOException {
         String filePattern;
-        if(sinkConfig.isEnabled()){
+        String cat = sinkConfig.getCategories();
+        if(sinkConfig.isEnabled() && !cat.equals(SinkConfiguration.CATEGORY_SSPC_LOGS)){
             MessageSinkSupport sinkSupport = dispatchingSink.getMessageSink(sinkConfig);
             FileMessageSink fileSink = (FileMessageSink)sinkSupport;
             filePattern = fileSink.getFilePattern();
         } else {
             String filepath = sinkConfig.getProperty( "file.logPath" );
-            String cat = sinkConfig.getCategories();
-            if(cat != null && cat.contains(SinkConfiguration.CATEGORY_SSPC_LOGS)){
+            if(cat != null && cat.equals(SinkConfiguration.CATEGORY_SSPC_LOGS)){
                 filepath = ConfigFactory.getProperty("com.l7tech.server.base") + "/Controller/var/logs";
             }
             filePattern = LogUtils.getLogFilePattern(serverConfig, sinkConfig.getName(), filepath, false);
