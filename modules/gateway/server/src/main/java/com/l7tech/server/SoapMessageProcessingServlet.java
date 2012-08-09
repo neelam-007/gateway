@@ -1,7 +1,6 @@
 package com.l7tech.server;
 
 import com.l7tech.common.http.CookieUtils;
-import static com.l7tech.common.http.HttpConstants.*;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpHeaderUtil;
 import com.l7tech.common.io.XmlUtil;
@@ -23,7 +22,6 @@ import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
-import static com.l7tech.server.tomcat.ResponseKillerValve.ATTRIBUTE_FLAG_NAME;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.DelegatingServletInputStream;
@@ -54,9 +52,11 @@ import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static com.l7tech.common.http.HttpConstants.*;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
 import static com.l7tech.server.ServerConfigParams.PARAM_IO_HTTP_RESPONSE_STREAMING;
 import static com.l7tech.server.ServerConfigParams.PARAM_IO_HTTP_RESPONSE_STREAM_UNLIMITED;
+import static com.l7tech.server.tomcat.ResponseKillerValve.ATTRIBUTE_FLAG_NAME;
 import static java.util.Collections.list;
 
 /**
@@ -286,9 +286,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     hresponse.setHeader( HEADER_CONTENT_ENCODING, "gzip");
                     responseos = new GZIPOutputStream(responseos);
                 }
-                boolean destroyAsRead =
-                        !context.isAuditSaveResponse() &&
-                        config.getBooleanProperty( PARAM_IO_HTTP_RESPONSE_STREAMING, true );
+                boolean destroyAsRead = canStreamResponse(context);
                 if ( destroyAsRead && config.getBooleanProperty( PARAM_IO_HTTP_RESPONSE_STREAM_UNLIMITED, true ) ) {
                     // It is safe to clear the response size limit since we're
                     // not reading into memory. If an explicit size limit was
@@ -377,6 +375,15 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } finally {
             context.close();
         }
+    }
+
+    private boolean canStreamResponse(PolicyEnforcementContext context) {
+        // It is OK to stream a response unless it is marked to be saved for auditing,
+        // or response streaming is globally disabled,
+        // or the "original main part" feature is enabled.
+        return !context.isAuditSaveResponse() &&
+                config.getBooleanProperty( PARAM_IO_HTTP_RESPONSE_STREAMING, true ) &&
+               !config.getBooleanProperty( "audit.originalMainPart.enable", false );
     }
 
     private ContentTypeHeader getRequestContentType( final HttpServletRequest hrequest ) {
