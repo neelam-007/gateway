@@ -89,11 +89,11 @@ if [ $COUNTER -gt $END ] ; then
 fi
 
 # Obtain the configuration information from the Admin Gateway
-wget --no-check-certificate -O /tmp/createNodeRequest.xml $ADMIN_GATEWAY_URI 2> /tmp/createNodeError.log
+CREATE_NODE_REQUEST=`wget --no-check-certificate -qO- $ADMIN_GATEWAY_URI`
 
-if ! grep -q '.*createNode.*' /tmp/createNodeRequest.xml; then
+if ! `echo "${CREATE_NODE_REQUEST}" | grep -q '.*createNode.*'`; then
   echo "Failed to create the node."|logger -s -t "ec2"
-  rm -rf /tmp/createNodeRequest.xml
+  CREATE_NODE_REQUEST=""
   exit 1
 fi
 
@@ -102,14 +102,15 @@ hostsecret=$(sed '/^\#/d' /opt/SecureSpan/Controller/etc/host.properties | grep 
 wget --no-check-certificate -O /tmp/createNodeResponse.xml \
      --header="Content-Type: text/xml; charset=UTF-8" --header="SOAPAction: " \
      --header="Cookie: PC-AUTH=${hostsecret}" \
-     --post-file=/tmp/createNodeRequest.xml \
+     --post-data "${CREATE_NODE_REQUEST}" \
      $NODE_MANAGEMENT_URI 2> /tmp/createNodeError.log
 
 # Always delete create node request message
-rm -rf /tmp/createNodeRequest.xml
+CREATE_NODE_REQUEST=""
 
 if ! grep -q '<soap:Envelope[^>]*><soap:Body><ns2:createNodeResponse[^>]*>.*</ns2:createNodeResponse></soap:Body></soap:Envelope>' /tmp/createNodeResponse.xml; then
   echo "Failed to create the node."|logger -s -t "ec2"
+  CREATE_NODE_REQUEST=""
   exit 1
 fi
 
