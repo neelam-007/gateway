@@ -8,7 +8,9 @@ import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.TransformerException;
@@ -21,6 +23,24 @@ import java.io.ByteArrayInputStream;
  * @user: vchan
  */
 public class StylesheetCompilerTest {
+
+    /*
+     * Test for bug 12777 - throw xml parse exception when message is empty
+     */
+    @Ignore
+    @BugNumber(12777)
+    @Test
+    public void testEmptyInputFailsParseException() {
+        try {
+            doTransform( XALAN_TEST_XSL, "", true );
+            Assert.fail("Expected compilation or transformation failure.");
+        }catch (SAXParseException ex) {
+            ex.printStackTrace();
+        }catch (Exception ex) {
+            ex.printStackTrace();
+            Assert.fail("Expected SAXParseException.");
+        }
+    }
 
     /*
      * Test for bug 4789 - xsl stylesheets with output operations using xalan-extensions should be omitted.
