@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="weblogic"
+		module="wljmsclient"
+		revision="10.3"
+		status="release"
+		publication="20100825114157"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="wljmsclient" type="jar" ext="jar" conf="default"/>
+	</publications>
+	<dependencies>
+		<dependency org="weblogic" name="wlclient" rev="10.3" force="true" conf="default"/>
+	</dependencies>
+</ivy-module>

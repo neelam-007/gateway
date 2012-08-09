@@ -889,6 +889,12 @@
         <constructor-arg index="1" ref="clusterPropertyManager"/>
     </bean>
 
+    <bean id="sslContextInitializer" class="com.l7tech.server.security.cert.SslContextInitializer" init-method="init">
+        <constructor-arg index="0" ref="trustManager"/>
+        <constructor-arg index="1" ref="ssgKeyStoreManager"/>    
+        <constructor-arg index="2" ref="applicationEventProxy"/>
+    </bean>
+
     <!-- general server side HTTP client trust manager -->
     <!--suppress SpringBeanConstructorArgInspection -->
     <bean id="trustManager" class="com.l7tech.server.transport.http.SslClientTrustManager" depends-on="keyUsageChecker">

@@ -5,7 +5,7 @@ import com.l7tech.gui.util.GuiPasswordCallbackHandler;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.SslCertificateSniffer;
+import com.l7tech.common.io.SslCertificateSniffer;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.client.gui.Gui;

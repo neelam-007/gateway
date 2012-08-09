@@ -7,7 +7,8 @@ public enum JmsProviderType {
     // - PUBLIC
     Tibco("TIBCO EMS", "com.tibco.tibjms.naming.TibjmsInitialContextFactory", "QueueConnectionFactory", null, null, "com.l7tech.console.panels.TibcoEmsJndiExtraPropertiesPanel", "com.l7tech.console.panels.TibcoEmsQueueExtraPropertiesPanel"),
     MQ("WebSphere MQ over LDAP", "com.sun.jndi.ldap.LdapCtxFactory", "QueueConnectionFactory", null, null, null, "com.l7tech.console.panels.MQSeriesQueueExtraPropertiesPanel"),
-    Fiorano("FioranoMQ", "fiorano.jms.runtime.naming.FioranoInitialContextFactory", "QueueConnectionFactory", null, null, "com.l7tech.console.panels.FioranoJndiExtraPropertiesPanel", null);
+    Fiorano("FioranoMQ", "fiorano.jms.runtime.naming.FioranoInitialContextFactory", "QueueConnectionFactory", null, null, "com.l7tech.console.panels.FioranoJndiExtraPropertiesPanel", null),
+    Weblogic("WebLogic JMS", "weblogic.jndi.WLInitialContextFactory", "ConnectionFactory", null, null, null, null);
 
     public String getName() {
         return name;

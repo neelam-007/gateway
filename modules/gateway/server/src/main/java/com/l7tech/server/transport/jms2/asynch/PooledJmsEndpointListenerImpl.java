@@ -8,6 +8,7 @@ import com.l7tech.server.transport.jms2.AbstractJmsEndpointListener;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsMessages;
 import com.l7tech.server.util.ThreadPoolBean;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ThreadPool;
 
@@ -59,6 +60,10 @@ class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
         }
     }
 
+    private static boolean isConnectionPoolingEnabled() {
+        return ConfigFactory.getCachedConfig().getIntProperty( "ioJmsConnectionCacheSize", 1 ) != 0;
+    }
+
     /**
      * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#handleMessage(javax.jms.Message)
      */
@@ -70,6 +75,13 @@ class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
 
         // create the JmsTask
         JmsTask task = newJmsTask(jmsMessage);
+
+        if (!isConnectionPoolingEnabled()) {
+            // Pooling is disabled for WebLogic compatibility. When enabled we fail to
+            // reconnect to WebLogic when the WebLogic server is restarted.
+            task.run();
+            return;
+        }
 
         try {
             // fire-and-forget

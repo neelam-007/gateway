@@ -1,6 +1,7 @@
-package com.l7tech.util;
+package com.l7tech.common.io;
 
 import javax.net.ssl.*;
+import java.net.Socket;
 import java.security.cert.X509Certificate;
 import java.security.NoSuchAlgorithmException;
 import java.security.KeyManagementException;
@@ -40,20 +41,22 @@ public class SslCertificateSniffer {
     public static X509Certificate[] retrieveCertFromUrl(String purl, boolean ignoreHostname)
       throws IOException, HostnameMismatchException {
         if (!purl.startsWith("https://")) throw new IllegalArgumentException("Can't load certificate from non-https URLs");
-        URL url = new URL(purl);
 
         SSLContext sslContext;
         try {
             sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null,
               new X509TrustManager[]{new X509TrustManager() {
+                  @Override
                   public X509Certificate[] getAcceptedIssuers() {
                       return new X509Certificate[0];
                   }
 
+                  @Override
                   public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {
                   }
 
+                  @Override
                   public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {
                   }
               }},
@@ -66,14 +69,48 @@ public class SslCertificateSniffer {
             throw new IOException(e.getMessage());
         }
 
-        URLConnection gconn = url.openConnection();
-        if (gconn instanceof HttpsURLConnection) {
+        final String[] sslProtocols = sslContext.getSupportedSSLParameters().getProtocols();
+
+        SSLException lastSSLException = null;
+        for ( final String protocol : sslProtocols ) {
+            try {
+                return doRetrieveCertFromUrl( purl, ignoreHostname, sslContext, protocol );
+            } catch ( SSLException se ) {
+                lastSSLException = se;
+            }
+        }
+
+        if ( lastSSLException != null ) {
+            throw lastSSLException;
+        } else {
+            throw new SSLException( "No supported protocols" );
+        }
+    }
+
+    private static X509Certificate[] doRetrieveCertFromUrl( final String purl,
+                                                            final boolean ignoreHostname,
+                                                            final SSLContext sslContext,
+                                                            final String protocol ) throws IOException, HostnameMismatchException {
+        final URL url = new URL(purl);
+        final URLConnection gconn = url.openConnection();
+        if (gconn instanceof HttpsURLConnection ) {
             HttpsURLConnection conn = (HttpsURLConnection)gconn;
             conn.setConnectTimeout( 20000 );
-            conn.setSSLSocketFactory(sslContext.getSocketFactory());
+            conn.setSSLSocketFactory(new SSLSocketFactoryWrapper(sslContext.getSocketFactory()){
+                @Override
+                protected Socket notifySocket( final Socket socket ) {
+                    if ( socket instanceof SSLSocket ) {
+                        final SSLSocket sslSocket = (SSLSocket) socket;
+                        sslSocket.setEnabledProtocols( new String[]{ protocol } );
+                    }
+
+                    return socket;
+                }
+            });
             final String[] sawHost = new String[] { null };
             if (ignoreHostname) {
                 conn.setHostnameVerifier(new HostnameVerifier() {
+                    @Override
                     public boolean verify(String s, SSLSession sslSession) {
                         sawHost[0] = s;
                         return true;
@@ -84,7 +121,7 @@ public class SslCertificateSniffer {
             try {
                 conn.connect();
             } catch (IOException e) {
-                logger.log(Level.INFO, "Unable to connect to: " + purl);
+                logger.log( Level.INFO, "Unable to connect to: " + purl + " using " + protocol);
 
                 // rethrow it
                 throw e;

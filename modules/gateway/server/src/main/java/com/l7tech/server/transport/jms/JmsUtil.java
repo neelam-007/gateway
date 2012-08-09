@@ -4,7 +4,6 @@ import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
-import static com.l7tech.server.policy.variable.ServerVariables.expandSinglePasswordOnlyVariable;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
@@ -21,6 +20,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.policy.variable.ServerVariables.expandSinglePasswordOnlyVariable;
 
 /**
  * @author alex
@@ -225,7 +226,8 @@ public class JmsUtil {
         } catch ( NoInitialContextException e ) {
             throw new JmsConfigException("Error connecting to JMS, could not create initial context : " + ExceptionUtils.getMessage(e), e);
         } catch ( RuntimeException rte ) {
-            throw new JmsConfigException("Error connecting to JMS : " + ExceptionUtils.getMessage(rte), rte);
+            logger.log( Level.WARNING, "Caught RuntimeException while attempting to connect to JMS provider", ExceptionUtils.getDebugException(rte) );
+            throw (JmsConfigException)new JmsConfigException(rte.toString()).initCause(rte);
         } finally {
             Thread.currentThread().setContextClassLoader(contextLoader);
             try { if ( session != null ) session.close(); } catch (Throwable t) { logit(t); }
