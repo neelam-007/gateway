@@ -121,7 +121,7 @@ public class AssociatedLogsTable extends JTable {
                     ((JLabel) comp).setText("");
                 }
                 String detailText = (String) value;
-                if (detailText != null && detailText.trim().length() > 0) {
+                if (TextUtils.trim(detailText).length() > 0) {
                     detailRenderComponent.setBackground(comp.getBackground());
                     detailRenderComponent.setBorder(comp.getBorder());
                     comp = detailRenderComponent;
@@ -140,11 +140,13 @@ public class AssociatedLogsTable extends JTable {
             JComponent messageRenderComponent = buildButtonComponent(messageRenderButton);
 
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                JComponent comp = (JComponent) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                final String origMessageText = (String) value;
+                final String escapedMessageText = wrapInHtml(origMessageText);
 
-                String messageText = (String) value;
-                if (messageText != null && messageText.trim().length() > 0 && (messageText.length() > 200 || messageText.contains("\n"))) {
-                    JLabel textLabel = new JLabel(messageText, SwingConstants.LEFT);
+                JComponent comp = (JComponent) super.getTableCellRendererComponent(table, escapedMessageText, isSelected, hasFocus, row, column);
+
+                if (isLarge(origMessageText, true)) {
+                    JLabel textLabel = new JLabel(escapedMessageText, SwingConstants.LEFT);
                     textLabel.setPreferredSize(new Dimension(columnModel.getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX).getWidth() - 45, 25));
 
                     messageRenderComponent.setBackground(comp.getBackground());
@@ -159,12 +161,12 @@ public class AssociatedLogsTable extends JTable {
                 }
 
                 //set tooltip
-                if (messageText == null || messageText.trim().length() == 0) {
+                if (TextUtils.trim(origMessageText).length() == 0) {
                     comp.setToolTipText(null);
                 } else {
-                    if (messageText.length() < 4096) {
+                    if (origMessageText.length() < 4096) {
                         //sanitize in case messageText contains html
-                        comp.setToolTipText("<html><pre>" + TextUtils.escapeHtmlSpecialCharacters(messageText) + "</pre></html>");
+                        comp.setToolTipText(escapedMessageText);
                     }
                 }
 
@@ -184,7 +186,6 @@ public class AssociatedLogsTable extends JTable {
 
         return columnModel;
     }
-
 
     /**
      * create the table model with log fields
@@ -376,6 +377,18 @@ public class AssociatedLogsTable extends JTable {
         return false;
     }
 
+    private boolean isLarge(final String value, final boolean trimFirst) {
+        if (trimFirst) {
+            return TextUtils.trim(value).length() > 0 && (value.length() > 200 || value.contains("\n"));
+        } else {
+            return value != null && value.length() > 0 && (value.length() > 200 || value.contains("\n"));
+        }
+    }
+
+    private String wrapInHtml(final String text) {
+        return "<html><pre>" + TextUtils.escapeHtmlSpecialCharacters(text) + "</pre></html>";
+    }
+
     private class CellEditorWithButton extends AbstractCellEditor implements TableCellEditor, ListSelectionListener {
         private final JButton button;
         private final JComponent buttonComponent;
@@ -389,8 +402,8 @@ public class AssociatedLogsTable extends JTable {
 
             this.button.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    if (value != null) {
-                        final JDialog dialog = getViewDialog(value, columnTitle);
+                    if (getCellEditorValue() != null) {
+                        final JDialog dialog = getViewDialog(getCellEditorValue(), columnTitle);
                         dialog.setSize(450, 175);
                         Utilities.centerOnScreen(dialog);
                         DialogDisplayer.display(dialog, new Runnable() {
@@ -428,14 +441,15 @@ public class AssociatedLogsTable extends JTable {
             // Case 1: for "Message" tab in the 5th Column (index = 4)
             if (column == 4) {
                 JComponent tempButtonComponent = buildButtonComponent(button);
-                JLabel textLabel = new JLabel(this.value, SwingConstants.LEFT);
+                final String escapedValue = wrapInHtml(getCellEditorValue());
+                JLabel textLabel = new JLabel(escapedValue, SwingConstants.LEFT);
                 textLabel.setPreferredSize(new Dimension(getLogColumnModel().getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX).getWidth() - 45, 25));
                 JPanel messagePane = new JPanel();
                 messagePane.setBackground(getColour());
                 messagePane.setLayout(new BorderLayout());
                 messagePane.add(textLabel, BorderLayout.WEST);
 
-                if (this.value != null && this.value.trim().length() > 0 && (this.value.length() > 200 || this.value.contains("\n"))) {
+                if (isLarge(getCellEditorValue(), true)) {
                     messagePane.add(tempButtonComponent, BorderLayout.EAST);
                 }
 
@@ -446,7 +460,7 @@ public class AssociatedLogsTable extends JTable {
             return buttonComponent;
         }
 
-        public Object getCellEditorValue() {
+        public String getCellEditorValue() {
             return value;
         }
 
@@ -456,9 +470,9 @@ public class AssociatedLogsTable extends JTable {
                 MouseEvent me = (MouseEvent) anEvent;
                 column = AssociatedLogsTable.this.columnAtPoint(me.getPoint());
                 String value = getValue(anEvent);
-                if (column == 4 && value != null && value.length() > 0 && (value.length() > 200 || value.contains("\n"))) {
+                if (column == 4 && isLarge(value, false)) {
                     return true;
-                } else if (column == 2 && value != null && value.length() > 0) {
+                } else if (column == 2 && TextUtils.trim(value).length() > 0) {
                     return true;
                 }
             }
