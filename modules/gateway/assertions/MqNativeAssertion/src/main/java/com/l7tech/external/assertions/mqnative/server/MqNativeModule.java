@@ -42,6 +42,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.ibm.mq.constants.MQConstants.*;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_LISTENER_MAX_CONCURRENT_CONNECTIONS_PROPERTY;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.QUEUE_OPEN_OPTIONS_INBOUND_FAILURE_QUEUE;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
@@ -60,6 +61,7 @@ import static com.l7tech.util.JdkLoggerConfigurator.debugState;
  */
 public class MqNativeModule extends ActiveTransportModule implements ApplicationListener {
     static final int DEFAULT_MESSAGE_MAX_BYTES = 2621440;
+    static final int DEFAULT_LISTENER_MAX_CONCURRENT_CONNECTIONS = 1000;
 
     private static final Logger logger = Logger.getLogger(MqNativeModule.class.getName());
     private static final Set<String> SUPPORTED_TYPES = caseInsensitiveSet( ACTIVE_CONNECTOR_TYPE_MQ_NATIVE );
@@ -199,7 +201,14 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
     @Override
     protected void addConnector( @NotNull final SsgActiveConnector ssgActiveConnector ) throws ListenerException {
-        int numberOfListenersToCreate =  ssgActiveConnector.getIntegerProperty( PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE, 1 );
+        int numberOfListenersToCreate =  ssgActiveConnector.getIntegerProperty(PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE, 1);
+        int maxListenersAllowed = serverConfig.getIntProperty(MQ_LISTENER_MAX_CONCURRENT_CONNECTIONS_PROPERTY, DEFAULT_LISTENER_MAX_CONCURRENT_CONNECTIONS);
+        if (numberOfListenersToCreate > maxListenersAllowed) {
+            logger.log(Level.INFO, "Overriding connection concurrency configured for " + ssgActiveConnector.getName() + " to: " + maxListenersAllowed +
+                    ", configured: " + numberOfListenersToCreate + ", maximum allowed: " + maxListenersAllowed  +  ".");
+            numberOfListenersToCreate = maxListenersAllowed;
+        }
+
         Set<MqNativeListener> listenerSet = new HashSet<MqNativeListener>( numberOfListenersToCreate );
         activeListeners.put( ssgActiveConnector.getOid(), listenerSet );
         for ( int i = 1; i <= numberOfListenersToCreate; i++ ) {
@@ -343,7 +352,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             ctype = ContentTypeHeader.parseValue(contentTypeValue);
 
             // parse the request message
-            parsedRequest = MqNativeUtils.parseHeader(requestMessage); // TODO (TL) need help changing; this is reading the whole message into memory
+            parsedRequest = MqNativeUtils.parseHeader(requestMessage); // reading message into memory
             mqHeader = parsedRequest.left;
 
             // enforce size restriction

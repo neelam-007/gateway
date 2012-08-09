@@ -23,6 +23,10 @@ public interface MqNativeConstants {
     String MQ_LISTENER_THREAD_LIMIT_UI_PROPERTY = "mq.listenerThreadLimit";
     String MQ_LISTENER_THREAD_LIMIT_DESC = "The global limit on the number of processing threads that can be created to work off all MQ Native queue listeners. Value must be >= 5.";
 
+    String MQ_LISTENER_MAX_CONCURRENT_CONNECTIONS_PROPERTY = "mqListenerMaxConcurrentConnections";
+    String MQ_LISTENER_MAX_CONCURRENT_CONNECTIONS_UI_PROPERTY = "mq.listenerMaxConcurrentConnections";
+    String MQ_LISTENER_MAX_CONCURRENT_CONNECTIONS_DESC = "The maximum number of concurrent connections allowed for any inbound MQ Native queue.  This limit will override any larger value entered.";
+
     String MQ_CONNECT_ERROR_SLEEP_PROPERTY = "mqConnectErrorSleep";
     String MQ_CONNECT_ERROR_SLEEP_UI_PROPERTY = "mq.connectErrorSleep";
     String MQ_CONNECT_ERROR_SLEEP_DESC = "Time to sleep after a connection error for an inbound MQ Native queue (timeunit)";
