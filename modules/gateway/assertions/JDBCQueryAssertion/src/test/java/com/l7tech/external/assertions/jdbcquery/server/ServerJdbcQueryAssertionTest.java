@@ -410,4 +410,42 @@ public class ServerJdbcQueryAssertionTest {
         return list;
     }
 
+    @BugNumber(12795)
+    @Test
+    public void testNewNamingMapCaseInsensetive() throws Exception {
+        Map<String, String> namingMap = new TreeMap<String, String>();
+        namingMap.put(MockJdbcDatabaseManager.MOCK_COLUMN_NAMES[0].toLowerCase(), "name2");
+        namingMap.put(MockJdbcDatabaseManager.MOCK_COLUMN_NAMES[1].toUpperCase(), "dept2");
+        namingMap.put("sEx", "sex2");
+        namingMap.put("AgE", "age2");
+
+        assertion.setNamingMap(namingMap);
+        assertion.setMaxRecords(MockJdbcDatabaseManager.MOCK_MAX_ROWS);
+
+        JdbcQueryingManager jdbcQueryingManager = (JdbcQueryingManager) appCtx.getBean("jdbcQueryingManager");
+        SqlRowSet resultSet = jdbcQueryingManager.getMockSqlRowSet();
+
+        ServerJdbcQueryAssertion serverAssertion = new ServerJdbcQueryAssertion(assertion, appCtx);
+        int numOfRecords = serverAssertion.setContextVariables(resultSet, peCtx, "");
+
+        // Check the number of returned records by the query
+        assertEquals("The number of returned numOfRecords matched", MockJdbcDatabaseManager.MOCK_MAX_ROWS, numOfRecords);
+
+        // Check if the context variable 'department' has been renamed to 'dept2'.
+        Object nameCtxVar = peCtx.getVariable("jdbcQuery.name2");
+        Object deptCtxVar = peCtx.getVariable("jdbcQuery.dept2");
+        Object sexCtxVar = peCtx.getVariable("jdbcQuery.sex2");
+        Object ageCtxVar = peCtx.getVariable("jdbcQuery.age2");
+        assertNotNull("The context variable successfully renamed from '" + MockJdbcDatabaseManager.MOCK_COLUMN_NAMES[0] + "' to 'name2'", nameCtxVar);
+        assertNotNull("The context variable successfully renamed from '" + MockJdbcDatabaseManager.MOCK_COLUMN_NAMES[1] + "' to 'dept2'", deptCtxVar);
+        assertNotNull("The context variable successfully renamed from '" + MockJdbcDatabaseManager.MOCK_COLUMN_NAMES[2] + "' to 'sex2'", sexCtxVar);
+        assertNotNull("The context variable successfully renamed from '" + MockJdbcDatabaseManager.MOCK_COLUMN_NAMES[3] + "' to 'age2'", ageCtxVar);
+
+        // Check context variables creation
+        assertArrayEquals("All names matched", MockJdbcDatabaseManager.MOCK_NAMES, (Object[]) peCtx.getVariable("jdbcQuery.NAME2"));
+        assertArrayEquals("All departments matched", MockJdbcDatabaseManager.MOCK_DEPTS, (Object[]) peCtx.getVariable("jdbcQuery.DEPT2"));
+        assertArrayEquals("All sexes matched", MockJdbcDatabaseManager.MOCK_SEXES, (Object[]) peCtx.getVariable("jdbcQuery.SEX2"));
+        assertArrayEquals("All ages matched", MockJdbcDatabaseManager.MOCK_AGES, (Object[]) peCtx.getVariable("jdbcQuery.AGE2"));
+    }
+
 }

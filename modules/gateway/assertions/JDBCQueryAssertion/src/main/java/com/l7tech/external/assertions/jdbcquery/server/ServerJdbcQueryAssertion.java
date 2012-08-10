@@ -194,10 +194,18 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         // Get mappings of column names and context variable names
         for (String columnName : resultSet.keySet()) {
-            if (namingMap.containsKey(columnName)) {
-                newNamingMap.put(columnName, namingMap.get(columnName));
-            } else {
-                newNamingMap.put(columnName, columnName);
+            boolean found = false;
+            for (final Map.Entry e : namingMap.entrySet()) {
+                String key = e.getKey().toString();
+                String value = e.getValue().toString();
+                if (key.equalsIgnoreCase(columnName)) {
+                    found = true;
+                    newNamingMap.put(columnName.toLowerCase(), value);
+                    break;
+                }
+            }
+            if (!found) {
+                newNamingMap.put(columnName.toLowerCase(), columnName);
             }
         }
         return newNamingMap;
@@ -214,10 +222,18 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         SqlRowSetMetaData metaData = resultSet.getMetaData();
         for (int i = 1; i <= metaData.getColumnCount(); i++) {
             String columnName = metaData.getColumnName(i);
-            if (namingMap.containsKey(columnName)) {
-                newNamingMap.put(columnName, namingMap.get(columnName));
-            } else {
-                newNamingMap.put(columnName, columnName);
+            boolean found = false;
+            for (final Map.Entry e : namingMap.entrySet()) {
+                String key = e.getKey().toString();
+                String value = e.getValue().toString();
+                if (key.equalsIgnoreCase(columnName)) {
+                    found = true;
+                    newNamingMap.put(columnName.toLowerCase(), value);
+                    break;
+                }
+            }
+            if (!found) {
+                newNamingMap.put(columnName.toLowerCase(), columnName);
             }
         }
         return newNamingMap;
@@ -236,10 +252,10 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         int row = 0;
         for (String columnName : resultSet.keySet()) {
             if (logger.isLoggable(Level.FINER)) {
-                logger.log(Level.FINER, varPrefix  + "." + newNamingMap.get(columnName) + resultSet.get(columnName).toArray());
+                logger.log(Level.FINER, varPrefix  + "." + newNamingMap.get(columnName.toLowerCase()) + resultSet.get(columnName).toArray());
             }
             row = resultSet.get(columnName).size();
-            context.setVariable(varPrefix  + "." + newNamingMap.get(columnName), resultSet.get(columnName).toArray());
+            context.setVariable(varPrefix  + "." + newNamingMap.get(columnName.toLowerCase()), resultSet.get(columnName).toArray());
         }
         context.setVariable(varPrefix + "." + JdbcQueryAssertion.VARIABLE_COUNT, row);
         return row;
@@ -267,9 +283,9 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         String varPrefix = getVariablePrefix(context);
         for (String column : results.keySet()) {
             if (logger.isLoggable(Level.FINER)) {
-                logger.log(Level.FINER, varPrefix + resultSetPrefix + "." + newNamingMap.get(column) + results.get(column).toArray());
+                logger.log(Level.FINER, varPrefix + resultSetPrefix + "." + newNamingMap.get(column.toLowerCase()) + results.get(column).toArray());
             }
-            context.setVariable(varPrefix + resultSetPrefix + "." + newNamingMap.get(column), results.get(column).toArray());
+            context.setVariable(varPrefix + resultSetPrefix + "." + newNamingMap.get(column.toLowerCase()), results.get(column).toArray());
         }
         context.setVariable(varPrefix + resultSetPrefix + "." + JdbcQueryAssertion.VARIABLE_COUNT, row);
 
