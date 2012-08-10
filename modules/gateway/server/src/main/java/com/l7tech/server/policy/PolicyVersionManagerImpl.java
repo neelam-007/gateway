@@ -110,8 +110,9 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         return ver;
     }
 
-    private PolicyVersion findLatestRevisionForPolicy( final long policyOid ) {
-        return getHibernateTemplate().execute( new ReadOnlyHibernateCallback<PolicyVersion>() {
+    @Override
+    public PolicyVersion findLatestRevisionForPolicy(final long policyOid) {
+        return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<PolicyVersion>() {
             @Override
             public PolicyVersion doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
                 final DetachedCriteria detachedCriteria = DetachedCriteria.forClass( getImpClass() );

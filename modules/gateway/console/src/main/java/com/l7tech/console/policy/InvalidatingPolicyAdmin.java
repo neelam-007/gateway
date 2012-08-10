@@ -150,6 +150,11 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
         return delegate.findAllExternalReferenceFactories();
     }
 
+    @Override
+    public PolicyVersion findLatestRevisionForPolicy(final long policyOid) {
+        return delegate.findLatestRevisionForPolicy(policyOid);
+    }
+
     //- PRIVATE
 
     private final PolicyAdmin delegate;

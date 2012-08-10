@@ -59,5 +59,13 @@ public interface PolicyVersionManager extends EntityManager<PolicyVersion, Entit
      * @throws com.l7tech.objectmodel.ObjectModelException if there is a problem finding or updating information from the database
      * @throws IllegalArgumentException if newPolicy does not have a valid OID
      */
-    PolicyVersion checkpointPolicy( Policy newPolicy, boolean activated, boolean newEntity) throws ObjectModelException;
+    PolicyVersion checkpointPolicy(Policy newPolicy, boolean activated, boolean newEntity) throws ObjectModelException;
+
+    /**
+     * Finds the latest PolicyVersion for the given Policy Oid.
+     *
+     * @param policyOid the OID of the policy whose versions will be searched. Required.
+     * @return the latest PolicyVersion.
+     */
+    PolicyVersion findLatestRevisionForPolicy(long policyOid);
 }

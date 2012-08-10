@@ -15,6 +15,7 @@ import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -22,10 +23,7 @@ import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -111,6 +109,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
     private final boolean enableUddi;
     private final PolicyValidator policyValidator;
+    private final PolicyAdmin policyAdmin;
     private Long overrideVersionNumber = null;
     private Boolean overrideVersionActive = null;
     private SearchForm searchForm;
@@ -162,6 +161,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         this.policyTree = pt;
         this.policyTree.setWriteAccess(subject.hasWriteAccess());
         this.policyValidator = Registry.getDefault().getPolicyValidator();
+        this.policyAdmin = Registry.getDefault().getPolicyAdmin();
         layoutComponents();
 
         renderPolicy();
@@ -634,6 +634,18 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return subject.getVersionNumber();
     }
 
+    private long getLatestVersionNumber() {
+        final long policyOid;
+        try {
+            policyOid = subject.getPolicyNode().getPolicy().getOid();
+        } catch (final FindException e) {
+            // e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+        final PolicyVersion latest = policyAdmin.findLatestRevisionForPolicy(policyOid);
+        return latest.getOrdinal();
+    }
+
     public boolean isVersionActive() {
         if (overrideVersionActive != null) return overrideVersionActive;
         return subject.isActive();
@@ -648,12 +660,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     public String getDisplayName() {
-        long versionNum = getVersionNumber();
+        final long versionNum = getVersionNumber();
         String activeStr = isVersionActive() ? "active" : "inactive";
         if (versionNum < 1)
             return subjectName + " (" + activeStr + ')';
-        else
-            return subjectName + " (v" + versionNum + ", " + activeStr + ')';
+        else {
+            final long latestVersionNum = getLatestVersionNumber();
+            return subjectName + " (v" + versionNum + "/" + latestVersionNum + ", " + activeStr + ')';
+        }
     }
 
     /** updates the policy name, tab name etc */

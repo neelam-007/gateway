@@ -511,6 +511,11 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     @Override
+    public PolicyVersion findLatestRevisionForPolicy(final long policyOid) {
+        return policyVersionManager.findLatestRevisionForPolicy(policyOid);
+    }
+
+    @Override
     public List<PolicyVersion> findPolicyVersionHeadersByPolicy(long policyOid) throws FindException {
         final Set<PropertyDescriptor> allButXml = BeanUtils.omitProperties(BeanUtils.getProperties(PolicyVersion.class), "xml");
 
