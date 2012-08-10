@@ -18,6 +18,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.Functions.Binary;
@@ -173,7 +174,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
     /**
      * This tree can always be refreshed
      * <p/>
-     * May consider introducing the logic arround disabling this while the tree is
+     * May consider introducing the logic around disabling this while the tree is
      * refreshing if needed
      *
      * @return always true
@@ -181,6 +182,74 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
     @Override
     public boolean canRefresh() {
         return true;
+    }
+
+    /**
+     * Attempts to delete the given nodes in dependency order to maximize the chance of successful deletes.
+     *
+     * Dependency order:<br />
+     * 1. Service aliases<br />
+     * 2. Services<br />
+     * 3. Policy aliases<br />
+     * 4. Policies that contains an include<br />
+     * 5. Policies that do not contain an include<br />
+     * 6. Folders
+     *
+     * @param nodes the nodes to delete
+     * @param detectConfirmation If true, whether confirmation dialogs be should be displayed will be auto-detected.
+     * If false, will not display any confirmation dialogs.
+     */
+    public void deleteMultipleEntities(final List<AbstractTreeNode> nodes, final boolean detectConfirmation) {
+        if (nodes != null && !nodes.isEmpty()) {
+            boolean confirmationEnabled = false;
+            boolean okayToDelete = true;
+            if(detectConfirmation){
+                if(nodes.size() == 1 && nodes.get(0) instanceof FolderNode && nodes.get(0).getChildCount() > 0){
+                    // it's a single non-empty folder
+                    final Integer result = DeleteFolderAction.confirmFolderDeletion(nodes.get(0).getName());
+                    if(result != JOptionPane.YES_OPTION){
+                        okayToDelete = false;
+                    }
+                }else{
+                    confirmationEnabled = nodes.size() == 1 ? true : false;
+                }
+            }
+
+            if(okayToDelete){
+                final List<ServiceNode> serviceNodes = new ArrayList<ServiceNode>();
+                final List<ServiceNodeAlias> serviceAliasNodes = new ArrayList<ServiceNodeAlias>();
+                final List<PolicyEntityNode> policyNodes = new ArrayList<PolicyEntityNode>();
+                final List<PolicyEntityNode> policyNodesWithInclude = new ArrayList<PolicyEntityNode>();
+                final List<PolicyEntityNodeAlias> policyAliasNodes = new ArrayList<PolicyEntityNodeAlias>();
+                final List<FolderNode> folderNodes = new ArrayList<FolderNode>();
+                sortNodes(nodes, serviceNodes, serviceAliasNodes, policyNodes, policyNodesWithInclude,
+                        policyAliasNodes, folderNodes);
+
+                for (final ServiceNodeAlias serviceAliasNode : serviceAliasNodes) {
+                    new DeleteServiceAliasAction(serviceAliasNode, confirmationEnabled).actionPerformed(null);
+                }
+                for (final ServiceNode serviceNode : serviceNodes) {
+                    new DeleteServiceAction(serviceNode, confirmationEnabled).actionPerformed(null);
+                }
+                for (final PolicyEntityNodeAlias policyAliasNode : policyAliasNodes) {
+                    new DeletePolicyAliasAction(policyAliasNode, confirmationEnabled).actionPerformed(null);
+                }
+                for (final PolicyEntityNode policyNodeWithInclude : policyNodesWithInclude) {
+                    new DeletePolicyAction(policyNodeWithInclude, confirmationEnabled).actionPerformed(null);
+                }
+                for (final PolicyEntityNode policyNode : policyNodes) {
+                    new DeletePolicyAction(policyNode, confirmationEnabled).actionPerformed(null);
+                }
+                for (final FolderNode folderNode : folderNodes) {
+                    // don't try to delete the folder if some of its contents could not be deleted
+                    if(folderNode.getChildCount() == 0){
+                        new DeleteFolderAction(folderNode, Registry.getDefault().getFolderAdmin(), confirmationEnabled).actionPerformed(null);
+                    }else{
+                        DeleteFolderAction.showNonEmptyFolderDialog(folderNode.getName());
+                    }
+                }
+            }
+        }
     }
 
 
@@ -215,7 +284,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                                 }
                             });
                 }else{
-                    deleteMultipleEntities(abstractTreeNodes);
+                    deleteMultipleEntities(abstractTreeNodes, true);
                 }
 
             } else if (keyCode == KeyEvent.VK_ENTER && !hasMultipleSelection) {
@@ -299,7 +368,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                         public void reportResult(int option) {
                             if (option == 1) {//ok
                                 if(deleteAll.isSelected()){
-                                    deleteMultipleEntities(abstractTreeNodes);
+                                    deleteMultipleEntities(abstractTreeNodes, true);
                                 }else{
                                     final List<AbstractTreeNode> subset = new ArrayList<AbstractTreeNode>();
                                     for(AbstractTreeNode abstractTreeNode: abstractTreeNodes){
@@ -315,33 +384,52 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                                         }
                                         subset.add(abstractTreeNode);
                                     }
-                                    deleteMultipleEntities(subset);
+                                    deleteMultipleEntities(subset, true);
                                 }
                             }
                             //else nothing to do
                         }
                     });
         } else {
-            deleteMultipleEntities(abstractTreeNodes);
+            deleteMultipleEntities(abstractTreeNodes, true);
         }
     }
 
-    private void deleteMultipleEntities(final List<AbstractTreeNode> abstractTreeNodes){
-        final boolean confirmationEnabled = abstractTreeNodes.size() <= 1;
-
-        for (AbstractTreeNode node: abstractTreeNodes) {
-            if (!node.canDelete()) return;
-            if (node instanceof ServiceNodeAlias) {
-                new DeleteServiceAliasAction((ServiceNodeAlias)node, confirmationEnabled).actionPerformed(null);
-            } else if (node instanceof ServiceNode) {
-                new DeleteServiceAction((ServiceNode)node, confirmationEnabled).actionPerformed(null);
-            } else if (node instanceof PolicyEntityNodeAlias) {
-                new DeletePolicyAliasAction((PolicyEntityNodeAlias)node, confirmationEnabled).actionPerformed(null);
-            } else if (node instanceof PolicyEntityNode) {
-                new DeletePolicyAction((PolicyEntityNode)node, confirmationEnabled).actionPerformed(null);
-            } else if (node instanceof FolderNode) {
-                FolderNode folderNode = (FolderNode) node;
-                new DeleteFolderAction(folderNode.getOid(), node, Registry.getDefault().getFolderAdmin(), confirmationEnabled).actionPerformed(null);
+    private void sortNodes(final List<AbstractTreeNode> nodes, final List<ServiceNode> serviceNodes,
+                                  final List<ServiceNodeAlias> serviceAliasNodes,
+                                  final List<PolicyEntityNode> policyNodes,
+                                  final List<PolicyEntityNode> policyNodesWithInclude,
+                                  final List<PolicyEntityNodeAlias> policyAliasNodes,
+                                  final List<FolderNode> folderNodes) {
+        for (final AbstractTreeNode node : nodes) {
+            if (node.canDelete()) {
+                if (node instanceof ServiceNodeAlias) {
+                    serviceAliasNodes.add((ServiceNodeAlias) node);
+                } else if (node instanceof ServiceNode) {
+                    serviceNodes.add((ServiceNode) node);
+                } else if (node instanceof PolicyEntityNodeAlias) {
+                    policyAliasNodes.add((PolicyEntityNodeAlias) node);
+                } else if (node instanceof PolicyEntityNode) {
+                    final PolicyEntityNode policyNode = (PolicyEntityNode) node;
+                    Policy policy = null;
+                    try {
+                        policy = policyNode.getPolicy();
+                    } catch (final FindException e) {
+                        log.warning("Unable to determine if policy contains an Include assertion.");
+                    }
+                    if (policy != null && policy.getXml().contains("L7p:Include")) {
+                        policyNodesWithInclude.add(policyNode);
+                    } else {
+                        policyNodes.add(policyNode);
+                    }
+                } else if (node instanceof FolderNode) {
+                    final FolderNode folderNode = (FolderNode) node;
+                    sortNodes(folderNode.getChildNodes(), serviceNodes, serviceAliasNodes, policyNodes, policyNodesWithInclude,
+                            policyAliasNodes, folderNodes);
+                    // important to add the folder node to the list AFTER the children have been processed
+                    // so that sub folders are ordered before their parent
+                    folderNodes.add(folderNode);
+                }
             }
         }
     }

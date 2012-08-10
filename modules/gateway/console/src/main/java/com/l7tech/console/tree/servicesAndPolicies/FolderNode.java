@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
+import javax.swing.tree.TreeNode;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -52,7 +53,7 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
             new CreatePolicyAction(folder, this),
             new EditFolderAction(folder, folderHeader, this, folderAdmin),
             new CreateFolderAction(folder, this, folderAdmin),
-            new DeleteFolderAction(folderHeader.getOid(), this, folderAdmin),
+            new DeleteFolderAction(this, folderAdmin),
             new PasteAsAliasAction(this)
         };
     }
@@ -153,5 +154,19 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
     @Override
     public boolean canDelete() {
         return true;
+    }
+
+    /**
+     * Retrieve the child nodes as a list.
+     */
+    public List<AbstractTreeNode> getChildNodes(){
+        final List<AbstractTreeNode> folderChildren = new ArrayList<AbstractTreeNode>();
+        for (int i = 0; i < this.getChildCount(); i++) {
+            final TreeNode child = this.getChildAt(i);
+            if(child instanceof AbstractTreeNode){
+                folderChildren.add((AbstractTreeNode)child);
+            }
+        }
+        return folderChildren;
     }
 }
