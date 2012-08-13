@@ -639,7 +639,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         try {
             policyOid = subject.getPolicyNode().getPolicy().getOid();
         } catch (final FindException e) {
-            // e.printStackTrace();
             throw new RuntimeException(e);
         }
         final PolicyVersion latest = policyAdmin.findLatestRevisionForPolicy(policyOid);

@@ -284,7 +284,10 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
     Set<ExternalReferenceFactory> findAllExternalReferenceFactories();
 
     /**
-     * Simply delegates to PolicyVersionManager.findLatestRevisionForPolicy(long policyOid).
+     * Finds the latest PolicyVersion for the given Policy Oid.
+     *
+     * @param policyOid the OID of the policy whose versions will be searched. Required.
+     * @return the latest PolicyVersion.
      */
     @Secured(stereotype=GET_PROPERTY_BY_ID, relevantArg=0)
     @Transactional(readOnly=true)
