@@ -197,7 +197,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
      *
      * @param nodes the nodes to delete
      * @param detectConfirmation If true, whether confirmation dialogs be should be displayed will be auto-detected.
-     * If false, will not display any confirmation dialogs.
+     * If false, will not display any confirmation dialogs (other than any UDDI dialogs).
      */
     public void deleteMultipleEntities(final List<AbstractTreeNode> nodes, final boolean detectConfirmation) {
         if (nodes != null && !nodes.isEmpty()) {
@@ -225,28 +225,34 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                 sortNodes(nodes, serviceNodes, serviceAliasNodes, policyNodes, policyNodesWithInclude,
                         policyAliasNodes, folderNodes);
 
-                for (final ServiceNodeAlias serviceAliasNode : serviceAliasNodes) {
-                    new DeleteServiceAliasAction(serviceAliasNode, confirmationEnabled).actionPerformed(null);
-                }
-                for (final ServiceNode serviceNode : serviceNodes) {
-                    new DeleteServiceAction(serviceNode, confirmationEnabled).actionPerformed(null);
-                }
-                for (final PolicyEntityNodeAlias policyAliasNode : policyAliasNodes) {
-                    new DeletePolicyAliasAction(policyAliasNode, confirmationEnabled).actionPerformed(null);
-                }
-                for (final PolicyEntityNode policyNodeWithInclude : policyNodesWithInclude) {
-                    new DeletePolicyAction(policyNodeWithInclude, confirmationEnabled).actionPerformed(null);
-                }
-                for (final PolicyEntityNode policyNode : policyNodes) {
-                    new DeletePolicyAction(policyNode, confirmationEnabled).actionPerformed(null);
-                }
-                for (final FolderNode folderNode : folderNodes) {
-                    // don't try to delete the folder if some of its contents could not be deleted
-                    if(folderNode.getChildCount() == 0){
-                        new DeleteFolderAction(folderNode, Registry.getDefault().getFolderAdmin(), confirmationEnabled).actionPerformed(null);
-                    }else{
-                        DeleteFolderAction.showNonEmptyFolderDialog(folderNode.getName());
+                try {
+                    filterServicesInUddi(serviceNodes);
+
+                    for (final ServiceNodeAlias serviceAliasNode : serviceAliasNodes) {
+                        new DeleteServiceAliasAction(serviceAliasNode, confirmationEnabled).actionPerformed(null);
                     }
+                    for (final ServiceNode serviceNode : serviceNodes) {
+                        new DeleteServiceAction(serviceNode, confirmationEnabled).actionPerformed(null);
+                    }
+                    for (final PolicyEntityNodeAlias policyAliasNode : policyAliasNodes) {
+                        new DeletePolicyAliasAction(policyAliasNode, confirmationEnabled).actionPerformed(null);
+                    }
+                    for (final PolicyEntityNode policyNodeWithInclude : policyNodesWithInclude) {
+                        new DeletePolicyAction(policyNodeWithInclude, confirmationEnabled).actionPerformed(null);
+                    }
+                    for (final PolicyEntityNode policyNode : policyNodes) {
+                        new DeletePolicyAction(policyNode, confirmationEnabled).actionPerformed(null);
+                    }
+                    for (final FolderNode folderNode : folderNodes) {
+                        // don't try to delete the folder if some of its contents could not be deleted
+                        if(folderNode.getChildCount() == 0){
+                            new DeleteFolderAction(folderNode, Registry.getDefault().getFolderAdmin(), confirmationEnabled).actionPerformed(null);
+                        }else{
+                            DeleteFolderAction.showNonEmptyFolderDialog(folderNode.getName());
+                        }
+                    }
+                } catch (final DeletionCancelledException e) {
+                    // user cancelled deletion
                 }
             }
         }
@@ -279,7 +285,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                                 @Override
                                 public void reportResult(int option) {
                                     if (option == JOptionPane.YES_OPTION) {
-                                        handleMultipleEntityDelete(abstractTreeNodes);
+                                        deleteMultipleEntities(abstractTreeNodes, true);
                                     }
                                 }
                             });
@@ -295,18 +301,23 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         }
     }
 
-    private void handleMultipleEntityDelete(final List<AbstractTreeNode> abstractTreeNodes){
+    /**
+     * If any services are detected to be published to the UDDI, a dialog box is displayed asking the user to confirm
+     * whether these services should be deleted. If not, the services published to the UDDI will be removed from the
+     * given list of service nodes.
+     *
+     * @param serviceNodes the list of service nodes which may contain services published to UDDI.
+     * @throws DeletionCancelledException if the user chose to cancel the UDDI dialog.
+     */
+    private void filterServicesInUddi(final List<ServiceNode> serviceNodes) throws DeletionCancelledException {
         final Set<Long> allServicesInUddi = new HashSet<Long>();
         //find out if any have uddi data
-        for(AbstractTreeNode abstractTreeNode: abstractTreeNodes){
-            if(abstractTreeNode instanceof ServiceNode){
-                final ServiceNode serviceNode = (ServiceNode) abstractTreeNode;
-                try {
-                    allServicesInUddi.add(serviceNode.getEntity().getOid());
-                } catch (FindException e1) {
-                    log.log(Level.WARNING, e1.getMessage(), e1);
-                    throw new RuntimeException(e1);
-                }
+        for(ServiceNode serviceNode: serviceNodes){
+            try {
+                allServicesInUddi.add(serviceNode.getEntity().getOid());
+            } catch (FindException e1) {
+                log.log(Level.WARNING, e1.getMessage(), e1);
+                throw new RuntimeException(e1);
             }
         }
 
@@ -368,30 +379,28 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                         public void reportResult(int option) {
                             if (option == 1) {//ok
                                 if(deleteAll.isSelected()){
-                                    deleteMultipleEntities(abstractTreeNodes, true);
+                                    // no need to filter any
                                 }else{
-                                    final List<AbstractTreeNode> subset = new ArrayList<AbstractTreeNode>();
-                                    for(AbstractTreeNode abstractTreeNode: abstractTreeNodes){
-                                        if(abstractTreeNode instanceof ServiceNode){
-                                            ServiceNode serviceNode = (ServiceNode) abstractTreeNode;
-                                            try {
-                                                final PublishedService service = serviceNode.getEntity();
-                                                if(allOids.contains(service.getOid())) continue;
-                                            } catch (FindException e) {
-                                                log.log(Level.WARNING, e.getMessage(), e);
-                                                throw new RuntimeException(e);
+                                    final List<ServiceNode> toRemove = new ArrayList<ServiceNode>();
+                                    for(final ServiceNode serviceNode: serviceNodes){
+                                        try {
+                                            final PublishedService service = serviceNode.getEntity();
+                                            if(allOids.contains(service.getOid())){
+                                                toRemove.add(serviceNode);
                                             }
+                                        } catch (FindException e) {
+                                            log.log(Level.WARNING, e.getMessage(), e);
+                                            throw new RuntimeException(e);
                                         }
-                                        subset.add(abstractTreeNode);
                                     }
-                                    deleteMultipleEntities(subset, true);
+                                    serviceNodes.removeAll(toRemove);
                                 }
+                            }else{
+                                // cancelled
+                                throw new DeletionCancelledException("User cancelled UDDI service deletion dialog.");
                             }
-                            //else nothing to do
                         }
                     });
-        } else {
-            deleteMultipleEntities(abstractTreeNodes, true);
         }
     }
 
@@ -768,5 +777,11 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
      */
     public void filterTreeToDefault() {
         sortComponents.selectDefaultFilter();
+    }
+
+    private class DeletionCancelledException extends RuntimeException{
+        private DeletionCancelledException(final String message) {
+            super(message);
+        }
     }
 }
