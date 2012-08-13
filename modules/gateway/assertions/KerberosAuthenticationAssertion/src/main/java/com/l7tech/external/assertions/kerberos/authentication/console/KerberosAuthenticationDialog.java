@@ -42,6 +42,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
     private JPanel authenticatedUserPanel;
     private JLabel servicePrincipalLabel;
     private JLabel passwordLabel;
+    private JLabel realmLabel;
     private final InputValidator inputValidator;
 
     public KerberosAuthenticationDialog(final Frame owner, final KerberosAuthenticationAssertion assertion){
@@ -79,6 +80,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         };
 
         useConfiguredCredentialsRadioButton.addChangeListener(enableDisableComponentsListener);
+        inputValidator.constrainTextFieldToBeNonEmpty(realmLabel.getText(), realmTextField, null);
         inputValidator.constrainTextFieldToBeNonEmpty(gatewayAccountNameLabel.getText(), gatewayAccountName, null);
         inputValidator.constrainTextFieldToBeNonEmpty(specifyUserRadioButton.getText(), authenticatedUserTextField, null );
         inputValidator.constrainTextFieldToBeNonEmpty(servicePrincipalLabel.getText(), servicePrincipalTextField, null);
@@ -189,7 +191,8 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         assertion.setS4U2Self(protocolTransitionRadioButton.isSelected());
         assertion.setS4U2Proxy(constrainedProxyRadioButton.isSelected());
         assertion.setLastAuthenticatedUser(lastAuthenticatedUserRadioButton.isSelected());
-        assertion.setAuthenticatedUser(authenticatedUserTextField.getText());
+        String authenticatedUser = !lastAuthenticatedUserRadioButton.isSelected()? authenticatedUserTextField.getText():null;
+        assertion.setAuthenticatedUser(authenticatedUser);
 
         return assertion;
     }

@@ -108,7 +108,7 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
     }
 
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(servicePrincipalName, authenticatedUser);
+        return Syntax.getReferencedNames(servicePrincipalName, authenticatedUser, realm, krbConfiguredAccount);
     }
 
     //

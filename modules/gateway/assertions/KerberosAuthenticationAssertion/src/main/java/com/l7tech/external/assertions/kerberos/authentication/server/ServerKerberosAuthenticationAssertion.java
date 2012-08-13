@@ -82,6 +82,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
         String serviceType = getServiceFromServicePrincipalName(assertion.getServicePrincipalName());
         String realm = ExpandVariables.process(assertion.getRealm(), variableMap, getAudit()).toUpperCase();//realm should always be in upper case
         String spn = ExpandVariables.process(assertion.getServicePrincipalName(), variableMap, getAudit());
+        String krbServiceAccount = !assertion.isKrbUseGatewayKeytab()?ExpandVariables.process(assertion.getKrbConfiguredAccount(), variableMap, getAudit()):null;
         
         String svcPrincipal = null;
         KerberosServiceTicket kerberosServiceTicket = null;
@@ -143,7 +144,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                         svcPrincipal = getServicePrincipal(serviceType, realm);
                         kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), svcPrincipal, authenticatedUserAccount);
                     } else {
-                        PrincipalName userPrincipal = new PrincipalName(assertion.getKrbConfiguredAccount(), assertion.getRealm());
+                        PrincipalName userPrincipal = new PrincipalName(krbServiceAccount, realm);
                         String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), assertion.getKrbSecurePasswordReference());
                         kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, authenticatedUserAccount);
                     }
@@ -178,7 +179,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                     kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), svcPrincipal, serviceTicket);
                 }
                 else {
-                    PrincipalName userPrincipal = new PrincipalName(assertion.getKrbConfiguredAccount(), assertion.getRealm());
+                    PrincipalName userPrincipal = new PrincipalName(krbServiceAccount, realm);
                     String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), assertion.getKrbSecurePasswordReference());
                     kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, serviceTicket);
                 }
