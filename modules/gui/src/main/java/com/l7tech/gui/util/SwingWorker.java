@@ -1,15 +1,12 @@
 package com.l7tech.gui.util;
 
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 
-import javax.swing.*;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
+import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import javax.swing.SwingUtilities;
 
 /**
  * This is the 3rd version of SwingWorker (also known as
@@ -25,49 +22,40 @@ import java.util.logging.Logger;
  */
 public abstract class SwingWorker {
   private static final Logger logger = Logger.getLogger(SwingWorker.class.getName());
+  private Object value;  // see getValue(), setValue()
 
-  private static final int POOL_CORE_SIZE = SyspropUtil.getInteger("com.l7tech.gui.util.SwingWorker.threadPool.coreSize", 5);
-  private static final int POOL_MAX_SIZE = SyspropUtil.getInteger("com.l7tech.gui.util.SwingWorker.threadPool.maxSize",50);
-  private static final int POOL_KEEP_ALIVE_MILLIS = SyspropUtil.getInteger("com.l7tech.gui.util.SwingWorker.threadPool.keepAliveMillis",1000);
-
-  private static final BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(100);
-  private static final ThreadFactory threadFactory = new ThreadFactory() {
-      final ThreadFactory dflt = Executors.defaultThreadFactory();
-
-      @Override
-      public Thread newThread(Runnable r) {
-          Thread t = dflt.newThread(r);
-          t.setName("SwingWorker-" + t.getName());
-          return t;
-      }
-  };
-  private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(POOL_CORE_SIZE, POOL_MAX_SIZE, POOL_KEEP_ALIVE_MILLIS, TimeUnit.MILLISECONDS, workQueue, threadFactory, new ThreadPoolExecutor.CallerRunsPolicy());
-
-  private final AtomicReference<Object> value = new AtomicReference<Object>();
-
-  private final AtomicReference<Future<Object>> valueFuture = new AtomicReference<Future<Object>>();
-
-  private final Runnable doFinished = new Runnable() {
-    public void run() {
-      finished();
+  /** 
+   * Class to maintain reference to current worker thread
+   * under separate synchronization control.
+   */
+  private static class ThreadVar {
+    private Thread thread;
+    ThreadVar(Thread t) {
+      thread = t;
     }
-  };
+    synchronized Thread get() {
+      return thread;
+    }
+    synchronized void clear() {
+      thread = null;
+    }
+  }
 
-  private final Runnable doConstruct;
+  private ThreadVar threadVar;
 
-    /**
+  /** 
    * Get the value produced by the worker thread, or null if it 
    * hasn't been constructed yet.
    */
-  protected Object getValue() {
-    return value.get();
+  protected synchronized Object getValue() {
+    return value; 
   }
 
-  /**
-   * Set the value produced by worker thread
+  /** 
+   * Set the value produced by worker thread 
    */
-  private void setValue(Object x) {
-    value.set(x);
+  private synchronized void setValue(Object x) {
+    value = x; 
   }
 
   /** 
@@ -87,10 +75,11 @@ public abstract class SwingWorker {
    * to force the worker to stop what it's doing.
    */
   public void interrupt() {
-    Future<Object> future = valueFuture.getAndSet(null);
-    if (future != null) {
-      future.cancel(true);
+    Thread t = threadVar.get();
+    if (t != null) {
+      t.interrupt();
     }
+    threadVar.clear();
   }
 
   /**
@@ -101,19 +90,15 @@ public abstract class SwingWorker {
    * @return the value created by the <code>construct</code> method
    */
   public Object get() {
-
     while (true) {
-      Future<Object> future = valueFuture.get();
-      if (future == null) {
+      Thread t = threadVar.get();
+      if (t == null) {
         return getValue();
       }
       try {
-        future.get();
+        t.join();
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt(); // propagate
-        return null;
-      } catch (ExecutionException e) {
-        logger.log(Level.FINE, "Exception in SwingWorker task: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         return null;
       }
     }
@@ -125,38 +110,49 @@ public abstract class SwingWorker {
    * and then exit.
    */
   public SwingWorker() {
-      doConstruct = new Runnable() {
-          public void run() {
-              try {
-                  setValue(construct());
-              } catch(RuntimeException exception) {
-                  String handlerClass = SyspropUtil.getProperty("sun.awt.exception.handler");
-                  if (handlerClass != null) {
-                      handleException(handlerClass, exception);
-                  }
-                  else {
-                      throw exception;
-                  }
-              } finally {
-                  valueFuture.set(null);
-              }
+    final Runnable doFinished = new Runnable() {
+      public void run() {
+        finished();
+      }
+    };
 
-              SwingUtilities.invokeLater(doFinished);
-          }
-      };
+    Runnable doConstruct = new Runnable() {
+      public void run() {
+        try {
+          setValue(construct());
+        } catch(RuntimeException exception) {
+            String handlerClass = SyspropUtil.getProperty("sun.awt.exception.handler");
+            if (handlerClass != null) {
+                handleException(handlerClass, exception);
+            }
+            else {
+                throw exception;
+            }
+        } finally {
+          threadVar.clear();
+        }
 
+        SwingUtilities.invokeLater(doFinished);
+      }
+    };
+
+    Thread t = new Thread(doConstruct);
+    threadVar = new ThreadVar(t);
   }
 
   /**
    * Start the worker thread.
    */
   public void start() {
-      valueFuture.set((Future<Object>)executor.submit(doConstruct));
+    Thread t = threadVar.get();
+    if (t != null) {
+      t.start();
+    }
   }
 
-  protected boolean isAlive() {
-    return valueFuture.get() != null;
-  }
+    protected boolean isAlive() {
+        return threadVar.get() != null;
+    }
 
     private void handleException(String handerClassName, RuntimeException exception) {
         Object handler = null;
