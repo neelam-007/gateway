@@ -35,17 +35,17 @@ import java.util.regex.Pattern;
  */
 public class RestServiceInfoPanel extends WizardStepPanel {
     private static final Pattern FILE_PATTERN = Pattern.compile("(?i).*(:?wadl|xml)");
-    private static final String[] COLUMN_HEADERS = new String[]{"Resource Base URL", "Service Name", "Gateway URL"};
+    private static final String[] COLUMN_HEADERS = new String[]{"Resource Base URL", "Service Name", "Gateway URI"};
     private JPanel mainPanel;
     private JTextField tfServiceName;
     private JTextField tfBackendUrl;
-    private JRadioButton overrideGatewayUrl;
+    private JCheckBox overrideGatewayUrl;
     private JTextField tfGatewayUrl;
     private JTextField tfWadlLocation;
     private JButton btHttpOptions;
     private JButton btFile;
     private JTable serviceDescriptors;
-    private JRadioButton useCustomValues;
+    private JCheckBox useCustomValues;
     private JPanel wadlImportPanel;
     private JPanel manualEntryPanel;
     private JButton btLoadWadl;
@@ -154,7 +154,7 @@ public class RestServiceInfoPanel extends WizardStepPanel {
     private void initialize(){
         setLayout(new BorderLayout());
         add(mainPanel);
-        gatewayPrefix.setText("http://" + TopComponents.getInstance().ssgURL().getHost() + ":8080/");
+        gatewayPrefix.setText("http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]/");
     }
 
     @Override
@@ -165,10 +165,20 @@ public class RestServiceInfoPanel extends WizardStepPanel {
             manualEntryPanel.setVisible(manualEntry);
             wadlImportPanel.setVisible(!manualEntry);
             if(manualEntry){
-                description = "Specify a Service Name, Resource Base URL and optionally overriding the default Gateway URL.  The Gateway URL will mimic the path from the Resource Base URL unless overridden.";
+                description = "Specify a Service Name, Resource Base URL and optionally overriding the default Gateway URI.  The Gateway URI will mimic the path from the Resource Base URL unless overridden.<br/>" +
+                        "<br/>* denotes required fields.<br/>" +
+                        "<br/>Example:<br/>" +
+                        "Service Name: Twitter Search API<br/>" +
+                        "Resource Base URL: http://search.twitter.com<br/>" +
+                        "Gateway URI: http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]/ssg/twitter/";
             }
             else {
-                description = "Specify the location to a WADL file and click Load to import the REST service endpoint(s).  The Gateway URL must be unique will mimic the Resource Base URL ";
+                description = "Specify the location to a WADL file and click Load to import the REST service endpoint(s).  The Gateway URI must be unique will mimic the Resource Base URL.<br/>" +
+                        "<br/>* denotes required fields.<br/>" +
+                        "<br/>Example:<br/>" +
+                        "Location: c:\\services\\wadl\\echo_service.wadl (Windows)<br/>" +
+                        "Location: \\wadl\\echo_service.wadl (Unix/Linux)<br/>" +
+                        "Location: http://www.api.layer7.com/services/echo_service.wadl<br/>";
             }
         }
     }
@@ -243,7 +253,10 @@ public class RestServiceInfoPanel extends WizardStepPanel {
             DialogDisplayer.display(new JOptionPane("Invalid Backend URL"), getOwner().getContentPane(), "Invalid Backend URL", null);
             return false;
         }
-
+        if(overrideGatewayUrl.isSelected() && tfGatewayUrl.getText().trim().isEmpty()){
+            DialogDisplayer.display(new JOptionPane("Gateway URI can not be empty."), getOwner().getContentPane(), "Invalid Gateway URI", null);
+            return false;
+        }
         return true;
     }
 
@@ -256,6 +269,10 @@ public class RestServiceInfoPanel extends WizardStepPanel {
         Set<String> duplicate = new HashSet<String>();
         for(int i = 0; i < serviceDescriptorsTableModel.getRowCount(); i++){
             String value = (String)serviceDescriptorsTableModel.getValueAt(i, 2);
+            if(useCustomValues.isSelected() && (value == null || value.trim().isEmpty())){
+                DialogDisplayer.display(new JOptionPane("Gateway URI can not be empty."), getOwner().getContentPane(), "Invalid Gateway URI", null);
+                return false;
+            }
             if(duplicate.contains(value)){
                 DialogDisplayer.display(new JOptionPane("Duplicate Gateway URL '" + value + "' found.  Please ensure all Gateway URLs are unique."), getOwner().getContentPane(), "Duplicate Gateway URL", null);
                 return false;
