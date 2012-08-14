@@ -193,7 +193,7 @@ public class ServerSchemaValidation
                     logAndAudit(AssertionMessages.SCHEMA_VALIDATION_GLOBALREF_BROKEN, globalSchemaUri );
                     return AssertionStatus.SERVER_ERROR;
                 } catch (IOException e) {
-                    logAndAudit(AssertionMessages.SCHEMA_VALIDATION_IO_ERROR, new String[] { "schema name: " + globalSchemaUri + ": " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+                    logAndAudit(AssertionMessages.SCHEMA_VALIDATION_GLOBALREF_BROKEN, new String[] { globalSchemaUri  }, ExceptionUtils.getDebugException(e));
                     return AssertionStatus.SERVER_ERROR;
                 }
             } else {
