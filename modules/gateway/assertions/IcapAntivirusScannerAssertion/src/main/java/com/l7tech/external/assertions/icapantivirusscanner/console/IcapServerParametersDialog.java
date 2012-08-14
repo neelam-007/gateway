@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.icapantivirusscanner.console;
 
+import ch.mimo.netty.handler.codec.icap.IcapCodecUtil;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapServiceParameter;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -87,7 +88,28 @@ public class IcapServerParametersDialog extends JDialog {
                     JOptionPane.ERROR_MESSAGE, null);
             return;
         }
-
+        if(header.isSelected()){
+            try{
+                IcapCodecUtil.validateHeaderName(paramNameField.getText().trim());
+            }
+            catch(IllegalArgumentException e){
+                DialogDisplayer.showMessageDialog(this,
+                        "Parameter name contains invalid character",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE, null);
+                return;
+            }
+            try{
+                IcapCodecUtil.validateHeaderValue(paramValueField.getText().trim());
+            }
+            catch(IllegalArgumentException e){
+                DialogDisplayer.showMessageDialog(this,
+                        "Parameter value contains invalid character",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE, null);
+                return;
+            }
+        }
         IcapServiceParameter parameter = new IcapServiceParameter(
                 paramNameField.getText().trim(),
                 paramValueField.getText().trim(),

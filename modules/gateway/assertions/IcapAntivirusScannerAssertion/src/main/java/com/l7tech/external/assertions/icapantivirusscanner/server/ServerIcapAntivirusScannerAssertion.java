@@ -455,6 +455,6 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         } catch (UnsupportedEncodingException e) {
             logAndAudit(AssertionMessages.ICAP_UNSUPPORTED_ENCODING, ExceptionUtils.getMessage(e));
         }
-        return sb.toString();
+        return sb.length() == 1 ? "" : sb.toString();
     }
 }
