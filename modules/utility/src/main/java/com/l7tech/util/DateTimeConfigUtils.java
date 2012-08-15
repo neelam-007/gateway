@@ -56,7 +56,7 @@ public class DateTimeConfigUtils {
             if (isTimestamp(dateTimeString)) {
                 returnDate = parseTimestamp(dateTimeString);
             } else {
-                throw new UnknownDateFormatException("Unknown date format: " + dateTimeString);
+                throw new UnknownDateFormatException("Unknown date format: '" + dateTimeString + "'");
             }
         } else {
             final SimpleDateFormat dateFormat;
@@ -240,7 +240,7 @@ public class DateTimeConfigUtils {
         final boolean isSeconds = millis == null || !millis;
 
         final String typeMsg = (isMillis && isSeconds) ? "" : (isMillis) ? " millisecond" : " second";
-        final String exceptionMsg = "Invalid" + typeMsg + " timestamp: " + timeStamp;
+        final String exceptionMsg = "Invalid" + typeMsg + " timestamp: '" + timeStamp + "'";
 
         if (!isTimestamp(timeStamp)) {
             throw new UnknownDateFormatException(exceptionMsg);

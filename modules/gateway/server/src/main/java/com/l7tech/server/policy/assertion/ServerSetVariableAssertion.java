@@ -67,11 +67,18 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
             }
         } else if(dataType == DataType.DATE_TIME) {
             try {
+
+                // Is the assertion configured to use <auto> e.g. gateway's current time?
+                // <auto> is saved as an empty expression, which is treated differently to the expression resolving to
+                // nothing, which is a fail case.
+                final boolean isGatewayTime = assertion.expression().isEmpty();
                 final Date date;
-                if (strValue.trim().isEmpty()) {
+                if (isGatewayTime) {
                     date = new Date(timeSource.currentTimeMillis());
                 } else {
                     final String dateFormat = assertion.getDateFormat();
+                    // the <auto> format is saved as an empty value, which is treated differently to the format resolving
+                    // to nothing, which is a fail case.
                     if (dateFormat != null && !dateFormat.trim().isEmpty()) {
                         //assertion configured with a format
                         if (dateFormat.equalsIgnoreCase(DateTimeConfigUtils.TIMESTAMP)) {
@@ -83,7 +90,8 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
                         } else {
                             final String dateFormatEvaled = ExpandVariables.process(dateFormat, vars, getAudit());
                             if (dateFormatEvaled.trim().isEmpty()) {
-                                logAndAudit(AssertionMessages.SET_VARIABLE_UNRECOGNISED_DATE_FORMAT, dateFormatEvaled);
+                                // fail case, date format resolved to nothing
+                                logAndAudit(AssertionMessages.SET_VARIABLE_UNRECOGNISED_DATE_FORMAT, "''");
                                 return AssertionStatus.FALSIFIED;
                             }
                             final SimpleDateFormat simpleDateFormat;

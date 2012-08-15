@@ -15,6 +15,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mock;
+import org.mockito.internal.stubbing.answers.Returns;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.text.MessageFormat;
@@ -86,7 +87,33 @@ public class ServerSetVariableAssertionTest {
         }
 
         assertTrue(testAudit.isAuditPresent(AssertionMessages.SET_VARIABLE_UNRECOGNISED_DATE_FORMAT));
-        assertTrue(testAudit.isAuditPresentContaining("Date string format is not recognized: Unknown date format: 2012-05-07T23:12:24.567Z"));
+        assertTrue(testAudit.isAuditPresentContaining("Date string format is not recognized: Unknown date format: '2012-05-07T23:12:24.567Z'"));
+    }
+
+    /**
+     * A format which resolves to nothing is a fail case as we don't know how to parse any input. This is different
+     * to the &lt;auto&gt; which allows for well known formats to be parsed as a convenience. &lt;auto&gt; is
+     * persisted as an empty property value, which is different to the value resolving to nothing at runtime.
+     *
+     */
+    @Test
+    public void testSetDateVariable_FormatResolvesToNothing_Fail() throws Exception {
+        final String expression = "${doesnotexist}";
+        SetVariableAssertion assertion = new SetVariableAssertion("foo", expression);
+        assertion.setDataType(DataType.DATE_TIME);
+        assertion.setDateFormat(expression);
+
+        createServerAssertion(assertion);
+
+        when(mockContext.getVariable("doesnotexist")).then(new Returns(""));
+        final AssertionStatus assertionStatus = fixture.checkRequest(mockContext);
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SET_VARIABLE_UNRECOGNISED_DATE_FORMAT));
+        assertTrue(testAudit.isAuditPresentContaining("Date string format is not recognized: ''"));
     }
 
     /**
@@ -211,6 +238,32 @@ public class ServerSetVariableAssertionTest {
         verify(mockContext, times(1)).setVariable("foo", expectedDate);
     }
 
+    /**
+     * A variable which resolves to nothing is a fail case as there is nothing to parse. This is different to the
+     * &lt;auto&gt; behavior which provides the gateway current time as a convenience.
+     *
+     */
+    @Test
+    @BugNumber(12831)
+    public void testSetDateVariable_ExpressionResolvesToNothing_Fail() throws Exception {
+        final String expression = "${doesnotexist}";
+        SetVariableAssertion assertion = new SetVariableAssertion("foo", expression);
+        assertion.setDataType(DataType.DATE_TIME);
+        assertion.setDateFormat(DateTimeConfigUtils.TIMESTAMP);
+
+        createServerAssertion(assertion);
+
+        when(mockContext.getVariable("doesnotexist")).then(new Returns(""));
+        final AssertionStatus assertionStatus = fixture.checkRequest(mockContext);
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SET_VARIABLE_UNRECOGNISED_DATE_FORMAT));
+        assertTrue(testAudit.isAuditPresentContaining("Date string format is not recognized: Invalid timestamp: ''"));
+    }
+
     @Test
     public void testSetDateVariable_InvalidTimestamp() throws Exception {
         final String inputDate = "13364323445670"; // 14 digits
@@ -227,7 +280,7 @@ public class ServerSetVariableAssertionTest {
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
 
         assertTrue(testAudit.isAuditPresent(AssertionMessages.SET_VARIABLE_UNRECOGNISED_DATE_FORMAT));
-        assertTrue(testAudit.isAuditPresentContaining("Date string format is not recognized: Invalid timestamp: 13364323445670"));
+        assertTrue(testAudit.isAuditPresentContaining("Date string format is not recognized: Invalid timestamp: '13364323445670'"));
     }
 
     @Test

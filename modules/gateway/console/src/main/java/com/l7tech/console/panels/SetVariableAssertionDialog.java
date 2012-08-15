@@ -563,6 +563,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         }
 
         if (getSelectedDataType() == DataType.DATE_TIME) {
+            // Validate any custom format selected
             try {
                 final String pattern = getDateFormat();
                 if (!Syntax.isAnyVariableReferenced(pattern) && !AUTO_STRING.equals(pattern) && !pattern.isEmpty() && !DateTimeConfigUtils.isTimestampFormat(pattern)) {
@@ -576,6 +577,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                 nonExpressionInputStatusLabel.setText("Invalid date format");
             }
 
+            // validate offset
             final String offsetExp = dateOffsetTextField.getText().trim();
             boolean isValid = true;
             String errorMsg = null;

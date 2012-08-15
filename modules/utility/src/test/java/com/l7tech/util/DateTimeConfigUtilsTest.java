@@ -134,7 +134,7 @@ public class DateTimeConfigUtilsTest {
             DateTimeConfigUtils.parseTimestamp(timeStamp);
             fail("Exception expected");
         } catch (DateTimeConfigUtils.UnknownDateFormatException e) {
-            assertEquals("Invalid timestamp: " + timeStamp, e.getMessage());
+            assertEquals("Invalid timestamp: '" + timeStamp + "'", e.getMessage());
         }
     }
 
@@ -151,7 +151,7 @@ public class DateTimeConfigUtilsTest {
             DateTimeConfigUtils.parseMilliTimestamp(timeStamp);
             fail("Exception expected");
         } catch (DateTimeConfigUtils.UnknownDateFormatException e) {
-            assertEquals("Invalid millisecond timestamp: " + timeStamp, e.getMessage());
+            assertEquals("Invalid millisecond timestamp: '" + timeStamp + "'", e.getMessage());
         }
     }
 
@@ -168,7 +168,7 @@ public class DateTimeConfigUtilsTest {
             DateTimeConfigUtils.parseSecondTimestamp(timeStamp);
             fail("Exception expected");
         } catch (DateTimeConfigUtils.UnknownDateFormatException e) {
-            assertEquals("Invalid second timestamp: " + timeStamp, e.getMessage());
+            assertEquals("Invalid second timestamp: '" + timeStamp + "'", e.getMessage());
         }
     }
 
