@@ -307,7 +307,7 @@ doUpdateSudoers () {
 # updating the /etc/sudoers file:
 if [ "X$LDAP_GROUP_NAME" != "X" ]; then
         # prepare group name - in case there are spaces we have to escape them:
-        SUDOERS_COMP_GROUP_NAME=$(echo "$LDAP_GROUP_NAME" | sed 's| |\\\ |g')
+        SUDOERS_COMP_GROUP_NAME=$(echo "$LDAP_GROUP_NAME" | sed 's| |\\\\ |g')
         doBackup /etc/sudoers
         if [ "X$RETVAL" == "X0" ]; then
                 sed -i "s|\(^ssgconfig ALL = NOPASSWD: /sbin/service ssem start.*$\)|\1\n\n# Added by $0 on $DATE_TIME:\n\
