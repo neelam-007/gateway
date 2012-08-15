@@ -85,7 +85,7 @@ public class NtlmAuthenticationAssertion extends HttpCredentialSourceAssertion i
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:NtlmAuthentication" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "assertion:NtlmAuthentication");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ntlm.console.NtlmAuthenticationPropertiesDialog");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "NTLM Authentication Properties");
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);

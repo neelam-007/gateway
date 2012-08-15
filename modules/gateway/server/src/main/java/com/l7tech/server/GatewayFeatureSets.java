@@ -656,6 +656,16 @@ public class GatewayFeatureSets {
                 "The necessary assertions to enable generate of an OAuth 1.0 A Signature Base String",
                 mass("assertion:GenerateOAuthSignatureBaseString"));
 
+        GatewayFeatureSet ntlmAuthenticationAssertion =
+                fsr("set:NtlmAuthenticationAssertion:Assertions",
+                     "The necessary assertions to enable NTLM inbound authentication functionality",
+                     mass("assertion:NtlmAuthentication"));
+
+        GatewayFeatureSet kerberosAuthenticationAssertion =
+                fsr("set:KerberosAuthenticationAssertion:Assertions",
+                 "The necessary assertions to enable Kerberos authentication and constrained delegation functionality",
+                 mass("assertion:KerberosAuthentication"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -702,6 +712,8 @@ public class GatewayFeatureSets {
             fs(evaluateJsonPathExpression),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
+            fs(ntlmAuthenticationAssertion),
+            fs(kerberosAuthenticationAssertion),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -753,7 +765,9 @@ public class GatewayFeatureSets {
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
             fs(lookupDynamicContextVariables),
-            fs(generateOAuthSignatureBaseString));
+            fs(generateOAuthSignatureBaseString),
+            fs(ntlmAuthenticationAssertion),
+            fs(kerberosAuthenticationAssertion));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
             "Same features as XML Firewall for now.",
@@ -798,7 +812,9 @@ public class GatewayFeatureSets {
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
             fs(lookupDynamicContextVariables),
-            fs(generateOAuthSignatureBaseString));
+            fs(generateOAuthSignatureBaseString),
+            fs(ntlmAuthenticationAssertion),
+            fs(kerberosAuthenticationAssertion));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
             "Same features as Gateway for now.",
@@ -845,7 +861,9 @@ public class GatewayFeatureSets {
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
             fs(lookupDynamicContextVariables),
-            fs(generateOAuthSignatureBaseString));
+            fs(generateOAuthSignatureBaseString),
+            fs(ntlmAuthenticationAssertion),
+            fs(kerberosAuthenticationAssertion));
 
         GatewayFeatureSet profileApi =
         fsp("set:Profile:Api", "Layer 7 API Proxy",

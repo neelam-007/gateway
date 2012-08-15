@@ -147,8 +147,8 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/authentication.gif");//authentication.gif
 
         // request default feature set name for our class name, since we are a known optional module
-        // that is, we want our required feature set to be "assertion:KerberosConstrainedDelegation" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        // that is, we want our required feature set to be "assertion:KerberosAuthentication" rather than "set:modularAssertions"
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "assertion:KerberosAuthentication");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
