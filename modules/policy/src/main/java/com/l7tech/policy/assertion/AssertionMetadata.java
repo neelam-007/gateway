@@ -578,7 +578,7 @@ public interface AssertionMetadata {
      * Any returned bindings will be registered with the Gateway's extensionInterfaceManager.
      * <p/>
      * If an interface is annotated with both @Administrative and @Secured, then method
-     * calls will be passed through the RBAC enforcemetn interceptor.
+     * calls will be passed through the RBAC enforcement interceptor.
      * <p/>
      * Any @Transactional annotations present on the interface will be honored when methods are invoked remotely.
      * <p/>

@@ -666,6 +666,10 @@ public class GatewayFeatureSets {
                  "The necessary assertions to enable Kerberos authentication and constrained delegation functionality",
                  mass("assertion:KerberosAuthentication"));
 
+        GatewayFeatureSet oAuthInstaller = fsr("set:OAuthInstallerAssertion:Assertions",
+                "The necessary assertions to install the OAuth Toolkit",
+                mass("assertion:OAuthInstaller"));
+        
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -712,8 +716,6 @@ public class GatewayFeatureSets {
             fs(evaluateJsonPathExpression),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
-            fs(ntlmAuthenticationAssertion),
-            fs(kerberosAuthenticationAssertion),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -814,7 +816,8 @@ public class GatewayFeatureSets {
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(ntlmAuthenticationAssertion),
-            fs(kerberosAuthenticationAssertion));
+            fs(kerberosAuthenticationAssertion),
+            fs(oAuthInstaller));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
             "Same features as Gateway for now.",

@@ -1,0 +1,2667 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<enumeration ObjectType="Service" ExportDate="20120814 0133" ExporterVersion="6.2 (4248)">
+    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="123797510" version="2">
+        <l7:ServiceDetail folderId="123600899" id="123797510" version="2">
+            <l7:Name>oauth/v1</l7:Name>
+            <l7:Enabled>true</l7:Enabled>
+            <l7:ServiceMappings>
+                <l7:HttpMapping>
+                    <l7:UrlPattern>/auth/oauth/v1/token</l7:UrlPattern>
+                    <l7:Verbs>
+                        <l7:Verb>GET</l7:Verb>
+                        <l7:Verb>POST</l7:Verb>
+                        <l7:Verb>PUT</l7:Verb>
+                        <l7:Verb>DELETE</l7:Verb>
+                    </l7:Verbs>
+                </l7:HttpMapping>
+            </l7:ServiceMappings>
+            <l7:Properties>
+                <l7:Property key="policyRevision">
+                    <l7:LongValue>3</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="wssProcessingEnabled">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="internal">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:ServiceDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy" version="2">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Implements the token endpoint for OAuth 1.0"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="This endpoint issues an access token"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SslAssertion/&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="60cec430-0767-429c-8eff-62891c2eb343"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="35aa8869-8319-44e0-a6b6-2ed2ce59001e"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:Split&gt;
+                    &lt;L7p:InputVariable stringValue="oauth_params"/&gt;
+                    &lt;L7p:OutputVariable stringValue="oauth_params_mulit"/&gt;
+                    &lt;/L7p:Split&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${oauth_params_mulit}"/&gt;
+                    &lt;L7p:Operator operatorNull="null"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item regex="included"&gt;
+                    &lt;L7p:Pattern
+                    stringValue="oauth_(consumer_key|timestamp|verifier|token|signature|signature_method|nonce)=.+"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="400"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="T25seSBvYXV0aCBwYXJhbWV0ZXJzIGFyZSBhY2NlcHRlZA=="/&gt;
+                    &lt;L7p:EarlyResponse booleanValue="true"/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
+                    &lt;L7p:ResponseStatus stringValue="400"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:FalseAssertion/&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Validate that only oauth parameters are included"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtwYXJhbXN9"/&gt;
+                    &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="params"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
+                    &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
+                    &lt;L7p:ProtectedServiceUrl
+                    stringValue="${oauth_ovp_server}/oauth/validation/validate/v1/signature"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestMsgSrc stringValue="params"/&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="validationResult"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue=""/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="validationResult"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/validation/result[text()='valid']"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Validate the token including the signature"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="YXQ="/&gt;
+                    &lt;L7p:VariableToSet stringValue="token_type"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="585c3a3d-8fd7-4337-8d91-46846bfc4194"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="dG9rZW49JHtnZW5Ub2tlbn0mc2VjcmV0PSR7Z2VuU2VjcmV0fSZleHBpcmF0aW9uPSR7Z2VuRXhwaXJhdGlvbn0mY2xpZW50X2tleT0ke29hdXRoX2NvbnN1bWVyX2tleX0mdGVtcF90b2tlbj0ke29hdXRoX3Rva2VufSZzdGF0dXM9RU5BQkxFRA=="/&gt;
+                    &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="toStore"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:HttpMethod httpMethod="POST"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/store"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestMsgSrc stringValue="toStore"/&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="toStoreResult"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${toStoreResult.mainpart}"/&gt;
+                    &lt;L7p:Expression2 stringValue="persisted"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="persisted"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="dGVtcF90b2tlbj0ke29hdXRoX3Rva2VufQ=="/&gt;
+                    &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="toStore"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:HttpMethod httpMethod="POST"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/delete"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestMsgSrc stringValue="toStore"/&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="toStoreResult"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:AuditDetailAssertion&gt;
+                    &lt;L7p:Detail stringValue="The temporary token '${oauth_token}' could not be deleted."/&gt;
+                    &lt;L7p:Level stringValue="WARNING"/&gt;
+                    &lt;/L7p:AuditDetailAssertion&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Delete the used authorized_request_token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="200"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody
+                    stringValue="b2F1dGhfdG9rZW49JHtnZW5Ub2tlbn0mb2F1dGhfdG9rZW5fc2VjcmV0PSR7Z2VuU2VjcmV0fQ=="/&gt;
+                    &lt;L7p:EarlyResponse booleanValue="true"/&gt;
+                    &lt;L7p:ResponseContentType stringValue="application/x-www-form-urlencoded"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Service>
+    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="123797505" version="2">
+        <l7:ServiceDetail folderId="123600900" id="123797505" version="2">
+            <l7:Name>oauth/v1</l7:Name>
+            <l7:Enabled>true</l7:Enabled>
+            <l7:ServiceMappings>
+                <l7:HttpMapping>
+                    <l7:UrlPattern>/auth/oauth/v1/*</l7:UrlPattern>
+                    <l7:Verbs>
+                        <l7:Verb>GET</l7:Verb>
+                        <l7:Verb>POST</l7:Verb>
+                        <l7:Verb>PUT</l7:Verb>
+                        <l7:Verb>DELETE</l7:Verb>
+                    </l7:Verbs>
+                </l7:HttpMapping>
+            </l7:ServiceMappings>
+            <l7:Properties>
+                <l7:Property key="policyRevision">
+                    <l7:LongValue>3</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="wssProcessingEnabled">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="internal">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:ServiceDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy" version="2">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Endpoint isused by websites to reload website content"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="60cec430-0767-429c-8eff-62891c2eb343"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Set this to the uri prefix that points to the authorization template
+                    resource files "/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAudXJpfQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="uri"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:Regex&gt;
+                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
+                    &lt;L7p:CaptureVar stringValue="uris"/&gt;
+                    &lt;L7p:IncludeEntireExpressionCapture booleanValue="false"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="uri"/&gt;
+                    &lt;L7p:Regex stringValue="(.*)/"/&gt;
+                    &lt;L7p:RegexName stringValue="remove uri prefix"/&gt;
+                    &lt;L7p:RegexVar stringValue="uri"/&gt;
+                    &lt;L7p:Replace booleanValue="true"/&gt;
+                    &lt;L7p:Replacement stringValue="/"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:Regex&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
+                    &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
+                    &lt;L7p:ProtectedServiceUrl
+                    stringValue="${oauth_v1_server_website_baseuri}${uri}${request.http.query}"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="Cookie"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="SOAPAction"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="Set-Cookie"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Service>
+    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="123797504" version="2">
+        <l7:ServiceDetail folderId="123600901" id="123797504" version="2">
+            <l7:Name>/protected/resource</l7:Name>
+            <l7:Enabled>true</l7:Enabled>
+            <l7:ServiceMappings>
+                <l7:HttpMapping>
+                    <l7:UrlPattern>/protected/resource</l7:UrlPattern>
+                    <l7:Verbs>
+                        <l7:Verb>GET</l7:Verb>
+                        <l7:Verb>POST</l7:Verb>
+                        <l7:Verb>PUT</l7:Verb>
+                        <l7:Verb>DELETE</l7:Verb>
+                    </l7:Verbs>
+                </l7:HttpMapping>
+            </l7:ServiceMappings>
+            <l7:Properties>
+                <l7:Property key="policyRevision">
+                    <l7:LongValue>1</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="wssProcessingEnabled">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="internal">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:ServiceDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy" version="0">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="&amp;quot;Protected&amp;quot; resource endpoint"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="a1d0576f-ad44-4142-bd1f-e7b15c37d52f"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="200"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="This assertion is a placeholder for calls to a resource server"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody
+                    stringValue="WW91IG1hZGUgaXQsIGhlcmUgaXMgdGhlIHJlc291cmNlOiAke2dhdGV3YXkudGltZX0sCmNvbnN1bWVyX2tleTogJHtvYXV0aF9jb25zdW1lcl9rZXl9LCB0b2tlbjogJHtvYXV0aF90b2tlbn0="/&gt;
+                    &lt;L7p:EarlyResponse booleanValue="true"/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Service>
+    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="123797507" version="2">
+        <l7:ServiceDetail folderId="123600899" id="123797507" version="2">
+            <l7:Name>oauth/v1</l7:Name>
+            <l7:Enabled>true</l7:Enabled>
+            <l7:ServiceMappings>
+                <l7:HttpMapping>
+                    <l7:UrlPattern>/auth/oauth/v1/request</l7:UrlPattern>
+                    <l7:Verbs>
+                        <l7:Verb>GET</l7:Verb>
+                        <l7:Verb>POST</l7:Verb>
+                        <l7:Verb>PUT</l7:Verb>
+                        <l7:Verb>DELETE</l7:Verb>
+                    </l7:Verbs>
+                </l7:HttpMapping>
+            </l7:ServiceMappings>
+            <l7:Properties>
+                <l7:Property key="policyRevision">
+                    <l7:LongValue>4</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="wssProcessingEnabled">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="internal">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:ServiceDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy" version="3">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Implements the request endpoint for OAuth 1.0"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SslAssertion/&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="60cec430-0767-429c-8eff-62891c2eb343"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0LnVybC5xdWVyeX0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="query"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${query}"/&gt;
+                    &lt;L7p:Expression2 stringValue="oauth"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue="oauth"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${query}"/&gt;
+                    &lt;L7p:Expression2 stringValue="oauth"/&gt;
+                    &lt;L7p:Negate booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="CONTAINS"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="CONTAINS"/&gt;
+                    &lt;L7p:RightValue stringValue="oauth"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="400"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="Tm8gb2F1dGggcGFyYW1zIGFsbG93ZWQgaW4gVVJM"/&gt;
+                    &lt;L7p:EarlyResponse booleanValue="true"/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
+                    &lt;L7p:ResponseStatus stringValue="400"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:FalseAssertion/&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="No oauth parameters allowed within URL"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="35aa8869-8319-44e0-a6b6-2ed2ce59001e"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${params}"/&gt;
+                    &lt;L7p:Operator operatorNull="null"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="CONTAINS"/&gt;
+                    &lt;L7p:RightValue stringValue="oauth_verifier"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Operator operator="CONTAINS"/&gt;
+                    &lt;L7p:RightValue stringValue="oauth_callback"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtwYXJhbXN9"/&gt;
+                    &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="params"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
+                    &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
+                    &lt;L7p:ProtectedServiceUrl
+                    stringValue="${oauth_ovp_server}/oauth/validation/validate/v1/signature"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestMsgSrc stringValue="params"/&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="validationResult"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue=""/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="validationResult"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/validation/result[text()='valid']"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue="xpathClientName"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="validationResult"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/validation/client_name/text()"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Validate signature"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="dXJ0"/&gt;
+                    &lt;L7p:VariableToSet stringValue="token_type"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="585c3a3d-8fd7-4337-8d91-46846bfc4194"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="xpathClientName.result"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="client_name"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="including 'scope' for the tokenstore"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="Y2xpZW50X2tleT0ke29hdXRoX2NvbnN1bWVyX2tleX0mdG9rZW49JHtnZW5Ub2tlbn0mc2VjcmV0PSR7Z2VuU2VjcmV0fSZjYWxsYmFjaz0ke29hdXRoX2NhbGxiYWNrfSZleHBpcmF0aW9uPSR7Z2VuRXhwaXJhdGlvbn0mY2xpZW50X25hbWU9JHtjbGllbnRfbmFtZX0mc2NvcGU9b29i"/&gt;
+                    &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="toTokenStore"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
+                    &lt;L7p:HttpMethod httpMethod="POST"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/store"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestMsgSrc stringValue="toTokenStore"/&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="client_key"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="token"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="secret"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="callback"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="expiration"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="client_name"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="tokenStoreResult"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${tokenStoreResult.mainpart}"/&gt;
+                    &lt;L7p:Expression2 stringValue="persisted"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:RightValue stringValue="persisted"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Issue an Unauthorized Request Token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="200"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody
+                    stringValue="b2F1dGhfdG9rZW49JHtnZW5Ub2tlbn0mb2F1dGhfdG9rZW5fc2VjcmV0PSR7Z2VuU2VjcmV0fSZvYXV0aF9jYWxsYmFja19jb25maXJtZWQ9dHJ1ZQo="/&gt;
+                    &lt;L7p:EarlyResponse booleanValue="true"/&gt;
+                    &lt;L7p:ResponseContentType stringValue="application/x-www-form-urlencoded"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="400"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHt0b2tlblN0b3JlUmVzdWx0Lm1haW5wYXJ0fQ=="/&gt;
+                    &lt;L7p:EarlyResponse booleanValue="true"/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
+                    &lt;L7p:ResponseStatus stringValue="400"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:FalseAssertion/&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Service>
+    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="123797506" version="2">
+        <l7:ServiceDetail folderId="123600899" id="123797506" version="2">
+            <l7:Name>oauth/v1</l7:Name>
+            <l7:Enabled>true</l7:Enabled>
+            <l7:ServiceMappings>
+                <l7:HttpMapping>
+                    <l7:UrlPattern>/auth/oauth/v1/authorize</l7:UrlPattern>
+                    <l7:Verbs>
+                        <l7:Verb>GET</l7:Verb>
+                        <l7:Verb>POST</l7:Verb>
+                        <l7:Verb>PUT</l7:Verb>
+                        <l7:Verb>DELETE</l7:Verb>
+                    </l7:Verbs>
+                </l7:HttpMapping>
+            </l7:ServiceMappings>
+            <l7:Properties>
+                <l7:Property key="policyRevision">
+                    <l7:LongValue>7</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="wssProcessingEnabled">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="internal">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:ServiceDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy" version="6">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Implements the autorization endpoint for OAuth 1.0"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="60cec430-0767-429c-8eff-62891c2eb343"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:SslAssertion/&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnN0YXRlfQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="state"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CustomizeErrorResponse&gt;
+                    &lt;L7p:Content stringValue="The request could not be handled due to unknown state: '${state}'"/&gt;
+                    &lt;L7p:ExtraHeaders nameValuePairArray="included"/&gt;
+                    &lt;/L7p:CustomizeErrorResponse&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ============== CONFIGURE VALUES HERE START ============== "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="JHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0ke3JlcXVlc3QudXJsLnBhdGh9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="this.app.url"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PHN0eWxlIHR5cGU9InRleHQvY3NzIi8+DQo8IS0tDQpib2R5IA0Kew0KYmFja2dyb3VuZC1pbWFnZTp1cmwoJy9hdXRoL29hdXRoL3YxL2F1dGhvcml6ZS9sb2dvJyk7DQpiYWNrZ3JvdW5kLXJlcGVhdDpuby1yZXBlYXQ7DQpiYWNrZ3JvdW5kLXBvc2l0aW9uOmNlbnRlcjsNCmJhY2tncm91bmQtYXR0YWNobWVudDpmaXhlZDsNCn0NCmRpdg0Kew0KYm9yZGVyOiNDMEMwQzAgb3V0c2V0IHRoaW47DQpiYWNrZ3JvdW5kLWNvbG9yOnJnYigyNDMsMjQzLDI0Myk7DQp9DQotLT4NCjwvc3R5bGU+"/&gt;
+                    &lt;L7p:VariableToSet stringValue="website_style"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ================== CONFIGURE VALUES HERE END ================== "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Configure constants"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${request.http.method}"/&gt;
+                    &lt;L7p:Expression2 stringValue="GET"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="GET"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Find mandatory parameters"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="401"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHtyZXF1ZXN0Lmh0dHAubWV0aG9kfSBpcyBub3Qgc3VwcG9ydGVk"/&gt;
+                    &lt;L7p:EarlyResponse booleanValue="true"/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
+                    &lt;L7p:ResponseStatus stringValue="400"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:FalseAssertion/&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Only GET is specified and supported"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${state}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_v1_server_website}"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="Cookie"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="SOAPAction"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="websiteTemplate"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt3ZWJzaXRlVGVtcGxhdGUubWFpbnBhcnR9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="content"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PGRpdj4NCjxwPg0KQW4gYXBwbGljYXRpb24gaXMgcmVxdWVzdGluZyBhY2Nlc3MgdG8geW91ciByZXNvdXJjZXMuDQo8L3A+DQo8cD4NClBsZWFzZSBsb2dpbiB0byBzZWUgd2hpY2ggYXBwbGljYXRpb24gaXMgbWFraW5nIHRoZSByZXF1ZXN0LCBhbmQgdG8gZ3JhbnQgb3IgZGVueSB0aGUgcmVxdWVzdC4NCjwvcD4NCjxmb3JtIGFjdGlvbj0iJHt0aGlzLmFwcC51cmx9IiBtZXRob2Q9IkdFVCI+DQoJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0ib2F1dGhfdG9rZW4iIHZhbHVlPSIke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXIub2F1dGhfdG9rZW59Ii8+DQoJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0ib2F1dGhfY29uc3VtZXJfa2V5IiB2YWx1ZT0iJHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLm9hdXRoX2NvbnN1bWVyX2tleX0iLz4NCgk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJzdGF0ZSIgdmFsdWU9ImF1dGhlbnRpY2F0ZSIvPg0KCTxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJMb2dpbiIvPg0KPC9mb3JtPg0KPC9kaXY+"/&gt;
+                    &lt;L7p:VariableToSet stringValue="newContent"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:Regex&gt;
+                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="content"/&gt;
+                    &lt;L7p:Regex stringValue="&amp;lt;!--oauth_content_placeholder--&gt;"/&gt;
+                    &lt;L7p:RegexName stringValue="update the content of the website"/&gt;
+                    &lt;L7p:Replace booleanValue="true"/&gt;
+                    &lt;L7p:Replacement stringValue="${newContent}"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:Regex&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Generate website content"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="200"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHtjb250ZW50fQ=="/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/html; charset=UTF-8"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="initial call of the client"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${state}"/&gt;
+                    &lt;L7p:Expression2 stringValue="authenticate"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="authenticate"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:HttpBasic/&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_v1_server_website}"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="Cookie"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="SOAPAction"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="websiteTemplate"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt3ZWJzaXRlVGVtcGxhdGUubWFpbnBhcnR9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="content"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt3ZWJzaXRlVGVtcGxhdGUubWFpbnBhcnR9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="errorContent"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PGRpdj5JbnZhbGlkIGNyZWRlbnRpYWxzLCBwbGVhc2UgdHJ5IGFnYWluIGxhdGVyPC9kaXY+"/&gt;
+                    &lt;L7p:VariableToSet stringValue="newErrorContent"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:Regex&gt;
+                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="errorContent"/&gt;
+                    &lt;L7p:Regex stringValue="&amp;lt;!--oauth_content_placeholder--&gt;"/&gt;
+                    &lt;L7p:RegexName stringValue="update the content of the website"/&gt;
+                    &lt;L7p:Replace booleanValue="true"/&gt;
+                    &lt;L7p:Replacement stringValue="${newErrorContent}"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:Regex&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Generate website content"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:CustomizeErrorResponse&gt;
+                    &lt;L7p:Content stringValue="${errorContent}"/&gt;
+                    &lt;L7p:ContentType stringValue="text/html; charset=UTF-8"/&gt;
+                    &lt;L7p:ExtraHeaders nameValuePairArray="included"/&gt;
+                    &lt;L7p:HttpStatus stringValue="401"/&gt;
+                    &lt;/L7p:CustomizeErrorResponse&gt;
+                    &lt;L7p:Authentication&gt;
+                    &lt;L7p:IdentityProviderOid longValue="-2"/&gt;
+                    &lt;/L7p:Authentication&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLm9hdXRoX3Rva2VufQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Add the user to the token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:ProtectedServiceUrl
+                    stringValue="${oauth_tokenstore_server}/oauth/tokenstore/update?token=${request.http.parameter.oauth_token}&amp;amp;resource_owner=${request.username}"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:ProtectedServiceUrl
+                    stringValue="${oauth_tokenstore_server}/oauth/tokenstore/getTemp?token=${request.http.parameter.oauth_token}"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="tokenClientResult"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue="xpathClientName"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="tokenClientResult"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/values/value/client_name/text()"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt4cGF0aENsaWVudE5hbWUucmVzdWx0fQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="client_name"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PGRpdj4NCjxwPg0KRG8geW91IHdhbnQgdG8gZ3JhbnQgdGhlIGNsaWVudCBhcHBsaWNhdGlvbiA8Yj4ke2NsaWVudF9uYW1lfTwvYj4gYWNjZXNzIHRvIHlvdXIgcmVzb3VyY2VzPw0KPC9wPg0KPGZvcm0gYWN0aW9uPSIke3RoaXMuYXBwLnVybH0iIG1ldGhvZD0iR0VUIj4NCgk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJvYXV0aF90b2tlbiIgdmFsdWU9IiR7cmVxdWVzdC5odHRwLnBhcmFtZXRlci5vYXV0aF90b2tlbn0iLz4NCgk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJzdGF0ZSIgdmFsdWU9ImdyYW50ZWQiLz4NCgk8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iR3JhbnQiLz4NCjwvZm9ybT4NCjxmb3JtIGFjdGlvbj0iJHt0aGlzLmFwcC51cmx9IiBtZXRob2Q9IkdFVCI+DQoJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0ib2F1dGhfdG9rZW4iIHZhbHVlPSIke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXIub2F1dGhfdG9rZW59Ii8+DQoJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0ic3RhdGUiIHZhbHVlPSJkZW5pZWQiLz4NCgk8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iRGVueSIvPg0KPC9mb3JtPg0KPGJyPg0KPGhyPg0KPHA+DQo8Yj5Ob3RlOjwvYj4gVGhlIGNsaWVudCBhcHBsaWNhdGlvbiB3YXMgaWRlbnRpZmllZCBieSB0aGUgcmVxdWVzdF90b2tlbiBvbmx5Ljxici8+DQooVGhpcyBpbmZvIG5lZWRzIHRvIGJlIGRpc3BsYXllZCBhY2NvcmRpbmcgdG8gT0F1dGggMS4wYSBpZiB0aGUgU2VydmljZVByb3ZpZGVyIGRvZXMgbm90IGhhdmUgYSB0cnVzdGVkIHJlbGF0aW9uc2hpcCB3aXRoIHRoZSBjbGllbnQgYXBwbGljYXRpb24uKQ0KPC9wPg0KPC9kaXY+"/&gt;
+                    &lt;L7p:VariableToSet stringValue="newContent"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:Regex&gt;
+                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="content"/&gt;
+                    &lt;L7p:Regex stringValue="&amp;lt;!--oauth_content_placeholder--&gt;"/&gt;
+                    &lt;L7p:RegexName stringValue="update the content of the website"/&gt;
+                    &lt;L7p:Replace booleanValue="true"/&gt;
+                    &lt;L7p:Replacement stringValue="${newContent}"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:Regex&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="200"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHtjb250ZW50fQ=="/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/html; charset=UTF-8"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="User login and grant/ deny access for client app"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${state}"/&gt;
+                    &lt;L7p:Expression2 stringValue="granted"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="granted"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="YXJ0"/&gt;
+                    &lt;L7p:VariableToSet stringValue="token_type"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="585c3a3d-8fd7-4337-8d91-46846bfc4194"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLm9hdXRoX3Rva2VufQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="dG9rZW49JHt0b2tlbn0mZXhwaXJhdGlvbj0ke2dlbkV4cGlyYXRpb259JnZlcmlmaWVyPSR7Z2VuVG9rZW59"/&gt;
+                    &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:LineBreak lineBreak="CR"/&gt;
+                    &lt;L7p:VariableToSet stringValue="messageBody"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
+                    &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_ovp_server}/oauth/validation/v1/authorize"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestMsgSrc stringValue="messageBody"/&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="authorizationResult"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue=""/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="authorizationResult"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/validation/result[text()='valid']"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue="xpathCallback"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="authorizationResult"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/validation/callback/text()"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt4cGF0aENhbGxiYWNrLnJlc3VsdH0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_callback"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${oauth_callback}"/&gt;
+                    &lt;L7p:Expression2 stringValue="oob"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="oob"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_v1_server_website}"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="Cookie"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="SOAPAction"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="websiteTemplate"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt3ZWJzaXRlVGVtcGxhdGUubWFpbnBhcnR9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="content"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PGRpdj4NClJldHVybiB0byB5b3VyIGFwcGxpY2F0aW9uIGFuZCBpbnNlcnQgdGhlIHZhbHVlIHdpdGggdGhlIHF1b3RlcyBhdCB0aGUgYXBwcm9wcmlhdGUgZmllbGQgb2YgeW91ciBhcHBsaWNhdGlvbjo8YnIvPg0KPGgyPnZlcmlmaWVyPSIke2dlblRva2VufSI8L2gyPg0KPC9kaXY+"/&gt;
+                    &lt;L7p:VariableToSet stringValue="newContent"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:Regex&gt;
+                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="content"/&gt;
+                    &lt;L7p:Regex stringValue="&amp;lt;!--oauth_content_placeholder--&gt;"/&gt;
+                    &lt;L7p:RegexName stringValue="update the content of the website"/&gt;
+                    &lt;L7p:Replace booleanValue="true"/&gt;
+                    &lt;L7p:Replacement stringValue="${newContent}"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:Regex&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Generate website content"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="200"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHtjb250ZW50fQ=="/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/html; charset=UTF-8"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Handle oob -- display the verifier for manuell input"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="b2F1dGhfdG9rZW49JHt0b2tlbn0mb2F1dGhfdmVyaWZpZXI9JHtnZW5Ub2tlbn0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="tokenVerifier"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${oauth_callback}"/&gt;
+                    &lt;L7p:Expression2 stringValue="?"/&gt;
+                    &lt;L7p:Operator operator="CONTAINS"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Operator operator="CONTAINS"/&gt;
+                    &lt;L7p:RightValue stringValue="?"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtvYXV0aF9jYWxsYmFja30mJHt0b2tlblZlcmlmaWVyfQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="location"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="CallbackURL already contains query parameters"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtvYXV0aF9jYWxsYmFja30/JHt0b2tlblZlcmlmaWVyfQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="location"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="complete callbackURL"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Redirect"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="302"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
+                    &lt;L7p:ResponseStatus stringValue="302"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:AddHeader&gt;
+                    &lt;L7p:HeaderName stringValue="Location"/&gt;
+                    &lt;L7p:HeaderValue stringValue="${location}"/&gt;
+                    &lt;L7p:Target target="RESPONSE"/&gt;
+                    &lt;/L7p:AddHeader&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Do a redirect back to the client app"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Handle callback for oob or a valid URL"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Access was granted"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${state}"/&gt;
+                    &lt;L7p:Expression2 stringValue="denied"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="denied"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_v1_server_website}"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="Cookie"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="SOAPAction"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="websiteTemplate"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt3ZWJzaXRlVGVtcGxhdGUubWFpbnBhcnR9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="content"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt3ZWJzaXRlVGVtcGxhdGUubWFpbnBhcnR9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="errorContent"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="PGRpdj4NCjxiPkFjY2VzcyBERU5JRUQ8L2I+DQo8L2Rpdj4="/&gt;
+                    &lt;L7p:VariableToSet stringValue="newContent"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="PGRpdj4NCjxiPkFjY2VzcyBERU5JRUQ8L2I+DQo8L2Rpdj4="/&gt;
+                    &lt;L7p:VariableToSet stringValue="newErrorContent"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:Regex&gt;
+                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="errorContent"/&gt;
+                    &lt;L7p:Regex stringValue="&amp;lt;!--oauth_content_placeholder--&gt;"/&gt;
+                    &lt;L7p:RegexName stringValue="update the content of the website"/&gt;
+                    &lt;L7p:Replace booleanValue="true"/&gt;
+                    &lt;L7p:Replacement stringValue="${newErrorContent}"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:Regex&gt;
+                    &lt;L7p:Regex&gt;
+                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="content"/&gt;
+                    &lt;L7p:Regex stringValue="&amp;lt;!--oauth_content_placeholder--&gt;"/&gt;
+                    &lt;L7p:RegexName stringValue="update the content of the website"/&gt;
+                    &lt;L7p:Replace booleanValue="true"/&gt;
+                    &lt;L7p:Replacement stringValue="${newContent}"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:Regex&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Generate website content"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:CustomizeErrorResponse&gt;
+                    &lt;L7p:Content stringValue="${errorContent}"/&gt;
+                    &lt;L7p:ContentType stringValue="text/html; charset=UTF-8"/&gt;
+                    &lt;L7p:ExtraHeaders nameValuePairArray="included"/&gt;
+                    &lt;L7p:HttpStatus stringValue="401"/&gt;
+                    &lt;/L7p:CustomizeErrorResponse&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="dGVtcF90b2tlbj0ke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXIub2F1dGhfdG9rZW59"/&gt;
+                    &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:LineBreak lineBreak="CR"/&gt;
+                    &lt;L7p:VariableToSet stringValue="messageBody"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/delete"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestMsgSrc stringValue="messageBody"/&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="200"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHtjb250ZW50fQ=="/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/html; charset=UTF-8"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Access was denied, delete the token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Service>
+    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="123797509" version="2">
+        <l7:ServiceDetail folderId="123600898" id="123797509" version="2">
+            <l7:Name>oauth/v1</l7:Name>
+            <l7:Enabled>true</l7:Enabled>
+            <l7:ServiceMappings>
+                <l7:HttpMapping>
+                    <l7:UrlPattern>/oauth/v1/client</l7:UrlPattern>
+                    <l7:Verbs>
+                        <l7:Verb>GET</l7:Verb>
+                        <l7:Verb>POST</l7:Verb>
+                        <l7:Verb>PUT</l7:Verb>
+                        <l7:Verb>DELETE</l7:Verb>
+                    </l7:Verbs>
+                </l7:HttpMapping>
+            </l7:ServiceMappings>
+            <l7:Properties>
+                <l7:Property key="policyRevision">
+                    <l7:LongValue>5</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="wssProcessingEnabled">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="internal">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:ServiceDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy" version="4">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ======= THIS CLIENT WORKS FOR OAUTH 1.0, 1.0a ======= "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ======= THIS CLIENT NEEDS TO ACCESS ITS OWN DATABASE TABLE ======= "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnN0YXRlfQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="state"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ============== CONFIGURE VALUES HERE START ============== "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0LnVybC5ob3N0fQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="target.host"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="T0F1dGhWMUNsaWVudA=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="this.app.name"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="aHR0cHM6Ly8ke3RhcmdldC5ob3N0fTo4NDQzJHtyZXF1ZXN0LnVybC5wYXRofQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="this.app.url"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt0aGlzLmFwcC51cmx9P3N0YXRlPWF1dGhvcml6ZWQ="/&gt;
+                    &lt;L7p:VariableToSet stringValue="this.app.callback"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PHN0eWxlIHR5cGU9InRleHQvY3NzIj4NCmJvZHkuZHJhZ3tjdXJzb3I6bW92ZTt9dGguYWN0aXZlIGltZ3tkaXNwbGF5OmlubGluZTt9dHIuZXZlbix0ci5vZGR7YmFja2dyb3VuZC1jb2xvcjojZWVlO2JvcmRlci1ib3R0b206MXB4IHNvbGlkICNjY2M7cGFkZGluZzowLjFlbSAwLjZlbTt9DQp0ci5kcmFne2JhY2tncm91bmQtY29sb3I6I2ZmZmZmMDt9dHIuZHJhZy1wcmV2aW91c3tiYWNrZ3JvdW5kLWNvbG9yOiNmZmQ7fQ0KdGQuYWN0aXZle2JhY2tncm91bmQtY29sb3I6I2RkZDt9dGQuY2hlY2tib3gsdGguY2hlY2tib3h7dGV4dC1hbGlnbjpjZW50ZXI7fQ0KdGJvZHl7Ym9yZGVyLXRvcDoxcHggc29saWQgI2NjYzt9dGJvZHkgdGh7Ym9yZGVyLWJvdHRvbToxcHggc29saWQgI2NjYzt9DQp0aGVhZCB0aHt0ZXh0LWFsaWduOmxlZnQ7DQogIHBhZGRpbmctcmlnaHQ6MWVtOw0KICBib3JkZXItYm90dG9tOjNweCBzb2xpZCAjY2NjO30NCi5icmVhZGNydW1ie3BhZGRpbmctYm90dG9tOi41ZW19ZGl2LmluZGVudGF0aW9ue3dpZHRoOjIwcHg7aGVpZ2h0OjEuN2VtO21hcmdpbjotMC40ZW0gMC4yZW0gLTAuNGVtIC0wLjRlbTsNCiAgcGFkZGluZzowLjQyZW0gMCAwLjQyZW0gMC42ZW07DQogIGZsb2F0OmxlZnQ7fQ0KdWwucHJpbWFyeXtib3JkZXItY29sbGFwc2U6Y29sbGFwc2U7cGFkZGluZzowIDAgMCAxZW07DQogIHdoaXRlLXNwYWNlOm5vd3JhcDtsaXN0LXN0eWxlOm5vbmU7bWFyZ2luOjVweDtoZWlnaHQ6YXV0bztsaW5lLWhlaWdodDpub3JtYWw7Ym9yZGVyLWJvdHRvbToxcHggc29saWQgI2JiYjt9DQp1bC5wcmltYXJ5IGxpe2Rpc3BsYXk6aW5saW5lO311bC5wcmltYXJ5IGxpIGF7YmFja2dyb3VuZC1jb2xvcjojZGRkO2JvcmRlci1jb2xvcjojYmJiO2JvcmRlci13aWR0aDoxcHg7Ym9yZGVyLXN0eWxlOnNvbGlkIHNvbGlkIG5vbmUgc29saWQ7aGVpZ2h0OmF1dG87bWFyZ2luLXJpZ2h0OjAuNWVtOw0KICBwYWRkaW5nOjAgMWVtO3RleHQtZGVjb3JhdGlvbjpub25lO311bC5wcmltYXJ5IGxpLmFjdGl2ZSBhe2JhY2tncm91bmQtY29sb3I6I2ZmZjtib3JkZXI6MXB4IHNvbGlkICNiYmI7Ym9yZGVyLWJvdHRvbTojZmZmIDFweCBzb2xpZDt9DQp1bC5wcmltYXJ5IGxpIGE6aG92ZXJ7YmFja2dyb3VuZC1jb2xvcjojZWVlO2JvcmRlci1jb2xvcjojY2NjO2JvcmRlci1ib3R0b20tY29sb3I6I2VlZTt9dWwuc2Vjb25kYXJ5e2JvcmRlci1ib3R0b206MXB4IHNvbGlkICNiYmI7cGFkZGluZzowLjVlbSAxZW07bWFyZ2luOjVweDt9DQoNCip7bWFyZ2luOjA7fQ0KaHRtbCxib2R5e2JhY2tncm91bmQ6I2ZmZjtmb250OjEycHgvMS4yZW0gaGVsdmV0aWNhLGFyaWFsLHNhbnMtc2VyaWY7Y29sb3I6IzRiNGI0YjtoZWlnaHQ6MTAwJTtsaW5lLWhlaWdodDoxLjNlbTt9DQpocntoZWlnaHQ6MXB4O2JhY2tncm91bmQtY29sb3I6I2RkZDsgbm8tcmVwZWF0IGNlbnRlciBib3R0b207cGFkZGluZzo4cHggYXV0bztib3JkZXI6MCBub25lO30NCmlucHV0e2NvbG9yOiM0YjRiNGI7fQ0KaDEsaDIsaDMsaDQsaDUsaDZ7cGFkZGluZzowO2ZvbnQtd2VpZ2h0Om5vcm1hbDtmb250LWZhbWlseTpoZWx2ZXRpY2EsYXJpYWwsc2Fucy1zZXJpZjt9DQpoMXtmb250LXNpemU6MjUwJTtjb2xvcjp3aGl0ZTt6LWluZGV4OjU7fQ0KaDJ7Zm9udC1zaXplOjE3NSU7fQ0KaDN7Zm9udC1zaXplOjE1MCU7fQ0KaDR7Zm9udC1zaXplOjEyMCU7fQ0KaDV7Zm9udC1zaXplOjExMCU7fQ0KaDZ7Zm9udC1zaXplOjEwNSU7fQ0KYTphY3RpdmUsYS5hY3RpdmV7Y29sb3I6IzRiNGI0Yjt0ZXh0LWRlY29yYXRpb246bm9uZTt9DQphOmxpbmssYTp2aXNpdGVke2NvbG9yOiM0YjRiNGI7dGV4dC1kZWNvcmF0aW9uOnVuZGVybGluZTtvdXRsaW5lOm5vbmU7fQ0KYTpob3Zlcntjb2xvcjojZGIzYjJjO3RleHQtZGVjb3JhdGlvbjp1bmRlcmxpbmU7fQ0KcHttYXJnaW4tYm90dG9tOi41ZW07bGluZS1oZWlnaHQ6MS4zZW07bGlzdC1zdHlsZTpub25lO3RleHQtYWxpZ246bGVmdDtsaW5lLWhlaWdodDoxLjVlbTtjb2xvcjojNGI0YjRiO30NCmJsb2NrcXVvdGUgKnttYXJnaW46NXB4IDAgMCAxMHB4O311bHtsaW5lLWhlaWdodDoxLjVlbTsNCnBhZGRpbmc6LjJlbSAxZW0gMWVtIDFlbTt9b2x7bGluZS1oZWlnaHQ6MS41ZW07cGFkZGluZzouMmVtIDFlbSAxZW0gMWVtO310ci5ldmVuLHRyLm9kZHtiYWNrZ3JvdW5kOm5vbmU7fWltZyxhIGltZ3tib3JkZXI6bm9uZTt9DQpuby1yZXBlYXQgbGVmdCAzNSU7bWFyZ2luLWxlZnQ6LjVlbTtwYWRkaW5nLWxlZnQ6MWVtO30NCiN3cmFwcGVye21pbi1oZWlnaHQ6MTAwJTtoZWlnaHQ6YXV0byAhaW1wb3J0YW50O2hlaWdodDoxMDAlO21hcmdpbjowIGF1dG8gLTVlbTt9I2NvbnRhaW5lcnttYXJnaW46LTIuNWVtIGF1dG8gMCAyLjVlbTt9DQouZmllbGQtY29udGVudCAudmlldy1kb20taWQtNSAudmlldy1jb250ZW50IC52aWV3cy1yb3d7DQogICAgbWFyZ2luOjBweDtwYWRkaW5nOjBweDt9DQoNCiNzaWRlYmFyLWxlZnR7cG9zaXRpb246cmVsYXRpdmU7ZmxvYXQ6bGVmdDtjbGVhcjpsZWZ0O3BhZGRpbmc6MmVtIDAgNmVtIDA7ei1pbmRleDo1MDA7d2lkdGg6MTMuNWVtO30NCiNzaWRlYmFyLWxlZnQgLmNvbnRlbnR7bWFyZ2luLXRvcDouOGVtO30NCiNzaWRlYmFyLWxlZnQgYXtkaXNwbGF5OmJsb2NrO2xpbmUtaGVpZ2h0OjEuMmVtO3BhZGRpbmc6M3B4IDAgMXB4IDNweDt0ZXh0LWRlY29yYXRpb246bm9uZTtmb250LXNpemU6MTA1JTttYXJnaW4tbGVmdDozcHg7bWFyZ2luLXJpZ2h0OjNweDt9DQojc2lkZWJhci1sZWZ0IHVse3dpZHRoOjEzLjVlbTtkaXNwbGF5OmJsb2NrO2xpc3Qtc3R5bGU6bm9uZTt9DQojc2lkZWJhci1sZWZ0IHVsIHVse25vLXJlcGVhdCBjZW50ZXIgdG9wO3BhZGRpbmctbGVmdDouMmVtO30NCiNzaWRlYmFyLWxlZnQgYTpob3ZlciwNCiNzaWRlYmFyLWxlZnQgYS5hY3RpdmV7YmFja2dyb3VuZC1jb2xvcjojZDgzYjJjO2NvbG9yOndoaXRlO30NCiNzaWRlYmFyLWxlZnQgLm5vbGluay1saXtwYWRkaW5nLXRvcDoxLjNlbTt9DQojc2lkZWJhci1sZWZ0IC5maXJzdC5ub2xpbmstbGl7cGFkZGluZy10b3A6MDt9DQojc2lkZWJhci1sZWZ0IC5ub2xpbmt7Y29sb3I6IzIzMjAyMTtmb250LXNpemU6MTIwJTtmb250LXdlaWdodDo2MDA7fQ0KI3NpZGViYXItbGVmdCAubWVudS1uYW1lLW1lbnUtcmVzb3VyY2VzIC5ub2xpbmt7Zm9udC13ZWlnaHQ6MTAwO2ZvbnQtc2l6ZToxMDUlO30NCiNzaWRlYmFyLWxlZnQgbGkubGVhZntib3JkZXI6bm9uZTt0ZXh0LWluZGVudDpub25lOyBuby1yZXBlYXQgY2VudGVyIGJvdHRvbTtkaXNwbGF5OmJsb2NrO3BhZGRpbmc6MXB4IDAgMnB4O30NCiNzaWRlYmFyLWxlZnQgdWwgdWwgbGkuZmlyc3R7cGFkZGluZy10b3A6MnB4O30NCg0KLnZpZXctY29udGVudCBoNHtmb250LXNpemU6MTAwJTt9I25hdmlnYXRpb257cG9zaXRpb246cmVsYXRpdmU7Ym9yZGVyOjBweCBzb2xpZCByZWQ7bWFyZ2luOjBweDtwYWRkaW5nOjBweDt9DQoNCi5icmVhZGNydW1ie3RleHQtYWxpZ246bGVmdDtwYWRkaW5nOjA7cG9zaXRpb246YWJzb2x1dGU7dG9wOjQuN2VtO2xlZnQ6MTUuOGVtO3otaW5kZXg6NTA7fS5icmVhZGNydW1iIGEuYWN0aXZlLC5icmVhZGNydW1iIGE6YWN0aXZle2NvbG9yOiMyMzIwMjE7dGV4dC1kZWNvcmF0aW9uOm5vbmU7fS5icmVhZGNydW1iIGE6aG92ZXJ7Y29sb3I6I2RiM2IyYzt9bGkubGVhZntkaXNwbGF5OmlubGluZTtwYWRkaW5nOjAgMC41ZW0gMCAwLjNlbTt2ZXJ0aWNhbC1hbGlnbjptaWRkbGU7Ym9yZGVyLXJpZ2h0OjFweCBzb2xpZCAjNzI3MjcyO30NCg0KI2hlYWRlcntoZWlnaHQ6Ni41ZW07bWF4LXdpZHRoOjEwMCU7cG9zaXRpb246cmVsYXRpdmU7fSNoZWFkZXIgI2xvZ28tZmxvYXRlcntmbG9hdDpsZWZ0O3Bvc2l0aW9uOnJlbGF0aXZlO3RvcDoxMCU7d2lkdGg6MTU5cHg7aGVpZ2h0OjUzcHg7bWFyZ2luLWxlZnQ6Mi41ZW07fWRpdiNyZXN7ZGlzcGxheTpub25lO3Zpc2liaWxpdHk6aGlkZGVuO30jbWVudWJrZ3twb3NpdGlvbjpyZWxhdGl2ZTt3aWR0aDoxMDAlO2hlaWdodDozMXB4O2JhY2tncm91bmQtY29sb3I6I2ZmMDAwMDt0b3A6Ni42ZW07ei1pbmRleDowO30NCg0KZGl2Lmxpbmtze2Rpc3BsYXk6bm9uZTt9DQoNCiNjb250ZW50e21hcmdpbjo0LjNlbSBhdXRvIDFlbSAyLjVlbTt9DQouc3VibWl0dGVke2Rpc3BsYXk6bm9uZTt9LmNvbnRhaW5lcnt6LWluZGV4OjU7aGVpZ2h0OjEwMCU7cGFkZGluZy10b3A6LjJlbTt9DQoudGl0bGUtYm94IGgxe2NvbG9yOiNkYjNiMmM7bGluZS1oZWlnaHQ6MWVtO30NCg0KI25hdmlnYXRpb24gZGl2Lm1lbnUtbmFtZS1wcmltYXJ5LWxpbmtzIHVse2JvcmRlcjowO2xpc3Qtc3R5bGU6bm9uZTtoZWlnaHQ6MzFweDttYXJnaW46MDtwYWRkaW5nOjA7d2lkdGg6MTAwJTt9DQojbmF2aWdhdGlvbiBkaXYubWVudS1uYW1lLXByaW1hcnktbGlua3MgdWwgbGl7YmFja2dyb3VuZDp0cmFuc3BhcmVudDtib3JkZXI6MDtmbG9hdDpsZWZ0O21hcmdpbjowO3BhZGRpbmc6MDtsaXN0LXN0eWxlOm5vbmU7cG9zaXRpb246cmVsYXRpdmU7fQ0KI25hdmlnYXRpb24gZGl2Lm1lbnUtbmFtZS1wcmltYXJ5LWxpbmtzIHVsIGxpIGF7ZGlzcGxheTpibG9jaztoZWlnaHQ6MzFweDt0ZXh0LWluZGVudDotNTAwMHB4O30NCiNuYXZpZ2F0aW9uIGRpdi5tZW51LW5hbWUtcHJpbWFyeS1saW5rcyBsaSBhe2JhY2tncm91bmQtY29sb3I6I2NjYzt9DQojbmF2aWdhdGlvbiBkaXYubWVudS1uYW1lLXByaW1hcnktbGlua3MgbGkgYTpob3ZlcntiYWNrZ3JvdW5kLWNvbG9yOiNjY2M7fQ0KI25hdmlnYXRpb24gZGl2Lm1lbnUtbmFtZS1wcmltYXJ5LWxpbmtzIGxpLm1lbnUtbWxpZC0yMzkzID4gYTpob3Zlcnt9DQoNCiNib3R0b21iYXJ7cG9zaXRpb246cmVsYXRpdmU7cGFkZGluZzoyZW0gMCA2ZW0gMDt6LWluZGV4OjUwMDt3aWR0aDoxMy41ZW07Zm9udC1zaXplOjEzMCU7fQ0KI2JvdHRvbWJhciAuY29udGVudHttYXJnaW4tdG9wOi44ZW07fQ0KI2JvdHRvbWJhciBhe2xpbmUtaGVpZ2h0OjEuMmVtO3BhZGRpbmc6M3B4IDNweCAzcHggM3B4O3RleHQtZGVjb3JhdGlvbjpub25lO30NCiNib3R0b21iYXIgYTpob3ZlciwNCiNib3R0b21iYXIgYS5hY3RpdmV7Y29sb3I6I2Q4M2IyYzt9DQojYm90dG9tYmFyIGJ7Zm9udC1zaXplOjEzMyU7fQ0KDQo8L3N0eWxlPg=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="website_style"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PGh0bWwgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHhtbDpsYW5nPSJlbiIgbGFuZz0iZW4iIGRpcj0ibHRyIj4NCjxoZWFkPg0KPG1ldGEgaHR0cC1lcXVpdj0iQ29udGVudC1UeXBlIiBjb250ZW50PSJ0ZXh0L2h0bWw7IGNoYXJzZXQ9dXRmLTgiIC8+DQo8dGl0bGU+JHt0aGlzLmFwcC5uYW1lfTwvdGl0bGU+DQoke3dlYnNpdGVfc3R5bGV9DQo8L2hlYWQ+DQoNCjxib2R5Pg0KICAgICA8ZGl2IGlkPSJtZW51YmtnIj48L2Rpdj4NCiAgICAgPGRpdiBpZD0iY29udGFpbmVyIj4NCgkgIDxkaXYgaWQ9ImhlYWRlciI+DQoJCQk8ZGl2IGlkPSJsb2dvLWZsb2F0ZXIiPjxhIHRpdGxlPSIiIGhyZWY9IiR7cmVxdWVzdC51cmwucGF0aH0iPjxpbWcgaWQ9ImxvZ28iIGFsdD0iTGF5ZXI3IiBzcmM9ImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBSjhBQUFBMUNBTUFBQUJvUXNsYUFBQUFHWFJGV0hSVGIyWjBkMkZ5WlFCQlpHOWlaU0JKYldGblpWSmxZV1I1Y2NsbFBBQUFBTUJRVEZSRkZCQU1qSTZPN3FPbGEyOXc1dWZuOU1qSjVtRmd5TWpJVDFKUzRUd3QxZGZZdExlNCtmbjU4L1QwcDZpblhXTm0rZVRsL3Z6Nyt2MytxN3E4K3Z6NSt1L3cvZm43d01QRTZvZUlnSVNHMGRMUytmdjgvZnovOXZqNjcvRHpvNkdmVlZ4ZjkvajNxNjZ3K2ZmMHVidTlucUtrUkVFOTI5emR5ODNPdjhDKzlmWDE3ZTd1NnV2cjR1UGs1RXhJZDN0N3JxMnJYbHRYaG9TQjk5amFsWmlaMytEZ0x5d29aV1Joc3JPeThmSHhuWjZkK1BqNysvejcvUHo4L2YzOS8vLy9BU0REWXdBQURGcEpSRUZVZU5yVVdXdDdxam9XTnFMRmVnRmhLQlozMm9xMUZhdVUzWXB1VzVPcy8vK3ZacTBrSUxaMjVubm13NXh6Y3M2MkdJSjU4Njc3b2dWLzc5SDZSK0JUVWtrcGhWRDZHd2VoRk1oQXFiOEpQZ1VLRVVrSnNKNGM1b3VjQUVzaGFRSXYxVitQVHhsMGQ1T0VzWVFsZ3hmZ2dRajFyUHByRWJZcThRS0lhWmw4WnN0bDMyUE01VURRQ0o4ZWZ6aytnSjJYTU5kTUxsbmlvWkFSbXpRVS9uVUFyWHdoekpKa0VBT1hJbENTaTBYQ3NrZlNRUVdhUXZqL0FOUzd5Ty8yeS9sNi9yblJWcUlDeEFOOFU1WWRRNjJtOTM5QytEUHY2b2RyWXd2ZjhVaytHaUVvZERDeGlCWENSRlM3VHQ1ZmRzalhrSkExeUsrN2ZOOWRXVXlxd21lVnQ5cFZOVWZsMmhvVHlqSlIzOWI0QW40emZnUWVjYUVDcnJnSU9NTEtGeXhKeXNrYTBaUHpVZWRuL1dJMHArMDFMRERiR050WHArWHF6TnFVT1UwTlQ5b0orUldmaXR1dnQrTUl0UzhLd29DZ3lNMnFLRHgzeFp5eW4yb3oxdDVRblVuTi9EWjgyMTV2Skp2RVdBZG1yNFNzVjFXYzZjZmwyWU5OK1c2dnJxK3YyemNoaUFBQ0JEUEttRFBRZHpiTVdXeENhOG9uUUtBM3JLZk0vcWZQMDExek5IdERtbW5aUE1XRklXbWM0M3RGZk5kWDNVY0ZrZUF5TC8ybkQySk5CZ0J1a1V6dnlKSTFoNnJ5NXJLR0lwdUFEQXo3V1grVE5iN0dBVVFEZFBWRDFWSlFKbmhaK1JwODE5ZTNOMXh5OVZFazVQMDQyb3RRQWw2ZW5Ea29EUkFzQ0VPTGFzckpUZ3VoVDYram83VFgxYXpRZjRUR1pTY2E0UFE1Nmtkd3YyLzg0WGdkY3g1MGxnb0VqNVFJMEY0b1oxZytRWXhpRnlBcUhhSGZqWEEvWEIxb1dJVDlseGlLNFJDUFJFaUcrSW4vNlVOaXFNVHZkRmZQUjFKRzBURTBpeUs5RG45SHhYRVU0d2hpRWVBZnhiL3FueDVYWVloN3hmZ0xDcDhJU0pzRGN4NkJGNHB6ZlZiQTAyMG1yanRGbnlSQlJxQXpuazdtdW02VzR4bGU4TUpkSXoxQ2JhYXUyeDlCeDYxR0gyZGg2bWI2eTNTdFFoNHJDQUtRM2ViWTNzQUYrZUlZODVBOERSNUlCc2hJRUFqdFc1UndsMFpRV2tZSThkQnF0WjVCSzZiVTBnY0haL2F0Ti9RUG5SNWVGUytrUkFWT0ZpL3dvTy9Sdno4WWwrRFpmbTN0ZTJpSElXN0IxWFZ6dkhiRGkveWhGVitoR29ZU014akVGUk5heUV0bkVIbysyeWxKSEpJYUNmaHQ4QkcxNU5BRmJONW93MWF2QXlxbG02MGxLdThISVQwQWZMYXE4ZllJQnA4ZGU0K2lLajcvQlI5YzBqL0UxNlc3YlZBOE5Cb05MNTdqK3c2ODdKNThiNFNTRElXMlk4MmZFbGFuVVUxWFp0UG5GYXBwaDY0L1h3QThaTW41QU1OZitjN2UzNzFVQ0kzdmM1TVBlblFnQ0RFcXhQd0x2cWIramEvTzhhRWVia21tS0FudUZyNVArQVI2eGFTWVlMUWg4VXJMWHloalBBVUZRWGhIYm1pL2R6VDlpTzd1MFF2UWhJYyt2U1Fnang4NFJtU2FoTzgzYmtEd245Y1E0MXc0cmdhQnVZMGI4ZzM1N1ZkOHVPSVJqWmJuelBFTnZnQ05lbk53eWcwUXE1YS9vSElKU2oyaWVKMFM5M3ZEZldGRENBNThpbi9lZGhCcS9ucUJEbmJTNnQ4RDh1eml4Zk9HNC9OaEhTdmJSTThZZ21aK2RWTEFHdC8xN1poRHYvQm5CaDg2QVB6NWRNa3lyclJiTlB3SlRTWjZETWh3SzVZalg4OW93VUhzNmR1TzRTa3cvSm45dWNYbkliNEo0ZnNBTkdFVm9aREpteEc4MTIzWTlDK2hDcnV2My9CZHQySDBhZEFSZnhLZlJwKzVTVnlJNWNsK2NUZEI1d2UyYisxL0U2RDlncXg2UStiNVlPaERRTVRmYzdiQ2dXNkhXL21DaHYyR2d0R3VtWWRoREFUa3RSdEV2SkVmU0I2cTdlMDNmRmZqekRuaEU5YXBUM2RBL3JqaUw0ekk1d2lBUDdoVHJqY3NLT09SekxxUTMrU0F0UDN1bjJsTUkybncvZm44TEVqOU1sd2VDUlBaakNXMFkya1RKaXRmakFMaFkvZnFDNzdyN3I4cWVBWmZoUEFtWlpMQmlUL2lUcEIxa01XK3JhYUVxa2NpVjVwQVE1OHcvSmt4aVdYbFgzREYzc2twQmRSbnhHZ2YzaHJORDdocytCZFNkMVN1bXpaeTJ6M0QxNnZ3L1FFOEkwRC8wNW4xUEF4enRmL2oyanRMN1VpSUlHSmtpUklONFgxUEFCNkdRRTVLOC9kZUZNWDdMbERHdnp5LzBXY1BuYU5HUndsRFpSdFlhRFRsaXlyTE1kNUN1RzIzYjdZWDhTVW9TY2pueFd6bTk3d1hpbThOL1ZOR3ZMWEhKYzhSQ20zQ2lKWElNZllMNlV1YXhqd3kvTEhjMWZMdEU4SEc1NCsxOGluS1E0TW1Qc3p0MGRQRitpcSt1b1RQeGZqcU1tM01QZThPL1YzRlgyZ3l1Zzh5eElJeFJrRUV5WmFoZ2orNE94dVJQekg4V2ZzbGFWbjcwQ0huWGF1clRxaU04bW55ZU5Td0QxUUJpdndpeHJTRmQ3L2pteVZwQUs0MUZvMVBXUDVVcUQwZ0xQYTBFWTRWVGFlNmhIRkl2S25CWi9qRENnS0xReW1zL3dQcmRpaENraEJvNTZzYkRDZGtFR2Y4WWRXR2tpSkY0Z0cwWDgveHpmd3loN2hUMlhMUE8wSnR2NVlTblFaNHBBTjlDcmdaWmVFVlB2TGhUZjhIMW43Si8ra2Z5Y0g0ZUUxZmx4Snlya0IrNlY5aDJzU3grRUJYT0I1M2J4djRabjR5V09hangza2w2cGxIbkdqKzloNk5oMXltejlwUlVOcUZTUGNNaUE1eXpwKzAxdXJmczE3dGRXejhmYkx4QS8ybER1TndvNDBqa3MybVN1dFU2bURtVERuVnpkVnJlOXUrc3ZobXZ2UFVYejRWZzRpZDhOMFJFTzlrRUFmbElsWEZtcXBsVVlsTTF2Z0lhM2xhdlJpcW1yLzhqemtOS1VuUU5kcW4vU0NjMVIrbXBxQ0dVQkRyL0tXN3ZYM0ZzMHg4aDJYNXdPL05IRlhqUS9zZHBjVGZuZ2I1a0JXVWVQRUFPazJZNFB4elNpY29hSkt1VU9HOGxsbU0vMCtHRXRPR3ZjYVhNcHp5WDB5bmdxVFdCYW1hTlhxcldWaFRiaGRWK2N2MnRzdEhrMFdlSmFTRURYeXp3M3JhUVZmNHpxclJoOS80aVY2UFdPczh2TE95UXh3Y0dIdlBocFR1WTNSTzZ0VTd4UEtBdDZhVVJ5d1pya1lGSklzam1XMjF4Ni9MdDdQK3FSSlluTWVOL0FYTDlBN3J6VXo4cVBETm5Lemo1dWRkRXZNbFVqclB0RTdFRm1BcU1nQWJRMWg2OERqcXRGcWJ4K3NXemh0bURYd3FDTWlFdTZmd2l5UVZ2U3ErV1h5ejJRQjJCK0xLVm1LbUVNTUxyblJDcTRlZVYxVVJaNUljazRjTlZaWFJtcHZDcmtUK1hnMitRRjdHaDNlVWlrVWpmd2xHWmVXZ1QvSjl1dGRucndEVXY2K0xPQU5HYW5kV0xSQ25zckcrUEFOSmc0SmV0OTN1M29SVkwrWGNQa0I3SFJYdzZJZjhSUnA4UmNZaEV1ZW5sNnF1Y3hWdFZKZFJwcWt0cTZVNnNiWHpOcUxWNEFPamNxaTFYUDNVdjBmcFloRjZPVDl3T09GekRpbUZWams4VXAwYnBWVEE0aVozUjVKb2RBeCtIZEZEaVNpU1I4UXBvelQ5RlFSQk5NUlNOK0RoOFU1RUZBV0d1QnpMNldIOEs2YTFRNFRMMDVUdXlhb3A4Z00rdkJGRVArQ0RKOTh2TjZIdUUrMFdoOE9xQTV2NVlYR1B6MHhZT1QxQ3VzcWdQMGxoMkIva284TWFmVUhHbUp0aWRiL0tLWVBlZUd5T3RRRWZMZEM4TWR4UEpxZ295L25CZllHMFh6SVhxdGJEai96cE5DWWUvNUMvakJiNWtKT1NTUmhOSExZWlFkOTNkNm1NWFNmM2loeEd5Uk40Q1c0Mm1EM2Qrem1Jek85UC9DbkFvTURBQXV0UHRpa3hjejNpMnJKY0F6QnFvaHljYVQ2RURmdTk5RGVxcW1SK3hFZmxMYitZdnpnVFVFT3RLaFRMWVZlVXVHWGZ6M0xFVnlhakhUTHpVYkJPaWVsS091Z2xmY1RINThuSHhobWtpTTlGQjlRdjVtcmhkT0JZeklmckhhWWJMRUVuT2krbUcweGozcFBwdlFoTUUrcTg3ZG42MGxzTndrdjVpNThjZFo5QTZFUlhhbndLK3JPazNLaVlKUitrMUtPa0dDUU0rVHY0SG5OeUdUSTJzdmd5aUFnZlRCRDIwVDkwUHIwUE1QZ0dmbkxBeEc3Si9PUWxNRG0rK3ZIOUZuVmIwSXVGM2V1ditRdTdWOWFibVVUTjhEZDE4aU9YdnhnNzVoZ0M3b3N5ZlNMNXpvdCt6OG01bWlmSGtiTVlJajRVTXZRUnlNS1g2cTd3K0lwMW9PSnZnM1hheDJTOTlKZWFBVkEvNngrbVZoSkJCdkcybWIvNHN3STFtU28vK3hZTVE4VFNZYmgwMm1OUFV4Q1RHZkxXZ1h1bmhLZGlCRVBQT1JiK0xwRDkyWno1ZmRReFB5a25jRjg2aStRVGt3WFBXYkFDb1NXb3N6Q2ZsZDRPT3NubndWL2JWMWcvNngrbERRRndyS1p2dWxYKzR2ZFFIaEZndW9qaEpiRDlRenp3bEZSK3NNSkFGOTI1MlNUSFVPLzJWVDhid25BNWdlWGlROG8wYzFmTFJ3VzcxV3FCOFlZNldHanRZajNKcHU0SUlLT1AzV0RpYnZDUmxkc1g1bzNRZjNoL2FYcWpPc2lIWTZ4RFg4ZVQzcXhjM2dISVpvZVRhRXlIMUhCTDB4U05Cc1JJdDZpRmFlaEpnU0VzcFRjVktrMHB0QTV4V1VxQ0d3MTEyaVZHMUFkVXFWNkx0eWgxZVVsQnlVdHZxbG9YWGhGd1VzUmcyOTdHNnltWjE2bUJyT29Hc21uTzZCNk5zdjF6cUJ2UTByUXNkVU5jTDlPbXBVeEh4eDdVTmx1MTFsRDZvTXlDLy9iK1YzY2ZqUjFEYUwyMlBPOWlOeHZldHNkck83SzZxeXgwRjFpYUJyTVEwcmFWcS82MWZsYlU0YnR1c1l2TGIva3V2Sjl1Tk9PcENSSkVsYzlVOWZzTWVYcDVhTFNtbG43VmY2OWIzK1kxbnUxYWF5YTFtNE5xN2FsbEQ1Y1EvalBlbi85OXg3OEZHQUNEOWdaSGl6NmVGZ0FBQUFCSlJVNUVya0pnZ2c9PSI+PC9hPjwvZGl2Pg0KDQogIAkJPC9kaXY+DQo8IS0tY2xvc2UgaGVhZGVyLS0+DQoNCjxkaXYgaWQ9ImNvbnRlbnQiPg0KDQoJPGlmcmFtZSBzdHlsZT0iZGlzcGxheTpub25lIiBzcmM9IiIgaWQ9Im15aWZyYW1lIiBmcmFtZWJvcmRlcj0iMCIgc2Nyb2xsaW5nPSJhdXRvIj4NCgk8L2lmcmFtZT4NCgkJPGRpdiBpZD0iY29udGVudF9sYW5kaW5nX3BhZ2UiPiAgICAgICAgICAgICAgDQoJCTxkaXYgY2xhc3M9InZpZXcgdmlldy1wcm9kdWN0czMgdmlldy1pZC1wcm9kdWN0czMgdmlldy1kaXNwbGF5LWlkLXBhZ2VfMSB2aWV3LWRvbS1pZC0xIj4JCQ0KCQk8ZGl2IGNsYXNzPSJjb250YWluZXIiPg0KCQk8ZGl2IGNsYXNzPSJ0aXRsZS1ib3giPg0KCQk8aDE+JHt0aGlzLmFwcC5uYW1lfTwvaDE+DQoJCTxicj4NCgkJPGgzPk9BdXRoIHZlcnNpb246IDEuMDwvaDM+DQoJCTxicj4NCgkJDQoJCTxwPjwvcD4NCgkJCQ0KCQk8L2Rpdj4NCg0KCQkgPGRpdiBjbGFzcz0idmlldyB2aWV3LXByb2R1Y3RzMyB2aWV3LWlkLXByb2R1Y3RzMyB2aWV3LWRpc3BsYXktaWQtcGFnZV8xIHZpZXctZG9tLWlkLTEiPgkJDQo8ZGl2IGNsYXNzPSJjb250YWluZXIiPg0KPGhyPg=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="website_top"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PC9kaXY+PC9kaXY+PC9kaXY+PC9kaXY+PC9kaXY+PC9kaXY+PC9kaXY+PC9ib2R5PjwvaHRtbD4="/&gt;
+                    &lt;L7p:VariableToSet stringValue="website_bottom"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ================== CONFIGURE VALUES HERE END ================== "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Set CONSTANTS"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ============ WHEN USING OTHER SERVICE PROVIDERS SET URLs HERE
+                    ============"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="R0VU"/&gt;
+                    &lt;L7p:VariableToSet stringValue="api.endpoint.httpMetod"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="aHR0cDovL2xvY2FsaG9zdDo4MDgwL3Byb3RlY3RlZC9yZXNvdXJjZT93aXRoPXF1ZXJ5I2FuZEZyYWdtZW50"/&gt;
+                    &lt;L7p:VariableToSet stringValue="api.endpoint.url"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="YWNmODlkYjItOTk0ZS00MjdiLWFjMmMtODhlNjEwMWY5NDMz"/&gt;
+                    &lt;L7p:VariableToSet stringValue="consumer_key"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="NzRkNWUwZGItY2Q4Yi00ZDhlLWE5ODktOTVhMDc0NmMzMzQz"/&gt;
+                    &lt;L7p:VariableToSet stringValue="consumer_key_secret"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0My9hdXRoL29hdXRoL3YxL3JlcXVlc3Q="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth.endpoint.request"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="aHR0cHM6Ly8ke3RhcmdldC5ob3N0fTo4NDQzL2F1dGgvb2F1dGgvdjEvYXV0aG9yaXpl"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth.endpoint.authorize"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0My9hdXRoL29hdXRoL3YxL3Rva2Vu"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth.endpoint.token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ================== END OF CONFIGURATION ================== "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Access ssg endpoints"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:TrueAssertion/&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ============ WHEN USING OTHER SERVICE PROVIDERS SET URLs HERE
+                    ============"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ============ A TWITTER API CALL IS PRECONFIGURED"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" == WATCH OUT ==== DO NOT FOGET TO IMPORT TWITTER CA CERTIFICATE"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="WU9VUl9DT05TVU1FUl9LRVk="/&gt;
+                    &lt;L7p:VariableToSet stringValue="consumer_key"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="WU9VUl9DT05TVU1FUl9LRVlfU0VDUkVU"/&gt;
+                    &lt;L7p:VariableToSet stringValue="consumer_key_secret"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="VHdpdHRlcmVy"/&gt;
+                    &lt;L7p:VariableToSet stringValue="this.app.name"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="R0VU"/&gt;
+                    &lt;L7p:VariableToSet stringValue="api.endpoint.httpMetod"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="aHR0cHM6Ly9hcGkudHdpdHRlci5jb20vMS9hY2NvdW50L3NldHRpbmdzLmpzb24="/&gt;
+                    &lt;L7p:VariableToSet stringValue="api.endpoint.url"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9hcGkudHdpdHRlci5jb20vb2F1dGgvcmVxdWVzdF90b2tlbg=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth.endpoint.request"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9hcGkudHdpdHRlci5jb20vb2F1dGgvYXV0aG9yaXpl"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth.endpoint.authorize"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9hcGkudHdpdHRlci5jb20vb2F1dGgvYWNjZXNzX3Rva2Vu"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth.endpoint.token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ================== END OF CONFIGURATION ================== "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Access Twitter"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ============ WHEN USING OTHER SERVICE PROVIDERS SET URLs HERE
+                    ============"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ============ A DROPBOX API CALL IS PRECONFIGURED"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" == WATCH OUT ==== DO NOT FOGET TO IMPORT DROPBOX CA CERTIFICATE"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="WU9VUl9DT05TVU1FUl9LRVk="/&gt;
+                    &lt;L7p:VariableToSet stringValue="consumer_key"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="WU9VUl9DT05TVU1FUl9LRVlfU0VDUkVU"/&gt;
+                    &lt;L7p:VariableToSet stringValue="consumer_key_secret"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="RHJvcEJveEFjY2Vzc29y"/&gt;
+                    &lt;L7p:VariableToSet stringValue="this.app.name"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="R0VU"/&gt;
+                    &lt;L7p:VariableToSet stringValue="api.endpoint.httpMetod"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9hcGkuZHJvcGJveC5jb20vMS9hY2NvdW50L2luZm8="/&gt;
+                    &lt;L7p:VariableToSet stringValue="api.endpoint.url"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9hcGkuZHJvcGJveC5jb20vMS9vYXV0aC9yZXF1ZXN0X3Rva2Vu"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth.endpoint.request"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly93d3cuZHJvcGJveC5jb20vMS9vYXV0aC9hdXRob3JpemU="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth.endpoint.authorize"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9hcGkuZHJvcGJveC5jb20vMS9vYXV0aC9hY2Nlc3NfdG9rZW4="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth.endpoint.token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ================== END OF CONFIGURATION ================== "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Access DropBox"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ============ WHEN USING OTHER SERVICE PROVIDERS SET URLs HERE
+                    ============"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ============ A LINKED IN API CALL IS PRECONFIGURED"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" == WATCH OUT ==== DO NOT FOGET TO IMPORT LINKEDIN CA CERTIFICATE"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="WU9VUl9DT05TVU1FUl9LRVk="/&gt;
+                    &lt;L7p:VariableToSet stringValue="consumer_key"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="WU9VUl9DT05TVU1FUl9LRVlfU0VDUkVU"/&gt;
+                    &lt;L7p:VariableToSet stringValue="consumer_key_secret"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="TGlua2VkSW5BY2Nlc3Nvcg=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="this.app.name"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="R0VU"/&gt;
+                    &lt;L7p:VariableToSet stringValue="api.endpoint.httpMetod"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cDovL2FwaS5saW5rZWRpbi5jb20vdjEvcGVvcGxlL34="/&gt;
+                    &lt;L7p:VariableToSet stringValue="api.endpoint.url"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="aHR0cHM6Ly9hcGkubGlua2VkaW4uY29tL3Vhcy9vYXV0aC9yZXF1ZXN0VG9rZW4="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth.endpoint.request"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL3Vhcy9vYXV0aC9hdXRob3JpemU="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth.endpoint.authorize"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="aHR0cHM6Ly9hcGkubGlua2VkaW4uY29tL3Vhcy9vYXV0aC9hY2Nlc3NUb2tlbg=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth.endpoint.token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue=" ================== END OF CONFIGURATION ================== "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Access Linked In"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Configure oauth endpoints here"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${state}"/&gt;
+                    &lt;L7p:Expression2 stringValue="request_token"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue="request_token"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:Base64ResponseBody
+                    stringValue="JHt3ZWJzaXRlX3RvcH0KCjxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0Ij4KZnVuY3Rpb24gdmFsaWRhdGVGb3JtKCkKewoJdmFyIHRlbXBVc2VyID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoInRlbXB1c2VyIikudmFsdWU7CglpZih0ZW1wVXNlciA9PSBudWxsIHx8IHRlbXBVc2VyLnJlcGxhY2UoLyheXHMqKXwoXHMqJCkvZywgIiIpLmxlbmd0aD09MCkKCXsKCQlyZXR1cm4gY29uZmlybSgiRG8geW91IHdhbnQgdG8gcHJvY2VlZCB3aXRob3V0IGEgbmFtZT8gSW4gdGhhdCBjYXNlICdzeXN0ZW0nIHdpbGwgYmUgdXNlZCBhcyB1c2VybmFtZSIpOwoJfQoJZWxzZQoJCXJldHVybiB0cnVlOwp9Cjwvc2NyaXB0Pgo8ZGl2IGNsYXNzPSJDb250YWluZXIiPgo8cD4KSSBhbSA8Yj4ke3RoaXMuYXBwLm5hbWV9PC9iPiBhbmQgSSB3YW50IHRvIGFjY2VzcyByZXNvdXJjZXMgZnJvbSA8Yj5TZXJ2aWNlUHJvdmlkZXI8L2I+IG9uIHlvdXIgYmVoYWxmIDxicj4KPGZvcm0gYWN0aW9uPSIke3RoaXMuYXBwLnVybH0iIG1ldGhvZD0iR0VUIiBvbnN1Ym1pdD0icmV0dXJuIHZhbGlkYXRlRm9ybSgpIj4KUGxlYXNlIGVudGVyIGEgbmFtZSBiZWZvcmUgaGl0dGluZyAnQWNjZXNzUmVzb3VyY2VzJy4gVGhpcyBuYW1lIGlzIHVzZWQgdG8gZGlzdGluZ3Vpc2ggYmV0d2VlbiBkaWZmZXJlbnQgdXNlcnMgdXNpbmcgdGhpcyBjbGllbnQuPGJyPgpJdCBkb2VzIG5vdCBuZXNjZWNlcmlseSBuZWVkIHRvIGJlIHlvdXIgdXNlcm5hbWUgb2YgdGhlIHN5c3RlbS4gQnV0IHlvdSBzaG91bGQgYWx3YXlzIHVzZSB0aGUgc2FtZSBuYW1lIHdoZW4gdXNpbmcgdGhpcyBjbGllbnQuCjwvcD4KPGhyPgpZb3VyIG5hbWU6IDxpbnB1dCBuYW1lPSJ0ZW1wdXNlciIgaWQ9InRlbXB1c2VyIiB3aWR0aD0iNjAiPgoJPGlucHV0IHZhbHVlPSJyZXF1ZXN0X3Rva2VuIiBuYW1lPSJzdGF0ZSIgdHlwZT0iaGlkZGVuIj4KCTxpbnB1dCB2YWx1ZT0iQWNjZXNzUmVzb3VyY2VzIiBzdHlsZT0ibWFyZ2luOiA1cHg7IiB0eXBlPSJzdWJtaXQiPgoJPGlucHV0IHZhbHVlPSJyZXVzZXRva2VuIiBuYW1lPSJyZXVzZXRva2VuIiB0eXBlPSJjaGVja2JveCI+IFJldXNlIGV4aXN0aW5nIGFjY2Vzc190b2tlbiBpZiBpdCBleGlzdHM/Cjxocj4KPC9mb3JtPgo8L2Rpdj4KCiR7d2Vic2l0ZV9ib3R0b219"/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/html; charset=UTF-8"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Initial request"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${state}"/&gt;
+                    &lt;L7p:Expression2 stringValue="request_token"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="request_token"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnRlbXB1c2VyfQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="tempuser"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${tempuser}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Negate booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="c3lzdGVt"/&gt;
+                    &lt;L7p:VariableToSet stringValue="tempuser"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:UUIDGenerator&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Generate nonce"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:TargetVariable stringValue="nonce"/&gt;
+                    &lt;/L7p:UUIDGenerator&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtvYXV0aC5lbmRwb2ludC5yZXF1ZXN0fQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="url"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:VariableToSet stringValue="token_secret"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="R0VU"/&gt;
+                    &lt;L7p:VariableToSet stringValue="http_method"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="this.app.callback"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="callback"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="b2F1dGhfY29uc3VtZXJfa2V5PSIke2NvbnN1bWVyX2tleX0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSJITUFDLVNIQTEiLG9hdXRoX3RpbWVzdGFtcD0iJHtnYXRld2F5LnRpbWUuc2Vjb25kc30iLCBvYXV0aF9ub25jZT0iJHtub25jZVswXX0iLCBvYXV0aF9jYWxsYmFjaz0iJHtjYWxsYmFja30iLCBvYXV0aF92ZXJzaW9uPSIxLjAi"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${request.http.parameter.reusetoken}"/&gt;
+                    &lt;L7p:Expression2 stringValue="reusetoken"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="reusetoken"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CacheLookup&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${tempuser}${consumer_key}"/&gt;
+                    &lt;L7p:CacheId stringValue="oauth_v1_client_cache"/&gt;
+                    &lt;L7p:ContentTypeOverride stringValue=""/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheLookup&gt;
+                    &lt;L7p:XslTransformation&gt;
+                    &lt;L7p:Direction intValue="-1"/&gt;
+                    &lt;L7p:MsgVarPrefix stringValue="findOwner"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:ResourceInfo staticResourceInfo="included"&gt;
+                    &lt;L7p:Document stringValueReference="inline"&gt;&lt;![CDATA[&lt;xsl:stylesheet version="1.0"
+                    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+                    &lt;xsl:output method="text" omit-xml-declaration="yes"/&gt;
+                    &lt;xsl:param name="tempuser"/&gt;
+                    &lt;xsl:param name="consumer_key"/&gt;
+                    &lt;xsl:template match="/"&gt;
+                    &lt;xsl:choose&gt;
+                    &lt;xsl:when test="count(/session[consumer=$consumer_key and resource_owner=$tempuser]) &gt; 0"&gt;true&lt;/xsl:when&gt;
+                    &lt;xsl:otherwise&gt;false&lt;/xsl:otherwise&gt;
+                    &lt;/xsl:choose&gt;
+                    &lt;/xsl:template&gt;
+                    &lt;/xsl:stylesheet&gt;]]&gt;&lt;/L7p:Document&gt;
+                    &lt;/L7p:ResourceInfo&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;L7p:TransformName stringValue=""/&gt;
+                    &lt;/L7p:XslTransformation&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${oauth_client_session.mainpart}"/&gt;
+                    &lt;L7p:Expression2 stringValue="true"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:RightValue stringValue="true"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="JHt0aGlzLmFwcC51cmx9P3N0YXRlPWRvd25sb2FkJnRlbXB1c2VyPSR7dGVtcHVzZXJ9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="location"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PHNlc3Npb24+DQogIDxjb25zdW1lcj48L2NvbnN1bWVyPg0KICA8cmVzb3VyY2Vfb3duZXI+PC9yZXNvdXJjZV9vd25lcj4NCiAgPHRva2VuPjwvdG9rZW4+DQogIDx0b2tlbl9zZWNyZXQ+PC90b2tlbl9zZWNyZXQ+DQogIDx2ZXJpZmllcj48L3ZlcmlmaWVyPg0KICA8YWNjZXNzX3Rva2VuPjwvYWNjZXNzX3Rva2VuPg0KICA8YWNjZXNzX3Rva2VuX3NlY3JldD48L2FjY2Vzc190b2tlbl9zZWNyZXQ+DQo8L3Nlc3Npb24+"/&gt;
+                    &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_client_session"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${tempuser}${consumer_key}"/&gt;
+                    &lt;L7p:CacheId stringValue="oauth_v1_client_cache"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="fded77d9-893f-4dcd-99bf-859988d65072"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="T0F1dGggJHtvYXV0aF9wYXJhbXN9LCBvYXV0aF9zaWduYXR1cmU9IiR7c2lnbmF0dXJlfSI="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
+                    &lt;L7p:HttpMethod httpMethod="GET"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth.endpoint.request}"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:CustomizeValue stringValue="${oauth_params}"/&gt;
+                    &lt;L7p:Name stringValue="Authorization"/&gt;
+                    &lt;L7p:UsesCustomizedValue booleanValue="true"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="requestToken"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:Regex&gt;
+                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
+                    &lt;L7p:CaptureVar stringValue="oauthToken"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="requestToken"/&gt;
+                    &lt;L7p:Regex stringValue="oauth_token=([^&amp;amp;]{1,100})"/&gt;
+                    &lt;L7p:RegexName stringValue="get token"/&gt;
+                    &lt;L7p:Replacement stringValue=""/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:Regex&gt;
+                    &lt;L7p:Regex&gt;
+                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
+                    &lt;L7p:CaptureVar stringValue="oauthSecret"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="requestToken"/&gt;
+                    &lt;L7p:Regex stringValue="oauth_token_secret=([^&amp;amp;]{1,100})"/&gt;
+                    &lt;L7p:RegexName stringValue="get token secret"/&gt;
+                    &lt;L7p:Replacement stringValue=""/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:Regex&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="401"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody
+                    stringValue="Q291bGQgbm90IHJlY2VpdmUgYSByZXF1ZXN0X3Rva2VuLiBQbGVhc2UgdHJ5IGFnYWluLg=="/&gt;
+                    &lt;L7p:EarlyResponse booleanValue="true"/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
+                    &lt;L7p:ResponseStatus stringValue="401"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:FalseAssertion/&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtvYXV0aFRva2VuWzFdfQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtvYXV0aFNlY3JldFsxXX0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_token_secret"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PHNlc3Npb24+DQogIDxjb25zdW1lcj4ke2NvbnN1bWVyX2tleX08L2NvbnN1bWVyPg0KICA8cmVzb3VyY2Vfb3duZXI+JHt0ZW1wdXNlcn08L3Jlc291cmNlX293bmVyPg0KICA8dG9rZW4+JHtvYXV0aF90b2tlbn08L3Rva2VuPg0KICA8dG9rZW5fc2VjcmV0PiR7b2F1dGhfdG9rZW5fc2VjcmV0fTwvdG9rZW5fc2VjcmV0Pg0KICA8dmVyaWZpZXI+PC92ZXJpZmllcj4NCiAgPGFjY2Vzc190b2tlbj48L2FjY2Vzc190b2tlbj4NCiAgPGFjY2Vzc190b2tlbl9zZWNyZXQ+PC9hY2Nlc3NfdG9rZW5fc2VjcmV0Pg0KPC9zZXNzaW9uPg=="/&gt;
+                    &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_client_session"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="use token as key"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${oauth_token}"/&gt;
+                    &lt;L7p:CacheId stringValue="oauth_v1_client_cache"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="The param oauth_callback here is only needed for Dropbox!"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="JHtvYXV0aC5lbmRwb2ludC5hdXRob3JpemV9P29hdXRoX3Rva2VuPSR7b2F1dGhfdG9rZW59Jm9hdXRoX2NhbGxiYWNrPSR7dGhpcy5hcHAuY2FsbGJhY2t9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="location"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="302"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
+                    &lt;L7p:ResponseStatus stringValue="302"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:AddHeader&gt;
+                    &lt;L7p:HeaderName stringValue="Location"/&gt;
+                    &lt;L7p:HeaderValue stringValue="${location}"/&gt;
+                    &lt;L7p:Target target="RESPONSE"/&gt;
+                    &lt;/L7p:AddHeader&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Request endpoint"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${state}"/&gt;
+                    &lt;L7p:Expression2 stringValue="authorized"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="authorized"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:UUIDGenerator&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Generate nonce"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:TargetVariable stringValue="nonce"/&gt;
+                    &lt;/L7p:UUIDGenerator&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtvYXV0aC5lbmRwb2ludC50b2tlbn0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="url"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="UE9TVA=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="http_method"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLm9hdXRoX3ZlcmlmaWVyfQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="verifier"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLm9hdXRoX3Rva2VufQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="token"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="token"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CacheLookup&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${token}"/&gt;
+                    &lt;L7p:CacheId stringValue="oauth_v1_client_cache"/&gt;
+                    &lt;L7p:ContentTypeOverride stringValue=""/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheLookup&gt;
+                    &lt;L7p:CacheLookup&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${token}"/&gt;
+                    &lt;L7p:CacheId stringValue="oauth_v1_client_cache"/&gt;
+                    &lt;L7p:ContentTypeOverride stringValue=""/&gt;
+                    &lt;L7p:Enabled booleanValue="false"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheLookup&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue="xpathConsumer"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/session/consumer/text()"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue="xpathOwner"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/session/resource_owner/text()"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue="xpathToken"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/session/token/text()"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue="xpathSecret"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/session/token_secret/text()"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt4cGF0aFNlY3JldC5yZXN1bHR9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="token_secret"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PHNlc3Npb24+DQogIDxjb25zdW1lcj4ke3hwYXRoQ29uc3VtZXIucmVzdWx0fTwvY29uc3VtZXI+DQogIDxyZXNvdXJjZV9vd25lcj4ke3hwYXRoT3duZXIucmVzdWx0fTwvcmVzb3VyY2Vfb3duZXI+DQogIDx0b2tlbj4ke3hwYXRoVG9rZW4ucmVzdWx0fTwvdG9rZW4+DQogIDx0b2tlbl9zZWNyZXQ+JHt4cGF0aFNlY3JldC5yZXN1bHR9PC90b2tlbl9zZWNyZXQ+DQogIDx2ZXJpZmllcj4ke3ZlcmlmaWVyfTwvdmVyaWZpZXI+DQogIDxhY2Nlc3NfdG9rZW4+PC9hY2Nlc3NfdG9rZW4+DQogIDxhY2Nlc3NfdG9rZW5fc2VjcmV0PjwvYWNjZXNzX3Rva2VuX3NlY3JldD4NCjwvc2Vzc2lvbj4="/&gt;
+                    &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_client_session"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${token}"/&gt;
+                    &lt;L7p:CacheId stringValue="oauth_v1_client_cache"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="get the request token and secret from the cache"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="b2F1dGhfY29uc3VtZXJfa2V5PSIke2NvbnN1bWVyX2tleX0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSJITUFDLVNIQTEiLG9hdXRoX3RpbWVzdGFtcD0iJHtnYXRld2F5LnRpbWUuc2Vjb25kc30iLCBvYXV0aF9ub25jZT0iJHtub25jZVswXX0iLCBvYXV0aF90b2tlbj0iJHt0b2tlbn0iLCBvYXV0aF92ZXJpZmllcj0iJHt2ZXJpZmllcn0i"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="fded77d9-893f-4dcd-99bf-859988d65072"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="T0F1dGggJHtvYXV0aF9wYXJhbXN9LCBvYXV0aF9zaWduYXR1cmU9IiR7c2lnbmF0dXJlfSI="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:HttpMethod httpMethod="POST"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth.endpoint.token}"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:CustomizeValue stringValue="${oauth_params}"/&gt;
+                    &lt;L7p:Name stringValue="Authorization"/&gt;
+                    &lt;L7p:UsesCustomizedValue booleanValue="true"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="accessToken"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHthY2Nlc3NUb2tlbi5tYWlucGFydH0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="tokenSecret"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:Regex&gt;
+                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
+                    &lt;L7p:CaptureVar stringValue="oauthToken"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="tokenSecret"/&gt;
+                    &lt;L7p:Regex stringValue="oauth_token=([^&amp;amp;]{1,100})"/&gt;
+                    &lt;L7p:RegexName stringValue="Get access token"/&gt;
+                    &lt;L7p:Replacement stringValue=""/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:Regex&gt;
+                    &lt;L7p:Regex&gt;
+                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
+                    &lt;L7p:CaptureVar stringValue="oauthTokenSecret"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="tokenSecret"/&gt;
+                    &lt;L7p:Regex stringValue="oauth_token_secret=([^&amp;amp;]{1,100})"/&gt;
+                    &lt;L7p:RegexName stringValue="Get access token secret"/&gt;
+                    &lt;L7p:Replacement stringValue=""/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:Regex&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CacheLookup&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${token}"/&gt;
+                    &lt;L7p:CacheId stringValue="oauth_v1_client_cache"/&gt;
+                    &lt;L7p:ContentTypeOverride stringValue=""/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheLookup&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue="xpathConsumer"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/session/consumer/text()"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue="xpathOwner"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/session/resource_owner/text()"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PHNlc3Npb24+DQogIDxjb25zdW1lcj4ke3hwYXRoQ29uc3VtZXIucmVzdWx0fTwvY29uc3VtZXI+DQogIDxyZXNvdXJjZV9vd25lcj4ke3hwYXRoT3duZXIucmVzdWx0fTwvcmVzb3VyY2Vfb3duZXI+DQogIDx0b2tlbj48L3Rva2VuPg0KICA8dG9rZW5fc2VjcmV0PjwvdG9rZW5fc2VjcmV0Pg0KICA8dmVyaWZpZXI+PC92ZXJpZmllcj4NCiAgPGFjY2Vzc190b2tlbj4ke29hdXRoVG9rZW5bMV19PC9hY2Nlc3NfdG9rZW4+DQogIDxhY2Nlc3NfdG9rZW5fc2VjcmV0PiR7b2F1dGhUb2tlblNlY3JldFsxXX08L2FjY2Vzc190b2tlbl9zZWNyZXQ+DQo8L3Nlc3Npb24+"/&gt;
+                    &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_client_session"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${xpathOwner.result}${xpathConsumer.result}"/&gt;
+                    &lt;L7p:CacheId stringValue="oauth_v1_client_cache"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="get the request token and secret from the cache"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="200"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody
+                    stringValue="JHt3ZWJzaXRlX3RvcH0KCjxkaXY+CjxwPgpJIGFtIG5vdyByZWFkeSB0byBhY2Nlc3MgeW91ciByZXNvdXJjZXMsIGxldHMgZ28hCjwvcD4KPGZvcm0gYWN0aW9uPSIke3RoaXMuYXBwLnVybH0iIG1ldGhvZD0iR0VUIj4KCTxpbnB1dCB0eXBlPSJoaWRkZW4iIG5hbWU9Im9hdXRoX2NvbnN1bWVyX2tleSIgdmFsdWU9IiR7Y29uc3VtZXJfa2V5fSIvPgoJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0ib2F1dGhfdG9rZW4iIHZhbHVlPSIke29hdXRoVG9rZW5bMV19Ii8+Cgk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJ0ZW1wdXNlciIgdmFsdWU9IiR7eHBhdGhPd25lci5yZXN1bHR9Ii8+Cgk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJzdGF0ZSIgdmFsdWU9ImRvd25sb2FkIi8+Cgk8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iRG93bmxvYWQiLz4KPC9mb3JtPgo8L2Rpdj4KCgoke3dlYnNpdGVfYm90dG9tfQ=="/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/html; charset=UTF-8"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Receive authorized request token, get an access token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${state}"/&gt;
+                    &lt;L7p:Expression2 stringValue="download"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="download"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:UUIDGenerator&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Generate nonce"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:TargetVariable stringValue="nonce"/&gt;
+                    &lt;/L7p:UUIDGenerator&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHthcGkuZW5kcG9pbnQudXJsfQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="url"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHthcGkuZW5kcG9pbnQuaHR0cE1ldG9kfQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="http_method"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CacheLookup&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${request.http.parameter.tempuser}${consumer_key}"/&gt;
+                    &lt;L7p:CacheId stringValue="oauth_v1_client_cache"/&gt;
+                    &lt;L7p:ContentTypeOverride stringValue=""/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheLookup&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue="xpathToken"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/session/access_token/text()"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue="xpathSecret"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="oauth_client_session"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/session/access_token_secret/text()"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt4cGF0aFRva2VuLnJlc3VsdH0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt4cGF0aFNlY3JldC5yZXN1bHR9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="token_secret"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="get the access_token and secret from the database"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="b2F1dGhfY29uc3VtZXJfa2V5PSIke2NvbnN1bWVyX2tleX0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSJITUFDLVNIQTEiLG9hdXRoX3RpbWVzdGFtcD0iJHtnYXRld2F5LnRpbWUuc2Vjb25kc30iLCBvYXV0aF9ub25jZT0iJHtub25jZX0iLCBvYXV0aF90b2tlbj0iJHt0b2tlbn0iLCBvYXV0aF92ZXJzaW9uPSIxLjAi"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="fded77d9-893f-4dcd-99bf-859988d65072"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="T0F1dGggJHtvYXV0aF9wYXJhbXN9LCBvYXV0aF9zaWduYXR1cmU9IiR7c2lnbmF0dXJlfSI="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${http_method}"/&gt;
+                    &lt;L7p:Expression2 stringValue="POST"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="POST"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
+                    &lt;L7p:HttpMethod httpMethod="POST"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${api.endpoint.url}"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:CustomizeValue stringValue="${oauth_params}"/&gt;
+                    &lt;L7p:Name stringValue="Authorization"/&gt;
+                    &lt;L7p:UsesCustomizedValue booleanValue="true"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="resource"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
+                    &lt;L7p:HttpMethod httpMethod="GET"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${api.endpoint.url}"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:CustomizeValue stringValue="${oauth_params}"/&gt;
+                    &lt;L7p:Name stringValue="Authorization"/&gt;
+                    &lt;L7p:UsesCustomizedValue booleanValue="true"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="resource"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="200"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody
+                    stringValue="JHt3ZWJzaXRlX3RvcH0KCjxkaXY+CjxwPgpUaGlzIGlzIHdoYXQgSSBoYXZlIHJlY2VpdmVkIGZyb20gdGhlIDxiPlNlcnZpY2VQcm92aWRlcjwvYj46CjwvcD4KPGhyPgo8YnI+CiR7cmVzb3VyY2UubWFpbnBhcnR9Cjxicj4KPGhyPgo8YSBocmVmPSIke3RoaXMuYXBwLnVybH0iPkFnYWluPC9hPgo8L2Rpdj4KCiR7d2Vic2l0ZV9ib3R0b219"/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/html; charset=UTF-8"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Download resources using the issued access token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Service>
+    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="123797508" version="2">
+        <l7:ServiceDetail folderId="123600900" id="123797508" version="2">
+            <l7:Name>oauth/v1</l7:Name>
+            <l7:Enabled>true</l7:Enabled>
+            <l7:ServiceMappings>
+                <l7:HttpMapping>
+                    <l7:UrlPattern>/auth/oauth/v1/authorize/website</l7:UrlPattern>
+                    <l7:Verbs>
+                        <l7:Verb>GET</l7:Verb>
+                        <l7:Verb>POST</l7:Verb>
+                        <l7:Verb>PUT</l7:Verb>
+                        <l7:Verb>DELETE</l7:Verb>
+                    </l7:Verbs>
+                </l7:HttpMapping>
+            </l7:ServiceMappings>
+            <l7:Properties>
+                <l7:Property key="policyRevision">
+                    <l7:LongValue>1</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="wssProcessingEnabled">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+                <l7:Property key="internal">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:ServiceDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy" version="0">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="T0F1dGggMS4wIEF1dGhvcml6YXRpb24gYW5kIFJlc291cmNlIFNlcnZlcg=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="this.app.name"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PHN0eWxlIHR5cGU9InRleHQvY3NzIj4NCmJvZHkuZHJhZ3tjdXJzb3I6bW92ZTt9dGguYWN0aXZlIGltZ3tkaXNwbGF5OmlubGluZTt9dHIuZXZlbix0ci5vZGR7YmFja2dyb3VuZC1jb2xvcjojZWVlO2JvcmRlci1ib3R0b206MXB4IHNvbGlkICNjY2M7cGFkZGluZzowLjFlbSAwLjZlbTt9DQp0ci5kcmFne2JhY2tncm91bmQtY29sb3I6I2ZmZmZmMDt9dHIuZHJhZy1wcmV2aW91c3tiYWNrZ3JvdW5kLWNvbG9yOiNmZmQ7fQ0KdGQuYWN0aXZle2JhY2tncm91bmQtY29sb3I6I2RkZDt9dGQuY2hlY2tib3gsdGguY2hlY2tib3h7dGV4dC1hbGlnbjpjZW50ZXI7fQ0KdGJvZHl7Ym9yZGVyLXRvcDoxcHggc29saWQgI2NjYzt9dGJvZHkgdGh7Ym9yZGVyLWJvdHRvbToxcHggc29saWQgI2NjYzt9DQp0aGVhZCB0aHt0ZXh0LWFsaWduOmxlZnQ7DQogIHBhZGRpbmctcmlnaHQ6MWVtOw0KICBib3JkZXItYm90dG9tOjNweCBzb2xpZCAjY2NjO30NCi5icmVhZGNydW1ie3BhZGRpbmctYm90dG9tOi41ZW19ZGl2LmluZGVudGF0aW9ue3dpZHRoOjIwcHg7aGVpZ2h0OjEuN2VtO21hcmdpbjotMC40ZW0gMC4yZW0gLTAuNGVtIC0wLjRlbTsNCiAgcGFkZGluZzowLjQyZW0gMCAwLjQyZW0gMC42ZW07DQogIGZsb2F0OmxlZnQ7fQ0KdWwucHJpbWFyeXtib3JkZXItY29sbGFwc2U6Y29sbGFwc2U7cGFkZGluZzowIDAgMCAxZW07DQogIHdoaXRlLXNwYWNlOm5vd3JhcDtsaXN0LXN0eWxlOm5vbmU7bWFyZ2luOjVweDtoZWlnaHQ6YXV0bztsaW5lLWhlaWdodDpub3JtYWw7Ym9yZGVyLWJvdHRvbToxcHggc29saWQgI2JiYjt9DQp1bC5wcmltYXJ5IGxpe2Rpc3BsYXk6aW5saW5lO311bC5wcmltYXJ5IGxpIGF7YmFja2dyb3VuZC1jb2xvcjojZGRkO2JvcmRlci1jb2xvcjojYmJiO2JvcmRlci13aWR0aDoxcHg7Ym9yZGVyLXN0eWxlOnNvbGlkIHNvbGlkIG5vbmUgc29saWQ7aGVpZ2h0OmF1dG87bWFyZ2luLXJpZ2h0OjAuNWVtOw0KICBwYWRkaW5nOjAgMWVtO3RleHQtZGVjb3JhdGlvbjpub25lO311bC5wcmltYXJ5IGxpLmFjdGl2ZSBhe2JhY2tncm91bmQtY29sb3I6I2ZmZjtib3JkZXI6MXB4IHNvbGlkICNiYmI7Ym9yZGVyLWJvdHRvbTojZmZmIDFweCBzb2xpZDt9DQp1bC5wcmltYXJ5IGxpIGE6aG92ZXJ7YmFja2dyb3VuZC1jb2xvcjojZWVlO2JvcmRlci1jb2xvcjojY2NjO2JvcmRlci1ib3R0b20tY29sb3I6I2VlZTt9dWwuc2Vjb25kYXJ5e2JvcmRlci1ib3R0b206MXB4IHNvbGlkICNiYmI7cGFkZGluZzowLjVlbSAxZW07bWFyZ2luOjVweDt9DQoNCip7bWFyZ2luOjA7fQ0KaHRtbCxib2R5e2JhY2tncm91bmQ6I2ZmZjtmb250OjEycHgvMS4yZW0gaGVsdmV0aWNhLGFyaWFsLHNhbnMtc2VyaWY7Y29sb3I6IzRiNGI0YjtoZWlnaHQ6MTAwJTtsaW5lLWhlaWdodDoxLjNlbTt9DQpocntoZWlnaHQ6MXB4O2JhY2tncm91bmQtY29sb3I6I2RkZDsgbm8tcmVwZWF0IGNlbnRlciBib3R0b207cGFkZGluZzo4cHggYXV0bztib3JkZXI6MCBub25lO30NCmlucHV0e2NvbG9yOiM0YjRiNGI7fQ0KaDEsaDIsaDMsaDQsaDUsaDZ7cGFkZGluZzowO2ZvbnQtd2VpZ2h0Om5vcm1hbDtmb250LWZhbWlseTpoZWx2ZXRpY2EsYXJpYWwsc2Fucy1zZXJpZjt9DQpoMXtmb250LXNpemU6MjUwJTtjb2xvcjp3aGl0ZTt6LWluZGV4OjU7fQ0KaDJ7Zm9udC1zaXplOjE3NSU7fQ0KaDN7Zm9udC1zaXplOjE1MCU7fQ0KaDR7Zm9udC1zaXplOjEyMCU7fQ0KaDV7Zm9udC1zaXplOjExMCU7fQ0KaDZ7Zm9udC1zaXplOjEwNSU7fQ0KYTphY3RpdmUsYS5hY3RpdmV7Y29sb3I6IzRiNGI0Yjt0ZXh0LWRlY29yYXRpb246bm9uZTt9DQphOmxpbmssYTp2aXNpdGVke2NvbG9yOiM0YjRiNGI7dGV4dC1kZWNvcmF0aW9uOnVuZGVybGluZTtvdXRsaW5lOm5vbmU7fQ0KYTpob3Zlcntjb2xvcjojZGIzYjJjO3RleHQtZGVjb3JhdGlvbjp1bmRlcmxpbmU7fQ0KcHttYXJnaW4tYm90dG9tOi41ZW07bGluZS1oZWlnaHQ6MS4zZW07bGlzdC1zdHlsZTpub25lO3RleHQtYWxpZ246bGVmdDtsaW5lLWhlaWdodDoxLjVlbTtjb2xvcjojNGI0YjRiO30NCmJsb2NrcXVvdGUgKnttYXJnaW46NXB4IDAgMCAxMHB4O311bHtsaW5lLWhlaWdodDoxLjVlbTsNCnBhZGRpbmc6LjJlbSAxZW0gMWVtIDFlbTt9b2x7bGluZS1oZWlnaHQ6MS41ZW07cGFkZGluZzouMmVtIDFlbSAxZW0gMWVtO310ci5ldmVuLHRyLm9kZHtiYWNrZ3JvdW5kOm5vbmU7fWltZyxhIGltZ3tib3JkZXI6bm9uZTt9DQpuby1yZXBlYXQgbGVmdCAzNSU7bWFyZ2luLWxlZnQ6LjVlbTtwYWRkaW5nLWxlZnQ6MWVtO30NCiN3cmFwcGVye21pbi1oZWlnaHQ6MTAwJTtoZWlnaHQ6YXV0byAhaW1wb3J0YW50O2hlaWdodDoxMDAlO21hcmdpbjowIGF1dG8gLTVlbTt9I2NvbnRhaW5lcnttYXJnaW46LTIuNWVtIGF1dG8gMCAyLjVlbTt9DQouZmllbGQtY29udGVudCAudmlldy1kb20taWQtNSAudmlldy1jb250ZW50IC52aWV3cy1yb3d7DQogICAgbWFyZ2luOjBweDtwYWRkaW5nOjBweDt9DQoNCiNzaWRlYmFyLWxlZnR7cG9zaXRpb246cmVsYXRpdmU7ZmxvYXQ6bGVmdDtjbGVhcjpsZWZ0O3BhZGRpbmc6MmVtIDAgNmVtIDA7ei1pbmRleDo1MDA7d2lkdGg6MTMuNWVtO30NCiNzaWRlYmFyLWxlZnQgLmNvbnRlbnR7bWFyZ2luLXRvcDouOGVtO30NCiNzaWRlYmFyLWxlZnQgYXtkaXNwbGF5OmJsb2NrO2xpbmUtaGVpZ2h0OjEuMmVtO3BhZGRpbmc6M3B4IDAgMXB4IDNweDt0ZXh0LWRlY29yYXRpb246bm9uZTtmb250LXNpemU6MTA1JTttYXJnaW4tbGVmdDozcHg7bWFyZ2luLXJpZ2h0OjNweDt9DQojc2lkZWJhci1sZWZ0IHVse3dpZHRoOjEzLjVlbTtkaXNwbGF5OmJsb2NrO2xpc3Qtc3R5bGU6bm9uZTt9DQojc2lkZWJhci1sZWZ0IHVsIHVse25vLXJlcGVhdCBjZW50ZXIgdG9wO3BhZGRpbmctbGVmdDouMmVtO30NCiNzaWRlYmFyLWxlZnQgYTpob3ZlciwNCiNzaWRlYmFyLWxlZnQgYS5hY3RpdmV7YmFja2dyb3VuZC1jb2xvcjojZDgzYjJjO2NvbG9yOndoaXRlO30NCiNzaWRlYmFyLWxlZnQgLm5vbGluay1saXtwYWRkaW5nLXRvcDoxLjNlbTt9DQojc2lkZWJhci1sZWZ0IC5maXJzdC5ub2xpbmstbGl7cGFkZGluZy10b3A6MDt9DQojc2lkZWJhci1sZWZ0IC5ub2xpbmt7Y29sb3I6IzIzMjAyMTtmb250LXNpemU6MTIwJTtmb250LXdlaWdodDo2MDA7fQ0KI3NpZGViYXItbGVmdCAubWVudS1uYW1lLW1lbnUtcmVzb3VyY2VzIC5ub2xpbmt7Zm9udC13ZWlnaHQ6MTAwO2ZvbnQtc2l6ZToxMDUlO30NCiNzaWRlYmFyLWxlZnQgbGkubGVhZntib3JkZXI6bm9uZTt0ZXh0LWluZGVudDpub25lOyBuby1yZXBlYXQgY2VudGVyIGJvdHRvbTtkaXNwbGF5OmJsb2NrO3BhZGRpbmc6MXB4IDAgMnB4O30NCiNzaWRlYmFyLWxlZnQgdWwgdWwgbGkuZmlyc3R7cGFkZGluZy10b3A6MnB4O30NCg0KLnZpZXctY29udGVudCBoNHtmb250LXNpemU6MTAwJTt9I25hdmlnYXRpb257cG9zaXRpb246cmVsYXRpdmU7Ym9yZGVyOjBweCBzb2xpZCByZWQ7bWFyZ2luOjBweDtwYWRkaW5nOjBweDt9DQoNCi5icmVhZGNydW1ie3RleHQtYWxpZ246bGVmdDtwYWRkaW5nOjA7cG9zaXRpb246YWJzb2x1dGU7dG9wOjQuN2VtO2xlZnQ6MTUuOGVtO3otaW5kZXg6NTA7fS5icmVhZGNydW1iIGEuYWN0aXZlLC5icmVhZGNydW1iIGE6YWN0aXZle2NvbG9yOiMyMzIwMjE7dGV4dC1kZWNvcmF0aW9uOm5vbmU7fS5icmVhZGNydW1iIGE6aG92ZXJ7Y29sb3I6I2RiM2IyYzt9bGkubGVhZntkaXNwbGF5OmlubGluZTtwYWRkaW5nOjAgMC41ZW0gMCAwLjNlbTt2ZXJ0aWNhbC1hbGlnbjptaWRkbGU7Ym9yZGVyLXJpZ2h0OjFweCBzb2xpZCAjNzI3MjcyO30NCg0KI2hlYWRlcntoZWlnaHQ6Ni41ZW07bWF4LXdpZHRoOjEwMCU7cG9zaXRpb246cmVsYXRpdmU7fSNoZWFkZXIgI2xvZ28tZmxvYXRlcntmbG9hdDpsZWZ0O3Bvc2l0aW9uOnJlbGF0aXZlO3RvcDoxMCU7d2lkdGg6MTU5cHg7aGVpZ2h0OjUzcHg7bWFyZ2luLWxlZnQ6Mi41ZW07fWRpdiNyZXN7ZGlzcGxheTpub25lO3Zpc2liaWxpdHk6aGlkZGVuO30jbWVudWJrZ3twb3NpdGlvbjpyZWxhdGl2ZTt3aWR0aDoxMDAlO2hlaWdodDozMXB4O2JhY2tncm91bmQtY29sb3I6IzY2Njt0b3A6Ni42ZW07ei1pbmRleDowO30NCg0KZGl2Lmxpbmtze2Rpc3BsYXk6bm9uZTt9DQoNCiNjb250ZW50e21hcmdpbjo0LjNlbSBhdXRvIDFlbSAyLjVlbTt9DQouc3VibWl0dGVke2Rpc3BsYXk6bm9uZTt9LmNvbnRhaW5lcnt6LWluZGV4OjU7aGVpZ2h0OjEwMCU7cGFkZGluZy10b3A6LjJlbTt9DQoudGl0bGUtYm94IGgxe2NvbG9yOiNkYjNiMmM7bGluZS1oZWlnaHQ6MWVtO30NCg0KI25hdmlnYXRpb24gZGl2Lm1lbnUtbmFtZS1wcmltYXJ5LWxpbmtzIHVse2JvcmRlcjowO2xpc3Qtc3R5bGU6bm9uZTtoZWlnaHQ6MzFweDttYXJnaW46MDtwYWRkaW5nOjA7d2lkdGg6MTAwJTt9DQojbmF2aWdhdGlvbiBkaXYubWVudS1uYW1lLXByaW1hcnktbGlua3MgdWwgbGl7YmFja2dyb3VuZDp0cmFuc3BhcmVudDtib3JkZXI6MDtmbG9hdDpsZWZ0O21hcmdpbjowO3BhZGRpbmc6MDtsaXN0LXN0eWxlOm5vbmU7cG9zaXRpb246cmVsYXRpdmU7fQ0KI25hdmlnYXRpb24gZGl2Lm1lbnUtbmFtZS1wcmltYXJ5LWxpbmtzIHVsIGxpIGF7ZGlzcGxheTpibG9jaztoZWlnaHQ6MzFweDt0ZXh0LWluZGVudDotNTAwMHB4O30NCiNuYXZpZ2F0aW9uIGRpdi5tZW51LW5hbWUtcHJpbWFyeS1saW5rcyBsaSBhe2JhY2tncm91bmQtY29sb3I6I2NjYzt9DQojbmF2aWdhdGlvbiBkaXYubWVudS1uYW1lLXByaW1hcnktbGlua3MgbGkgYTpob3ZlcntiYWNrZ3JvdW5kLWNvbG9yOiNjY2M7fQ0KI25hdmlnYXRpb24gZGl2Lm1lbnUtbmFtZS1wcmltYXJ5LWxpbmtzIGxpLm1lbnUtbWxpZC0yMzkzID4gYTpob3Zlcnt9DQoNCiNib3R0b21iYXJ7cG9zaXRpb246cmVsYXRpdmU7cGFkZGluZzoyZW0gMCA2ZW0gMDt6LWluZGV4OjUwMDt3aWR0aDoxMy41ZW07Zm9udC1zaXplOjEzMCU7fQ0KI2JvdHRvbWJhciAuY29udGVudHttYXJnaW4tdG9wOi44ZW07fQ0KI2JvdHRvbWJhciBhe2xpbmUtaGVpZ2h0OjEuMmVtO3BhZGRpbmc6M3B4IDNweCAzcHggM3B4O3RleHQtZGVjb3JhdGlvbjpub25lO30NCiNib3R0b21iYXIgYTpob3ZlciwNCiNib3R0b21iYXIgYS5hY3RpdmV7Y29sb3I6I2Q4M2IyYzt9DQojYm90dG9tYmFyIGJ7Zm9udC1zaXplOjEzMyU7fQ0KDQo8L3N0eWxlPg=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="website_style"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PCFET0NUWVBFIGh0bWwgUFVCTElDICItLy9XM0MvL0RURCBYSFRNTCAxLjAgU3RyaWN0Ly9FTiINCiJodHRwOi8vd3d3LnczLm9yZy9UUi94aHRtbDEvRFREL3hodG1sMS1zdHJpY3QuZHRkIj4NCjxodG1sIGNsYXNzPSJqcyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHhtbDpsYW5nPSJlbiIgZGlyPSJsdHIiIGxhbmc9ImVuIj4NCjxoZWFkPg0KICAgIDxtZXRhIGh0dHAtZXF1aXY9IkNvbnRlbnQtVHlwZSIgY29udGVudD0idGV4dC9odG1sOyBjaGFyc2V0PXV0Zi04Ij4NCiAgICA8dGl0bGU+JHt0aGlzLmFwcC5uYW1lfTwvdGl0bGU+DQo8L2hlYWQ+DQoke3dlYnNpdGVfc3R5bGV9DQo8Ym9keSBjbGFzcz0ic2lkZWJhci1sZWZ0IGNyb24tY2hlY2stcHJvY2Vzc2VkIj4NCjxkaXYgaWQ9IndyYXBwZXIiPg0KPGRpdiBpZD0ibWVudWJrZyI+PC9kaXY+DQo8ZGl2IGlkPSJjb250YWluZXIiPg0KPGRpdiBpZD0iaGVhZGVyIj4NCiAgICA8ZGl2IGlkPSJsb2dvLWZsb2F0ZXIiPg0KCQk8YSB0aXRsZT0iIiBocmVmPSIke3JlcXVlc3QudXJsLnBhdGh9Ij48aW1nIGlkPSJsb2dvIiAgaGVpZ2h0PSI1MyIgd2lkdGg9IjE1OSIgYWx0PSJMYXllcjciIHNyYz0iZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUFKOEFBQUExQ0FNQUFBQm9Rc2xhQUFBQUdYUkZXSFJUYjJaMGQyRnlaUUJCWkc5aVpTQkpiV0ZuWlZKbFlXUjVjY2xsUEFBQUFNQlFURlJGRkJBTWpJNk83cU9sYTI5dzV1Zm45TWpKNW1GZ3lNaklUMUpTNFR3dDFkZll0TGU0K2ZuNTgvVDBwNmluWFdObStlVGwvdno3K3YzK3E3cTgrdno1K3Uvdy9mbjd3TVBFNm9lSWdJU0cwZExTK2Z2OC9mei85dmo2Ny9Eem82R2ZWVnhmOS9qM3E2NncrZmYwdWJ1OW5xS2tSRUU5Mjl6ZHk4M092OEMrOWZYMTdlN3U2dXZyNHVQazVFeElkM3Q3cnEyclhsdFhob1NCOTlqYWxaaVozK0RnTHl3b1pXUmhzck95OGZIeG5aNmQrUGo3Ky96Ny9QejgvZjM5Ly8vL0FTRERZd0FBREZwSlJFRlVlTnJVV1d0N3Fqb1dOcUxGZWdGaEtCWjMyb3ExRmF1VTNZcHVXNU9zLy8rdlpxMGtJTFoyNW5ubXc1eHpjczYyR0lKNTg2NzdvZ1YvNzlINlIrQlRVa2twaFZENkd3ZWhGTWhBcWI4SlBnVUtFVWtKc0o0YzVvdWNBRXNoYVFJdjFWK1BUeGwwZDVPRXNZUWxneGZnZ1FqMXJQcHJFYllxOFFLSWFabDhac3RsMzJQTTVVRFFDSjhlZnprK2dKMlhNTmRNTGxuaW9aQVJtelFVL25VQXJYd2h6SkprRUFPWElsQ1NpMFhDc2tmU1FRV2FRdmovQU5TN3lPLzJ5L2w2L3JuUlZxSUN4QU44VTVZZFE2Mm05MzlDK0RQdjZvZHJZd3ZmOFVrK0dpRW9kREN4aUJYQ1JGUzdUdDVmZHNqWGtKQTF5Sys3Zk45ZFdVeXF3bWVWdDlwVk5VZmwyaG9UeWpKUjM5YjRBbjR6ZmdRZWNhRUNycmdJT01MS0Z5eEp5c2thMFpQelVlZG4vV0kwcCswMUxERGJHTnRYcCtYcXpOcVVPVTBOVDlvSitSV2ZpdHV2dCtNSXRTOEt3b0NneU0ycUtEeDN4Wnl5bjJvejF0NVFuVW5OL0RaODIxNXZKSnZFV0FkbXI0U3NWMVdjNmNmbDJZTk4rVzZ2cnErdjJ6Y2hpQUFDQkRQS21EUFFkemJNV1d4Q2E4b25RS0EzcktmTS9xZlAwMTF6Tkh0RG1tblpQTVdGSVdtYzQzdEZmTmRYM1VjRmtlQXlMLzJuRDJKTkJnQnVrVXp2eUpJMWg2cnk1cktHSXB1QURBejdXWCtUTmI3R0FVUURkUFZEMVZKUUpuaForUnA4MTllM04xeHk5VkVrNVAwNDJvdFFBbDZlbkRrb0RSQXNDRU9MYXNySlRndWhUNitqbzdUWDFhelFmNFRHWlNjYTRQUTU2a2R3djIvODRYZ2RjeDUwbGdvRWo1UUkwRjRvWjFnK1FZeGlGeUFxSGFIZmpYQS9YQjFvV0lUOWx4aUs0UkNQUkVpRytJbi82VU5pcU1UdmRGZlBSMUpHMFRFMGl5SzlEbjlIeFhFVTR3aGlFZUFmeGIvcW54NVhZWWg3eGZnTENwOElTSnNEY3g2QkY0cHpmVmJBMDIwbXJqdEZueVJCUnFBem5rN211bTZXNHhsZThNSmRJejFDYmFhdTJ4OUJ4NjFHSDJkaDZtYjZ5M1N0UWg0ckNBS1EzZWJZM3NBRitlSVk4NUE4RFI1SUJzaElFQWp0VzVSd2wwWlFXa1lJOGRCcXRaNUJLNmJVMGdjSFovYXROL1FQblI1ZUZTK2tSQVZPRmkvd29PL1J2ejhZbCtEWmZtM3RlMmlISVc3QjFYVnp2SGJEaS95aEZWK2hHb1lTTXhqRUZSTmF5RXRuRUhvKzJ5bEpISklhQ2ZodDhCRzE1TkFGYk41b3cxYXZBeXFsbTYwbEt1OEhJVDBBZkxhcThmWUlCcDhkZTQraUtqNy9CUjljMGovRTE2VzdiVkE4TkJvTkw1N2ordzY4N0o1OGI0U1NESVcyWTgyZkVsYW5VVTFYWnRQbkZhcHBoNjQvWHdBOFpNbjVBTU5mK2M3ZTM3MVVDSTN2YzVNUGVuUWdDREVxeFB3THZxYitqYS9POGFFZWJrbW1LQW51RnI1UCtBUjZ4YVNZWUxRaDhVckxYeWhqUEFVRlFYaEhibWkvZHpUOWlPN3UwUXZRaEljK3ZTUWdqeDg0Um1TYWhPODNia0R3bjljUTQxdzRyZ2FCdVkwYjhnMzU3VmQ4dU9JUmpaYm56UEVOdmdDTmVuTnd5ZzBRcTVhL29ISUpTajJpZUowUzkzdkRmV0ZEQ0E1OGluL2VkaEJxL25xQkRuYlM2dDhEOHV6aXhmT0c0L05oSFN2YlJNOFlnbVorZFZMQUd0LzE3WmhEdi9CbkJoODZBUHo1ZE1reXJyUmJOUHdKVFNaNkRNaHdLNVlqWDg5b3dVSHM2ZHVPNFNrdy9Kbjl1Y1huSWI0SjRmc0FOR0VWb1pESm14RzgxMjNZOUMraENydXYzL0JkdDJIMGFkQVJmeEtmUnArNVNWeUk1Y2wrY1RkQjV3ZTJiKzEvRTZEOWdxeDZRK2I1WU9oRFFNVGZjN2JDZ1c2SFcvbUNodjJHZ3RHdW1ZZGhEQVRrdFJ0RXZKRWZTQjZxN2UwM2ZGZmp6RG5oRTlhcFQzZEEvcmppTDR6STV3aUFQN2hUcmpjc0tPT1J6THFRMytTQXRQM3VuMmxNSTJudy9mbjhMRWo5TWx3ZUNSUFpqQ1cwWTJrVEppdGZqQUxoWS9mcUM3N3I3cjhxZUFaZmhQQW1aWkxCaVQvaVRwQjFrTVcrcmFhRXFrY2lWNXBBUTU4dy9Ka3hpV1hsWDNERjNza3BCZFJueEdnZjNock5EN2hzK0JkU2QxU3Vtelp5MnozRDE2dncvUUU4STBELzA1bjFQQXh6dGYvajJqdEw3VWlJSUdKa2lSSU40WDFQQUI2R1FFNUs4L2RlRk1YN0xsREd2enkvMFdjUG5hTkdSd2xEWlJ0WWFEVGxpeXJMTWQ1Q3VHMjNiN1lYOFNVb1Njam54V3ptOTd3WGltOE4vVk5HdkxYSEpjOFJDbTNDaUpYSU1mWUw2VXVheGp3eS9MSGMxZkx0RThIRzU0KzE4aW5LUTRNbVBzenQwZFBGK2lxK3VvVFB4ZmpxTW0zTVBlOE8vVjNGWDJneXVnOHl4SUl4UmtFRXlaYWhnais0T3h1UlB6SDhXZnNsYVZuNzBDSG5YYXVyVHFpTThtbnllTlN3RDFRQml2d2l4clNGZDcvam15VnBBSzQxRm8xUFdQNVVxRDBnTFBhMEVZNFZUYWU2aEhGSXZLbkJaL2pEQ2dLTFF5bXMvd1ByZGloQ2toQm81NnNiRENka0VHZjhZZFdHa2lKRjRnRzBYOC94emZ3eWg3aFQyWExQTzBKdHY1WVNuUVo0cEFOOUNyZ1paZUVWUHZMaFRmOEgxbjdKLytrZnljSDRlRTFmbHhKeXJrQis2VjloMnNTeCtFQlhPQjUzYnh2NFpuNHlXT2FqeDNrbDZwbEhuR2orOWg2TmgxeW16OXBSVU5xRlNQY01pQTV5enArMDF1cmZzMTd0ZFd6OGZiTHhBLzJsRHVOd280MGprczJtU3V0VTZtRG1URG5WemRWcmU5dStzdmhtdnZQVVh6NFZnNGlkOE4wUkVPOWtFQWZsSWxYRm1xcGxVWWxNMXZnSWEzbGF2UmlxbXIvOGp6a05LVW5RTmRxbi9TQ2MxUittcHFDR1VCRHIvS1c3dlgzRnMweDhoMlg1d08vTkhGWGpRL3NkcGNUZm5nYjVrQldVZVBFQU9rMlk0UHh6U2ljb2FKS3VVT0c4bGxtTS8wK0dFdE9HdmNhWE1wenlYMHluZ3FUV0JhbWFOWHFyV1ZoVGJoZFYrY3YydHN0SGswV2VKYVNFRFh5enczcmFRVmY0enFyUmg5LzRpVjZQV09zOHZMT3lReHdjR0h2UGhwVHVZM1JPNnRVN3hQS0F0NmFVUnl3WnJrWUZKSXNqbVcyMXg2L0x0N1ArcVJKWW5NZU4vQVhMOUE3cnpVejhxUERObkt6ajV1ZGRFdk1sVWpyUHRFN0VGbUFxTWdBYlExaDY4RGpxdEZxYngrc1d6aHRtRFh3cUNNaUV1NmZ3aXlRVnZTcStXWHl6MlFCMkIrTEtWbUttRU1NTHJuUkNxNGVlVjFVUlo1SWNrNGNOVlpYUm1wdkNya1QrWGcyK1FGN0doM2VVaWtVamZ3bEdaZVdnVC9KOXV0ZG5yd0RVdjYrTE9BTkdhbmRXTFJDbnNyRytQQU5KZzRKZXQ5M3Uzb1JWTCtYY1BrQjdIUlh3NklmOFJScDhSY1loRXVlbmw2cXVjeFZ0VkpkUnBxa3RxNlU2c2JYek5xTFY0QU9qY3FpMVhQM1V2MGZwWWhGNk9UOXdPT0Z6RGltRlZqazhVcDBicFZUQTRpWjNSNUpvZEF4K0hkRkRpU2lTUjhRcG96VDlGUVJCTk1SU04rRGg4VTVFRkFXR3VCekw2V0g4SzZhMVE0VEwwNVR1eWFvcDhnTSt2QkZFUCtDREo5OHZONkh1RSswV2g4T3FBNXY1WVhHUHoweFlPVDFDdXNxZ1AwbGgyQi9rbzhNYWZVSEdtSnRpZGIvS0tZUGVlR3lPdFFFZkxkQzhNZHhQSnFnb3kvbkJmWUcwWHpJWHF0YkRqL3pwTkNZZS81Qy9qQmI1a0pPU1NSaE5ITFlaUWQ5M2Q2bU1YU2YzaWh4R3lSTjRDVzQybUQzZCt6bUl6TzlQL0NuQW9NREFBdXRQdGlreGN6M2kyckpjQXpCcW9oeWNhVDZFRGZ1OTlEZXFxbVIreEVmbExiK1l2emdUVUVPdEtoVExZVmVVdUdYZnozTEVWeWFqSFRMelViQk9pZWxLT3VnbGZjVEg1OG5IeGhta2lNOUZCOVF2NW1yaGRPQll6SWZySGFZYkxFRW5PaSttRzB4ajNwUHB2UWhNRStxODdkbjYwbHNOd2t2NWk1OGNkWjlBNkVSWGFud0srck9rM0tpWUpSK2sxS09rR0NRTStUdjRIbk55R1RJMnN2Z3lpQWdmVEJEMjBUOTBQcjBQTVBnR2ZuTEF4RzdKL09RbE1EbSsrdkg5Rm5WYjBJdUYzZXV2K1F1N1Y5YWJtVVROOERkMThpT1h2eGc3NWhnQzdvc3lmU0w1em90K3o4bTVtaWZIa2JNWUlqNFVNdlFSeU1LWDZxN3crSXAxb09KdmczWGF4MlM5OUplYUFWQS82eCttVmhKQkJ2RzJtYi80c3dJMW1Tby8reFlNUThUU1liaDAybU5QVXhDVEdmTFdnWHVuaEtkaUJFUFBPUmIrTHBEOTJaejVmZFF4UHlrbmNGODZpK1FUa3dYUFdiQUNvU1dvc3pDZmxkNE9Pc25ud1YvYlYxZy82eCtsRFFGd3JLWnZ1bFgrNHZkUUhoRmd1b2poSmJEOVF6endsRlIrc01KQUY5MjUyU1RIVU8vMlZUOGJ3bkE1Z2VYaVE4bzBjMWZMUndXNzFXcUI4WVk2V0dqdFlqM0pwdTRJSUtPUDNXRGlidkNSbGRzWDVvM1FmM2gvYVhxak9zaUhZNnhEWDhlVDNxeGMzZ0hJWm9lVGFFeUgxSEJMMHhTTkJzUkl0NmlGYWVoSmdTRXNwVGNWS2swcHRBNXhXVXFDR3cxMTJpVkcxQWRVcVY2THR5aDFlVWxCeVV0dnFsb1hYaEZ3VXNSZzI5N0c2eW1aMTZtQnJPb0dzbW5PNkI2TnN2MXpxQnZRMHJRc2RVTmNMOU9tcFV4SHh4N1VObHUxMWxENm9NeUMvL2IrVjNjZmpSMURhTDIyUE85aU54dmV0c2RyTzdLNnF5eDBGMWlhQnJNUTByYVZxLzYxZmxiVTRidHVzWXZMYi9rdXZKOXVOT09wQ1JKRWxjOVU5ZnNNZVhwNWFMU21sbjdWZjY5YjMrWTFudTFhYXlhMW00TnE3YWxsRDVjUS9qUGVuLzk5eDc4RkdBQ0Q5Z1pIaXo2ZUZnQUFBQUJKUlU1RXJrSmdnZz09Ij48L2E+DQoJPC9kaXY+CQ0KPC9kaXY+DQo8ZGl2IGlkPSJjb250ZW50Ij4NCgk8aWZyYW1lIHN0eWxlPSJkaXNwbGF5Om5vbmUiIHNyYz0iIiBpZD0ibXlpZnJhbWUiIGZyYW1lYm9yZGVyPSIwIiBzY3JvbGxpbmc9ImF1dG8iPg0KCTwvaWZyYW1lPg0KCQk8ZGl2IGlkPSJjb250ZW50X2xhbmRpbmdfcGFnZSI+ICAgICAgICAgICAgICANCgkJPGRpdiBjbGFzcz0idmlldyB2aWV3LXByb2R1Y3RzMyB2aWV3LWlkLXByb2R1Y3RzMyB2aWV3LWRpc3BsYXktaWQtcGFnZV8xIHZpZXctZG9tLWlkLTEiPgkJDQoJCTxkaXYgY2xhc3M9ImNvbnRhaW5lciI+DQoJCTxkaXYgY2xhc3M9InRpdGxlLWJveCI+DQoJCTxoMT4ke3RoaXMuYXBwLm5hbWV9PC9oMT4NCgkJPGJyPg0KCQk8aDM+T0F1dGggdmVyc2lvbjogMS4wPC9oMz4NCgkJPGJyPg0KCQkNCgkJPHA+PC9wPg0KCQkJDQoJCTwvZGl2Pg0KDQoJCSA8ZGl2IGNsYXNzPSJ2aWV3IHZpZXctcHJvZHVjdHMzIHZpZXctaWQtcHJvZHVjdHMzIHZpZXctZGlzcGxheS1pZC1wYWdlXzEgdmlldy1kb20taWQtMSI+CQ0KPGRpdiBjbGFzcz0iY29udGFpbmVyIj4="/&gt;
+                    &lt;L7p:VariableToSet stringValue="website_top"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="PC9kaXY+DQo8L2Rpdj48L2Rpdj4NCjwvYm9keT4NCjwvaHRtbD4="/&gt;
+                    &lt;L7p:VariableToSet stringValue="website_bottom"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:HardcodedResponse&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="200"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64ResponseBody
+                    stringValue="JHt3ZWJzaXRlX3RvcH0KCQkgCjwhLS1vYXV0aF9jb250ZW50X3BsYWNlaG9sZGVyLS0+Cgoke3dlYnNpdGVfYm90dG9tfQ=="/&gt;
+                    &lt;L7p:ResponseContentType stringValue="text/html; charset=UTF-8"/&gt;
+                    &lt;/L7p:HardcodedResponse&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Service>
+</enumeration>
