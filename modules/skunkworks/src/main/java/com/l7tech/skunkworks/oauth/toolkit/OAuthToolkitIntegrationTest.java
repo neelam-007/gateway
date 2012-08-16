@@ -29,16 +29,24 @@ import static org.junit.Assert.*;
  * the default OTK client.
  * <p/>
  * Modify static Strings as needed and remove the Ignore annotation to execute the tests.
+ *
+ * At minimum you need to change the BASE_URL and SIGNATURE strings.
  */
 @Ignore
 public class OAuthToolkitIntegrationTest {
-    private static final String CLIENT_REQUEST_TOKEN = "http://aleeoauth.l7tech.com:8080/oauth/v1/client?state=request_token";
-    private static final String REQUEST_TOKEN_ENDPOINT = "https://aleeoauth.l7tech.com:8443/auth/oauth/v1/request";
-    private static final String AUTHORIZE_ENDPOINT = "https://aleeoauth.l7tech.com:8443/auth/oauth/v1/authorize";
+    //private static final String BASE_URL = "daesm62t.l7tech.com";
+    private static final String BASE_URL = "aleeoauth.l7tech.com";
+    //private static final String SIGNATURE = "qBZINGunNf/GiqJkf6PXGUsorh8=";
+    private static final String SIGNATURE = "pwvUKSVVqeU4nZsBfbm1Pr6lEpk=";
+    private static final String CLIENT_REQUEST_TOKEN = "http://" + BASE_URL + ":8080/oauth/v1/client?state=request_token";
+    private static final String REQUEST_TOKEN_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/request";
+    private static final String AUTHORIZE_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/authorize";
+    private static final String OTK_CLIENT_CALLBACK = "https://" + BASE_URL + ":8443/oauth/v1/client?state=authorized";
+    private static final String AUTH_HEADER = "OAuth realm=\"http://" + BASE_URL + "\",oauth_consumer_key=\"acf89db2-994e-427b-ac2c-88e6101f9433\",oauth_signature_method=\"HMAC-SHA1\",oauth_timestamp=\"1344979213\",oauth_nonce=\"ca6e55f3-3e1c-41d6-8584-41c7e2611d34\",oauth_callback=\"https://" + BASE_URL + ":8443/oauth/v1/client?state=authorized\",oauth_version=\"1.0\",oauth_signature=\"" + SIGNATURE + "\"";
     private static final String USER = "admin";
     private static final String PASSWORD = "password";
     private static final String OTK_CLIENT_CONSUMER_KEY = "acf89db2-994e-427b-ac2c-88e6101f9433";
-    private static final String OTK_CLIENT_CALLBACK = "https://aleeoauth.l7tech.com:8443/oauth/v1/client?state=authorized";
+
     private GenericHttpClient client;
     private PasswordAuthentication passwordAuthentication;
 
@@ -72,11 +80,10 @@ public class OAuthToolkitIntegrationTest {
     @Test
     public void requestTokenEndpointAuthorizationHeader() throws Exception {
         System.out.println("Requesting request token from " + REQUEST_TOKEN_ENDPOINT + " using Authorization header");
-        final String authHeader = "OAuth realm=\"http://aleeoauth.l7tech.com\",oauth_consumer_key=\"acf89db2-994e-427b-ac2c-88e6101f9433\",oauth_signature_method=\"HMAC-SHA1\",oauth_timestamp=\"1344979213\",oauth_nonce=\"ca6e55f3-3e1c-41d6-8584-41c7e2611d34\",oauth_callback=\"https://aleeoauth.l7tech.com:8443/oauth/v1/client?state=authorized\",oauth_version=\"1.0\",oauth_signature=\"pwvUKSVVqeU4nZsBfbm1Pr6lEpk=\"";
 
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(REQUEST_TOKEN_ENDPOINT));
         requestParams.setSslSocketFactory(getSSLSocketFactory());
-        requestParams.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader("Authorization", authHeader)});
+        requestParams.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader("Authorization", AUTH_HEADER)});
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
 
         final GenericHttpResponse response = request.getResponse();
@@ -150,7 +157,6 @@ public class OAuthToolkitIntegrationTest {
     @Test
     public void authorizeRequestTokenMissingToken() throws Exception {
         final GenericHttpResponse authenticateResponse = authorizeRequestToken(null);
-        // kind of odd for OTK to return 401 in this scenario, but that is how it works right now
         assertEquals(401, authenticateResponse.getStatus());
     }
 
@@ -262,7 +268,7 @@ public class OAuthToolkitIntegrationTest {
         parameterMap.put("oauth_nonce", "ca6e55f3-3e1c-41d6-8584-41c7e2611d34");
         parameterMap.put("oauth_callback", OTK_CLIENT_CALLBACK);
         parameterMap.put("oauth_version", "1.0");
-        parameterMap.put("oauth_signature", "pwvUKSVVqeU4nZsBfbm1Pr6lEpk=");
+        parameterMap.put("oauth_signature", SIGNATURE);
         return parameterMap;
     }
 
