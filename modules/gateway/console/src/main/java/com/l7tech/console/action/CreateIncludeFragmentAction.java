@@ -40,6 +40,7 @@ import java.util.logging.Level;
  * Creates an include policy fragment from selected nodes and inserts an include assertion into policy.
  */
 public class CreateIncludeFragmentAction extends NodeAction {
+    private static final int MAX_NAME_LENGTH = 255;
     private final AssertionTreeNode assertionNode;
     private final CompositeAssertionTreeNode parentNode;
 
@@ -96,8 +97,13 @@ public class CreateIncludeFragmentAction extends NodeAction {
                         if (option.toString().isEmpty()) {
                             showErrorDialog(topParent, "Fragment Name must be specified.", true);
                         } else {
+                            String fragmentName = option.toString();
+                            if (fragmentName.length() > MAX_NAME_LENGTH) {
+                                // truncate
+                                fragmentName = fragmentName.substring(0, MAX_NAME_LENGTH);
+                            }
                             try {
-                                final String fragmentGuid = createFragment(option.toString(), selected);
+                                final String fragmentGuid = createFragment(fragmentName, selected);
                                 updatePolicy(policyTree, selected, fragmentGuid);
                             } catch (final DuplicateObjectException e) {
                                 showErrorDialog(topParent, "Fragment name is already in use.", true);
