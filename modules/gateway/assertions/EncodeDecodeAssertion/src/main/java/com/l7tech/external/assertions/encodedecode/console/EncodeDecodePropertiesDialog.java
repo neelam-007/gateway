@@ -3,10 +3,8 @@ package com.l7tech.external.assertions.encodedecode.console;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.encodedecode.EncodeDecodeAssertion;
-import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.widgets.TextListCellRenderer;
@@ -35,7 +33,6 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
     public EncodeDecodePropertiesDialog( final Window parent,
                                          final EncodeDecodeAssertion assertion ) {
         super( EncodeDecodeAssertion.class, parent, assertion, true );
-        checkEnableExperimental(assertion);
         initComponents();
         setData(assertion);
     }
@@ -85,7 +82,7 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
     protected void initComponents() {
         super.initComponents();
 
-        encodeDecodeComboBox.setModel( new DefaultComboBoxModel( enableExperimental ? EncodeDecodeAssertion.TransformType.values() : getCoreTransformTypes(EncodeDecodeAssertion.TransformType.values()) ) );
+        encodeDecodeComboBox.setModel( new DefaultComboBoxModel( EncodeDecodeAssertion.TransformType.values()));
         encodeDecodeComboBox.setRenderer( new TextListCellRenderer<EncodeDecodeAssertion.TransformType>( new Functions.Unary<String,EncodeDecodeAssertion.TransformType>(){
             @Override
             public String call( final EncodeDecodeAssertion.TransformType transformType ) {
@@ -141,11 +138,6 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
 
     private static final ResourceBundle bundle = ResourceBundle.getBundle( EncodeDecodePropertiesDialog.class.getName());
 
-    private static final Collection<EncodeDecodeAssertion.TransformType> experimentalTransforms = Collections.unmodifiableCollection( Arrays.asList(
-        EncodeDecodeAssertion.TransformType.HEX_ENCODE,
-        EncodeDecodeAssertion.TransformType.HEX_DECODE
-    ) );
-
     private JPanel mainPanel;
     private JComboBox encodeDecodeComboBox;
     private JTextField sourceVariableTextField;
@@ -159,43 +151,6 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
     private JCheckBox multipleLinesCheckBox;
     private JLabel lineBreakLabel1;
     private JLabel lineBreakLabel2;
-
-    private boolean enableExperimental = false;
-
-    private void checkEnableExperimental( final EncodeDecodeAssertion assertion ) {
-        boolean enableExperimental = false;
-
-        if ( assertion != null && assertion.getTransformType() != null ) {
-            enableExperimental = experimentalTransforms.contains( assertion.getTransformType() );
-        }
-
-        if ( !enableExperimental ) {
-            final Registry registry = Registry.getDefault();
-            if ( registry != null ) {
-                final LicenseManager licenseManager = registry.getLicenseManager();
-                if ( licenseManager != null ) {
-                    enableExperimental = licenseManager.isFeatureEnabled( "set:experimental" );
-                }
-            }
-        }
-
-        this.enableExperimental = enableExperimental;
-    }
-
-    /**
-     * Get non experimental transforms
-     */
-    private EncodeDecodeAssertion.TransformType[] getCoreTransformTypes( final EncodeDecodeAssertion.TransformType[] source ) {
-        final Collection<EncodeDecodeAssertion.TransformType> transforms = new ArrayList<EncodeDecodeAssertion.TransformType>();
-
-        for ( final EncodeDecodeAssertion.TransformType transform : source ) {
-            if ( !experimentalTransforms.contains( transform )) {
-                transforms.add( transform );
-            }
-        }
-
-        return transforms.toArray( new EncodeDecodeAssertion.TransformType[transforms.size()] );
-    }
 
     private void setText( final JTextComponent textComponent, final String text ) {
         if ( text != null ) {
