@@ -276,7 +276,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
                 return;
 
         throw new InvalidPasswordException(
-                MessageFormat.format("New password must differ from previous password by at least {0} characters.", minCharDiff), internalIdpPasswordPolicy.getDescription());
+                MessageFormat.format("New password must differ from previous password by at least {0} characters", minCharDiff), internalIdpPasswordPolicy.getDescription());
     }
 
     /**
