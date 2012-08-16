@@ -114,7 +114,7 @@ public class ExternalAuditsCommonUtils {
         if(dbType.equals("mysql"))
             return "SELECT";
         else if(dbType.equals("sqlserver"))
-            return "SET ROWCOUNT ${recordQueryLimit} SELECT";
+            return "SELECT TOP (${recordQueryLimit}) ";
         else if(dbType.equals("oracle"))
             return "SELECT *  FROM ( SELECT";
         else if(dbType.equals("db2"))
