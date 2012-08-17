@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.jdbcquery.console;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.util.MutablePair;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
@@ -16,6 +15,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.MutablePair;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -147,6 +147,8 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
             }
         });
 
+        Utilities.setDoubleClickAction(namingTable, editButton);
+
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 doRemove();
@@ -238,7 +240,6 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                 enableOrDisableTableButtons();
             }
         });
-        Utilities.setDoubleClickAction(namingTable, editButton);
 
         enableOrDisableTableButtons();
     }
