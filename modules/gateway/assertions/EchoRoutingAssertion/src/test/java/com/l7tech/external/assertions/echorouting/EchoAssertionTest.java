@@ -1,14 +1,13 @@
 package com.l7tech.external.assertions.echorouting;
 
 import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.TestDocuments;
-import com.l7tech.message.Message;
-import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.xml.soap.SoapMessageGenerator;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.echorouting.server.ServerEchoRoutingAssertion;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.message.Message;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
@@ -18,21 +17,18 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
-import com.l7tech.server.transport.http.HttpTransportModuleTester;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.server.service.ServicesHelper;
+import com.l7tech.server.transport.http.HttpTransportModuleTester;
+import com.l7tech.util.SoapConstants;
+import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.soap.SoapMessageGenerator;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
-import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.xml.sax.SAXException;
@@ -43,6 +39,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author emil
@@ -148,9 +147,8 @@ public class EchoAssertionTest {
      */
     @Test
     public void testInstantiateEchoAssertion() throws Exception {
-        ApplicationContext testApplicationContext = ApplicationContexts.getTestApplicationContext();
         AllAssertion echo = new AllAssertion(Arrays.asList(new EchoRoutingAssertion()));
-        ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");
+        ServerPolicyFactory pfac = servletApi.getApplicationContext().getBean("policyFactory", ServerPolicyFactory.class);
         ServerAssertion serverAll = pfac.compilePolicy(echo, true);
         assertTrue(((ServerCompositeAssertion)serverAll).getChildren().get(0) instanceof ServerEchoRoutingAssertion);
     }
