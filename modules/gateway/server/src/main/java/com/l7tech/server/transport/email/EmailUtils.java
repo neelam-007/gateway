@@ -110,9 +110,10 @@ public class EmailUtils {
                     throw new EmailTestException(me.getMessage());
                 }
             }
-        } catch (IllegalArgumentException e) {
-            logger.fine("Failed to send test email message: " + e.getMessage());
-            throw new EmailTestException("Invalid host wildcard specification.");
+        } catch (Exception e) {
+            String msg = "Unexpected error sending email: " + e.getMessage();
+            logger.fine(msg);
+            throw new EmailTestException(msg);
         }
     }
 
