@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.console.panels.CipherSuiteListModel;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -34,11 +35,13 @@ public final class CipherSuiteGuiUtil {
      *
      * @param cipherSuiteList  a JList to configure.  Required.
      * @param defaultCipherListButton  a button to use for the "Use Default Ciphers" button, or null to disable this functionality.
+     * @param selectNoneButton a button to use for the "Un-check all cipher suites" button, or null to disable this functionality.
+     * @param selectAllButton a button to use for the "Check all cipher suites" button, or null to disable this functionality.
      * @param moveUpButton  a button to use for the "Move Up" functionality, or null to disable this functionality.
      * @param moveDownButton  a button to use for the "Move Down" functionality, or null to disable this functionality.
      * @return the new CipherSuiteListModel.  Never null.
      */
-    public static CipherSuiteListModel createCipherSuiteListModel(final JList cipherSuiteList, final JButton defaultCipherListButton, final JButton selectNoneButton, final JButton selectAllButton, final JButton moveUpButton, final JButton moveDownButton) {
+    public static CipherSuiteListModel createCipherSuiteListModel(final JList cipherSuiteList, final @Nullable JButton defaultCipherListButton, final @Nullable JButton selectNoneButton, final @Nullable JButton selectAllButton, final @Nullable JButton moveUpButton, final @Nullable JButton moveDownButton) {
         String[] allCiphers = getCipherSuiteNames();
         Set<String> defaultCiphers = new LinkedHashSet<String>(Arrays.asList(
                 Registry.getDefault().getTransportAdmin().getDefaultCipherSuiteNames()));
