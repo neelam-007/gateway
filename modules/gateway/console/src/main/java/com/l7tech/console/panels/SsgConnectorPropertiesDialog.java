@@ -154,6 +154,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private Map<String, CustomTransportPropertiesPanel> customGuisByScheme = new TreeMap<String, CustomTransportPropertiesPanel>(String.CASE_INSENSITIVE_ORDER);
     private Map<String, Set<String>> reservedPropertyNamesByScheme = new TreeMap<String, Set<String>>(String.CASE_INSENSITIVE_ORDER);
 
+    private final boolean snmpQueryEnabled = Registry.getDefault().isAdminContextPresent() && Registry.getDefault().getTransportAdmin().isSnmpQueryEnabled();;
+
     public SsgConnectorPropertiesDialog(Window owner, SsgConnector connector, boolean isCluster) {
         super(owner, DIALOG_TITLE, ModalityType.DOCUMENT_MODAL);
         this.isCluster = isCluster;
@@ -1189,9 +1191,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private boolean snmpQueryServicePropertyEnabled() {
-        Registry registry = Registry.getDefault();
-        return registry.isAdminContextPresent()?
-            registry.getTransportAdmin().isSnmpQueryEnabled() : true;
+        return snmpQueryEnabled;
     }
 
     /**
