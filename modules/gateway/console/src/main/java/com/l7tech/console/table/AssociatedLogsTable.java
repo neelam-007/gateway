@@ -386,7 +386,7 @@ public class AssociatedLogsTable extends JTable {
     }
 
     private String wrapInHtml(final String text) {
-        return "<html><pre>" + TextUtils.escapeHtmlSpecialCharacters(text) + "</pre></html>";
+        return "<html>" + TextUtils.escapeHtmlSpecialCharacters(text) + "</html>";
     }
 
     private class CellEditorWithButton extends AbstractCellEditor implements TableCellEditor, ListSelectionListener {
