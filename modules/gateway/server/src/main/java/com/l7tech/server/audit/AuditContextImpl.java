@@ -109,7 +109,7 @@ public class AuditContextImpl implements AuditContext {
         detail.setOrdinal(ordinal++);
         // set the ordinal (used to resolve the sequence as the time stamp in ms cannot resolve the order of the messages)
         getDetailList(detailWithInfo.getSource()).add(detailWithInfo);
-        if(getUseAssociatedLogsThreshold() && severity.intValue() > highestLevelYetSeen.intValue()) {
+        if(getUseAssociatedLogsThreshold() && severity !=null && severity.intValue() > highestLevelYetSeen.intValue()) {
             highestLevelYetSeen = severity;
         }
     }
