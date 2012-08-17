@@ -104,8 +104,8 @@ public class AuditContextImpl implements AuditContext {
         final AuditDetail detail = detailWithInfo.getDetail();
 
         AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(detail.getMessageId());
-        Level severity = message==null ? null : message.getLevel();
-        if(severity == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
+        if(message == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
+        Level severity = getUseAssociatedLogsThreshold() ? MessagesUtil.getAuditLevelByIdWithFilter(detail.getMessageId()) : message.getLevel();
         detail.setOrdinal(ordinal++);
         // set the ordinal (used to resolve the sequence as the time stamp in ms cannot resolve the order of the messages)
         getDetailList(detailWithInfo.getSource()).add(detailWithInfo);

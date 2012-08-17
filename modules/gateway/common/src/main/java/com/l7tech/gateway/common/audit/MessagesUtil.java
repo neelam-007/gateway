@@ -19,6 +19,35 @@ public class MessagesUtil {
     // - PUBLIC
 
     /**
+     * Get the adjusted level of an audit allowing for any registered filter.
+     *
+     * @param id message id
+     * @return the adjusted level if applicable, null if message id does not exsist or if the message is filtered to never.
+     */
+    public static Level getAuditLevelByIdWithFilter(int id) {
+        AuditDetailMessage message = Messages.getAuditDetailMessageById(id);
+        if(message == null){
+            //does not exist
+            return null;
+        }
+
+        final AuditDetailLevelFilter levelFilter = auditMessageLevelFilter.get();
+        if (levelFilter != null){
+            final Level level = levelFilter.filterLevelForAuditDetailMessage(id, message.getLevel());
+            if(level != null){
+                if(!message.getLevel().equals(level)){
+                    return level;
+                }
+            } else {
+                //message has been filtered to NEVER
+                return null;
+            }
+        }
+        return message.getLevel();
+    }
+
+
+    /**
      * Get an audit allowing for any registered filter to be ran before returning the Audit.
      *
      * @param id message id
