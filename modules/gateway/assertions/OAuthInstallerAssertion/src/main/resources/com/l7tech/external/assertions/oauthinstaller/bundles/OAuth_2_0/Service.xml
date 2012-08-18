@@ -788,7 +788,7 @@
             </l7:ServiceMappings>
             <l7:Properties>
                 <l7:Property key="policyRevision">
-                    <l7:LongValue>15</l7:LongValue>
+                    <l7:LongValue>16</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="wssProcessingEnabled">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -803,7 +803,7 @@
         </l7:ServiceDetail>
         <l7:Resources>
             <l7:ResourceSet tag="policy">
-                <l7:Resource type="policy" version="14">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                <l7:Resource type="policy" version="15">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
                     &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -916,6 +916,7 @@
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Rules&gt;
                     &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestMsgSrc stringValue="postMsg"/&gt;
                     &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
                     &lt;L7p:ForwardAll booleanValue="true"/&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"&gt;
@@ -1332,7 +1333,7 @@
             </l7:ServiceMappings>
             <l7:Properties>
                 <l7:Property key="policyRevision">
-                    <l7:LongValue>9</l7:LongValue>
+                    <l7:LongValue>11</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="wssProcessingEnabled">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -1347,7 +1348,7 @@
         </l7:ServiceDetail>
         <l7:Resources>
             <l7:ResourceSet tag="policy">
-                <l7:Resource type="policy" version="8">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                <l7:Resource type="policy" version="10">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
                     &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -1360,6 +1361,9 @@
                     &lt;/L7p:Include&gt;
                     &lt;L7p:Include&gt;
                     &lt;L7p:PolicyGuid stringValue="d1d995ab-c7c8-4354-b005-ec3deeedc3a5"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;

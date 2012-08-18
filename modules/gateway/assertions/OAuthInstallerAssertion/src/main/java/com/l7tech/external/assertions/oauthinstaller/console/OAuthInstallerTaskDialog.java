@@ -17,6 +17,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
     private JCheckBox prefixResolutionURIsAndCheckBox;
     private JTextField ma1TextField;
     private JTextField OAuthTextField;
+    private JLabel otkVersionLabel;
 
     public OAuthInstallerTaskDialog(Frame owner) {
         super(owner, "OAuth Toolkit Installer", true);
