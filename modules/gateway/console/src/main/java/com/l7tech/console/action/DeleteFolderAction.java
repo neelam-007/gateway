@@ -1,12 +1,13 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.*;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.FolderAdmin;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -56,17 +57,20 @@ public class DeleteFolderAction extends SecureAction {
         return "com/l7tech/console/resources/delete.gif";
     }
 
-    public static int confirmFolderDeletion(final String folderName) {
-        return JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
+    public static void confirmFolderDeletion(final String folderName, final DialogDisplayer.OptionListener optionListener) {
+        DialogDisplayer.showSafeConfirmDialog(
+                TopComponents.getInstance().getTopParent(),
                 getUserConfirmationMessage(folderName),
                 DELETE_FOLDER,
                 JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE);
+                JOptionPane.WARNING_MESSAGE,
+                optionListener
+        );
     }
 
     public static void showNonEmptyFolderDialog(final String folderName) {
         JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), "Could not delete folder '" +
-                folderName + "' because not all of its contents could be deleted", "Delete Error", JOptionPane.ERROR_MESSAGE);
+                folderName + "' because some of its contents are still in use.", "Delete Error", JOptionPane.ERROR_MESSAGE);
     }
 
     /**
@@ -78,11 +82,14 @@ public class DeleteFolderAction extends SecureAction {
             return;
         }
 
-        int result = confirmFolderDeletion(folderToDelete.getName());
-
-        if(result == JOptionPane.YES_OPTION) {
-            doDelete();
-        }
+        confirmFolderDeletion(folderToDelete.getName(), new DialogDisplayer.OptionListener() {
+            @Override
+            public void reportResult(int option) {
+                if (option == JOptionPane.YES_OPTION) {
+                    doDelete();
+                }
+            }
+        });
     }
 
     private void doDelete() {

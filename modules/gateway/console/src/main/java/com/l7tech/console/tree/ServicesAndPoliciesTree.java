@@ -202,59 +202,64 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
     public void deleteMultipleEntities(final List<AbstractTreeNode> nodes, final boolean detectConfirmation) {
         if (nodes != null && !nodes.isEmpty()) {
             boolean confirmationEnabled = false;
-            boolean okayToDelete = true;
             if(detectConfirmation){
                 if(nodes.size() == 1 && nodes.get(0) instanceof FolderNode && nodes.get(0).getChildCount() > 0){
                     // it's a single non-empty folder
-                    final Integer result = DeleteFolderAction.confirmFolderDeletion(nodes.get(0).getName());
-                    if(result != JOptionPane.YES_OPTION){
-                        okayToDelete = false;
-                    }
+                    DeleteFolderAction.confirmFolderDeletion(nodes.get(0).getName(), new DialogDisplayer.OptionListener() {
+                        @Override
+                        public void reportResult(int option) {
+                            if(option == JOptionPane.YES_OPTION){
+                                deleteInDependencyOrder(nodes, false);
+                            }
+                        }
+                    });
+                    return;
                 }else{
                     confirmationEnabled = nodes.size() == 1 ? true : false;
                 }
             }
+            deleteInDependencyOrder(nodes, confirmationEnabled);
+        }
+    }
 
-            if(okayToDelete){
-                final List<ServiceNode> serviceNodes = new ArrayList<ServiceNode>();
-                final List<ServiceNodeAlias> serviceAliasNodes = new ArrayList<ServiceNodeAlias>();
-                final List<PolicyEntityNode> policyNodes = new ArrayList<PolicyEntityNode>();
-                final List<PolicyEntityNode> policyNodesWithInclude = new ArrayList<PolicyEntityNode>();
-                final List<PolicyEntityNodeAlias> policyAliasNodes = new ArrayList<PolicyEntityNodeAlias>();
-                final List<FolderNode> folderNodes = new ArrayList<FolderNode>();
-                sortNodes(nodes, serviceNodes, serviceAliasNodes, policyNodes, policyNodesWithInclude,
-                        policyAliasNodes, folderNodes);
+    private void deleteInDependencyOrder(final List<AbstractTreeNode> nodes, boolean confirmationEnabled) {
+        final List<ServiceNode> serviceNodes = new ArrayList<ServiceNode>();
+        final List<ServiceNodeAlias> serviceAliasNodes = new ArrayList<ServiceNodeAlias>();
+        final List<PolicyEntityNode> policyNodes = new ArrayList<PolicyEntityNode>();
+        final List<PolicyEntityNode> policyNodesWithInclude = new ArrayList<PolicyEntityNode>();
+        final List<PolicyEntityNodeAlias> policyAliasNodes = new ArrayList<PolicyEntityNodeAlias>();
+        final List<FolderNode> folderNodes = new ArrayList<FolderNode>();
+        sortNodes(nodes, serviceNodes, serviceAliasNodes, policyNodes, policyNodesWithInclude,
+                policyAliasNodes, folderNodes);
 
-                try {
-                    filterServicesInUddi(serviceNodes);
+        try {
+            filterServicesInUddi(serviceNodes);
 
-                    for (final ServiceNodeAlias serviceAliasNode : serviceAliasNodes) {
-                        new DeleteServiceAliasAction(serviceAliasNode, confirmationEnabled).actionPerformed(null);
-                    }
-                    for (final ServiceNode serviceNode : serviceNodes) {
-                        new DeleteServiceAction(serviceNode, confirmationEnabled).actionPerformed(null);
-                    }
-                    for (final PolicyEntityNodeAlias policyAliasNode : policyAliasNodes) {
-                        new DeletePolicyAliasAction(policyAliasNode, confirmationEnabled).actionPerformed(null);
-                    }
-                    for (final PolicyEntityNode policyNodeWithInclude : policyNodesWithInclude) {
-                        new DeletePolicyAction(policyNodeWithInclude, confirmationEnabled).actionPerformed(null);
-                    }
-                    for (final PolicyEntityNode policyNode : policyNodes) {
-                        new DeletePolicyAction(policyNode, confirmationEnabled).actionPerformed(null);
-                    }
-                    for (final FolderNode folderNode : folderNodes) {
-                        // don't try to delete the folder if some of its contents could not be deleted
-                        if(folderNode.getChildCount() == 0){
-                            new DeleteFolderAction(folderNode, Registry.getDefault().getFolderAdmin(), confirmationEnabled).actionPerformed(null);
-                        }else{
-                            DeleteFolderAction.showNonEmptyFolderDialog(folderNode.getName());
-                        }
-                    }
-                } catch (final DeletionCancelledException e) {
-                    // user cancelled deletion
+            for (final ServiceNodeAlias serviceAliasNode : serviceAliasNodes) {
+                new DeleteServiceAliasAction(serviceAliasNode, confirmationEnabled).actionPerformed(null);
+            }
+            for (final ServiceNode serviceNode : serviceNodes) {
+                new DeleteServiceAction(serviceNode, confirmationEnabled).actionPerformed(null);
+            }
+            for (final PolicyEntityNodeAlias policyAliasNode : policyAliasNodes) {
+                new DeletePolicyAliasAction(policyAliasNode, confirmationEnabled).actionPerformed(null);
+            }
+            for (final PolicyEntityNode policyNodeWithInclude : policyNodesWithInclude) {
+                new DeletePolicyAction(policyNodeWithInclude, confirmationEnabled).actionPerformed(null);
+            }
+            for (final PolicyEntityNode policyNode : policyNodes) {
+                new DeletePolicyAction(policyNode, confirmationEnabled).actionPerformed(null);
+            }
+            for (final FolderNode folderNode : folderNodes) {
+                // don't try to delete the folder if some of its contents could not be deleted
+                if(folderNode.getChildCount() == 0){
+                    new DeleteFolderAction(folderNode, Registry.getDefault().getFolderAdmin(), confirmationEnabled).actionPerformed(null);
+                }else{
+                    DeleteFolderAction.showNonEmptyFolderDialog(folderNode.getName());
                 }
             }
+        } catch (final DeletionCancelledException e) {
+            // user cancelled deletion
         }
     }
 
