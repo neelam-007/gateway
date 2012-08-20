@@ -185,10 +185,12 @@ public class CaptureProperty extends JDialog {
             final String name ) {
         ClusterPropertyDescriptor property = null;
 
-        for ( ClusterPropertyDescriptor descriptor : properties ) {
-            if ( name.equals(descriptor.getName()) ) {
-                property = descriptor;
-                break;
+        if ( properties != null ) {
+            for ( ClusterPropertyDescriptor descriptor : properties ) {
+                if ( name.equals(descriptor.getName()) ) {
+                    property = descriptor;
+                    break;
+                }
             }
         }
 
