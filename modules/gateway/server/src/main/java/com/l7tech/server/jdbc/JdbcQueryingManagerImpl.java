@@ -77,7 +77,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
 
         // Query or update and return querying results.
         try {
-            boolean isSelectQuery = query.toLowerCase().contains("select");
+            boolean isSelectQuery = query.toLowerCase().startsWith("select");
             boolean isStoredProcedureQuery = query.toLowerCase().startsWith(CALL)
                     || query.toLowerCase().startsWith(EXEC)
                     || query.toLowerCase().startsWith(FUNC);
