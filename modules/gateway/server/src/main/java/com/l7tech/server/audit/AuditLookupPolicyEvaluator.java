@@ -77,7 +77,7 @@ public class AuditLookupPolicyEvaluator  {
 
 
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed to execute audit lookup policy: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Failed to execute audit lookup policy: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             throw new FindException("Failed to execute audit lookup policy",e);
         }
     }
@@ -321,7 +321,7 @@ public class AuditLookupPolicyEvaluator  {
             logger.log(Level.WARNING, "Failed to execute audit sink policy: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed to execute audit sink policy: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Failed to execute audit sink policy: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } finally {
             ResourceUtils.closeQuietly(sph);

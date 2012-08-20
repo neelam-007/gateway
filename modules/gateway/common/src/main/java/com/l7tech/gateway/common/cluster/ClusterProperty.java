@@ -45,6 +45,7 @@ public class ClusterProperty extends NamedEntityImp implements Comparable {
         hiddenInGui.add("audit.archiverInProgress");
         hiddenInGui.add("audit.archiver.ftp.config");
         hiddenInGui.add("audit.sink.policy.guid");
+        hiddenInGui.add("audit.lookup.policy.guid");
         hiddenInGui.add("trace.policy.guid");
         hiddenInGui.add("audit.sink.alwaysSaveInternal");
         hiddenInGui.add("krb5.keytab");
