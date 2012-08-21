@@ -29,18 +29,21 @@ import static org.junit.Assert.*;
  * the default OTK client.
  * <p/>
  * Modify static Strings as needed and remove the Ignore annotation to execute the tests.
- *
+ * <p/>
  * At minimum you need to change the BASE_URL and SIGNATURE strings.
  */
 @Ignore
 public class OAuthToolkitIntegrationTest {
     //private static final String BASE_URL = "daesm62t.l7tech.com";
-    private static final String BASE_URL = "aleeoauth.l7tech.com";
+    //private static final String BASE_URL = "aleeoauth.l7tech.com";
+    private static final String BASE_URL = "localhost";
     //private static final String SIGNATURE = "qBZINGunNf/GiqJkf6PXGUsorh8=";
-    private static final String SIGNATURE = "pwvUKSVVqeU4nZsBfbm1Pr6lEpk=";
+    //private static final String SIGNATURE = "pwvUKSVVqeU4nZsBfbm1Pr6lEpk=";
+    private static final String SIGNATURE = "zQQtKbwhcAcDnwzI8gg6f2tBHUQ=";
     private static final String CLIENT_REQUEST_TOKEN = "http://" + BASE_URL + ":8080/oauth/v1/client?state=request_token";
     private static final String REQUEST_TOKEN_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/request";
     private static final String AUTHORIZE_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/authorize";
+    private static final String CLIENT_DOWNLOAD_RESOURCE = "https://" + BASE_URL + ":8443/oauth/v1/client?state=download";
     private static final String OTK_CLIENT_CALLBACK = "https://" + BASE_URL + ":8443/oauth/v1/client?state=authorized";
     private static final String AUTH_HEADER = "OAuth realm=\"http://" + BASE_URL + "\",oauth_consumer_key=\"acf89db2-994e-427b-ac2c-88e6101f9433\",oauth_signature_method=\"HMAC-SHA1\",oauth_timestamp=\"1344979213\",oauth_nonce=\"ca6e55f3-3e1c-41d6-8584-41c7e2611d34\",oauth_callback=\"https://" + BASE_URL + ":8443/oauth/v1/client?state=authorized\",oauth_version=\"1.0\",oauth_signature=\"" + SIGNATURE + "\"";
     private static final String USER = "admin";
@@ -179,6 +182,33 @@ public class OAuthToolkitIntegrationTest {
      */
     @Test
     public void accessTokenClient() throws Exception {
+        final String accessToken = getAccessTokenFromClient();
+
+        assertFalse(accessToken.isEmpty());
+    }
+
+    /**
+     * Download a protected resource using the client.
+     *
+     * Using the client so that we can use the default callback url to obtain the access token.
+     */
+    @Test
+    public void downloadResourceClient() throws Exception {
+        System.out.println("Downloading a protected resource from: " + CLIENT_DOWNLOAD_RESOURCE);
+        final String accessToken = getAccessTokenFromClient();
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(CLIENT_DOWNLOAD_RESOURCE +
+                "&oauth_consumer_key=" + OTK_CLIENT_CONSUMER_KEY + "&oauth_token=" + accessToken + "&tempuser=system"));
+        params.setSslSocketFactory(getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+
+        final GenericHttpResponse response = request.getResponse();
+        assertEquals(200, response.getStatus());
+        assertTrue(response.getAsString(false, Integer.MAX_VALUE).contains("You made it, here is the resource"));
+        System.out.println("Successfully downloaded a protected resource");
+    }
+
+    private String getAccessTokenFromClient() throws Exception {
         // must first get a non-expired request token
         final String requestToken = getRequestTokenFromClient();
 
@@ -204,9 +234,9 @@ public class OAuthToolkitIntegrationTest {
         final String html = grantedResponse.getAsString(false, Integer.MAX_VALUE);
 
         final String accessToken = getTokenFromHtmlForm(html);
-        assertFalse(accessToken.isEmpty());
         assertFalse(accessToken.equalsIgnoreCase(requestToken));
         System.out.println("Received access token: " + accessToken);
+        return accessToken;
     }
 
     private String getRequestTokenFromClient() throws Exception {

@@ -1889,17 +1889,6 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;/wsp:All&gt;
-                    &lt;L7p:UUIDGenerator&gt;
-                    &lt;L7p:AssertionComment assertionComment="included"&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Generate nonce"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:TargetVariable stringValue="nonce"/&gt;
-                    &lt;/L7p:UUIDGenerator&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtvYXV0aC5lbmRwb2ludC5yZXF1ZXN0fQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="url"/&gt;
@@ -1920,7 +1909,7 @@
                     &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="b2F1dGhfY29uc3VtZXJfa2V5PSIke2NvbnN1bWVyX2tleX0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSJITUFDLVNIQTEiLG9hdXRoX3RpbWVzdGFtcD0iJHtnYXRld2F5LnRpbWUuc2Vjb25kc30iLCBvYXV0aF9ub25jZT0iJHtub25jZVswXX0iLCBvYXV0aF9jYWxsYmFjaz0iJHtjYWxsYmFja30iLCBvYXV0aF92ZXJzaW9uPSIxLjAi"/&gt;
+                    stringValue="b2F1dGhfY29uc3VtZXJfa2V5PSIke2NvbnN1bWVyX2tleX0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSJITUFDLVNIQTEiLCBvYXV0aF9jYWxsYmFjaz0iJHtjYWxsYmFja30iLCBvYXV0aF92ZXJzaW9uPSIxLjAi"/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
@@ -1998,7 +1987,7 @@
                     &lt;/L7p:Include&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="T0F1dGggJHtvYXV0aF9wYXJhbXN9LCBvYXV0aF9zaWduYXR1cmU9IiR7c2lnbmF0dXJlfSI="/&gt;
+                    stringValue="T0F1dGggJHtvYXV0aF9wYXJhbXN9LCBvYXV0aF9ub25jZT0iJHtvYXV0aC5vYXV0aF9ub25jZX0iLCBvYXV0aF90aW1lc3RhbXA9IiR7b2F1dGgub2F1dGhfdGltZXN0YW1wfSIsIG9hdXRoX3NpZ25hdHVyZT0iJHtzaWduYXR1cmV9Ig=="/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
@@ -2145,17 +2134,6 @@
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:UUIDGenerator&gt;
-                    &lt;L7p:AssertionComment assertionComment="included"&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Generate nonce"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:TargetVariable stringValue="nonce"/&gt;
-                    &lt;/L7p:UUIDGenerator&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtvYXV0aC5lbmRwb2ludC50b2tlbn0="/&gt;
                     &lt;L7p:VariableToSet stringValue="url"/&gt;
@@ -2274,7 +2252,7 @@
                     &lt;/wsp:All&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="b2F1dGhfY29uc3VtZXJfa2V5PSIke2NvbnN1bWVyX2tleX0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSJITUFDLVNIQTEiLG9hdXRoX3RpbWVzdGFtcD0iJHtnYXRld2F5LnRpbWUuc2Vjb25kc30iLCBvYXV0aF9ub25jZT0iJHtub25jZVswXX0iLCBvYXV0aF90b2tlbj0iJHt0b2tlbn0iLCBvYXV0aF92ZXJpZmllcj0iJHt2ZXJpZmllcn0i"/&gt;
+                    stringValue="b2F1dGhfY29uc3VtZXJfa2V5PSIke2NvbnN1bWVyX2tleX0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSJITUFDLVNIQTEiLCBvYXV0aF90b2tlbj0iJHt0b2tlbn0iLCBvYXV0aF92ZXJpZmllcj0iJHt2ZXJpZmllcn0i"/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
@@ -2282,7 +2260,7 @@
                     &lt;/L7p:Include&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="T0F1dGggJHtvYXV0aF9wYXJhbXN9LCBvYXV0aF9zaWduYXR1cmU9IiR7c2lnbmF0dXJlfSI="/&gt;
+                    stringValue="T0F1dGggJHtvYXV0aF9wYXJhbXN9LCBvYXV0aF9ub25jZT0iJHtvYXV0aC5vYXV0aF9ub25jZX0iLCBvYXV0aF90aW1lc3RhbXA9IiR7b2F1dGgub2F1dGhfdGltZXN0YW1wfSIsIG9hdXRoX3NpZ25hdHVyZT0iJHtzaWduYXR1cmV9Iiwgb2F1dGhfdmVyc2lvbj0iMS4wIg=="/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
@@ -2418,17 +2396,6 @@
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:UUIDGenerator&gt;
-                    &lt;L7p:AssertionComment assertionComment="included"&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Generate nonce"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:TargetVariable stringValue="nonce"/&gt;
-                    &lt;/L7p:UUIDGenerator&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHthcGkuZW5kcG9pbnQudXJsfQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="url"/&gt;
@@ -2490,7 +2457,7 @@
                     &lt;/wsp:All&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="b2F1dGhfY29uc3VtZXJfa2V5PSIke2NvbnN1bWVyX2tleX0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSJITUFDLVNIQTEiLG9hdXRoX3RpbWVzdGFtcD0iJHtnYXRld2F5LnRpbWUuc2Vjb25kc30iLCBvYXV0aF9ub25jZT0iJHtub25jZX0iLCBvYXV0aF90b2tlbj0iJHt0b2tlbn0iLCBvYXV0aF92ZXJzaW9uPSIxLjAi"/&gt;
+                    stringValue="b2F1dGhfY29uc3VtZXJfa2V5PSIke2NvbnN1bWVyX2tleX0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSJITUFDLVNIQTEiLCBvYXV0aF90b2tlbj0iJHt0b2tlbn0iLCBvYXV0aF92ZXJzaW9uPSIxLjAi"/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
@@ -2498,7 +2465,7 @@
                     &lt;/L7p:Include&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="T0F1dGggJHtvYXV0aF9wYXJhbXN9LCBvYXV0aF9zaWduYXR1cmU9IiR7c2lnbmF0dXJlfSI="/&gt;
+                    stringValue="T0F1dGggJHtvYXV0aF9wYXJhbXN9LCBvYXV0aF9ub25jZT0iJHtvYXV0aC5vYXV0aF9ub25jZX0iLCBvYXV0aF90aW1lc3RhbXA9IiR7b2F1dGgub2F1dGhfdGltZXN0YW1wfSIsIG9hdXRoX3NpZ25hdHVyZT0iJHtzaWduYXR1cmV9Ig=="/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
