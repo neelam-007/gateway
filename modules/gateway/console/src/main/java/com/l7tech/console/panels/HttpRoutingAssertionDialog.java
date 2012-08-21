@@ -1175,11 +1175,160 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             // stuff it in a scrollpane with a controlled size.
             final JScrollPane scrollPane = new JScrollPane(textArea);
             scrollPane.setPreferredSize(new Dimension(450, 150));
+            final HttpRoutingAssertion assertionTest = assertion.clone();//we need a final variable for the inner class
 
+            Map<String, String> newTestValues = new HashMap<String, String>();
+            int ruleCount = 0;
+            boolean pluralHeader = false;
+            boolean pluralParam = false;
+
+            Map<String, String> newHeaderTestValues = new HashMap<String, String>();
+            if (assertion.getRequestHeaderRules().getRules().length > 0) {
+                for (int i = 0; i < assertion.getRequestHeaderRules().getRules().length; i++) {
+                    HttpPassthroughRule rule = assertion.getRequestHeaderRules().getRules()[i];
+                    newHeaderTestValues.put("header." + rule.getName(), rule.getCustomizeValue());
+                }
+                pluralHeader = true;
+            }
+            for (Map.Entry entry : assertion.getTestValues().entrySet()) {
+                if (entry.getKey().toString().startsWith("header.")) {
+                    newHeaderTestValues.put((String) entry.getKey(), (String) entry.getValue());
+                    pluralHeader = true;
+                }
+            }
+
+            Map<String, String> copyHeaderValues = new HashMap<String, String>();
+            for (Map.Entry entry : newHeaderTestValues.entrySet()) {
+                String paramKey = entry.getKey().toString();
+                String defaultValue = newHeaderTestValues.get(paramKey);
+                String value = (String) JOptionPane.showInputDialog(mainPanel, "Enter value for header " + paramKey.substring(7) + " or press cancel to remove this header", "Customize Header", JOptionPane.PLAIN_MESSAGE, null, null, defaultValue);
+                if (value != null) {
+                    copyHeaderValues.put(paramKey, value);
+                }
+            }
+            newHeaderTestValues = copyHeaderValues;
+
+            while (true) {
+                final String message = "Do you want to add a header?";
+                final String message2 = "Do you want to add more headers?";
+                String useMessage = message2;
+                if (!pluralHeader) {
+                    useMessage = message;
+                }
+                int button = JOptionPane.showConfirmDialog(mainPanel, useMessage, "Customize Header", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null);
+                if (JOptionPane.YES_OPTION != button) {
+                    break;
+                } else {
+                    String paramName = (String) JOptionPane.showInputDialog(mainPanel, "Enter header name", "Customize Header", JOptionPane.PLAIN_MESSAGE, null, null, "");
+                    if (paramName == null || paramName.length()==0) {
+                        return;
+                    }
+                    String paramValue = (String) JOptionPane.showInputDialog(mainPanel, "Enter value for header " + paramName, "Customize Header", JOptionPane.PLAIN_MESSAGE, null, null, null);
+                    if (paramValue == null) {
+                        return;
+                    }
+                    newHeaderTestValues.put("header." + paramName, paramValue);
+                }
+                pluralHeader = true;
+            }
+
+            Map<String, String> newParamTestValues = new HashMap<String, String>();
+            if (assertion.getRequestParamRules().getRules().length > 0) {
+                for (int i = 0; i < assertion.getRequestParamRules().getRules().length; i++) {
+                    HttpPassthroughRule rule = assertion.getRequestParamRules().getRules()[i];
+                    newParamTestValues.put("param." + rule.getName(), rule.getCustomizeValue());
+                }
+                pluralParam = true;
+            }
+            for (Map.Entry entry : assertion.getTestValues().entrySet()) {
+                if (entry.getKey().toString().startsWith("param.")) {
+                    newParamTestValues.put((String) entry.getKey(), (String) entry.getValue());
+                    pluralParam = true;
+                }
+            }
+
+            Map<String, String> copyParamValues = new HashMap<String, String>();
+            for (Map.Entry entry : newParamTestValues.entrySet()) {
+                String paramKey = entry.getKey().toString();
+                String defaultValue = newParamTestValues.get(paramKey);
+                String value = (String) JOptionPane.showInputDialog(mainPanel, "Enter value for parameter " + paramKey.substring(6) + " or press cancel to remove this parameter", "Customize Parameter", JOptionPane.PLAIN_MESSAGE, null, null, defaultValue);
+                if (value != null) {
+                    copyParamValues.put(paramKey, value);
+                }
+            }
+            newParamTestValues = copyParamValues;
+
+            while (true) {
+                final String message = "Do you want to add a parameter?";
+                final String message2 = "Do you want to add more parameters?";
+                String useMessage = message2;
+                if (!pluralParam) {
+                    useMessage = message;
+                }
+                int button = JOptionPane.showConfirmDialog(mainPanel, useMessage, "Customize Parameter", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null);
+                if (JOptionPane.YES_OPTION != button) {
+                    break;
+                } else {
+                    String paramName = (String) JOptionPane.showInputDialog(mainPanel, "Enter parameter name", "Customize Parameter", JOptionPane.PLAIN_MESSAGE, null, null, "");
+                    if (paramName == null || paramName.length()==0) {
+                        return;
+                    }
+                    String paramValue = (String) JOptionPane.showInputDialog(mainPanel, "Enter value for parameter " + paramName, "Customize Parameter", JOptionPane.PLAIN_MESSAGE, null, null, null);
+                    if (paramValue == null) {
+                        return;
+                    }
+                    newParamTestValues.put("param." + paramName, paramValue);
+                }
+                pluralParam = true;
+            }
+
+            //build param rules to attach with the test
+            if (newParamTestValues.size() > 0) {
+                HttpPassthroughRule[] newParamRules = new HttpPassthroughRule[newParamTestValues.size()];
+                ruleCount = 0;
+                for (Map.Entry entry : newParamTestValues.entrySet()) {
+                    String paramKey = entry.getKey().toString().substring(6);
+                    String paramValue = (String) entry.getValue();
+                    HttpPassthroughRule rule = new HttpPassthroughRule();
+                    rule.setName(paramKey);//param.=6, real name starts after the 6 character
+                    if (paramValue != null) {
+                        rule.setUsesCustomizedValue(true);
+                    } else {
+                        rule.setUsesCustomizedValue(false);
+                    }
+                    rule.setCustomizeValue(paramValue);
+                    newTestValues.put((String) entry.getKey(), (String) entry.getValue());//make sure we merge it to the testValues map that we need to save in the assertion
+                    newParamRules[ruleCount++] = rule;
+                }
+                assertionTest.getRequestParamRules().setRules(newParamRules);
+            }
+
+            //build param rules to attach with the test
+            if (newHeaderTestValues.size() > 0) {
+                HttpPassthroughRule[] newHeaderRules = new HttpPassthroughRule[newHeaderTestValues.size()];
+                ruleCount = 0;
+                for (Map.Entry entry : newHeaderTestValues.entrySet()) {
+                    String paramKey = entry.getKey().toString().substring(7);
+                    String paramValue = (String) entry.getValue();
+                    HttpPassthroughRule rule = new HttpPassthroughRule();
+                    rule.setName(paramKey);//header.=7, real name starts after the 7 character
+                    if (paramValue != null) {
+                        rule.setUsesCustomizedValue(true);
+                    } else {
+                        rule.setUsesCustomizedValue(false);
+                    }
+                    rule.setCustomizeValue(paramValue);
+                    newTestValues.put((String) entry.getKey(), (String) entry.getValue());//make sure we merge it to the testValues map that we need to save in the assertion
+                    newHeaderRules[ruleCount++] = rule;
+                }
+                assertionTest.getRequestHeaderRules().setRules(newHeaderRules);
+            }
+            
             int button = JOptionPane.showConfirmDialog(mainPanel, scrollPane, resources.getString("dialog.test.message"), JOptionPane.OK_CANCEL_OPTION);
             if(JOptionPane.OK_OPTION!=button){//don't proceed if OK button was not clicked
                 return;
             }
+            assertion.setTestValues(newTestValues);
             final String inputMessage = textArea.getText(); //we need a final variable for the inner class
             if(inputMessage!=null){
                 if(inputMessage.trim().equals("")){
@@ -1196,8 +1345,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             } else {
                 return;//cancel button was selected
             }
-            final HttpRoutingAssertion assertionTest = assertion.clone();//we need a final variable for the inner class
-                    
+
             final JProgressBar progressBar = new JProgressBar();
             progressBar.setIndeterminate(true);
             final CancelableOperationDialog cancelDialog =

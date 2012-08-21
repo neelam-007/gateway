@@ -1,6 +1,8 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ByteArrayStashManager;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.transport.http.HttpAdmin;
 import com.l7tech.message.Message;
@@ -15,6 +17,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import java.io.ByteArrayInputStream;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.util.*;
@@ -39,12 +42,17 @@ public class HttpAdminImpl implements HttpAdmin, ApplicationContextAware {
         final StringBuffer sb = new StringBuffer();
         boolean hasError = false;
         try {
+            XmlUtil.stringAsDocument(testMessage);//make sure it's a valid XML
             //simulate the request using the real server assertion
-            final Message request = new Message(XmlUtil.stringAsDocument(testMessage));
+            final Message testRequestVariable = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(testMessage.getBytes()));
+            testRequestVariable.getXmlKnob().getDocumentReadOnly();
+            testRequestVariable.getMimeKnob();
             for (String serverUrl : serverUrls) {
                 try {
                     assertion.setProtectedServiceUrl(serverUrl);//make sure we are testing one URL at a time, this forces it
-                    final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, true);
+                    assertion.setRequestMsgSrc("testRequestMessage");
+                    final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message(), true);
+                    pec.setVariable("testRequestMessage",testRequestVariable);
                     final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, getApplicationContext());
                     sb.append("\"");
                     sb.append(serverUrl);
@@ -105,12 +113,11 @@ public class HttpAdminImpl implements HttpAdmin, ApplicationContextAware {
                     sb.append("\n");
                 }
             }//end of for
-            request.close();
-            //response.close();
         } catch (Exception e) {
             sb.append(e.getMessage());
             throw new HttpAdminException("HttpAdminException:" + e.getMessage(), sb.toString());
         }
+        logger.log(Level.FINER, sb.toString());//just in case we need to see details of the test even when the test is successful
         if (hasError) {
             throw new HttpAdminException("HttpAdminException", sb.toString());
         }

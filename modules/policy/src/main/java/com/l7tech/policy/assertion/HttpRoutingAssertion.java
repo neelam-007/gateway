@@ -21,9 +21,7 @@ import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspSensitive;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.*;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
@@ -123,6 +121,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     protected String testBodyMessage = "<request><message>Test</message></request>";
     private boolean forceIncludeRequestBody = false;
+    private Map<String,String> testValues = new HashMap<String,String>();
 
     // TODO WARNING
     // TODO WARNING
@@ -189,6 +188,8 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         this.setTlsTrustedCertOids(source.getTlsTrustedCertOids());
         this.setTlsTrustedCertNames(source.getTlsTrustedCertNames());
         this.setHttpVersion(source.getHttpVersion());
+        this.setTestValues(source.getTestValues());
+        this.setTestBodyMessage(source.getTestBodyMessage());
     }
 
     @Override
@@ -198,6 +199,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         hra.responseHeaderRules = responseHeaderRules.clone();
         hra.requestHeaderRules = requestHeaderRules.clone();
         hra.requestParamRules = requestParamRules.clone();
+        hra.testValues = new HashMap<String, String>(testValues);
 
         return hra;
     }
@@ -871,5 +873,13 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     public void setTestBodyMessage(String testBodyMessage) {
         this.testBodyMessage = testBodyMessage;
+    }
+
+    public Map<String, String> getTestValues() {
+        return testValues;
+    }
+
+    public void setTestValues(Map<String, String> testValues) {
+        this.testValues = testValues;
     }
 }
