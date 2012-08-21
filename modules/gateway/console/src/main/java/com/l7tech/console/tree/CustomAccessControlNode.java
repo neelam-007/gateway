@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class CustomAccessControlNode extends AbstractTreeNode implements Comparable<AbstractTreeNode> {
+public class CustomAccessControlNode extends DefaultAssertionPaletteNode<CustomAssertionHolder> implements Comparable<AbstractTreeNode> {
     private static final Logger logger = Logger.getLogger(CustomAccessControlNode.class.getName());
 
     private CustomAssertionsRegistrar registrar;
@@ -79,12 +79,6 @@ public class CustomAccessControlNode extends AbstractTreeNode implements Compara
      */
     @Override
     public Assertion asAssertion() {
-        Assertion assertion = (Assertion) super.getUserObject();
-
-        if ( assertion != null ) {
-            assertion = assertion.getCopy();
-        }
-
         return assertion;
     }
 
