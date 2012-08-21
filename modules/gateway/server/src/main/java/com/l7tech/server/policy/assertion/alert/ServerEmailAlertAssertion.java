@@ -1,31 +1,28 @@
 package com.l7tech.server.policy.assertion.alert;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
-import com.l7tech.server.transport.http.AnonymousSslClientHostnameAwareSocketFactory;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.transport.email.EmailUtils;
+import com.l7tech.server.transport.http.AnonymousSslClientHostnameAwareSocketFactory;
+import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
-import javax.mail.MessagingException;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.AuthenticationFailedException;
+import javax.mail.*;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
-import java.util.*;
 import java.net.ConnectException;
+import java.util.*;
 
 /**
  * Server side implementation of assertion that sends an email alert.
@@ -235,14 +232,12 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
             assertion.setTargetBCCEmailAddress(sb.toString());
         }
 
-
         try {
             final Map<String, String> propertyMap = buildProperties(connectTimeout, readTimeout, portNum, host, fromAddress.getAddress());
             final Session session = getSession(propertyMap);
             final String body = ExpandVariables.process(assertion.messageString(), context.getVariableMap(varsUsed, getAudit()), getAudit());
 
-            if(!assertion.isTestBean())
-                sendMessage(session, body, host, toAddresses, ccAddresses, bccAddresses, userName, pwd, recipients, fromAddress, subject, portNumberInt);
+            sendMessage(session, body, host, toAddresses, ccAddresses, bccAddresses, userName, pwd, recipients, fromAddress, subject, portNumberInt);
 
             logAndAudit( AssertionMessages.EMAILALERT_MESSAGE_SENT );
             return AssertionStatus.NONE;
@@ -260,6 +255,10 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
                 logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                         new String[]{ "Unable to send email: " + e.getMessage() }, ExceptionUtils.getDebugException( e ) );
             }
+            return AssertionStatus.FAILED;
+        } catch (Exception e) {
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[]{ "Unexpected error sending email: " + e.getMessage() }, ExceptionUtils.getDebugException( e ) );
             return AssertionStatus.FAILED;
         }
     }
@@ -282,10 +281,15 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         message.setText(body);
         message.saveChanges();
 
-        Transport tr = session.getTransport(assertion.getProtocol() == EmailAlertAssertion.Protocol.SSL ? "smtps" : "smtp");
+        Transport tr = getTransport(session, assertion.getProtocol() == EmailAlertAssertion.Protocol.SSL ? "smtps" : "smtp");
         tr.connect(host, portNumber, userName, pwd);
         tr.sendMessage(message, recipients);
     }
+
+    protected Transport getTransport(Session session, String protocol) throws NoSuchProviderException {
+        return session.getTransport(protocol);
+    }
+
 
     private InternetAddress[] assembleAddresses(String addresses, String addressName) {
         InternetAddress[] addr = null;
