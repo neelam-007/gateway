@@ -53,7 +53,7 @@ public class SamlValidationCommon {
         Document assertionDocument = XmlUtil.stringToDocument(assertionWithAudienceXml);
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
-        sav.validate(assertionDocument, loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
+        sav.validate(loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
 
         // we expect no errors, but to future proof test, simply ensure no error with any messages were found
         for (SamlAssertionValidate.Error result : results) {
@@ -79,7 +79,7 @@ public class SamlValidationCommon {
         Document assertionDocument = XmlUtil.stringToDocument(assertionWithNoAudience);
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
-        sav.validate(assertionDocument, loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
+        sav.validate(loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
 
         //remove this line iff test fails due to new additional logic or simply update the tests configuration to satisfy new rule.
         assertTrue("Should be no errors.", results.size()==0);
@@ -102,7 +102,7 @@ public class SamlValidationCommon {
         Document assertionDocument = XmlUtil.stringToDocument(assertionWithNoAudience);
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
-        sav.validate(assertionDocument, loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
+        sav.validate(loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
 
         validateAudienceErrorFound(results);
     }
@@ -120,7 +120,7 @@ public class SamlValidationCommon {
         Document assertionDocument = XmlUtil.stringToDocument(assertionWithAudienceXml);
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
-        sav.validate(assertionDocument, loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
+        sav.validate(loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
 
         validateNoAudienceErrorsFound(results);
     }
@@ -138,7 +138,7 @@ public class SamlValidationCommon {
         Document assertionDocument = XmlUtil.stringToDocument(assertionWithAudienceXml);
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
-        sav.validate(assertionDocument, loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
+        sav.validate(loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
 
         validateAudienceErrorFound(results);
     }
@@ -159,7 +159,7 @@ public class SamlValidationCommon {
         Document assertionDocument = XmlUtil.stringToDocument(assertionWithAudienceXml);
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
-        sav.validate(assertionDocument, loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
+        sav.validate(loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
 
         validateNoAudienceErrorsFound(results);
     }
@@ -180,7 +180,7 @@ public class SamlValidationCommon {
         Document assertionDocument = XmlUtil.stringToDocument(assertionWithAudienceXml);
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
-        sav.validate(assertionDocument, loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
+        sav.validate(loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
 
         validateNoAudienceErrorsFound(results);
     }
@@ -201,7 +201,7 @@ public class SamlValidationCommon {
         Document assertionDocument = XmlUtil.stringToDocument(assertionWithMultipleAudiences);
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
-        sav.validate(assertionDocument, loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
+        sav.validate(loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
 
         validateNoAudienceErrorsFound(results);
     }
@@ -222,7 +222,7 @@ public class SamlValidationCommon {
         Document assertionDocument = XmlUtil.stringToDocument(assertionWithMultipleAudiences);
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
-        sav.validate(assertionDocument, loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
+        sav.validate(loginCredentials, fakeProcessorResults(assertion), results, null, null, serverVariables, new TestAudit());
 
         validateAudienceErrorFound(results);
     }

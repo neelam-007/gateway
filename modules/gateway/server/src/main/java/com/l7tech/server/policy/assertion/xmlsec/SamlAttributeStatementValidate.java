@@ -7,7 +7,6 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.util.Pair;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlCursor;
-import org.w3c.dom.Document;
 import x0Assertion.oasisNamesTcSAML1.AttributeStatementType;
 import x0Assertion.oasisNamesTcSAML1.AttributeType;
 
@@ -41,7 +40,6 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
     /**
      * Validate the attribute statement
      *
-     * @param document
      * @param statementAbstractType
      * @param wssResults
      * @param validationResults     where the results are collected
@@ -49,8 +47,8 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
      * @param serverVariables
      * @param auditor
      */
-    protected void validate(Document document,
-                            XmlObject statementAbstractType,
+    @Override
+    protected void validate(XmlObject statementAbstractType,
                             ProcessorResult wssResults,
                             Collection<SamlAssertionValidate.Error> validationResults, Collection<Pair<String, String[]>> collectAttrValues, Map<String, Object> serverVariables, Audit auditor) {
         if (!(statementAbstractType instanceof AttributeStatementType)) {

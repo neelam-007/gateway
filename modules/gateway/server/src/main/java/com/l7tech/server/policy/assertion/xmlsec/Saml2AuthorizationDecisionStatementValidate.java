@@ -6,7 +6,6 @@ import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.Pair;
 import org.apache.xmlbeans.XmlObject;
-import org.w3c.dom.Document;
 import x0Assertion.oasisNamesTcSAML2.ActionType;
 import x0Assertion.oasisNamesTcSAML2.AuthzDecisionStatementType;
 import x0Assertion.oasisNamesTcSAML2.DecisionType;
@@ -41,7 +40,6 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
     /**
      * Validate the authentication statement
      *
-     * @param document
      * @param statementAbstractType
      * @param wssResults
      * @param validationResults     where the results are collected
@@ -49,8 +47,8 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
      * @param serverVariables
      * @param auditor
      */
-    protected void validate(Document document,
-                            XmlObject statementAbstractType,
+    @Override
+    protected void validate(XmlObject statementAbstractType,
                             ProcessorResult wssResults, Collection<SamlAssertionValidate.Error> validationResults, Collection<Pair<String, String[]>> collectAttrValues, Map<String, Object> serverVariables, Audit auditor) {
         if (!(statementAbstractType instanceof AuthzDecisionStatementType)) {
             throw new IllegalArgumentException("Expected " + AuthzDecisionStatementType.class);

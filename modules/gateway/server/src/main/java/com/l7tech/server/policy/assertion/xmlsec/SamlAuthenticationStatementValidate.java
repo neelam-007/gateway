@@ -6,7 +6,6 @@ import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.util.Pair;
-import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
 import x0Assertion.oasisNamesTcSAML1.AuthenticationStatementType;
 
@@ -36,7 +35,6 @@ class SamlAuthenticationStatementValidate extends SamlStatementValidate {
 
     /**
      * Validate the authentication statement
-     * @param document
      * @param statementAbstractType
      * @param wssResults
      * @param validationResults where the results are collected
@@ -45,8 +43,7 @@ class SamlAuthenticationStatementValidate extends SamlStatementValidate {
      * @param auditor
      */
     @Override
-    protected void validate(Document document,
-                            XmlObject statementAbstractType,
+    protected void validate(XmlObject statementAbstractType,
                             ProcessorResult wssResults,
                             Collection<SamlAssertionValidate.Error> validationResults,
                             Collection<Pair<String, String[]>> collectAttrValues,

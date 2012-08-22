@@ -10,7 +10,6 @@ import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Pair;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlObject;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -51,7 +50,6 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
     /**
      * Validate the attribute statement
      *
-     * @param document
      * @param statementAbstractType
      * @param wssResults
      * @param validationResults     where the results are collected
@@ -59,8 +57,8 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
      * @param serverVariables
      * @param auditor
      */
-    protected void validate(Document document,
-                            XmlObject statementAbstractType,
+    @Override
+    protected void validate(XmlObject statementAbstractType,
                             ProcessorResult wssResults, Collection<SamlAssertionValidate.Error> validationResults, Collection<Pair<String, String[]>> collectAttrValues, Map<String, Object> serverVariables, Audit auditor) {
         if (!(statementAbstractType instanceof AttributeStatementType)) {
             throw new IllegalArgumentException("Expected " + AttributeStatementType.class);

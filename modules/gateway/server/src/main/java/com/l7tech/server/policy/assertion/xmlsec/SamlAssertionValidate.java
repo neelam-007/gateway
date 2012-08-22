@@ -69,20 +69,18 @@ public class SamlAssertionValidate {
     /**
      * Validates the SAML statement.
      *
-     * @param soapMessageDoc    the soapMessageDoc/message to validate
      * @param credentials       the  credenaitls that may have been collected, null otherwise
      * @param wssResults        the wssresults
      * @param validationResults
      * @param collectAttrValues
      */
-    public void validate( final Document soapMessageDoc,
-                          final LoginCredentials credentials,
-                          final ProcessorResult wssResults,
-                          final Collection<Error> validationResults,
-                          final Collection<Pair<String, String[]>> collectAttrValues,
-                          final Collection<String> clientAddresses,
-                          final Map<String, Object> serverVariables,
-                          final Audit auditor) {
+    public void validate(final LoginCredentials credentials,
+                         final ProcessorResult wssResults,
+                         final Collection<Error> validationResults,
+                         final Collection<Pair<String, String[]>> collectAttrValues,
+                         final Collection<String> clientAddresses,
+                         final Map<String, Object> serverVariables,
+                         final Audit auditor) {
         String securityNS = wssResults.getSecurityNS();
         if (null == securityNS) {  // assume no security header was found
             Error result = new Error("No Security Header found", null);
@@ -124,7 +122,7 @@ public class SamlAssertionValidate {
                                     SamlStatementValidate statementValidate = validators.get(clazz);
                                     validateSubjectConfirmation((SubjectStatementAbstractType)statementAbstractType, validationResults, serverVariables, auditor);
                                     validateConditions(assertionType, validationResults, serverVariables, auditor);
-                                    statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults, collectAttrValues, serverVariables, auditor);
+                                    statementValidate.validate(statementAbstractType, wssResults, validationResults, collectAttrValues, serverVariables, auditor);
                                 }
                             }
                         }
@@ -148,7 +146,7 @@ public class SamlAssertionValidate {
                                 if (clazz.isAssignableFrom(statementAbstractType.getClass())) {
                                     assertionMatch = true;
                                     SamlStatementValidate statementValidate = validators.get(clazz);
-                                    statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults, collectAttrValues, serverVariables, auditor);
+                                    statementValidate.validate(statementAbstractType, wssResults, validationResults, collectAttrValues, serverVariables, auditor);
                                 }
                             }
                         }

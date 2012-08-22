@@ -29,7 +29,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Level;
 
 /**
  * Class <code>ServerRequestWssSaml</code> represents the server
@@ -88,7 +87,6 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                                               final String messageDesc,
                                               final AuthenticationContext authContext ) throws IOException {
         try {
-            final XmlKnob xmlKnob = message.getXmlKnob();
             if (!message.isSoap()) {
                 logAndAudit(AssertionMessages.SAML_AUTHN_STMT_REQUEST_NOT_SOAP, messageDesc);
                 return AssertionStatus.NOT_APPLICABLE;
@@ -149,7 +147,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                     null;
 
             final Map<String, Object> serverVariables = context.getVariableMap( variablesUsed, getAudit() );
-            assertionValidate.validate(xmlKnob.getDocumentReadOnly(),
+            assertionValidate.validate(
                     credentials,
                     wssResults,
                     validateResults,

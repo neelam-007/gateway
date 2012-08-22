@@ -8,7 +8,6 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.Pair;
 import org.apache.xmlbeans.XmlObject;
-import org.w3c.dom.Document;
 import x0Assertion.oasisNamesTcSAML2.AuthnContextType;
 import x0Assertion.oasisNamesTcSAML2.AuthnStatementType;
 
@@ -38,7 +37,6 @@ class Saml2AuthenticationStatementValidate extends SamlStatementValidate {
 
     /**
      * Validate the authentication statement
-     * @param document
      * @param statementAbstractType
      * @param wssResults
      * @param validationResults where the results are collected
@@ -47,8 +45,7 @@ class Saml2AuthenticationStatementValidate extends SamlStatementValidate {
      * @param auditor
      */
     @Override
-    protected void validate(Document document,
-                            XmlObject statementAbstractType,
+    protected void validate(XmlObject statementAbstractType,
                             ProcessorResult wssResults,
                             Collection<SamlAssertionValidate.Error> validationResults,
                             Collection<Pair<String, String[]>> collectAttrValues,

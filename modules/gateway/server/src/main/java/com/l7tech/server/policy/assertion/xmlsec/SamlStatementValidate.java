@@ -45,7 +45,6 @@ public abstract class SamlStatementValidate {
      * Validate the specific <code>SubjectStatementAbstractType</code> and collect eventual validation
      * errors in the validationResults collection.
      *
-     * @param document          the message document
      * @param statementObject   the subject statement type, that may be authentication statement
      *                          authorization statement or attribute statement
      * @param wssResults        the wssresults collection
@@ -54,8 +53,7 @@ public abstract class SamlStatementValidate {
      * @param serverVariables variables used by assertion
      * @param auditor required to process server variables.
      */
-    protected abstract void validate(Document document,
-                                     XmlObject statementObject,
+    protected abstract void validate(XmlObject statementObject,
                                      ProcessorResult wssResults,
                                      Collection<SamlAssertionValidate.Error> validationResults,
                                      Collection<Pair<String, String[]>> collectAttrValues,
