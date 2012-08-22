@@ -1908,9 +1908,12 @@
                     &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
                     &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="b2F1dGhfY29uc3VtZXJfa2V5PSIke2NvbnN1bWVyX2tleX0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSJITUFDLVNIQTEiLCBvYXV0aF9jYWxsYmFjaz0iJHtjYWxsYmFja30iLCBvYXV0aF92ZXJzaW9uPSIxLjAi"/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtjb25zdW1lcl9rZXl9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_consumer_key"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtjYWxsYmFja30="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_callback"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -1987,8 +1990,8 @@
                     &lt;/L7p:Include&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="T0F1dGggJHtvYXV0aF9wYXJhbXN9LCBvYXV0aF9ub25jZT0iJHtvYXV0aC5vYXV0aF9ub25jZX0iLCBvYXV0aF90aW1lc3RhbXA9IiR7b2F1dGgub2F1dGhfdGltZXN0YW1wfSIsIG9hdXRoX3NpZ25hdHVyZT0iJHtzaWduYXR1cmV9Ig=="/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
+                    stringValue="T0F1dGggb2F1dGhfY29uc3VtZXJfa2V5PSIke29hdXRoLm9hdXRoX2NvbnN1bWVyX2tleX0iLCBvYXV0aF9jYWxsYmFjaz0iJHtvYXV0aC5vYXV0aF9jYWxsYmFja30iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSIke29hdXRoLm9hdXRoX3NpZ25hdHVyZV9tZXRob2R9Iiwgb2F1dGhfbm9uY2U9IiR7b2F1dGgub2F1dGhfbm9uY2V9Iiwgb2F1dGhfdGltZXN0YW1wPSIke29hdXRoLm9hdXRoX3RpbWVzdGFtcH0iLCBvYXV0aF9zaWduYXR1cmU9IiR7c2lnbmF0dXJlfSIsIG9hdXRoX3ZlcnNpb249IiR7b2F1dGgub2F1dGhfdmVyc2lvbn0i"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_header"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
@@ -1999,7 +2002,7 @@
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"&gt;
                     &lt;L7p:item httpPassthroughRule="included"&gt;
-                    &lt;L7p:CustomizeValue stringValue="${oauth_params}"/&gt;
+                    &lt;L7p:CustomizeValue stringValue="${oauth_header}"/&gt;
                     &lt;L7p:Name stringValue="Authorization"/&gt;
                     &lt;L7p:UsesCustomizedValue booleanValue="true"/&gt;
                     &lt;/L7p:item&gt;
@@ -2251,17 +2254,24 @@
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:All&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="b2F1dGhfY29uc3VtZXJfa2V5PSIke2NvbnN1bWVyX2tleX0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSJITUFDLVNIQTEiLCBvYXV0aF90b2tlbj0iJHt0b2tlbn0iLCBvYXV0aF92ZXJpZmllcj0iJHt2ZXJpZmllcn0i"/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtjb25zdW1lcl9rZXl9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_consumer_key"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt0b2tlbn0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt2ZXJpZmllcn0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_verifier"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
                     &lt;L7p:PolicyGuid stringValue="fded77d9-893f-4dcd-99bf-859988d65072"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="T0F1dGggJHtvYXV0aF9wYXJhbXN9LCBvYXV0aF9ub25jZT0iJHtvYXV0aC5vYXV0aF9ub25jZX0iLCBvYXV0aF90aW1lc3RhbXA9IiR7b2F1dGgub2F1dGhfdGltZXN0YW1wfSIsIG9hdXRoX3NpZ25hdHVyZT0iJHtzaWduYXR1cmV9Iiwgb2F1dGhfdmVyc2lvbj0iMS4wIg=="/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
+                    stringValue="T0F1dGggb2F1dGhfY29uc3VtZXJfa2V5PSIke29hdXRoLm9hdXRoX2NvbnN1bWVyX2tleX0iLCBvYXV0aF90b2tlbj0iJHtvYXV0aC5vYXV0aF90b2tlbn0iLCBvYXV0aF92ZXJpZmllcj0iJHtvYXV0aC5vYXV0aF92ZXJpZmllcn0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSIke29hdXRoLm9hdXRoX3NpZ25hdHVyZV9tZXRob2R9Iiwgb2F1dGhfbm9uY2U9IiR7b2F1dGgub2F1dGhfbm9uY2V9Iiwgb2F1dGhfdGltZXN0YW1wPSIke29hdXRoLm9hdXRoX3RpbWVzdGFtcH0iLCBvYXV0aF9zaWduYXR1cmU9IiR7c2lnbmF0dXJlfSIsIG9hdXRoX3ZlcnNpb249IjEuMCI="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_header"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:HttpMethod httpMethod="POST"/&gt;
@@ -2271,7 +2281,7 @@
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"&gt;
                     &lt;L7p:item httpPassthroughRule="included"&gt;
-                    &lt;L7p:CustomizeValue stringValue="${oauth_params}"/&gt;
+                    &lt;L7p:CustomizeValue stringValue="${oauth_header}"/&gt;
                     &lt;L7p:Name stringValue="Authorization"/&gt;
                     &lt;L7p:UsesCustomizedValue booleanValue="true"/&gt;
                     &lt;/L7p:item&gt;
@@ -2456,17 +2466,20 @@
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:All&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="b2F1dGhfY29uc3VtZXJfa2V5PSIke2NvbnN1bWVyX2tleX0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSJITUFDLVNIQTEiLCBvYXV0aF90b2tlbj0iJHt0b2tlbn0iLCBvYXV0aF92ZXJzaW9uPSIxLjAi"/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtjb25zdW1lcl9rZXl9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_consumer_key"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt0b2tlbn0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
                     &lt;L7p:PolicyGuid stringValue="fded77d9-893f-4dcd-99bf-859988d65072"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="T0F1dGggJHtvYXV0aF9wYXJhbXN9LCBvYXV0aF9ub25jZT0iJHtvYXV0aC5vYXV0aF9ub25jZX0iLCBvYXV0aF90aW1lc3RhbXA9IiR7b2F1dGgub2F1dGhfdGltZXN0YW1wfSIsIG9hdXRoX3NpZ25hdHVyZT0iJHtzaWduYXR1cmV9Ig=="/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
+                    stringValue="T0F1dGggb2F1dGhfY29uc3VtZXJfa2V5PSIke29hdXRoLm9hdXRoX2NvbnN1bWVyX2tleX0iLCBvYXV0aF90b2tlbj0iJHtvYXV0aC5vYXV0aF90b2tlbn0iLCBvYXV0aF9zaWduYXR1cmVfbWV0aG9kPSIke29hdXRoLm9hdXRoX3NpZ25hdHVyZV9tZXRob2R9Iiwgb2F1dGhfbm9uY2U9IiR7b2F1dGgub2F1dGhfbm9uY2V9Iiwgb2F1dGhfdGltZXN0YW1wPSIke29hdXRoLm9hdXRoX3RpbWVzdGFtcH0iLCBvYXV0aF9zaWduYXR1cmU9IiR7c2lnbmF0dXJlfSIsIG9hdXRoX3ZlcnNpb249IiR7b2F1dGgub2F1dGhfdmVyc2lvbn0i"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_header"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -2488,7 +2501,7 @@
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"&gt;
                     &lt;L7p:item httpPassthroughRule="included"&gt;
-                    &lt;L7p:CustomizeValue stringValue="${oauth_params}"/&gt;
+                    &lt;L7p:CustomizeValue stringValue="${oauth_header}"/&gt;
                     &lt;L7p:Name stringValue="Authorization"/&gt;
                     &lt;L7p:UsesCustomizedValue booleanValue="true"/&gt;
                     &lt;/L7p:item&gt;
@@ -2513,7 +2526,7 @@
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"&gt;
                     &lt;L7p:item httpPassthroughRule="included"&gt;
-                    &lt;L7p:CustomizeValue stringValue="${oauth_params}"/&gt;
+                    &lt;L7p:CustomizeValue stringValue="${oauth_header}"/&gt;
                     &lt;L7p:Name stringValue="Authorization"/&gt;
                     &lt;L7p:UsesCustomizedValue booleanValue="true"/&gt;
                     &lt;/L7p:item&gt;
