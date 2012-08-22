@@ -65,6 +65,7 @@ import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.ExceptionUtils.getMessage;
 import static com.l7tech.util.Option.optional;
 import static com.l7tech.util.Option.some;
+import static java.text.MessageFormat.format;
 import static java.util.Collections.unmodifiableMap;
 
 /**
@@ -171,9 +172,10 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                         if(attempts>=10){
                             //10 failed attempts made to make a connection, fail!
                             if ( mqre.getCause() instanceof MQException ) {
-                                logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion and returning completion code 2059.", getDebugExceptionForExpectedReasonCode((MQException)mqre.getCause()));
+                                MQException mqException = (MQException) mqre.getCause();
+                                logger.log(Level.WARNING, format("At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion and returning completion code {0}.",mqException.getReason()) , getDebugExceptionForExpectedReasonCode(mqException));
                             }  else {
-                                logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion and returning completion code 2059.", mqre);
+                                logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion.", mqre);
                             }
                             context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, MQCC_FAILED);
                             context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, MQRC_Q_MGR_NOT_AVAILABLE);
