@@ -947,7 +947,7 @@ public class ServerVariables {
         protected Object getBaseObject(PolicyEnforcementContext context) {
             if (context instanceof AuditLookupPolicyEnforcementContext) {
                 AuditLookupPolicyEnforcementContext lookupctx = (AuditLookupPolicyEnforcementContext) context;
-                return   lookupctx.getAuditSearchCriteria();
+                return   lookupctx.getAuditLookupSearchCriteria();
             }
             return null;
         }

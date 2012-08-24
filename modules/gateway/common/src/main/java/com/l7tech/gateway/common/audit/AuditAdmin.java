@@ -60,13 +60,14 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * Get digests for audit records.
      *
      * @param auditRecordIds The set of audit records to retrieve digests for. Cannot be null.
+     * @param fromPolicy get via external lookup policy
      * @return Digests for the requested audit records. May not contain records for each id requested.
      * @throws FindException any problems searching.
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITIES)
     @Administrative(licensed=false, background = true)
-    Map<Long, byte[]> getDigestsForAuditRecords(Collection<Long> auditRecordIds) throws FindException;
+    Map<String, byte[]> getDigestsForAuditRecords(Collection<String> auditRecordIds, boolean fromPolicy) throws FindException;
 
     /**
      * Checks if there are any audits found given the date and level to search for.

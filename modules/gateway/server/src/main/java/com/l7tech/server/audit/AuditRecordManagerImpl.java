@@ -67,10 +67,10 @@ public class AuditRecordManagerImpl
     }
 
     @Override
-    public Map<Long, byte[]> getDigestForAuditRecords(final Collection<Long> auditRecordIds) throws FindException {
+    public Map<String, byte[]> getDigestForAuditRecords(final Collection<String> auditRecordIds) throws FindException {
         if(auditRecordIds == null) throw new NullPointerException("auditRecordIds is null");
 
-        final Map<Long, byte[]> returnMap = new HashMap<Long, byte[]>();
+        final Map<String, byte[]> returnMap = new HashMap<String, byte[]>();
 
         if (auditRecordIds.isEmpty()) {
             return returnMap;
@@ -83,7 +83,7 @@ public class AuditRecordManagerImpl
 
             if (auditRecordIds.size() > maxRecords) {
                 int difference = auditRecordIds.size() - maxRecords;
-                final Iterator<Long> iterator = auditRecordIds.iterator();
+                final Iterator<String> iterator = auditRecordIds.iterator();
                 int index = 0;
                 while (iterator.hasNext() && index < difference) {
                     iterator.remove();
@@ -97,7 +97,12 @@ public class AuditRecordManagerImpl
             // This query must perform multiple queries to avoid cartesian product as there are several possible collections
             // to fill in the audit record hierarchy.
             final Query query = session.createQuery(HQL_SELECT_AUDIT_RECORDS_SIZE_PROTECTED);
-            query.setParameterList(IDS_PARAMETER, auditRecordIds);
+            Collection<Long> auditRecordIdNumbers = new ArrayList<Long>();
+            for(String idStr : auditRecordIds){
+                try{ auditRecordIdNumbers.add(Long.parseLong(idStr));}
+                catch(NumberFormatException e){}// ignore
+            }
+            query.setParameterList(IDS_PARAMETER, auditRecordIdNumbers);
             final int maxMsgSize = validatedConfig.getIntProperty( ServerConfigParams.PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE, 2621440);
             query.setInteger(MAX_SIZE_PARAMETER, maxMsgSize);
 
@@ -108,7 +113,7 @@ public class AuditRecordManagerImpl
                 String sig = record.getSignature();
                 if (sig != null && !sig.isEmpty()) {
                     final byte[] digest = record.computeSignatureDigest();
-                    returnMap.put(record.getOid(), digest);
+                    returnMap.put(Long.toString(record.getOid()), digest);
                 }
                 session.evict(record);
             }

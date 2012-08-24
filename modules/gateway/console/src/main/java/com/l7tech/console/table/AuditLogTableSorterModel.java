@@ -230,9 +230,10 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
                             return;
                         }
 
-                        final Map<Long, AuditHeaderMessage> auditHeaders = new HashMap<Long, AuditHeaderMessage>();
+                        final Map<String, AuditHeaderMessage> auditHeaders = new HashMap<String, AuditHeaderMessage>();
                         int index = sigValidationIndex;
                         int count = 0;
+                        boolean fromPolicy = false;
                         synchronized (auditHeaderLock) {
 
                             while (index < filteredLogCache.size() && count < maxNumberToProcess) {
@@ -242,17 +243,19 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
 
                                 final AuditHeaderMessage logMessage = (AuditHeaderMessage) filteredLogCache.get(index);
                                 if (logMessage.getSignatureDigest() == null) {
-                                    auditHeaders.put(logMessage.getMsgNumber(), logMessage);
+                                    fromPolicy = fromPolicy || logMessage.getGuid()!=null;
+                                    String id = fromPolicy ? logMessage.getGuid() : Long.toString(logMessage.getMsgNumber());
+                                    auditHeaders.put(id , logMessage);
                                 }
                                 index++;
                                 count++;
                             }
                         }
 
-                        final List<Long> auditRecordIds = new ArrayList<Long>(auditHeaders.keySet());//keySet is not serializable
+                        final List<String> auditRecordIds = new ArrayList<String>(auditHeaders.keySet());//keySet is not serializable
                         if (!auditRecordIds.isEmpty()) {
                             //update digests
-                            final Map<Long, byte[]> digestsForRecords = auditAdmin.getDigestsForAuditRecords(auditRecordIds);
+                            final Map<String, byte[]> digestsForRecords = auditAdmin.getDigestsForAuditRecords(auditRecordIds, fromPolicy);
                             if (logger.isLoggable(Level.FINE)) {
                                 logger.log(Level.FINE, "Validated " + digestsForRecords.size()+" records. Requested " + auditRecordIds.size()+" records.");
                             }
@@ -262,7 +265,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
                             }
 
                             synchronized (auditHeaderLock) {
-                                for (Long auditRecordId : auditRecordIds) {
+                                for (String auditRecordId : auditRecordIds) {
                                     if (Thread.currentThread().isInterrupted()) {
                                         return;
                                     }

@@ -32,7 +32,7 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
-    public Map<Long, byte[]> getDigestsForAuditRecords(Collection<Long> auditRecordIds) throws FindException {
+    public Map<String, byte[]> getDigestsForAuditRecords(Collection<String> auditRecordIds, boolean fromPolicy) throws FindException {
         throw new UnsupportedOperationException("Not supported in stub mode");
     }
 

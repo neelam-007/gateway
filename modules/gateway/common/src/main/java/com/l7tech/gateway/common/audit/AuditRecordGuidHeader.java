@@ -9,7 +9,7 @@ public class AuditRecordGuidHeader extends AuditRecordHeader {
 
     private String guid;
 
-    public AuditRecordGuidHeader(final AuditRecord auditRecord, String guid, Long time){
+    public AuditRecordGuidHeader(final AuditRecord auditRecord, String guid){
         this( guid,
               auditRecord.getOid(),
               auditRecord instanceof MessageSummaryAuditRecord ? auditRecord.getName() : "",
@@ -17,7 +17,7 @@ public class AuditRecordGuidHeader extends AuditRecordHeader {
               null,
               auditRecord.getSignature(),
               auditRecord.getNodeId(),
-              time,
+              auditRecord.getMillis(),
               auditRecord.getLevel(),
               auditRecord.getVersion() );
     }

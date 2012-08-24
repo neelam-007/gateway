@@ -35,16 +35,22 @@ public class AuditLookupPolicyEvaluator  {
     private static final Logger logger = Logger.getLogger(AuditLookupPolicyEvaluator.class.getName());
 
     private final Config config;
+    private ValidatedConfig validatedConfig;
     private final PolicyCache policyCache;
-    private final Cache auditRecordsCache;
+    private final Cache auditRecordsCache;  // guid -> audit record
+    private final Cache auditRecordsIDCache; // guid -> oid for retrieved audit record
 //    private final AuditDetailPropertiesDomUnmarshaller detailUnmarshaller = new AuditDetailPropertiesDomUnmarshaller();
     private static final AtomicLong nextFakeOid = new AtomicLong(100);
 
     public AuditLookupPolicyEvaluator(Config config, PolicyCache policyCache) {
         this.config = config;
+        validatedConfig = new ValidatedConfig( config, logger);
         this.policyCache = policyCache;
         this.auditRecordsCache =
                 WhirlycacheFactory.createCache("AuditLookupPolicyCache", 10000, 120, WhirlycacheFactory.POLICY_LRU);
+        this.auditRecordsIDCache =
+                WhirlycacheFactory.createCache("AuditLookupPolicyIDCache", 100000, 120, WhirlycacheFactory.POLICY_LRU);
+
     }
 
     private String loadAuditSinkPolicyGuid() {
@@ -60,7 +66,7 @@ public class AuditLookupPolicyEvaluator  {
             AssertionStatus assertionStatus = AuditContextFactory.doWithCustomAuditContext(AuditContextFactory.createLogOnlyAuditContext(), new Callable<AssertionStatus>() {
                 @Override
                 public AssertionStatus call() throws Exception {
-                    return executeAuditLookupPolicy(criteria, context);
+                    return executeAuditLookupPolicy(new AuditLookupSearchCriteria(criteria), context);
                 }
             });
 
@@ -71,7 +77,7 @@ public class AuditLookupPolicyEvaluator  {
             if(assertionStatus != AssertionStatus.NONE){
                 throw new FindException("Audit Lookup Policy Failed");
             }
-            List<AuditRecordHeader> recordHeaders = makeAuditRecords(context);
+            List<AuditRecordHeader> recordHeaders = makeAuditRecordHeaders(context);
             return recordHeaders;
 
 
@@ -83,19 +89,15 @@ public class AuditLookupPolicyEvaluator  {
     }
 
 
-
-
-        
-
-    private List<AuditRecordHeader> makeAuditRecords(PolicyEnforcementContext context){
+    private void makeAuditRecords(PolicyEnforcementContext context){
         try {
 
             final String prefix = "recordQuery";
 
             Object sizeObj = context.getVariable(prefix + ".queryresult.count");
-            List<AuditRecordHeader> recordHeaders = new ArrayList<AuditRecordHeader> ();
+            List<AuditRecord> records = new ArrayList<AuditRecord> ();
             if((Integer)sizeObj == 0){
-                return new ArrayList<AuditRecordHeader>();
+                return ;
             }
 
             Object[] id_var = (Object[])context.getVariable(prefix + ".id");
@@ -172,14 +174,86 @@ public class AuditLookupPolicyEvaluator  {
                             entityClass,entityId,status,requestId,serviceOid,operationName,authenticated,authenticationType,
                             requestLength,responseLength,requestZip,responseZip,responseStatus,latency,componentId,action,properties);
 
-                    record.setOid(nextFakeOid.incrementAndGet());
+                    Long oid = (Long)auditRecordsIDCache.retrieve(id);
+                    record.setOid(oid== null? nextFakeOid.incrementAndGet():oid);
                     auditRecordsCache.store(id,record);
                 }
 
-                AuditRecordGuidHeader header = new AuditRecordGuidHeader(record,id,record.getMillis());
-                recordHeaders.add(header);
+                records.add(record);
             }
             makeAuditDetails(context);
+
+        } catch (NoSuchVariableException e) {
+            logger.warning("Error creating audit records, some fields not present: "+e.getMessage());
+        } catch (ClassCastException e){
+            logger.warning("Error creating audit records, field type mismatch: "+e.getMessage());
+        }
+
+    }
+        
+
+    private List<AuditRecordHeader> makeAuditRecordHeaders(PolicyEnforcementContext context){
+        try {
+
+            final String prefix = "recordQuery";
+
+            Object sizeObj = context.getVariable(prefix + ".queryresult.count");
+            List<AuditRecordHeader> recordHeaders = new ArrayList<AuditRecordHeader> ();
+            if((Integer)sizeObj == 0){
+                return new ArrayList<AuditRecordHeader>();
+            }
+
+            Object[] id_var = (Object[])context.getVariable(prefix + ".id");
+            Object[] nodeid_var = (Object[])context.getVariable(prefix+".nodeid");
+            Object[] time_var = (Object[])context.getVariable(prefix+".time");
+            Object[] auditLevel_var = (Object[])context.getVariable(prefix+".audit_level");
+            Object[] name_var = (Object[])context.getVariable(prefix+".name");
+            Object[] message_var = (Object[])context.getVariable(prefix+".message");
+            Object[] signature_var = (Object[])context.getVariable(prefix+".signature");
+
+            for(int i = 0 ; i < (Integer)sizeObj ; ++i){
+                String id = ExternalAuditsUtils.getStringData(id_var[i]);
+                AuditRecordGuidHeader header;
+
+                // try getting id from audit records
+                AuditRecord record = getAuditRecordFromCache(id);
+                Long oid ;
+                if(record == null ){
+                    Object get  = auditRecordsIDCache.retrieve(id);
+                    if(get == null){
+                        oid = nextFakeOid.incrementAndGet();
+                        // save guid -> fake id mapping
+                        auditRecordsIDCache.store(id,oid);
+                    }else {
+                        oid = (Long)get;
+                    }
+
+                    String nodeid = ExternalAuditsUtils.getStringData(nodeid_var[i]);
+                    Long time = ExternalAuditsUtils.getLongData(time_var[i]);
+                    String auditLevel = ExternalAuditsUtils.getStringData(auditLevel_var[i]);
+                    String name = ExternalAuditsUtils.getStringData(name_var[i]);
+                    String message = ExternalAuditsUtils.getStringData(message_var[i]);
+                    String signature = ExternalAuditsUtils.getStringData(signature_var[i]);
+
+                    header = new AuditRecordGuidHeader(
+                            id,
+                            oid,
+                            name,
+                            message,
+                            null,
+                            signature,
+                            nodeid,
+                            time,
+                            Level.parse(auditLevel),
+                            0);
+
+                }else{
+                    header = new AuditRecordGuidHeader(record,id);
+
+
+                }
+                recordHeaders.add(header);
+            }
             return recordHeaders;
 
         } catch (NoSuchVariableException e) {
@@ -237,7 +311,7 @@ public class AuditLookupPolicyEvaluator  {
                 detail.setComponentId(componentId);
                 detail.setOid(ordinal);
 
-                AuditRecord record = (AuditRecord)auditRecordsCache.retrieve(audit_oid);
+                AuditRecord record = getAuditRecordFromCache(audit_oid);
                 detail.setAuditRecord(record);
                 Set<AuditDetail> details = record.getDetails();
                 details.add(detail);
@@ -250,8 +324,38 @@ public class AuditLookupPolicyEvaluator  {
         }
     }
 
-    public AuditRecord findByGuid(String guid) throws FindException{
-        return (AuditRecord)auditRecordsCache.retrieve(guid);
+    public AuditRecord findByGuid(final String guid) throws FindException{
+        AuditRecord record = getAuditRecordFromCache(guid);
+        if(record !=null)
+            return record;
+
+        try {
+            // Make sure a logging-only audit context is active while running the audit sink policy, so we don't
+            // try to add details to the record that is currently being flushed via this very policy
+            final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
+
+            AssertionStatus assertionStatus = AuditContextFactory.doWithCustomAuditContext(AuditContextFactory.createLogOnlyAuditContext(), new Callable<AssertionStatus>() {
+                @Override
+                public AssertionStatus call() throws Exception {
+                    return executeAuditLookupPolicy(new AuditLookupSearchCriteria(new String[]{guid},null), context);
+                }
+            });
+
+            if(assertionStatus == null){
+                return null;
+            }
+
+            if(assertionStatus != AssertionStatus.NONE){
+                throw new FindException("Audit Lookup Policy Failed");
+            }
+            makeAuditRecords(context);
+            record = getAuditRecordFromCache(guid);
+            return record;
+
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to execute audit lookup policy: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new FindException("Failed to execute audit lookup policy",e);
+        }
     }
 
 
@@ -279,7 +383,7 @@ public class AuditLookupPolicyEvaluator  {
      * @param   policyContext  context for the lookup policy to use
      * @return  null if policy does not exsist, policy assertion status if policy exsists
      */
-    private AssertionStatus executeAuditLookupPolicy(AuditSearchCriteria criteria, PolicyEnforcementContext policyContext) {
+    private AssertionStatus executeAuditLookupPolicy(AuditLookupSearchCriteria criteria, PolicyEnforcementContext policyContext) {
         ServerPolicyHandle sph = null;
         try {
             final String guid = loadAuditSinkPolicyGuid();
@@ -328,4 +432,64 @@ public class AuditLookupPolicyEvaluator  {
             ResourceUtils.closeQuietly(policyContext);
         }
     }
+
+    public Map<String, byte[]> getDigestForAuditRecords(Collection<String> auditRecordIds) throws FindException  {
+        final Map<String, byte[]> returnMap = new HashMap<String, byte[]>();
+
+        final int maxRecords = validatedConfig.getIntProperty( ServerConfigParams.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
+        final List<String> auditsToRetrieve = new ArrayList<String>();
+        for(String guid: auditRecordIds){
+            AuditRecord record = getAuditRecordFromCache(guid);
+            if(record !=null)
+                returnMap.put(guid,record.computeSignatureDigest());
+            else if(auditsToRetrieve.size()< maxRecords)
+                auditsToRetrieve.add(guid);
+        }
+
+        if(auditsToRetrieve.isEmpty())
+            return returnMap;
+
+        final Long maxMessageSize =  validatedConfig.getLongProperty( ServerConfigParams.PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE, 2621440L);
+
+
+        try {
+            // Make sure a logging-only audit context is active while running the audit sink policy, so we don't
+            // try to add details to the record that is currently being flushed via this very policy
+            final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
+
+            AssertionStatus assertionStatus = AuditContextFactory.doWithCustomAuditContext(AuditContextFactory.createLogOnlyAuditContext(), new Callable<AssertionStatus>() {
+                @Override
+                public AssertionStatus call() throws Exception {
+                    return executeAuditLookupPolicy(new AuditLookupSearchCriteria(auditsToRetrieve.toArray(new String[auditsToRetrieve.size()]),maxMessageSize), context);
+                }
+            });
+
+            if(assertionStatus == null){
+                return returnMap;
+            }
+
+            if(assertionStatus != AssertionStatus.NONE){
+                throw new FindException("Audit Lookup Policy Failed");
+            }
+            makeAuditRecords(context);
+
+            for(String guid: auditsToRetrieve){
+                AuditRecord record = getAuditRecordFromCache(guid);
+                if(record !=null){
+                    returnMap.put(guid,record.computeSignatureDigest());
+                }
+            }
+
+            return returnMap;
+
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to execute audit lookup policy: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new FindException("Failed to execute audit lookup policy",e);
+        }
+    }
+
+    private AuditRecord getAuditRecordFromCache(String guid){
+        return (AuditRecord)auditRecordsCache.retrieve(guid);
+    }
+
 }

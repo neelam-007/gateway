@@ -26,7 +26,7 @@ public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord,AuditR
     }
 
     @Override
-    public Map<Long, byte[]> getDigestForAuditRecords(Collection<Long> auditRecordIds) throws FindException {
+    public Map<String, byte[]> getDigestForAuditRecords(Collection<String> auditRecordIds) throws FindException {
         throw new UnsupportedOperationException();
     }
 

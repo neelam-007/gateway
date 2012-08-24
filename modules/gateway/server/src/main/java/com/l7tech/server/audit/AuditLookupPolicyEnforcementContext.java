@@ -1,6 +1,5 @@
 package com.l7tech.server.audit;
 
-import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextWrapper;
 
@@ -10,15 +9,16 @@ import com.l7tech.server.message.PolicyEnforcementContextWrapper;
  * @see AuditLookupPolicyEvaluator
  */
 public class AuditLookupPolicyEnforcementContext extends PolicyEnforcementContextWrapper  {
-    private final AuditSearchCriteria criteria;
+    private final AuditLookupSearchCriteria criteria;
 
-    public AuditLookupPolicyEnforcementContext(final AuditSearchCriteria criteria,
+    public AuditLookupPolicyEnforcementContext(final AuditLookupSearchCriteria criteria,
                                                final PolicyEnforcementContext delegate) {
         super(delegate);
         this.criteria = criteria;
     }
 
-    public AuditSearchCriteria getAuditSearchCriteria() {
+    public AuditLookupSearchCriteria getAuditLookupSearchCriteria() {
         return criteria;
     }
+
 }
