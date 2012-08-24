@@ -1166,5 +1166,9 @@ public class AssertionMessages extends Messages {
     public static final M KA_LOGIN_REALM_NOT_SUPPORT = m(9707, Level.WARNING, "Unable to handle Realm: {0}");
     public static final M KA_KERBEROS_KDC_EXCEPTION = m(9708, Level.WARNING, "Error message returned from KDC: {0}");
 
+    public static final M CACHE_LOOKUP_NOT_VAR_OR_LONG = m(9800, Level.WARNING, "Message cache error: ''{0}'' is not single variable reference or a long between ''{1}'' and ''{2}'' inclusive");
+    public static final M CACHE_LOOKUP_VAR_CONTENTS_ILLEGAL = m(9801, Level.WARNING, "Message cache error: Variable ''{0}'' with contents ''{1}'' is not a long between ''{2}'' and ''{3}'' inclusive");
+    public static final M CACHE_LOOKUP_RETRIEVED = m(9802, Level.FINE, "Retrieved from cache: ''{0}''");
+
     // Highest ID reserved for AssertionMessages = 99999
 }

@@ -10,9 +10,14 @@ import com.l7tech.external.assertions.cache.server.SsgCacheManager;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.Message;
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.wsp.WspConstants;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.MockClusterPropertyManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
@@ -20,23 +25,24 @@ import com.l7tech.server.event.system.Stopping;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * Test the CacheStorageAssertion and the CacheLookupAssertion.
@@ -73,6 +79,10 @@ public class CacheAssertionTest {
                 field.setAccessible(false);
             }
         }
+    }
+
+    protected BeanFactory getBeanFactory() {
+        return beanFactory;
     }
 
     @Ignore("unknown")
@@ -126,11 +136,11 @@ public class CacheAssertionTest {
         ServerCacheLookupAssertion lookass = new ServerCacheLookupAssertion( lookbean, beanFactory );
 
         PolicyEnforcementContext ctx = makeContext();
-        ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToCache/>" ) );
-        String cachedString = messageBodyToString( ctx.getResponse() );
-        assertTrue( cachedString.contains( "<responseToCache" ) ); // may be canonicalized; we'll accept it if so
+        ctx.getResponse().initialize(XmlUtil.stringAsDocument("<responseToCache/>"));
+        String cachedString = messageBodyToString(ctx.getResponse());
+        assertTrue(cachedString.contains("<responseToCache")); // may be canonicalized; we'll accept it if so
         AssertionStatus storeResult = storass.checkRequest( ctx );
-        assertEquals( AssertionStatus.NONE, storeResult );
+        assertEquals(AssertionStatus.NONE, storeResult);
 
         ctx = makeContext();
         ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToReplace/>" ) );
@@ -150,10 +160,10 @@ public class CacheAssertionTest {
 
         final String funkyResp1 = "<resp>funkyKey1</resp>";
         PolicyEnforcementContext ctx = makeContext( funkyResp1 );
-        AssertionStatus storeResult1 = storass1.checkRequest( ctx );
-        assertEquals( AssertionStatus.NONE, storeResult1 );
+        AssertionStatus storeResult1 = storass1.checkRequest(ctx);
+        assertEquals(AssertionStatus.NONE, storeResult1);
 
-        ServerCacheStorageAssertion storass2 = makeStorAss( "myOtherKey2" );
+        ServerCacheStorageAssertion storass2 = makeStorAss("myOtherKey2");
         ServerCacheLookupAssertion lookass2 = makeLookAss( "myOtherKey2" );
 
         final String otherResp2 = "<resp>otherKey2</resp>";
@@ -180,7 +190,7 @@ public class CacheAssertionTest {
     private static ServerCacheLookupAssertion makeLookAss( String cacheKey ) throws PolicyAssertionException {
         final CacheLookupAssertion lookbean1 = new CacheLookupAssertion();
         lookbean1.setTarget(TargetMessageType.RESPONSE);
-        lookbean1.setCacheEntryKey( cacheKey );
+        lookbean1.setCacheEntryKey(cacheKey);
         return new ServerCacheLookupAssertion( lookbean1, beanFactory );
     }
 
@@ -197,10 +207,10 @@ public class CacheAssertionTest {
 
     private static PolicyEnforcementContext makeContext( String res ) {
         Message request = new Message();
-        request.initialize( XmlUtil.stringAsDocument( "<myrequest/>" ) );
+        request.initialize(XmlUtil.stringAsDocument("<myrequest/>"));
         Message response = new Message();
-        response.initialize( XmlUtil.stringAsDocument( res ) );
-        return PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
+        response.initialize(XmlUtil.stringAsDocument(res));
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
     }
 
     @Test
@@ -226,6 +236,50 @@ public class CacheAssertionTest {
         assertEquals( lookResult, AssertionStatus.FALSIFIED );
         assertEquals( messageBodyToString( ctx.getResponse() ), origResponse );
     }
+
+    @Test
+    @BugNumber(12094)
+    public void testCacheLookupWithPreFangtoothXml() throws Exception {
+        cacheLookupHelper(LOOKUP_PRE_FANGTOOTH, "2");
+    }
+
+    @Test
+    @BugNumber(12094)
+    public void testCacheLookupWithPostFangtoothXml() throws Exception {
+        cacheLookupHelper(LOOKUP_POST_FANGTOOTH, "3");
+    }
+
+    private void cacheLookupHelper(final String xml, final String value) throws Exception {
+        AssertionRegistry assReg = new AssertionRegistry();
+        assReg.registerAssertion(CacheLookupAssertion.class);
+        WspConstants.setTypeMappingFinder(assReg);
+        Assertion ass = WspReader.getDefault().parseStrictly(xml, WspReader.INCLUDE_DISABLED);
+
+        AllAssertion allAss = (AllAssertion) ass;
+        final List<Assertion> children = allAss.getChildren();
+        final CacheLookupAssertion cacheLookupAss = (CacheLookupAssertion) children.get(0);
+        assertEquals(value, cacheLookupAss.getMaxEntryAgeMillis());
+    }
+
+    private final String LOOKUP_PRE_FANGTOOTH = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "        <wsp:All wsp:Usage=\"Required\">\n" +
+            "                <L7p:CacheLookup>\n" +
+            "                    <L7p:ContentTypeOverride stringValue=\"\"/>\n" +
+            "                    <L7p:MaxEntryAgeMillis longValue=\"2\"/>\n" +
+            "                </L7p:CacheLookup>\n" +
+            "        </wsp:All>\n" +
+            "    </wsp:Policy>\n";
+
+    private final String LOOKUP_POST_FANGTOOTH = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "        <wsp:All wsp:Usage=\"Required\">\n" +
+            "                <L7p:CacheLookup>\n" +
+            "                    <L7p:ContentTypeOverride stringValue=\"\"/>\n" +
+            "                    <L7p:MaxEntryAgeMillis stringValue=\"3\"/>\n" +
+            "                </L7p:CacheLookup>\n" +
+            "        </wsp:All>\n" +
+            "    </wsp:Policy>\n";
 
     private static final class TestStashManagerFactory implements StashManagerFactory {
         private static AtomicLong stashFileUnique = new AtomicLong( 0 );

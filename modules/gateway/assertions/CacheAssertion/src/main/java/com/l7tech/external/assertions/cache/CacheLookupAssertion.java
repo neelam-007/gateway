@@ -1,15 +1,21 @@
 package com.l7tech.external.assertions.cache;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.Syntax;
 
 /**
  * 
  */
 public class CacheLookupAssertion extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
 
+    public final static long MIN_MILLIS_FOR_MAX_ENTRY_AGE = 0;
+    public final static long MIN_SECONDS_FOR_MAX_ENTRY_AGE = 0;
+    public final static long MAX_MILLIS_FOR_MAX_ENTRY_AGE = Long.MAX_VALUE;
+    public final static long MAX_SECONDS_FOR_MAX_ENTRY_AGE = Long.MAX_VALUE / 1000L;
+
     private String cacheId = "defaultCache";
     private String cacheEntryKey = "${request.url}";
-    private long maxEntryAgeMillis = 300000L; // 30s
+    private String maxEntryAgeMillis = String.valueOf(1000L * 300); // 300s
     private String contentTypeOverride = null;
 
     public CacheLookupAssertion() {
@@ -19,7 +25,7 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        return super.doGetVariablesUsed().withExpressions( cacheId, cacheEntryKey );
+        return super.doGetVariablesUsed().withExpressions( cacheId, cacheEntryKey, maxEntryAgeMillis );
     }
 
     /** @return the name of the cache in which the item is to be looked up.  May contain variables that need interpolation. */
@@ -37,7 +43,7 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
      * @param cacheId the name of the cache in which the item is to be looked up.  If null, the assertion will
      *                always fail.
      */
-    public void setCacheId(String cacheId) {
+    public void setCacheId(final String cacheId) {
         this.cacheId = cacheId;
     }
 
@@ -57,29 +63,58 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
      * @param cacheEntryKey the key that should be used to look up a matching item from the cache.
      *                      If null, the assertion will always fail.
      */
-    public void setCacheEntryKey(String cacheEntryKey) {
+    public void setCacheEntryKey(final String cacheEntryKey) {
         this.cacheEntryKey = cacheEntryKey;
     }
 
-    /** @return maximum age of a cached entry in milliseconds. */
-    public long getMaxEntryAgeMillis() {
+    /**
+     * Two different Strings can be returned:
+     * <ol>
+     *     <li>A long between the {@link CacheLookupAssertion#MIN_MILLIS_FOR_MAX_ENTRY_AGE} and {@link CacheLookupAssertion#MAX_MILLIS_FOR_MAX_ENTRY_AGE} values (inclusive) with the units being milliseconds.</li>
+     *     <li>A context variable (for example "${xyz}").
+     *     It's contents are not interpolated yet but are expected to be a long between {@link CacheLookupAssertion#MIN_SECONDS_FOR_MAX_ENTRY_AGE} and {@link CacheLookupAssertion#MAX_SECONDS_FOR_MAX_ENTRY_AGE} values (inclusive) with the units being seconds.</li>
+     * </ol>
+     *
+     * @return Either a long or a context variable as described above.
+     * @see com.l7tech.external.assertions.cache.server.ServerCacheLookupAssertion
+     */
+    public String getMaxEntryAgeMillis() {
         return maxEntryAgeMillis;
     }
 
     /**
+     * This method exists for backwards compatibility with serialized CacheLookupAssertions.
+     *
+     * This method simply calls {@link #setMaxEntryAgeMillis(String)} by converting the given long to a String.
+     *
+     * @deprecated Use {@link #setMaxEntryAgeMillis(String)} instead.
+     * @see #setMaxEntryAgeMillis(String)
+     */
+    @Deprecated
+    public void setMaxEntryAgeMillis(final long maxEntryAgeMillis) {
+        setMaxEntryAgeMillis(Long.toString(maxEntryAgeMillis));
+    }
+
+    /**
      * Set the maximum age of the cached entry that should be accepted.
-     * <p/>
-     * If a maching entry is found, but is older than this age, it will be left in the cache
+     *
+     * If a matching entry is found, but is older than this age, it will be left in the cache
      * for other cache users with less restrictive entry ages.
-     * <p/>
+     *
      * This setting controls removal from the cache via this assertion; the cache itself has its own setting,
      * the {@link #cacheId}'s maximum entry age, that should not be confused with this setting.
      *
-     * @param maxEntryAgeMillis maximum age of a cached entry in milliseconds.  If zero, this assertion
-     *                          will never return success.
+     * The parameter accepts two different Strings:
+     * <ol>
+     *     <li>A long between the {@link CacheLookupAssertion#MIN_MILLIS_FOR_MAX_ENTRY_AGE} and {@link CacheLookupAssertion#MAX_MILLIS_FOR_MAX_ENTRY_AGE} values (inclusive) with the units being milliseconds.</li>
+     *     <li>A context variable (for example "${xyz}").
+     *     It's contents are not interpolated yet but are expected to be a long between {@link CacheLookupAssertion#MIN_SECONDS_FOR_MAX_ENTRY_AGE} and {@link CacheLookupAssertion#MAX_SECONDS_FOR_MAX_ENTRY_AGE} values (inclusive) with the units being seconds.</li>
+     * </ol>
+     *
+     * @param maxEntryAgeMillis Either a long or a context variable as described above. If zero, this assertion will never return success.
      */
-    public void setMaxEntryAgeMillis(long maxEntryAgeMillis) {
-        this.maxEntryAgeMillis = maxEntryAgeMillis;
+    public void setMaxEntryAgeMillis(final String maxEntryAgeMillis) {
+         this.maxEntryAgeMillis = maxEntryAgeMillis;
     }
 
     /**
@@ -94,7 +129,7 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
      *  
      * @param contentTypeOverride the content-type override value
      */
-    public void setContentTypeOverride(String contentTypeOverride) {
+    public void setContentTypeOverride(final String contentTypeOverride) {
         this.contentTypeOverride = contentTypeOverride;
     }
 
@@ -130,4 +165,54 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
+
+    /**
+     * Tests is the given String is a long.
+     *
+     * @param value The value to test.
+     * @return True if the given String is a long, false otherwise.
+     */
+    public static boolean isLong(final String value) {
+        try {
+            Long.parseLong(value);
+            return true;
+        } catch (final NumberFormatException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Tests if the given String is a long within the given range (inclusive).
+     *
+     * @param value The value to test.
+     * @param min Inclusive.
+     * @param max Inclusive.
+     * @return True if the given String is a long within the given range (inclusive), false otherwise.
+     */
+    public static boolean isLongWithinRange(final String value, final long min, final long max) {
+        if (isLong(value)) {
+            final long l = Long.parseLong(value);
+            if (l >= min && l <= max) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Tests if the given String is a single context variable (for example "${xyz}") or is a long within the given range (inclusive).
+     *
+     * @param value The value to test.
+     * @param min Inclusive.
+     * @param max Inclusive.
+     * @return True if the given String is a single context variable or a long within the given range (inclusive), false otherwise.
+     */
+    public static boolean isSingleVariableOrLongWithinRange(final String value, final long min, final long max) {
+        if (Syntax.isOnlyASingleVariableReferenced(value) || isLongWithinRange(value, min, max)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 }

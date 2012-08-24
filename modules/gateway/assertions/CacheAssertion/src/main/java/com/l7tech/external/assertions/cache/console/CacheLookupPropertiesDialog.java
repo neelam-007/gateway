@@ -76,7 +76,17 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
                 return null;
             }
         });
-        validator.constrainTextFieldToNumberRange(resourceBundle.getString("max.entry.age.field"), maxAgeField, 0, CacheStoragePropertiesDialog.kMAX_ENTRY_AGE);
+        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entry.age.field"), maxAgeField, new InputValidator.ComponentValidationRule(maxAgeField) {
+            @Override
+            public String getValidationError() {
+                if (CacheLookupAssertion.isSingleVariableOrLongWithinRange(
+                        maxAgeField.getText(), CacheLookupAssertion.MIN_SECONDS_FOR_MAX_ENTRY_AGE, CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE)) {
+                    return null;
+                } else {
+                    return resourceBundle.getString("max.entry.age.field");
+                }
+            }
+        });
         validator.constrainTextField(contentTypeOverride, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
@@ -122,16 +132,29 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
     public void setData(CacheLookupAssertion ass) {
         cacheIdField.setText(ass.getCacheId());
         cacheKeyField.setText(ass.getCacheEntryKey());
-        maxAgeField.setText(Long.toString(ass.getMaxEntryAgeMillis() / 1000L));
         contentTypeOverride.setText(ass.getContentTypeOverride());
+
+        if (CacheLookupAssertion.isLong(ass.getMaxEntryAgeMillis())) {
+            final long seconds = Long.parseLong(ass.getMaxEntryAgeMillis()) / 1000L;
+            maxAgeField.setText(String.valueOf(seconds));
+        } else {
+            maxAgeField.setText(ass.getMaxEntryAgeMillis());
+        }
     }
 
     @Override
     public CacheLookupAssertion getData(CacheLookupAssertion ass) {
         ass.setCacheId(cacheIdField.getText());
         ass.setCacheEntryKey(cacheKeyField.getText());
-        ass.setMaxEntryAgeMillis(Long.parseLong(maxAgeField.getText()) * 1000L);
         ass.setContentTypeOverride(contentTypeOverride.getText());
+
+        if (CacheLookupAssertion.isLong(maxAgeField.getText())) {
+            final long milliseconds = Long.parseLong(maxAgeField.getText()) * 1000L;
+            ass.setMaxEntryAgeMillis(String.valueOf(milliseconds));
+        } else {
+            ass.setMaxEntryAgeMillis(maxAgeField.getText());
+        }
+
         return ass;
     }
 }
