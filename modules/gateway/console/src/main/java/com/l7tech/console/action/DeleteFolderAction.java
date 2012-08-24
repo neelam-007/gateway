@@ -38,7 +38,7 @@ public class DeleteFolderAction extends SecureAction {
      */
     @Override
     public String getName() {
-        return "Delete Folder";
+        return DELETE_FOLDER;
     }
 
     /**
@@ -46,7 +46,7 @@ public class DeleteFolderAction extends SecureAction {
      */
     @Override
     public String getDescription() {
-        return "Delete Folder";
+        return DELETE_FOLDER;
     }
 
     /**

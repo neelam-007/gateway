@@ -185,6 +185,17 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
     }
 
     /**
+     * Smartly deletes all selected entities in dependency order.
+     *
+     * @see #getSmartSelectedNodes
+     * @see #deleteMultipleEntities
+     */
+    public void deleteSelectedEntities() {
+        final List<AbstractTreeNode> entities = getSmartSelectedNodes();
+        deleteMultipleEntities(entities, false);
+    }
+
+    /**
      * Attempts to delete the given nodes in dependency order to maximize the chance of successful deletes.
      *
      * Dependency order:<br />
@@ -275,30 +286,33 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         @Override
         public void keyPressed(KeyEvent e) {
             JTree tree = (JTree) e.getSource();
+
             // Sometimes, multiple items (folders, published services, policies, or aliases) are selected.
             final List<AbstractTreeNode> abstractTreeNodes = ((ServicesAndPoliciesTree) tree).getSmartSelectedNodes();
             if (abstractTreeNodes == null || abstractTreeNodes.isEmpty()) return;
 
-            final boolean hasMultipleSelection = abstractTreeNodes.size() > 1;
-            int keyCode = e.getKeyCode();
-            if (keyCode == KeyEvent.VK_DELETE) {
+            final boolean hasMultipleSelection = tree.getSelectionCount() > 1;
+
+            if (KeyEvent.VK_DELETE == e.getKeyCode()) {
                 if (hasMultipleSelection) {
-                    DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(),
-                            "Are you sure you want to delete multiple selected targets?",
-                            "Multi-deletion Confirmation", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE,
-                            new DialogDisplayer.OptionListener() {
-                                @Override
-                                public void reportResult(int option) {
-                                    if (option == JOptionPane.YES_OPTION) {
-                                        deleteMultipleEntities(abstractTreeNodes, true);
-                                    }
-                                }
-                            });
-                }else{
+                    new DeleteTargetsAction().actionPerformed(null);
+                } else {
+                    AbstractTreeNode node = abstractTreeNodes.get(0);
+
+                    // if we have only selected a single FolderNode and its deletion is not authorized, do nothing
+                    if (node instanceof FolderNode) {
+                        DeleteFolderAction a =
+                                new DeleteFolderAction((FolderNode) node,
+                                        Registry.getDefault().getFolderAdmin(), false);
+
+                        if(!a.isAuthorized()) {
+                            return;
+                        }
+                    }
+
                     deleteMultipleEntities(abstractTreeNodes, true);
                 }
-
-            } else if (keyCode == KeyEvent.VK_ENTER && !hasMultipleSelection) {
+            } else if (KeyEvent.VK_ENTER == e.getKeyCode() && !hasMultipleSelection) {
                 AbstractTreeNode node = abstractTreeNodes.get(0);
                 if (node instanceof EntityWithPolicyNode)
                     new EditPolicyAction((EntityWithPolicyNode) node).actionPerformed(null);
@@ -504,33 +518,17 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                             break;
                         }
                     }
+
                     if (!found) {
                         tree.setSelectionRow(closestRow);
                     }
+
+                    boolean hasMultipleSelection = tree.getSelectionCount() > 1;
                     AbstractTreeNode node = (AbstractTreeNode)tree.getLastSelectedPathComponent();
 
-                    JPopupMenu menu = node.getPopupMenu(ServicesAndPoliciesTree.this);
-
-                    boolean hasMultipleSelection = ServicesAndPoliciesTree.this.getSmartSelectedNodes().size() > 1;
-                    if (hasMultipleSelection) {
-                        for (Component component: menu.getComponents()) {
-                            if (component instanceof JMenuItem) {
-                                Action action = ((JMenuItem)component).getAction();
-                                String actionName = (String)action.getValue(Action.NAME);
-                                //Precondition: multiple items are selected.
-                                if (
-                                    // Case 1: if "node" is an EntityWithPolicyNode (published service node, policy node, or alias),
-                                    // all assoicated actions except "Copy as Alias", "Refresh", and "Cut" are disabled.
-                                    (node instanceof EntityWithPolicyNode && !(action instanceof MarkEntityToAliasAction) && !(action instanceof RefreshTreeNodeAction) && !"Cut".equals(actionName))
-                                        ||
-                                    // Case 2: if "node" is a folder node, all associated actions except "Cut" are disabled.
-                                    (node instanceof FolderNode && !"Cut".equals(actionName))
-                                   ) {
-                                    action.setEnabled(false);
-                                }
-                            }
-                        }
-                    }
+                    JPopupMenu menu = hasMultipleSelection
+                            ? createMultiSelectPopupMenu(node, tree)
+                            : node.getPopupMenu(ServicesAndPoliciesTree.this);
 
                     if (menu != null) {
                         Utilities.removeToolTipsFromMenuItems(menu);
@@ -539,6 +537,48 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                     }
                 }
             }
+        }
+
+        private JPopupMenu createMultiSelectPopupMenu(AbstractTreeNode node, JTree tree) {
+            JPopupMenu pm = new JPopupMenu();
+
+            boolean copyAsAliasAllowed = true;
+
+            for (AbstractTreeNode abstractTreeNode : getSmartSelectedNodes()) {
+                if (!(abstractTreeNode instanceof EntityHeaderNode)) {
+                    copyAsAliasAllowed = false;
+                    break;
+                }
+            }
+
+            if(copyAsAliasAllowed) {
+                MarkEntityToAliasAction markEntityToAliasAction = new MarkEntityToAliasAction((EntityHeaderNode) node);
+
+                if(markEntityToAliasAction.isAuthorized()) {
+                    pm.add(markEntityToAliasAction);
+                }
+            }
+
+            DeleteTargetsAction deleteTargetsAction = new DeleteTargetsAction();
+
+            if(deleteTargetsAction.isAuthorized()) {
+                pm.add(deleteTargetsAction);
+            }
+
+            RefreshTreeNodeAction refreshTreeNodeAction = new RefreshTreeNodeAction(node);
+
+            if(refreshTreeNodeAction.isAuthorized()) {
+                refreshTreeNodeAction.setTree(tree);
+                pm.add(refreshTreeNodeAction);
+            }
+
+            Action secureCut = getSecuredAction(ClipboardActionType.CUT);
+
+            if(secureCut != null) {
+                pm.add(secureCut);
+            }
+
+            return pm;
         }
     }
 
