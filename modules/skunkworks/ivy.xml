@@ -41,6 +41,7 @@
         <dependency org="org.scala-lang" name="scala-library" rev="2.9.1" force="true" conf="core"/>
         <dependency org="org.specs2" name="specs2_2.9.1" rev="1.5" force="true" conf="test"/>
         <dependency org="org.mockito" name="mockito-core" rev="1.9.0" force="true" conf="test"/>
+        <dependency org="org.scribe" name="scribe" rev="1.3.1" force="true" conf="core"/>
 
         <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
