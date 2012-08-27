@@ -7,15 +7,21 @@ import org.scribe.builder.ServiceBuilder;
 import org.scribe.model.*;
 import org.scribe.oauth.OAuthService;
 
+import static org.junit.Assert.*;
+
 /**
- * Integration tests for the OAuth Tool Kit that uses Scribe.
+ * Integration tests for the OAuth Tool Kit (oauth version 1.0) that uses Scribe.
  * <p/>
  * Each test requires the SSG to be running with an installed OTK (does not require the OTK Test Client).
  * <p/>
  * Modify static Strings as needed and remove the Ignore annotation to execute the tests.
+ * <p/>
+ * Note on SSL with Scribe: Scribe cannot handle self-signed certs.
+ * You will most likely have to add the gateway SSL cert to your local cacerts file (use the keytool command).
+ * If using localhost, you may have to change the gateway's default SSL cert to use 'localhost' instead of your computer name.
  */
 @Ignore
-public class OAuthToolkitScribeIntegrationTest {
+public class OAuthToolkit1_0ScribeIntegrationTest {
     private static String GATEWAY = "localhost";
     private static final String PROTECTED_RESOURCE_URI = "/protected/resource";
     private static final String CONSUMER_KEY = "acf89db2-994e-427b-ac2c-88e6101f9433";
@@ -53,6 +59,7 @@ public class OAuthToolkitScribeIntegrationTest {
         request.addQuerystringParameter("Query", "Layer 7 Oauth");
         service.signRequest(accessToken, request);
         final Response response = request.send();
+        assertEquals(200, response.getCode());
         System.out.println("Obtained protected resource: ");
         System.out.println(response.getBody());
     }

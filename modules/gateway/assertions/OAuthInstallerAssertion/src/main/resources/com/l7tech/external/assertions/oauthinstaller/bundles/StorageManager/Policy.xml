@@ -225,7 +225,7 @@
                     &lt;/wsp:All&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue=&quot;MA==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration.ms&quot;/&gt;
+                    &lt;L7p:VariableToSet stringValue=&quot;expiration.millis&quot;/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:assertionComment&gt;

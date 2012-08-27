@@ -5,6 +5,7 @@ import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.PermissiveX509TrustManager;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import org.apache.cxf.transport.https.SSLUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -85,7 +86,7 @@ public class OAuthToolkitIntegrationTest {
         System.out.println("Requesting request token from " + REQUEST_TOKEN_ENDPOINT + " using Authorization header");
 
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(REQUEST_TOKEN_ENDPOINT));
-        requestParams.setSslSocketFactory(getSSLSocketFactory());
+        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
         requestParams.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader("Authorization", AUTH_HEADER)});
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
 
@@ -199,7 +200,7 @@ public class OAuthToolkitIntegrationTest {
 
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(CLIENT_DOWNLOAD_RESOURCE +
                 "&oauth_consumer_key=" + OTK_CLIENT_CONSUMER_KEY + "&oauth_token=" + accessToken + "&tempuser=system"));
-        params.setSslSocketFactory(getSSLSocketFactory());
+        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
 
         final GenericHttpResponse response = request.getResponse();
@@ -222,7 +223,7 @@ public class OAuthToolkitIntegrationTest {
         final GenericHttpRequestParams grantedParams = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT +
                 "?state=granted&oauth_token=" + requestToken));
         grantedParams.setFollowRedirects(true);
-        grantedParams.setSslSocketFactory(getSSLSocketFactory());
+        grantedParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
         grantedParams.setPasswordAuthentication(passwordAuthentication);
         final GenericHttpRequest grantedRequest = client.createRequest(HttpMethod.GET, grantedParams);
 
@@ -243,7 +244,7 @@ public class OAuthToolkitIntegrationTest {
         System.out.println("Requesting request token from " + CLIENT_REQUEST_TOKEN);
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(CLIENT_REQUEST_TOKEN));
         requestParams.setFollowRedirects(true);
-        requestParams.setSslSocketFactory(getSSLSocketFactory());
+        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, requestParams);
 
         final GenericHttpResponse response = request.getResponse();
@@ -280,7 +281,7 @@ public class OAuthToolkitIntegrationTest {
     private GenericHttpResponse getRequestTokenResponseFromEndpoint(final Map<String, String> parameters) throws Exception {
         System.out.println("Requesting request token from " + REQUEST_TOKEN_ENDPOINT);
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(REQUEST_TOKEN_ENDPOINT));
-        requestParams.setSslSocketFactory(getSSLSocketFactory());
+        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
         requestParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
         for (final Map.Entry<String, String> entry : parameters.entrySet()) {
@@ -325,7 +326,7 @@ public class OAuthToolkitIntegrationTest {
             url = url + "&oauth_token=" + requestToken;
         }
         final GenericHttpRequestParams authenticateParams = new GenericHttpRequestParams(new URL(url));
-        authenticateParams.setSslSocketFactory(getSSLSocketFactory());
+        authenticateParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
         authenticateParams.setPasswordAuthentication(passwordAuthentication);
         final GenericHttpRequest authenticateRequest = client.createRequest(HttpMethod.GET, authenticateParams);
 
@@ -349,15 +350,5 @@ public class OAuthToolkitIntegrationTest {
         System.out.println("Received oauth_token: " + oauthToken);
         System.out.println("Received oauth_token_secret: " + oauthTokenSecret);
         System.out.println("Callback confirmed: " + callbackConfirmed);
-    }
-
-    /**
-     * Trust everything.
-     */
-    private SSLSocketFactory getSSLSocketFactory() throws Exception {
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        KeyManager[] keyManagers = new KeyManager[]{};
-        sslContext.init(keyManagers, new X509TrustManager[]{new PermissiveX509TrustManager()}, null);
-        return sslContext.getSocketFactory();
     }
 }
