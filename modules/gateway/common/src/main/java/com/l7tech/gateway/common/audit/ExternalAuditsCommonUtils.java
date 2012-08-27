@@ -368,20 +368,40 @@ public class ExternalAuditsCommonUtils {
                 "                                <L7p:SqlQuery stringValue=\""+messaageIdLookupQuery(detailTable,dbType)+"\"/>\n" +
                 "                                <L7p:VariablePrefix stringValue=\"recordIdQuery\"/>\n" +
                 "                            </L7p:JdbcQuery>\n" +
-                "                            <L7p:JdbcQuery>\n" +
-                "                                <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
-                "                                <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
-                "                                <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
-                "                                <L7p:MaxRecords intValue=\"10000\"/>\n" +
-                "                                <L7p:NamingMap mapValue=\"included\">\n" +
-                "                                    <L7p:entry>\n" +
-                "                                    <L7p:key stringValue=\"id\"/>\n" +
-                "                                    <L7p:value stringValue=\"id\"/>\n" +
-                "                                    </L7p:entry>\n" +
-                "                                </L7p:NamingMap>\n" +
-                "                                <L7p:SqlQuery stringValue=\""+lookupQueryWithAuditId(recordTable,dbType)+"\"/>\n" +
-                "                                <L7p:VariablePrefix stringValue=\"recordQuery\"/>\n" +
-                "                            </L7p:JdbcQuery>\n" +
+                "                            <L7p:SetVariable>\n" +
+                "                                <L7p:Base64Expression stringValue=\"MA==\"/>\n" +
+                "                                <L7p:DataType variableDataType=\"int\"/>\n" +
+                "                                <L7p:VariableToSet stringValue=\"recordQuery.queryresult.count\"/>\n" +
+                "                            </L7p:SetVariable>\n" +
+                "                            <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
+                "                                <L7p:ComparisonAssertion>\n" +
+                "                                    <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
+                "                                    <L7p:Expression1 stringValue=\"${recordIdQuery.queryresult.count}\"/>\n" +
+                "                                    <L7p:Operator operatorNull=\"null\"/>\n" +
+                "                                    <L7p:Predicates predicates=\"included\">\n" +
+                "                                        <L7p:item dataType=\"included\">\n" +
+                "                                            <L7p:Type variableDataType=\"int\"/>\n" +
+                "                                        </L7p:item>\n" +
+                "                                        <L7p:item binary=\"included\">\n" +
+                "                                            <L7p:RightValue stringValue=\"0\"/>\n" +
+                "                                        </L7p:item>\n" +
+                "                                    </L7p:Predicates>\n" +
+                "                                </L7p:ComparisonAssertion>\n" +
+                "                                <L7p:JdbcQuery>\n" +
+                "                                    <L7p:AllowMultiValuedVariables booleanValue=\"true\"/>\n" +
+                "                                    <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
+                "                                    <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
+                "                                    <L7p:MaxRecords intValue=\"10000\"/>\n" +
+                "                                    <L7p:NamingMap mapValue=\"included\">\n" +
+                "                                        <L7p:entry>\n" +
+                "                                            <L7p:key stringValue=\"id\"/>\n" +
+                "                                            <L7p:value stringValue=\"id\"/>\n" +
+                "                                        </L7p:entry>\n" +
+                "                                    </L7p:NamingMap>\n" +
+                "                                    <L7p:SqlQuery stringValue=\""+lookupQueryWithAuditId(recordTable,dbType)+"\"/>\n" +
+                "                                    <L7p:VariablePrefix stringValue=\"recordQuery\"/>\n" +
+                "                                </L7p:JdbcQuery>\n" +
+                "                            </wsp:OneOrMore>\n" +
                 "                        </wsp:All>\n" +
                 "                    </wsp:OneOrMore>\n" +
                 "                </wsp:All>\n" +
