@@ -29,7 +29,6 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ValidationUtils;
 import com.l7tech.wsdl.Wsdl;
@@ -43,11 +42,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -177,7 +174,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private String tlsCipherSuites;
     private Set<EntityHeader> tlsTrustedCerts;
 
-    private String testBodyMessage;
+    private HttpRoutingAssertion testAssertion;//holds the test values for the assertion, until user Ok's the save.
 
     /**
      * Creates new form ServicePanel
@@ -210,6 +207,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             }
         };
 
+        final Window windowOwner = owner.getOwner();
         testButtonAction = new BaseAction() {
             @Override
             public String getName() {
@@ -223,7 +221,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
             @Override
             protected void performAction() {
-                test();
+                testDialog(windowOwner);
             }
         };
 
@@ -909,9 +907,15 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             assertion.setTlsTrustedCertNames(names);
         }
 
-        assertion.setTestBodyMessage(testBodyMessage);
-
         if(disposeParam){
+            //if this is not null, means user triggered the test button, we need to capture the updated values and update the assertion
+            if(testAssertion!=null){
+                assertion.setTestParameters(testAssertion.getTestParameters());
+                assertion.setTestContentType(testAssertion.getTestContentType());
+                assertion.setTestBodyMessage(testAssertion.getTestBodyMessage());
+                assertion.setTestHttpMethod(testAssertion.getTestHttpMethod());
+                assertion.setTestForceIncludeRequestBody(testAssertion.isTestForceIncludeRequestBody());
+            }
             confirmed = true;
             fireEventAssertionChanged(assertion);
             this.dispose();
@@ -1066,7 +1070,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             }
         }
         trustedServerCertsButton.setEnabled(!bra);
-        testBodyMessage=assertion.getTestBodyMessage();
 
         enableOrDisableProxyFields();
     }
@@ -1130,7 +1133,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         return confirmed;
     }
 
-    private void test(){
+    private void testDialog(final Window owner){
         ok(false);//ok button saves all the values into the assertion object that we need to pass in the test method
 
         // check url before accepting
@@ -1152,7 +1155,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 hasContextVariables=true;
             }
         }
-        
+
         if(hasContextVariables){
             String msg = "Unable to test a URL containing context variable" + (totalNumOfContextVariablesUsed > 1 ? "s." : ".");
             DialogDisplayer.showMessageDialog(
@@ -1163,247 +1166,24 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                     null);
             return;
         }
-        final String[] ipListFinal = ipListToTest;//we need a final variable for the inner class
 
-        try {
-            // create and configure a text area - fill it with our initial text
-            final JTextArea textArea = new JTextArea();
-            textArea.setFont(mainPanel.getFont());
-            textArea.setEditable(true);
-            textArea.setText(testBodyMessage);
-
-            // stuff it in a scrollpane with a controlled size.
-            final JScrollPane scrollPane = new JScrollPane(textArea);
-            scrollPane.setPreferredSize(new Dimension(450, 150));
-            final HttpRoutingAssertion assertionTest = assertion.clone();//we need a final variable for the inner class
-
-            Map<String, String> newTestValues = new HashMap<String, String>();
-            int ruleCount = 0;
-            boolean pluralHeader = false;
-            boolean pluralParam = false;
-
-            Map<String, String> newHeaderTestValues = new HashMap<String, String>();
-            if (assertion.getRequestHeaderRules().getRules().length > 0) {
-                for (int i = 0; i < assertion.getRequestHeaderRules().getRules().length; i++) {
-                    HttpPassthroughRule rule = assertion.getRequestHeaderRules().getRules()[i];
-                    newHeaderTestValues.put("header." + rule.getName(), rule.getCustomizeValue());
-                }
-                pluralHeader = true;
-            }
-            for (Map.Entry entry : assertion.getTestValues().entrySet()) {
-                if (entry.getKey().toString().startsWith("header.")) {
-                    newHeaderTestValues.put((String) entry.getKey(), (String) entry.getValue());
-                    pluralHeader = true;
-                }
-            }
-
-            Map<String, String> copyHeaderValues = new HashMap<String, String>();
-            for (Map.Entry entry : newHeaderTestValues.entrySet()) {
-                String paramKey = entry.getKey().toString();
-                String defaultValue = newHeaderTestValues.get(paramKey);
-                String value = (String) JOptionPane.showInputDialog(mainPanel, "Enter value for header " + paramKey.substring(7) + " or press cancel to remove this header", "Customize Header", JOptionPane.PLAIN_MESSAGE, null, null, defaultValue);
-                if (value != null) {
-                    copyHeaderValues.put(paramKey, value);
-                }
-            }
-            newHeaderTestValues = copyHeaderValues;
-
-            while (true) {
-                final String message = "Do you want to add a header?";
-                final String message2 = "Do you want to add more headers?";
-                String useMessage = message2;
-                if (!pluralHeader) {
-                    useMessage = message;
-                }
-                int button = JOptionPane.showConfirmDialog(mainPanel, useMessage, "Customize Header", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null);
-                if (JOptionPane.YES_OPTION != button) {
-                    break;
-                } else {
-                    String paramName = (String) JOptionPane.showInputDialog(mainPanel, "Enter header name", "Customize Header", JOptionPane.PLAIN_MESSAGE, null, null, "");
-                    if (paramName == null || paramName.length()==0) {
-                        return;
-                    }
-                    String paramValue = (String) JOptionPane.showInputDialog(mainPanel, "Enter value for header " + paramName, "Customize Header", JOptionPane.PLAIN_MESSAGE, null, null, null);
-                    if (paramValue == null) {
-                        return;
-                    }
-                    newHeaderTestValues.put("header." + paramName, paramValue);
-                }
-                pluralHeader = true;
-            }
-
-            Map<String, String> newParamTestValues = new HashMap<String, String>();
-            if (assertion.getRequestParamRules().getRules().length > 0) {
-                for (int i = 0; i < assertion.getRequestParamRules().getRules().length; i++) {
-                    HttpPassthroughRule rule = assertion.getRequestParamRules().getRules()[i];
-                    newParamTestValues.put("param." + rule.getName(), rule.getCustomizeValue());
-                }
-                pluralParam = true;
-            }
-            for (Map.Entry entry : assertion.getTestValues().entrySet()) {
-                if (entry.getKey().toString().startsWith("param.")) {
-                    newParamTestValues.put((String) entry.getKey(), (String) entry.getValue());
-                    pluralParam = true;
-                }
-            }
-
-            Map<String, String> copyParamValues = new HashMap<String, String>();
-            for (Map.Entry entry : newParamTestValues.entrySet()) {
-                String paramKey = entry.getKey().toString();
-                String defaultValue = newParamTestValues.get(paramKey);
-                String value = (String) JOptionPane.showInputDialog(mainPanel, "Enter value for parameter " + paramKey.substring(6) + " or press cancel to remove this parameter", "Customize Parameter", JOptionPane.PLAIN_MESSAGE, null, null, defaultValue);
-                if (value != null) {
-                    copyParamValues.put(paramKey, value);
-                }
-            }
-            newParamTestValues = copyParamValues;
-
-            while (true) {
-                final String message = "Do you want to add a parameter?";
-                final String message2 = "Do you want to add more parameters?";
-                String useMessage = message2;
-                if (!pluralParam) {
-                    useMessage = message;
-                }
-                int button = JOptionPane.showConfirmDialog(mainPanel, useMessage, "Customize Parameter", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null);
-                if (JOptionPane.YES_OPTION != button) {
-                    break;
-                } else {
-                    String paramName = (String) JOptionPane.showInputDialog(mainPanel, "Enter parameter name", "Customize Parameter", JOptionPane.PLAIN_MESSAGE, null, null, "");
-                    if (paramName == null || paramName.length()==0) {
-                        return;
-                    }
-                    String paramValue = (String) JOptionPane.showInputDialog(mainPanel, "Enter value for parameter " + paramName, "Customize Parameter", JOptionPane.PLAIN_MESSAGE, null, null, null);
-                    if (paramValue == null) {
-                        return;
-                    }
-                    newParamTestValues.put("param." + paramName, paramValue);
-                }
-                pluralParam = true;
-            }
-
-            //build param rules to attach with the test
-            if (newParamTestValues.size() > 0) {
-                HttpPassthroughRule[] newParamRules = new HttpPassthroughRule[newParamTestValues.size()];
-                ruleCount = 0;
-                for (Map.Entry entry : newParamTestValues.entrySet()) {
-                    String paramKey = entry.getKey().toString().substring(6);
-                    String paramValue = (String) entry.getValue();
-                    HttpPassthroughRule rule = new HttpPassthroughRule();
-                    rule.setName(paramKey);//param.=6, real name starts after the 6 character
-                    if (paramValue != null) {
-                        rule.setUsesCustomizedValue(true);
-                    } else {
-                        rule.setUsesCustomizedValue(false);
-                    }
-                    rule.setCustomizeValue(paramValue);
-                    newTestValues.put((String) entry.getKey(), (String) entry.getValue());//make sure we merge it to the testValues map that we need to save in the assertion
-                    newParamRules[ruleCount++] = rule;
-                }
-                assertionTest.getRequestParamRules().setRules(newParamRules);
-            }
-
-            //build param rules to attach with the test
-            if (newHeaderTestValues.size() > 0) {
-                HttpPassthroughRule[] newHeaderRules = new HttpPassthroughRule[newHeaderTestValues.size()];
-                ruleCount = 0;
-                for (Map.Entry entry : newHeaderTestValues.entrySet()) {
-                    String paramKey = entry.getKey().toString().substring(7);
-                    String paramValue = (String) entry.getValue();
-                    HttpPassthroughRule rule = new HttpPassthroughRule();
-                    rule.setName(paramKey);//header.=7, real name starts after the 7 character
-                    if (paramValue != null) {
-                        rule.setUsesCustomizedValue(true);
-                    } else {
-                        rule.setUsesCustomizedValue(false);
-                    }
-                    rule.setCustomizeValue(paramValue);
-                    newTestValues.put((String) entry.getKey(), (String) entry.getValue());//make sure we merge it to the testValues map that we need to save in the assertion
-                    newHeaderRules[ruleCount++] = rule;
-                }
-                assertionTest.getRequestHeaderRules().setRules(newHeaderRules);
-            }
-            
-            int button = JOptionPane.showConfirmDialog(mainPanel, scrollPane, resources.getString("dialog.test.message"), JOptionPane.OK_CANCEL_OPTION);
-            if(JOptionPane.OK_OPTION!=button){//don't proceed if OK button was not clicked
-                return;
-            }
-            assertion.setTestValues(newTestValues);
-            final String inputMessage = textArea.getText(); //we need a final variable for the inner class
-            if(inputMessage!=null){
-                if(inputMessage.trim().equals("")){
-                    String msg = resources.getString("dialog.test.message.required");
-                    DialogDisplayer.showMessageDialog(
-                            HttpRoutingAssertionDialog.this,
-                            msg,
-                            resources.getString("dialog.test.title"),
-                            (msg == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
-                            null);
-                    return;
-                }
-                testBodyMessage=inputMessage;
-            } else {
-                return;//cancel button was selected
-            }
-
-            final JProgressBar progressBar = new JProgressBar();
-            progressBar.setIndeterminate(true);
-            final CancelableOperationDialog cancelDialog =
-                    new CancelableOperationDialog(null, resources.getString("dialog.test.title"), resources.getString("dialog.test.progress"), progressBar);
-            cancelDialog.pack();
-            cancelDialog.setModal(true);
-            Utilities.centerOnScreen(cancelDialog);
-
-            final Callable<Boolean> callable = new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    HttpAdmin admin = getHttpAdmin();
-                    admin.testConnection(ipListFinal,inputMessage,assertionTest);
-                    return Boolean.TRUE;
-                }
-            };
-
-            final Boolean result = Utilities.doWithDelayedCancelDialog(callable, cancelDialog, 500L);
-            if (result == Boolean.TRUE) {
-                JOptionPane.showMessageDialog(
-                        HttpRoutingAssertionDialog.this,
-                        resources.getString("dialog.test.result.gateway.success")+(ipListFinal.length > 1 ? "s." : "."),
-                        resources.getString("dialog.test.result.success"),
-                        JOptionPane.INFORMATION_MESSAGE);
-            }
-        } catch (InterruptedException e) {
-            // Swing thread interrupted.
-        } catch (InvocationTargetException e) {
-            final Throwable cause = e.getCause();
-            if (cause != null) {
-                if (cause instanceof HttpAdmin.HttpAdminException) {
-                    final HttpAdmin.HttpAdminException fte = (HttpAdmin.HttpAdminException) cause;
-                    JPanel panel = new JPanel();
-                    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-                    panel.add(new JLabel(resources.getString("dialog.test.result.gateway.failure")+(ipListFinal.length > 1 ? "s." : ".")));
-                    panel.add(new JLabel(fte.getMessage()));
-                    if (fte.getSessionLog() != null && fte.getSessionLog().length() != 0) {
-                        panel.add(Box.createVerticalStrut(10));
-                        panel.add(new JLabel(resources.getString("dialog.test.detail.log")));
-                        JTextArea sessionLog = new JTextArea(fte.getSessionLog());
-                        sessionLog.setAlignmentX(Component.LEFT_ALIGNMENT);
-                        sessionLog.setBorder(BorderFactory.createEtchedBorder());
-                        sessionLog.setEditable(false);
-                        sessionLog.setEnabled(true);
-                        sessionLog.setFont(new Font(null, Font.PLAIN, 11));
-                        panel.add(sessionLog);
-                    }
-                    JOptionPane.showMessageDialog(
-                            HttpRoutingAssertionDialog.this,
-                            panel,
-                            resources.getString("dialog.test.result.failure"),
-                            JOptionPane.ERROR_MESSAGE);
-
-                } else {
-                    throw ExceptionUtils.wrap(cause);
-                }
-            }
+        //we need a clone of assertion to store our test values
+        if(testAssertion==null){
+            testAssertion = assertion.clone();//a copy for our test
         }
+        HttpRoutingAssertionTestDialog dspd = new HttpRoutingAssertionTestDialog(owner, testAssertion, ipListToTest);
+        dspd.pack();
+        Utilities.centerOnScreen(dspd);
+        dspd.setVisible(true);
+
+        //allows us to hold the values, w/o messing the original assertion values until the user clicks on save
+        testAssertion.setTestParameters(dspd.getParameters());
+        testAssertion.setTestContentType(dspd.getTestContentType());
+        testAssertion.setTestBodyMessage(dspd.getTestBodyMessage());
+        testAssertion.setTestHttpMethod(dspd.getHttpMethod());
+        testAssertion.setTestForceIncludeRequestBody(dspd.isForceIncludeRequestBody());
+
+        dspd=null;
     }
 
     private HttpAdmin getHttpAdmin() {

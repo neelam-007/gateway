@@ -547,16 +547,6 @@ public class ServerHttpRoutingAssertionTest {
             fail("testConnection method should not fail");
         }
 
-        try {
-            final String message = "invalid/non-xml message";
-            admin.testConnection(new String[]{testUrl}, message, hra);
-            fail("testConnection method should have fail");
-        } catch (HttpAdmin.HttpAdminException e) {
-            assertEquals(e.getSessionLog(),"Unable to parse 'invalid/non-xml message' as XML.");
-        } catch (Exception e){
-            fail("should not have this exception");
-        }
-
         final MockGenericHttpClient mockClient2 = new MockGenericHttpClient(500, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
 
         //let's simulate an unknown host error

@@ -18,6 +18,8 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.policy.wsp.CollectionTypeMapping;
+import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.WspSensitive;
 import org.jetbrains.annotations.Nullable;
 
@@ -121,7 +123,10 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     protected String testBodyMessage = "<request><message>Test</message></request>";
     private boolean forceIncludeRequestBody = false;
-    private Map<String,String> testValues = new HashMap<String,String>();
+    private List<HttpRoutingServiceParameter> testParameters = new ArrayList<HttpRoutingServiceParameter>();
+    private HttpMethod testHttpMethod;
+    private String testContentType;
+    private boolean testForceIncludeRequestBody = false;
 
     // TODO WARNING
     // TODO WARNING
@@ -188,8 +193,11 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         this.setTlsTrustedCertOids(source.getTlsTrustedCertOids());
         this.setTlsTrustedCertNames(source.getTlsTrustedCertNames());
         this.setHttpVersion(source.getHttpVersion());
-        this.setTestValues(source.getTestValues());
         this.setTestBodyMessage(source.getTestBodyMessage());
+        this.setTestParameters(source.getTestParameters());
+        this.setTestContentType(source.getTestContentType());
+        this.setTestHttpMethod(source.getTestHttpMethod());
+        this.setTestForceIncludeRequestBody(source.isTestForceIncludeRequestBody());
     }
 
     @Override
@@ -199,7 +207,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         hra.responseHeaderRules = responseHeaderRules.clone();
         hra.requestHeaderRules = requestHeaderRules.clone();
         hra.requestParamRules = requestParamRules.clone();
-        hra.testValues = new HashMap<String, String>(testValues);
+        hra.testParameters = new ArrayList<HttpRoutingServiceParameter>(getTestParameters());
 
         return hra;
     }
@@ -828,7 +836,9 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
                 new Java5EnumTypeMapping(HttpMethod.class, "httpMethod"),
-                new Java5EnumTypeMapping(GenericHttpRequestParams.HttpVersion.class, "httpVersion")
+                new Java5EnumTypeMapping(GenericHttpRequestParams.HttpVersion.class, "httpVersion"),
+                new CollectionTypeMapping(List.class, HttpRoutingServiceParameter.class, ArrayList.class, "parameters"),
+                new BeanTypeMapping(HttpRoutingServiceParameter.class, "parameter")
         )));
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
@@ -875,11 +885,35 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         this.testBodyMessage = testBodyMessage;
     }
 
-    public Map<String, String> getTestValues() {
-        return testValues;
+    public List<HttpRoutingServiceParameter> getTestParameters() {
+        return testParameters;
     }
 
-    public void setTestValues(Map<String, String> testValues) {
-        this.testValues = testValues;
+    public void setTestParameters(final List<HttpRoutingServiceParameter> testParameters) {
+        this.testParameters = testParameters;
+    }
+
+    public HttpMethod getTestHttpMethod() {
+        return testHttpMethod;
+    }
+
+    public void setTestHttpMethod(HttpMethod testHttpMethod) {
+        this.testHttpMethod = testHttpMethod;
+    }
+
+    public String getTestContentType() {
+        return testContentType;
+    }
+
+    public void setTestContentType(String testContentType) {
+        this.testContentType = testContentType;
+    }
+
+    public boolean isTestForceIncludeRequestBody() {
+        return testForceIncludeRequestBody;
+    }
+
+    public void setTestForceIncludeRequestBody(boolean testForceIncludeRequestBody) {
+        this.testForceIncludeRequestBody = testForceIncludeRequestBody;
     }
 }

@@ -18,21 +18,23 @@ import org.springframework.transaction.annotation.Transactional;
 public interface HttpAdmin {
 
     @Transactional(readOnly = true)
-    void testConnection(String[] serverUrls, String testMessage, HttpRoutingAssertion assertion) throws HttpAdminException;
+    String testConnection(String[] serverUrls, String testMessage, HttpRoutingAssertion assertion) throws HttpAdminException;
 
     public class HttpAdminException extends Exception {
         private String _sessionLog;
+        private String _response;
 
         public HttpAdminException() {
             super();
         }
 
-        public HttpAdminException(String message, String _sessionLog) {
+        public HttpAdminException(String message, String _sessionLog, String _response) {
             super(message);
             this._sessionLog = _sessionLog;
+            this._response = _response;
         }
 
-        public HttpAdminException(String message, Exception e, String _sessionLog) {
+        public HttpAdminException(String message, Exception e, String _sessionLog, String _response) {
             super(message, e);
             this._sessionLog = _sessionLog;
         }
@@ -42,6 +44,13 @@ public interface HttpAdmin {
          */
         public String getSessionLog() {
             return _sessionLog;
+        }
+
+        /**
+         * @return a response
+         */
+        public String getResponse() {
+            return _response;
         }
 
     }
