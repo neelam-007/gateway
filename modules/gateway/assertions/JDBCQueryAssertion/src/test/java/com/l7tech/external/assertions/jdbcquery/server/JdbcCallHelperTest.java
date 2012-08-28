@@ -454,6 +454,33 @@ public class JdbcCallHelperTest {
         assertEquals("GetSamples7",name);
     }
 
+    /**
+     * Simulate result from Oracle/DB2, fields are upper case, make sure we can retrieve result in a case-insensitive way
+     *
+     * @throws Exception
+     */
+    @BugNumber(12888)
+    @Test
+    public void testOracleDB2Result() throws Exception {
+        String query = "CALL GetSamples";
+        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
+        SqlRowSet rowSet = results.get(0);
+        rowSet.next();//results sets
+        Object obj = rowSet.getObject("Out1");//Out1 should also match out1
+        assertNotNull(obj);
+        assertEquals("result 1", obj);
+        obj = rowSet.getObject("OUT2");//OUT2 should also match out2
+        assertNotNull(obj);
+        assertEquals("result 2", obj);
+        obj = rowSet.getObject("OUT3");//OUT3 should also match out3
+        assertNotNull(obj);
+        assertEquals(999L, obj);
+
+        //test non existing  parameter
+        obj = rowSet.getObject("dummy field");
+        assertNull(obj);
+    }
+
     private PolicyEnforcementContext makeContext(String req, String res) {
         Message request = new Message();
         request.initialize(XmlUtil.stringAsDocument(req));

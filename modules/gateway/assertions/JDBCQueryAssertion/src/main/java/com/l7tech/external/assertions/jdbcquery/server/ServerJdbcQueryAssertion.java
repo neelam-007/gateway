@@ -35,6 +35,8 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     private final static String XML_RESULT_ROW_OPEN = "<L7j:row>";
     private final static String XML_RESULT_ROW_CLOSE = "</L7j:row>";
     private final static String XML_CDATA_TAG_OPEN = "<![CDATA[";
+    private final static String XML_CDATA_TAG_CLOSE = "]]>";
+    private final static String XML_NULL_VALUE = XML_CDATA_TAG_OPEN + "NULL" + XML_CDATA_TAG_CLOSE;//are special entry to null values
 
     public ServerJdbcQueryAssertion(JdbcQueryAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
@@ -127,16 +129,35 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
      * process stored procedure results
      */
     void buildXmlResultString(int resultSetNumber, final SqlRowSet resultSet, final StringBuffer xmlResult) {
-        Map<String, String> newNamingMap = getNewMapping(resultSet);
         int maxRecords = assertion.getMaxRecords();
         int row = 0;
         resultSet.first();
         StringBuffer records = new StringBuffer();
         while (resultSet.next() && row < maxRecords) {
             records.append(XML_RESULT_ROW_OPEN);
-            for (String columnName : newNamingMap.keySet()) {
-                records.append(XML_RESULT_COL_OPEN + " name=\"" + columnName + "\" type=\"" + resultSet.getObject(columnName).getClass().getName() + "\">");
-                records.append(handleSpecialXmlChar(resultSet.getObject(columnName).toString()));
+            SqlRowSetMetaData metaData = resultSet.getMetaData();
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                String columnName = metaData.getColumnName(i);
+                Object value = resultSet.getObject(columnName);
+                String colType = EMPTY_STRING;
+                if (value != null) {
+                    if (value instanceof byte[]) {
+                        colType = "type=\"java.lang.byte[]\"";
+                        StringBuilder sb = new StringBuilder();
+                        for (byte b : (byte[]) value) {
+                            sb.append(String.format("%02X ", b));
+                        }
+                        value = sb.toString();
+                    } else {
+                        colType = "type=\"" + value.getClass().getName() + "\"";
+                    }
+                }
+                records.append(XML_RESULT_COL_OPEN + " name=\"" + columnName + "\" " + colType + ">");
+                if (value != null) {
+                    records.append(handleSpecialXmlChar(value));
+                } else {
+                    records.append(XML_NULL_VALUE);
+                }
                 records.append(XML_RESULT_COL_CLOSE);
             }
             records.append(XML_RESULT_ROW_CLOSE);
@@ -154,34 +175,62 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
      * process standard SQL select results
      */
     void buildXmlResultString(Map<String, List<Object>> resultSet, final StringBuffer xmlResult) {
-        Map<String, String> newNamingMap = getNewMapping(resultSet);
         int row = 0;
         //try to check how many rows we need
         for (String columnName : resultSet.keySet()) {
-            row = resultSet.get(columnName).toArray().length;
-            break;
+            if (resultSet.get(columnName) != null) {
+                row = resultSet.get(columnName).toArray().length;
+                break;
+            }
         }
         StringBuffer records = new StringBuffer();
         for (int i = 0; i < row; i++) {
             records.append(XML_RESULT_ROW_OPEN);
-            for (String columnName : newNamingMap.keySet()) {
-                records.append(XML_RESULT_COL_OPEN + " name=\"" + columnName + "\" type=\"" + resultSet.get(columnName).get(i).getClass().getName() + "\">");
-                records.append(handleSpecialXmlChar(resultSet.get(columnName).get(i).toString()));
+            for (String columnName : resultSet.keySet()) {
+                List list = resultSet.get(columnName);
+                Object value = null;
+                if (list != null && i < list.size()) {
+                    value = resultSet.get(columnName).get(i);
+                }
+                String colType = EMPTY_STRING;
+                if (value != null) {
+                    if (value instanceof byte[]) {
+                        colType = "type=\"java.lang.byte[]\"";
+                        StringBuilder sb = new StringBuilder();
+                        for (byte b : (byte[]) value) {
+                            sb.append(String.format("%02X ", b));
+                        }
+                        value = sb.toString();
+                    } else {
+                        colType = "type=\"" + value.getClass().getName() + "\"";
+                    }
+                }
+                records.append(XML_RESULT_COL_OPEN + " name=\"" + columnName + "\" " + colType + ">");
+                if (value != null) {
+                    records.append(handleSpecialXmlChar(value));
+                } else {
+                    records.append(XML_NULL_VALUE);
+                }
                 records.append(XML_RESULT_COL_CLOSE);
             }
             records.append(XML_RESULT_ROW_CLOSE);
         }
         xmlResult.append(records);
     }
-    
-    String handleSpecialXmlChar(String inputStr){
-        if(!inputStr.startsWith(XML_CDATA_TAG_OPEN) && (inputStr.indexOf('>') >=0 || inputStr.indexOf('<') >=0 || inputStr.indexOf('&') >=0)){
-            StringBuffer sb = new StringBuffer(XML_CDATA_TAG_OPEN);
-            sb.append(inputStr);
-            sb.append("]]>");
-            return sb.toString();
+
+    Object handleSpecialXmlChar(final Object inputObj) {
+        if (inputObj instanceof String) {
+            String inputStr = inputObj.toString();
+            if (!inputStr.startsWith(XML_CDATA_TAG_OPEN) && (inputStr.indexOf('>') >= 0 || inputStr.indexOf('<') >= 0 || inputStr.indexOf('&') >= 0)) {
+                StringBuffer sb = new StringBuffer(XML_CDATA_TAG_OPEN);
+                sb.append(inputStr);
+                sb.append(XML_CDATA_TAG_CLOSE);
+                return sb.toString();
+            } else {
+                return inputStr;
+            }
         } else {
-            return inputStr;
+            return inputObj;
         }
     }
 
@@ -254,8 +303,12 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             if (logger.isLoggable(Level.FINER)) {
                 logger.log(Level.FINER, varPrefix  + "." + newNamingMap.get(columnName.toLowerCase()) + resultSet.get(columnName).toArray());
             }
-            row = resultSet.get(columnName).size();
-            context.setVariable(varPrefix  + "." + newNamingMap.get(columnName.toLowerCase()), resultSet.get(columnName).toArray());
+            if (resultSet.get(columnName) != null) {
+                row = resultSet.get(columnName).size();
+                context.setVariable(varPrefix + "." + newNamingMap.get(columnName.toLowerCase()), resultSet.get(columnName).toArray());
+            } else {
+                logger.log(Level.FINER, columnName + " result list was null");
+            }
         }
         context.setVariable(varPrefix + "." + JdbcQueryAssertion.VARIABLE_COUNT, row);
         return row;

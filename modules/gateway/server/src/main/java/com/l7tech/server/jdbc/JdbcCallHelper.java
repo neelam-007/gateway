@@ -315,7 +315,15 @@ public class JdbcCallHelper {
         public Object getObject(String s) throws InvalidResultSetAccessException {
             if (cursor > MAX_ROWS) throw new IllegalStateException("No data can be accessed.");
 
-            return data.get(cursor - 1).get(s);
+            Object value = null;
+            for(Map.Entry entry : data.get(cursor - 1).entrySet()){
+                String key = entry.getKey().toString();
+                if(s!=null && s.equalsIgnoreCase(key)){
+                    value=entry.getValue();
+                    break;
+                }
+            }
+            return value;
         }
 
         @Override

@@ -354,7 +354,7 @@ public class ServerJdbcQueryAssertionTest {
         sass.checkRequest(peCtx);
         xmlResult = peCtx.getVariable("jdbcQuery.xmlResult").toString();
         assertNotNull(xmlResult);
-        expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">45</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Production</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">John</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">26</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Sales</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Darcy</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">22</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Admin</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Alice</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">32</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Production</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Mary</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">50</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Marketing</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Oliver</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">40</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Development</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Bob</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">38</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Development</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Ahmad</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">19</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Admin</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Amy</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">25</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Sales</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Carmen</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">28</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Sales</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">David</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">37</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Marketing</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Carlo</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row><L7j:row><L7j:col  name=\"age\" type=\"java.lang.String\">29</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Production</L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\">Kan</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col></L7j:row></L7j:jdbcQueryResult>";
+        expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">John</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Production</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">45</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Darcy</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Sales</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">26</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Alice</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Admin</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">22</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Mary</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Production</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">32</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Oliver</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Marketing</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">50</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Bob</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Development</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">40</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Ahmad</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Development</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">38</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Amy</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Admin</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">19</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Carmen</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Sales</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">F</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">25</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">David</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Sales</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">28</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Carlo</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Marketing</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">37</L7j:col></L7j:row><L7j:row><L7j:col  name=\"name\" type=\"java.lang.String\">Kan</L7j:col><L7j:col  name=\"department\" type=\"java.lang.String\">Production</L7j:col><L7j:col  name=\"sex\" type=\"java.lang.String\">M</L7j:col><L7j:col  name=\"age\" type=\"java.lang.String\">29</L7j:col></L7j:row></L7j:jdbcQueryResult>";
         assertEquals(expected, xmlResult);
         // Check context variables creation
         assertArrayEquals("All names matched", MockJdbcDatabaseManager.MOCK_NAMES, (Object[])peCtx.getVariable("jdbcQuery.name"));
@@ -447,5 +447,75 @@ public class ServerJdbcQueryAssertionTest {
         assertArrayEquals("All sexes matched", MockJdbcDatabaseManager.MOCK_SEXES, (Object[]) peCtx.getVariable("jdbcQuery.SEX2"));
         assertArrayEquals("All ages matched", MockJdbcDatabaseManager.MOCK_AGES, (Object[]) peCtx.getVariable("jdbcQuery.AGE2"));
     }
+
+    /**
+     * Test XML Generation on a null value
+    */
+    @BugNumber(12888)
+    @Test
+    public void testNullResult() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        final AssertionRegistry assertionRegistry = new AssertionRegistry();
+        assertionRegistry.afterPropertiesSet();
+        serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockResults());
+        GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("jdbcQueryingManager", jdbcQueryingManager);
+        }}));
+        serverPolicyFactory.setApplicationContext(applicationContext);
+        assertion.setSqlQuery("SELECT * FROM myTest");
+        assertion.setGenerateXmlResult(true);
+        assertion.setConnectionName("mockDb");
+
+        //test/touch SELECT query related code, with null result
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockWithNullResults());
+        applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("jdbcQueryingManager", jdbcQueryingManager);
+        }}));
+        serverPolicyFactory.setApplicationContext(applicationContext);
+        ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        sass.checkRequest(peCtx);
+        String xmlResult = peCtx.getVariable("jdbcQuery.xmlResult").toString();
+        assertNotNull(xmlResult);
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\"><L7j:row><L7j:col  name=\"id\" type=\"java.lang.Integer\">2</L7j:col><L7j:col  name=\"testByte\" type=\"java.lang.byte[]\">63 68 61 72 64 </L7j:col><L7j:col  name=\"name\" type=\"java.lang.String\"><![CDATA[name2]]></L7j:col><L7j:col  name=\"testField\" ><![CDATA[NULL]]></L7j:col><L7j:col  name=\"value\" type=\"java.lang.String\"><![CDATA[value2&'<\">]]></L7j:col></L7j:row></L7j:jdbcQueryResult>";
+        assertEquals(expected, xmlResult);
+        assertTrue(xmlResult.indexOf("type=\"java.lang.byte[]\"")>0);
+        assertTrue(xmlResult.indexOf("<![CDATA[NULL]]>")>0);
+        Object[] idObj = (Object[]) peCtx.getVariable("jdbcQuery.id");
+        Object[] nameObj = (Object[]) peCtx.getVariable("jdbcQuery.name");
+        Object[] valueObj = (Object[]) peCtx.getVariable("jdbcQuery.value");
+        assertEquals(2, idObj[0]);
+        assertEquals("<![CDATA[name2]]>", nameObj[0]);
+        assertEquals("value2&'<\">", valueObj[0]);
+        try {
+            Object[] testFieldObj = (Object[]) peCtx.getVariable("jdbcQuery.testField");
+            fail("Should have failed");
+        } catch (NoSuchVariableException e) {
+            //expected
+        }
+    }
+
+    private Object getMockWithNullResults() {
+        Map<String, List<Object>> row1 = new HashMap<String, List<Object>>();
+        List<Object> list1 = new ArrayList<Object>();
+        List<Object> list2 = new ArrayList<Object>();
+        List<Object> list3 = new ArrayList<Object>();
+        List<Object> list4 = new ArrayList<Object>();
+        list1.add(2);
+        list2.add("<![CDATA[name2]]>");
+        list3.add("value2&'<\">");
+        list4.add(new byte[]{0x63, 0x68, 0x61, 0x72, 0x64});
+        row1.put("id", list1);
+        row1.put("name", list2);
+        row1.put("value", list3);
+        row1.put("testField", null);
+        row1.put("testByte", list4);
+        return row1;
+    }
+
 
 }
