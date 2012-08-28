@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -61,6 +62,7 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
             for (Assertion assertion : nass) {
                 AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(assertion);
                 model.insertNodeInto(as, this, position);
+                tree.scrollPathToVisible(new TreePath(as.getPath()));
             }
         } else {
             log.log(Level.WARNING, "Unable to reach the palette tree.");
