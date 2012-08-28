@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.encodedecode.server;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
@@ -265,6 +266,8 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
                 }
             } else if ( source instanceof String ) {
                 data = ((String) source).getBytes( encodeDecodeContext.getInputEncoding() );
+            } else if (source instanceof PartInfo) {
+                data = getPartInfoBody((PartInfo) source, false).right;
             } else {
                 encodeDecodeContext.audit( AssertionMessages.ENCODE_DECODE_IN_TYPE, (source==null ? "<NULL>" : source.getClass().getName()), "binary" );
                 throw new AssertionStatusException( AssertionStatus.FALSIFIED );
@@ -301,27 +304,38 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
             encodeDecodeContext.audit( message, exception, parameters );
         }
 
+        private Pair<Charset,byte[]> getPartInfoBody( PartInfo partInfo, boolean requireText ) {
+            Pair<Charset,byte[]> content;
+            try {
+                final ContentTypeHeader contentType = partInfo.getContentType();
+                if ( requireText && !contentType.isTextualContentType()) {
+                    audit( AssertionMessages.ENCODE_DECODE_IN_ACCESS, null, "Message", "non-text content" );
+                    throw new AssertionStatusException( AssertionStatus.FALSIFIED );
+                }
+                // TODO maximum size? This could be huge and OOM
+                final byte[] bytes = IOUtils.slurpStream(partInfo.getInputStream(false));
+                content = new Pair<Charset,byte[]>(contentType.getEncoding(), bytes);
+            } catch (IOException e) {
+                audit( AssertionMessages.ENCODE_DECODE_IN_ACCESS, ExceptionUtils.getDebugException(e), "Message", ExceptionUtils.getMessage(e) );
+                throw new AssertionStatusException( AssertionStatus.FAILED );
+            } catch (NoSuchPartException e) {
+                audit( AssertionMessages.ENCODE_DECODE_IN_ACCESS, ExceptionUtils.getDebugException(e), "Message", ExceptionUtils.getMessage(e) );
+                throw new AssertionStatusException( AssertionStatus.FAILED );
+            }
+            return content;
+        }
+
         private Pair<Charset,byte[]> getMessageFirstPart( final Message message, final boolean requireText ) {
             Pair<Charset,byte[]> content;
             try {
                 final MimeKnob mimeKnob = message.getKnob(MimeKnob.class);
                 if ( mimeKnob != null && message.isInitialized() ) {
-                    final ContentTypeHeader contentType = mimeKnob.getFirstPart().getContentType();
-                    if ( requireText && !contentType.isTextualContentType()) {
-                        audit( AssertionMessages.ENCODE_DECODE_IN_ACCESS, null, "Message", "non-text content" );
-                        throw new AssertionStatusException( AssertionStatus.FALSIFIED );
-                    }
-                    // TODO maximum size? This could be huge and OOM
-                    final byte[] bytes = IOUtils.slurpStream(mimeKnob.getFirstPart().getInputStream(false));
-                    content = new Pair<Charset,byte[]>(contentType.getEncoding(), bytes);
+                    content = getPartInfoBody(mimeKnob.getFirstPart(), requireText);
                 } else {
                     audit( AssertionMessages.ENCODE_DECODE_IN_ACCESS, null, "Message", "not initialized" );
                     throw new AssertionStatusException( AssertionStatus.FALSIFIED );
                 }
             } catch (IOException e) {
-                audit( AssertionMessages.ENCODE_DECODE_IN_ACCESS, ExceptionUtils.getDebugException(e), "Message", ExceptionUtils.getMessage(e) );
-                throw new AssertionStatusException( AssertionStatus.FAILED );
-            } catch (NoSuchPartException e) {
                 audit( AssertionMessages.ENCODE_DECODE_IN_ACCESS, ExceptionUtils.getDebugException(e), "Message", ExceptionUtils.getMessage(e) );
                 throw new AssertionStatusException( AssertionStatus.FAILED );
             }

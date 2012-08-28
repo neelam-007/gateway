@@ -19,25 +19,27 @@ class ArraySelector implements ExpandVariables.Selector<Object[]> {
                              final boolean strict ) {
         int indexOffset = name.indexOf( '.' );
 
+        String indexText;
+        String remainingName;
         if ( indexOffset < 1 ) {
-            String msg = handler.handleBadVariable( "Unable to process array selector." );
-            if ( strict ) throw new IllegalArgumentException(msg);
+            indexText = name;
+            remainingName = null;
         } else {
-            String indexText = name.substring( 0, indexOffset );
-            String remainingName = name.substring( indexOffset+1 );
+            indexText = name.substring( 0, indexOffset );
+            remainingName = name.substring( indexOffset+1 );
+        }
 
-            try {
-                int index = Integer.parseInt( indexText ) - 1; // selector is one based
-                if ( index < 0 || index >= context.length ) {
-                    String msg = handler.handleSubscriptOutOfRange( index, contextName, context.length );
-                    if ( strict ) throw new IllegalArgumentException(msg);
-                } else {
-                    return new Selection(context[index], process(remainingName));
-                }
-            } catch ( NumberFormatException nfe ) {
-                String msg = handler.handleBadVariable( "Unable to process array selector '"+indexText+"'." );
+        try {
+            int index = Integer.parseInt( indexText ) - 1; // selector is one based
+            if ( index < 0 || index >= context.length ) {
+                String msg = handler.handleSubscriptOutOfRange( index, contextName, context.length );
                 if ( strict ) throw new IllegalArgumentException(msg);
+            } else {
+                return new Selection(context[index], process(remainingName));
             }
+        } catch ( NumberFormatException nfe ) {
+            String msg = handler.handleBadVariable( "Unable to process array selector '"+indexText+"'." );
+            if ( strict ) throw new IllegalArgumentException(msg);
         }
 
         return null;
