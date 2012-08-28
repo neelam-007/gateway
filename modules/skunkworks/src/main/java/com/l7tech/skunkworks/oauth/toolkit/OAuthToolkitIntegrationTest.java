@@ -2,10 +2,9 @@ package com.l7tech.skunkworks.oauth.toolkit;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.io.PermissiveX509TrustManager;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
-import org.apache.cxf.transport.https.SSLUtils;
+import com.l7tech.util.IOUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -13,10 +12,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.X509TrustManager;
 import javax.xml.xpath.*;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -44,6 +39,7 @@ public class OAuthToolkitIntegrationTest {
     private static final String CLIENT_REQUEST_TOKEN = "http://" + BASE_URL + ":8080/oauth/v1/client?state=request_token";
     private static final String REQUEST_TOKEN_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/request";
     private static final String AUTHORIZE_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/authorize";
+    private static final String ACCESS_TOKEN_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/token";
     private static final String CLIENT_DOWNLOAD_RESOURCE = "https://" + BASE_URL + ":8443/oauth/v1/client?state=download";
     private static final String OTK_CLIENT_CALLBACK = "https://" + BASE_URL + ":8443/oauth/v1/client?state=authorized";
     private static final String AUTH_HEADER = "OAuth realm=\"http://" + BASE_URL + "\",oauth_consumer_key=\"acf89db2-994e-427b-ac2c-88e6101f9433\",oauth_signature_method=\"HMAC-SHA1\",oauth_timestamp=\"1344979213\",oauth_nonce=\"ca6e55f3-3e1c-41d6-8584-41c7e2611d34\",oauth_callback=\"https://" + BASE_URL + ":8443/oauth/v1/client?state=authorized\",oauth_version=\"1.0\",oauth_signature=\"" + SIGNATURE + "\"";
@@ -102,9 +98,9 @@ public class OAuthToolkitIntegrationTest {
      */
     @Test
     public void requestTokenEndpointInvalidSignature() throws Exception {
-        final Map<String, String> parameters = createDefaultParameterMap();
+        final Map<String, String> parameters = createDefaultRequestTokenParameters();
         parameters.put("oauth_signature", "invalidSignature");
-        final GenericHttpResponse response = getRequestTokenResponseFromEndpoint(parameters);
+        final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
         assertEquals(500, response.getStatus());
     }
 
@@ -113,9 +109,9 @@ public class OAuthToolkitIntegrationTest {
      */
     @Test
     public void requestTokenEndpointUnrecognizedConsumerKey() throws Exception {
-        final Map<String, String> parameters = createDefaultParameterMap();
+        final Map<String, String> parameters = createDefaultRequestTokenParameters();
         parameters.put("oauth_consumer_key", "unregisteredClient");
-        final GenericHttpResponse response = getRequestTokenResponseFromEndpoint(parameters);
+        final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
         assertEquals(500, response.getStatus());
     }
 
@@ -124,9 +120,9 @@ public class OAuthToolkitIntegrationTest {
      */
     @Test
     public void requestTokenEndpointSignatureMethodNotHMACSHA1() throws Exception {
-        final Map<String, String> parameters = createDefaultParameterMap();
+        final Map<String, String> parameters = createDefaultRequestTokenParameters();
         parameters.put("oauth_signature_method", "RSA-SHA1");
-        final GenericHttpResponse response = getRequestTokenResponseFromEndpoint(parameters);
+        final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
         assertEquals(400, response.getStatus());
     }
 
@@ -140,6 +136,37 @@ public class OAuthToolkitIntegrationTest {
         assertMissingParamReturns400("oauth_timestamp");
         assertMissingParamReturns400("oauth_nonce");
         assertMissingParamReturns400("oauth_signature");
+    }
+
+    @Test
+    public void requestTokenEndpointInvalidVersion() throws Exception {
+        final Map<String, String> parameters = createDefaultRequestTokenParameters();
+        parameters.put("oauth_version", "2.0");
+        final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Wrong oauth version", responseBody);
+    }
+
+    @Test
+    public void requestTokenEndpointDuplicateParameter() throws Exception {
+        final GenericHttpRequest request = createRequestTokenEndpointRequest(createDefaultRequestTokenParameters());
+        request.addParameter("oauth_callback", "duplicateCallback");
+        final GenericHttpResponse response = request.getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Duplicate oauth headers", responseBody);
+    }
+
+    @Test
+    public void requestTokenEndpointNotGetOrPost() throws Exception {
+        final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(REQUEST_TOKEN_ENDPOINT));
+        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        requestParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
+        final GenericHttpRequest request = client.createRequest(HttpMethod.PUT, requestParams);
+        final GenericHttpResponse response = request.getResponse();
+        assertEquals(400, response.getStatus());
+        assertEquals("PUT not permitted", new String(IOUtils.slurpStream(response.getInputStream())));
     }
 
     /**
@@ -190,7 +217,7 @@ public class OAuthToolkitIntegrationTest {
 
     /**
      * Download a protected resource using the client.
-     *
+     * <p/>
      * Using the client so that we can use the default callback url to obtain the access token.
      */
     @Test
@@ -207,6 +234,82 @@ public class OAuthToolkitIntegrationTest {
         assertEquals(200, response.getStatus());
         assertTrue(response.getAsString(false, Integer.MAX_VALUE).contains("You made it, here is the resource"));
         System.out.println("Successfully downloaded a protected resource");
+    }
+
+    /**
+     * Hit access token endpoint with missing parameters.
+     */
+    @Test
+    public void accessTokenEndpointMissingParameters() throws Exception {
+        testTokenEndpointMissingParameter("oauth_signature");
+        testTokenEndpointMissingParameter("oauth_nonce");
+        testTokenEndpointMissingParameter("oauth_signature_method");
+        testTokenEndpointMissingParameter("oauth_consumer_key");
+        testTokenEndpointMissingParameter("oauth_timestamp");
+    }
+
+    /**
+     * Hit access token endpoint with non GET/POST method.
+     */
+    @Test
+    public void accessTokenEndpointNotGetOrPost() throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(ACCESS_TOKEN_ENDPOINT));
+        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setPasswordAuthentication(passwordAuthentication);
+        final GenericHttpRequest request = client.createRequest(HttpMethod.PUT, params);
+        final GenericHttpResponse response = request.getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("PUT not permitted", responseBody);
+    }
+
+    /**
+     * Hit access token endpoint with oauth_version not equal to 1.0.
+     */
+    @Test
+    public void accessTokenEndpointInvalidVersion() throws Exception {
+        final Map<String, String> parameters = createDefaultAccessTokenParameters();
+        parameters.put("oauth_version", "2.0");
+        final GenericHttpResponse response = createAccessTokenEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Wrong oauth version", responseBody);
+    }
+
+    /**
+     * Hit access token endpoint with a duplicate oauth parameter.
+     */
+    @Test
+    public void accessTokenEndpointDuplicateParameter() throws Exception {
+        final GenericHttpRequest request = createAccessTokenEndpointRequest(createDefaultAccessTokenParameters());
+        request.addParameter("oauth_token", "testTokenDuplicate");
+        final GenericHttpResponse response = request.getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Duplicate oauth headers", responseBody);
+    }
+
+    private void testTokenEndpointMissingParameter(final String missingParameter) throws Exception {
+        System.out.println("testing missing parameter: " + missingParameter);
+        final Map<String, String> oauthParameters = createDefaultAccessTokenParameters();
+        oauthParameters.remove(missingParameter);
+        final GenericHttpResponse response = createAccessTokenEndpointRequest(oauthParameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        // error message is misleading but this is the current error message returned if a required oauth param is missing
+        assertEquals("No OAuth parameters found", responseBody);
+    }
+
+    private GenericHttpRequest createAccessTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(ACCESS_TOKEN_ENDPOINT));
+        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setPasswordAuthentication(passwordAuthentication);
+        params.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader("Content-Type", "application/x-www-form-urlencoded")});
+        final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
+        for (final Map.Entry<String, String> entry : parameters.entrySet()) {
+            request.addParameter(entry.getKey(), entry.getValue());
+        }
+        return request;
     }
 
     private String getAccessTokenFromClient() throws Exception {
@@ -259,7 +362,7 @@ public class OAuthToolkitIntegrationTest {
 
     private Map<String, String> getRequestTokenFromEndpoint() throws Exception {
         // signature generated using OTK client consumer secret
-        final GenericHttpResponse response = getRequestTokenResponseFromEndpoint(createDefaultParameterMap());
+        final GenericHttpResponse response = createRequestTokenEndpointRequest(createDefaultRequestTokenParameters()).getResponse();
         assertEquals(200, response.getStatus());
 
         // expected response format: oauth_token=49f0589b-7b8c-4b3d-a416-e9b0fc6bf401&oauth_token_secret=2d288801-7e33-49ca-8f3c-0c39df56664c&oauth_callback_confirmed=true
@@ -278,7 +381,7 @@ public class OAuthToolkitIntegrationTest {
         return responseParameters;
     }
 
-    private GenericHttpResponse getRequestTokenResponseFromEndpoint(final Map<String, String> parameters) throws Exception {
+    private GenericHttpRequest createRequestTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
         System.out.println("Requesting request token from " + REQUEST_TOKEN_ENDPOINT);
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(REQUEST_TOKEN_ENDPOINT));
         requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
@@ -287,11 +390,10 @@ public class OAuthToolkitIntegrationTest {
         for (final Map.Entry<String, String> entry : parameters.entrySet()) {
             request.addParameter(entry.getKey(), entry.getValue());
         }
-
-        return request.getResponse();
+        return request;
     }
 
-    private Map<String, String> createDefaultParameterMap() {
+    private Map<String, String> createDefaultRequestTokenParameters() {
         final Map<String, String> parameterMap = new HashMap<String, String>();
         parameterMap.put("oauth_consumer_key", OTK_CLIENT_CONSUMER_KEY);
         parameterMap.put("oauth_signature_method", "HMAC-SHA1");
@@ -301,6 +403,18 @@ public class OAuthToolkitIntegrationTest {
         parameterMap.put("oauth_version", "1.0");
         parameterMap.put("oauth_signature", SIGNATURE);
         return parameterMap;
+    }
+
+    private Map<String, String> createDefaultAccessTokenParameters() {
+        final Map<String, String> oauthParameters = new HashMap<String, String>();
+        oauthParameters.put("oauth_signature", "testSignature");
+        oauthParameters.put("oauth_nonce", "testNonce");
+        oauthParameters.put("oauth_signature_method", "HMAC-SHA1");
+        oauthParameters.put("oauth_consumer_key", OTK_CLIENT_CONSUMER_KEY);
+        oauthParameters.put("oauth_timestamp", "1000000000");
+        oauthParameters.put("oauth_token", "testToken");
+        oauthParameters.put("oauth_version", "1.0");
+        return oauthParameters;
     }
 
     private String getTokenFromHtmlForm(final String html) throws SAXException, XPathExpressionException {
@@ -334,9 +448,9 @@ public class OAuthToolkitIntegrationTest {
     }
 
     private void assertMissingParamReturns400(final String parameter) throws Exception {
-        final Map<String, String> parameters = createDefaultParameterMap();
+        final Map<String, String> parameters = createDefaultRequestTokenParameters();
         parameters.remove(parameter);
-        final GenericHttpResponse response = getRequestTokenResponseFromEndpoint(parameters);
+        final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
         assertEquals(400, response.getStatus());
     }
 
