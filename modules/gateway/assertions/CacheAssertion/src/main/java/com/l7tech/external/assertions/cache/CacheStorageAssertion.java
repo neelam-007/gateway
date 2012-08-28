@@ -2,16 +2,22 @@ package com.l7tech.external.assertions.cache;
 
 import com.l7tech.external.assertions.cache.server.SsgCache;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.Syntax;
 
 /**
  * 
  */
 public class CacheStorageAssertion extends MessageTargetableAssertion implements UsesVariables {
 
+    public static final int kMAX_ENTRIES = 1000000;
+    public static final long kMAX_ENTRY_AGE_MILLIS = 100000000L;
+    public static final long kMAX_ENTRY_AGE_SECONDS = kMAX_ENTRY_AGE_MILLIS / 1000L;
+    public static final long kMAX_ENTRY_SIZE = 1000000000L;
+
     private String cacheId = "defaultCache";
-    private int maxEntries = SsgCache.Config.DEFAULT_MAX_ENTRIES;
-    private long maxEntryAgeMillis = SsgCache.Config.DEFAULT_MAX_AGE_MILLIS;
-    private long maxEntrySizeBytes = SsgCache.Config.DEFAULT_MAX_SIZE_BYTES;
+    private String maxEntries = Integer.toString(SsgCache.Config.DEFAULT_MAX_ENTRIES);
+    private String maxEntryAgeMillis = Long.toString(SsgCache.Config.DEFAULT_MAX_AGE_MILLIS);
+    private String maxEntrySizeBytes = Long.toString(SsgCache.Config.DEFAULT_MAX_SIZE_BYTES);
     private String cacheEntryKey = "${request.url}";
     private boolean storeSoapFaults = false;
 
@@ -22,7 +28,7 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        return super.doGetVariablesUsed().withExpressions( cacheId, cacheEntryKey );
+        return super.doGetVariablesUsed().withExpressions( cacheId, cacheEntryKey, maxEntries, maxEntryAgeMillis, maxEntrySizeBytes );
     }
 
     /** @return the name of the cache in which to store the item.  May contain variables that need interpolation. */
@@ -41,12 +47,25 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
      * @param cacheId the name of the cache in which the item is to be stored.  If null, the assertion will
      *                always fail.
      */
-    public void setCacheId(String cacheId) {
+    public void setCacheId(final String cacheId) {
         this.cacheId = cacheId;
     }
 
-    public int getMaxEntries() {
+    public String getMaxEntries() {
         return maxEntries;
+    }
+
+    /**
+     * This method exists for backwards compatibility with serialized CacheStorageAssertions.
+     *
+     * This method simply calls {@link #setMaxEntries(String)} by converting the given int to a String.
+     *
+     * @deprecated Use {@link #setMaxEntries(String)} instead.
+     * @see #setMaxEntries(String)
+     */
+    @Deprecated
+    public void setMaxEntries(final int maxEntries) {
+        setMaxEntries(Integer.toString(maxEntries));
     }
 
     /**
@@ -54,14 +73,34 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
      * If the cache named by cacheId already exists, its maxEntries will already have been configured
      * when it was created and this value will be ignored.
      *
+     * The parameter accepts two different Strings:
+     * <ol>
+     *     <li>A long between 0 and kMAX_ENTRIES (inclusive).</li>
+     *     <li>A context variable (for example "${xyz}").
+     *     It's contents are not interpolated yet but are expected to be an integer between 0 and kMAX_ENTRIES (inclusive).</li>
+     * </ol>
+     *
      * @param maxEntries maximum number of entries allowed in the cache (if a new cache is created), or zero for unlimited.
      */
-    public void setMaxEntries(int maxEntries) {
+    public void setMaxEntries(final String maxEntries) {
         this.maxEntries = maxEntries;
     }
 
-    public long getMaxEntryAgeMillis() {
+    public String getMaxEntryAgeMillis() {
         return maxEntryAgeMillis;
+    }
+
+    /**
+     * This method exists for backwards compatibility with serialized CacheStorageAssertions.
+     *
+     * This method simply calls {@link #setMaxEntryAgeMillis(String)} by converting the given long to a String.
+     *
+     * @deprecated Use {@link #setMaxEntryAgeMillis(String)} instead.
+     * @see #setMaxEntryAgeMillis(String)
+     */
+    @Deprecated
+    public void setMaxEntryAgeMillis(final long maxEntryAgeMillis) {
+        setMaxEntryAgeMillis(Long.toString(maxEntryAgeMillis));
     }
 
     /**
@@ -69,14 +108,34 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
      * If the cache named by cacheId already exists, its maxEntryAgeMillis will already have been configured
      * when it was created and this value will be ignored.
      *
+     * The parameter accepts two different Strings:
+     * <ol>
+     *     <li>A long between 0 and kMAX_ENTRY_AGE (inclusive) with the units being milliseconds.</li>
+     *     <li>A context variable (for example "${xyz}").
+     *     It's contents are not interpolated yet but are expected to be a long between 0 and kMAX_ENTRY_AGE_SECONDS values (inclusive) with the units being seconds.</li>
+     * </ol>
+     *
      * @param maxEntryAgeMillis maximum age of a cached entry in milliseconds.
      */
-    public void setMaxEntryAgeMillis(long maxEntryAgeMillis) {
+    public void setMaxEntryAgeMillis(final String maxEntryAgeMillis) {
         this.maxEntryAgeMillis = maxEntryAgeMillis;
     }
 
-    public long getMaxEntrySizeBytes() {
+    public String getMaxEntrySizeBytes() {
         return maxEntrySizeBytes;
+    }
+
+    /**
+     * This method exists for backwards compatibility with serialized CacheStorageAssertions.
+     *
+     * This method simply calls {@link #setMaxEntrySizeBytes(String)} by converting the given long to a String.
+     *
+     * @deprecated Use {@link #setMaxEntrySizeBytes(String)} instead.
+     * @see #setMaxEntrySizeBytes(String)
+     */
+    @Deprecated
+    public void setMaxEntrySizeBytes(final long maxEntrySizeBytes) {
+        setMaxEntrySizeBytes(Long.toString(maxEntrySizeBytes));
     }
 
     /**
@@ -84,9 +143,16 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
      * If the cache named by cacheId already exists, its maxEntrySizeBytes will already have been configured
      * when it was created and this value will be ignored.
      *
+     * The parameter accepts two different Strings:
+     * <ol>
+     *     <li>A long between 0 and kMAX_ENTRY_SIZE (inclusive).</li>
+     *     <li>A context variable (for example "${xyz}").
+     *     It's contents are not interpolated yet but are expected to be an integer between 0 and kMAX_ENTRY_SIZE (inclusive).</li>
+     * </ol>
+     *
      * @param maxEntrySizeBytes maximum size of a single cache entry in bytes
      */
-    public void setMaxEntrySizeBytes(long maxEntrySizeBytes) {
+    public void setMaxEntrySizeBytes(final String maxEntrySizeBytes) {
         this.maxEntrySizeBytes = maxEntrySizeBytes;
     }
 
@@ -104,7 +170,7 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
      *
      * @param cacheEntryKey the key that should be used to associate the item in the cache.
      */
-    public void setCacheEntryKey(String cacheEntryKey) {
+    public void setCacheEntryKey(final String cacheEntryKey) {
         this.cacheEntryKey = cacheEntryKey;
     }
 
@@ -117,7 +183,7 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
         return storeSoapFaults;
     }
 
-    public void setStoreSoapFaults(boolean storeSoapFaults) {
+    public void setStoreSoapFaults(final boolean storeSoapFaults) {
         this.storeSoapFaults = storeSoapFaults;
     }
 
@@ -152,4 +218,54 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
+
+    /**
+     * Tests is the given String is an integer.
+     *
+     * @param value The value to test.
+     * @return True if the given String is an integer, false otherwise.
+     */
+    public static boolean isInteger(final String value) {
+        try {
+            Integer.parseInt(value);
+            return true;
+        } catch (final NumberFormatException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Tests if the given String is an integer within the given range (inclusive).
+     *
+     * @param value The value to test.
+     * @param min Inclusive.
+     * @param max Inclusive.
+     * @return True if the given String is an integer within the given range (inclusive), false otherwise.
+     */
+    public static boolean isIntegerWithinRange(final String value, final int min, final int max) {
+        if (isInteger(value)) {
+            final int i = Integer.parseInt(value);
+            if (i >= min && i <= max) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Tests if the given String is a single context variable (for example "${xyz}") or is an integer within the given range (inclusive).
+     *
+     * @param value The value to test.
+     * @param min Inclusive.
+     * @param max Inclusive.
+     * @return True if the given String is a single context variable or an integer within the given range (inclusive), false otherwise.
+     */
+    public static boolean isSingleVariableOrIntegerWithinRange(final String value, final int min, final int max) {
+        if (Syntax.isOnlyASingleVariableReferenced(value) || isIntegerWithinRange(value, min, max)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 }

@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.cache.console;
 
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.external.assertions.cache.CacheLookupAssertion;
 import com.l7tech.external.assertions.cache.CacheStorageAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
@@ -16,13 +17,9 @@ import java.awt.event.WindowEvent;
 import java.util.ResourceBundle;
 
 public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSupport<CacheStorageAssertion> {
+
     private static ResourceBundle resourceBundle = ResourceBundle.getBundle(CacheStoragePropertiesDialog.class.getName());
-
     public static final String TITLE = resourceBundle.getString("cache.storage.properties.title");
-    public static final long kMAX_ENTIRES = 1000000L;
-    public static final long kMAX_ENTRY_AGE = 100000000L;
-    public static final long kMAX_ENTRY_SIZE = 1000000000L;
-
 
     private JPanel contentPane;
     private JButton buttonOK;
@@ -80,12 +77,39 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
                 return null;
             }
         });
-        validator.constrainTextFieldToNumberRange(resourceBundle.getString("max.entries.field"), maxEntriesField, 0, kMAX_ENTIRES);
-        validator.constrainTextFieldToNumberRange(resourceBundle.getString("max.entry.age.field"), maxEntryAgeField, 0, kMAX_ENTRY_AGE);
-        validator.constrainTextFieldToNumberRange(resourceBundle.getString("max.entry.size.field"), maxEntrySizeField, 0, kMAX_ENTRY_SIZE);
+        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entries.field"), maxEntriesField, new InputValidator.ComponentValidationRule(maxEntriesField) {
+            @Override
+            public String getValidationError() {
+                if (CacheStorageAssertion.isSingleVariableOrIntegerWithinRange(maxEntriesField.getText(), 0, CacheStorageAssertion.kMAX_ENTRIES)) {
+                    return null;
+                } else {
+                    return resourceBundle.getString("max.entries.field");
+                }
+            }
+        });
+        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entry.age.field"), maxEntryAgeField, new InputValidator.ComponentValidationRule(maxEntryAgeField) {
+            @Override
+            public String getValidationError() {
+                if (CacheLookupAssertion.isSingleVariableOrLongWithinRange(maxEntryAgeField.getText(), 0, CacheStorageAssertion.kMAX_ENTRY_AGE_SECONDS)) {
+                    return null;
+                } else {
+                    return resourceBundle.getString("max.entry.age.field");
+                }
+            }
+        });
+        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entry.size.field"), maxEntrySizeField, new InputValidator.ComponentValidationRule(maxEntrySizeField) {
+            @Override
+            public String getValidationError() {
+                if (CacheLookupAssertion.isSingleVariableOrLongWithinRange(maxEntrySizeField.getText(), 0, CacheStorageAssertion.kMAX_ENTRY_SIZE)) {
+                    return null;
+                } else {
+                    return resourceBundle.getString("max.entry.size.field");
+                }
+            }
+        });
         Utilities.setEscKeyStrokeDisposes(this);
     }
-    
+
     private void onOK() {
         confirmed = true;
         dispose();
@@ -113,20 +137,35 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
     public void setData(CacheStorageAssertion ass) {
         cacheIdField.setText(ass.getCacheId());
         cacheKeyField.setText(ass.getCacheEntryKey());
-        maxEntryAgeField.setText(Long.toString(ass.getMaxEntryAgeMillis() / 1000L));
-        maxEntriesField.setText(Integer.toString(ass.getMaxEntries()));
-        maxEntrySizeField.setText(Long.toString(ass.getMaxEntrySizeBytes()));
+        maxEntriesField.setText(ass.getMaxEntries());
+        maxEntrySizeField.setText(ass.getMaxEntrySizeBytes());
         dontCacheFaults.setSelected(! ass.isStoreSoapFaults());
+
+        if (CacheLookupAssertion.isLong(ass.getMaxEntryAgeMillis())) {
+            final long seconds = Long.parseLong(ass.getMaxEntryAgeMillis()) / 1000L;
+            maxEntryAgeField.setText(String.valueOf(seconds));
+        } else {
+            // It's a context variable reference.
+            maxEntryAgeField.setText(ass.getMaxEntryAgeMillis());
+        }
     }
 
     @Override
     public CacheStorageAssertion getData(CacheStorageAssertion ass) {
-        ass.setMaxEntries(Integer.parseInt(maxEntriesField.getText()));
-        ass.setMaxEntryAgeMillis(Long.parseLong(maxEntryAgeField.getText()) * 1000L);
-        ass.setMaxEntrySizeBytes(Long.parseLong(maxEntrySizeField.getText()));
+        ass.setMaxEntries(maxEntriesField.getText());
+        ass.setMaxEntrySizeBytes(maxEntrySizeField.getText());
         ass.setCacheId(cacheIdField.getText());
         ass.setCacheEntryKey(cacheKeyField.getText());
         ass.setStoreSoapFaults(! dontCacheFaults.isSelected());
+
+        if (CacheLookupAssertion.isLong(maxEntryAgeField.getText())) {
+            final long milliseconds = Long.parseLong(maxEntryAgeField.getText()) * 1000L;
+            ass.setMaxEntryAgeMillis(String.valueOf(milliseconds));
+        } else {
+            // It's a context variable reference.
+            ass.setMaxEntryAgeMillis(maxEntryAgeField.getText());
+        }
+
         return ass;
     }
 }

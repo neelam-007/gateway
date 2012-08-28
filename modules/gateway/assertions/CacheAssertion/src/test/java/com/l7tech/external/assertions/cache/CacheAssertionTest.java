@@ -281,6 +281,54 @@ public class CacheAssertionTest {
             "        </wsp:All>\n" +
             "    </wsp:Policy>\n";
 
+    @Test
+    @BugNumber(12094)
+    public void testCacheStorageWithPreFangtoothXml() throws Exception {
+        cacheStorageHelper(STORAGE_PRE_FANGTOOTH, "2", "3", "5");
+    }
+
+    @Test
+    @BugNumber(12094)
+    public void testCacheStorageWithPostFangtoothXml() throws Exception {
+        cacheStorageHelper(STORAGE_POST_FANGTOOTH, "7", "11", "13");
+    }
+
+    private void cacheStorageHelper(final String xml, final String maxEntries, final String maxAgeMillis, final String maxSizeBytes) throws Exception {
+        AssertionRegistry assReg = new AssertionRegistry();
+        assReg.registerAssertion(CacheStorageAssertion.class);
+        WspConstants.setTypeMappingFinder(assReg);
+        Assertion ass = WspReader.getDefault().parseStrictly(xml, WspReader.INCLUDE_DISABLED);
+
+        AllAssertion allAss = (AllAssertion) ass;
+        final List<Assertion> children = allAss.getChildren();
+        final CacheStorageAssertion cacheStorageAss = (CacheStorageAssertion) children.get(0);
+        assertEquals(maxEntries, cacheStorageAss.getMaxEntries());
+        assertEquals(maxAgeMillis, cacheStorageAss.getMaxEntryAgeMillis());
+        assertEquals(maxSizeBytes, cacheStorageAss.getMaxEntrySizeBytes());
+    }
+
+    private final String STORAGE_PRE_FANGTOOTH = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "        <wsp:All wsp:Usage=\"Required\">\n" +
+            "                    <L7p:CacheStorage>\n" +
+            "                        <L7p:MaxEntries intValue=\"2\"/>\n" +
+            "                        <L7p:MaxEntryAgeMillis longValue=\"3\"/>\n" +
+            "                        <L7p:MaxEntrySizeBytes longValue=\"5\"/>\n" +
+            "                    </L7p:CacheStorage>\n" +
+            "        </wsp:All>\n" +
+            "    </wsp:Policy>";
+
+    private final String STORAGE_POST_FANGTOOTH = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "        <wsp:All wsp:Usage=\"Required\">\n" +
+            "                    <L7p:CacheStorage>\n" +
+            "                        <L7p:MaxEntries stringValue=\"7\"/>\n" +
+            "                        <L7p:MaxEntryAgeMillis stringValue=\"11\"/>\n" +
+            "                        <L7p:MaxEntrySizeBytes stringValue=\"13\"/>\n" +
+            "                    </L7p:CacheStorage>\n" +
+            "        </wsp:All>\n" +
+            "    </wsp:Policy>";
+
     private static final class TestStashManagerFactory implements StashManagerFactory {
         private static AtomicLong stashFileUnique = new AtomicLong( 0 );
 
