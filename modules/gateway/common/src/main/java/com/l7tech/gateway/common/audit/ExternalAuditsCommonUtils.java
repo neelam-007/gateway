@@ -12,6 +12,9 @@ public class ExternalAuditsCommonUtils {
                 "        <L7p:CommentAssertion>\n" +
                 "            <L7p:Comment stringValue=\"Start default audit sink policy\"/>\n" +
                 "        </L7p:CommentAssertion>\n" +
+                "        <L7p:CommentAssertion>\n" +
+                "            <L7p:Comment stringValue=\"*** DO NOT MODIFY THIS POLICY ***\"/>\n" +
+                "        </L7p:CommentAssertion>\n" +
                 "        <L7p:UUIDGenerator>\n" +
                 "            <L7p:TargetVariable stringValue=\"record.guid\"/>\n" +
                 "        </L7p:UUIDGenerator>\n" +
@@ -183,6 +186,9 @@ public class ExternalAuditsCommonUtils {
                 "        <wsp:All wsp:Usage=\"Required\">\n" +
                 "            <L7p:CommentAssertion>\n" +
                 "                <L7p:Comment stringValue=\"Start Auto-Generated Lookup Policy\"/>\n" +
+                "            </L7p:CommentAssertion>\n" +
+                "            <L7p:CommentAssertion>\n" +
+                "                <L7p:Comment stringValue=\"*** DO NOT MODIFY THIS POLICY ***\"/>\n" +
                 "            </L7p:CommentAssertion>\n" +
                 "            <L7p:SetVariable>\n" +
                 "                <L7p:Base64Expression stringValue=\"MTAw\"/>\n" +
