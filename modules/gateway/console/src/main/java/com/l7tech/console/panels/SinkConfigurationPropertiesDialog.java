@@ -93,6 +93,9 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     private boolean confirmed = false;
     private List<FilterInfo> filterList = new ArrayList<FilterInfo>();
 
+    private long maximumLogFileSize;
+    private long reservedLogFileSize;
+
     private static abstract class FilterBuilder {
         private final String typeId;
         protected FilterBuilder( final String typeId ) {
@@ -237,6 +240,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      */
     private void initialize() {
         initResources();
+        maximumLogFileSize = getMaximumLogFileSize();
+        reservedLogFileSize = getReservedLogFileSize();
 
         initializeBaseFields();
         initializeFileFields();
@@ -437,8 +442,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             public String getValidationError() {
                 String error = null;
 
-                long maximum = getMaximumLogFileSize();
-                long reserved = getReservedLogFileSize();
+                long maximum = maximumLogFileSize;
+                long reserved = reservedLogFileSize;
 
                 // deduct space used for previous configuration
                 reserved -= getSpaceUsed(sinkConfiguration);
