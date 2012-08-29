@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.spring.remoting.http;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
+import com.l7tech.util.SyspropUtil;
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
@@ -84,7 +85,7 @@ public class SecureHttpClient extends HttpClient {
 
     //- PRIVATE
 
-    private static final String PROTOCOLS = ConfigFactory.getProperty(PROP_PROTOCOLS, DEFAULT_PROTOCOLS);
+    private static final String PROTOCOLS = ConfigFactory.getProperty(PROP_PROTOCOLS, SyspropUtil.getString(PROP_PROTOCOLS, DEFAULT_PROTOCOLS));
 
     private static X509KeyManager keyManager;
     private static SSLTrustFailureHandler currentTrustFailureHandler;
