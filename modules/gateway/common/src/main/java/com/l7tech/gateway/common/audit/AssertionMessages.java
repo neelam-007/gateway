@@ -1170,11 +1170,8 @@ public class AssertionMessages extends Messages {
     public static final M CACHE_LOOKUP_VAR_CONTENTS_ILLEGAL = m(9801, Level.WARNING, "Message cache error: Variable ''{0}'' with contents ''{1}'' is not a long between ''{2}'' and ''{3}'' inclusive");
     public static final M CACHE_LOOKUP_RETRIEVED = m(9802, Level.FINE, "Retrieved from cache: ''{0}''");
 
-    public static final M CACHE_STORAGE_VAR_CONTENTS_NOT_INTEGER = m(9900, Level.WARNING, "Message cache error: Variable ''{0}'' with contents ''{1}'' is not an integer between ''{2}'' and ''{3}'' inclusive");
-    public static final M CACHE_STORAGE_VAR_CONTENTS_NOT_LONG = m(9901, Level.WARNING, "Message cache error: Variable ''{0}'' with contents ''{1}'' is not a long between ''{2}'' and ''{3}'' inclusive");
-    public static final M CACHE_STORAGE_NOT_VAR_OR_INTEGER = m(9902, Level.WARNING, "Message cache error: ''{0}'' is not single variable reference or an integer between ''{1}'' and ''{2}'' inclusive");
-    public static final M CACHE_STORAGE_NOT_VAR_OR_LONG = m(9903, Level.WARNING, "Message cache error: ''{0}'' is not single variable reference or a long between ''{1}'' and ''{2}'' inclusive");
-    public static final M CACHE_STORAGE_STORED = m(9904, Level.FINE, "Stored to cache: ''{0}''");
+    public static final M CACHE_STORAGE_ERROR = m(9900, Level.WARNING, "Message cache error: {0}");
+    public static final M CACHE_STORAGE_STORED = m(9901, Level.FINE, "Stored to cache: ''{0}''");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

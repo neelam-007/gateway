@@ -25,13 +25,27 @@ import java.util.Map;
  * @see com.l7tech.external.assertions.cache.CacheStorageAssertion
  */
 public class ServerCacheStorageAssertion extends AbstractMessageTargetableServerAssertion<CacheStorageAssertion> {
+
     private final String[] variablesUsed;
     private final SsgCacheManager cacheManager;
+    private final static String zeroString = Integer.toString(0);
 
     public ServerCacheStorageAssertion(CacheStorageAssertion assertion, BeanFactory beanFactory) throws PolicyAssertionException {
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
         this.cacheManager = SsgCacheManager.getInstance(beanFactory);
+
+        if (! CacheStorageAssertion.isSingleVariableOrIntegerWithinRange(assertion.getMaxEntries(), 0, CacheStorageAssertion.kMAX_ENTRIES)) {
+            throw new PolicyAssertionException(assertion, "maxEntries value of ''" + assertion.getMaxEntries() + "'' is not single variable reference or an integer between ''" + zeroString + "'' and ''" + Integer.toString(CacheStorageAssertion.kMAX_ENTRIES) + "'' inclusive");
+        }
+
+        if (! CacheLookupAssertion.isSingleVariableOrLongWithinRange(assertion.getMaxEntryAgeMillis(), 0, CacheStorageAssertion.kMAX_ENTRY_AGE_MILLIS)) {
+            throw new PolicyAssertionException(assertion, "maxEntryAgeMillis value of ''" + assertion.getMaxEntryAgeMillis() + "'' is not single variable reference or a long between ''" + zeroString + "'' and ''" + Long.toString(CacheStorageAssertion.kMAX_ENTRY_AGE_MILLIS) + "'' inclusive");
+        }
+
+        if (! CacheLookupAssertion.isSingleVariableOrLongWithinRange(assertion.getMaxEntrySizeBytes(), 0, CacheStorageAssertion.kMAX_ENTRY_SIZE)) {
+            throw new PolicyAssertionException(assertion, "maxEntrySizeBytes value of ''" + assertion.getMaxEntrySizeBytes() + "'' is not single variable reference or a long between ''" + zeroString + "'' and ''" + Long.toString(CacheStorageAssertion.kMAX_ENTRY_SIZE) + "'' inclusive");
+        }
     }
 
     @Override
@@ -41,62 +55,34 @@ public class ServerCacheStorageAssertion extends AbstractMessageTargetableServer
 
         try {
             final int cacheMaxEntries;
-            if (CacheStorageAssertion.isSingleVariableOrIntegerWithinRange(assertion.getMaxEntries(), 0, CacheStorageAssertion.kMAX_ENTRIES)) {
-                if (Syntax.isOnlyASingleVariableReferenced(assertion.getMaxEntries())) {
-                    final String value = ExpandVariables.process(assertion.getMaxEntries(), vars, getAudit(), true);
-                    if (CacheStorageAssertion.isIntegerWithinRange(value, 0, CacheStorageAssertion.kMAX_ENTRIES)) {
-                        cacheMaxEntries = Integer.parseInt(value);
-                    } else {
-                        logAndAudit(AssertionMessages.CACHE_STORAGE_VAR_CONTENTS_NOT_INTEGER, assertion.getMaxEntries(), value, Integer.toString(0), Integer.toString(CacheStorageAssertion.kMAX_ENTRIES));
-                        return AssertionStatus.FAILED;
-                    }
-                } else {
-                    cacheMaxEntries = Integer.parseInt(assertion.getMaxEntries());
-                }
+            final String processedCacheMaxEntries = ExpandVariables.process(assertion.getMaxEntries(), vars, getAudit(), true);
+            if (CacheStorageAssertion.isIntegerWithinRange(processedCacheMaxEntries, 0, CacheStorageAssertion.kMAX_ENTRIES)) {
+                cacheMaxEntries = Integer.parseInt(processedCacheMaxEntries);
             } else {
-                logAndAudit(AssertionMessages.CACHE_STORAGE_NOT_VAR_OR_INTEGER, assertion.getMaxEntries(), Integer.toString(0), Integer.toString(CacheStorageAssertion.kMAX_ENTRIES));
+                logAndAudit(AssertionMessages.CACHE_STORAGE_ERROR, "''" + processedCacheMaxEntries + "'' is not an integer between ''" + zeroString + "'' and ''" + Integer.toString(CacheStorageAssertion.kMAX_ENTRIES) + "'' inclusive");
                 return AssertionStatus.FAILED;
             }
 
-            final long minMillis = 0;
-            final long maxMillis = CacheStorageAssertion.kMAX_ENTRY_AGE_MILLIS;
-            final String maxEntryAgeString = assertion.getMaxEntryAgeMillis();
             final long cacheMaxEntryAgeMillis;
-            if (CacheLookupAssertion.isSingleVariableOrLongWithinRange(maxEntryAgeString, minMillis, maxMillis)) {
-                if (Syntax.isOnlyASingleVariableReferenced(maxEntryAgeString)) {
-                    final String cacheMaxEntryAgeSecondsString = ExpandVariables.process(maxEntryAgeString, vars, getAudit(), true);
-                    final long minSeconds = 0;
-                    final long maxSeconds = CacheStorageAssertion.kMAX_ENTRY_AGE_SECONDS;
-                    if (CacheLookupAssertion.isLongWithinRange(cacheMaxEntryAgeSecondsString, minSeconds, maxSeconds)) {
-                        cacheMaxEntryAgeMillis = Long.parseLong(cacheMaxEntryAgeSecondsString) * 1000L;
-                    } else {
-                        logAndAudit(AssertionMessages.CACHE_STORAGE_VAR_CONTENTS_NOT_LONG, maxEntryAgeString, cacheMaxEntryAgeSecondsString, Long.toString(minSeconds), Long.toString(maxSeconds));
-                        return AssertionStatus.FAILED;
-                    }
+            final String maxEntryAgeString = assertion.getMaxEntryAgeMillis();
+            if (Syntax.isOnlyASingleVariableReferenced(maxEntryAgeString)) {
+                final String processedCacheMaxEntryAgeSeconds = ExpandVariables.process(maxEntryAgeString, vars, getAudit(), true);
+                if (CacheLookupAssertion.isLongWithinRange(processedCacheMaxEntryAgeSeconds, 0, CacheStorageAssertion.kMAX_ENTRY_AGE_SECONDS)) {
+                    cacheMaxEntryAgeMillis = Long.parseLong(processedCacheMaxEntryAgeSeconds) * 1000L;
                 } else {
-                    cacheMaxEntryAgeMillis = Long.parseLong(maxEntryAgeString);
+                    logAndAudit(AssertionMessages.CACHE_STORAGE_ERROR, "''" + processedCacheMaxEntryAgeSeconds + "'' is not a long between ''" + zeroString + "'' and ''" + Long.toString(CacheStorageAssertion.kMAX_ENTRY_AGE_SECONDS) + "'' inclusive");
+                    return AssertionStatus.FAILED;
                 }
             } else {
-                logAndAudit(AssertionMessages.CACHE_STORAGE_NOT_VAR_OR_LONG, maxEntryAgeString, Long.toString(minMillis), Long.toString(maxMillis));
-                return AssertionStatus.FAILED;
+                cacheMaxEntryAgeMillis = Long.parseLong(maxEntryAgeString);
             }
 
-            final String maxEntrySizeString = assertion.getMaxEntrySizeBytes();
             final long cacheMaxEntrySizeBytes;
-            if (CacheLookupAssertion.isSingleVariableOrLongWithinRange(maxEntrySizeString, 0, CacheStorageAssertion.kMAX_ENTRY_SIZE)) {
-                if (Syntax.isOnlyASingleVariableReferenced(maxEntrySizeString)) {
-                    final String value = ExpandVariables.process(maxEntrySizeString, vars, getAudit(), true);
-                    if (CacheLookupAssertion.isLongWithinRange(value, 0, CacheStorageAssertion.kMAX_ENTRY_SIZE)) {
-                        cacheMaxEntrySizeBytes = Long.parseLong(value);
-                    } else {
-                        logAndAudit(AssertionMessages.CACHE_STORAGE_VAR_CONTENTS_NOT_LONG, maxEntrySizeString, value, Long.toString(0), Long.toString(CacheStorageAssertion.kMAX_ENTRY_SIZE));
-                        return AssertionStatus.FAILED;
-                    }
-                } else {
-                    cacheMaxEntrySizeBytes = Long.parseLong(maxEntrySizeString);
-                }
+            final String processedCacheMaxEntrySizeBytes = ExpandVariables.process(assertion.getMaxEntrySizeBytes(), vars, getAudit(), true);
+            if (CacheLookupAssertion.isLongWithinRange(processedCacheMaxEntrySizeBytes, 0, CacheStorageAssertion.kMAX_ENTRY_SIZE)) {
+                cacheMaxEntrySizeBytes = Long.parseLong(processedCacheMaxEntrySizeBytes);
             } else {
-                logAndAudit(AssertionMessages.CACHE_STORAGE_NOT_VAR_OR_LONG, maxEntrySizeString, Long.toString(0), Long.toString(CacheStorageAssertion.kMAX_ENTRY_SIZE));
+                logAndAudit(AssertionMessages.CACHE_STORAGE_ERROR, "''" + processedCacheMaxEntrySizeBytes + "'' is not a long between ''" + zeroString + "'' and ''" + Long.toString(CacheStorageAssertion.kMAX_ENTRY_SIZE) + "'' inclusive");
                 return AssertionStatus.FAILED;
             }
 

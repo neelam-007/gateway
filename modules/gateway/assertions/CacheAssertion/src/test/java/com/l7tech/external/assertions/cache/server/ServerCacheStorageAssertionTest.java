@@ -38,13 +38,13 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
     }
 
-    private ServerCacheStorageAssertion initServerCacheStorageAssertion(final String aa, final String bb, final String cc) throws PolicyAssertionException {
+    private ServerCacheStorageAssertion initServerCacheStorageAssertion(final String maxEntries, final String maxEntryAgeMillis, final String maxEntrySizeBytes) throws PolicyAssertionException {
         final CacheStorageAssertion assertion = new CacheStorageAssertion();
         assertion.setCacheEntryKey("a");
         assertion.setCacheId("b");
-        assertion.setMaxEntries(aa);
-        assertion.setMaxEntryAgeMillis(bb);
-        assertion.setMaxEntrySizeBytes(cc);
+        assertion.setMaxEntries(maxEntries);
+        assertion.setMaxEntryAgeMillis(maxEntryAgeMillis);
+        assertion.setMaxEntrySizeBytes(maxEntrySizeBytes);
         final ServerCacheStorageAssertion serverAssertion = new ServerCacheStorageAssertion(assertion, getBeanFactory());
         final AuditFactory auditFactory = new TestAudit().factory();
         testAudit = (TestAudit) auditFactory.newInstance(null, null);
@@ -56,13 +56,13 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         return serverAssertion;
     }
 
-    @Test
+    @Test(expected = PolicyAssertionException.class)
     @BugNumber(12094)
     public void checkMaxEntriesLessThanMin() throws Exception {
         PolicyEnforcementContext policyContext = initPolicyContext();
         final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("-1", "2", "3");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_NOT_VAR_OR_INTEGER));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_ERROR));
         assertEquals(AssertionStatus.FAILED, status);
     }
 
@@ -73,17 +73,17 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         policyContext.setVariable("xyz", "-1");
         final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("${xyz}", "2", "3");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_VAR_CONTENTS_NOT_INTEGER));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_ERROR));
         assertEquals(AssertionStatus.FAILED, status);
     }
 
-    @Test
+    @Test(expected = PolicyAssertionException.class)
     @BugNumber(12094)
     public void checkEntryAgeLessThanMin() throws Exception {
         PolicyEnforcementContext policyContext = initPolicyContext();
         final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("2", "-1", "3");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_NOT_VAR_OR_LONG));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_ERROR));
         assertEquals(AssertionStatus.FAILED, status);
     }
 
@@ -94,7 +94,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         policyContext.setVariable("xyz", "-1");
         final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("2", "${xyz}", "3");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_VAR_CONTENTS_NOT_LONG));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_ERROR));
         assertEquals(AssertionStatus.FAILED, status);
     }
 
@@ -106,17 +106,17 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         policyContext.setVariable("xyz", Long.toString(CacheStorageAssertion.kMAX_ENTRY_AGE_MILLIS));
         final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("2", "${xyz}", "3");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_VAR_CONTENTS_NOT_LONG));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_ERROR));
         assertEquals(AssertionStatus.FAILED, status);
     }
 
-    @Test
+    @Test(expected = PolicyAssertionException.class)
     @BugNumber(12094)
     public void checkMaxEntrySizeLessThanMin() throws Exception {
         PolicyEnforcementContext policyContext = initPolicyContext();
         final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("2", "3", "-1");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_NOT_VAR_OR_LONG));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_ERROR));
         assertEquals(AssertionStatus.FAILED, status);
     }
 
@@ -127,7 +127,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         policyContext.setVariable("xyz", "-1");
         final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("2", "3", "${xyz}");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_VAR_CONTENTS_NOT_LONG));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_ERROR));
         assertEquals(AssertionStatus.FAILED, status);
     }
 
