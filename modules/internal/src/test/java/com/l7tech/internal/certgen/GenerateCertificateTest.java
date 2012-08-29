@@ -193,10 +193,18 @@ public class GenerateCertificateTest {
         assertNotNull(altEntries);
         assertEquals(2, altEntries.size());
         List<X509GeneralName> gens = X509GeneralName.fromList(altEntries);
-        assertEquals(X509GeneralName.Type.iPAddress, gens.get(1).getType());
-        assertEquals("1.2.3.4", gens.get(1).getStringVal());
-        assertEquals(X509GeneralName.Type.dNSName, gens.get(0).getType());
-        assertEquals("*.foo.bar.com", gens.get(0).getStringVal());
+        Set<String> stringVals = new HashSet<String>();
+        for (X509GeneralName gen : gens) {
+            X509GeneralName.Type type = gen.getType();
+            if (X509GeneralName.Type.iPAddress.equals(type)) {
+                assertEquals("1.2.3.4", gen.getStringVal());
+            } else if (X509GeneralName.Type.dNSName.equals(type)) {
+                assertEquals("*.foo.bar.com", gen.getStringVal());
+            }
+            stringVals.add(gen.getStringVal());
+        }
+        assertTrue(stringVals.contains("1.2.3.4"));
+        assertTrue(stringVals.contains("*.foo.bar.com"));
     }
 
     @Test
