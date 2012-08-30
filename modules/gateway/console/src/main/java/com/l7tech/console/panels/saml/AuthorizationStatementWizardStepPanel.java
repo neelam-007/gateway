@@ -81,6 +81,7 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         SamlPolicyAssertion assertion = (SamlPolicyAssertion)settings;
         SamlAuthorizationStatement statement = assertion.getAuthorizationStatement();
@@ -101,6 +102,7 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         SamlPolicyAssertion assertion = (SamlPolicyAssertion)settings;
         SamlAuthorizationStatement statement = assertion.getAuthorizationStatement();
@@ -125,14 +127,17 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
         }
 
         DocumentListener docListener = new DocumentListener() {
+            @Override
             public void changedUpdate(DocumentEvent e) {
                 notifyListeners();
             }
 
+            @Override
             public void insertUpdate(DocumentEvent e) {
                 notifyListeners();
             }
 
+            @Override
             public void removeUpdate(DocumentEvent e) {
                 notifyListeners();
             }
@@ -141,6 +146,7 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
         textFieldAction.getDocument().addDocumentListener(docListener);
 
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 notifyListeners();
             }
@@ -150,11 +156,13 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Authorization Statement";
     }
 
 
+    @Override
     public String getDescription() {
         if (issueMode) {
             return DESC_PREFIX + "will" + DESC_SUFFIX;
@@ -169,6 +177,7 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
      *
      * @return true if the panel is valid, false otherwis
      */
+    @Override
     public boolean canAdvance() {
         String resource = textFieldResource.getText();
         String action = textFieldAction.getText();

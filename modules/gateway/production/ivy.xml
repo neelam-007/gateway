@@ -73,6 +73,7 @@
         <dependency name="NtlmAuthenticationAssertion" rev="latest.integration" conf="module"/>
         <dependency name="KerberosAuthenticationAssertion" rev="latest.integration" conf="module"/>
         <dependency name="GenerateOAuthSignatureBaseStringAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="ValidateNonSoapSamlAssertion" rev="latest.integration" conf="module"/>
         <!-- Optional Modular Assertions are copied to "dist" but not packaged -->
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="module-optional"/>
     </dependencies>

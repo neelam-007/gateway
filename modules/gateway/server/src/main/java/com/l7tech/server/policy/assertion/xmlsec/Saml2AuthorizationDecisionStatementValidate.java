@@ -1,9 +1,8 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
-import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.Pair;
 import org.apache.xmlbeans.XmlObject;
 import x0Assertion.oasisNamesTcSAML2.ActionType;
@@ -26,11 +25,11 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
     /**
      * Construct  the <code>SamlAssertionValidate</code> for the statement assertion
      *
-     * @param requestWssSaml     the saml statement assertion
+     * @param requestSaml     the saml statement assertion
      */
-    Saml2AuthorizationDecisionStatementValidate(RequireWssSaml requestWssSaml) {
-        super(requestWssSaml);
-        authorizationStatementRequirements = requestWssSaml.getAuthorizationStatement();
+    Saml2AuthorizationDecisionStatementValidate(RequireSaml requestSaml) {
+        super(requestSaml);
+        authorizationStatementRequirements = requestSaml.getAuthorizationStatement();
         if (authorizationStatementRequirements == null) {
             throw new IllegalArgumentException("Authorization requirements have not been specified");
         }
@@ -41,7 +40,6 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
      * Validate the authentication statement
      *
      * @param statementAbstractType
-     * @param wssResults
      * @param validationResults     where the results are collected
      * @param collectAttrValues
      * @param serverVariables
@@ -49,7 +47,7 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
      */
     @Override
     protected void validate(XmlObject statementAbstractType,
-                            ProcessorResult wssResults, Collection<SamlAssertionValidate.Error> validationResults, Collection<Pair<String, String[]>> collectAttrValues, Map<String, Object> serverVariables, Audit auditor) {
+                            Collection<SamlAssertionValidate.Error> validationResults, Collection<Pair<String, String[]>> collectAttrValues, Map<String, Object> serverVariables, Audit auditor) {
         if (!(statementAbstractType instanceof AuthzDecisionStatementType)) {
             throw new IllegalArgumentException("Expected " + AuthzDecisionStatementType.class);
         }

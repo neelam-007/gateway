@@ -2,10 +2,9 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Pair;
 import org.apache.xmlbeans.XmlCursor;
@@ -37,11 +36,11 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
     /**
      * Construct  the <code>SamlAssertionValidate</code> for the statement assertion
      *
-     * @param requestWssSaml     the saml statemenet assertion
+     * @param requestSaml     the saml statemenet assertion
      */
-    Saml2AttributeStatementValidate(RequireWssSaml requestWssSaml) {
-        super(requestWssSaml);
-        attribueStatementRequirements = requestWssSaml.getAttributeStatement();
+    Saml2AttributeStatementValidate(RequireSaml requestSaml) {
+        super(requestSaml);
+        attribueStatementRequirements = requestSaml.getAttributeStatement();
         if (attribueStatementRequirements == null) {
             throw new IllegalArgumentException("Attribute requirements have not been specified");
         }
@@ -51,7 +50,6 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
      * Validate the attribute statement
      *
      * @param statementAbstractType
-     * @param wssResults
      * @param validationResults     where the results are collected
      * @param collectAttrValues
      * @param serverVariables
@@ -59,7 +57,7 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
      */
     @Override
     protected void validate(XmlObject statementAbstractType,
-                            ProcessorResult wssResults, Collection<SamlAssertionValidate.Error> validationResults, Collection<Pair<String, String[]>> collectAttrValues, Map<String, Object> serverVariables, Audit auditor) {
+                            Collection<SamlAssertionValidate.Error> validationResults, Collection<Pair<String, String[]>> collectAttrValues, Map<String, Object> serverVariables, Audit auditor) {
         if (!(statementAbstractType instanceof AttributeStatementType)) {
             throw new IllegalArgumentException("Expected " + AttributeStatementType.class);
         }

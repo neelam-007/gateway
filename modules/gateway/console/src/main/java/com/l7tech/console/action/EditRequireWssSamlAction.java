@@ -37,8 +37,8 @@ public class EditRequireWssSamlAction extends NodeActionWithMetaSupport {
     protected void performAction() {
         final RequireWssSaml requestWssSaml = (RequireWssSaml)node.asAssertion();
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final RequireWssSamlPropertiesPanel dlg =
-          new RequireWssSamlPropertiesPanel(requestWssSaml, mw, true, !node.canEdit());
+        final RequireWssSamlPropertiesPanel<RequireWssSaml> dlg =
+          new RequireWssSamlPropertiesPanel<RequireWssSaml>(requestWssSaml, mw, true, !node.canEdit(), false);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

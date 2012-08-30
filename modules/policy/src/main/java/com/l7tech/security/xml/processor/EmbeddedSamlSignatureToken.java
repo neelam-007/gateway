@@ -14,12 +14,12 @@ import java.security.cert.X509Certificate;
 /**
 * A virtual signing token representing a signing certificate embedded in a SAML token signature.
 */
-class EmbeddedSamlSignatureToken extends SigningSecurityTokenImpl implements X509SecurityToken {
+public final class EmbeddedSamlSignatureToken extends SigningSecurityTokenImpl implements X509SecurityToken {
     private final SamlAssertion samlToken;
     private final String signatureAlgorithmId;
     private final String[] digestAlgorithmIds;
 
-    EmbeddedSamlSignatureToken( final SamlAssertion samlToken ) throws SignatureException {
+    public EmbeddedSamlSignatureToken( final SamlAssertion samlToken ) throws SignatureException {
         super(null);
         this.samlToken = samlToken;
         this.signatureAlgorithmId = DsigUtil.findSigAlgorithm(samlToken.getEmbeddedIssuerSignature());

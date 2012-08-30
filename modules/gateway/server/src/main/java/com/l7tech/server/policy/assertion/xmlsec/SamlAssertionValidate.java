@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.xmlsec.RequireSaml;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
@@ -15,7 +16,6 @@ import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import org.apache.xmlbeans.XmlObject;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import x0Assertion.oasisNamesTcSAML1.*;
 
@@ -28,8 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Validates the SAML Assertion within the Document. The Document must represent a well formed
- * SOAP message.
+ * Validates an SAML Assertion.
  *
  * Note: Instances of this class are currently only used by the ServerRequireWssSaml server assertion. Other usages
  * are of static members.
@@ -42,37 +41,42 @@ public class SamlAssertionValidate {
 
     protected final Logger logger = Logger.getLogger(getClass().getName());
     protected Collection errorCollector = new ArrayList();
-    protected final RequireWssSaml requestWssSaml;
+    protected final RequireSaml requestSaml;
     private Map<Class, SamlStatementValidate> validators = new HashMap<Class, SamlStatementValidate>();
+    private final boolean isSoap;
 
     /**
      * Construct  the <code>SamlAssertionValidate</code> for the statement assertion
      *
-     * @param requestWssSaml     the saml assertion that specifies constraints
+     * @param requestSaml     the saml assertion that specifies constraints
      */
-    public SamlAssertionValidate(RequireWssSaml requestWssSaml) {
-        this.requestWssSaml = requestWssSaml;
-        if (requestWssSaml.getAuthenticationStatement() != null) {
-            validators.put(AuthenticationStatementType.class, new SamlAuthenticationStatementValidate(requestWssSaml));
-            validators.put(x0Assertion.oasisNamesTcSAML2.AuthnStatementType.class, new Saml2AuthenticationStatementValidate(requestWssSaml));
+    public SamlAssertionValidate(RequireSaml requestSaml) {
+        this.requestSaml = requestSaml;
+        if (requestSaml.getAuthenticationStatement() != null) {
+            validators.put(AuthenticationStatementType.class, new SamlAuthenticationStatementValidate(requestSaml));
+            validators.put(x0Assertion.oasisNamesTcSAML2.AuthnStatementType.class, new Saml2AuthenticationStatementValidate(requestSaml));
         }
-        if (requestWssSaml.getAuthorizationStatement() != null) {
-            validators.put(AuthorizationDecisionStatementType.class, new SamlAuthorizationDecisionStatementValidate(requestWssSaml));
-            validators.put(x0Assertion.oasisNamesTcSAML2.AuthzDecisionStatementType.class, new Saml2AuthorizationDecisionStatementValidate(requestWssSaml));
+        if (requestSaml.getAuthorizationStatement() != null) {
+            validators.put(AuthorizationDecisionStatementType.class, new SamlAuthorizationDecisionStatementValidate(requestSaml));
+            validators.put(x0Assertion.oasisNamesTcSAML2.AuthzDecisionStatementType.class, new Saml2AuthorizationDecisionStatementValidate(requestSaml));
         }
-        if (requestWssSaml.getAttributeStatement() != null) {
-            validators.put(AttributeStatementType.class, new SamlAttributeStatementValidate(requestWssSaml));
-            validators.put(x0Assertion.oasisNamesTcSAML2.AttributeStatementType.class, new Saml2AttributeStatementValidate(requestWssSaml));
+        if (requestSaml.getAttributeStatement() != null) {
+            validators.put(AttributeStatementType.class, new SamlAttributeStatementValidate(requestSaml));
+            validators.put(x0Assertion.oasisNamesTcSAML2.AttributeStatementType.class, new Saml2AttributeStatementValidate(requestSaml));
         }
+
+        isSoap = requestSaml instanceof RequireWssSaml;
     }
 
     /**
-     * Validates the SAML statement.
-     *
-     * @param credentials       the  credenaitls that may have been collected, null otherwise
-     * @param wssResults        the wssresults
+     * Only called from tests. Leaving in as all tests should require that a signature is present.
+     * @param credentials
+     * @param wssResults
      * @param validationResults
      * @param collectAttrValues
+     * @param clientAddresses
+     * @param serverVariables
+     * @param auditor
      */
     public void validate(final LoginCredentials credentials,
                          final ProcessorResult wssResults,
@@ -81,6 +85,27 @@ public class SamlAssertionValidate {
                          final Collection<String> clientAddresses,
                          final Map<String, Object> serverVariables,
                          final Audit auditor) {
+        validate(credentials, wssResults, validationResults, collectAttrValues, clientAddresses, serverVariables, auditor, true);
+
+    }
+    /**
+     * Validates the SAML statement.
+     *
+     * @param credentials       the  credenaitls that may have been collected, null otherwise
+     * @param wssResults        the wssresults
+     * @param validationResults
+     * @param collectAttrValues
+     * @param isSignatureAlwaysRequired true if a signature must always be required. Historically this has always
+     * been true for SOAP messages
+     */
+    public void validate(final LoginCredentials credentials,
+                         final ProcessorResult wssResults,
+                         final Collection<Error> validationResults,
+                         final Collection<Pair<String, String[]>> collectAttrValues,
+                         final Collection<String> clientAddresses,
+                         final Map<String, Object> serverVariables,
+                         final Audit auditor,
+                         final boolean isSignatureAlwaysRequired) {
         String securityNS = wssResults.getSecurityNS();
         if (null == securityNS) {  // assume no security header was found
             Error result = new Error("No Security Header found", null);
@@ -89,8 +114,8 @@ public class SamlAssertionValidate {
             return;
         }
 
-        boolean acceptV1 = requestWssSaml.getVersion()==null || requestWssSaml.getVersion()!=2;
-        boolean acceptV2 = requestWssSaml.getVersion()!=null && requestWssSaml.getVersion()!=1;
+        boolean acceptV1 = requestSaml.getVersion()==null || requestSaml.getVersion()!=2;
+        boolean acceptV2 = requestSaml.getVersion()!=null && requestSaml.getVersion()!=1;
         Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
         now.clear(Calendar.MILLISECOND); //clear millis xsd:dateTime does not have it
 
@@ -122,7 +147,7 @@ public class SamlAssertionValidate {
                                     SamlStatementValidate statementValidate = validators.get(clazz);
                                     validateSubjectConfirmation((SubjectStatementAbstractType)statementAbstractType, validationResults, serverVariables, auditor);
                                     validateConditions(assertionType, validationResults, serverVariables, auditor);
-                                    statementValidate.validate(statementAbstractType, wssResults, validationResults, collectAttrValues, serverVariables, auditor);
+                                    statementValidate.validate(statementAbstractType, validationResults, collectAttrValues, serverVariables, auditor);
                                 }
                             }
                         }
@@ -146,7 +171,7 @@ public class SamlAssertionValidate {
                                 if (clazz.isAssignableFrom(statementAbstractType.getClass())) {
                                     assertionMatch = true;
                                     SamlStatementValidate statementValidate = validators.get(clazz);
-                                    statementValidate.validate(statementAbstractType, wssResults, validationResults, collectAttrValues, serverVariables, auditor);
+                                    statementValidate.validate(statementAbstractType, validationResults, collectAttrValues, serverVariables, auditor);
                                 }
                             }
                         }
@@ -178,16 +203,19 @@ public class SamlAssertionValidate {
             final SigningSecurityToken embeddedSignatureToken = tokes.left;
             final SigningSecurityToken[] signingTokens = tokes.right;
 
-            if (embeddedSignatureToken == null && signingTokens.length == 0) {
-                Error result = new Error("Unsigned SAML assertion found in security Header", null);
-                validationResults.add(result);
-                logger.finer(result.toString());
-                return;
-            } else if (signingTokens.length > 1) {
-                Error result = new Error("SAML assertion was signed by more than one security token", null);
-                validationResults.add(result);
-                logger.finer(result.toString());
-                return;
+            if (isSoap || (!isSoap && isSignatureAlwaysRequired)) {
+                //always require a signature when it's SOAP. Otherwise only check when a signature is always required
+                if (embeddedSignatureToken == null && signingTokens.length == 0) {
+                    Error result = new Error("Unsigned SAML assertion found in security Header", null);
+                    validationResults.add(result);
+                    logger.finer(result.toString());
+                    return;
+                } else if (signingTokens.length > 1) {
+                    Error result = new Error("SAML assertion was signed by more than one security token", null);
+                    validationResults.add(result);
+                    logger.finer(result.toString());
+                    return;
+                }
             }
 
             if (assertion.isSenderVouches()) {
@@ -200,7 +228,7 @@ public class SamlAssertionValidate {
                         validationResults.add(result);
                         logger.finer(result.toString());
                         return;
-                    } else {
+                    } else if (isSoap || (!isSoap && isSignatureAlwaysRequired)) {
                         Error result = new Error("Assertion was not signed by an X.509 SecurityToken", null);
                         validationResults.add(result);
                         logger.finer(result.toString());
@@ -209,7 +237,7 @@ public class SamlAssertionValidate {
                 }
             }
 
-            if (assertion.isHolderOfKey() && requestWssSaml.isRequireHolderOfKeyWithMessageSignature()) {
+            if (assertion.isHolderOfKey() && isSoap && ((RequireWssSaml)requestSaml).isRequireHolderOfKeyWithMessageSignature()) {
                 X509Certificate subjectCertificate = assertion.getSubjectCertificate();
                 if (subjectCertificate == null) {
                     Error result = new Error("Subject Certificate is required for Holder-Of-Key Assertion", null);
@@ -223,7 +251,7 @@ public class SamlAssertionValidate {
                     validationResults.add(result);
                     logger.finer(result.toString());
                 }
-            } else if (assertion.isSenderVouches() && requestWssSaml.isRequireSenderVouchesWithMessageSignature()) {
+            } else if (assertion.isSenderVouches() && isSoap && ((RequireWssSaml)requestSaml).isRequireSenderVouchesWithMessageSignature()) {
                 // make sure ther soap:Body or timestamp is signed. The actual trust verification is in FIP SamlAuthorizationHandler
                 X509Certificate messageSigner = getBodyOrTimestampSigner(wssResults);
 
@@ -372,7 +400,7 @@ public class SamlAssertionValidate {
                                     final Map<String, Object> serverVariables,
                                     final Audit auditor) throws IOException {
         ConditionsType conditionsType = assertionType.getConditions();
-        if (!requestWssSaml.isCheckAssertionValidity()) {
+        if (!requestSaml.isCheckAssertionValidity()) {
             logger.finer("No Assertion Validity requested");
         } else {
             if (conditionsType == null) {
@@ -414,7 +442,7 @@ public class SamlAssertionValidate {
             }
         }
 
-        final Option<String> option = Option.optional(requestWssSaml.getAudienceRestriction());
+        final Option<String> option = Option.optional(requestSaml.getAudienceRestriction());
         final List<String> allAudienceRestrictions = (!option.isSome()) ?
                 Collections.<String>emptyList() :
                 ContextVariableUtils.getAllResolvedStrings(option.some(), serverVariables, auditor, TextUtils.URI_STRING_SPLIT_PATTERN, new Functions.UnaryVoid<Object>() {
@@ -503,7 +531,7 @@ public class SamlAssertionValidate {
             return;
         }
 
-        final String nameQualTest = requestWssSaml.getNameQualifier();
+        final String nameQualTest = requestSaml.getNameQualifier();
         final String nameQualifier = (nameQualTest == null) ? nameQualTest : ExpandVariables.process(nameQualTest, serverVariables, auditor);
         final NameIdentifierType nameIdentifierType = subject.getNameIdentifier();
         if (nameQualifier != null && !"".equals(nameQualifier)) {
@@ -522,7 +550,7 @@ public class SamlAssertionValidate {
                 }
             }
         }
-        String[] nameFormats = filterNameFormats(requestWssSaml.getNameFormats());
+        String[] nameFormats = filterNameFormats(requestSaml.getNameFormats());
         boolean nameFormatMatch = false;
         final String presentedNameFormat = (nameIdentifierType != null && nameIdentifierType.getFormat() != null)?
                 nameIdentifierType.getFormat():
@@ -550,7 +578,7 @@ public class SamlAssertionValidate {
             logger.finer(result.toString());
             return;
         }
-        String[] confirmations = requestWssSaml.getSubjectConfirmations();
+        String[] confirmations = requestSaml.getSubjectConfirmations();
         final SubjectConfirmationType subjectConfirmation = subject.getSubjectConfirmation();
         List presentedConfirmations = null;
         if (subjectConfirmation != null) {
@@ -563,7 +591,7 @@ public class SamlAssertionValidate {
 
         // if no confirmations have been presented, and that is what corresponds to assertion requirements
         // no confirmation check is performed
-        if (presentedConfirmations.isEmpty() && requestWssSaml.isNoSubjectConfirmation()) {
+        if (presentedConfirmations.isEmpty() && requestSaml.isNoSubjectConfirmation()) {
             logger.fine("Matched Subject Confirmation 'None'");
             return;
         }
@@ -579,7 +607,7 @@ public class SamlAssertionValidate {
 
         if (!confirmationMatch) {
             List<String> acceptedConfirmations = new ArrayList<String>(Arrays.asList(confirmations));
-            if (requestWssSaml.isNoSubjectConfirmation()) {
+            if (requestSaml.isNoSubjectConfirmation()) {
                 acceptedConfirmations.add("None");
             }
             Error result = new Error("Subject Confirmations mismatch presented/accepted {0}/{1}",
@@ -600,7 +628,7 @@ public class SamlAssertionValidate {
                                     final Map<String, Object> serverVariables,
                                     final Audit auditor) {
 
-        Saml2SubjectAndConditionValidate.validateConditions(requestWssSaml,
+        Saml2SubjectAndConditionValidate.validateConditions(requestSaml,
                 conditionsType,
                 timeNow,
                 validationResults,
@@ -617,7 +645,7 @@ public class SamlAssertionValidate {
                                              final Collection<Error> validationResults,
                                              final Map<String, Object> serverVariables,
                                              final Audit auditor) {
-        Saml2SubjectAndConditionValidate.validateSubject(requestWssSaml,
+        Saml2SubjectAndConditionValidate.validateSubject(requestSaml,
                 subjectType,
                 timeNow,
                 clientAddresses,

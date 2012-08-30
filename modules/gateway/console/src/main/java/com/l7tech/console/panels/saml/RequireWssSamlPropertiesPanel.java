@@ -3,7 +3,7 @@ package com.l7tech.console.panels.saml;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.LegacyAssertionPropertyDialog;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireSaml;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -22,22 +22,25 @@ import java.util.Collection;
  * @author emil
  * @version Jan 18, 2005
  */
-public class RequireWssSamlPropertiesPanel extends LegacyAssertionPropertyDialog {
+// TODO [Donal] - rename panel
+public class RequireWssSamlPropertiesPanel<AT extends RequireSaml> extends LegacyAssertionPropertyDialog {
     private JTabbedPane tabbedPane;
     private JButton buttonOk;
     private JButton buttonCancel;
     private JPanel mainPanel;
-    private RequireWssSaml assertion;
+    private RequireSaml assertion;
     private boolean assertionChanged;
     private WizardStepPanel[] wizardPanels;
     private ChangeListener wizardPanelChangeListener;
+    private final boolean hasOptionalSignature;
 
     /**
      * Creates new wizard
      */
-    public RequireWssSamlPropertiesPanel(RequireWssSaml assertion, Frame parent, boolean modal, boolean readOnly) {
+    public RequireWssSamlPropertiesPanel(AT assertion, Frame parent, boolean modal, boolean readOnly, boolean hasOptionalSignature) {
         super(parent, assertion, modal);
         this.assertion = assertion;
+        this.hasOptionalSignature = hasOptionalSignature;
         Container contentPane = getContentPane();
         contentPane.setLayout(new BorderLayout());
         /** Set content pane */
@@ -89,19 +92,35 @@ public class RequireWssSamlPropertiesPanel extends LegacyAssertionPropertyDialog
         subjectConfirmationNameIdentifierWizardStepPanel.setBorder(emptyBorder);
         panels.add(subjectConfirmationNameIdentifierWizardStepPanel);
 
-        ConditionsWizardStepPanel conditionsWizardStepPanel = new ConditionsWizardStepPanel(null, false, this);
+        final RequireEmbeddedSignatureWizardStepPanel signatureWizardStepPanel;
+
+        // create early as may or may not need to show it and need to set up preceding step correctly if it should be shown.
+        if (hasOptionalSignature) {
+            signatureWizardStepPanel = new RequireEmbeddedSignatureWizardStepPanel(null, false, this);
+        } else {
+            signatureWizardStepPanel = null;
+        }
+
+        ConditionsWizardStepPanel conditionsWizardStepPanel = new ConditionsWizardStepPanel(signatureWizardStepPanel, false, this);
         conditionsWizardStepPanel.setBorder(emptyBorder);
         panels.add(conditionsWizardStepPanel);
-        wizardPanels = (WizardStepPanel[])panels.toArray(new WizardStepPanel[]{});
 
         tabbedPane.add(subjectConfirmationWizardStepPanel.getStepLabel(), subjectConfirmationWizardStepPanel);
         tabbedPane.add(subjectConfirmationNameIdentifierWizardStepPanel.getStepLabel(), subjectConfirmationNameIdentifierWizardStepPanel);
         tabbedPane.add(conditionsWizardStepPanel.getStepLabel(), conditionsWizardStepPanel);
 
+        if (hasOptionalSignature) {
+            tabbedPane.add(signatureWizardStepPanel.getStepLabel(), signatureWizardStepPanel);
+            panels.add(signatureWizardStepPanel);
+        }
+
+        wizardPanels = (WizardStepPanel[])panels.toArray(new WizardStepPanel[]{});
+
         // Save / restore when changing tabs
         tabbedPane.addChangeListener(new ChangeListener(){
+            @Override
             public void stateChanged(ChangeEvent e) {
-                RequireWssSaml workingCopy = (RequireWssSaml) assertion.clone();
+                AT workingCopy = (AT) assertion.clone();
                 for (int i = 0; i < wizardPanels.length; i++) {
                     WizardStepPanel wizardPanel = wizardPanels[i];
                     wizardPanel.storeSettings(workingCopy);
@@ -111,6 +130,7 @@ public class RequireWssSamlPropertiesPanel extends LegacyAssertionPropertyDialog
         });
 
         wizardPanelChangeListener = new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 for (int j = 0; j < wizardPanels.length; j++) {
                     WizardStepPanel panel = wizardPanels[j];
@@ -128,6 +148,7 @@ public class RequireWssSamlPropertiesPanel extends LegacyAssertionPropertyDialog
             wizardPanel.addChangeListener(wizardPanelChangeListener);
         }
         buttonCancel.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }
@@ -135,6 +156,7 @@ public class RequireWssSamlPropertiesPanel extends LegacyAssertionPropertyDialog
 
         buttonOk.setEnabled(!readOnly);
         buttonOk.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 for (int i = 0; i < wizardPanels.length; i++) {
                     WizardStepPanel wizardPanel = wizardPanels[i];

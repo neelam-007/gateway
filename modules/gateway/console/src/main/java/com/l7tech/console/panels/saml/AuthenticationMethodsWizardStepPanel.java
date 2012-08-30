@@ -6,8 +6,8 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.policy.assertion.xmlsec.RequireSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.saml.SamlConstants;
 
 import javax.swing.*;
@@ -100,7 +100,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        RequireWssSaml assertion = (RequireWssSaml)settings;
+        RequireSaml assertion = (RequireSaml)settings;
         SamlAuthenticationStatement statement = assertion.getAuthenticationStatement();
         setSkipped(statement == null);
         if (statement == null) {
@@ -140,7 +140,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        RequireWssSaml assertion = (RequireWssSaml)settings;
+        RequireSaml assertion = (RequireSaml)settings;
          SamlAuthenticationStatement statement = assertion.getAuthenticationStatement();
          if (statement == null) {
              throw new IllegalArgumentException();
@@ -196,6 +196,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
 
         allMethods = (JCheckBox[])authenticationsMap.values().toArray(new JCheckBox[] {});
         buttonSelectAll.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 for (int i = 0; i < allMethods.length; i++) {
                     JCheckBox method = allMethods[i];
@@ -205,6 +206,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
             }
         });
         buttonSelectNone.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 for (int i = 0; i < allMethods.length; i++) {
                     JCheckBox method = allMethods[i];
@@ -217,6 +219,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
         for (int i = 0; i < allMethods.length; i++) {
             JCheckBox method = allMethods[i];
             method.addChangeListener( new ChangeListener() {
+                @Override
                 public void stateChanged(ChangeEvent e) {
                     notifyListeners();
                 }
@@ -227,6 +230,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Authentication Methods";
     }
@@ -237,6 +241,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
      *
      * @return true if the panel is valid, false otherwis
      */
+    @Override
     public boolean canAdvance() {
         for (int i = 0; i < allMethods.length; i++) {
             JCheckBox method = allMethods[i];
@@ -247,6 +252,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
         return false;
     }
 
+    @Override
     public String getDescription() {
         return
           "<html>Specify one or more accepted authentication methods that the SAML statement must assert. " +

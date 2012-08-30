@@ -18,27 +18,14 @@ import java.util.EnumSet;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
- * The <code>RequestWssSaml</code> assertion describes the common SAML constraints
- * about subject, general SAML Assertion conditions and Statement constraints: for
- * authentication, authorization and attribute statements.
+ * Additional information required for WS-Security SOAP processing.
  */
 @RequiresSOAP(wss=true)
-public class RequireWssSaml extends SamlPolicyAssertion implements MessageTargetable, UsesVariables, SetsVariables, SecurityHeaderAddressable {
-    public static final String PREFIX_SAML_ATTR = "saml.attr";
-    public static final long UPPER_BOUND_FOR_MAX_EXPIRY = 100L * 365L * 86400L * 1000L; // 100 Years
+public class RequireWssSaml extends RequireSaml implements SecurityHeaderAddressable {
 
-    private String[] subjectConfirmations = new String[]{};
-    private String subjectConfirmationDataRecipient;
-    private boolean subjectConfirmationDataCheckAddress = false;
-    private boolean subjectConfirmationDataCheckValidity = true;
-    private String[] nameFormats = new String[]{};
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private boolean requireSenderVouchesWithMessageSignature = false;
     private boolean requireHolderOfKeyWithMessageSignature = false;
-    private MessageTargetableSupport messageTargetableSupport = new MessageTargetableSupport(false);
-    private boolean checkAssertionValidity = true;
-    private long maxExpiry = 0L;
-    private TimeUnit timeUnit = TimeUnit.MINUTES;
 
     public RequireWssSaml() {
     }
@@ -76,93 +63,10 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
     }
 
     public void copyFrom(RequireWssSaml requestWssSaml) {
-        this.setAssertionComment(requestWssSaml.getAssertionComment());
-        this.setAttributeStatement(requestWssSaml.getAttributeStatement());
-        this.setAudienceRestriction(requestWssSaml.getAudienceRestriction());
-        this.setAuthenticationStatement(requestWssSaml.getAuthenticationStatement());
-        this.setAuthorizationStatement(requestWssSaml.getAuthorizationStatement());
-        this.setCheckAssertionValidity(requestWssSaml.isCheckAssertionValidity());
-        this.setNameFormats(requestWssSaml.getNameFormats());
-        this.setNameQualifier(requestWssSaml.getNameQualifier());
-        this.setNoSubjectConfirmation(requestWssSaml.isNoSubjectConfirmation());
-        this.setParent(requestWssSaml.getParent());
+        super.copyFrom(requestWssSaml);
         this.setRecipientContext(requestWssSaml.getRecipientContext());
         this.setRequireHolderOfKeyWithMessageSignature(requestWssSaml.isRequireHolderOfKeyWithMessageSignature());
         this.setRequireSenderVouchesWithMessageSignature(requestWssSaml.isRequireSenderVouchesWithMessageSignature());
-        this.setSubjectConfirmations(requestWssSaml.getSubjectConfirmations());
-        this.setVersion(requestWssSaml.getVersion());
-        this.setTarget(requestWssSaml.getTarget());
-        this.setOtherTargetMessageVariable(requestWssSaml.getOtherTargetMessageVariable());
-        this.setEnabled(requestWssSaml.isEnabled());
-        this.setSubjectConfirmationDataCheckAddress(requestWssSaml.isSubjectConfirmationDataCheckAddress());
-        this.setSubjectConfirmationDataCheckValidity(requestWssSaml.isSubjectConfirmationDataCheckValidity());
-        this.setSubjectConfirmationDataRecipient(requestWssSaml.getSubjectConfirmationDataRecipient());
-        this.setMaxExpiry(requestWssSaml.getMaxExpiry());
-        this.setTimeUnit(requestWssSaml.getTimeUnit());
-    }
-
-    /**
-     * Get the Subject confirmations specified in this assertion
-     *
-     * @return the array of subject confirmations specified
-     * @see com.l7tech.security.saml.SamlConstants#CONFIRMATION_HOLDER_OF_KEY
-     * @see com.l7tech.security.saml.SamlConstants#CONFIRMATION_SENDER_VOUCHES
-     */
-    public String[] getSubjectConfirmations() {
-        return subjectConfirmations;
-    }
-
-    /**
-     * Set the subject confirmations that are required
-     *
-     * @param subjectConfirmations
-     */
-    public void setSubjectConfirmations(String[] subjectConfirmations) {
-        if (subjectConfirmations == null) {
-            this.subjectConfirmations = new String[]{};
-        } else {
-            this.subjectConfirmations = subjectConfirmations;
-        }
-    }
-
-    /**
-     * @return the boolean flad indicating whether the assertion validity was requested
-     */
-    public boolean isCheckAssertionValidity() {
-        return checkAssertionValidity;
-    }
-
-    /**
-     * Set whther to check the assertion validity period.
-     *
-     * @param checkAssertionValidity true t ocheck assertion validity, false otherwise
-     */
-    public void setCheckAssertionValidity(boolean checkAssertionValidity) {
-        this.checkAssertionValidity = checkAssertionValidity;
-    }
-
-    /**
-     * @return an integer value for the maximum lifetime of the SAML assertion (unit: milliseconds)
-     */
-    public long getMaxExpiry() {
-        return maxExpiry;
-    }
-
-    /**
-     * Set the maximum lifetime of the SAML assertion (unit: milliseconds)
-     * 
-     * @param maxExpiry: an integer value for the maximum lifetime of the SAML assertion.
-     */
-    public void setMaxExpiry(long maxExpiry) {
-        this.maxExpiry = maxExpiry;
-    }
-
-    public TimeUnit getTimeUnit() {
-        return timeUnit;
-    }
-
-    public void setTimeUnit(TimeUnit timeUnit) {
-        this.timeUnit = timeUnit;
     }
 
     @Override
@@ -190,84 +94,6 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
 
     public void setRequireSenderVouchesWithMessageSignature(boolean requireSenderVouchesWithMessageSignature) {
         this.requireSenderVouchesWithMessageSignature = requireSenderVouchesWithMessageSignature;
-    }
-
-
-    public String[] getNameFormats() {
-        return nameFormats;
-    }
-
-    public void setNameFormats(String[] nameFormats) {
-        if (nameFormats == null) {
-            this.nameFormats = new String[]{};
-        } else {
-            this.nameFormats = nameFormats;
-        }
-    }
-
-    public String getSubjectConfirmationDataRecipient() {
-        return subjectConfirmationDataRecipient;
-    }
-
-    public void setSubjectConfirmationDataRecipient( final String subjectConfirmationDataRecipient ) {
-        this.subjectConfirmationDataRecipient = subjectConfirmationDataRecipient;
-    }
-
-    public boolean isSubjectConfirmationDataCheckAddress() {
-        return subjectConfirmationDataCheckAddress;
-    }
-
-    public void setSubjectConfirmationDataCheckAddress( final boolean subjectConfirmationDataCheckAddress ) {
-        this.subjectConfirmationDataCheckAddress = subjectConfirmationDataCheckAddress;
-    }
-
-    public boolean isSubjectConfirmationDataCheckValidity() {
-        return subjectConfirmationDataCheckValidity;
-    }
-
-    public void setSubjectConfirmationDataCheckValidity( final boolean subjectConfirmationDataCheckValidity ) {
-        this.subjectConfirmationDataCheckValidity = subjectConfirmationDataCheckValidity;
-    }
-
-    @Override
-    public String getOtherTargetMessageVariable() {
-        return messageTargetableSupport.getOtherTargetMessageVariable();
-    }
-
-    @Override
-    public TargetMessageType getTarget() {
-        return messageTargetableSupport.getTarget();
-    }
-
-    @Override
-    public String getTargetName() {
-        return messageTargetableSupport.getTargetName();
-    }
-
-    @Override
-    public boolean isTargetModifiedByGateway() {
-        return messageTargetableSupport.isTargetModifiedByGateway();
-    }
-
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    @Override
-    public String[] getVariablesUsed() {
-        return messageTargetableSupport.getMessageTargetVariablesUsed().withExpressions(
-                subjectConfirmationDataRecipient,
-                nameQualifier,
-                audienceRestriction,
-                (authenticationStatement != null)? authenticationStatement.getCustomAuthenticationMethods(): ""
-        ).asArray();
-    }
-
-    @Override
-    public void setOtherTargetMessageVariable(String otherTargetMessageVariable) {
-        messageTargetableSupport.setOtherTargetMessageVariable(otherTargetMessageVariable);
-    }
-
-    @Override
-    public void setTarget(TargetMessageType target) {
-        messageTargetableSupport.setTarget(target);
     }
 
     /**
@@ -331,53 +157,18 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
             }
         });
 
+        meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, "com.l7tech.server.policy.assertion.xmlsec.ServerRequireWssSoapSaml");
         return meta;
     }
 
-    @Override
-    public Object clone() {
-        RequireWssSaml assertion = (RequireWssSaml) super.clone();
-
-        if (assertion.getAttributeStatement() != null) {
-            assertion.setAttributeStatement((SamlAttributeStatement)assertion.getAttributeStatement().clone());
-        }
-
-        if (assertion.getAuthenticationStatement() != null) {
-            assertion.setAuthenticationStatement((SamlAuthenticationStatement)assertion.getAuthenticationStatement().clone());
-        }
-
-        if (assertion.getAuthorizationStatement() != null) {
-            assertion.setAuthorizationStatement((SamlAuthorizationStatement)assertion.getAuthorizationStatement().clone());
-        }
-
-        assertion.messageTargetableSupport = new MessageTargetableSupport( messageTargetableSupport );
-
-        return assertion;
-    }
-
-    public String describe() {
-        String st = "Unknown Statement";
-        if (getAuthenticationStatement() != null) {
-            st = "Authentication Statement";
-        } else if (getAttributeStatement() !=null) {
-            st = "Attribute Statement";
-        } else if (getAuthorizationStatement() !=null) {
-            st = "Authorization Decision Statement";
-        }
-
-        if (this.getVersion() != null && this.getVersion() != 0) {
-            st = "v" + this.getVersion() + " " + st;
-        }
-
-        return AssertionUtils.decorateName(this, "Require SAML Token " + st);
-    }
+    // - PROTECTED
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return messageTargetableSupport.getMessageTargetVariablesSet().withVariables(
-                new VariableMetadata(PREFIX_SAML_ATTR, true, true, PREFIX_SAML_ATTR, false)
-        ).asArray();
+    protected String getAssertionDisplayName() {
+        return "Require SAML Token";
     }
+
+    // - PRIVATE
 
     private static final Pattern converter = Pattern.compile("[^a-zA-Z0-9]");
 

@@ -12,7 +12,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.assertion.SamlElementGenericConfig;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.util.TimeUnit;
@@ -97,7 +97,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
             issuerConfiguration.setConditionsNotBeforeSecondsInPast( specifyValidityRadioButton.isSelected() ? (Integer)notBeforeSpinner.getValue() : -1);
             issuerConfiguration.setConditionsNotOnOrAfterExpirySeconds( specifyValidityRadioButton.isSelected() ? (Integer)notOnOrAfterSpinner.getValue() : -1);
         } else {
-            final RequireWssSaml assertion = (RequireWssSaml) settings;
+            final RequireSaml assertion = (RequireSaml) settings;
             assertion.setCheckAssertionValidity(checkBoxCheckAssertionValidity.isSelected());
 
             TimeUnit timeUnit = (TimeUnit) timeUnitComboBox.getSelectedItem();
@@ -133,7 +133,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
             if (secondsInPast != -1) notBeforeSpinner.setValue(secondsInPast);
             if (onOrAfterExpirySeconds != -1) notOnOrAfterSpinner.setValue(onOrAfterExpirySeconds);
         } else {
-            RequireWssSaml ass = (RequireWssSaml) samlAssertion;
+            RequireSaml ass = (RequireSaml) samlAssertion;
             checkBoxCheckAssertionValidity.setSelected(ass.isCheckAssertionValidity());
 
             TimeUnit timeUnit = ass.getTimeUnit();
@@ -246,7 +246,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
             maxExpiryTextField.getText().trim(),
             false,
             0,
-            RequireWssSaml.UPPER_BOUND_FOR_MAX_EXPIRY  / multiplier);
+            RequireSaml.UPPER_BOUND_FOR_MAX_EXPIRY  / multiplier);
     }
 
     @Override

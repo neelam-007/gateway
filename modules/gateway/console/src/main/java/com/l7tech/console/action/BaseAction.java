@@ -24,7 +24,7 @@ import java.util.logging.Level;
  * @see AbstractAction
  */
 public abstract class BaseAction extends AbstractAction {
-    static final Logger log = Logger.getLogger(BaseAction.class.getName());
+    static final protected Logger log = Logger.getLogger(BaseAction.class.getName());
 
     public static final String LARGE_ICON = "LargeIcon";
     private EventListenerList listenerList = new EventListenerList();

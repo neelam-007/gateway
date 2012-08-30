@@ -5,11 +5,12 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.SamlElementGenericConfig;
+import com.l7tech.policy.assertion.xmlsec.RequireSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.util.Functions;
 
@@ -61,6 +62,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     private Map<String, JToggleButton> confirmationsMap;
     private boolean showTitleLabel;
     private boolean enableSubjectConfirmationData;
+    private boolean isSoapAssertion = true;
 
     private final boolean issueMode;
     private final RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
@@ -147,12 +149,12 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
                 notOnOrAfterSpinner.setValue( issuerConfiguration.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() );
             }
         } else {
-            RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
-            requestWssSaml.getSubjectConfirmations();
+            RequireSaml requestSaml = (RequireSaml)settings;
+            requestSaml.getSubjectConfirmations();
             for (JToggleButton jToggleButton : confirmationsMap.values()) {
                 jToggleButton.setSelected(false);
             }
-            String[] confirmations = requestWssSaml.getSubjectConfirmations();
+            String[] confirmations = requestSaml.getSubjectConfirmations();
             for (String confirmation : confirmations) {
                 JToggleButton jc = confirmationsMap.get(confirmation);
                 if (jc == null) {
@@ -160,15 +162,21 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
                 }
                 jc.setSelected(true);
             }
-            checkBoxSVMessageSignature.setSelected(requestWssSaml.isRequireSenderVouchesWithMessageSignature());
-            checkBoxSVMessageSignature.setEnabled(confirmationSenderVouchesButton.isSelected());
-            checkBoxHoKMessageSignature.setSelected(requestWssSaml.isRequireHolderOfKeyWithMessageSignature());
-            checkBoxHoKMessageSignature.setEnabled(confirmationHolderOfKeyButton.isSelected());
-            confirmationNoneButton.setSelected(requestWssSaml.isNoSubjectConfirmation());
 
-            setText( recipientTextField, requestWssSaml.getSubjectConfirmationDataRecipient() );
-            checkAddressCheckBox.setSelected( requestWssSaml.isSubjectConfirmationDataCheckAddress() );
-            checkValidityPeriodCheckBox.setSelected( requestWssSaml.isSubjectConfirmationDataCheckValidity() );
+            if (requestSaml instanceof RequireWssSaml) {
+                checkBoxSVMessageSignature.setSelected(((RequireWssSaml) requestSaml).isRequireSenderVouchesWithMessageSignature());
+                checkBoxHoKMessageSignature.setSelected(((RequireWssSaml)requestSaml).isRequireHolderOfKeyWithMessageSignature());
+                checkBoxSVMessageSignature.setEnabled(confirmationSenderVouchesButton.isSelected());
+                checkBoxHoKMessageSignature.setEnabled(confirmationHolderOfKeyButton.isSelected());
+            } else {
+                isSoapAssertion = false;
+            }
+
+            confirmationNoneButton.setSelected(requestSaml.isNoSubjectConfirmation());
+
+            setText( recipientTextField, requestSaml.getSubjectConfirmationDataRecipient() );
+            checkAddressCheckBox.setSelected( requestSaml.isSubjectConfirmationDataCheckAddress() );
+            checkValidityPeriodCheckBox.setSelected( requestSaml.isSubjectConfirmationDataCheckValidity() );
         }
 
         final Integer version = ((SamlPolicyAssertion)settings).getVersion();
@@ -198,15 +206,20 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
                 notOnOrAfterSpinner.setEnabled( notOnOrAfter );
             }
         } else {
-            checkBoxHoKMessageSignature.setEnabled(confirmationHolderOfKeyButton.isSelected());
-            checkBoxSVMessageSignature.setEnabled(confirmationSenderVouchesButton.isSelected());
+            if (!isSoapAssertion) {
+                checkBoxHoKMessageSignature.setVisible(false);
+                checkBoxSVMessageSignature.setVisible(false);
+            } else {
+                checkBoxHoKMessageSignature.setEnabled(confirmationHolderOfKeyButton.isSelected());
+                checkBoxSVMessageSignature.setEnabled(confirmationSenderVouchesButton.isSelected());
+            }
 
             final boolean confirmationMethodWithData =
                     confirmationSenderVouchesButton.isSelected() ||
-                    confirmationHolderOfKeyButton.isSelected() ||
-                    confirmationBearerButton.isSelected();
+                            confirmationHolderOfKeyButton.isSelected() ||
+                            confirmationBearerButton.isSelected();
 
-            Utilities.setEnabled( subjectConfirmationDataPanel, enableSubjectConfirmationData && confirmationMethodWithData );
+            Utilities.setEnabled(subjectConfirmationDataPanel, enableSubjectConfirmationData && confirmationMethodWithData);
         }
     }
 
@@ -255,7 +268,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
             issuerConfiguration.setSubjectConfirmationDataNotOnOrAfterExpirySeconds(
                     useNotOnOrAfterPeriod ? (Integer)notOnOrAfterSpinner.getValue() : -1 );
         } else {
-            RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
+            RequireSaml requestSaml = (RequireSaml)settings;
             Collection<String> confirmations = new ArrayList<String>();
             for (Map.Entry<String, JToggleButton> entry : confirmationsMap.entrySet()) {
                 JToggleButton jc = entry.getValue();
@@ -263,14 +276,16 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
                     confirmations.add(entry.getKey());
                 }
             }
-            requestWssSaml.setSubjectConfirmations(confirmations.toArray(new String[confirmations.size()]));
-            requestWssSaml.setRequireHolderOfKeyWithMessageSignature(checkBoxHoKMessageSignature.isSelected());
-            requestWssSaml.setRequireSenderVouchesWithMessageSignature(checkBoxSVMessageSignature.isSelected());
-            requestWssSaml.setNoSubjectConfirmation(confirmationNoneButton.isSelected());
+            requestSaml.setSubjectConfirmations(confirmations.toArray(new String[confirmations.size()]));
+            if (requestSaml instanceof RequireWssSaml) {
+                ((RequireWssSaml)requestSaml).setRequireHolderOfKeyWithMessageSignature(checkBoxHoKMessageSignature.isSelected());
+                ((RequireWssSaml)requestSaml).setRequireSenderVouchesWithMessageSignature(checkBoxSVMessageSignature.isSelected());
+            }
+            requestSaml.setNoSubjectConfirmation(confirmationNoneButton.isSelected());
 
-            requestWssSaml.setSubjectConfirmationDataRecipient( getText(recipientTextField) );
-            requestWssSaml.setSubjectConfirmationDataCheckAddress( checkAddressCheckBox.isSelected() );
-            requestWssSaml.setSubjectConfirmationDataCheckValidity( checkValidityPeriodCheckBox.isSelected() );
+            requestSaml.setSubjectConfirmationDataRecipient( getText(recipientTextField) );
+            requestSaml.setSubjectConfirmationDataCheckAddress( checkAddressCheckBox.isSelected() );
+            requestSaml.setSubjectConfirmationDataCheckValidity(checkValidityPeriodCheckBox.isSelected());
         }
     }
 

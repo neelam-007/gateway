@@ -5,6 +5,8 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.security.saml.SamlConstants;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.*;
 
 /**
@@ -112,7 +114,7 @@ public abstract class SamlPolicyAssertion extends Assertion {
          *
          * @param authenticationStatement the authentication statement constraints
          */
-    public void setAuthenticationStatement(SamlAuthenticationStatement authenticationStatement) {
+    public void setAuthenticationStatement(@Nullable SamlAuthenticationStatement authenticationStatement) {
         this.authenticationStatement = authenticationStatement;
     }
 
@@ -129,7 +131,7 @@ public abstract class SamlPolicyAssertion extends Assertion {
          *
          * @param authorizationStatement the authorization statement constraints
          */
-    public void setAuthorizationStatement(SamlAuthorizationStatement authorizationStatement) {
+    public void setAuthorizationStatement(@Nullable SamlAuthorizationStatement authorizationStatement) {
         this.authorizationStatement = authorizationStatement;
     }
 
@@ -145,7 +147,7 @@ public abstract class SamlPolicyAssertion extends Assertion {
      * Set the attribute statement constraints
      * @param attributeStatement the attribute statement constraints
      */
-    public void setAttributeStatement(SamlAttributeStatement attributeStatement) {
+    public void setAttributeStatement(@Nullable SamlAttributeStatement attributeStatement) {
         this.attributeStatement = attributeStatement;
     }
 }

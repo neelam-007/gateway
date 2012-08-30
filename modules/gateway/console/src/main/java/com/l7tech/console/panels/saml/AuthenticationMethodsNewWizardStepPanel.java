@@ -2,7 +2,6 @@ package com.l7tech.console.panels.saml;
 
 import java.awt.event.*;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Collections;
 import java.util.Collection;
@@ -21,8 +20,9 @@ import com.l7tech.console.util.SquigglyFieldUtils;
 import com.l7tech.gui.util.PauseListenerAdapter;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.widgets.SquigglyTextField;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.gui.util.ImageCache;
 
@@ -43,8 +43,8 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel{
     private JLabel titleLabel;
     private SquigglyTextField customAuthMethodTextField;
 
-    private final HashMap authenticationsMap;
-    private final HashMap enabledAuthenticationsMap;
+    private final HashMap<String, String> authenticationsMap;
+    private final HashMap<String, String> enabledAuthenticationsMap;
     private final boolean showTitleLabel;
     private final SortedListModel selectedList;
     private final SortedListModel unselectedList;
@@ -54,8 +54,8 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel{
      */
     public AuthenticationMethodsNewWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
         super(next);
-        this.authenticationsMap = new HashMap();
-        this.enabledAuthenticationsMap = new HashMap();
+        this.authenticationsMap = new HashMap<String, String>();
+        this.enabledAuthenticationsMap = new HashMap<String, String>();
         this.showTitleLabel = showTitleLabel;
         this.selectedList = new SortedListModel();
         this.unselectedList = new SortedListModel();
@@ -68,8 +68,8 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel{
      */
     public AuthenticationMethodsNewWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog owner) {
         super(next);
-        this.authenticationsMap = new HashMap();
-        this.enabledAuthenticationsMap = new HashMap();
+        this.authenticationsMap = new HashMap<String, String>();
+        this.enabledAuthenticationsMap = new HashMap<String, String>();
         this.showTitleLabel = showTitleLabel;
         this.selectedList = new SortedListModel();
         this.unselectedList = new SortedListModel();
@@ -94,7 +94,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel{
      */
     @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
-        RequireWssSaml assertion = (RequireWssSaml)settings;
+        SamlPolicyAssertion assertion = (SamlPolicyAssertion)settings;
         SamlAuthenticationStatement statement = assertion.getAuthenticationStatement();
         setSkipped(statement == null);
         if (statement == null) {
@@ -109,7 +109,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel{
 
         String[] methods = statement.getAuthenticationMethods();
         for (String method : methods) {
-            String methodText = (String) authenticationsMap.get(method);
+            String methodText = authenticationsMap.get(method);
             if (methodText == null) {
                 throw new IllegalArgumentException("Unknown authentication method: " + method);
             }
@@ -139,14 +139,14 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel{
      */
     @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        RequireWssSaml assertion = (RequireWssSaml)settings;
+        RequireSaml assertion = (RequireSaml)settings;
         SamlAuthenticationStatement statement = assertion.getAuthenticationStatement();
         if (statement == null) {
             throw new IllegalArgumentException();
         }
-        Map authMap = new HashMap(authenticationsMap);
+        Map<String, String> authMap = new HashMap<String, String>(authenticationsMap);
         authMap.values().retainAll(selectedList.getItems());
-        statement.setAuthenticationMethods((String[])authMap.keySet().toArray(new String[] {}));
+        statement.setAuthenticationMethods(authMap.keySet().toArray(new String[] {}));
         statement.setCustomAuthenticationMethods(customAuthMethodTextField.getText().trim());
     }
 

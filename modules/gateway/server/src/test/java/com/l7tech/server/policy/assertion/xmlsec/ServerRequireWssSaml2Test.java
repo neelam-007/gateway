@@ -45,7 +45,8 @@ public class ServerRequireWssSaml2Test {
     @BugNumber(5141)
     public void testContextVariableAttr() throws Exception {
         RequireWssSaml2 ass = SamlTestUtil.configureToAllowAttributeBearer(new RequireWssSaml2());
-        ServerRequireWssSaml2 sass = new ServerRequireWssSaml2(ass, SamlTestUtil.beanFactory);
+        ServerRequireWssSaml2 sass = new ServerRequireWssSaml2(ass);
+        SamlTestUtil.configureServerAssertionInjects(sass);
 
         PolicyEnforcementContext context = SamlTestUtil.createWssProcessedContext(request);
 
@@ -66,7 +67,8 @@ public class ServerRequireWssSaml2Test {
         ass.setRequireHolderOfKeyWithMessageSignature(false);
         ass.setRequireSenderVouchesWithMessageSignature(false);
         ass.setNoSubjectConfirmation(true);
-        ServerRequireWssSaml sass = new ServerRequireWssSaml2(ass, SamlTestUtil.beanFactory);
+        ServerRequireWssSaml sass = new ServerRequireWssSaml2(ass);
+        SamlTestUtil.configureServerAssertionInjects(sass);
 
 
         Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV));
@@ -169,7 +171,8 @@ public class ServerRequireWssSaml2Test {
         authStmt.setAuthenticationMethods(new String[]{SamlConstants.AUTHENTICATION_SAML2_PASSWORD});
         requireWssSaml.setAuthenticationStatement(authStmt);
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
 
         Message request = ServerRequireWssSamlTest.getDecoratedMessage(samlAssertionV2);
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
@@ -198,7 +201,8 @@ public class ServerRequireWssSaml2Test {
         authStmt.setAuthenticationMethods(new String[]{SamlConstants.UNSPECIFIED_AUTHENTICATION});
         requireWssSaml.setAuthenticationStatement(authStmt);
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
 
         Message request = ServerRequireWssSamlTest.getDecoratedMessage(samlAssertionV2);
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
@@ -231,7 +235,8 @@ public class ServerRequireWssSaml2Test {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
     }
@@ -260,7 +265,8 @@ public class ServerRequireWssSaml2Test {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.FALSIFIED, result);
     }
@@ -290,7 +296,8 @@ public class ServerRequireWssSaml2Test {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
     }
@@ -321,7 +328,8 @@ public class ServerRequireWssSaml2Test {
         context.setVariable("context_var", SamlConstants.AUTHENTICATION_SAML2_PASSWORD);
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
     }
@@ -349,7 +357,8 @@ public class ServerRequireWssSaml2Test {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
     }
@@ -368,7 +377,8 @@ public class ServerRequireWssSaml2Test {
         ass.setNoSubjectConfirmation(true);
         ass.setCheckAssertionValidity(checkAssertionValidity);
         ass.setMaxExpiry(maxExpiryTime);
-        ServerRequireWssSaml sass = new ServerRequireWssSaml2(ass, SamlTestUtil.beanFactory);
+        ServerRequireWssSaml sass = new ServerRequireWssSaml2(ass);
+        SamlTestUtil.configureServerAssertionInjects(sass);
 
         Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV));
         WssDecoratorImpl dec = new WssDecoratorImpl();

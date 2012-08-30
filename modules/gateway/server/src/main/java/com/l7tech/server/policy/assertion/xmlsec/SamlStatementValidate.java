@@ -6,11 +6,10 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.policy.assertion.xmlsec.RequireSaml;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.server.util.ContextVariableUtils;
 import com.l7tech.util.*;
-import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
 
 import java.util.*;
@@ -29,15 +28,15 @@ public abstract class SamlStatementValidate {
 
     protected final Logger logger = Logger.getLogger(getClass().getName());
     protected Collection errorCollector = new ArrayList();
-    protected final RequireWssSaml requestWssSaml;
+    protected final RequireSaml requestSaml;
 
     /**
      * Construct  the <code>SamlAssertionValidate</code> for the statement assertion
      *
-     * @param requestWssSaml the saml assertion that specifies constraints
+     * @param requestSaml the saml assertion that specifies constraints
      */
-    public SamlStatementValidate(RequireWssSaml requestWssSaml) {
-        this.requestWssSaml = requestWssSaml;
+    public SamlStatementValidate(RequireSaml requestSaml) {
+        this.requestSaml = requestSaml;
     }
 
 
@@ -47,14 +46,12 @@ public abstract class SamlStatementValidate {
      *
      * @param statementObject   the subject statement type, that may be authentication statement
      *                          authorization statement or attribute statement
-     * @param wssResults        the wssresults collection
      * @param validationResults where the valida
      * @param collectAttrValues
      * @param serverVariables variables used by assertion
      * @param auditor required to process server variables.
      */
     protected abstract void validate(XmlObject statementObject,
-                                     ProcessorResult wssResults,
                                      Collection<SamlAssertionValidate.Error> validationResults,
                                      Collection<Pair<String, String[]>> collectAttrValues,
                                      Map<String, Object> serverVariables,

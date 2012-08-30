@@ -1,8 +1,12 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.LoggingAudit;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.identity.mapping.NameFormat;
+import com.l7tech.message.HttpServletRequestKnob;
+import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
@@ -15,19 +19,25 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.StubMessageIdManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.MockConfig;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockServletContext;
 import org.w3c.dom.Document;
 import static org.junit.Assert.*;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -50,6 +60,20 @@ public class SamlTestUtil {
                     "</wsse:Security></soap:Header>" +
                     "<soap:Body><blah xmlns=\"urn:blah\"/></soap:Body>\n" +
                     "</soap:Envelope>";
+
+    public static TestAudit configureServerAssertionInjects(ServerRequireWssSaml serverAssertion) {
+        TestAudit testAudit = new TestAudit();
+
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("auditFactory", testAudit.factory())
+                .put("securityTokenResolver", securityTokenResolver)
+                .put("serverConfig", new MockConfig(new Properties()))
+                .put("distributedMessageIdManager", new StubMessageIdManager())
+                .unmodifiableMap()
+        );
+
+        return testAudit;
+    }
 
     /**
      * Creates a request Message that includes a SAML assertion.
@@ -144,4 +168,28 @@ public class SamlTestUtil {
         assertEquals("value two!", ((String[])attrmv)[1]);
 
     }
+
+    public static Document createSamlAssertion(boolean version2, boolean signAssertion, String confirmationMethod) throws Exception{
+        PrivateKey privateKey = TestDocuments.getDotNetServerPrivateKey();
+        SamlAssertionGenerator sag = new SamlAssertionGenerator(new SignerInfo(privateKey,
+                new X509Certificate[] { TestDocuments.getDotNetServerCertificate() }));
+        AttributeStatement st = new AttributeStatement();
+        st.setAttributes(new Attribute[] {
+                new Attribute("First Attr 32", "urn:me", "test value foo blah blartch"),
+                new Attribute("2 Attribute: it is indeed!", "urn:me", "value for myotherattr blah"),
+                new Attribute("moreattr", "urn:me", "value for moreattr blah"),
+                new Attribute("multivalattr", "urn:mv1", "value one!"),
+                new Attribute("multivalattr", "urn:mv1", "value two!")
+        });
+        st.setConfirmationMethod(confirmationMethod);
+        st.setNameFormat(version2 ? NameFormat.OTHER.getSaml20Uri() : NameFormat.OTHER.getSaml11Uri());
+        st.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+        st.setSubjectConfirmationData("subjectconfirmationdata1");
+
+        SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
+        options.setVersion(version2 ? 2 : 1);
+        options.setSignAssertion(signAssertion);
+        return sag.createAssertion(st, options);
+    }
+
 }

@@ -7,7 +7,7 @@ package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.SamlElementGenericConfig;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlConstants;
@@ -154,13 +154,13 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
 
             enableDisable();
         } else {
-            RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
+            RequireSaml requestSaml = (RequireSaml)settings;
             for (Map.Entry<String, JToggleButton> entry : nameFormatsMap.entrySet()) {
                 JToggleButton jc = entry.getValue();
                 if (jc.isEnabled())
                     jc.setSelected(false);
             }
-            String[] formats = requestWssSaml.getNameFormats();
+            String[] formats = requestSaml.getNameFormats();
             for (String format : formats) {
                 JToggleButton jc = nameFormatsMap.get(format);
                 if (jc == null) {
@@ -215,7 +215,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
                 issuerConfiguration.setNameIdentifierValue(null);
             }
         } else {
-            RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
+            RequireSaml requestSaml = (RequireSaml)settings;
             Collection<String> formats = new ArrayList<String>();
             for (Map.Entry<String, JToggleButton> entry : nameFormatsMap.entrySet()) {
                 JToggleButton jc = entry.getValue();
@@ -223,7 +223,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
                     formats.add(entry.getKey());
                 }
             }
-            requestWssSaml.setNameFormats(formats.toArray(new String[]{}));
+            requestSaml.setNameFormats(formats.toArray(new String[]{}));
         }
     }
 

@@ -334,7 +334,8 @@ public class GatewayFeatureSets {
             mass("assertion:SamlIssuer"),
             mass("assertion:LDAPQuery"),
             mass("assertion:IdentityAttributes"),
-            mass("assertion:CertificateAttributes"));
+            mass("assertion:CertificateAttributes"),
+            mass("assertion:ValidateNonSoapSaml"));
 
         GatewayFeatureSet accessGateway =
         fsr("set:AccessControl:Gateway", "SecureSpan Gateway access control",
@@ -669,7 +670,7 @@ public class GatewayFeatureSets {
         GatewayFeatureSet oAuthInstaller = fsr("set:OAuthInstallerAssertion:Assertions",
                 "The necessary assertions to install the OAuth Toolkit",
                 mass("assertion:OAuthInstaller"));
-        
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",

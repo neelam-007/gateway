@@ -1,12 +1,12 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.policy.assertion.xmlsec.RequireSaml;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.ContextVariableUtils;
 import com.l7tech.util.*;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import x0Assertion.oasisNamesTcSAML2.*;
 
 import java.util.*;
@@ -23,7 +23,7 @@ class Saml2SubjectAndConditionValidate {
     /**
      * Subject validation for 2.x
      */
-    static void validateSubject(final RequireWssSaml requestWssSaml,
+    static void validateSubject(final RequireSaml requestSaml,
                                 final SubjectType subject,
                                 final Calendar now,
                                 final Collection<String> clientAddresses,
@@ -35,7 +35,7 @@ class Saml2SubjectAndConditionValidate {
             return; // no point trying to continue validating a null subject
         }
 
-        final String nameQualTest = requestWssSaml.getNameQualifier();
+        final String nameQualTest = requestSaml.getNameQualifier();
         final String nameQualifier = (nameQualTest == null) ? nameQualTest : ExpandVariables.process(nameQualTest, serverVariables, auditor);
         NameIDType nameIdentifierType = subject.getNameID();
         if (nameQualifier != null && !"".equals(nameQualifier)) {
@@ -54,7 +54,7 @@ class Saml2SubjectAndConditionValidate {
 
         // name formats are the same for v1 and v2 so no mapping required
         boolean nameFormatMatch = false;
-        String[] nameFormats = requestWssSaml.getNameFormats();
+        String[] nameFormats = requestSaml.getNameFormats();
         final String presentedNameFormat = (nameIdentifierType != null && nameIdentifierType.getFormat() != null)?
                 nameIdentifierType.getFormat():
                 SamlConstants.NAMEIDENTIFIER_UNSPECIFIED;
@@ -83,7 +83,7 @@ class Saml2SubjectAndConditionValidate {
         }
 
         // map the config v1 names to v2 names
-        String[] confirmations = ArrayUtils.copy(requestWssSaml.getSubjectConfirmations());
+        String[] confirmations = ArrayUtils.copy(requestSaml.getSubjectConfirmations());
         for (int i = 0; i < confirmations.length; i++) {
             String confirmation = confirmations[i];
             String saml2Confirmation = (String) SamlConstants.CONF_MAP_SAML_1TO2.get(confirmation);
@@ -101,7 +101,7 @@ class Saml2SubjectAndConditionValidate {
                 SubjectConfirmationDataType confirmationData = subjectConfirmation.getSubjectConfirmationData();
                 boolean statementValid = true;
                 if (confirmationData != null) {
-                    if ( requestWssSaml.isSubjectConfirmationDataCheckValidity() ) {
+                    if ( requestSaml.isSubjectConfirmationDataCheckValidity() ) {
                         Calendar notBefore = confirmationData.getNotBefore();
                         if (notBefore != null && now.before(adjustNotBefore(notBefore))) {
                             subjectConfirmationDataValidationError( subjectConfirmationValidationFailures,
@@ -130,7 +130,7 @@ class Saml2SubjectAndConditionValidate {
                         }
                     }
 
-                    if ( requestWssSaml.isSubjectConfirmationDataCheckAddress() && confirmationData.getAddress() != null ) {
+                    if ( requestSaml.isSubjectConfirmationDataCheckAddress() && confirmationData.getAddress() != null ) {
                         if ( clientAddresses==null || !clientAddresses.contains( confirmationData.getAddress() ) ) {
                             subjectConfirmationDataValidationError( subjectConfirmationValidationFailures,
                                     "Statement condition is invalid, 'Address' {0} does not match client address.",
@@ -139,7 +139,7 @@ class Saml2SubjectAndConditionValidate {
                         }
                     }
 
-                    final String recipientTest = requestWssSaml.getSubjectConfirmationDataRecipient();
+                    final String recipientTest = requestSaml.getSubjectConfirmationDataRecipient();
                     final String recipient = (recipientTest == null)? recipientTest: ExpandVariables.process(recipientTest, serverVariables, auditor);
                     if ( recipient != null &&
                          confirmationData.getRecipient() !=null &&
@@ -161,7 +161,7 @@ class Saml2SubjectAndConditionValidate {
 
         // if no confirmations have been presented, and that is what corresponds to assertion requirements
         // no confirmation check is performed
-        if (presentedConfirmations.isEmpty() && requestWssSaml.isNoSubjectConfirmation()) {
+        if (presentedConfirmations.isEmpty() && requestSaml.isNoSubjectConfirmation()) {
             logger.fine("Matched Subject Confirmation 'None'");
             return;
         }
@@ -181,7 +181,7 @@ class Saml2SubjectAndConditionValidate {
             validationResults.addAll( subjectConfirmationValidationFailures );
 
             List<String> acceptedConfirmations = new ArrayList<String>(Arrays.asList(confirmations));
-            if (requestWssSaml.isNoSubjectConfirmation()) {
+            if (requestSaml.isNoSubjectConfirmation()) {
                 acceptedConfirmations.add("None");
             }
             SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Subject Confirmations mismatch "+(anyInvalid?"(some confirmations were rejected) " : "")+"presented/accepted {0}/{1}", null, presentedConfirmations, acceptedConfirmations);
@@ -205,13 +205,13 @@ class Saml2SubjectAndConditionValidate {
     /**
      * Validate the SAML v2 assertion conditions
      */
-    static void validateConditions(final RequireWssSaml requestWssSaml,
+    static void validateConditions(final RequireSaml requestSaml,
                                    final ConditionsType conditionsType,
                                    final Calendar now,
                                    final Collection<SamlAssertionValidate.Error> validationResults,
                                    final Map<String, Object> serverVariables,
                                    final Audit auditor) {
-        if (!requestWssSaml.isCheckAssertionValidity()) {
+        if (!requestSaml.isCheckAssertionValidity()) {
             logger.finer("No Assertion Validity requested");
         } else {
             if (conditionsType == null) {
@@ -241,7 +241,7 @@ class Saml2SubjectAndConditionValidate {
             }
         }
 
-        validateAudienceRestriction(requestWssSaml, conditionsType, validationResults, serverVariables, auditor);
+        validateAudienceRestriction(requestSaml, conditionsType, validationResults, serverVariables, auditor);
 
         if (conditionsType != null) {
             if (conditionsType.getOneTimeUseArray() != null &&
@@ -258,13 +258,13 @@ class Saml2SubjectAndConditionValidate {
         }
     }
 
-    private static void validateAudienceRestriction(final RequireWssSaml requestWssSaml,
+    private static void validateAudienceRestriction(final RequireSaml requestSaml,
                                                     final ConditionsType conditionsType,
                                                     final Collection<SamlAssertionValidate.Error> validationResults,
                                                     final Map<String, Object> serverVariables,
                                                     final Audit auditor) {
-        final String audienceResTest = requestWssSaml.getAudienceRestriction();
-        final Option<String> option = Option.optional(requestWssSaml.getAudienceRestriction());
+        final String audienceResTest = requestSaml.getAudienceRestriction();
+        final Option<String> option = Option.optional(requestSaml.getAudienceRestriction());
         final List<String> allAudienceRestrictions = (!option.isSome()) ?
                 Collections.<String>emptyList() :
                 ContextVariableUtils.getAllResolvedStrings(audienceResTest, serverVariables, auditor, TextUtils.URI_STRING_SPLIT_PATTERN, new Functions.UnaryVoid<Object>() {
