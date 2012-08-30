@@ -20,24 +20,16 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import java.util.Collections;
 
 import static com.l7tech.external.assertions.generateoauthsignaturebasestring.GenerateOAuthSignatureBaseStringAssertion.*;
-import static com.l7tech.external.assertions.generateoauthsignaturebasestring.GenerateOAuthSignatureBaseStringAssertion.OAUTH_CALLBACK;
-import static com.l7tech.external.assertions.generateoauthsignaturebasestring.GenerateOAuthSignatureBaseStringAssertion.OAUTH_CONSUMER_KEY;
-import static com.l7tech.external.assertions.generateoauthsignaturebasestring.GenerateOAuthSignatureBaseStringAssertion.OAUTH_NONCE;
-import static com.l7tech.external.assertions.generateoauthsignaturebasestring.GenerateOAuthSignatureBaseStringAssertion.OAUTH_SIGNATURE_METHOD;
-import static com.l7tech.external.assertions.generateoauthsignaturebasestring.GenerateOAuthSignatureBaseStringAssertion.OAUTH_TIMESTAMP;
-import static com.l7tech.external.assertions.generateoauthsignaturebasestring.GenerateOAuthSignatureBaseStringAssertion.OAUTH_TOKEN;
-import static com.l7tech.external.assertions.generateoauthsignaturebasestring.GenerateOAuthSignatureBaseStringAssertion.OAUTH_VERIFIER;
-import static com.l7tech.external.assertions.generateoauthsignaturebasestring.GenerateOAuthSignatureBaseStringAssertion.OAUTH_VERSION;
-import static com.l7tech.external.assertions.generateoauthsignaturebasestring.server.ServerGenerateOAuthSignatureBaseStringAssertion.*;
 import static org.junit.Assert.*;
 
 public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     private static final String REQUEST_URL = "http://photos.example.net/photos";
-    private static final String CALLBACK = "http://mycallback.com";
+    private static final String CALLBACK = "http%3A%2F%2Fmycallback.com";
+    private static final String CALLBACK_ENCODED = "http%253A%252F%252Fmycallback.com";
     private static final String CONSUMER_KEY = "dpf43f3p2l4k3l03";
     private static final String TIMESTAMP = "2000";
     private static final String NONCE = "nongeneratednonce";
-    private static final String QUERY_STRING = "?z=last&a=first&p=middle";
+    private static final String QUERY_STRING = "z=last&a=first&p=middle";
     private static final String FILE_QUERY_STRING = "?size=original&file=vacation.jpg";
     private static final String SIG_METHOD = "HMAC-SHA1";
     private static final String VERSION = "1.0";
@@ -172,7 +164,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
 
-        final String expected = "POST&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3Dfirst%26oauth_callback%3Dhttp%3A%2F%2Fmycallback.com%26" +
+        final String expected = "POST&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3Dfirst%26oauth_callback%3D" + CALLBACK_ENCODED + "%26" +
                 "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dnongeneratednonce%26oauth_signature_method%3D" +
                 "HMAC-SHA1%26oauth_timestamp%3D2000%26oauth_version%3D1.0%26p%3Dmiddle%26z%3Dlast";
 
@@ -263,7 +255,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
                 "oauth_signature_method=\"HMAC-SHA1\"," +
                 "oauth_timestamp=\"" + TIMESTAMP + "\"," +
                 "oauth_nonce=\"" + NONCE + "\"," +
-                "oauth_callback=\"http://mycallback.com\"," +
+                "oauth_callback=\"" + CALLBACK + "\"," +
                 "oauth_signature=\"asdf\"," +
                 "oauth_version=\"1.0\"";
         request.addHeader("Authorization", authorizationHeader);
@@ -292,6 +284,32 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_DUPLICATE_PARAMETER));
+        assertEquals("Duplicate oauth parameter: oauth_consumer_key", (String) policyContext.getVariable("oauth.error"));
+    }
+
+    @Test
+    public void paramDetectedMoreThanOnceInRequestBody() throws Exception {
+        request.setServerName(SERVER_NAME);
+        request.setRequestURI("/photos" + QUERY_STRING);
+        request.setMethod(HTTP_METHOD);
+        final String body = "oauth_consumer_key=" + CONSUMER_KEY + "&" +
+                "oauth_signature_method=" + SIG_METHOD + "&" +
+                "oauth_timestamp=" + TIMESTAMP + "&" +
+                "oauth_nonce=" + NONCE + "&" +
+                "oauth_callback=" + CALLBACK + "&" +
+                "oauth_callback=" + CALLBACK + "duplicate&" +
+                "oauth_version=" + VERSION;
+        request.setContent(body.getBytes());
+        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        request.setMethod("POST");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+        assertion.setUsageMode(UsageMode.SERVER);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_DUPLICATE_PARAMETER));
+        assertEquals("Duplicate oauth parameter: oauth_callback", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
@@ -305,6 +323,54 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         assertEquals(AssertionStatus.NONE, assertionStatus);
         assertEquals(buildExpectedString(POST, REQUEST_TOKEN, false), (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+    }
+
+    @Test
+    public void invalidOAuthVersion() throws Exception {
+        request.setServerName(SERVER_NAME);
+        request.setRequestURI("/photos" + QUERY_STRING);
+        request.setMethod(HTTP_METHOD);
+        final String body = "oauth_consumer_key=" + CONSUMER_KEY + "&" +
+                "oauth_signature_method=" + SIG_METHOD + "&" +
+                "oauth_timestamp=" + TIMESTAMP + "&" +
+                "oauth_nonce=" + NONCE + "&" +
+                "oauth_callback=" + CALLBACK + "&" +
+                "oauth_version=2.0";
+        request.setContent(body.getBytes());
+        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        request.setMethod("POST");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+        assertion.setUsageMode(UsageMode.SERVER);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_PARAMETER));
+        assertEquals("Invalid oauth_version: 2.0", (String) policyContext.getVariable("oauth.error"));
+    }
+
+    @Test
+    public void invalidSignatureMethod() throws Exception {
+        request.setServerName(SERVER_NAME);
+        request.setRequestURI("/photos" + QUERY_STRING);
+        request.setMethod(HTTP_METHOD);
+        final String body = "oauth_consumer_key=" + CONSUMER_KEY + "&" +
+                "oauth_signature_method=RSA-SHA1&" +
+                "oauth_timestamp=" + TIMESTAMP + "&" +
+                "oauth_nonce=" + NONCE + "&" +
+                "oauth_callback=" + CALLBACK + "&" +
+                "oauth_version=" + VERSION;
+        request.setContent(body.getBytes());
+        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        request.setMethod("POST");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+        assertion.setUsageMode(UsageMode.SERVER);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_PARAMETER));
+        assertEquals("Invalid oauth_signature_method: RSA-SHA1", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
@@ -343,7 +409,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertion.setUseOAuthVersion(false);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
 
-        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3Dfirst%26oauth_callback%3Dhttp%3A%2F%2Fmycallback.com%26" +
+        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3Dfirst%26oauth_callback%3D" + CALLBACK_ENCODED + "%26" +
                 "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dstubgeneratednonce%26oauth_signature_method%3D" +
                 "HMAC-SHA1%26oauth_timestamp%3D1000%26p%3Dmiddle%26z%3Dlast";
 
@@ -400,6 +466,8 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_REQUEST_URL));
+        assertEquals("Invalid request url: *@$   &@(", (String) policyContext.getVariable("oauth." + ERROR));
     }
 
     @Test
@@ -412,6 +480,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_REQUEST_URL));
+        assertEquals("Invalid request url: photos.example.net/photos", (String) policyContext.getVariable("oauth." + ERROR));
     }
 
     @Test
@@ -424,6 +493,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_REQUEST_URL));
+        assertEquals("Invalid request url: ", (String) policyContext.getVariable("oauth." + ERROR));
     }
 
     @Test
@@ -436,6 +506,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_HTTP_METHOD));
+        assertEquals("Missing http method", (String) policyContext.getVariable("oauth." + ERROR));
     }
 
     @Test
@@ -519,7 +590,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertion.setQueryString(null);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
 
-        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&oauth_callback%3Dhttp%3A%2F%2Fmycallback.com%26" +
+        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&oauth_callback%3D" + CALLBACK_ENCODED + "%26" +
                 "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dstubgeneratednonce%26oauth_signature_method%3D" +
                 "HMAC-SHA1%26oauth_timestamp%3D1000%26oauth_version%3D1.0";
 
@@ -671,7 +742,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertion.setQueryString("?z=last&a=&p=middle");
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
 
-        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3D%26oauth_callback%3Dhttp%3A%2F%2Fmycallback.com%26" +
+        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3D%26oauth_callback%3D" + CALLBACK_ENCODED + "%26" +
                 "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dstubgeneratednonce%26oauth_signature_method%3D" +
                 "HMAC-SHA1%26oauth_timestamp%3D1000%26oauth_version%3D1.0%26p%3Dmiddle%26z%3Dlast";
 
@@ -694,18 +765,79 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
+        assertEquals("Missing oauth_consumer_key", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
     public void requestTokenMissingSignatureMethod() throws Exception {
-        setParamsForRequestToken(assertion);
-        assertion.setOauthSignatureMethod(null);
+        assertion.setUsageMode(UsageMode.SERVER);
+        assertion.setUseMessageTarget(true);
+        request.setServerName(SERVER_NAME);
+        request.setRequestURI("/photos" + QUERY_STRING);
+        request.setMethod(HTTP_METHOD);
+        final String body = "oauth_consumer_key=" + CONSUMER_KEY + "&" +
+                "oauth_timestamp=" + TIMESTAMP + "&" +
+                "oauth_nonce=" + NONCE + "&" +
+                "oauth_callback=" + CALLBACK + "&" +
+                "oauth_version=" + VERSION;
+        request.setContent(body.getBytes());
+        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        request.setMethod("POST");
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
+        assertEquals("Missing oauth_signature_method", (String) policyContext.getVariable("oauth.error"));
+    }
+
+    @Test
+    public void requestTokenMissingTimestamp() throws Exception {
+        assertion.setUsageMode(UsageMode.SERVER);
+        assertion.setUseMessageTarget(true);
+        request.setServerName(SERVER_NAME);
+        request.setRequestURI("/photos" + QUERY_STRING);
+        request.setMethod(HTTP_METHOD);
+        final String body = "oauth_consumer_key=" + CONSUMER_KEY + "&" +
+                "oauth_signature_method=" + SIG_METHOD + "&" +
+                "oauth_nonce=" + NONCE + "&" +
+                "oauth_callback=" + CALLBACK + "&" +
+                "oauth_version=" + VERSION;
+        request.setContent(body.getBytes());
+        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        request.setMethod("POST");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
+        assertEquals("Missing oauth_timestamp", (String) policyContext.getVariable("oauth.error"));
+    }
+
+    @Test
+    public void requestTokenMissingNonce() throws Exception {
+        assertion.setUsageMode(UsageMode.SERVER);
+        assertion.setUseMessageTarget(true);
+        request.setServerName(SERVER_NAME);
+        request.setRequestURI("/photos" + QUERY_STRING);
+        request.setMethod(HTTP_METHOD);
+        final String body = "oauth_consumer_key=" + CONSUMER_KEY + "&" +
+                "oauth_signature_method=" + SIG_METHOD + "&" +
+                "oauth_timestamp=" + TIMESTAMP + "&" +
+                "oauth_callback=" + CALLBACK + "&" +
+                "oauth_version=" + VERSION;
+        request.setContent(body.getBytes());
+        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        request.setMethod("POST");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
+        assertEquals("Missing oauth_nonce", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
@@ -718,18 +850,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
-    }
-
-    @Test
-    public void authorizedRequestTokenMissingSignatureMethod() throws Exception {
-        setParamsForAuthRequestToken(assertion);
-        assertion.setOauthSignatureMethod(null);
-        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
-
-        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
-
-        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
+        assertEquals("Missing oauth_consumer_key", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
@@ -742,18 +863,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
-    }
-
-    @Test
-    public void accessTokenMissingSignatureMethod() throws Exception {
-        setParamsForAccessToken(assertion);
-        assertion.setOauthSignatureMethod(null);
-        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
-
-        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
-
-        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
+        assertEquals("Missing oauth_consumer_key", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
@@ -766,18 +876,32 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
+        assertEquals("Missing oauth_consumer_key", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
     public void requestTokenEmptySignatureMethod() throws Exception {
-        setParamsForRequestToken(assertion);
-        assertion.setOauthSignatureMethod("");
+        assertion.setUsageMode(UsageMode.SERVER);
+        assertion.setUseMessageTarget(true);
+        request.setMethod(HTTP_METHOD);
+        request.setServerName(SERVER_NAME);
+        request.setRequestURI("/photos" + FILE_QUERY_STRING);
+        final String body = "oauth_consumer_key=" + CONSUMER_KEY + "&" +
+                "oauth_signature_method=&" +
+                "oauth_timestamp=" + TIMESTAMP + "&" +
+                "oauth_nonce=" + NONCE + "&" +
+                "oauth_token=" + TOKEN + "&" +
+                "oauth_version=" + VERSION;
+        request.setContent(body.getBytes());
+        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        request.setMethod("POST");
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
+        assertEquals("Missing oauth_signature_method", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
@@ -790,18 +914,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
-    }
-
-    @Test
-    public void authorizedRequestTokenEmptySignatureMethod() throws Exception {
-        setParamsForAuthRequestToken(assertion);
-        assertion.setOauthSignatureMethod("");
-        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
-
-        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
-
-        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
+        assertEquals("Missing oauth_consumer_key", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
@@ -814,18 +927,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
-    }
-
-    @Test
-    public void accessTokenEmptySignatureMethod() throws Exception {
-        setParamsForAccessToken(assertion);
-        assertion.setOauthSignatureMethod("");
-        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
-
-        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
-
-        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
+        assertEquals("Missing oauth_consumer_key", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
@@ -838,6 +940,27 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         assertEquals(AssertionStatus.NONE, assertionStatus);
         assertEquals(buildExpectedString(GET, REQUEST_TOKEN, true), (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertRequestTokenVariables();
+        assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
+    }
+
+    @Test
+    public void encodedQueryParam() throws Exception {
+        setParamsForRequestToken(request, false, true);
+        request.setQueryString("Query=Layer%207%20Oauth");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+        assertion.setUsageMode(UsageMode.SERVER);
+        assertion.setQueryString("${request.url}");
+
+        final String expected = "POST&http%3A%2F%2Fphotos.example.net%2Fphotos&Query%3DLayer%25207%2520Oauth%26oauth_callback%3D" + CALLBACK_ENCODED + "%26" +
+                "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dnongeneratednonce%26oauth_signature_method%3D" +
+                "HMAC-SHA1%26oauth_timestamp%3D2000%26oauth_version%3D1.0";
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
         assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
         assertRequestTokenVariables();
         assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
@@ -870,7 +993,8 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
      */
     private void setParamsForRequestToken(final MockHttpServletRequest request, final boolean authHeader, final boolean requestBody) {
         request.setServerName(SERVER_NAME);
-        request.setRequestURI("/photos" + QUERY_STRING);
+        request.setRequestURI("/photos");
+        request.setQueryString(QUERY_STRING);
         request.setMethod(HTTP_METHOD);
         if (requestBody) {
             final String body = "oauth_consumer_key=" + CONSUMER_KEY + "&" +
@@ -913,7 +1037,8 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     private void setParamsForAuthRequestToken(final MockHttpServletRequest request, final boolean authHeader, final boolean requestBody) {
         request.setMethod(HTTP_METHOD);
         request.setServerName(SERVER_NAME);
-        request.setRequestURI("/photos" + QUERY_STRING);
+        request.setRequestURI("/photos");
+        request.setQueryString(QUERY_STRING);
         if (requestBody) {
             final String body = "oauth_consumer_key=" + CONSUMER_KEY + "&" +
                     "oauth_signature_method=" + SIG_METHOD + "&" +
@@ -1030,7 +1155,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
             stringBuilder.append("file%3Dvacation.jpg%26");
         }
         if (REQUEST_TOKEN.equals(requestType)) {
-            stringBuilder.append("oauth_callback%3Dhttp%3A%2F%2Fmycallback.com%26");
+            stringBuilder.append("oauth_callback%3D" + CALLBACK_ENCODED + "%26");
         }
         stringBuilder.append("oauth_consumer_key%3D" + CONSUMER_KEY + "%26");
         if (clientSide) {

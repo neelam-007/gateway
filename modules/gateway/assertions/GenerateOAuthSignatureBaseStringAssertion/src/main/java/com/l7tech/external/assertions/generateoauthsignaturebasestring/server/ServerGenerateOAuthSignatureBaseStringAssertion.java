@@ -4,6 +4,7 @@ import com.l7tech.external.assertions.generateoauthsignaturebasestring.GenerateO
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.HttpRequestKnob;
+import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -12,11 +13,13 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TimeSource;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import javax.servlet.ServletInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -60,6 +63,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         final String httpMethod = ExpandVariables.process(assertion.getHttpMethod(), variableMap, audit).toUpperCase();
         if (StringUtils.isBlank(httpMethod)) {
             logAndAudit(AssertionMessages.OAUTH_MISSING_HTTP_METHOD);
+            context.setVariable(assertion.getVariablePrefix() + "." + ERROR, "Missing http method");
             assertionStatus = AssertionStatus.FALSIFIED;
         } else {
             final String requestUrl = ExpandVariables.process(assertion.getRequestUrl(), variableMap, audit);
@@ -71,7 +75,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
 
                 final StringBuilder stringBuilder = new StringBuilder(httpMethod);
                 stringBuilder.append(AMPERSAND).append(encodedUrl).append(AMPERSAND);
-                stringBuilder.append(encodeMap(sortedParameters));
+                stringBuilder.append(buildEncodedParamString(sortedParameters));
 
                 // set context variables
                 context.setVariable(assertion.getVariablePrefix() + "." + SIG_BASE_STRING, stringBuilder.toString());
@@ -82,13 +86,20 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
                     }
                 }
             } catch (final DuplicateParameterException e) {
-                logAndAudit(AssertionMessages.OAUTH_DUPLICATE_PARAMETER, new String[]{e.getParameter()}, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.OAUTH_DUPLICATE_PARAMETER, new String[]{e.getParameter(), StringUtils.join(e.getDuplicateValues(), ",")}, ExceptionUtils.getDebugException(e));
+                context.setVariable(assertion.getVariablePrefix() + "." + ERROR, "Duplicate oauth parameter: " + e.getParameter());
                 assertionStatus = AssertionStatus.FALSIFIED;
             } catch (final MissingRequiredParameterException e) {
                 logAndAudit(AssertionMessages.OAUTH_MISSING_PARAMETER, new String[]{e.getParameter()}, ExceptionUtils.getDebugException(e));
+                context.setVariable(assertion.getVariablePrefix() + "." + ERROR, "Missing " + e.getParameter());
+                assertionStatus = AssertionStatus.FALSIFIED;
+            } catch (final InvalidParameterException e) {
+                logAndAudit(AssertionMessages.OAUTH_INVALID_PARAMETER, new String[]{e.getParameter(), e.getInvalidValue()}, ExceptionUtils.getDebugException(e));
+                context.setVariable(assertion.getVariablePrefix() + "." + ERROR, "Invalid " + e.getParameter() + ": " + e.getInvalidValue());
                 assertionStatus = AssertionStatus.FALSIFIED;
             } catch (final URISyntaxException e) {
                 logAndAudit(AssertionMessages.OAUTH_INVALID_REQUEST_URL, new String[]{requestUrl}, ExceptionUtils.getDebugException(e));
+                context.setVariable(assertion.getVariablePrefix() + "." + ERROR, "Invalid request url: " + requestUrl);
                 assertionStatus = AssertionStatus.FALSIFIED;
             } catch (final UnsupportedEncodingException e) {
                 logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Error encoding signature base string: " + e.getMessage()},
@@ -103,7 +114,6 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
                 assertionStatus = AssertionStatus.FAILED;
             }
         }
-
         return assertionStatus;
     }
 
@@ -184,7 +194,8 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         final TreeMap<String, String> sortedParameters = new TreeMap<String, String>();
         for (final Pair<String, String> parameter : unsortedParameters) {
             if (sortedParameters.containsKey(parameter.getKey()) && !sortedParameters.get(parameter.getKey()).equals(parameter.getValue())) {
-                throw new DuplicateParameterException(parameter.getKey(), "Duplicate oauth parameter detected");
+                throw new DuplicateParameterException(parameter.getKey(),
+                        Arrays.asList(sortedParameters.get(parameter.getKey()), parameter.getValue()), "Duplicate oauth parameter detected");
             }
             sortedParameters.put(parameter.getKey(), parameter.getValue());
         }
@@ -204,7 +215,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
             addManualParam(parameters, OAUTH_CALLBACK, assertion.getOauthCallback(), variableMap, audit);
             addManualParam(parameters, OAUTH_CONSUMER_KEY, assertion.getOauthConsumerKey(), variableMap, audit);
             addManualParam(parameters, OAUTH_NONCE, generateNonce());
-            addManualParam(parameters, OAUTH_SIGNATURE_METHOD, assertion.getOauthSignatureMethod(), variableMap, audit);
+            addManualParam(parameters, OAUTH_SIGNATURE_METHOD, HMAC_SHA1, variableMap, audit);
             addManualParam(parameters, OAUTH_TIMESTAMP, String.valueOf(timeSource.currentTimeMillis() / MILLIS_PER_SEC));
             addManualParam(parameters, OAUTH_TOKEN, assertion.getOauthToken(), variableMap, audit);
             addManualParam(parameters, OAUTH_VERIFIER, assertion.getOauthVerifier(), variableMap, audit);
@@ -238,11 +249,15 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
     private void addRequestParams(final List<Pair<String, String>> parameters, final PolicyEnforcementContext context) throws NoSuchVariableException, IOException {
         if (assertion.isUseMessageTarget()) {
             final Message targetMessage = context.getTargetMessage(assertion.getMessageTargetableSupport());
-            final HttpRequestKnob httpRequestKnob = targetMessage.getHttpRequestKnob();
-            final Map parameterMap = httpRequestKnob.getParameterMap();
-            for (final Object key : parameterMap.keySet()) {
-                final String keyString = key.toString();
-                parameters.add(new Pair<String, String>(keyString, httpRequestKnob.getParameter(keyString)));
+            final HttpServletRequestKnob httpRequestKnob = targetMessage.getKnob(HttpServletRequestKnob.class);
+            final Map<String, String[]> parameterMap = httpRequestKnob.getRequestBodyParameterMap();
+            // parameters retrieved from request knob will be decoded
+            for (final Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
+                // duplicates are checked later
+                for (int i = 0; i < entry.getValue().length; i++) {
+                    // re-encode the parameter
+                    parameters.add(new Pair<String, String>(entry.getKey(), percentEncode(entry.getValue()[i])));
+                }
             }
         }
     }
@@ -307,7 +322,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
      * Convert a parameter map to an encoded string.
      */
     @SuppressWarnings({"JavaDoc"})
-    private String encodeMap(final Map<String, String> parameterMap) throws UnsupportedEncodingException {
+    private String buildEncodedParamString(final Map<String, String> parameterMap) throws UnsupportedEncodingException {
         final StringBuilder sb = new StringBuilder();
         int count = 0;
         for (final Map.Entry<String, String> entry : parameterMap.entrySet()) {
@@ -366,11 +381,19 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         return result;
     }
 
-    private void validateParameters(final TreeMap<String, String> sortedParameters) throws MissingRequiredParameterException {
+    private void validateParameters(final TreeMap<String, String> sortedParameters) throws MissingRequiredParameterException, InvalidParameterException {
         for (final String requiredParameter : REQUIRED_PARAMETERS) {
             if (!sortedParameters.containsKey(requiredParameter) || StringUtils.isBlank(sortedParameters.get(requiredParameter))) {
                 throw new MissingRequiredParameterException(requiredParameter, "Missing required oauth parameter");
             }
+        }
+        final String foundVersion = sortedParameters.get(OAUTH_VERSION);
+        if (foundVersion != null && !OAUTH_1_0.equals(foundVersion)) {
+            throw new InvalidParameterException(OAUTH_VERSION, foundVersion, OAUTH_VERSION + " must be " + OAUTH_1_0 + " but found: " + foundVersion);
+        }
+        final String foundSignatureMethod = sortedParameters.get(OAUTH_SIGNATURE_METHOD);
+        if (!HMAC_SHA1.equals(foundSignatureMethod)) {
+            throw new InvalidParameterException(OAUTH_SIGNATURE_METHOD, foundSignatureMethod, OAUTH_SIGNATURE_METHOD + " must be " + HMAC_SHA1 + " but found: " + foundSignatureMethod);
         }
     }
 

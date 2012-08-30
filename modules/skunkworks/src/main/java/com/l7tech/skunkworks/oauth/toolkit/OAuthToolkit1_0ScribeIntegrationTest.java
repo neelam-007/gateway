@@ -22,10 +22,13 @@ import static org.junit.Assert.*;
  */
 @Ignore
 public class OAuthToolkit1_0ScribeIntegrationTest {
-    private static String GATEWAY = "localhost";
-    private static final String PROTECTED_RESOURCE_URI = "/protected/resource";
+    private static final String GATEWAY = "localhost";
+    //private static final String GATEWAY = "aleeoauth.l7tech.com";
     private static final String CONSUMER_KEY = "acf89db2-994e-427b-ac2c-88e6101f9433";
+    //private static final String CONSUMER_KEY = "a13a32e0-448e-4e76-853f-72eca2ffb4fa";
     private static final String CONSUMER_SECRET = "74d5e0db-cd8b-4d8e-a989-95a0746c3343";
+    //private static final String CONSUMER_SECRET = "4d3e5843-174a-4bb8-ac43-1537d7adca01";
+    private static final String PROTECTED_RESOURCE_URI = "/protected/resource";
     private OAuthService service;
     private Layer710aApi api;
 

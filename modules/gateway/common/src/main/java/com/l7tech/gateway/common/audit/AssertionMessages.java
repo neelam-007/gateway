@@ -1150,11 +1150,12 @@ public class AssertionMessages extends Messages {
 
 
     // Generate OAuth signature base string assertion
-    public static final M OAUTH_DUPLICATE_PARAMETER = m(9670, Level.WARNING, "Found duplicate oauth parameter: {0}");
+    public static final M OAUTH_DUPLICATE_PARAMETER = m(9670, Level.WARNING, "Found duplicate oauth parameter {0} with values {1}");
     public static final M OAUTH_INVALID_REQUEST_URL = m(9671, Level.WARNING, "Invalid request url: {0}");
     public static final M OAUTH_MISSING_HTTP_METHOD = m(9672, Level.WARNING, "Http method is empty");
     public static final M OAUTH_PARAMETERS = m(9673, Level.INFO, "OAuth parameters found: {0}");
     public static final M OAUTH_MISSING_PARAMETER = m(9674, Level.WARNING, "Required oauth parameter is missing or empty: {0}");
+    public static final M OAUTH_INVALID_PARAMETER =  m(9675, Level.WARNING, "Value for {0} is invalid: {1}");
 
     //Kerberos Authentication assertion
     public static final M KA_OPTION_NOT_SUPPORTED = m(9701, Level.WARNING, "{0} option does not support {1}");

@@ -16,6 +16,7 @@ import java.util.Arrays;
 public class GenerateOAuthSignatureBaseStringAssertion extends Assertion implements UsesVariables, SetsVariables {
     public static final String SIG_BASE_STRING = "sigBaseString";
     public static final String REQUEST_TYPE = "requestType";
+    public static final String HMAC_SHA1 = "HMAC-SHA1";
     public static final String OAUTH_1_0 = "1.0";
     public static final String OAUTH_CALLBACK = "oauth_callback";
     public static final String OAUTH_CONSUMER_KEY = "oauth_consumer_key";
@@ -29,15 +30,20 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
     public static final String REQUEST_TOKEN = "request token";
     public static final String AUTHORIZED_REQUEST_TOKEN = "authorized request token";
     public static final String ACCESS_TOKEN = "access token";
+    public static final String ERROR = "error";
 
     public static enum UsageMode {
         /**
          * Sending an OAuth request.
+         *
+         * OAuth parameters can be retrieved via query string or assertion fields.
          */
         CLIENT("Client"),
 
         /**
          * Receiving an OAuth request.
+         *
+         * OAuth parameters can be retrieved via query string, authorization header, and/or request parameters.
          */
         SERVER("Server");
 
@@ -57,6 +63,7 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
         return new VariableMetadata[]{new VariableMetadata(this.getVariablePrefix() + "." + SIG_BASE_STRING),
                 new VariableMetadata(this.getVariablePrefix() + "." + REQUEST_TYPE),
                 new VariableMetadata(this.getVariablePrefix() + "." + AUTH_HEADER),
+                new VariableMetadata(this.getVariablePrefix() + "." + ERROR),
                 new VariableMetadata(this.getVariablePrefix() + "." + OAUTH_CONSUMER_KEY),
                 new VariableMetadata(this.getVariablePrefix() + "." + OAUTH_SIGNATURE_METHOD),
                 new VariableMetadata(this.getVariablePrefix() + "." + OAUTH_TIMESTAMP),
@@ -159,14 +166,6 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
         this.oauthConsumerKey = oauthConsumerKey;
     }
 
-    public String getOauthSignatureMethod() {
-        return oauthSignatureMethod;
-    }
-
-    public void setOauthSignatureMethod(final String oauthSignatureMethod) {
-        this.oauthSignatureMethod = oauthSignatureMethod;
-    }
-
     public String getOauthToken() {
         return oauthToken;
     }
@@ -233,7 +232,6 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
     // applies to CLIENT
     private boolean useOAuthVersion = true;
     private String oauthConsumerKey;
-    private String oauthSignatureMethod = "HMAC-SHA1";
     private String oauthToken;
     private String oauthCallback;
     private String oauthVerifier;

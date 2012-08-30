@@ -195,19 +195,6 @@
                   <text value="oauth_signature_method:"/>
                 </properties>
               </component>
-              <component id="4e10b" class="javax.swing.JComboBox" binding="oauthSignatureMethodComboBox">
-                <constraints>
-                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <editable value="false"/>
-                  <model>
-                    <item value="HMAC-SHA1"/>
-                    <item value="RSA-SHA1"/>
-                    <item value="PLAINTEXT"/>
-                  </model>
-                </properties>
-              </component>
               <component id="f1c76" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
@@ -305,6 +292,15 @@
                 <properties>
                   <text value="1.0"/>
                   <toolTipText value="Generate OAuth Signature Base String only applies to OAuth version 1.0"/>
+                </properties>
+              </component>
+              <component id="64835" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="HMAC-SHA1"/>
+                  <toolTipText value="oauth_timestamp will be auto-generated at runtime"/>
                 </properties>
               </component>
             </children>

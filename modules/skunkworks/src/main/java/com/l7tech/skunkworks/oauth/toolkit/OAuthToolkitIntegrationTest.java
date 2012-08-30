@@ -84,6 +84,7 @@ public class OAuthToolkitIntegrationTest {
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(REQUEST_TOKEN_ENDPOINT));
         requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
         requestParams.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader("Authorization", AUTH_HEADER)});
+        requestParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
 
         final GenericHttpResponse response = request.getResponse();
@@ -123,7 +124,9 @@ public class OAuthToolkitIntegrationTest {
         final Map<String, String> parameters = createDefaultRequestTokenParameters();
         parameters.put("oauth_signature_method", "RSA-SHA1");
         final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
+        assertEquals("Invalid oauth_signature_method: RSA-SHA1", responseBody);
     }
 
     /**
@@ -131,11 +134,11 @@ public class OAuthToolkitIntegrationTest {
      */
     @Test
     public void requestTokenEndpointMissingParameters() throws Exception {
-        assertMissingParamReturns400("oauth_consumer_key");
-        assertMissingParamReturns400("oauth_signature_method");
-        assertMissingParamReturns400("oauth_timestamp");
-        assertMissingParamReturns400("oauth_nonce");
-        assertMissingParamReturns400("oauth_signature");
+        assertRequestEndpointMissingParameter("oauth_consumer_key");
+        assertRequestEndpointMissingParameter("oauth_signature_method");
+        assertRequestEndpointMissingParameter("oauth_timestamp");
+        assertRequestEndpointMissingParameter("oauth_nonce");
+        assertRequestEndpointMissingParameter("oauth_signature");
     }
 
     @Test
@@ -145,7 +148,7 @@ public class OAuthToolkitIntegrationTest {
         final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
-        assertEquals("Wrong oauth version", responseBody);
+        assertEquals("Invalid oauth_version: 2.0", responseBody);
     }
 
     @Test
@@ -155,7 +158,7 @@ public class OAuthToolkitIntegrationTest {
         final GenericHttpResponse response = request.getResponse();
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
-        assertEquals("Duplicate oauth headers", responseBody);
+        assertEquals("Duplicate oauth parameter: oauth_callback", responseBody);
     }
 
     @Test
@@ -241,11 +244,11 @@ public class OAuthToolkitIntegrationTest {
      */
     @Test
     public void accessTokenEndpointMissingParameters() throws Exception {
-        testTokenEndpointMissingParameter("oauth_signature");
-        testTokenEndpointMissingParameter("oauth_nonce");
-        testTokenEndpointMissingParameter("oauth_signature_method");
-        testTokenEndpointMissingParameter("oauth_consumer_key");
-        testTokenEndpointMissingParameter("oauth_timestamp");
+        assertTokenEndpointMissingParameter("oauth_signature");
+        assertTokenEndpointMissingParameter("oauth_nonce");
+        assertTokenEndpointMissingParameter("oauth_signature_method");
+        assertTokenEndpointMissingParameter("oauth_consumer_key");
+        assertTokenEndpointMissingParameter("oauth_timestamp");
     }
 
     /**
@@ -273,7 +276,7 @@ public class OAuthToolkitIntegrationTest {
         final GenericHttpResponse response = createAccessTokenEndpointRequest(parameters).getResponse();
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
-        assertEquals("Wrong oauth version", responseBody);
+        assertEquals("Invalid oauth_version: 2.0", responseBody);
     }
 
     /**
@@ -286,18 +289,7 @@ public class OAuthToolkitIntegrationTest {
         final GenericHttpResponse response = request.getResponse();
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
-        assertEquals("Duplicate oauth headers", responseBody);
-    }
-
-    private void testTokenEndpointMissingParameter(final String missingParameter) throws Exception {
-        System.out.println("testing missing parameter: " + missingParameter);
-        final Map<String, String> oauthParameters = createDefaultAccessTokenParameters();
-        oauthParameters.remove(missingParameter);
-        final GenericHttpResponse response = createAccessTokenEndpointRequest(oauthParameters).getResponse();
-        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
-        assertEquals(400, response.getStatus());
-        // error message is misleading but this is the current error message returned if a required oauth param is missing
-        assertEquals("No OAuth parameters found", responseBody);
+        assertEquals("Duplicate oauth parameter: oauth_token", responseBody);
     }
 
     private GenericHttpRequest createAccessTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
@@ -447,11 +439,26 @@ public class OAuthToolkitIntegrationTest {
         return authenticateRequest.getResponse();
     }
 
-    private void assertMissingParamReturns400(final String parameter) throws Exception {
+    private void assertTokenEndpointMissingParameter(final String missingParameter) throws Exception {
+        System.out.println("testing missing parameter: " + missingParameter);
+        final Map<String, String> oauthParameters = createDefaultAccessTokenParameters();
+        oauthParameters.remove(missingParameter);
+        final GenericHttpResponse response = createAccessTokenEndpointRequest(oauthParameters).getResponse();
+        assertMissingParameter(missingParameter, response);
+    }
+
+    private void assertRequestEndpointMissingParameter(final String missingParameter) throws Exception {
+        System.out.println("testing missing parameter: " + missingParameter);
         final Map<String, String> parameters = createDefaultRequestTokenParameters();
-        parameters.remove(parameter);
+        parameters.remove(missingParameter);
         final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
+        assertMissingParameter(missingParameter, response);
+    }
+
+    private void assertMissingParameter(final String parameter, final GenericHttpResponse response) throws Exception {
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
+        assertEquals("Missing " + parameter, responseBody);
     }
 
     private void assertParamsFromRequestTokenEndpoint(final Map<String, String> responseParameters) {
