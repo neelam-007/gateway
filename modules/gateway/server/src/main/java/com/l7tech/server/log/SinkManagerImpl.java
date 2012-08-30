@@ -271,7 +271,7 @@ public class SinkManagerImpl
                     String folder = pattern.substring(0,pattern.lastIndexOf("/"));
                     String filePattern = pattern.substring(pattern.lastIndexOf("/")+1);
                     if(config.isRollingEnabled()){
-                        filePattern = filePattern + "." + config.getRollingInterval().getPattern().replaceAll("\\w{2,4}", "\\\\d{2,4}") + ".log";
+                        filePattern = config.getName() + "." + config.getRollingInterval().getPattern().replaceAll("\\w{2,4}", "\\\\d{2,4}") + ".log";
                     }
                     else {
                         filePattern = filePattern.replace("%u","[0-9]");
@@ -336,7 +336,7 @@ public class SinkManagerImpl
                             .replace( "%u", "[0-9]" )
                             .replace( "%g", "[0-9]" );
                     if(sinkConfig.isRollingEnabled()){
-                        fileRegex = fileRegex + "." + sinkConfig.getRollingInterval().getPattern().replaceAll("\\w{2,4}", "\\\\d{2,4}") + ".log";
+                        fileRegex = sinkConfig.getName() + "." + sinkConfig.getRollingInterval().getPattern().replaceAll("\\w{2,4}", "\\\\d{2,4}") + ".log";
                     }
                     if ( file.matches( fileRegex ) ) {
                         final File logFile = new File(fileDirectory, file);
