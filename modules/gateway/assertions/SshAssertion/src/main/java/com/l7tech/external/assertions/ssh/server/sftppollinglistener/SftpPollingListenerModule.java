@@ -4,6 +4,7 @@ import com.jscape.inet.sftp.SftpFile;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.ssh.server.MessageProcessingSshUtil;
+import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
@@ -76,7 +77,7 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
      * Single constructor for module.
      */
     public SftpPollingListenerModule( @NotNull final ThreadPoolBean threadPoolBean ) {
-        super("SFTP Polling Listener module", logger, SERVICE_SSH_MESSAGE_INPUT);
+        super("SFTP Polling Listener module", Component.GW_SFTP_POLL_RECV, logger, SERVICE_SSH_MESSAGE_INPUT);
         this.threadPoolBean = threadPoolBean;
     }
 

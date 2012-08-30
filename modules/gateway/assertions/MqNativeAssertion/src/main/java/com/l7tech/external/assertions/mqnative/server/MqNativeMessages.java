@@ -26,6 +26,6 @@ class MqNativeMessages {
 
     static final String INFO_EVENT_CONNECT_SUCCESS = "Connected to MQ endpoint ({0})";
     static final String INFO_EVENT_CONNECT_FAIL = "Error connecting to MQ endpoint ({0}) with: {1}";
-    static final String INFO_EVENT_NOT_PUBLISHED = "Not publishing event due to recent failure.";
+    static final String INFO_EVENT_NOT_PUBLISHED = "Not publishing this event due to recent failure: {0}";
     static final String INFO_EVENT_NOT_PUBLISHABLE = "Event not published, message is: {0}";
 }

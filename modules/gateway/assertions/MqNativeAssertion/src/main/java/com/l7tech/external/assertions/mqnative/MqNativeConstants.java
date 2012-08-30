@@ -31,6 +31,11 @@ public interface MqNativeConstants {
     String MQ_CONNECT_ERROR_SLEEP_UI_PROPERTY = "mq.connectErrorSleep";
     String MQ_CONNECT_ERROR_SLEEP_DESC = "Time to sleep after a connection error for an inbound MQ Native queue (timeunit)";
 
+    String MQ_PREVENT_AUDIT_FLOOD_PERIOD_PROPERTY = "mqPreventAuditFloodPeriod";
+    String MQ_PREVENT_AUDIT_FLOOD_PERIOD_UI_PROPERTY = "mq.preventAuditFloodPeriod";
+    String MQ_PREVENT_AUDIT_FLOOD_PERIOD_DESC = "Time period used to prevent audit message flooding by the MQ Native listener.  " +
+            "If the last listener audit message occurred within this period, the next listener message will just log instead.  0 for no audit flood throttling (timeunit)";
+
     String MQ_RESPONSE_TIMEOUT_PROPERTY = "ioMqResponseTimeout";
     String MQ_RESPONSE_TIMEOUT_UI_PROPERTY = "io.mqResponseTimeout";
     String MQ_RESPONSE_TIMEOUT_DESC = "Timeout for MQ Native routing to wait on the reply to queue in milliseconds, default 10 seconds.";

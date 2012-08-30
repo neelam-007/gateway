@@ -1,14 +1,18 @@
 package com.l7tech.server.transport;
 
+import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleBean;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 
 import javax.inject.Inject;
@@ -16,20 +20,26 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.gateway.common.audit.SystemMessages.CONNECTOR_ERROR;
+
 /**
  * Abstract superclass for active connector transport modules.
  */
 public abstract class ActiveTransportModule extends LifecycleBean {
     protected final Logger logger;
+    protected final Component component;
+    private Audit audit;
 
     @Inject
     protected SsgActiveConnectorManager ssgActiveConnectorManager;
 
     protected ActiveTransportModule( @NotNull final String name,
+                                     @NotNull  final Component component,
                                      @NotNull final Logger logger,
                                      @NotNull final String licenseFeature )
     {
         super(name, logger, licenseFeature, null);
+        this.component = component;
         this.logger = logger;
     }
 
@@ -161,8 +171,9 @@ public abstract class ActiveTransportModule extends LifecycleBean {
     private void handleConnectorInvalidationEvent( final EntityInvalidationEvent event ) {
         long[] ids = event.getEntityIds();
         char[] operations = event.getEntityOperations();
-        for (int i = 0; i < ids.length; i++)
+        for (int i = 0; i < ids.length; i++) {
             handleConnectorOperation( operations[i], ids[i] );
+        }
     }
 
     private void handleConnectorOperation( final char operation, final long connectorId ) {
@@ -205,5 +216,20 @@ public abstract class ActiveTransportModule extends LifecycleBean {
                 logger.log(Level.WARNING, "Unable to start " + roc.getType() + " active connector " + roc.getName() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
+    }
+
+    protected final void auditError( final String schemes, final String message, @Nullable final Throwable exception ) {
+        getAudit().logAndAudit( CONNECTOR_ERROR, new String[]{schemes, message}, exception);
+    }
+
+    private Audit getAudit() {
+        Audit audit = this.audit;
+
+        if (audit == null) {
+            audit = new Auditor(this, getApplicationContext(), logger);
+            this.audit = audit;
+        }
+
+        return audit;
     }
 }

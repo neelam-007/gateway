@@ -17,6 +17,7 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -160,6 +161,11 @@ public class MqNativeListenerTest extends AbstractJUnit4SpringContextTests {
                     System.err.println(Arrays.toString(e.getStackTrace()));
                     fail(e.getMessage());
                 }
+            }
+
+            @Override
+            final void auditError( final String message, @Nullable final Throwable exception ) {
+                // do nothing
             }
         };
 

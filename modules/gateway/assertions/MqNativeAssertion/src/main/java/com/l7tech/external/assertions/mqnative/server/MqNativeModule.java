@@ -4,6 +4,7 @@ import com.ibm.mq.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
+import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
@@ -25,6 +26,7 @@ import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
 import org.xml.sax.SAXException;
@@ -109,7 +111,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
      * @param threadPoolBean listener thread pool
      */
     public MqNativeModule(@NotNull final ThreadPoolBean threadPoolBean) {
-        super("MQ native active connector module", logger, SERVICE_MQNATIVE_MESSAGE_INPUT);
+        super("MQ native active connector module", Component.GW_MQ_NATIVE_RECV, logger, SERVICE_MQNATIVE_MESSAGE_INPUT);
         this.threadPoolBean = threadPoolBean;
     }
 
@@ -136,7 +138,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 threadPoolBean.start();
                 startInitialListeners();
             } catch (FindException e) {
-                logger.log(Level.SEVERE, "Unable to access initial MQ native listener(s): " + getMessage( e ), getDebugException( e ));
+                auditError(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE, "Unable to access initial MQ native listener(s): " + getMessage( e ), e);
             }
         }
     }
@@ -156,8 +158,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                     try {
                         addConnector( connector.getReadOnlyCopy() );
                     } catch ( Exception e ) {
-                        logger.log(Level.WARNING, "Unable to start MQ native active connector " + connector.getName() +
-                                        ": " + getMessage( e ), e);
+                        auditError(connector.getType(), "Unable to start MQ native active connector " + connector.getName() + ": " + getMessage( e ), e);
                     }
                 }
             }
@@ -219,13 +220,9 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 newListener.start();
                 listenerSet.add( newListener );
             } catch ( LifecycleException e ) {
-                logger.log( Level.WARNING,
-                        "Exception while initializing MQ native listener " + newListener.getDisplayName() + ": " + getMessage( e ),
-                        getDebugException( e ) );
+                auditError(ssgActiveConnector.getType(), "Exception while initializing MQ native listener " + newListener.getDisplayName() + ": " + getMessage( e ), getDebugException( e ));
             } catch ( MqNativeConfigException e ) {
-                logger.log( Level.WARNING,
-                        "Exception while initializing MQ native listener " + ssgActiveConnector.getName() + ": " + getMessage( e ),
-                        getDebugException( e ) );
+                auditError(ssgActiveConnector.getType(), "Exception while initializing MQ native listener " + ssgActiveConnector.getName() + ": " + getMessage( e ), getDebugException( e ));
             }
         }
     }
@@ -259,9 +256,9 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 } catch ( InterruptedException e ) {
                     Thread.currentThread().interrupt();
                 } catch ( ThreadPool.ThreadPoolShutDownException e ) {
-                    logger.log( Level.WARNING, "Error handling message, thread pool is shutdown.", getDebugException( e ) );
+                    auditError("Error handling message, thread pool is shutdown.", getDebugException( e ));
                 } catch ( ExecutionException e ) {
-                    logger.log( Level.WARNING, "Error handling message: " + getMessage( e ), getDebugException( e ) );
+                    auditError("Error handling message: "+ getMessage( e ), getDebugException( e ));
                 } catch ( RejectedExecutionException e ) {
                     try {
                         rollbackWork( mqNativeClient );
@@ -272,6 +269,11 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                     }
                     throw e;
                 }
+            }
+
+            @Override
+            final void auditError( final String message, @Nullable final Throwable exception ) {
+                MqNativeModule.this.auditError( ssgActiveConnector.getType(), message, exception);
             }
         };
     }

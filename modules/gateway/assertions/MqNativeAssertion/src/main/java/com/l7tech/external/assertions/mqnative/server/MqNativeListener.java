@@ -19,6 +19,7 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TimeUnit;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Hashtable;
@@ -26,8 +27,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.ibm.mq.constants.CMQC.MQRC_NO_MSG_AVAILABLE;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECT_ERROR_SLEEP_PROPERTY;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_LISTENER_POLLING_INTERVAL_PROPERTY;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeMessages.INFO_EVENT_CONNECT_FAIL;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeMessages.INFO_EVENT_NOT_PUBLISHABLE;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.util.Option.some;
 import static java.text.MessageFormat.format;
@@ -48,7 +50,7 @@ public abstract class MqNativeListener {
     static final long DEFAULT_OOPS_SLEEP = 60 * 1000; // One minute
     static final int MIN_OOPS_SLEEP = 10 * 1000; // 10 seconds
     static final int MAX_OOPS_SLEEP = TimeUnit.DAYS.getMultiplier(); // 24 hours
-    static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 minutes
+    static final int DEFAULT_OOPS_AUDIT = 0; // 0 seconds
     static final int DEFAULT_POLL_INTERVAL = 5 * 1000; // Set to five seconds so that the un-interrupt-able poll doesn't pause server shutdown for too long.
 
     private int oopsRetry = DEFAULT_OOPS_RETRY;
@@ -67,6 +69,7 @@ public abstract class MqNativeListener {
     private long lastStopRequestedTime;
     private long lastAuditErrorTime;
     private int concurrentId;
+	private long preventAuditFloodPeriod;
 
     public MqNativeListener(@NotNull final SsgActiveConnector ssgActiveConnector,
                                      final int concurrentId,
@@ -79,7 +82,7 @@ public abstract class MqNativeListener {
         this.securePasswordManager = securePasswordManager;
         this.mqNativeClient = buildMqNativeClient();
         this.listenerThread = new MqNativeListenerThread(this, toString());
-        configureThreadProperties(serverConfig);
+        configureProperties(serverConfig);
     }
 
     public String getDisplayName() {
@@ -110,6 +113,12 @@ public abstract class MqNativeListener {
      * @throws MqNativeException error encountered while processing the MQ inbound message
      */
     abstract void handleMessage(MQMessage queueMessage) throws MqNativeException;
+
+    abstract void auditError(final String message, @Nullable final Throwable exception);
+
+    void auditError(final String message) {
+        auditError(message, null);
+    }
 
     /**
      * Starts the listener thread.
@@ -155,7 +164,7 @@ public abstract class MqNativeListener {
         }
 
         if ( listenerThread.isAlive() ) {
-            log(Level.WARNING, MqNativeMessages.WARN_LISTENER_THREAD_ALIVE, this);
+            auditError(format(MqNativeMessages.WARN_LISTENER_THREAD_ALIVE, this));
         }
     }
 
@@ -169,7 +178,6 @@ public abstract class MqNativeListener {
             return threadStopped;
         }
     }
-
 
     /**
      * Perform cleanup of resources and reset the listener status.
@@ -285,21 +293,21 @@ public abstract class MqNativeListener {
 
     private void fireConnectError(String message) {
         fireEvent(new MqNativeEvent(this, Level.WARNING,  null, format(
-                MqNativeMessages.INFO_EVENT_CONNECT_FAIL,
+                INFO_EVENT_CONNECT_FAIL,
                 getDisplayName(), message )));
     }
 
     private void fireEvent(TransportEvent event) {
         if ( eventPublisher != null) {
             long timeNow = System.currentTimeMillis();
-            if ((lastAuditErrorTime+ (long) OOPS_AUDIT) < timeNow) {
+            if ((lastAuditErrorTime + preventAuditFloodPeriod) < timeNow) {
                 lastAuditErrorTime = timeNow;
                 eventPublisher.publishEvent( event );
             } else {
-                log(Level.INFO, MqNativeMessages.INFO_EVENT_NOT_PUBLISHED);
+                log(Level.INFO, MqNativeMessages.INFO_EVENT_NOT_PUBLISHED, event.getMessage());
             }
         } else {
-            log(Level.WARNING, MqNativeMessages.INFO_EVENT_NOT_PUBLISHABLE, event.getMessage());
+            auditError(format(INFO_EVENT_NOT_PUBLISHABLE, event.getMessage()));
         }
     }
 
@@ -311,25 +319,21 @@ public abstract class MqNativeListener {
         logger.log(level, messageKey, ex);
     }
 
-    private void configureThreadProperties(ServerConfig serverConfig) {
-        listenerThread.setOopsSleep( getErrorSleepTime(serverConfig.getProperty(MQ_CONNECT_ERROR_SLEEP_PROPERTY)) );
-        listenerThread.setPollInterval( getPollInterval(serverConfig.getProperty(MQ_LISTENER_POLLING_INTERVAL_PROPERTY)) );
+    private void configureProperties(ServerConfig serverConfig) {
+        listenerThread.setOopsSleep(getErrorSleepTime(serverConfig));
+        listenerThread.setPollInterval(getPollInterval(serverConfig));
+
+        preventAuditFloodPeriod = serverConfig.getTimeUnitProperty(MQ_PREVENT_AUDIT_FLOOD_PERIOD_PROPERTY, DEFAULT_OOPS_AUDIT);
     }
 
-    private long getErrorSleepTime(String stringValue) {
-        long newErrorSleepTime = DEFAULT_OOPS_SLEEP;
-
-        try {
-            newErrorSleepTime = TimeUnit.parse(stringValue, TimeUnit.SECONDS);
-        } catch (NumberFormatException nfe) {
-            logger.log(Level.WARNING, "Ignoring invalid MQ error sleep time ''{0}'' (using default).", stringValue);
-        }
+    private long getErrorSleepTime(ServerConfig serverConfig) {
+        long newErrorSleepTime = serverConfig.getTimeUnitProperty(MQ_CONNECT_ERROR_SLEEP_PROPERTY, DEFAULT_OOPS_SLEEP);
 
         if ( newErrorSleepTime < MIN_OOPS_SLEEP ) {
-            logger.log(Level.WARNING, "Ignoring invalid MQ error sleep time ''{0}'' (using minimum).", stringValue);
+            auditError(format("Ignoring invalid MQ error sleep time ''{0}'' (using minimum).", MQ_CONNECT_ERROR_SLEEP_PROPERTY));
             newErrorSleepTime = MIN_OOPS_SLEEP;
         } else if ( newErrorSleepTime > MAX_OOPS_SLEEP ) {
-            logger.log(Level.WARNING, "Ignoring invalid MQ error sleep time ''{0}'' (using maximum).", stringValue);
+            auditError(format("Ignoring invalid MQ error sleep time ''{0}'' (using maximum).", MQ_CONNECT_ERROR_SLEEP_PROPERTY));
             newErrorSleepTime = MAX_OOPS_SLEEP;
         }
 
@@ -337,17 +341,16 @@ public abstract class MqNativeListener {
         return newErrorSleepTime;
     }
 
-    private int getPollInterval(String stringValue) {
+    private int getPollInterval(ServerConfig serverConfig) {
         int pollInterval = DEFAULT_POLL_INTERVAL;
-        try {
-            long pollIntervalLong = TimeUnit.parse(stringValue, TimeUnit.SECONDS);
-            if (pollIntervalLong < Integer.MIN_VALUE || pollIntervalLong > Integer.MAX_VALUE) {
-                throw new NumberFormatException(pollIntervalLong + " cannot be cast to int without changing its value.");
-            }
+        long pollIntervalLong = serverConfig.getTimeUnitProperty(MQ_LISTENER_POLLING_INTERVAL_PROPERTY, DEFAULT_POLL_INTERVAL);
+
+        if (pollIntervalLong < Integer.MIN_VALUE || pollIntervalLong > Integer.MAX_VALUE) {
+            auditError(format("Ignoring invalid MQ poll interval ''{0}'', cannot be cast to int without changing its value (using default).", DEFAULT_POLL_INTERVAL));
+        } else {
             pollInterval = (int) pollIntervalLong;
-        } catch (NumberFormatException nfe) {
-            logger.log(Level.WARNING, "Ignoring invalid MQ poll interval ''{0}'' (using default).", stringValue);
         }
+
         logger.log(Level.CONFIG, "Updated MQ poll interval to {0}ms.", pollInterval);
         return pollInterval;
     }

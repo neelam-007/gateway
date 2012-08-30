@@ -79,15 +79,13 @@ class MqNativeListenerThread extends Thread {
                     }
 
                     if (!ExceptionUtils.causedBy(e, RejectedExecutionException.class)) {
-                        mqNativeListener.log(Level.WARNING, format(
-                                MqNativeMessages.WARN_LISTENER_RECEIVE_ERROR,
+                        mqNativeListener.auditError(format(MqNativeMessages.WARN_LISTENER_RECEIVE_ERROR,
                                 connectorInfo, ExceptionUtils.getMessage(e)),
                                 ExceptionUtils.getDebugException(e));
-
                         mqNativeListener.cleanup();
                     } else {
-                        mqNativeListener.log(Level.WARNING, "Running out threads in the MQ ThreadPool, " +
-                                "consider increasing the mq.listenerThreadLimit : {0}", e.getMessage());
+                        mqNativeListener.auditError(format("Running out threads in the MQ ThreadPool, " +
+                                "consider increasing the mq.listenerThreadLimit : {0}", e.getMessage()));
                     }
 
                     if ( ++oopses < MqNativeListener.MAXIMUM_OOPSES ) {
@@ -103,8 +101,8 @@ class MqNativeListenerThread extends Thread {
                     } else {
                         // max oops reached .. sleep for a longer period of time before retrying
                         long sleepTime = oopsSleep.get();
-                        mqNativeListener.log(Level.WARNING, MqNativeMessages.WARN_LISTENER_MAX_OOPS_REACHED, connectorInfo,
-                                MqNativeListener.MAXIMUM_OOPSES, sleepTime);
+                        mqNativeListener.auditError(format(MqNativeMessages.WARN_LISTENER_MAX_OOPS_REACHED, connectorInfo,
+                                MqNativeListener.MAXIMUM_OOPSES, sleepTime));
                         try {
                             Thread.sleep(sleepTime);
                         } catch ( InterruptedException e1 ) {
