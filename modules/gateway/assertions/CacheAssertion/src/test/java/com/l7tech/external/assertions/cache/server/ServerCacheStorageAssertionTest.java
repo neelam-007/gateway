@@ -56,7 +56,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         return serverAssertion;
     }
 
-    @Test(expected = PolicyAssertionException.class)
+    @Test
     @BugNumber(12094)
     public void checkMaxEntriesLessThanMin() throws Exception {
         PolicyEnforcementContext policyContext = initPolicyContext();
@@ -77,7 +77,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         assertEquals(AssertionStatus.FAILED, status);
     }
 
-    @Test(expected = PolicyAssertionException.class)
+    @Test
     @BugNumber(12094)
     public void checkEntryAgeLessThanMin() throws Exception {
         PolicyEnforcementContext policyContext = initPolicyContext();
@@ -110,7 +110,7 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         assertEquals(AssertionStatus.FAILED, status);
     }
 
-    @Test(expected = PolicyAssertionException.class)
+    @Test
     @BugNumber(12094)
     public void checkMaxEntrySizeLessThanMin() throws Exception {
         PolicyEnforcementContext policyContext = initPolicyContext();

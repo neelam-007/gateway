@@ -7,6 +7,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -80,7 +81,8 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
         validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entries.field"), maxEntriesField, new InputValidator.ComponentValidationRule(maxEntriesField) {
             @Override
             public String getValidationError() {
-                if (CacheStorageAssertion.isSingleVariableOrIntegerWithinRange(maxEntriesField.getText(), 0, CacheStorageAssertion.kMAX_ENTRIES)) {
+                if (ValidationUtils.isValidInteger(maxEntriesField.getText(), false, 0, CacheStorageAssertion.kMAX_ENTRIES)
+                        || Syntax.isOnlyASingleVariableReferenced(maxEntriesField.getText())) {
                     return null;
                 } else {
                     return resourceBundle.getString("max.entries.field");
@@ -90,7 +92,8 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
         validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entry.age.field"), maxEntryAgeField, new InputValidator.ComponentValidationRule(maxEntryAgeField) {
             @Override
             public String getValidationError() {
-                if (CacheLookupAssertion.isSingleVariableOrLongWithinRange(maxEntryAgeField.getText(), 0, CacheStorageAssertion.kMAX_ENTRY_AGE_SECONDS)) {
+                if (ValidationUtils.isValidLong(maxEntryAgeField.getText(), false, 0, CacheStorageAssertion.kMAX_ENTRY_AGE_SECONDS)
+                        || Syntax.isOnlyASingleVariableReferenced(maxEntryAgeField.getText())) {
                     return null;
                 } else {
                     return resourceBundle.getString("max.entry.age.field");
@@ -100,7 +103,8 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
         validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entry.size.field"), maxEntrySizeField, new InputValidator.ComponentValidationRule(maxEntrySizeField) {
             @Override
             public String getValidationError() {
-                if (CacheLookupAssertion.isSingleVariableOrLongWithinRange(maxEntrySizeField.getText(), 0, CacheStorageAssertion.kMAX_ENTRY_SIZE)) {
+                if (ValidationUtils.isValidLong(maxEntrySizeField.getText(), false, 0, CacheStorageAssertion.kMAX_ENTRY_SIZE)
+                        || Syntax.isOnlyASingleVariableReferenced(maxEntrySizeField.getText())) {
                     return null;
                 } else {
                     return resourceBundle.getString("max.entry.size.field");
