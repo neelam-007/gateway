@@ -9,12 +9,15 @@ import com.l7tech.policy.variable.Syntax;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * 
  */
 public class KerberosAuthenticationAssertion extends Assertion implements UsesVariables {
     protected static final Logger logger = Logger.getLogger(KerberosAuthenticationAssertion.class.getName());
+
+    public static final Pattern spnPattern = Pattern.compile("^([a-zA-Z0-9]+)\\/([a-zA-Z0-9\\.-]+[^\\W])(@([a-zA-Z0-9-\\.]*[^\\W])){0,1}$");
 
     protected String realm;
     protected String servicePrincipalName;
@@ -130,8 +133,8 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Require Kerberos Authentication Credentials");
-        meta.put(AssertionMetadata.LONG_NAME, "Requester required to authenticate via Kerberos v5 protocol");
+        meta.put(AssertionMetadata.SHORT_NAME, "Retrieve Kerberos Authentication Credentials");
+        meta.put(AssertionMetadata.LONG_NAME, "Gateway retrieves and validates requester credentials from KDC via Kerberos v5 protocol");
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 

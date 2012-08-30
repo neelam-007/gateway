@@ -22,6 +22,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.ServerVariables;
+import org.apache.commons.lang.StringUtils;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.RealmException;
 import sun.security.krb5.internal.Ticket;
@@ -42,9 +43,6 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
     private static final Logger logger = Logger.getLogger(ServerKerberosAuthenticationAssertion.class.getName());
 
     private final String[] variablesUsed;
-
-    private static final Pattern spnPattern = Pattern.compile("^([a-zA-Z0-9-]+)\\/([a-zA-Z0-9-\\.]+@{0,1}[a-zA-Z0-9-\\.]+)$");
-
 
     public ServerKerberosAuthenticationAssertion(final KerberosAuthenticationAssertion assertion) throws PolicyAssertionException {
         super(assertion);
@@ -88,7 +86,15 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
         KerberosServiceTicket kerberosServiceTicket = null;
 
         try {
-            PrincipalName targetPrincipalName = new PrincipalName(spn, realm);
+            PrincipalName targetPrincipalName = null;
+
+            if(containRealm(spn)) {
+              targetPrincipalName = new PrincipalName(spn);
+            }
+            else {
+                targetPrincipalName = new PrincipalName(spn, realm);
+            }
+
             if (assertion.isS4U2Self()) { //protocol transition case
                 LoginCredentials pc = null;
                 if(assertion.isLastAuthenticatedUser()) {
@@ -224,6 +230,14 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
         return status;
     }
 
+    protected static boolean containRealm(final String spn) {
+        Matcher m = KerberosAuthenticationAssertion.spnPattern.matcher(spn);
+        if(m.find()) {
+            return m.groupCount() == 4 && StringUtils.isNotEmpty(m.group(4));
+        }
+        return false;
+    }
+
     protected String getServicePrincipal(String serviceType, String realm) throws KerberosException {
         return KerberosClient.getKerberosAcceptPrincipal(serviceType, realm, true);
     }
@@ -236,7 +250,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
      * @return the service type portion of the service principal name otherwise null
      */
     protected String getServiceFromServicePrincipalName(String servicePrincipalName) {
-        Matcher m = spnPattern.matcher(servicePrincipalName.trim());
+        Matcher m = KerberosAuthenticationAssertion.spnPattern.matcher(servicePrincipalName.trim());
         if (m.find()) {
             return m.group(1);
         }

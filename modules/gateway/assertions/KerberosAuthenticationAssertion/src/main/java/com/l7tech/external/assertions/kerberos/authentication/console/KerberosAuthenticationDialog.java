@@ -19,6 +19,7 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.regex.Matcher;
 
 /**
  * Copyright: Layer 7 Technologies, 2012
@@ -83,7 +84,16 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         inputValidator.constrainTextFieldToBeNonEmpty(realmLabel.getText(), realmTextField, null);
         inputValidator.constrainTextFieldToBeNonEmpty(gatewayAccountNameLabel.getText(), gatewayAccountName, null);
         inputValidator.constrainTextFieldToBeNonEmpty(specifyUserRadioButton.getText(), authenticatedUserTextField, null );
-        inputValidator.constrainTextFieldToBeNonEmpty(servicePrincipalLabel.getText(), servicePrincipalTextField, null);
+        inputValidator.constrainTextFieldToBeNonEmpty(servicePrincipalLabel.getText(), servicePrincipalTextField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                Matcher m = KerberosAuthenticationAssertion.spnPattern.matcher(servicePrincipalTextField.getText());
+                if(!m.matches()){
+                    return "Invalid Service Principal name " + servicePrincipalTextField.getText();
+                }
+                return null;
+            }
+        });
         inputValidator.ensureComboBoxSelection(passwordLabel.getText(), securePasswordComboBox);
         inputValidator.attachToButton(getOkButton(), super.createOkAction());
 
