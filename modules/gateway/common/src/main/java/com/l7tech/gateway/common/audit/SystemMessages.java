@@ -104,6 +104,7 @@ public class SystemMessages extends Messages {
     public static final M AUDIT_ARCHIVER_JOB_COMPLETE  = m(2204, Level.WARNING, "Completed Audit Archiver job.");
     public static final M AUDIT_ARCHIVER_ERROR = m(2205, Level.WARNING, "Audit Archiver error: {0}");
     public static final M AUDIT_ARCHIVER_IMMEDIATE_TRIGGER  = m(2206, Level.WARNING, "Immediate Audit Archive trigger requested.");
+    public static final M AUDIT_ARCHIVER_SOFT_LIMIT_REACHED  = m(2207, Level.WARNING, "Audit Archive current database size {0}% has reached and/or exceeded the soft limit of {1}%.");
 
     // FTP Client Utils
     public static final M FTP_SSL_NO_CERT = m(2250, Level.WARNING, "FTP server ({0}) did not identify itself properly: {1}");

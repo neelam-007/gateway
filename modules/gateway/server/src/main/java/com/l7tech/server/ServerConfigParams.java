@@ -49,6 +49,7 @@ public interface ServerConfigParams {
     String PARAM_AUDIT_LOG_FORMAT_OTHER_DETAIL = "auditLogFormatOtherDetail";
     String PARAM_AUDIT_ARCHIVER_TIMER_PERIOD = "auditArchiverTimerPeriod";
     String PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD = "auditArchiverShutdownThreshold";
+    String PARAM_AUDIT_ARCHIVER_WARNING_THRESHOLD = "auditArchiverWarningThreshold";
     String PARAM_AUDIT_ARCHIVER_START_THRESHOLD = "auditArchiverStartThreshold";
     String PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD = "auditArchiverStopThreshold";
     String PARAM_AUDIT_ARCHIVER_STALE_TIMEOUT = "auditArchiverStaleTimeout";

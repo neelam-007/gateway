@@ -389,6 +389,7 @@
                                 <value>auditArchiverStartThreshold</value>
                                 <value>auditArchiverStopThreshold</value>
                                 <value>auditArchiverBatchSize</value>
+                                <value>auditArchiverWarningThreshold</value>
                             </list>
                         </entry>
                         <entry key="auditArchiveReceiver">

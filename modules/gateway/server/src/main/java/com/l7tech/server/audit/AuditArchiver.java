@@ -52,6 +52,7 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
     private int shutdownThreshold;
     private int startThreshold;
     private int stopThreshold;
+    private int warningThreshold;
     private int batchSize;
     private static final int MAX_BATCH_SIZE = 10000;
     public static final long MYSQL_STATS_UPDATE_SLEEP_WAIT = 15000L; // milliseconds
@@ -123,6 +124,7 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
         //todo add validation of thresholds
         logger.info("Reloading configuration.");
 
+        warningThreshold = validatedConfig.getIntProperty(PARAM_AUDIT_ARCHIVER_WARNING_THRESHOLD, 50);
         shutdownThreshold = validatedConfig.getIntProperty(PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD, 90);
         startThreshold = validatedConfig.getIntProperty(PARAM_AUDIT_ARCHIVER_START_THRESHOLD, 75);
         stopThreshold = validatedConfig.getIntProperty(PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD, 50);
@@ -158,7 +160,14 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
     private void trigger() {
         logger.info("Starting Audit Archiver check.");
 
-        if (currentUsageCheck(0L) < startThreshold) {
+        final int currentSize = currentUsageCheck(0L);
+
+        if (currentSize >= warningThreshold) {
+            auditor.logAndAudit( SystemMessages.AUDIT_ARCHIVER_SOFT_LIMIT_REACHED, String.valueOf(currentSize), String.valueOf(warningThreshold) );
+            getApplicationContext().publishEvent(new AuditArchiverEvent(this));
+        }
+
+        if (currentSize < startThreshold) {
             logger.info("Below start_archive threshold, not starting archiver thread.");
             return;
         }
@@ -378,10 +387,12 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
         vc.setMinimumValue(PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD, 0);
         vc.setMinimumValue(PARAM_AUDIT_ARCHIVER_START_THRESHOLD, 0);
         vc.setMinimumValue(PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD, 0);
+        vc.setMaximumValue(PARAM_AUDIT_ARCHIVER_WARNING_THRESHOLD, 0);
 
         vc.setMaximumValue(PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD, 100);
         vc.setMaximumValue(PARAM_AUDIT_ARCHIVER_START_THRESHOLD, 100);
         vc.setMaximumValue(PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD, 100);
+        vc.setMaximumValue(PARAM_AUDIT_ARCHIVER_WARNING_THRESHOLD, 100);
 
         return vc;
     }
