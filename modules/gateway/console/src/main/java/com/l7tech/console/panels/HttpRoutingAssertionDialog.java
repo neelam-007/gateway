@@ -1166,11 +1166,20 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                     null);
             return;
         }
-
-        //we need a clone of assertion to store our test values
-        if(testAssertion==null){
-            testAssertion = assertion.clone();//a copy for our test
+        
+        if(assertion.isPassthroughHttpAuthentication()){
+            String msg = "Unable to test Security - Use HTTP Credentials from Request.";
+            DialogDisplayer.showMessageDialog(
+                    HttpRoutingAssertionDialog.this,
+                    msg,
+                    resources.getString("dialog.test.title"),
+                    (msg == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
+                    null);
+            return;
         }
+
+        testAssertion = assertion.clone();//a copy for our test
+
         HttpRoutingAssertionTestDialog dspd = new HttpRoutingAssertionTestDialog(owner, testAssertion, ipListToTest);
         dspd.pack();
         Utilities.centerOnScreen(dspd);

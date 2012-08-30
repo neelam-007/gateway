@@ -94,7 +94,6 @@ public class HttpAdminImpl implements HttpAdmin, ApplicationContextAware {
                     byte[] message = IOUtils.slurpStream(response.getMimeKnob().getEntireMessageBodyAsInputStream());
                     responseStr.append("\"");
                     responseStr.append(serverUrl);
-                    System.out.println(response.getClass());
                     responseStr.append("\"\n");
                     responseStr.append("------------------------------------------------\n");
                     responseStr.append(new String(IOUtils.slurpStream( response.getMimeKnob().getEntireMessageBodyAsInputStream()), ContentTypeHeader.TEXT_DEFAULT.getEncoding()));
@@ -202,12 +201,19 @@ public class HttpAdminImpl implements HttpAdmin, ApplicationContextAware {
     
     private String getConfiguredContentType(final HttpRoutingAssertion assertion){
         String contentType = "text/xml; charset=utf-8";
+        //check if there's an header named content-type
         if(assertion.getRequestHeaderRules().getRules()!=null && assertion.getRequestHeaderRules().getRules().length > 0){
             for(HttpPassthroughRule rule: assertion.getRequestHeaderRules().getRules()){
                 if(rule.getName().equalsIgnoreCase("content-type")){
-                    contentType=rule.getCustomizeValue();
+                    if (rule.getCustomizeValue() != null && rule.getCustomizeValue().length() > 0) {
+                        return rule.getCustomizeValue();
+                    }
                 }
             }
+        }
+        if(assertion.getTestContentType()!=null){
+            //user selected a particular content type
+            contentType=assertion.getTestContentType();
         }
         return contentType;
     }
