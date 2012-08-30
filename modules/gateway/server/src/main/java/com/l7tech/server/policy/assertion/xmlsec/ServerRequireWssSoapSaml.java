@@ -19,7 +19,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 
-public class ServerRequireWssSoapSaml<AT extends RequireSaml> extends ServerRequireWssSaml<AT> {
+public class ServerRequireWssSoapSaml<AT extends RequireSaml> extends ServerRequireSaml<AT> {
 
     public ServerRequireWssSoapSaml(AT sa) {
         super(sa);

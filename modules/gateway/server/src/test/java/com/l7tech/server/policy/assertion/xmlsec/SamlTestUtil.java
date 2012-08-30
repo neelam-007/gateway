@@ -1,12 +1,9 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.TestDocuments;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.identity.mapping.NameFormat;
-import com.l7tech.message.HttpServletRequestKnob;
-import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
@@ -29,15 +26,11 @@ import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.MockConfig;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.mock.web.MockServletContext;
 import org.w3c.dom.Document;
 import static org.junit.Assert.*;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -61,7 +54,7 @@ public class SamlTestUtil {
                     "<soap:Body><blah xmlns=\"urn:blah\"/></soap:Body>\n" +
                     "</soap:Envelope>";
 
-    public static TestAudit configureServerAssertionInjects(ServerRequireWssSaml serverAssertion) {
+    public static TestAudit configureServerAssertionInjects(ServerRequireSaml serverAssertion) {
         TestAudit testAudit = new TestAudit();
 
         ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()

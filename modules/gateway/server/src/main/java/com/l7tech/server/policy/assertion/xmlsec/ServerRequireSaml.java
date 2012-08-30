@@ -38,8 +38,7 @@ import java.util.*;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-//TODO [Donal] rename after refactor for non soap saml
-public abstract class ServerRequireWssSaml<AT extends RequireSaml> extends AbstractMessageTargetableServerAssertion<AT> {
+public abstract class ServerRequireSaml<AT extends RequireSaml> extends AbstractMessageTargetableServerAssertion<AT> {
     protected static final long CACHE_ID_EXTRA_TIME_MILLIS = 1000L * 60L * 5L; // cache IDs for at least 5 min extra
     protected static final long DEFAULT_EXPIRY = 1000L * 60L * 5L; // 5 minutes
     protected final SamlAssertionValidate assertionValidate;
@@ -56,7 +55,7 @@ public abstract class ServerRequireWssSaml<AT extends RequireSaml> extends Abstr
      *
      * @param sa the saml
      */
-    public ServerRequireWssSaml(AT sa) {
+    public ServerRequireSaml(AT sa) {
         super(sa);
 
         assertionValidate = new SamlAssertionValidate(sa);

@@ -11,7 +11,7 @@ import com.l7tech.security.xml.processor.EmbeddedSamlSignatureToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssTimestamp;
 import com.l7tech.server.message.AuthenticationContext;
-import com.l7tech.server.policy.assertion.xmlsec.ServerRequireWssSaml;
+import com.l7tech.server.policy.assertion.xmlsec.ServerRequireSaml;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Triple;
 import com.l7tech.xml.saml.SamlAssertion;
@@ -29,7 +29,7 @@ import java.util.List;
  *
  * @see com.l7tech.external.assertions.validatenonsoapsaml.ValidateNonSoapSamlAssertion
  */
-public class ServerValidateNonSoapSamlAssertion extends ServerRequireWssSaml<ValidateNonSoapSamlAssertion> {
+public class ServerValidateNonSoapSamlAssertion extends ServerRequireSaml<ValidateNonSoapSamlAssertion> {
     private final String[] variablesUsed;
 
     public ServerValidateNonSoapSamlAssertion(final ValidateNonSoapSamlAssertion assertion) throws PolicyAssertionException {

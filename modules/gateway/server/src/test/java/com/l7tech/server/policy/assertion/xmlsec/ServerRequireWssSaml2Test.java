@@ -67,7 +67,7 @@ public class ServerRequireWssSaml2Test {
         ass.setRequireHolderOfKeyWithMessageSignature(false);
         ass.setRequireSenderVouchesWithMessageSignature(false);
         ass.setNoSubjectConfirmation(true);
-        ServerRequireWssSaml sass = new ServerRequireWssSaml2(ass);
+        ServerRequireSaml sass = new ServerRequireWssSaml2(ass);
         SamlTestUtil.configureServerAssertionInjects(sass);
 
 
@@ -171,7 +171,7 @@ public class ServerRequireWssSaml2Test {
         authStmt.setAuthenticationMethods(new String[]{SamlConstants.AUTHENTICATION_SAML2_PASSWORD});
         requireWssSaml.setAuthenticationStatement(authStmt);
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
 
         Message request = ServerRequireWssSamlTest.getDecoratedMessage(samlAssertionV2);
@@ -201,7 +201,7 @@ public class ServerRequireWssSaml2Test {
         authStmt.setAuthenticationMethods(new String[]{SamlConstants.UNSPECIFIED_AUTHENTICATION});
         requireWssSaml.setAuthenticationStatement(authStmt);
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
 
         Message request = ServerRequireWssSamlTest.getDecoratedMessage(samlAssertionV2);
@@ -235,7 +235,7 @@ public class ServerRequireWssSaml2Test {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -265,7 +265,7 @@ public class ServerRequireWssSaml2Test {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.FALSIFIED, result);
@@ -296,7 +296,7 @@ public class ServerRequireWssSaml2Test {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -328,7 +328,7 @@ public class ServerRequireWssSaml2Test {
         context.setVariable("context_var", SamlConstants.AUTHENTICATION_SAML2_PASSWORD);
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -357,7 +357,7 @@ public class ServerRequireWssSaml2Test {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -377,7 +377,7 @@ public class ServerRequireWssSaml2Test {
         ass.setNoSubjectConfirmation(true);
         ass.setCheckAssertionValidity(checkAssertionValidity);
         ass.setMaxExpiry(maxExpiryTime);
-        ServerRequireWssSaml sass = new ServerRequireWssSaml2(ass);
+        ServerRequireSaml sass = new ServerRequireWssSaml2(ass);
         SamlTestUtil.configureServerAssertionInjects(sass);
 
         Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV));
