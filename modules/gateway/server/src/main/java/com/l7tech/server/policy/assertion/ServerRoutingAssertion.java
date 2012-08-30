@@ -318,27 +318,20 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
         final AuthenticationContext context = policyEnforcementContext.getAuthenticationContext(policyEnforcementContext.getRequest());
         boolean isDelegated = false;
         KerberosServiceTicket kerberosServiceTicket = null;
-        if (wssResults == null) {
-            java.util.List<LoginCredentials> creds = context.getCredentials();
+        // first search through the login credentials
+        // this is the case when Kerberos Authentication assertion is used with one of the WS-Security assertions
+        java.util.List<LoginCredentials> creds = context.getCredentials();
 
-            for (LoginCredentials cred: creds) {
-                if ( cred.getPayload() instanceof KerberosServiceTicket ){
-                    kerberosServiceTicket = (KerberosServiceTicket) cred.getPayload();
-                    isDelegated = cred.getSecurityToken().getClass().isAssignableFrom(KerberosAuthenticationSecurityToken.class);
-                }
+        for (LoginCredentials cred: creds) {
+            if ( cred.getPayload() instanceof KerberosServiceTicket ){
+                kerberosServiceTicket = (KerberosServiceTicket) cred.getPayload();
+                isDelegated = cred.getSecurityToken().getClass().isAssignableFrom(KerberosAuthenticationSecurityToken.class);
             }
-
-        } else {
-            XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
-            if (tokens == null) {
-              throw new KerberosException("No security tokens found in request");
-            }
-
-            for (XmlSecurityToken tok : tokens) {
-                if (tok instanceof KerberosSigningSecurityToken) {
-                    kerberosServiceTicket = ((KerberosSigningSecurityToken) tok).getServiceTicket();
-                }
-            }
+        }
+        //for compatibility reason we will check if wssResults exists and no KerberosAuthenticationSecurityToken where found before
+        //so it's safe to overwrite the token with the one from the wssResults.
+        if(wssResults != null && !isDelegated){
+            kerberosServiceTicket = getLastKerberosSigningSecurityToken(wssResults);
         }
 
         if (kerberosServiceTicket == null) {
@@ -349,13 +342,33 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             delegatedServiceTicket =  kerberosServiceTicket;
         }
         else {
-            //TODO: this is a compatibility mode eventually all kerberos delegation functionality should be migrated to KerberosAuthentication assertion
+            //TODO: compatibility mode. Eventually all kerberos delegation functionality should be migrated to KerberosAuthentication assertion
             // create the delegated service ticket
-            KerberosRoutingClient client = new KerberosRoutingClient();
-            delegatedServiceTicket =
-                    client.getKerberosServiceTicket(KerberosRoutingClient.getGSSServiceName("http", server), kerberosServiceTicket);
+            delegatedServiceTicket = wrapKerberosServiceTicketForDelegation(kerberosServiceTicket, server);
         }
 
+        return delegatedServiceTicket;
+    }
+
+    protected KerberosServiceTicket getLastKerberosSigningSecurityToken(ProcessorResult wssResults) throws KerberosException {
+        KerberosServiceTicket kerberosServiceTicket = null;
+        XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
+        if (tokens == null) {
+            throw new KerberosException("No security tokens found in request");
+        }
+
+        for (XmlSecurityToken tok : tokens) {
+            if (tok instanceof KerberosSigningSecurityToken) {
+                kerberosServiceTicket = ((KerberosSigningSecurityToken) tok).getServiceTicket();
+            }
+        }
+        return kerberosServiceTicket;
+    }
+
+    protected KerberosServiceTicket wrapKerberosServiceTicketForDelegation(KerberosServiceTicket kerberosServiceTicket, String server) throws KerberosException {
+        KerberosServiceTicket delegatedServiceTicket;KerberosRoutingClient client = new KerberosRoutingClient();
+        delegatedServiceTicket =
+                client.getKerberosServiceTicket(KerberosRoutingClient.getGSSServiceName("http", server), kerberosServiceTicket);
         return delegatedServiceTicket;
     }
 

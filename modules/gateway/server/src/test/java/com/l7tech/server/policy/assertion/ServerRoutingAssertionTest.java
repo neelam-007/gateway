@@ -5,22 +5,26 @@ import com.l7tech.common.io.RandomInputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.kerberos.KerberosGSSAPReqTicket;
+import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.message.Message;
 import com.l7tech.message.TcpKnob;
 import com.l7tech.message.TcpKnobAdapter;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RoutingAssertionWithSamlSV;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.security.token.KerberosAuthenticationSecurityToken;
+import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.security.token.http.HttpNegotiateToken;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.security.xml.processor.KerberosSigningSecurityTokenImpl;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
@@ -29,16 +33,20 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
+import javax.security.auth.kerberos.KerberosTicket;
 import java.io.IOException;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.l7tech.common.TestDocuments.*;
@@ -48,10 +56,12 @@ import static com.l7tech.server.policy.assertion.MutateOption.MUTATE_INTO_NON_SO
 import static com.l7tech.server.policy.assertion.ThrowOption.SHOULD_NOT_THROW;
 import static com.l7tech.server.policy.assertion.ThrowOption.SHOULD_THROW;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  *
  */
+@RunWith(MockitoJUnitRunner.class)
 public class ServerRoutingAssertionTest {
     private static final String VAL_NOACTOR = null;
     private static final String VAL_SECURESPAN = SoapConstants.L7_SOAP_ACTOR;
@@ -406,5 +416,97 @@ public class ServerRoutingAssertionTest {
         makeTestSra().doAttachSamlSenderVouches(new HttpRoutingAssertion(), mess, makeLoginCredentials(), makeSignerInfo());
         String afterXml = toString(mess);
         assertFalse(messXml.equals(afterXml));
+    }
+
+    @Test
+    @BugNumber(12785)
+    public void testGetDelegatedKerberosTicket_constrainedDelegation() throws Exception {
+        PolicyEnforcementContext mockContext = mock(PolicyEnforcementContext.class);
+
+        Message request = makeMessage();
+        when(mockContext.getRequest()).thenReturn(request);
+        AuthenticationContext mockAuthenticationContext = mock(AuthenticationContext.class);
+        when(mockContext.getAuthenticationContext(request)).thenReturn(mockAuthenticationContext);
+        List<LoginCredentials> credentials = new ArrayList<LoginCredentials>();
+        byte[] key = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7};
+        byte[] bytes = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF};
+        KerberosServiceTicket kst = new KerberosServiceTicket("client", "service", key, 0, new KerberosGSSAPReqTicket(bytes));
+        credentials.add(LoginCredentials.makeLoginCredentials(new KerberosAuthenticationSecurityToken(kst), Assertion.class));
+        when(mockAuthenticationContext.getCredentials()).thenReturn(credentials);
+;
+        TestServerRoutingAssertion partiallyMockedFixture = spy(makeTestSra());
+
+        KerberosServiceTicket ticket = partiallyMockedFixture.getDelegatedKerberosTicket(mockContext, "testhost");
+
+        verify(partiallyMockedFixture, never()).getLastKerberosSigningSecurityToken(any(ProcessorResult.class));
+        verify(partiallyMockedFixture, never()).wrapKerberosServiceTicketForDelegation(any(KerberosServiceTicket.class), anyString());
+        assertEquals(kst, ticket);
+
+    }
+
+    @Test
+    @BugNumber(12785)
+    public void testGetDelegatedKerberosTicket_unconstrainedDelegation() throws Exception {
+        PolicyEnforcementContext mockContext = mock(PolicyEnforcementContext.class);
+
+        Message request = makeMessage();
+        when(mockContext.getRequest()).thenReturn(request);
+        AuthenticationContext mockAuthenticationContext = mock(AuthenticationContext.class);
+        when(mockContext.getAuthenticationContext(request)).thenReturn(mockAuthenticationContext);
+        List<LoginCredentials> credentials = new ArrayList<LoginCredentials>();
+        byte[] key = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7};
+        byte[] bytes = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF};
+        KerberosServiceTicket kst = new KerberosServiceTicket("client", "service", key, 0, new KerberosGSSAPReqTicket(bytes));
+        KerberosTicket mockKerberosTicket = mock(KerberosTicket.class);
+
+        KerberosServiceTicket delegatedTicket = new KerberosServiceTicket("client", "service", key, 0, new KerberosGSSAPReqTicket(bytes),mockKerberosTicket);
+        credentials.add(LoginCredentials.makeLoginCredentials(new HttpNegotiateToken(kst), Assertion.class));
+        when(mockAuthenticationContext.getCredentials()).thenReturn(credentials);
+
+        TestServerRoutingAssertion partiallyMockedFixture = spy(makeTestSra());
+        doReturn(delegatedTicket).when(partiallyMockedFixture).wrapKerberosServiceTicketForDelegation(kst, "testhost");
+
+        KerberosServiceTicket ticket = partiallyMockedFixture.getDelegatedKerberosTicket(mockContext, "testhost");
+
+        verify(partiallyMockedFixture, times(1)).wrapKerberosServiceTicketForDelegation(kst, "testhost");
+        assertEquals(delegatedTicket, ticket);
+
+    }
+
+    @Test
+    @BugNumber(12785)
+    public void testGetDelegatedKerberosTicket_ticketSupliedViaWSSTokenProfile() throws Exception {
+        PolicyEnforcementContext mockContext = mock(PolicyEnforcementContext.class);
+
+        Message request = makeMessage();
+        ProcessorResult mockProcessorResult = mock(ProcessorResult.class);
+        request.getSecurityKnob().setProcessorResult(mockProcessorResult);
+        when(mockContext.getRequest()).thenReturn(request);
+        AuthenticationContext mockAuthenticationContext = mock(AuthenticationContext.class);
+        when(mockContext.getAuthenticationContext(request)).thenReturn(mockAuthenticationContext);
+        List<LoginCredentials> credentials = new ArrayList<LoginCredentials>();
+        byte[] key = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7};
+        byte[] bytes = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF};
+        byte[] bytes2 = {0x10, 0x10, 0x12, 0x13, 0x14, 0x15, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF};
+        KerberosServiceTicket kst = new KerberosServiceTicket("client", "service", key, 0, new KerberosGSSAPReqTicket(bytes));
+
+        final KerberosSigningSecurityTokenImpl something = new KerberosSigningSecurityTokenImpl(kst, "something");
+        XmlSecurityToken[] xmlSecurityTokens = { something };
+        when(mockProcessorResult.getXmlSecurityTokens()).thenReturn(xmlSecurityTokens);
+
+        KerberosTicket mockKerberosTicket = mock(KerberosTicket.class);
+        KerberosServiceTicket delegatedTicket = new KerberosServiceTicket("client", "service", key, 0, new KerberosGSSAPReqTicket(bytes),mockKerberosTicket);
+        KerberosServiceTicket kst2 = new KerberosServiceTicket("client2", "service2", key, 1, new KerberosGSSAPReqTicket(bytes2));
+        credentials.add(LoginCredentials.makeLoginCredentials(new HttpNegotiateToken(kst2), Assertion.class));
+        when(mockAuthenticationContext.getCredentials()).thenReturn(credentials);
+
+        TestServerRoutingAssertion partiallyMockedFixture = spy(makeTestSra());
+        doReturn(delegatedTicket).when(partiallyMockedFixture).wrapKerberosServiceTicketForDelegation(kst, "testhost");
+
+        KerberosServiceTicket ticket = partiallyMockedFixture.getDelegatedKerberosTicket(mockContext, "testhost");
+        verify(partiallyMockedFixture, times(1)).getLastKerberosSigningSecurityToken(mockProcessorResult);
+        verify(partiallyMockedFixture, times(1)).wrapKerberosServiceTicketForDelegation(kst, "testhost");
+        assertEquals(delegatedTicket, ticket);
+
     }
 }
