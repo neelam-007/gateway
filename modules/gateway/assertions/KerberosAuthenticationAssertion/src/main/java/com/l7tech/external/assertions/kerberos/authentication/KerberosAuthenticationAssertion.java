@@ -9,7 +9,9 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.Syntax;
@@ -193,6 +195,7 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
         public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
             int foundCredentialSource = -1;
             int foundIdentity = -1;
+            int foundKerberosCredentialSource = -1;
             Assertion[] assertions = path.getPath();
             for(int i=0; i < assertions.length; i++) {
                 Assertion ass = assertions[i];
@@ -200,16 +203,24 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
                     if (ass == assertion) {
                         if (foundCredentialSource == -1 || foundCredentialSource > i) {
                             result.addError(new PolicyValidatorResult.Error(assertion, "Must be preceded by a credential source", null));
+
                         }
-                        if ((foundIdentity == -1 || foundIdentity > i) && assertion.isS4U2Self()) {
+                        else if(!assertion.isS4U2Self() && (foundKerberosCredentialSource == -1 || foundKerberosCredentialSource > i)) {
+                            result.addError(new PolicyValidatorResult.Error(assertion, "Must be preceded by either Require Windows Integrated Authentication Credentials or Require WS-Security Kerberos Token Profile Credentials", null));
+                        }
+                        else if (assertion.isS4U2Self() && (foundIdentity == -1 || foundIdentity > i)) {
                             result.addError(new PolicyValidatorResult.Error(assertion, "Must be preceded by an identity assertion (e.g. Authenticate User or Group)", null));
                         }
+
                         return;
                     }
-                    else if(assertions[i].isCredentialSource()) {
+                    else if(ass.isCredentialSource()) {
                         foundCredentialSource = i;
+                        if(ass instanceof HttpNegotiate || ass instanceof RequestWssKerberos)  {
+                            foundKerberosCredentialSource = i;
+                        }
                     }
-                    else if(assertions[i] instanceof IdentityAssertion) {
+                    else if(ass instanceof IdentityAssertion) {
                         foundIdentity = i;
                     }
                 }
