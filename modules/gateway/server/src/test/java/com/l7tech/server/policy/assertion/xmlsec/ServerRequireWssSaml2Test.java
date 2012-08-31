@@ -158,7 +158,7 @@ public class ServerRequireWssSaml2Test {
     @Test
     public void testAuthValue_BuiltInAuthMethods_Success() throws Exception {
 
-        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        final RequireWssSaml2 requireWssSaml = new RequireWssSaml2();
         requireWssSaml.setVersion(2);
         requireWssSaml.setCheckAssertionValidity(false);
         requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
@@ -171,7 +171,7 @@ public class ServerRequireWssSaml2Test {
         authStmt.setAuthenticationMethods(new String[]{SamlConstants.AUTHENTICATION_SAML2_PASSWORD});
         requireWssSaml.setAuthenticationStatement(authStmt);
 
-        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSaml2(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
 
         Message request = ServerRequireWssSamlTest.getDecoratedMessage(samlAssertionV2);
@@ -188,7 +188,7 @@ public class ServerRequireWssSaml2Test {
     @Test
     public void testAuthValue_BuiltInAuthMethods_Failure() throws Exception {
 
-        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        final RequireWssSaml2 requireWssSaml = new RequireWssSaml2();
         requireWssSaml.setVersion(2);
         requireWssSaml.setCheckAssertionValidity(false);
         requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
@@ -201,7 +201,7 @@ public class ServerRequireWssSaml2Test {
         authStmt.setAuthenticationMethods(new String[]{SamlConstants.UNSPECIFIED_AUTHENTICATION});
         requireWssSaml.setAuthenticationStatement(authStmt);
 
-        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSaml2(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
 
         Message request = ServerRequireWssSamlTest.getDecoratedMessage(samlAssertionV2);
@@ -218,7 +218,7 @@ public class ServerRequireWssSaml2Test {
     @Test
     @BugNumber(9657)
     public void testAuthValue_CustomMethods() throws Exception {
-        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        final RequireWssSaml2 requireWssSaml = new RequireWssSaml2();
         requireWssSaml.setVersion(2);
         requireWssSaml.setCheckAssertionValidity(false);
         requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
@@ -235,7 +235,7 @@ public class ServerRequireWssSaml2Test {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSaml2(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -247,7 +247,7 @@ public class ServerRequireWssSaml2Test {
     @Test
     @BugNumber(9657)
     public void testAuthValue_CustomMethods_Failure() throws Exception {
-        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        final RequireWssSaml2 requireWssSaml = new RequireWssSaml2();
         requireWssSaml.setVersion(2);
         requireWssSaml.setCheckAssertionValidity(false);
         requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
@@ -265,7 +265,7 @@ public class ServerRequireWssSaml2Test {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSaml2(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.FALSIFIED, result);
@@ -278,7 +278,7 @@ public class ServerRequireWssSaml2Test {
     @Test
     @BugNumber(9657)
     public void testAuthValue_CustomMethods_Multiple_Values() throws Exception {
-        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        final RequireWssSaml2 requireWssSaml = new RequireWssSaml2();
         requireWssSaml.setVersion(2);
         requireWssSaml.setCheckAssertionValidity(false);
         requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
@@ -296,7 +296,7 @@ public class ServerRequireWssSaml2Test {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSaml2(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -309,7 +309,7 @@ public class ServerRequireWssSaml2Test {
     @Test
     @BugNumber(9657)
     public void testAuthValue_CustomMethods_Context_Variables() throws Exception {
-        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        final RequireWssSaml2 requireWssSaml = new RequireWssSaml2();
         requireWssSaml.setVersion(2);
         requireWssSaml.setCheckAssertionValidity(false);
         requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
@@ -328,7 +328,7 @@ public class ServerRequireWssSaml2Test {
         context.setVariable("context_var", SamlConstants.AUTHENTICATION_SAML2_PASSWORD);
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSaml2(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -341,7 +341,7 @@ public class ServerRequireWssSaml2Test {
     @Test
     @BugNumber(10741)
     public void testDefaultValueForNameFormat() throws Exception {
-        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        final RequireWssSaml2 requireWssSaml = new RequireWssSaml2();
         requireWssSaml.setVersion(2);
         requireWssSaml.setCheckAssertionValidity(false);
         requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
@@ -357,7 +357,7 @@ public class ServerRequireWssSaml2Test {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
-        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSoapSaml<RequireWssSaml>(requireWssSaml);
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSaml2(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);

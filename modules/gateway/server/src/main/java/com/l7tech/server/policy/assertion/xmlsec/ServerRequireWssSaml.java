@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.RequireSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
@@ -19,9 +19,14 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 
-public class ServerRequireWssSoapSaml<AT extends RequireSaml> extends ServerRequireSaml<AT> {
+/**
+ * Require a SAML token delivered via WS-Security.
+ *
+ * @param <AT> RequireWssSaml
+ */
+public class ServerRequireWssSaml<AT extends RequireWssSaml> extends ServerRequireSaml<AT> {
 
-    public ServerRequireWssSoapSaml(AT sa) {
+    public ServerRequireWssSaml(AT sa) {
         super(sa);
     }
 

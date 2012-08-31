@@ -1,24 +1,20 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.util.Functions;
-import com.l7tech.util.TimeUnit;
 
 import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.EnumSet;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Additional information required for WS-Security SOAP processing.
+ *
+ * This class and sub classes represent configuration for SAML tokens acquired via WS-Security.
  */
 @RequiresSOAP(wss=true)
 public class RequireWssSaml extends RequireSaml implements SecurityHeaderAddressable {
@@ -157,7 +153,6 @@ public class RequireWssSaml extends RequireSaml implements SecurityHeaderAddress
             }
         });
 
-        meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, "com.l7tech.server.policy.assertion.xmlsec.ServerRequireWssSoapSaml");
         return meta;
     }
 

@@ -1,7 +1,5 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import org.springframework.beans.factory.BeanFactory;
-
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
 
 
@@ -11,7 +9,7 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class ServerRequireWssSaml2 extends ServerRequireWssSoapSaml<RequireWssSaml2> {
+public class ServerRequireWssSaml2 extends ServerRequireWssSaml<RequireWssSaml2> {
 
     public ServerRequireWssSaml2(RequireWssSaml2 sa) {
         super(sa);
