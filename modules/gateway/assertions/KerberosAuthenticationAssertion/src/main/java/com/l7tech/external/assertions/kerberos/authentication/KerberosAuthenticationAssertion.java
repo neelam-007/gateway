@@ -1,15 +1,26 @@
 package com.l7tech.external.assertions.kerberos.authentication;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.Syntax;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_VALIDATOR_CLASSNAME;
 
 /**
  * 
@@ -110,6 +121,9 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
         this.s4U2Proxy = s4U2Proxy;
     }
 
+
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Override
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames(servicePrincipalName, authenticatedUser, realm, krbConfiguredAccount);
     }
@@ -119,6 +133,7 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
     //
     private static final String META_INITIALIZED = KerberosAuthenticationAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -148,6 +163,7 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
 
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/authentication.gif");//authentication.gif
+        meta.put(POLICY_VALIDATOR_CLASSNAME, KerberosAuthenticationAssertion.Validator.class.getName());
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:KerberosAuthentication" rather than "set:modularAssertions"
@@ -157,4 +173,47 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
         return meta;
     }
 
+
+    public static class Validator implements AssertionValidator{
+       private final KerberosAuthenticationAssertion assertion;
+
+
+        public Validator(KerberosAuthenticationAssertion assertion) {
+           this.assertion = assertion;
+        }
+        /**
+         * Validate the assertion in the given path, service and store the result in the
+         * validator result.
+         *
+         * @param path   the assertion path where the assertion is located
+         * @param pvc    information about the context in which the assertion appears
+         * @param result the result where the validation warnings or errors are collected
+         */
+        @Override
+        public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
+            int foundCredentialSource = -1;
+            int foundIdentity = -1;
+            Assertion[] assertions = path.getPath();
+            for(int i=0; i < assertions.length; i++) {
+                Assertion ass = assertions[i];
+                if(ass.isEnabled()) {
+                    if (ass == assertion) {
+                        if (foundCredentialSource == -1 || foundCredentialSource > i) {
+                            result.addError(new PolicyValidatorResult.Error(assertion, "Must be preceded by a credential source", null));
+                        }
+                        if ((foundIdentity == -1 || foundIdentity > i) && assertion.isS4U2Self()) {
+                            result.addError(new PolicyValidatorResult.Error(assertion, "Must be preceded by an identity assertion (e.g. Authenticate User or Group)", null));
+                        }
+                        return;
+                    }
+                    else if(assertions[i].isCredentialSource()) {
+                        foundCredentialSource = i;
+                    }
+                    else if(assertions[i] instanceof IdentityAssertion) {
+                        foundIdentity = i;
+                    }
+                }
+            }
+        }
+    }
 }
