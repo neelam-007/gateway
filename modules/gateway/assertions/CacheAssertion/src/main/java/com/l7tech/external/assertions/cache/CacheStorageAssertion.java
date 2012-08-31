@@ -10,8 +10,9 @@ import com.l7tech.policy.variable.Syntax;
 public class CacheStorageAssertion extends MessageTargetableAssertion implements UsesVariables {
 
     public static final int kMAX_ENTRIES = 1000000;
-    public static final long kMAX_ENTRY_AGE_MILLIS = 100000000L;
-    public static final long kMAX_ENTRY_AGE_SECONDS = kMAX_ENTRY_AGE_MILLIS / 1000L;
+    public static final long kMAX_ENTRY_AGE_SECONDS = 100000000L;
+    public static final long kMAX_ENTRY_AGE_MILLIS = kMAX_ENTRY_AGE_SECONDS * 1000L;
+
     public static final long kMAX_ENTRY_SIZE = 1000000000L;
 
     private String cacheId = "defaultCache";

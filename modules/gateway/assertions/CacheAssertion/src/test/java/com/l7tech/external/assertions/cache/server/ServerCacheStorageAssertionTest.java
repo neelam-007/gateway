@@ -131,4 +131,22 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         assertEquals(AssertionStatus.FAILED, status);
     }
 
+    /**
+     * The maximum second value that may be entered is 100000000L
+     * @throws Exception
+     */
+    @Test
+    public void testMaxSecondValue() throws Exception {
+        PolicyEnforcementContext policyContext = initPolicyContext();
+        policyContext.setVariable("xyz", "-1");
+        final Long maxAge = 100000000L * 1000L;
+        final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("2", String.valueOf(maxAge), "34323");
+        AssertionStatus status = serverAssertion.checkRequest(policyContext);
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertEquals(AssertionStatus.NONE, status);
+    }
+
 }
