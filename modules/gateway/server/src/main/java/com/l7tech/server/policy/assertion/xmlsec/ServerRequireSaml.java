@@ -12,7 +12,6 @@ import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.server.identity.cert.TrustedCertCache;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
@@ -23,7 +22,6 @@ import com.l7tech.util.Pair;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.Triple;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.BeanFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -31,10 +29,12 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Class <code>ServerRequestWssSaml</code> represents the server
- * side saml Assertion that validates the SAML requestWssSaml.
- *
- * Updated to validate also non WSS SAML tokens
+ * Class <code>ServerRequestSaml</code> validates a SAML token.
+ * The token may have been retrieved from WS-Security header or not. There are still some baked in rules relating to
+ * WS-Security, but most of the validation logic is not WS-Security specific in that it can be applied to any SAML token.
+ * <p/>
+ * No validation changes should be made to this or related classes however without considering if it affects the
+ * WS-Security token profile for SAML.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
