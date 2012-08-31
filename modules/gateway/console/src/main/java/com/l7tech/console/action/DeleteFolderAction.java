@@ -1,5 +1,6 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.util.TopComponents;
@@ -7,11 +8,10 @@ import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Action to delete a service/policy folder.
@@ -68,11 +68,6 @@ public class DeleteFolderAction extends SecureAction {
         );
     }
 
-    public static void showNonEmptyFolderDialog(final String folderName) {
-        JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), "Could not delete folder '" +
-                folderName + "' because some of its contents are still in use.", "Delete Error", JOptionPane.ERROR_MESSAGE);
-    }
-
     /**
      */
     @Override
@@ -94,27 +89,9 @@ public class DeleteFolderAction extends SecureAction {
 
     private void doDelete() {
         final ServicesAndPoliciesTree servicesAndPoliciesTree = (ServicesAndPoliciesTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-        // try to delete contents first
-        servicesAndPoliciesTree.deleteMultipleEntities(folderToDelete.getChildNodes(), false);
-        deleteFolderNode(folderToDelete);
-    }
-
-    private void deleteFolderNode(final FolderNode folderNode) {
-        if(folderNode.getChildCount() == 0){
-            try {
-                folderAdmin.deleteFolder(folderNode.getOid());
-
-                JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-                if (tree != null) {
-                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    model.removeNodeFromParent(folderNode);
-                }
-            } catch(ObjectModelException e) {
-                JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), "Error deleting folder:\n" + ExceptionUtils.getMessage(e), "Delete Error", JOptionPane.ERROR_MESSAGE );
-            }
-        }else{
-            showNonEmptyFolderDialog(folderNode.getName());
-        }
+        final List<AbstractTreeNode> nodesToDelete = new ArrayList<AbstractTreeNode>(1);
+        nodesToDelete.add(folderToDelete);
+        servicesAndPoliciesTree.deleteMultipleEntities(nodesToDelete, false);
     }
 
     private static String getUserConfirmationMessage(final String folderName) {

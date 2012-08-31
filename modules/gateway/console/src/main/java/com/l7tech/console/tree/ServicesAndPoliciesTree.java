@@ -14,13 +14,11 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Binary;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Option;
@@ -220,7 +218,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                         @Override
                         public void reportResult(int option) {
                             if(option == JOptionPane.YES_OPTION){
-                                deleteInDependencyOrder(nodes, false);
+                                sortAndDelete(nodes, false);
                             }
                         }
                     });
@@ -229,11 +227,16 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                     confirmationEnabled = nodes.size() == 1 ? true : false;
                 }
             }
-            deleteInDependencyOrder(nodes, confirmationEnabled);
+            sortAndDelete(nodes, confirmationEnabled);
         }
     }
 
-    private void deleteInDependencyOrder(final List<AbstractTreeNode> nodes, boolean confirmationEnabled) {
+    /**
+     * If any services are detected to be published to the UDDI, a dialog box is displayed asking the user to confirm
+     * whether these services should be deleted. If not, the services published to the UDDI will be removed from the
+     * given list of service nodes.
+     */
+    private void sortAndDelete(final List<AbstractTreeNode> nodes, boolean confirmationEnabled) {
         final List<ServiceNode> serviceNodes = new ArrayList<ServiceNode>();
         final List<ServiceNodeAlias> serviceAliasNodes = new ArrayList<ServiceNodeAlias>();
         final List<PolicyEntityNode> policyNodes = new ArrayList<PolicyEntityNode>();
@@ -243,37 +246,91 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         sortNodes(nodes, serviceNodes, serviceAliasNodes, policyNodes, policyNodesWithInclude,
                 policyAliasNodes, folderNodes);
 
-        try {
-            filterServicesInUddi(serviceNodes);
-
-            for (final ServiceNodeAlias serviceAliasNode : serviceAliasNodes) {
-                new DeleteServiceAliasAction(serviceAliasNode, confirmationEnabled).actionPerformed(null);
-            }
-            for (final ServiceNode serviceNode : serviceNodes) {
-                new DeleteServiceAction(serviceNode, confirmationEnabled).actionPerformed(null);
-            }
-            for (final PolicyEntityNodeAlias policyAliasNode : policyAliasNodes) {
-                new DeletePolicyAliasAction(policyAliasNode, confirmationEnabled).actionPerformed(null);
-            }
-            for (final PolicyEntityNode policyNodeWithInclude : policyNodesWithInclude) {
-                new DeletePolicyAction(policyNodeWithInclude, confirmationEnabled).actionPerformed(null);
-            }
-            for (final PolicyEntityNode policyNode : policyNodes) {
-                new DeletePolicyAction(policyNode, confirmationEnabled).actionPerformed(null);
-            }
-            for (final FolderNode folderNode : folderNodes) {
-                // don't try to delete the folder if some of its contents could not be deleted
-                if(folderNode.getChildCount() == 0){
-                    new DeleteFolderAction(folderNode, Registry.getDefault().getFolderAdmin(), confirmationEnabled).actionPerformed(null);
-                }else{
-                    DeleteFolderAction.showNonEmptyFolderDialog(folderNode.getName());
+        final List<ServiceHeader> servicesInUDDI = new ArrayList<ServiceHeader>();
+        if (nodes.size() > 1){
+            //find out if any have uddi data
+            final Set<Long> serviceIds = new HashSet<Long>();
+            for(final ServiceNode serviceNode: serviceNodes){
+                try {
+                    serviceIds.add(serviceNode.getEntity().getOid());
+                } catch (FindException e1) {
+                    log.log(Level.WARNING, e1.getMessage(), e1);
+                    throw new RuntimeException(e1);
                 }
             }
-        } catch (final DeletionCancelledException e) {
-            // user cancelled deletion
+
+            try {
+                if(!serviceIds.isEmpty()){
+                    servicesInUDDI.addAll(Registry.getDefault().getUDDIRegistryAdmin().getServicesPublishedToUDDI(serviceIds));
+                }
+            } catch (FindException e) {
+                log.log(Level.WARNING, e.getMessage(), e);
+                throw new RuntimeException(e);
+            }
+        } else {
+            // only 1 node is selected
+            // if it is a service, UDDI check will be performed by DeleteServiceAction
+        }
+
+        if (!servicesInUDDI.isEmpty()) {
+            final UDDIConfirmationPanel uddiPanel = new UDDIConfirmationPanel(servicesInUDDI);
+            DialogDisplayer.showOptionDialog(TopComponents.getInstance().getTopParent(),
+                    "Confirm whether all selected services should be deleted or just those which have not published data to UDDI.\n" +
+                            "If all services are deleted then data will be orphaned in UDDI.",
+                    "Services have published data to UDDI", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
+                    new Object[]{uddiPanel, "Ok", "Cancel"}, null,
+                    new UDDIOptionListener(confirmationEnabled, uddiPanel, serviceNodes, servicesInUDDI,
+                            serviceAliasNodes, policyNodes, policyNodesWithInclude, policyAliasNodes, folderNodes));
+        }else{
+            doDependencyOrderDelete(confirmationEnabled, serviceNodes, serviceAliasNodes, policyNodes, policyNodesWithInclude, policyAliasNodes, folderNodes);
         }
     }
 
+    private void doDependencyOrderDelete(final boolean confirmationEnabled,
+                                         final List<ServiceNode> serviceNodes,
+                                         final List<ServiceNodeAlias> serviceAliasNodes,
+                                         final List<PolicyEntityNode> policyNodes,
+                                         final List<PolicyEntityNode> policyNodesWithInclude,
+                                         final List<PolicyEntityNodeAlias> policyAliasNodes,
+                                         final List<FolderNode> folderNodes) {
+        for (final ServiceNodeAlias serviceAliasNode : serviceAliasNodes) {
+            new DeleteServiceAliasAction(serviceAliasNode, confirmationEnabled).actionPerformed(null);
+        }
+        for (final ServiceNode serviceNode : serviceNodes) {
+            new DeleteServiceAction(serviceNode, confirmationEnabled).actionPerformed(null);
+        }
+        for (final PolicyEntityNodeAlias policyAliasNode : policyAliasNodes) {
+            new DeletePolicyAliasAction(policyAliasNode, confirmationEnabled).actionPerformed(null);
+        }
+        for (final PolicyEntityNode policyNodeWithInclude : policyNodesWithInclude) {
+            new DeletePolicyAction(policyNodeWithInclude, confirmationEnabled).actionPerformed(null);
+        }
+        for (final PolicyEntityNode policyNode : policyNodes) {
+            new DeletePolicyAction(policyNode, confirmationEnabled).actionPerformed(null);
+        }
+        for (final FolderNode folderNode : folderNodes) {
+            deleteFolderNode(folderNode);
+        }
+    }
+
+    private void deleteFolderNode(final FolderNode folderNode) {
+        if(folderNode.getChildCount() == 0){
+            try {
+                Registry.getDefault().getFolderAdmin().deleteFolder(folderNode.getOid());
+
+                JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                if (tree != null) {
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    model.removeNodeFromParent(folderNode);
+                }
+            } catch(ObjectModelException e) {
+                JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), "Error deleting folder:\n" + ExceptionUtils.getMessage(e), "Delete Error", JOptionPane.ERROR_MESSAGE );
+            }
+        }else{
+            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), "Could not delete folder '" +
+                    folderNode.getName() + "' because some of its contents are still in use.", "Delete Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
     /**
      * KeyAdapter for the policy trees
@@ -321,50 +378,84 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
     }
 
     /**
-     * If any services are detected to be published to the UDDI, a dialog box is displayed asking the user to confirm
-     * whether these services should be deleted. If not, the services published to the UDDI will be removed from the
-     * given list of service nodes.
-     *
-     * @param serviceNodes the list of service nodes which may contain services published to UDDI.
-     * @throws DeletionCancelledException if the user chose to cancel the UDDI dialog.
+     * Option listener for Services published to UDDI deletion confirmation dialog.
      */
-    private void filterServicesInUddi(final List<ServiceNode> serviceNodes) throws DeletionCancelledException {
-        final Set<Long> allServicesInUddi = new HashSet<Long>();
-        //find out if any have uddi data
-        for(ServiceNode serviceNode: serviceNodes){
-            try {
-                allServicesInUddi.add(serviceNode.getEntity().getOid());
-            } catch (FindException e1) {
-                log.log(Level.WARNING, e1.getMessage(), e1);
-                throw new RuntimeException(e1);
-            }
+    private class UDDIOptionListener implements DialogDisplayer.OptionListener {
+        private final boolean confirmationEnabled;
+        private final UDDIConfirmationPanel uddiPanel;
+        private final List<ServiceNode> serviceNodes;
+        private final List<ServiceHeader> servicesInUDDI;
+        private final List<ServiceNodeAlias> serviceAliasNodes;
+        private final List<PolicyEntityNode> policyNodes;
+        private final List<PolicyEntityNode> policyNodesWithInclude;
+        private final List<PolicyEntityNodeAlias> policyAliasNodes;
+        private final List<FolderNode> folderNodes;
+        public UDDIOptionListener(final boolean confirmationEnabled,
+                                  final UDDIConfirmationPanel uddiPanel,
+                                  final List<ServiceNode> serviceNodes,
+                                  final List<ServiceHeader> servicesInUDDI,
+                                  final List<ServiceNodeAlias> serviceAliasNodes,
+                                  final List<PolicyEntityNode> policyNodes,
+                                  final List<PolicyEntityNode> policyNodesWithInclude,
+                                  final List<PolicyEntityNodeAlias> policyAliasNodes,
+                                  final List<FolderNode> folderNodes){
+            this.confirmationEnabled = confirmationEnabled;
+            this.uddiPanel = uddiPanel;
+            this.serviceNodes = serviceNodes;
+            this.servicesInUDDI = servicesInUDDI;
+            this.serviceAliasNodes = serviceAliasNodes;
+            this.policyNodes = policyNodes;
+            this.policyNodesWithInclude = policyNodesWithInclude;
+            this.policyAliasNodes = policyAliasNodes;
+            this.folderNodes = folderNodes;
         }
-
-        final Collection<ServiceHeader> servicesInUDDI;
-        try {
-            if(!allServicesInUddi.isEmpty()){
-                servicesInUDDI = Registry.getDefault().getUDDIRegistryAdmin().getServicesPublishedToUDDI(allServicesInUddi);
+        @Override
+        public void reportResult(int option) {
+            if (option == 1) {//ok
+                if(uddiPanel.getDeleteAll().isSelected()){
+                    // no need to filter any
+                }else{
+                    final Set<Long> serviceIdsInUDDI= new HashSet<Long>();
+                    for(ServiceHeader header: servicesInUDDI){
+                        serviceIdsInUDDI.add(header.getOid());
+                    }
+                    final List<ServiceNode> toRemove = new ArrayList<ServiceNode>();
+                    for(final ServiceNode serviceNode: serviceNodes){
+                        try {
+                            final PublishedService service = serviceNode.getEntity();
+                            if(serviceIdsInUDDI.contains(service.getOid())){
+                                toRemove.add(serviceNode);
+                            }
+                        } catch (FindException e) {
+                            log.log(Level.WARNING, e.getMessage(), e);
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    serviceNodes.removeAll(toRemove);
+                }
+                doDependencyOrderDelete(confirmationEnabled, serviceNodes, serviceAliasNodes,
+                    policyNodes, policyNodesWithInclude, policyAliasNodes, folderNodes);
             }else{
-                servicesInUDDI = Collections.emptySet();
+                // cancelled
             }
-
-        } catch (FindException e) {
-            log.log(Level.WARNING, e.getMessage(), e);
-            throw new RuntimeException(e);
         }
+    }
 
-        if (!servicesInUDDI.isEmpty()) {
+    /**
+     * Displays a list of services published to UDDI and asks the user to select whether to delete or keep them.
+     */
+    private class UDDIConfirmationPanel extends JPanel{
+        private final JRadioButton deleteAll;
+        public UDDIConfirmationPanel(final Collection<ServiceHeader> servicesInUDDI){
             final JTextArea textArea = new JTextArea();
             textArea.setEditable(false);
             textArea.setEnabled(true);
             final StringBuilder builder = new StringBuilder();
             builder.append("The following services have published data to UDDI:\n");
 
-            final Set<Long> allOids = new HashSet<Long>();
             for(ServiceHeader header: servicesInUDDI){
                 builder.append(header.getDisplayName());
                 builder.append("\n");
-                allOids.add(header.getOid());
             }
             textArea.setText(builder.toString());
             textArea.setCaretPosition(0);
@@ -373,7 +464,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
             jScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
             final ButtonGroup buttonGroup= new ButtonGroup();
-            final JRadioButton deleteAll = new JRadioButton("Delete all selected");
+            deleteAll = new JRadioButton("Delete all selected");
             buttonGroup.add(deleteAll);
             final JRadioButton onlyNonUDDI = new JRadioButton("Delete all apart from those published to UDDI");
             buttonGroup.add(onlyNonUDDI);
@@ -383,43 +474,15 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
             radioPanel.add(onlyNonUDDI);
             radioPanel.add(deleteAll);
 
-            final JPanel container = new JPanel();
-            container.setLayout(new BorderLayout());
-            container.add(jScrollPane, BorderLayout.CENTER);
-            container.add(radioPanel, BorderLayout.SOUTH);
+            setLayout(new BorderLayout());
+            add(jScrollPane, BorderLayout.CENTER);
+            add(radioPanel, BorderLayout.SOUTH);
 
-            container.setPreferredSize(new Dimension(600, 200));
-            DialogDisplayer.showOptionDialog(TopComponents.getInstance().getTopParent(),
-                    "Confirm whether all selected services should be deleted or just those which have not published data to UDDI.\n" +
-                            "If all services are deleted then data will be orphaned in UDDI.",
-                    "Services have published data to UDDI", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
-                    new Object[]{container, "Ok", "Cancel"}, null, new DialogDisplayer.OptionListener() {
-                        @Override
-                        public void reportResult(int option) {
-                            if (option == 1) {//ok
-                                if(deleteAll.isSelected()){
-                                    // no need to filter any
-                                }else{
-                                    final List<ServiceNode> toRemove = new ArrayList<ServiceNode>();
-                                    for(final ServiceNode serviceNode: serviceNodes){
-                                        try {
-                                            final PublishedService service = serviceNode.getEntity();
-                                            if(allOids.contains(service.getOid())){
-                                                toRemove.add(serviceNode);
-                                            }
-                                        } catch (FindException e) {
-                                            log.log(Level.WARNING, e.getMessage(), e);
-                                            throw new RuntimeException(e);
-                                        }
-                                    }
-                                    serviceNodes.removeAll(toRemove);
-                                }
-                            }else{
-                                // cancelled
-                                throw new DeletionCancelledException("User cancelled UDDI service deletion dialog.");
-                            }
-                        }
-                    });
+            setPreferredSize(new Dimension(600, 200));
+        }
+
+        public JRadioButton getDeleteAll(){
+            return deleteAll;
         }
     }
 
