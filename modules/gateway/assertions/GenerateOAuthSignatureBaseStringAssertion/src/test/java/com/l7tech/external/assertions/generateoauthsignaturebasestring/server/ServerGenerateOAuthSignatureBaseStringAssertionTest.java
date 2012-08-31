@@ -457,6 +457,12 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         new ServerGenerateOAuthSignatureBaseStringAssertion(assertion);
     }
 
+    @Test(expected = PolicyAssertionException.class)
+    public void nullUsageMode() throws Exception {
+        assertion.setUsageMode(null);
+        new ServerGenerateOAuthSignatureBaseStringAssertion(assertion);
+    }
+
     @Test
     public void invalidRequestUrl() throws Exception {
         setParamsForRequestToken(assertion);
@@ -964,6 +970,56 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
         assertRequestTokenVariables();
         assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
+    }
+
+    @Test
+    public void clientTokenResolvesEmpty() throws Exception {
+        setParamsForRequestToken(assertion);
+        assertion.setOauthToken("${doesnotexist}");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(buildExpectedString(GET, REQUEST_TOKEN, true), (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertRequestTokenVariables();
+        assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
+    }
+
+    @Test
+    public void clientVerifierResolvesEmpty() throws Exception {
+        setParamsForRequestToken(assertion);
+        assertion.setOauthVerifier("${doesnotexist}");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(buildExpectedString(GET, REQUEST_TOKEN, true), (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertRequestTokenVariables();
+        assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
+    }
+
+    @Test
+    public void clientCallbackResolvesEmpty() throws Exception {
+        setParamsForRequestToken(assertion);
+        assertion.setOauthCallback("${doesnotexist}");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3Dfirst%26" +
+                "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dstubgeneratednonce%26" +
+                "oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1000%26" +
+                "oauth_version%3D1.0%26p%3Dmiddle%26z%3Dlast";
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertCommonVariables("oauth");
+        assertContextVariablesDoNotExist("oauth." + OAUTH_CALLBACK, "oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
     }
 
     private void assertContextVariablesDoNotExist(final String... names) throws NoSuchVariableException {

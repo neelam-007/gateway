@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.generateoauthsignaturebasestring.server;
 import com.l7tech.external.assertions.generateoauthsignaturebasestring.GenerateOAuthSignatureBaseStringAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -13,13 +12,11 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TimeSource;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-import javax.servlet.ServletInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -43,14 +40,11 @@ import static com.l7tech.external.assertions.generateoauthsignaturebasestring.Ge
 public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractServerAssertion<GenerateOAuthSignatureBaseStringAssertion> {
     public ServerGenerateOAuthSignatureBaseStringAssertion(@NotNull final GenerateOAuthSignatureBaseStringAssertion assertion) throws PolicyAssertionException {
         super(assertion);
-        if (StringUtils.isBlank(assertion.getRequestUrl())) {
-            throw new PolicyAssertionException(assertion, "Request Url cannot be null or empty.");
-        }
-        if (StringUtils.isBlank(assertion.getHttpMethod())) {
-            throw new PolicyAssertionException(assertion, "Http method cannot be null or empty.");
-        }
-        if (StringUtils.isBlank(assertion.getVariablePrefix())) {
-            throw new PolicyAssertionException(assertion, "Variable prefix cannot be null or empty");
+        throwIfNullOrBlank(assertion.getRequestUrl(), "Request Url");
+        throwIfNullOrBlank(assertion.getHttpMethod(), "Http method");
+        throwIfNullOrBlank(assertion.getVariablePrefix(), "Variable prefix");
+        if(assertion.getUsageMode() == null){
+            throw new PolicyAssertionException(assertion, "Usage mode cannot be null");
         }
         this.timeSource = new TimeSource();
     }
@@ -286,7 +280,9 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
 
     private void addManualParam(final List<Pair<String, String>> parameters, final String name, final String value) {
         if (value != null) {
-            parameters.add(new Pair<String, String>(name, value));
+            if (!value.isEmpty() || REQUIRED_PARAMETERS.contains(name)) {
+                parameters.add(new Pair<String, String>(name, value));
+            }
         }
     }
 
@@ -394,6 +390,12 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         final String foundSignatureMethod = sortedParameters.get(OAUTH_SIGNATURE_METHOD);
         if (!HMAC_SHA1.equals(foundSignatureMethod)) {
             throw new InvalidParameterException(OAUTH_SIGNATURE_METHOD, foundSignatureMethod, OAUTH_SIGNATURE_METHOD + " must be " + HMAC_SHA1 + " but found: " + foundSignatureMethod);
+        }
+    }
+
+    private void throwIfNullOrBlank(final String toTest, final String fieldName) throws PolicyAssertionException{
+        if (StringUtils.isBlank(toTest)) {
+            throw new PolicyAssertionException(assertion, fieldName + " cannot be null or empty");
         }
     }
 

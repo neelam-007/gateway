@@ -33,35 +33,11 @@ public class GenerateOAuthSignatureBaseStringTest {
     }
 
     @Test
-    public void getAssertionNameClientAuthorizedRequestToken(){
+    public void getAssertionNameClient(){
         assertion.setUsageMode(GenerateOAuthSignatureBaseStringAssertion.UsageMode.CLIENT);
-        assertion.setOauthToken("token");
-        assertion.setOauthVerifier("verifier");
 
         final String assertionName = nodeNameFactory.getAssertionName(assertion, true);
 
-        assertEquals("Client Generate OAuth Signature Base String: authorized request token", assertionName);
-    }
-
-    @Test
-    public void getAssertionNameClientAccessToken(){
-        assertion.setUsageMode(GenerateOAuthSignatureBaseStringAssertion.UsageMode.CLIENT);
-        assertion.setOauthToken("token");
-        assertion.setOauthVerifier(null);
-
-        final String assertionName = nodeNameFactory.getAssertionName(assertion, true);
-
-        assertEquals("Client Generate OAuth Signature Base String: access token", assertionName);
-    }
-
-    @Test
-    public void getAssertionNameClienReqestToken(){
-        assertion.setUsageMode(GenerateOAuthSignatureBaseStringAssertion.UsageMode.CLIENT);
-        assertion.setOauthToken(null);
-        assertion.setOauthVerifier(null);
-
-        final String assertionName = nodeNameFactory.getAssertionName(assertion, true);
-
-        assertEquals("Client Generate OAuth Signature Base String: request token", assertionName);
+        assertEquals("Client Generate OAuth Signature Base String", assertionName);
     }
 }

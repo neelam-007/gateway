@@ -6,7 +6,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
-import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 
@@ -35,14 +35,14 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
     public static enum UsageMode {
         /**
          * Sending an OAuth request.
-         *
+         * <p/>
          * OAuth parameters can be retrieved via query string or assertion fields.
          */
         CLIENT("Client"),
 
         /**
          * Receiving an OAuth request.
-         *
+         * <p/>
          * OAuth parameters can be retrieved via query string, authorization header, and/or request parameters.
          */
         SERVER("Server");
@@ -242,22 +242,7 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
         public String getAssertionName(final GenerateOAuthSignatureBaseStringAssertion assertion, final boolean decorate) {
             String assertionName = GENERATE_OAUTH_SIGNATURE_BASE_STRING;
             if (decorate) {
-                if (UsageMode.CLIENT.equals(assertion.getUsageMode())) {
-                    String requestType;
-                    if (StringUtils.isNotBlank(assertion.getOauthToken())) {
-                        if (StringUtils.isNotBlank(assertion.getOauthVerifier())) {
-                            requestType = AUTHORIZED_REQUEST_TOKEN;
-                        } else {
-                            requestType = ACCESS_TOKEN;
-                        }
-                    } else {
-                        requestType = REQUEST_TOKEN;
-                    }
-                    assertionName = assertion.getUsageMode().getDescription() + " " + GENERATE_OAUTH_SIGNATURE_BASE_STRING + ": " + requestType;
-                } else {
-                    // cannot determine request type
-                    assertionName = assertion.getUsageMode().getDescription() + " " + GENERATE_OAUTH_SIGNATURE_BASE_STRING;
-                }
+                assertionName = assertion.getUsageMode().getDescription() + " " + GENERATE_OAUTH_SIGNATURE_BASE_STRING;
             }
             return assertionName;
         }
