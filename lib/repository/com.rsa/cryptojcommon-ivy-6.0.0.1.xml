@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="2.0">
 	<info organisation="com.rsa"
-		module="cryptojFIPS"
-		revision="5.0"
+		module="cryptojcommon"
+		revision="6.0.0.1"
 		status="release"
-		publication="20110926134113"
+		publication="20120829213354"
 		default="true"
 	/>
 	<configurations>
 		<conf name="default" visibility="public"/>
 	</configurations>
 	<publications>
-		<artifact name="cryptojFIPS" type="jar" ext="jar" conf="default"/>
+		<artifact name="cryptojcommon" type="jar" ext="jar" conf="default"/>
 	</publications>
 </ivy-module>

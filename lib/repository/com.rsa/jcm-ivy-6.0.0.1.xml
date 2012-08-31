@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="2.0">
 	<info organisation="com.rsa"
-		module="cryptoj"
-		revision="5.0"
+		module="jcm"
+		revision="6.0.0.1"
 		status="release"
-		publication="20110926134105"
+		publication="20120829213420"
 		default="true"
 	/>
 	<configurations>
 		<conf name="default" visibility="public"/>
 	</configurations>
 	<publications>
-		<artifact name="cryptoj" type="jar" ext="jar" conf="default"/>
+		<artifact name="jcm" type="jar" ext="jar" conf="default"/>
 	</publications>
 </ivy-module>

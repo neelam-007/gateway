@@ -44,9 +44,11 @@
         <dependency org="org.apache.cxf" name="cxf-rt-transports-http" rev="2.3.10" force="true" conf="core"/>
 
         <!-- For the ESM, we'll always use the FIPS version of RSA for the time being -->
-        <dependency org="com.rsa" name="cryptojFIPS" rev="5.0" force="true" conf="core"/>
-        <dependency org="com.rsa" name="certj" rev="3.1" force="true" conf="core"/>
-        <dependency org="com.rsa" name="sslj" rev="5.1.1.2" force="true" conf="core"/>
+        <dependency org="com.rsa" name="jcmFIPS" rev="6.0.0.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojcommon" rev="6.0.0.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojce" rev="6.0.0.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="certj" rev="6.0" force="true" conf="core"/>
+        <dependency org="com.rsa" name="sslj" rev="6.0" force="true" conf="core"/>
         
         <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>

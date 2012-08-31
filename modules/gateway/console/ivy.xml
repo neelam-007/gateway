@@ -36,9 +36,11 @@
         <dependency org="com.japisoft" name="xmlpad-res" rev="3.7" force="true" conf="runtime"/>
         <dependency org="org.springframework" name="spring-web" rev="3.0.7.RELEASE" force="true" conf="core"/>
         <!-- For the SSM thick client, we'll always use the FIPS version of RSA for the time being -->
-        <dependency org="com.rsa" name="cryptojFIPS" rev="5.0" force="true" conf="core"/>
-        <dependency org="com.rsa" name="certj" rev="3.1" force="true" conf="core"/>
-        <dependency org="com.rsa" name="sslj" rev="5.1.1.2" force="true" conf="core"/>
+        <dependency org="com.rsa" name="jcmFIPS" rev="6.0.0.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojcommon" rev="6.0.0.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojce" rev="6.0.0.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="certj" rev="6.0" force="true" conf="core"/>
+        <dependency org="com.rsa" name="sslj" rev="6.0" force="true" conf="core"/>
         <dependency org="org.slf4j" name="slf4j-api" rev="1.6.5" force="true" conf="core"/>
         <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.5" force="true" conf="core"/>
         <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.5" force="true" conf="core"/>

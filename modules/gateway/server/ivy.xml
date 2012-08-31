@@ -104,10 +104,12 @@
         <dependency org="weblogic" name="wljmsclient" rev="10.3" force="true" conf="optional"/>
 
         <!-- Alternative dependencies -->
-        <dependency org="com.rsa" name="cryptoj" rev="5.0" force="true" conf="alternative"/>
-        <dependency org="com.rsa" name="cryptojFIPS" rev="5.0" force="true" conf="alternative"/>
-        <dependency org="com.rsa" name="certj" rev="3.1" force="true" conf="test,alternative"/>
-        <dependency org="com.rsa" name="sslj" rev="5.1.1.2" force="true" conf="test,alternative"/>
+        <dependency org="com.rsa" name="jcm" rev="6.0.0.1" force="true" conf="alternative"/>
+        <dependency org="com.rsa" name="jcmFIPS" rev="6.0.0.1" force="true" conf="alternative"/>
+        <dependency org="com.rsa" name="cryptojcommon" rev="6.0.0.1" force="true" conf="test,alternative"/>
+        <dependency org="com.rsa" name="cryptojce" rev="6.0.0.1" force="true" conf="test,alternative"/>
+        <dependency org="com.rsa" name="certj" rev="6.0" force="true" conf="test,alternative"/>
+        <dependency org="com.rsa" name="sslj" rev="6.0" force="true" conf="test,alternative"/>
 
         <!-- Test dependencies -->
         <dependency org="org.apache.cxf" name="cxf-rt-transports-local" rev="2.3.10" force="true" conf="test"/>

@@ -51,7 +51,9 @@
         <!-- Optional security provider -->
         <dependency org="com.ncipher" name="ncipher-libs" rev="1" force="true" conf="optional"/>
         <!-- RSA needed for running tests (since alternatives jarfiles are not deployed) -->
-        <dependency org="com.rsa" name="cryptoj" rev="5.0" force="true" conf="test"/>
+        <dependency org="com.rsa" name="jcm" rev="6.0.0.1" force="true" conf="test"/>
+        <dependency org="com.rsa" name="cryptojcommon" rev="6.0.0.1" force="true" conf="test"/>
+        <dependency org="com.rsa" name="cryptojce" rev="6.0.0.1" force="true" conf="test"/>
 
         <override org="jaxen" module="jaxen" matcher="exact" rev="1.1.1"/>
         <override org="antlr" module="antlr" matcher="exact" rev="2.7.7-l7p1"/>
