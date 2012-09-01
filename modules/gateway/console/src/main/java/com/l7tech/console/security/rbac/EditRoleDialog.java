@@ -9,8 +9,10 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DocumentSizeFilter;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -20,12 +22,12 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
@@ -35,6 +37,7 @@ import java.util.*;
 
 public class EditRoleDialog extends JDialog {
     private Role role;
+    private boolean confirmed = false;
 
     private JPanel contentPane;
     private JButton buttonOK;
@@ -50,7 +53,7 @@ public class EditRoleDialog extends JDialog {
     private JTable roleAssigneeTable;
     private RoleAssignmentTableModel roleAssignmentTableModel;
 
-    private PermissionTableModel tableModel;
+    private SimpleTableModel<Permission> permissionsTableModel;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
 
@@ -62,23 +65,15 @@ public class EditRoleDialog extends JDialog {
     };
 
     private final IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
-    private boolean shouldAllowEdits = RbacUtilities.isEnableRoleEditing();
-
-    private static final String[] COL_NAMES = new String[]{"Operation", "Applies To"};
+    private boolean shouldAllowEdits;
 
     private final PermissionFlags flags;
 
-    public EditRoleDialog(Role role, Dialog parent) {
-        super(parent, true);
+    public EditRoleDialog(Role role, Window parent) {
+        super(parent, ModalityType.DOCUMENT_MODAL);
         this.role = role;
         flags = PermissionFlags.get(EntityType.RBAC_ROLE);
-        initialize();
-    }
-
-    public EditRoleDialog(Role role, Frame parent) {
-        super(parent, true);
-        this.role = role;
-        flags = PermissionFlags.get(EntityType.RBAC_ROLE);
+        shouldAllowEdits = RbacUtilities.isEnableRoleEditing() && (role.isUserCreated() || RbacUtilities.isEnableBuiltInRoleEditing());
         initialize();
     }
 
@@ -88,10 +83,12 @@ public class EditRoleDialog extends JDialog {
             throw new IllegalStateException("Could not instantiate security provider");
         }
 
-        this.tableModel = new PermissionTableModel();
-        permissionsTable.setModel(tableModel);
+        this.permissionsTableModel = TableUtil.configureTable(permissionsTable,
+            TableUtil.column("Operation", 20, 70, 120, operationCellGetter),
+            TableUtil.column("Applies To", 150, 300, 99999, appliesToCellGetter));
+        permissionsTableModel.setRows(new ArrayList<Permission>(role.getPermissions()));
         permissionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        Utilities.setRowSorter(permissionsTable, tableModel, new int[] {0}, new boolean[] {true}, null);
+        Utilities.setRowSorter(permissionsTable, permissionsTableModel, new int[] {0}, new boolean[] {true}, null);
 
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
@@ -190,9 +187,7 @@ public class EditRoleDialog extends JDialog {
     }
 
     private void enableAssignmentDeleteButton() {
-        int index = this.roleAssigneeTable.getSelectedRow();
-        
-        boolean validRowSelected = index > -1;
+        boolean validRowSelected = this.roleAssigneeTable.getSelectedRow() > -1;
 
         boolean hasEditPermission = flags.canUpdateSome();
 
@@ -201,75 +196,39 @@ public class EditRoleDialog extends JDialog {
         removeAssignment.setEnabled(validRowSelected && hasEditPermission);
     }
 
-    private class PermissionTableModel extends AbstractTableModel {
-        private final java.util.List<Permission> permissions;
 
-        public java.util.List<Permission> getPermissions() {
-            return permissions;
-        }
-
-        private PermissionTableModel() {
-            permissions = new ArrayList<Permission>();
-            permissions.addAll(role.getPermissions());
-        }
-
+    private Functions.Unary<String, Permission> operationCellGetter = new Functions.Unary<String, Permission>() {
         @Override
-        public String getColumnName(int column) {
-            return COL_NAMES[column];
-        }
-
-        @Override
-        public int getRowCount() {
-            return permissions.size();
-        }
-
-        @Override
-        public int getColumnCount() {
-            return 2;
-        }
-
-        @Override
-        public Object getValueAt(int rowIndex, int columnIndex) {
-            Permission perm = permissions.get(rowIndex);
-            switch(columnIndex) {
-                case 0:
-                    if (perm.getOperation() == OperationType.OTHER) {
-                        return perm.getOtherOperationName();
-                    } else {
-                        return perm.getOperation().getName();
-                    }
-                case 1:
-                    EntityType etype = perm.getEntityType();
-                    switch(perm.getScope().size()) {
-                        case 0:
-                            StringBuilder sb = new StringBuilder("<Any");
-                            if (etype == EntityType.ANY)
-                                sb.append(" Object");
-                            else {
-                                sb.append(" ").append(etype.getName());
-                            }
-                            sb.append(">");
-                            return sb.toString();
-                        case 1:
-                            return perm.getScope().iterator().next().toString();
-                        default:
-                            return "<Complex Scope>";
-                    }
-                default:
-                    throw new RuntimeException("Unsupported column " + columnIndex);
+        public String call(Permission perm) {
+            if (perm.getOperation() == OperationType.OTHER) {
+                return perm.getOtherOperationName();
+            } else {
+                return perm.getOperation().getName();
             }
         }
+    };
 
-        public void add(Permission p) {
-            permissions.add(p);
-            fireTableDataChanged();
+    private Functions.Unary<String, Permission> appliesToCellGetter = new Functions.Unary<String, Permission>() {
+        @Override
+        public String call(Permission perm) {
+            EntityType etype = perm.getEntityType();
+            switch(perm.getScope().size()) {
+                case 0:
+                    StringBuilder sb = new StringBuilder("<Any");
+                    if (etype == EntityType.ANY)
+                        sb.append(" Object");
+                    else {
+                        sb.append(" ").append(etype.getName());
+                    }
+                    sb.append(">");
+                    return sb.toString();
+                case 1:
+                    return perm.getScope().iterator().next().toString();
+                default:
+                    return "<Complex Scope>";
+            }
         }
-
-        public void remove(Permission p) {
-            permissions.remove(p);
-            fireTableDataChanged();
-        }
-    }
+    };
 
     private void updateButtonStates() {
         buttonOK.setEnabled(StringUtils.isNotEmpty(roleName.getText()));
@@ -297,8 +256,16 @@ public class EditRoleDialog extends JDialog {
         permissionsTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() >= 2 && shouldAllowEdits)
-                    showEditPermissionDialog(getSelectedPermission());
+                if (e.getClickCount() == 2 && shouldAllowEdits) {
+                    final Permission perm = getSelectedPermission();
+                    if (perm != null) {
+                        Permission p = showEditPermissionDialog(perm);
+                        if (p != null) {
+                            perm.copyFrom(p);
+                            permissionsTableModel.fireTableDataChanged();
+                        }
+                    }
+                }
             }
         });
         permissionsTable.getSelectionModel().addListSelectionListener(listListener);
@@ -354,6 +321,9 @@ public class EditRoleDialog extends JDialog {
                 Utilities.centerOnScreen(fid);
                 FindIdentitiesDialog.FindResult result = fid.showDialog();
 
+                if (result == null)
+                    return;
+
                 long providerId = result.providerConfigOid;
                 for (EntityHeader header : result.entityHeaders) {
                     try {
@@ -406,8 +376,12 @@ public class EditRoleDialog extends JDialog {
 
         JButton srcButton = (JButton) src;
         if (srcButton == addPermission) {
-            Permission p = showEditPermissionDialog(new Permission(role, null, EntityType.ANY));
-            if (p != null) tableModel.add(p);
+            final Permission perm = new Permission(role, null, EntityType.ANY);
+            Permission p = showEditPermissionDialog(perm);
+            if (p != null) {
+                perm.copyFrom(p);
+                permissionsTableModel.addRow(perm);
+            }
             return;
         }
 
@@ -416,19 +390,25 @@ public class EditRoleDialog extends JDialog {
 
         if (srcButton == editPermission) {
             Permission p = showEditPermissionDialog(perm);
-            if (p != null) tableModel.fireTableDataChanged();
+            if (p != null) {
+                perm.copyFrom(p);
+                permissionsTableModel.fireTableDataChanged();
+            }
         } else if (srcButton == removePermission) {
             Utilities.doWithConfirmation(EditRoleDialog.this, "manageRoles.removePermissionTitle", "removePermissionMessage", new Runnable() {
                 @Override
                 public void run() {
-                    tableModel.remove(perm);
+                    permissionsTableModel.removeRow(perm);
                 }
             });
         }
     }
 
+    // Returns a possibly-edited anymous copy of the specified permission if the edit dialog is confirmed, or null if the dialog was canceled.
+    // Caller is responsible for ensuring that any changes get written back to the appropriate place.
+    // Note that the permission returned by this method, being an anonymous copy, will have a null role.
     private Permission showEditPermissionDialog(Permission perm) {
-        EditPermissionsDialog dlg = new EditPermissionsDialog(perm, this);
+        EditPermissionsDialog dlg = new EditPermissionsDialog(perm.getAnonymousClone(), this);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
@@ -437,8 +417,10 @@ public class EditRoleDialog extends JDialog {
 
     private Permission getSelectedPermission() {
         int row = permissionsTable.getSelectedRow();
-        if (row == -1) return null;
-        return tableModel.getPermissions().get(row);
+        if (row == -1)
+            return null;
+        row = permissionsTable.convertRowIndexToModel(row);
+        return permissionsTableModel.getRowObject(row);
     }
 
     private void onOK() {
@@ -449,7 +431,7 @@ public class EditRoleDialog extends JDialog {
             }
             Set<Permission> perms = role.getPermissions();
             perms.clear();
-            for (Permission perm : tableModel.getPermissions()) {
+            for (Permission perm : permissionsTableModel.getRows()) {
                 perms.add(perm);
             }
 
@@ -467,6 +449,7 @@ public class EditRoleDialog extends JDialog {
                         "Error Saving Role",
                         JOptionPane.ERROR_MESSAGE);
             }
+            confirmed = true;
         } else {
             role = null;
         }
@@ -474,10 +457,11 @@ public class EditRoleDialog extends JDialog {
     }
 
     public Role getRole() {
-        return role;
+        return confirmed ? role : null;
     }
 
     private void onCancel() {
+        confirmed = false;
         role = null;
         dispose();
     }

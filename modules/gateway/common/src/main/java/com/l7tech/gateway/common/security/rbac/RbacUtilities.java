@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
  */
 public class RbacUtilities {
     public static final String SYSTEM_PROP_ENABLEROLEEDIT = "com.l7tech.rbac.allowEditRoles";
+    public static final String SYSTEM_PROP_ENABLE_BUILTIN_ROLEEDIT = "com.l7tech.rbac.allowEditBuiltinRoles";
     public static final Pattern removeOidPattern = Pattern.compile("^(\\w{1,128} .*?) \\(#-?\\d[\\d, ]*\\)$");
     public static final String REGEX_PATTERN = "^\\w'{'1,128'}' (.*?) {0}$";
 
@@ -43,6 +44,10 @@ public class RbacUtilities {
 
     public static boolean isEnableRoleEditing() {
         return ConfigFactory.getBooleanProperty( SYSTEM_PROP_ENABLEROLEEDIT, false );
+    }
+
+    public static boolean isEnableBuiltInRoleEditing() {
+        return ConfigFactory.getBooleanProperty( SYSTEM_PROP_ENABLE_BUILTIN_ROLEEDIT, false );
     }
 
     public static String getDescriptionString(Role role, boolean asHtml) {

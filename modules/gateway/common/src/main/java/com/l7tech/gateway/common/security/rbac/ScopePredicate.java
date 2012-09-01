@@ -42,4 +42,14 @@ public abstract class ScopePredicate extends PersistentEntityImp {
     protected void setPermission(Permission permission) {
         this.permission = permission;
     }
+
+    /**
+     * Get a copy of this scope predicate that has the same OID but whose @{link #getPermission} method
+     * will return null.
+     * <p/>
+     * The general contract is that sp.createAnonymousClone().equals(sp) and sp.createAnonymousClone().hashCode() == sp.hashCode().
+     *
+     * @return a new copy of this scope predicate.  Never null.
+     */
+    public abstract ScopePredicate createAnonymousClone();
 }

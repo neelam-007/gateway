@@ -1,13 +1,12 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.objectmodel.EntityType;
-
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.Enumerated;
-import javax.persistence.EnumType;
-
 import org.hibernate.annotations.Proxy;
+
+import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Table;
 
 @javax.persistence.Entity
 @Proxy(lazy=false)
@@ -30,6 +29,13 @@ public class EntityFolderAncestryPredicate extends ScopePredicate {
 
     @Deprecated
     protected EntityFolderAncestryPredicate() { }
+
+    @Override
+    public ScopePredicate createAnonymousClone() {
+        EntityFolderAncestryPredicate copy = new EntityFolderAncestryPredicate(null, entityType, entityId);
+        copy.setOid(this.getOid());
+        return copy;
+    }
 
     @Column(name="entity_id", length=255)
     public String getEntityId() {

@@ -70,8 +70,8 @@ public class FindEntityDialog extends JDialog {
     }
 
     private void initialize(Assertion assertion) {
-        if(entityType == EntityType.ID_PROVIDER_CONFIG && assertion == null) throw new IllegalStateException("assertion cannot be null for identity providers");
-        
+        if (entityType == EntityType.ID_PROVIDER_CONFIG && assertion == null)
+            throw new IllegalStateException("assertion cannot be null for identity providers");
         final String name = entityType.getName();
         final String vowels = resources.getString("vowels");
         final String an = vowels.contains(name.substring(0,1).toLowerCase()) ? resources.getString("an") : resources.getString("a");

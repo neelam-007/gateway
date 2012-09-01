@@ -46,7 +46,8 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     private EntityType entityType;
     private Long entityOid;
     private Entity cachedSpecificEntity;
-    private Tag tag; 
+    private Tag tag;
+    private boolean userCreated = false;
 
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="role")
     @Fetch(FetchMode.SUBSELECT)
@@ -78,6 +79,22 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
 
     public void setTag(Tag tag) {
         this.tag = tag;
+    }
+
+    /**
+     * Check if this Role was created by an administrator (true) or else by the Gateway itself (false).  Roles
+     * pre-supplied or created by the Gateway cannot normally be edited or deleted by an admin user.
+     *
+     * @return true if this role was created by an administrator, rather than being pre-supplied as part of the Gateway
+     *              schema or auto-created by the Gateway.
+     */
+    @Column(name="user_created", nullable=true)
+    public Boolean isUserCreated() {
+        return userCreated;
+    }
+
+    public void setUserCreated(@Nullable Boolean userCreated) {
+        this.userCreated = Boolean.TRUE.equals(userCreated);
     }
 
     @Override
@@ -199,7 +216,11 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     public int compareTo(Role that) {
         if (this.equals(that))
             return 0;
-        
+
+        int ret = Boolean.compare(this.isUserCreated(), that.isUserCreated());
+        if (ret != 0)
+            return ret;
+
         return String.CASE_INSENSITIVE_ORDER.compare( this.getName(), that.getName() );
     }
 
@@ -263,6 +284,28 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
 
     public void setCachedSpecificEntity(Entity cachedSpecificEntity) {
         this.cachedSpecificEntity = cachedSpecificEntity;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Role)) return false;
+        if (!super.equals(o)) return false;
+
+        Role role = (Role) o;
+
+        if (userCreated != role.userCreated) return false;
+        if (tag != role.tag) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (tag != null ? tag.hashCode() : 0);
+        result = 31 * result + (userCreated ? 1 : 0);
+        return result;
     }
 
     @Transient

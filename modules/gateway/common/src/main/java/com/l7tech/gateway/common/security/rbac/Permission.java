@@ -165,6 +165,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
     }
 
     @SuppressWarnings({"RedundantIfStatement"})
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -176,7 +177,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         if (operation != that.operation) return false;
         if (otherOperationName != null ? !otherOperationName.equals(that.otherOperationName) : that.otherOperationName != null)
             return false;
-        if (role != null ? !role.equals(that.role) : that.role != null) return false;
+        if (scope != null ? !scope.equals(that.scope) : that.scope != null) return false;
 
         return true;
     }
@@ -192,16 +193,54 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         try {
             Permission perm = (Permission) clone();
             perm.setRole(null);
+            perm.scope = new HashSet<ScopePredicate>();
+            for (ScopePredicate sp : this.scope) {
+                final ScopePredicate scopeCopy = sp.createAnonymousClone();
+                scopeCopy.setPermission(perm);
+                perm.scope.add(scopeCopy);
+            }
             return perm;
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e);
         }
     }
 
+    /**
+     * Configure this permission to be identical to the specified permission.  This permission may have scope
+     * predicates added or removed so that at the end of this method the sets are the same.
+     * <p/>
+     * This will copy a non-null Role from the target, but if the target's Role is null this method will
+     * keep this permission's existing Role.
+     * <p/>
+     * Similarly, the target's OID will be copied to this permission only if it is not the default OID.
+     *
+     * @param perm the permisison to use as the source of data to copy.
+     */
+    public void copyFrom(Permission perm) {
+        if (perm.role != null)
+            this.role = perm.role;
+        if (perm.getOid() != DEFAULT_OID)
+            this.setOid(perm.getOid());
+        this.operation = perm.getOperation();
+        this.entityType = perm.getEntityType();
+        this.otherOperationName = perm.getOtherOperationName();
+        final Set<ScopePredicate> otherScope = perm.getScope();
+        if (otherScope != null) {
+            if (this.scope == null)
+                this.scope = new HashSet<ScopePredicate>();
+
+            this.scope.retainAll(otherScope);
+            for (ScopePredicate sp : otherScope) {
+                final ScopePredicate scopeCopy = sp.createAnonymousClone();
+                scopeCopy.setPermission(this);
+                this.scope.add(scopeCopy);
+            }
+        }
+    }
+
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (role != null ? role.hashCode() : 0);
         result = 31 * result + (operation != null ? operation.hashCode() : 0);
         result = 31 * result + (otherOperationName != null ? otherOperationName.hashCode() : 0);
         result = 31 * result + (entityType != null ? entityType.hashCode() : 0);

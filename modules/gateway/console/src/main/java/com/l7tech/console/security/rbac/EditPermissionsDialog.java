@@ -1,16 +1,17 @@
 package com.l7tech.console.security.rbac;
 
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.ArrayList;
 
 public class EditPermissionsDialog extends JDialog {
     private JPanel contentPane;
@@ -21,11 +22,19 @@ public class EditPermissionsDialog extends JDialog {
 
     private JComboBox typeSelection;
     private JComboBox operationSelection;
-    private JTextField scopeField;
+    private JTextArea scopeField;
     private JButton browseForScope;
 
     private Permission permission;
+    private boolean confirmed = false;
     private JLabel scopeLabel;
+
+    private final RunOnChangeListener enableDisableListener = new RunOnChangeListener(new Runnable() {
+        @Override
+        public void run() {
+            enableDisable();
+        }
+    });
 
     public EditPermissionsDialog(Permission permission, Dialog parent) {
         super(parent);
@@ -62,6 +71,7 @@ public class EditPermissionsDialog extends JDialog {
 
         if (permission.getOid() == Permission.DEFAULT_OID) {
             setTitle("Create new Permission");
+            scopeField.setText(getScopeString(permission));
         } else {
             setTitle("Edit Permission");
             scopeField.setText(getScopeString(permission));
@@ -95,65 +105,51 @@ public class EditPermissionsDialog extends JDialog {
             }
         });
 
-        operationSelection.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                OperationType opType = (OperationType) operationSelection.getSelectedItem();
-                permission.setOperation(opType);
-            }
-        } );
-
-        typeSelection.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                EntityType eType = (EntityType) typeSelection.getSelectedItem();
-                permission.setEntityType(eType);
-                enableDisable();
-            }
-        });
+        operationSelection.addActionListener(enableDisableListener);
+        typeSelection.addActionListener(enableDisableListener);
 
         browseForScope.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                ScopeDialog sd = new ScopeDialog(EditPermissionsDialog.this, permission, (EntityType)typeSelection.getSelectedItem());
+                ScopeDialog sd = new ScopeDialog(EditPermissionsDialog.this, permission.getAnonymousClone(), (EntityType)typeSelection.getSelectedItem());
                 sd.pack();
                 Utilities.centerOnScreen(sd);
                 sd.setVisible(true);
-                EntityHeader header = sd.getSpecificEntity();
+                EntityHeader header = null;
                 final Permission perm = sd.getPermission();
                 if (perm != null) {
-                    Set<ScopePredicate> scopes = perm.getScope();
+                    permission.copyFrom(perm);
+                    Set<ScopePredicate> scopes = permission.getScope();
                     if (scopes.size() == 1) {
                         ScopePredicate pred = scopes.iterator().next();
                         if (pred instanceof ObjectIdentityPredicate) {
                             ObjectIdentityPredicate objectIdentityPredicate = (ObjectIdentityPredicate) pred;
-                            objectIdentityPredicate.setHeader(header);
+                            header = objectIdentityPredicate.getHeader();
                         }
                     }
-                }
 
-                if (header != null) {
-                    scopeField.setText(sd.getSpecificEntity().getName());
-                } else
-                    scopeField.setText(getScopeString(sd.getPermission()));
+                    if (header != null) {
+                        scopeField.setText(header.getName());
+                    } else
+                        scopeField.setText(getScopeString(sd.getPermission()));
+                }
             }
         });
     }
 
     private String getScopeString(Permission perm) {
-        String theScope = "";
+        StringBuilder theScope = new StringBuilder();
         if (perm != null) {
-            switch(perm.getScope().size()) {
-                case 0:
-                    if (perm.getEntityType() == EntityType.ANY)
-                        theScope = "<Any Object>";
-                        theScope += ">";
-                        break;
-                case 1:
-                    theScope += perm.getScope().iterator().next().toString();
-                    break;
-                default:
-                    theScope += "<Complex Scope>";
+            int i = perm.getScope().size();
+            if (i == 0) {
+                theScope.append("<Any ").append(perm.getEntityType().getName()).append(">\n");
+            } else {
+                Set<ScopePredicate> scopes = perm.getScope();
+                for (ScopePredicate scopePredicate : scopes) {
+                    theScope.append(scopePredicate.toString()).append("\n");
+                }
             }
         }
-        return theScope;
+        return theScope.toString();
     }
 
     private void setupActionListeners() {
@@ -175,15 +171,15 @@ public class EditPermissionsDialog extends JDialog {
     private void onOK() {
         permission.setEntityType((EntityType) typeSelection.getSelectedItem());
         permission.setOperation((OperationType) operationSelection.getSelectedItem());
+        confirmed = true;
         dispose();
     }
 
     private void onCancel() {
-        permission = null;
         dispose();
     }
 
     public Permission getPermission() {
-        return permission;
+        return confirmed ? permission : null;
     }
 }

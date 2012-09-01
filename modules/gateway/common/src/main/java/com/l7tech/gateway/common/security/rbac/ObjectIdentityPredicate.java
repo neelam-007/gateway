@@ -3,15 +3,14 @@
  */
 package com.l7tech.gateway.common.security.rbac;
 
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.Transient;
-
 import org.hibernate.annotations.Proxy;
+
+import javax.persistence.Column;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 
 /**
  * Matches any {@link com.l7tech.objectmodel.Entity} that is of the expected type and whose
@@ -35,6 +34,14 @@ public class ObjectIdentityPredicate extends ScopePredicate implements ScopeEval
     }
 
     protected ObjectIdentityPredicate() { }
+
+    @Override
+    public ScopePredicate createAnonymousClone() {
+        ObjectIdentityPredicate copy = new ObjectIdentityPredicate(null, this.targetEntityId);
+        copy.setOid(this.getOid());
+        copy.header = this.header;
+        return copy;
+    }
 
     @Column(name="entity_id", nullable=false, length=255)
     public String getTargetEntityId() {

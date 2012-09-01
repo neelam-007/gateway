@@ -6,14 +6,13 @@ package com.l7tech.gateway.common.security.rbac;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.hibernate.annotations.Proxy;
 
 /**
  * Matches entities in a {@link #folder}, and optionally those in {@link #transitive child folders}.
@@ -39,6 +38,13 @@ public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
     protected FolderPredicate() { }
 
     @Override
+    public ScopePredicate createAnonymousClone() {
+        FolderPredicate copy = new FolderPredicate(null, this.folder, this.transitive);
+        copy.setOid(this.getOid());
+        return copy;
+    }
+
+    @Override
     public boolean matches(final Entity entity) {
         final Folder entityFolder;
         if (entity instanceof HasFolder) {
@@ -50,8 +56,10 @@ public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
 
         Folder nextFolder = entityFolder;
         while (nextFolder != null) {
-            if (nextFolder.getOid() == this.folder.getOid()) return true;
-            if (!transitive) break;
+            if (nextFolder.getOid() == this.folder.getOid())
+                return true;
+            if (!transitive)
+                break;
             nextFolder = nextFolder.getFolder();
         }
         return false;
@@ -87,7 +95,7 @@ public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(permission.getEntityType().getPluralName());
-        sb.append(" in ").append(folder.getName());
+        sb.append(" in folder ").append(folder.getName());
         if (transitive) {
             sb.append(" (transitive)");
         }

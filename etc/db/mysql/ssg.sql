@@ -1196,6 +1196,7 @@ CREATE TABLE rbac_role (
   entity_type varchar(255),
   entity_oid bigint(20),
   description mediumtext,
+  user_created tinyint(1) NOT NULL default 0,
   PRIMARY KEY (objectid),
   UNIQUE KEY name (name),
   INDEX i_rbacrole_etype (entity_type),
@@ -1259,6 +1260,7 @@ CREATE TABLE rbac_predicate_attribute (
   objectid bigint(20) NOT NULL,
   attribute varchar(255) default NULL,
   value varchar(255) default NULL,
+  mode varchar(255) default NULL,
   PRIMARY KEY (objectid),
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -1304,67 +1306,67 @@ CREATE TABLE rbac_predicate_entityfolder (
 -- Create Administrator role
 -- XXX NOTE!! COPIED in Role#ADMIN_ROLE_OID
 
-INSERT INTO rbac_role VALUES (-100,0,'Administrator','ADMIN',null,null,'Users assigned to the {0} role have full access to the gateway.');
+INSERT INTO rbac_role VALUES (-100,0,'Administrator','ADMIN',null,null,'Users assigned to the {0} role have full access to the gateway.',0);
 INSERT INTO rbac_permission VALUES (-101, 0, -100, 'CREATE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-102, 0, -100, 'READ',   null, 'ANY');
 INSERT INTO rbac_permission VALUES (-103, 0, -100, 'UPDATE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-104, 0, -100, 'DELETE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-105, 0, -100, 'OTHER', 'log-viewer', 'LOG_SINK');
 -- Create Operator role
-INSERT INTO rbac_role VALUES (-150,0,'Operator',null,null,null,'Users assigned to the {0} role have read only access to the gateway.');
+INSERT INTO rbac_role VALUES (-150,0,'Operator',null,null,null,'Users assigned to the {0} role have read only access to the gateway.',0);
 INSERT INTO rbac_permission VALUES (-151, 0, -150, 'READ', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-152, 0, -150, 'OTHER', 'log-viewer', 'LOG_SINK');
 
 -- Create other canned roles
-INSERT INTO rbac_role VALUES (-200,0,'Manage Internal Users and Groups', null,null,null, 'Users assigned to the {0} role have the ability to create, read, update and delete users and groups in the internal identity provider.');
+INSERT INTO rbac_role VALUES (-200,0,'Manage Internal Users and Groups', null,null,null, 'Users assigned to the {0} role have the ability to create, read, update and delete users and groups in the internal identity provider.',0);
 INSERT INTO rbac_permission VALUES (-201,0,-200,'READ',NULL,'USER');
 INSERT INTO rbac_predicate VALUES (-202,0,-201);
-INSERT INTO rbac_predicate_attribute VALUES (-202,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-202,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-203,0,-200,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_predicate VALUES (-204,0,-203);
 INSERT INTO rbac_predicate_oid VALUES (-204,'-2');
 INSERT INTO rbac_permission VALUES (-205,0,-200,'UPDATE',NULL,'USER');
 INSERT INTO rbac_predicate VALUES (-206,0,-205);
-INSERT INTO rbac_predicate_attribute VALUES (-206,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-206,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-207,0,-200,'READ',NULL,'GROUP');
 INSERT INTO rbac_predicate VALUES (-208,0,-207);
-INSERT INTO rbac_predicate_attribute VALUES (-208,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-208,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-209,0,-200,'DELETE',NULL,'USER');
 INSERT INTO rbac_predicate VALUES (-210,0,-209);
-INSERT INTO rbac_predicate_attribute VALUES (-210,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-210,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-211,0,-200,'CREATE',NULL,'USER');
 INSERT INTO rbac_predicate VALUES (-212,0,-211);
-INSERT INTO rbac_predicate_attribute VALUES (-212,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-212,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-213,0,-200,'CREATE',NULL,'GROUP');
 INSERT INTO rbac_predicate VALUES (-214,0,-213);
-INSERT INTO rbac_predicate_attribute VALUES (-214,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-214,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-215,0,-200,'DELETE',NULL,'GROUP');
 INSERT INTO rbac_predicate VALUES (-216,0,-215);
-INSERT INTO rbac_predicate_attribute VALUES (-216,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-216,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-217,0,-200,'UPDATE',NULL,'GROUP');
 INSERT INTO rbac_predicate VALUES (-218,0,-217);
-INSERT INTO rbac_predicate_attribute VALUES (-218,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-218,'providerId','-2','eq');
 
-INSERT INTO rbac_role VALUES (-250,0,'Publish External Identity Providers', null,null,null, 'Users assigned to the {0} role have the ability to create new external identity providers.');
+INSERT INTO rbac_role VALUES (-250,0,'Publish External Identity Providers', null,null,null, 'Users assigned to the {0} role have the ability to create new external identity providers.',0);
 INSERT INTO rbac_permission VALUES (-251,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_predicate VALUES (-252,0,-251);
-INSERT INTO rbac_predicate_attribute VALUES (-252,'typeVal','2');
+INSERT INTO rbac_predicate_attribute VALUES (-252,'typeVal','2','eq');
 INSERT INTO rbac_permission VALUES (-253,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_predicate VALUES (-254,0,-253);
-INSERT INTO rbac_predicate_attribute VALUES (-254,'typeVal','3');
+INSERT INTO rbac_predicate_attribute VALUES (-254,'typeVal','3','eq');
 INSERT INTO rbac_permission VALUES (-258,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_predicate VALUES (-259,0,-258);
-INSERT INTO rbac_predicate_attribute VALUES (-259,'typeVal','4');
+INSERT INTO rbac_predicate_attribute VALUES (-259,'typeVal','4','eq');
 INSERT INTO rbac_permission VALUES (-255,0,-250,'READ',NULL,'TRUSTED_CERT');
 INSERT INTO rbac_permission VALUES (-256,0,-250,'READ',NULL,'SSG_KEYSTORE');
 INSERT INTO rbac_permission VALUES (-257,0,-250,'READ',NULL,'SSG_KEY_ENTRY');
 
-INSERT INTO rbac_role VALUES (-300,0,'Search Users and Groups', null,null,null, 'Users assigned to the {0} role have permission to search and view users and groups in all identity providers.');
+INSERT INTO rbac_role VALUES (-300,0,'Search Users and Groups', null,null,null, 'Users assigned to the {0} role have permission to search and view users and groups in all identity providers.',0);
 INSERT INTO rbac_permission VALUES (-301,0,-300,'READ',NULL,'USER');
 INSERT INTO rbac_permission VALUES (-302,0,-300,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_permission VALUES (-303,0,-300,'READ',NULL,'GROUP');
 
-INSERT INTO rbac_role VALUES (-350,0,'Publish Webservices', null,null,null, 'Users assigned to the {0} role have the ability to publish new web services.' );
+INSERT INTO rbac_role VALUES (-350,0,'Publish Webservices', null,null,null, 'Users assigned to the {0} role have the ability to publish new web services.' ,0);
 INSERT INTO rbac_permission VALUES (-351,0,-350,'READ',NULL,'GROUP');
 INSERT INTO rbac_permission VALUES (-352,0,-350,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_permission VALUES (-353,0,-350,'READ',NULL,'USER');
@@ -1374,7 +1376,7 @@ INSERT INTO rbac_permission VALUES (-356,0,-350,'READ',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-357,0,-350,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-358,0,-350,'READ',NULL,'HTTP_CONFIGURATION');
 
-INSERT INTO rbac_role VALUES (-400,1,'Manage Webservices', null,null,null, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.');
+INSERT INTO rbac_role VALUES (-400,1,'Manage Webservices', null,null,null, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.',0);
 INSERT INTO rbac_permission VALUES (-401,0,-400,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_permission VALUES (-402,0,-400,'READ',NULL,'GROUP');
 INSERT INTO rbac_permission VALUES (-403,0,-400,'READ',NULL,'USER');
@@ -1415,24 +1417,24 @@ INSERT INTO rbac_permission VALUES (-437,0,-400,'CREATE',NULL,'UDDI_SERVICE_CONT
 INSERT INTO rbac_permission VALUES (-438,0,-400,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-439,0,-400,'READ',NULL,'HTTP_CONFIGURATION');
 
-INSERT INTO rbac_role VALUES (-450,0,'View Audit Records', null,null,null, 'Users assigned to the {0} role have the ability to view audits in the manager.');
+INSERT INTO rbac_role VALUES (-450,0,'View Audit Records', null,null,null, 'Users assigned to the {0} role have the ability to view audits in the manager.',0);
 INSERT INTO rbac_permission VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-452,0,-450,'READ',NULL,'AUDIT_RECORD');
 
-INSERT INTO rbac_role VALUES (-500,0,'View Service Metrics', null,null,null, 'Users assigned to the {0} role have the ability to monitor service metrics in the manager.');
+INSERT INTO rbac_role VALUES (-500,0,'View Service Metrics', null,null,null, 'Users assigned to the {0} role have the ability to monitor service metrics in the manager.',0);
 INSERT INTO rbac_permission VALUES (-501,0,-500,'READ',NULL,'METRICS_BIN');
 INSERT INTO rbac_permission VALUES (-502,0,-500,'READ',NULL,'SERVICE');
 INSERT INTO rbac_permission VALUES (-503,0,-500,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-504,0,-500,'READ',NULL,'SERVICE_USAGE');
 INSERT INTO rbac_permission VALUES (-505,0,-500,'READ',NULL,'FOLDER');
 
-INSERT INTO rbac_role VALUES (-550,0,'Manage Cluster Status', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster status information.');
+INSERT INTO rbac_role VALUES (-550,0,'Manage Cluster Status', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster status information.',0);
 INSERT INTO rbac_permission VALUES (-551,0,-550,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-552,0,-550,'UPDATE',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-553,0,-550,'DELETE',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-554,0,-550,'READ',NULL,'METRICS_BIN');
 
-INSERT INTO rbac_role VALUES (-600,0,'Manage Certificates (truststore)', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates and policies for revocation checking.');
+INSERT INTO rbac_role VALUES (-600,0,'Manage Certificates (truststore)', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates and policies for revocation checking.',0);
 INSERT INTO rbac_permission VALUES (-601,0,-600,'UPDATE',NULL,'TRUSTED_CERT');
 INSERT INTO rbac_permission VALUES (-602,0,-600,'READ',NULL,'TRUSTED_CERT');
 INSERT INTO rbac_permission VALUES (-603,0,-600,'DELETE',NULL,'TRUSTED_CERT');
@@ -1442,7 +1444,7 @@ INSERT INTO rbac_permission VALUES (-606,0,-600,'READ',NULL,'REVOCATION_CHECK_PO
 INSERT INTO rbac_permission VALUES (-607,0,-600,'DELETE',NULL,'REVOCATION_CHECK_POLICY');
 INSERT INTO rbac_permission VALUES (-608,0,-600,'CREATE',NULL,'REVOCATION_CHECK_POLICY');
 
-INSERT INTO rbac_role VALUES (-650,0,'Manage Message Destinations', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete message destinations.');
+INSERT INTO rbac_role VALUES (-650,0,'Manage Message Destinations', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete message destinations.',0);
 INSERT INTO rbac_permission VALUES (-651,1,-650,'READ',NULL,'JMS_CONNECTION');
 INSERT INTO rbac_permission VALUES (-652,1,-650,'DELETE',NULL,'JMS_CONNECTION');
 INSERT INTO rbac_permission VALUES (-653,1,-650,'CREATE',NULL,'JMS_CONNECTION');
@@ -1456,32 +1458,32 @@ INSERT INTO rbac_permission VALUES (-660,1,-650,'READ',NULL,'SSG_KEYSTORE');
 INSERT INTO rbac_permission VALUES (-661,1,-650,'READ',NULL,'SSG_KEY_ENTRY');
 INSERT INTO rbac_permission VALUES (-662,1,-650,'READ',NULL,'SSG_ACTIVE_CONNECTOR');
 INSERT INTO rbac_predicate VALUES (-663,0,-662);
-INSERT INTO rbac_predicate_attribute VALUES (-663,'type','MqNative');
+INSERT INTO rbac_predicate_attribute VALUES (-663,'type','MqNative','eq');
 INSERT INTO rbac_permission VALUES (-664,1,-650,'DELETE',NULL,'SSG_ACTIVE_CONNECTOR');
 INSERT INTO rbac_predicate VALUES (-665,0,-664);
-INSERT INTO rbac_predicate_attribute VALUES (-665,'type','MqNative');
+INSERT INTO rbac_predicate_attribute VALUES (-665,'type','MqNative','eq');
 INSERT INTO rbac_permission VALUES (-666,1,-650,'CREATE',NULL,'SSG_ACTIVE_CONNECTOR');
 INSERT INTO rbac_predicate VALUES (-667,0,-666);
-INSERT INTO rbac_predicate_attribute VALUES (-667,'type','MqNative');
+INSERT INTO rbac_predicate_attribute VALUES (-667,'type','MqNative','eq');
 INSERT INTO rbac_permission VALUES (-668,1,-650,'UPDATE',NULL,'SSG_ACTIVE_CONNECTOR');
 INSERT INTO rbac_predicate VALUES (-669,0,-668);
-INSERT INTO rbac_predicate_attribute VALUES (-669,'type','MqNative');
+INSERT INTO rbac_predicate_attribute VALUES (-669,'type','MqNative','eq');
 INSERT INTO rbac_permission VALUES (-670,0,-650,'READ',NULL,'SECURE_PASSWORD');
 
-INSERT INTO rbac_role VALUES (-700,0,'Manage Cluster Properties', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster properties.');
+INSERT INTO rbac_role VALUES (-700,0,'Manage Cluster Properties', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster properties.',0);
 INSERT INTO rbac_permission VALUES (-701,0,-700,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_permission VALUES (-702,0,-700,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_permission VALUES (-703,0,-700,'UPDATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_permission VALUES (-704,0,-700,'DELETE',NULL,'CLUSTER_PROPERTY');
 
-INSERT INTO rbac_role VALUES (-750,0,'Manage Listen Ports', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete Gateway listen ports (HTTP(S) and FTP(S)) and to list published services.');
+INSERT INTO rbac_role VALUES (-750,0,'Manage Listen Ports', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete Gateway listen ports (HTTP(S) and FTP(S)) and to list published services.',0);
 INSERT INTO rbac_permission VALUES (-751,0,-750,'READ',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-752,0,-750,'CREATE',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-753,0,-750,'UPDATE',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-754,0,-750,'DELETE',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-755,0,-750,'READ',NULL,'SERVICE');
 
-INSERT INTO rbac_role VALUES (-800,0,'Manage Log Sinks', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete log sinks.');
+INSERT INTO rbac_role VALUES (-800,0,'Manage Log Sinks', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete log sinks.',0);
 INSERT INTO rbac_permission VALUES (-801,0,-800,'READ',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-802,0,-800,'CREATE',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-803,0,-800,'UPDATE',NULL,'LOG_SINK');
@@ -1497,46 +1499,46 @@ INSERT INTO rbac_permission VALUES (-812,0,-800,'READ',NULL,'ID_PROVIDER_CONFIG'
 INSERT INTO rbac_permission VALUES (-813,0,-800,'READ',NULL,'POLICY');
 INSERT INTO rbac_permission VALUES (-814,0,-800,'READ',NULL,'EMAIL_LISTENER');
 
-INSERT INTO rbac_role VALUES (-850,0,'Gateway Maintenance', null,null,null, 'Users assigned to the {0} role have the ability to perform Gateway maintenance tasks.');
+INSERT INTO rbac_role VALUES (-850,0,'Gateway Maintenance', null,null,null, 'Users assigned to the {0} role have the ability to perform Gateway maintenance tasks.',0);
 INSERT INTO rbac_permission VALUES (-851,0,-850,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-852,0,-851);
-INSERT INTO rbac_predicate_attribute VALUES (-852,'name','audit.archiver.ftp.config');
+INSERT INTO rbac_predicate_attribute VALUES (-852,'name','audit.archiver.ftp.config','eq');
 INSERT INTO rbac_permission VALUES (-853,0,-850,'UPDATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-854,0,-853);
-INSERT INTO rbac_predicate_attribute VALUES (-854,'name','audit.archiver.ftp.config');
+INSERT INTO rbac_predicate_attribute VALUES (-854,'name','audit.archiver.ftp.config','eq');
 INSERT INTO rbac_permission VALUES (-855,0,-850,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-856,0,-855);
-INSERT INTO rbac_predicate_attribute VALUES (-856,'name','audit.archiver.ftp.config');
+INSERT INTO rbac_predicate_attribute VALUES (-856,'name','audit.archiver.ftp.config','eq');
 INSERT INTO rbac_permission VALUES (-857,0,-850,'DELETE',NULL,'AUDIT_RECORD');
 -- No predicates implies all entities
 
-INSERT INTO rbac_role VALUES (-900,0,'Manage Email Listeners', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete email listeners.');
+INSERT INTO rbac_role VALUES (-900,0,'Manage Email Listeners', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete email listeners.',0);
 INSERT INTO rbac_permission VALUES (-901,0,-900,'READ',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-902,0,-900,'CREATE',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-903,0,-900,'UPDATE',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-904,0,-900,'DELETE',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-905,0,-900,'READ',NULL,'SERVICE');
 
-INSERT INTO rbac_role VALUES (-950,0,'Manage JDBC Connections', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JDBC connections.');
+INSERT INTO rbac_role VALUES (-950,0,'Manage JDBC Connections', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JDBC connections.',0);
 INSERT INTO rbac_permission VALUES (-951,0,-950,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-952,0,-950,'CREATE',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-953,0,-950,'UPDATE',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-954,0,-950,'DELETE',NULL,'JDBC_CONNECTION');
 
-INSERT INTO rbac_role VALUES (-1000,0,'Manage UDDI Registries', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete UDDI Registry connections.');
+INSERT INTO rbac_role VALUES (-1000,0,'Manage UDDI Registries', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete UDDI Registry connections.',0);
 INSERT INTO rbac_permission VALUES (-1001,0,-1000,'READ',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1002,0,-1000,'CREATE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1003,0,-1000,'UPDATE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1004,0,-1000,'DELETE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1005,0,-1000,'READ',NULL,'SERVICE');
 
-INSERT INTO rbac_role VALUES (-1050,0,'Manage Secure Passwords', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete any stored password.');
+INSERT INTO rbac_role VALUES (-1050,0,'Manage Secure Passwords', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete any stored password.',0);
 INSERT INTO rbac_permission VALUES (-1051,0,-1050,'READ',NULL,'SECURE_PASSWORD');
 INSERT INTO rbac_permission VALUES (-1052,0,-1050,'CREATE',NULL,'SECURE_PASSWORD');
 INSERT INTO rbac_permission VALUES (-1053,0,-1050,'UPDATE',NULL,'SECURE_PASSWORD');
 INSERT INTO rbac_permission VALUES (-1054,0,-1050,'DELETE',NULL,'SECURE_PASSWORD');
 
-INSERT INTO `rbac_role` VALUES (-1100,1,'Manage Private Keys',NULL,NULL,NULL,'Users in this role have the ability to read, create, update, and delete private keys, as well as the ability to change the designated special-purpose keys (eg, the SSL or CA key).');
+INSERT INTO `rbac_role` VALUES (-1100,1,'Manage Private Keys',NULL,NULL,NULL,'Users in this role have the ability to read, create, update, and delete private keys, as well as the ability to change the designated special-purpose keys (eg, the SSL or CA key).',0);
 INSERT INTO `rbac_permission` VALUES
     (-1101,0,-1100,'UPDATE',NULL,'CLUSTER_PROPERTY'),
     (-1102,0,-1100,'DELETE',NULL,'SSG_KEY_ENTRY'),
@@ -1578,24 +1580,24 @@ INSERT INTO `rbac_predicate` VALUES
     (-1121,0,-1121),
     (-1122,0,-1122);
 INSERT INTO `rbac_predicate_attribute` VALUES
-    (-1101,'name','keyStore.defaultSsl.alias'),
-    (-1103,'name','keyStore.defaultCa.alias'),
-    (-1105,'name','keyStore.defaultSsl.alias'),
-    (-1108,'name','keyStore.defaultCa.alias'),
-    (-1109,'name','keyStore.defaultSsl.alias'),
-    (-1110,'name','keyStore.defaultCa.alias'),
-    (-1111,'name','keyStore.defaultSsl.alias'),
-    (-1113,'name','keyStore.defaultCa.alias'),
-    (-1115,'name','keyStore.auditViewer.alias'),
-    (-1116,'name','keyStore.auditViewer.alias'),
-    (-1117,'name','keyStore.auditViewer.alias'),
-    (-1118,'name','keyStore.auditViewer.alias'),
-    (-1119,'name','keyStore.auditSigning.alias'),
-    (-1120,'name','keyStore.auditSigning.alias'),
-    (-1121,'name','keyStore.auditSigning.alias'),
-    (-1122,'name','keyStore.auditSigning.alias');
+    (-1101,'name','keyStore.defaultSsl.alias','eq'),
+    (-1103,'name','keyStore.defaultCa.alias','eq'),
+    (-1105,'name','keyStore.defaultSsl.alias','eq'),
+    (-1108,'name','keyStore.defaultCa.alias','eq'),
+    (-1109,'name','keyStore.defaultSsl.alias','eq'),
+    (-1110,'name','keyStore.defaultCa.alias','eq'),
+    (-1111,'name','keyStore.defaultSsl.alias','eq'),
+    (-1113,'name','keyStore.defaultCa.alias','eq'),
+    (-1115,'name','keyStore.auditViewer.alias','eq'),
+    (-1116,'name','keyStore.auditViewer.alias','eq'),
+    (-1117,'name','keyStore.auditViewer.alias','eq'),
+    (-1118,'name','keyStore.auditViewer.alias','eq'),
+    (-1119,'name','keyStore.auditSigning.alias','eq'),
+    (-1120,'name','keyStore.auditSigning.alias','eq'),
+    (-1121,'name','keyStore.auditSigning.alias','eq'),
+    (-1122,'name','keyStore.auditSigning.alias','eq');
 
-INSERT INTO rbac_role VALUES (-1150,0,'Manage Password Policies', null,null,null, 'Users assigned to the {0} role have the ability to read and update any stored password policy and view the identity providers.');
+INSERT INTO rbac_role VALUES (-1150,0,'Manage Password Policies', null,null,null, 'Users assigned to the {0} role have the ability to read and update any stored password policy and view the identity providers.',0);
 INSERT INTO rbac_permission VALUES (-1151,0,-1150,'READ',NULL,'PASSWORD_POLICY');
 -- INSERT INTO rbac_permission VALUES (-1052,0,-1050,'CREATE',NULL,'PASSWORD_POLICY');
 INSERT INTO rbac_permission VALUES (-1153,0,-1150,'UPDATE',NULL,'PASSWORD_POLICY');
@@ -1605,48 +1607,48 @@ INSERT INTO rbac_permission VALUES (-1155,0,-1150,'READ',NULL,'ID_PROVIDER_CONFI
 --
 -- New role to invoke the audit viewer policy. Requires READ on audits to be able to open the audit viewer.
 --
-INSERT INTO rbac_role VALUES (-1200,0,'Invoke Audit Viewer Policy', null,null,null, 'Allow the INTERNAL audit-viewer policy to be invoked for an audited message (request / response or detail)');
+INSERT INTO rbac_role VALUES (-1200,0,'Invoke Audit Viewer Policy', null,null,null, 'Allow the INTERNAL audit-viewer policy to be invoked for an audited message (request / response or detail)',0);
 INSERT INTO rbac_permission VALUES (-1201,0,-1200,'OTHER','audit-viewer policy', 'AUDIT_RECORD');
 INSERT INTO rbac_permission VALUES (-1202,0,-1200,'READ',NULL,'AUDIT_RECORD');
 INSERT INTO rbac_permission VALUES (-1203,0,-1200,'READ',NULL,'CLUSTER_INFO');
 
-INSERT INTO rbac_role VALUES (-1250,0,'Manage Administrative Accounts Configuration', null,null,null, 'Users assigned to the {0} role have the ability to create/read/update cluster properties applicable to administrative accounts configurations.');
+INSERT INTO rbac_role VALUES (-1250,0,'Manage Administrative Accounts Configuration', null,null,null, 'Users assigned to the {0} role have the ability to create/read/update cluster properties applicable to administrative accounts configurations.',0);
 INSERT INTO rbac_permission VALUES (-1251,0,-1250,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1252,0,-1251);
-INSERT INTO rbac_predicate_attribute VALUES (-1252,'name','logon.maxAllowableAttempts');
+INSERT INTO rbac_predicate_attribute VALUES (-1252,'name','logon.maxAllowableAttempts','eq');
 INSERT INTO rbac_permission VALUES (-1253,0,-1250,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1254,0,-1253);
-INSERT INTO rbac_predicate_attribute VALUES (-1254,'name','logon.lockoutTime');
+INSERT INTO rbac_predicate_attribute VALUES (-1254,'name','logon.lockoutTime','eq');
 INSERT INTO rbac_permission VALUES (-1255,0,-1250,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1256,0,-1255);
-INSERT INTO rbac_predicate_attribute VALUES (-1256,'name','logon.sessionExpiry');
+INSERT INTO rbac_predicate_attribute VALUES (-1256,'name','logon.sessionExpiry','eq');
 INSERT INTO rbac_permission VALUES (-1257,0,-1250,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1258,0,-1257);
-INSERT INTO rbac_predicate_attribute VALUES (-1258,'name','logon.inactivityPeriod');
+INSERT INTO rbac_predicate_attribute VALUES (-1258,'name','logon.inactivityPeriod','eq');
 INSERT INTO rbac_permission VALUES (-1259,0,-1250,'UPDATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1260,0,-1259);
-INSERT INTO rbac_predicate_attribute VALUES (-1260,'name','logon.maxAllowableAttempts');
+INSERT INTO rbac_predicate_attribute VALUES (-1260,'name','logon.maxAllowableAttempts','eq');
 INSERT INTO rbac_permission VALUES (-1261,0,-1250,'UPDATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1262,0,-1261);
-INSERT INTO rbac_predicate_attribute VALUES (-1262,'name','logon.lockoutTime');
+INSERT INTO rbac_predicate_attribute VALUES (-1262,'name','logon.lockoutTime','eq');
 INSERT INTO rbac_permission VALUES (-1263,0,-1250,'UPDATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1264,0,-1263);
-INSERT INTO rbac_predicate_attribute VALUES (-1264,'name','logon.sessionExpiry');
+INSERT INTO rbac_predicate_attribute VALUES (-1264,'name','logon.sessionExpiry','eq');
 INSERT INTO rbac_permission VALUES (-1265,0,-1250,'UPDATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1266,0,-1265);
-INSERT INTO rbac_predicate_attribute VALUES (-1266,'name','logon.inactivityPeriod');
+INSERT INTO rbac_predicate_attribute VALUES (-1266,'name','logon.inactivityPeriod','eq');
 INSERT INTO rbac_permission VALUES (-1267,0,-1250,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1268,0,-1267);
-INSERT INTO rbac_predicate_attribute VALUES (-1268,'name','logon.maxAllowableAttempts');
+INSERT INTO rbac_predicate_attribute VALUES (-1268,'name','logon.maxAllowableAttempts','eq');
 INSERT INTO rbac_permission VALUES (-1269,0,-1250,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1270,0,-1269);
-INSERT INTO rbac_predicate_attribute VALUES (-1270,'name','logon.lockoutTime');
+INSERT INTO rbac_predicate_attribute VALUES (-1270,'name','logon.lockoutTime','eq');
 INSERT INTO rbac_permission VALUES (-1271,0,-1250,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1272,0,-1271);
-INSERT INTO rbac_predicate_attribute VALUES (-1272,'name','logon.sessionExpiry');
+INSERT INTO rbac_predicate_attribute VALUES (-1272,'name','logon.sessionExpiry','eq');
 INSERT INTO rbac_permission VALUES (-1273,0,-1250,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1274,0,-1273);
-INSERT INTO rbac_predicate_attribute VALUES (-1274,'name','logon.inactivityPeriod');
+INSERT INTO rbac_predicate_attribute VALUES (-1274,'name','logon.inactivityPeriod','eq');
 
 --
 -- New role for viewing the default log (oid = -810)
@@ -1654,7 +1656,7 @@ INSERT INTO rbac_predicate_attribute VALUES (-1274,'name','logon.inactivityPerio
 -- NOTE: This is an entity specific role and will be deleted if the default log
 -- sink is removed.
 --
-INSERT INTO rbac_role VALUES (-1300,0,'View ssg Log Sink (#-1,300)',null,'LOG_SINK',-810, 'Users assigned to the {0} role have the ability to read the log sink and any associated log files.');
+INSERT INTO rbac_role VALUES (-1300,0,'View ssg Log Sink (#-1,300)',null,'LOG_SINK',-810, 'Users assigned to the {0} role have the ability to read the log sink and any associated log files.',0);
 INSERT INTO rbac_permission VALUES (-1301,0,-1300,'READ',NULL,'LOG_SINK');
 INSERT INTO rbac_predicate VALUES (-1301,0,-1301);
 INSERT INTO rbac_predicate_oid VALUES (-1301,'-810');

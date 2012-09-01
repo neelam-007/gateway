@@ -605,6 +605,7 @@ create table rbac_predicate_attribute (
     objectid bigint not null,
     attribute varchar(255) not null,
     value varchar(255),
+    mode varchar(255),
     primary key (objectid)
 );
 
@@ -636,6 +637,7 @@ create table rbac_role (
     entity_type varchar(255),
     entity_oid bigint,
     description varchar(255),
+    user_created smallint not null default 0,
     primary key (objectid)
 );
 
@@ -1134,67 +1136,67 @@ INSERT INTO resource_entry (objectid, version, uri, uri_hash, type, content_type
 INSERT INTO resource_entry (objectid, version, uri, uri_hash, type, content_type, content, resource_key1) VALUES (-6,0,'http://www.w3.org/2001/datatypes.dtd','CnGeQLLg3aDZGm+VXQAHZEimjslNt6DgjHWn3RZ8VH3haj30QvOihEtZxgzq9y68dj9YSJ8JP71BQVEJ+9ycYg==','DTD','text/plain','<!--\n        DTD for XML Schemas: Part 2: Datatypes\n        $Id: datatypes.dtd,v 1.23 2001/03/16 17:36:30 ht Exp $\n        Note this DTD is NOT normative, or even definitive. - - the\n        prose copy in the datatypes REC is the definitive version\n        (which shouldn''t differ from this one except for this comment\n        and entity expansions, but just in case)\n  -->\n\n<!--\n        This DTD cannot be used on its own, it is intended\n        only for incorporation in XMLSchema.dtd, q.v.\n  -->\n\n<!-- Define all the element names, with optional prefix -->\n<!ENTITY % simpleType \"%p;simpleType\">\n<!ENTITY % restriction \"%p;restriction\">\n<!ENTITY % list \"%p;list\">\n<!ENTITY % union \"%p;union\">\n<!ENTITY % maxExclusive \"%p;maxExclusive\">\n<!ENTITY % minExclusive \"%p;minExclusive\">\n<!ENTITY % maxInclusive \"%p;maxInclusive\">\n<!ENTITY % minInclusive \"%p;minInclusive\">\n<!ENTITY % totalDigits \"%p;totalDigits\">\n<!ENTITY % fractionDigits \"%p;fractionDigits\">\n<!ENTITY % length \"%p;length\">\n<!ENTITY % minLength \"%p;minLength\">\n<!ENTITY % maxLength \"%p;maxLength\">\n<!ENTITY % enumeration \"%p;enumeration\">\n<!ENTITY % whiteSpace \"%p;whiteSpace\">\n<!ENTITY % pattern \"%p;pattern\">\n\n<!--\n        Customisation entities for the ATTLIST of each element\n        type. Define one of these if your schema takes advantage\n        of the anyAttribute=''##other'' in the schema for schemas\n  -->\n\n<!ENTITY % simpleTypeAttrs \"\">\n<!ENTITY % restrictionAttrs \"\">\n<!ENTITY % listAttrs \"\">\n<!ENTITY % unionAttrs \"\">\n<!ENTITY % maxExclusiveAttrs \"\">\n<!ENTITY % minExclusiveAttrs \"\">\n<!ENTITY % maxInclusiveAttrs \"\">\n<!ENTITY % minInclusiveAttrs \"\">\n<!ENTITY % totalDigitsAttrs \"\">\n<!ENTITY % fractionDigitsAttrs \"\">\n<!ENTITY % lengthAttrs \"\">\n<!ENTITY % minLengthAttrs \"\">\n<!ENTITY % maxLengthAttrs \"\">\n<!ENTITY % enumerationAttrs \"\">\n<!ENTITY % whiteSpaceAttrs \"\">\n<!ENTITY % patternAttrs \"\">\n\n<!-- Define some entities for informative use as attribute\n        types -->\n<!ENTITY % URIref \"CDATA\">\n<!ENTITY % XPathExpr \"CDATA\">\n<!ENTITY % QName \"NMTOKEN\">\n<!ENTITY % QNames \"NMTOKENS\">\n<!ENTITY % NCName \"NMTOKEN\">\n<!ENTITY % nonNegativeInteger \"NMTOKEN\">\n<!ENTITY % boolean \"(true|false)\">\n<!ENTITY % simpleDerivationSet \"CDATA\">\n<!--\n        #all or space-separated list drawn from derivationChoice\n  -->\n\n<!--\n        Note that the use of ''facet'' below is less restrictive\n        than is really intended:  There should in fact be no\n        more than one of each of minInclusive, minExclusive,\n        maxInclusive, maxExclusive, totalDigits, fractionDigits,\n        length, maxLength, minLength within datatype,\n        and the min- and max- variants of Inclusive and Exclusive\n        are mutually exclusive. On the other hand,  pattern and\n        enumeration may repeat.\n  -->\n<!ENTITY % minBound \"(%minInclusive; | %minExclusive;)\">\n<!ENTITY % maxBound \"(%maxInclusive; | %maxExclusive;)\">\n<!ENTITY % bounds \"%minBound; | %maxBound;\">\n<!ENTITY % numeric \"%totalDigits; | %fractionDigits;\">\n<!ENTITY % ordered \"%bounds; | %numeric;\">\n<!ENTITY % unordered\n   \"%pattern; | %enumeration; | %whiteSpace; | %length; |\n   %maxLength; | %minLength;\">\n<!ENTITY % facet \"%ordered; | %unordered;\">\n<!ENTITY % facetAttr \n        \"value CDATA #REQUIRED\n        id ID #IMPLIED\">\n<!ENTITY % fixedAttr \"fixed %boolean; #IMPLIED\">\n<!ENTITY % facetModel \"(%annotation;)?\">\n<!ELEMENT %simpleType;\n        ((%annotation;)?, (%restriction; | %list; | %union;))>\n<!ATTLIST %simpleType;\n    name      %NCName; #IMPLIED\n    final     %simpleDerivationSet; #IMPLIED\n    id        ID       #IMPLIED\n    %simpleTypeAttrs;>\n<!-- name is required at top level -->\n<!ELEMENT %restriction; ((%annotation;)?,\n                         (%restriction1; |\n                          ((%simpleType;)?,(%facet;)*)),\n                         (%attrDecls;))>\n<!ATTLIST %restriction;\n    base      %QName;                  #IMPLIED\n    id        ID       #IMPLIED\n    %restrictionAttrs;>\n<!--\n        base and simpleType child are mutually exclusive,\n        one is required.\n\n        restriction is shared between simpleType and\n        simpleContent and complexContent (in XMLSchema.xsd).\n        restriction1 is for the latter cases, when this\n        is restricting a complex type, as is attrDecls.\n  -->\n<!ELEMENT %list; ((%annotation;)?,(%simpleType;)?)>\n<!ATTLIST %list;\n    itemType      %QName;             #IMPLIED\n    id        ID       #IMPLIED\n    %listAttrs;>\n<!--\n        itemType and simpleType child are mutually exclusive,\n        one is required\n  -->\n<!ELEMENT %union; ((%annotation;)?,(%simpleType;)*)>\n<!ATTLIST %union;\n    id            ID       #IMPLIED\n    memberTypes   %QNames;            #IMPLIED\n    %unionAttrs;>\n<!--\n        At least one item in memberTypes or one simpleType\n        child is required\n  -->\n\n<!ELEMENT %maxExclusive; %facetModel;>\n<!ATTLIST %maxExclusive;\n        %facetAttr;\n        %fixedAttr;\n        %maxExclusiveAttrs;>\n<!ELEMENT %minExclusive; %facetModel;>\n<!ATTLIST %minExclusive;\n        %facetAttr;\n        %fixedAttr;\n        %minExclusiveAttrs;>\n\n<!ELEMENT %maxInclusive; %facetModel;>\n<!ATTLIST %maxInclusive;\n        %facetAttr;\n        %fixedAttr;\n        %maxInclusiveAttrs;>\n<!ELEMENT %minInclusive; %facetModel;>\n<!ATTLIST %minInclusive;\n        %facetAttr;\n        %fixedAttr;\n        %minInclusiveAttrs;>\n\n<!ELEMENT %totalDigits; %facetModel;>\n<!ATTLIST %totalDigits;\n        %facetAttr;\n        %fixedAttr;\n        %totalDigitsAttrs;>\n<!ELEMENT %fractionDigits; %facetModel;>\n<!ATTLIST %fractionDigits;\n        %facetAttr;\n        %fixedAttr;\n        %fractionDigitsAttrs;>\n\n<!ELEMENT %length; %facetModel;>\n<!ATTLIST %length;\n        %facetAttr;\n        %fixedAttr;\n        %lengthAttrs;>\n<!ELEMENT %minLength; %facetModel;>\n<!ATTLIST %minLength;\n        %facetAttr;\n        %fixedAttr;\n        %minLengthAttrs;>\n<!ELEMENT %maxLength; %facetModel;>\n<!ATTLIST %maxLength;\n        %facetAttr;\n        %fixedAttr;\n        %maxLengthAttrs;>\n\n<!-- This one can be repeated -->\n<!ELEMENT %enumeration; %facetModel;>\n<!ATTLIST %enumeration;\n        %facetAttr;\n        %enumerationAttrs;>\n\n<!ELEMENT %whiteSpace; %facetModel;>\n<!ATTLIST %whiteSpace;\n        %facetAttr;\n        %fixedAttr;\n        %whiteSpaceAttrs;>\n\n<!-- This one can be repeated -->\n<!ELEMENT %pattern; %facetModel;>\n<!ATTLIST %pattern;\n        %facetAttr;\n        %patternAttrs;>\n','datatypes');
 INSERT INTO resource_entry (objectid, version, uri, uri_hash, type, content_type, content, resource_key1) VALUES (-7,0,'http://www.w3.org/2001/XMLSchema.dtd','8yxOhhglB4ig2jm9Tl3Jb7wJ53OS0+aRQBJgpdleDH/HFJ9+XjbMys52YTDpRTqn8q1Zt8xAUMQEl9kEdjAlMw==','DTD','text/plain','<!-- DTD for XML Schemas: Part 1: Structures\n     Public Identifier: \"-//W3C//DTD XMLSCHEMA 200102//EN\"\n     Official Location: http://www.w3.org/2001/XMLSchema.dtd -->\n<!-- $Id: XMLSchema.dtd,v 1.31 2001/10/24 15:50:16 ht Exp $ -->\n<!-- Note this DTD is NOT normative, or even definitive. -->           <!--d-->\n<!-- prose copy in the structures REC is the definitive version -->    <!--d-->\n<!-- (which shouldn''t differ from this one except for this -->         <!--d-->\n<!-- comment and entity expansions, but just in case) -->              <!--d-->\n<!-- With the exception of cases with multiple namespace\n     prefixes for the XML Schema namespace, any XML document which is\n     not valid per this DTD given redefinitions in its internal subset of the\n     ''p'' and ''s'' parameter entities below appropriate to its namespace\n     declaration of the XML Schema namespace is almost certainly not\n     a valid schema. -->\n\n<!-- The simpleType element and its constituent parts\n     are defined in XML Schema: Part 2: Datatypes -->\n<!ENTITY % xs-datatypes PUBLIC ''datatypes'' ''datatypes.dtd'' >\n\n<!ENTITY % p ''xs:''> <!-- can be overriden in the internal subset of a\n                         schema document to establish a different\n                         namespace prefix -->\n<!ENTITY % s '':xs''> <!-- if %p is defined (e.g. as foo:) then you must\n                         also define %s as the suffix for the appropriate\n                         namespace declaration (e.g. :foo) -->\n<!ENTITY % nds ''xmlns%s;''>\n\n<!-- Define all the element names, with optional prefix -->\n<!ENTITY % schema \"%p;schema\">\n<!ENTITY % complexType \"%p;complexType\">\n<!ENTITY % complexContent \"%p;complexContent\">\n<!ENTITY % simpleContent \"%p;simpleContent\">\n<!ENTITY % extension \"%p;extension\">\n<!ENTITY % element \"%p;element\">\n<!ENTITY % unique \"%p;unique\">\n<!ENTITY % key \"%p;key\">\n<!ENTITY % keyref \"%p;keyref\">\n<!ENTITY % selector \"%p;selector\">\n<!ENTITY % field \"%p;field\">\n<!ENTITY % group \"%p;group\">\n<!ENTITY % all \"%p;all\">\n<!ENTITY % choice \"%p;choice\">\n<!ENTITY % sequence \"%p;sequence\">\n<!ENTITY % any \"%p;any\">\n<!ENTITY % anyAttribute \"%p;anyAttribute\">\n<!ENTITY % attribute \"%p;attribute\">\n<!ENTITY % attributeGroup \"%p;attributeGroup\">\n<!ENTITY % include \"%p;include\">\n<!ENTITY % import \"%p;import\">\n<!ENTITY % redefine \"%p;redefine\">\n<!ENTITY % notation \"%p;notation\">\n\n<!-- annotation elements -->\n<!ENTITY % annotation \"%p;annotation\">\n<!ENTITY % appinfo \"%p;appinfo\">\n<!ENTITY % documentation \"%p;documentation\">\n\n<!-- Customisation entities for the ATTLIST of each element type.\n     Define one of these if your schema takes advantage of the\n     anyAttribute=''##other'' in the schema for schemas -->\n\n<!ENTITY % schemaAttrs ''''>\n<!ENTITY % complexTypeAttrs ''''>\n<!ENTITY % complexContentAttrs ''''>\n<!ENTITY % simpleContentAttrs ''''>\n<!ENTITY % extensionAttrs ''''>\n<!ENTITY % elementAttrs ''''>\n<!ENTITY % groupAttrs ''''>\n<!ENTITY % allAttrs ''''>\n<!ENTITY % choiceAttrs ''''>\n<!ENTITY % sequenceAttrs ''''>\n<!ENTITY % anyAttrs ''''>\n<!ENTITY % anyAttributeAttrs ''''>\n<!ENTITY % attributeAttrs ''''>\n<!ENTITY % attributeGroupAttrs ''''>\n<!ENTITY % uniqueAttrs ''''>\n<!ENTITY % keyAttrs ''''>\n<!ENTITY % keyrefAttrs ''''>\n<!ENTITY % selectorAttrs ''''>\n<!ENTITY % fieldAttrs ''''>\n<!ENTITY % includeAttrs ''''>\n<!ENTITY % importAttrs ''''>\n<!ENTITY % redefineAttrs ''''>\n<!ENTITY % notationAttrs ''''>\n<!ENTITY % annotationAttrs ''''>\n<!ENTITY % appinfoAttrs ''''>\n<!ENTITY % documentationAttrs ''''>\n\n<!ENTITY % complexDerivationSet \"CDATA\">\n      <!-- #all or space-separated list drawn from derivationChoice -->\n<!ENTITY % blockSet \"CDATA\">\n      <!-- #all or space-separated list drawn from\n                      derivationChoice + ''substitution'' -->\n\n<!ENTITY % mgs ''%all; | %choice; | %sequence;''>\n<!ENTITY % cs ''%choice; | %sequence;''>\n<!ENTITY % formValues ''(qualified|unqualified)''>\n\n\n<!ENTITY % attrDecls    ''((%attribute;| %attributeGroup;)*,(%anyAttribute;)?)''>\n\n<!ENTITY % particleAndAttrs ''((%mgs; | %group;)?, %attrDecls;)''>\n\n<!-- This is used in part2 -->\n<!ENTITY % restriction1 ''((%mgs; | %group;)?)''>\n\n%xs-datatypes;\n\n<!-- the duplication below is to produce an unambiguous content model\n     which allows annotation everywhere -->\n<!ELEMENT %schema; ((%include; | %import; | %redefine; | %annotation;)*,\n                    ((%simpleType; | %complexType;\n                      | %element; | %attribute;\n                      | %attributeGroup; | %group;\n                      | %notation; ),\n                     (%annotation;)*)* )>\n<!ATTLIST %schema;\n   targetNamespace      %URIref;               #IMPLIED\n   version              CDATA                  #IMPLIED\n   %nds;                %URIref;               #FIXED ''http://www.w3.org/2001/XMLSchema''\n   xmlns                CDATA                  #IMPLIED\n   finalDefault         %complexDerivationSet; ''''\n   blockDefault         %blockSet;             ''''\n   id                   ID                     #IMPLIED\n   elementFormDefault   %formValues;           ''unqualified''\n   attributeFormDefault %formValues;           ''unqualified''\n   xml:lang             CDATA                  #IMPLIED\n   %schemaAttrs;>\n<!-- Note the xmlns declaration is NOT in the Schema for Schemas,\n     because at the Infoset level where schemas operate,\n     xmlns(:prefix) is NOT an attribute! -->\n<!-- The declaration of xmlns is a convenience for schema authors -->\n \n<!-- The id attribute here and below is for use in external references\n     from non-schemas using simple fragment identifiers.\n     It is NOT used for schema-to-schema reference, internal or\n     external. -->\n\n<!-- a type is a named content type specification which allows attribute\n     declarations-->\n<!-- -->\n\n<!ELEMENT %complexType; ((%annotation;)?,\n                         (%simpleContent;|%complexContent;|\n                          %particleAndAttrs;))>\n\n<!ATTLIST %complexType;\n          name      %NCName;                        #IMPLIED\n          id        ID                              #IMPLIED\n          abstract  %boolean;                       #IMPLIED\n          final     %complexDerivationSet;          #IMPLIED\n          block     %complexDerivationSet;          #IMPLIED\n          mixed (true|false) ''false''\n          %complexTypeAttrs;>\n\n<!-- particleAndAttrs is shorthand for a root type -->\n<!-- mixed is disallowed if simpleContent, overriden if complexContent\n     has one too. -->\n\n<!-- If anyAttribute appears in one or more referenced attributeGroups\n     and/or explicitly, the intersection of the permissions is used -->\n\n<!ELEMENT %complexContent; ((%annotation;)?, (%restriction;|%extension;))>\n<!ATTLIST %complexContent;\n          mixed (true|false) #IMPLIED\n          id    ID           #IMPLIED\n          %complexContentAttrs;>\n\n<!-- restriction should use the branch defined above, not the simple\n     one from part2; extension should use the full model  -->\n\n<!ELEMENT %simpleContent; ((%annotation;)?, (%restriction;|%extension;))>\n<!ATTLIST %simpleContent;\n          id    ID           #IMPLIED\n          %simpleContentAttrs;>\n\n<!-- restriction should use the simple branch from part2, not the \n     one defined above; extension should have no particle  -->\n\n<!ELEMENT %extension; ((%annotation;)?, (%particleAndAttrs;))>\n<!ATTLIST %extension;\n          base  %QName;      #REQUIRED\n          id    ID           #IMPLIED\n          %extensionAttrs;>\n\n<!-- an element is declared by either:\n a name and a type (either nested or referenced via the type attribute)\n or a ref to an existing element declaration -->\n\n<!ELEMENT %element; ((%annotation;)?, (%complexType;| %simpleType;)?,\n                     (%unique; | %key; | %keyref;)*)>\n<!-- simpleType or complexType only if no type|ref attribute -->\n<!-- ref not allowed at top level -->\n<!ATTLIST %element;\n            name               %NCName;               #IMPLIED\n            id                 ID                     #IMPLIED\n            ref                %QName;                #IMPLIED\n            type               %QName;                #IMPLIED\n            minOccurs          %nonNegativeInteger;   #IMPLIED\n            maxOccurs          CDATA                  #IMPLIED\n            nillable           %boolean;              #IMPLIED\n            substitutionGroup  %QName;                #IMPLIED\n            abstract           %boolean;              #IMPLIED\n            final              %complexDerivationSet; #IMPLIED\n            block              %blockSet;             #IMPLIED\n            default            CDATA                  #IMPLIED\n            fixed              CDATA                  #IMPLIED\n            form               %formValues;           #IMPLIED\n            %elementAttrs;>\n<!-- type and ref are mutually exclusive.\n     name and ref are mutually exclusive, one is required -->\n<!-- In the absence of type AND ref, type defaults to type of\n     substitutionGroup, if any, else the ur-type, i.e. unconstrained -->\n<!-- default and fixed are mutually exclusive -->\n\n<!ELEMENT %group; ((%annotation;)?,(%mgs;)?)>\n<!ATTLIST %group; \n          name        %NCName;               #IMPLIED\n          ref         %QName;                #IMPLIED\n          minOccurs   %nonNegativeInteger;   #IMPLIED\n          maxOccurs   CDATA                  #IMPLIED\n          id          ID                     #IMPLIED\n          %groupAttrs;>\n\n<!ELEMENT %all; ((%annotation;)?, (%element;)*)>\n<!ATTLIST %all;\n          minOccurs   (1)                    #IMPLIED\n          maxOccurs   (1)                    #IMPLIED\n          id          ID                     #IMPLIED\n          %allAttrs;>\n\n<!ELEMENT %choice; ((%annotation;)?, (%element;| %group;| %cs; | %any;)*)>\n<!ATTLIST %choice;\n          minOccurs   %nonNegativeInteger;   #IMPLIED\n          maxOccurs   CDATA                  #IMPLIED\n          id          ID                     #IMPLIED\n          %choiceAttrs;>\n\n<!ELEMENT %sequence; ((%annotation;)?, (%element;| %group;| %cs; | %any;)*)>\n<!ATTLIST %sequence;\n          minOccurs   %nonNegativeInteger;   #IMPLIED\n          maxOccurs   CDATA                  #IMPLIED\n          id          ID                     #IMPLIED\n          %sequenceAttrs;>\n\n<!-- an anonymous grouping in a model, or\n     a top-level named group definition, or a reference to same -->\n\n<!-- Note that if order is ''all'', group is not allowed inside.\n     If order is ''all'' THIS group must be alone (or referenced alone) at\n     the top level of a content model -->\n<!-- If order is ''all'', minOccurs==maxOccurs==1 on element/any inside -->\n<!-- Should allow minOccurs=0 inside order=''all'' . . . -->\n\n<!ELEMENT %any; (%annotation;)?>\n<!ATTLIST %any;\n            namespace       CDATA                  ''##any''\n            processContents (skip|lax|strict)      ''strict''\n            minOccurs       %nonNegativeInteger;   ''1''\n            maxOccurs       CDATA                  ''1''\n            id              ID                     #IMPLIED\n            %anyAttrs;>\n\n<!-- namespace is interpreted as follows:\n                  ##any      - - any non-conflicting WFXML at all\n\n                  ##other    - - any non-conflicting WFXML from namespace other\n                                  than targetNamespace\n\n                  ##local    - - any unqualified non-conflicting WFXML/attribute\n                  one or     - - any non-conflicting WFXML from\n                  more URI        the listed namespaces\n                  references\n\n                  ##targetNamespace ##local may appear in the above list,\n                    with the obvious meaning -->\n\n<!ELEMENT %anyAttribute; (%annotation;)?>\n<!ATTLIST %anyAttribute;\n            namespace       CDATA              ''##any''\n            processContents (skip|lax|strict)  ''strict''\n            id              ID                 #IMPLIED\n            %anyAttributeAttrs;>\n<!-- namespace is interpreted as for ''any'' above -->\n\n<!-- simpleType only if no type|ref attribute -->\n<!-- ref not allowed at top level, name iff at top level -->\n<!ELEMENT %attribute; ((%annotation;)?, (%simpleType;)?)>\n<!ATTLIST %attribute;\n          name      %NCName;      #IMPLIED\n          id        ID            #IMPLIED\n          ref       %QName;       #IMPLIED\n          type      %QName;       #IMPLIED\n          use       (prohibited|optional|required) #IMPLIED\n          default   CDATA         #IMPLIED\n          fixed     CDATA         #IMPLIED\n          form      %formValues;  #IMPLIED\n          %attributeAttrs;>\n<!-- type and ref are mutually exclusive.\n     name and ref are mutually exclusive, one is required -->\n<!-- default for use is optional when nested, none otherwise -->\n<!-- default and fixed are mutually exclusive -->\n<!-- type attr and simpleType content are mutually exclusive -->\n\n<!-- an attributeGroup is a named collection of attribute decls, or a\n     reference thereto -->\n<!ELEMENT %attributeGroup; ((%annotation;)?,\n                       (%attribute; | %attributeGroup;)*,\n                       (%anyAttribute;)?) >\n<!ATTLIST %attributeGroup;\n                 name       %NCName;       #IMPLIED\n                 id         ID             #IMPLIED\n                 ref        %QName;        #IMPLIED\n                 %attributeGroupAttrs;>\n\n<!-- ref iff no content, no name.  ref iff not top level -->\n\n<!-- better reference mechanisms -->\n<!ELEMENT %unique; ((%annotation;)?, %selector;, (%field;)+)>\n<!ATTLIST %unique;\n          name     %NCName;       #REQUIRED\n	  id       ID             #IMPLIED\n	  %uniqueAttrs;>\n\n<!ELEMENT %key;    ((%annotation;)?, %selector;, (%field;)+)>\n<!ATTLIST %key;\n          name     %NCName;       #REQUIRED\n	  id       ID             #IMPLIED\n	  %keyAttrs;>\n\n<!ELEMENT %keyref; ((%annotation;)?, %selector;, (%field;)+)>\n<!ATTLIST %keyref;\n          name     %NCName;       #REQUIRED\n	  refer    %QName;        #REQUIRED\n	  id       ID             #IMPLIED\n	  %keyrefAttrs;>\n\n<!ELEMENT %selector; ((%annotation;)?)>\n<!ATTLIST %selector;\n          xpath %XPathExpr; #REQUIRED\n          id    ID          #IMPLIED\n          %selectorAttrs;>\n<!ELEMENT %field; ((%annotation;)?)>\n<!ATTLIST %field;\n          xpath %XPathExpr; #REQUIRED\n          id    ID          #IMPLIED\n          %fieldAttrs;>\n\n<!-- Schema combination mechanisms -->\n<!ELEMENT %include; (%annotation;)?>\n<!ATTLIST %include;\n          schemaLocation %URIref; #REQUIRED\n          id             ID       #IMPLIED\n          %includeAttrs;>\n\n<!ELEMENT %import; (%annotation;)?>\n<!ATTLIST %import;\n          namespace      %URIref; #IMPLIED\n          schemaLocation %URIref; #IMPLIED\n          id             ID       #IMPLIED\n          %importAttrs;>\n\n<!ELEMENT %redefine; (%annotation; | %simpleType; | %complexType; |\n                      %attributeGroup; | %group;)*>\n<!ATTLIST %redefine;\n          schemaLocation %URIref; #REQUIRED\n          id             ID       #IMPLIED\n          %redefineAttrs;>\n\n<!ELEMENT %notation; (%annotation;)?>\n<!ATTLIST %notation;\n	  name        %NCName;    #REQUIRED\n	  id          ID          #IMPLIED\n	  public      CDATA       #REQUIRED\n	  system      %URIref;    #IMPLIED\n	  %notationAttrs;>\n\n<!-- Annotation is either application information or documentation -->\n<!-- By having these here they are available for datatypes as well\n     as all the structures elements -->\n\n<!ELEMENT %annotation; (%appinfo; | %documentation;)*>\n<!ATTLIST %annotation; %annotationAttrs;>\n\n<!-- User must define annotation elements in internal subset for this\n     to work -->\n<!ELEMENT %appinfo; ANY>   <!-- too restrictive -->\n<!ATTLIST %appinfo;\n          source     %URIref;      #IMPLIED\n          id         ID         #IMPLIED\n          %appinfoAttrs;>\n<!ELEMENT %documentation; ANY>   <!-- too restrictive -->\n<!ATTLIST %documentation;\n          source     %URIref;   #IMPLIED\n          id         ID         #IMPLIED\n          xml:lang   CDATA      #IMPLIED\n          %documentationAttrs;>\n\n<!NOTATION XMLSchemaStructures PUBLIC\n           ''structures'' ''http://www.w3.org/2001/XMLSchema.xsd'' >\n<!NOTATION XML PUBLIC\n           ''REC-xml-1998-0210'' ''http://www.w3.org/TR/1998/REC-xml-19980210'' >\n','-//W3C//DTD XMLSCHEMA 200102//EN');
 
-INSERT INTO rbac_role VALUES (-100,0,'Administrator','ADMIN',null,null,'Users assigned to the {0} role have full access to the gateway.');
+INSERT INTO rbac_role VALUES (-100,0,'Administrator','ADMIN',null,null,'Users assigned to the {0} role have full access to the gateway.',0);
 INSERT INTO rbac_permission VALUES (-101, 0, -100, 'CREATE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-102, 0, -100, 'READ',   null, 'ANY');
 INSERT INTO rbac_permission VALUES (-103, 0, -100, 'UPDATE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-104, 0, -100, 'DELETE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-105, 0, -100, 'OTHER', 'log-viewer', 'LOG_SINK');
 -- Create Operator role
-INSERT INTO rbac_role VALUES (-150,0,'Operator',null,null,null,'Users assigned to the {0} role have read only access to the gateway.');
+INSERT INTO rbac_role VALUES (-150,0,'Operator',null,null,null,'Users assigned to the {0} role have read only access to the gateway.',0);
 INSERT INTO rbac_permission VALUES (-151, 0, -150, 'READ', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-152, 0, -150, 'OTHER', 'log-viewer', 'LOG_SINK');
 
 -- Create other canned roles
-INSERT INTO rbac_role VALUES (-200,0,'Manage Internal Users and Groups', null,null,null, 'Users assigned to the {0} role have the ability to create, read, update and delete users and groups in the internal identity provider.');
+INSERT INTO rbac_role VALUES (-200,0,'Manage Internal Users and Groups', null,null,null, 'Users assigned to the {0} role have the ability to create, read, update and delete users and groups in the internal identity provider.',0);
 INSERT INTO rbac_permission VALUES (-201,0,-200,'READ',NULL,'USER');
 INSERT INTO rbac_predicate VALUES (-202,0,-201);
-INSERT INTO rbac_predicate_attribute VALUES (-202,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-202,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-203,0,-200,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_predicate VALUES (-204,0,-203);
 INSERT INTO rbac_predicate_oid VALUES (-204,'-2');
 INSERT INTO rbac_permission VALUES (-205,0,-200,'UPDATE',NULL,'USER');
 INSERT INTO rbac_predicate VALUES (-206,0,-205);
-INSERT INTO rbac_predicate_attribute VALUES (-206,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-206,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-207,0,-200,'READ',NULL,'GROUP');
 INSERT INTO rbac_predicate VALUES (-208,0,-207);
-INSERT INTO rbac_predicate_attribute VALUES (-208,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-208,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-209,0,-200,'DELETE',NULL,'USER');
 INSERT INTO rbac_predicate VALUES (-210,0,-209);
-INSERT INTO rbac_predicate_attribute VALUES (-210,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-210,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-211,0,-200,'CREATE',NULL,'USER');
 INSERT INTO rbac_predicate VALUES (-212,0,-211);
-INSERT INTO rbac_predicate_attribute VALUES (-212,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-212,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-213,0,-200,'CREATE',NULL,'GROUP');
 INSERT INTO rbac_predicate VALUES (-214,0,-213);
-INSERT INTO rbac_predicate_attribute VALUES (-214,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-214,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-215,0,-200,'DELETE',NULL,'GROUP');
 INSERT INTO rbac_predicate VALUES (-216,0,-215);
-INSERT INTO rbac_predicate_attribute VALUES (-216,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-216,'providerId','-2','eq');
 INSERT INTO rbac_permission VALUES (-217,0,-200,'UPDATE',NULL,'GROUP');
 INSERT INTO rbac_predicate VALUES (-218,0,-217);
-INSERT INTO rbac_predicate_attribute VALUES (-218,'providerId','-2');
+INSERT INTO rbac_predicate_attribute VALUES (-218,'providerId','-2','eq');
 
-INSERT INTO rbac_role VALUES (-250,0,'Publish External Identity Providers', null,null,null, 'Users assigned to the {0} role have the ability to create new external identity providers.');
+INSERT INTO rbac_role VALUES (-250,0,'Publish External Identity Providers', null,null,null, 'Users assigned to the {0} role have the ability to create new external identity providers.',0);
 INSERT INTO rbac_permission VALUES (-251,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_predicate VALUES (-252,0,-251);
-INSERT INTO rbac_predicate_attribute VALUES (-252,'typeVal','2');
+INSERT INTO rbac_predicate_attribute VALUES (-252,'typeVal','2','eq');
 INSERT INTO rbac_permission VALUES (-253,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_predicate VALUES (-254,0,-253);
-INSERT INTO rbac_predicate_attribute VALUES (-254,'typeVal','3');
+INSERT INTO rbac_predicate_attribute VALUES (-254,'typeVal','3','eq');
 INSERT INTO rbac_permission VALUES (-258,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_predicate VALUES (-259,0,-258);
-INSERT INTO rbac_predicate_attribute VALUES (-259,'typeVal','4');
+INSERT INTO rbac_predicate_attribute VALUES (-259,'typeVal','4','eq');
 INSERT INTO rbac_permission VALUES (-255,0,-250,'READ',NULL,'TRUSTED_CERT');
 INSERT INTO rbac_permission VALUES (-256,0,-250,'READ',NULL,'SSG_KEYSTORE');
 INSERT INTO rbac_permission VALUES (-257,0,-250,'READ',NULL,'SSG_KEY_ENTRY');
 
-INSERT INTO rbac_role VALUES (-300,0,'Search Users and Groups', null,null,null, 'Users assigned to the {0} role have permission to search and view users and groups in all identity providers.');
+INSERT INTO rbac_role VALUES (-300,0,'Search Users and Groups', null,null,null, 'Users assigned to the {0} role have permission to search and view users and groups in all identity providers.',0);
 INSERT INTO rbac_permission VALUES (-301,0,-300,'READ',NULL,'USER');
 INSERT INTO rbac_permission VALUES (-302,0,-300,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_permission VALUES (-303,0,-300,'READ',NULL,'GROUP');
 
-INSERT INTO rbac_role VALUES (-350,0,'Publish Webservices', null,null,null, 'Users assigned to the {0} role have the ability to publish new web services.' );
+INSERT INTO rbac_role VALUES (-350,0,'Publish Webservices', null,null,null, 'Users assigned to the {0} role have the ability to publish new web services.',0);
 INSERT INTO rbac_permission VALUES (-351,0,-350,'READ',NULL,'GROUP');
 INSERT INTO rbac_permission VALUES (-352,0,-350,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_permission VALUES (-353,0,-350,'READ',NULL,'USER');
@@ -1204,7 +1206,7 @@ INSERT INTO rbac_permission VALUES (-356,0,-350,'READ',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-357,0,-350,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-358,0,-350,'READ',NULL,'HTTP_CONFIGURATION');
 
-INSERT INTO rbac_role VALUES (-400,1,'Manage Webservices', null,null,null, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.');
+INSERT INTO rbac_role VALUES (-400,1,'Manage Webservices', null,null,null, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.',0);
 INSERT INTO rbac_permission VALUES (-401,0,-400,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_permission VALUES (-402,0,-400,'READ',NULL,'GROUP');
 INSERT INTO rbac_permission VALUES (-403,0,-400,'READ',NULL,'USER');
@@ -1245,24 +1247,24 @@ INSERT INTO rbac_permission VALUES (-437,0,-400,'CREATE',NULL,'UDDI_SERVICE_CONT
 INSERT INTO rbac_permission VALUES (-438,0,-400,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-439,0,-400,'READ',NULL,'HTTP_CONFIGURATION');
 
-INSERT INTO rbac_role VALUES (-450,0,'View Audit Records', null,null,null, 'Users assigned to the {0} role have the ability to view audits in the manager.');
+INSERT INTO rbac_role VALUES (-450,0,'View Audit Records', null,null,null, 'Users assigned to the {0} role have the ability to view audits in the manager.',0);
 INSERT INTO rbac_permission VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-452,0,-450,'READ',NULL,'AUDIT_RECORD');
 
-INSERT INTO rbac_role VALUES (-500,0,'View Service Metrics', null,null,null, 'Users assigned to the {0} role have the ability to monitor service metrics in the manager.');
+INSERT INTO rbac_role VALUES (-500,0,'View Service Metrics', null,null,null, 'Users assigned to the {0} role have the ability to monitor service metrics in the manager.',0);
 INSERT INTO rbac_permission VALUES (-501,0,-500,'READ',NULL,'METRICS_BIN');
 INSERT INTO rbac_permission VALUES (-502,0,-500,'READ',NULL,'SERVICE');
 INSERT INTO rbac_permission VALUES (-503,0,-500,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-504,0,-500,'READ',NULL,'SERVICE_USAGE');
 INSERT INTO rbac_permission VALUES (-505,0,-500,'READ',NULL,'FOLDER');
 
-INSERT INTO rbac_role VALUES (-550,0,'Manage Cluster Status', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster status information.');
+INSERT INTO rbac_role VALUES (-550,0,'Manage Cluster Status', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster status information.',0);
 INSERT INTO rbac_permission VALUES (-551,0,-550,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-552,0,-550,'UPDATE',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-553,0,-550,'DELETE',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-554,0,-550,'READ',NULL,'METRICS_BIN');
 
-INSERT INTO rbac_role VALUES (-600,0,'Manage Certificates (truststore)', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates and policies for revocation checking.');
+INSERT INTO rbac_role VALUES (-600,0,'Manage Certificates (truststore)', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates and policies for revocation checking.',0);
 INSERT INTO rbac_permission VALUES (-601,0,-600,'UPDATE',NULL,'TRUSTED_CERT');
 INSERT INTO rbac_permission VALUES (-602,0,-600,'READ',NULL,'TRUSTED_CERT');
 INSERT INTO rbac_permission VALUES (-603,0,-600,'DELETE',NULL,'TRUSTED_CERT');
@@ -1272,7 +1274,7 @@ INSERT INTO rbac_permission VALUES (-606,0,-600,'READ',NULL,'REVOCATION_CHECK_PO
 INSERT INTO rbac_permission VALUES (-607,0,-600,'DELETE',NULL,'REVOCATION_CHECK_POLICY');
 INSERT INTO rbac_permission VALUES (-608,0,-600,'CREATE',NULL,'REVOCATION_CHECK_POLICY');
 
-INSERT INTO rbac_role VALUES (-650,0,'Manage JMS Connections', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JMS connections.');
+INSERT INTO rbac_role VALUES (-650,0,'Manage JMS Connections', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JMS connections.',0);
 INSERT INTO rbac_permission VALUES (-651,1,-650,'READ',NULL,'JMS_CONNECTION');
 INSERT INTO rbac_permission VALUES (-652,1,-650,'DELETE',NULL,'JMS_CONNECTION');
 INSERT INTO rbac_permission VALUES (-653,1,-650,'CREATE',NULL,'JMS_CONNECTION');
@@ -1285,20 +1287,20 @@ INSERT INTO rbac_permission VALUES (-659,1,-650,'READ',NULL,'SERVICE');
 INSERT INTO rbac_permission VALUES (-660,1,-650,'READ',NULL,'SSG_KEYSTORE');
 INSERT INTO rbac_permission VALUES (-661,1,-650,'READ',NULL,'SSG_KEY_ENTRY');
 
-INSERT INTO rbac_role VALUES (-700,0,'Manage Cluster Properties', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster properties.');
+INSERT INTO rbac_role VALUES (-700,0,'Manage Cluster Properties', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster properties.',0);
 INSERT INTO rbac_permission VALUES (-701,0,-700,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_permission VALUES (-702,0,-700,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_permission VALUES (-703,0,-700,'UPDATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_permission VALUES (-704,0,-700,'DELETE',NULL,'CLUSTER_PROPERTY');
 
-INSERT INTO rbac_role VALUES (-750,0,'Manage Listen Ports', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete Gateway listen ports (HTTP(S) and FTP(S)) and to list published services.');
+INSERT INTO rbac_role VALUES (-750,0,'Manage Listen Ports', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete Gateway listen ports (HTTP(S) and FTP(S)) and to list published services.',0);
 INSERT INTO rbac_permission VALUES (-751,0,-750,'READ',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-752,0,-750,'CREATE',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-753,0,-750,'UPDATE',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-754,0,-750,'DELETE',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-755,0,-750,'READ',NULL,'SERVICE');
 
-INSERT INTO rbac_role VALUES (-800,0,'Manage Log Sinks', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete log sinks.');
+INSERT INTO rbac_role VALUES (-800,0,'Manage Log Sinks', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete log sinks.',0);
 INSERT INTO rbac_permission VALUES (-801,0,-800,'READ',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-802,0,-800,'CREATE',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-803,0,-800,'UPDATE',NULL,'LOG_SINK');
@@ -1314,46 +1316,46 @@ INSERT INTO rbac_permission VALUES (-812,0,-800,'READ',NULL,'ID_PROVIDER_CONFIG'
 INSERT INTO rbac_permission VALUES (-813,0,-800,'READ',NULL,'POLICY');
 INSERT INTO rbac_permission VALUES (-814,0,-800,'READ',NULL,'EMAIL_LISTENER');
 
-INSERT INTO rbac_role VALUES (-850,0,'Gateway Maintenance', null,null,null, 'Users assigned to the {0} role have the ability to perform Gateway maintenance tasks.');
+INSERT INTO rbac_role VALUES (-850,0,'Gateway Maintenance', null,null,null, 'Users assigned to the {0} role have the ability to perform Gateway maintenance tasks.',0);
 INSERT INTO rbac_permission VALUES (-851,0,-850,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-852,0,-851);
-INSERT INTO rbac_predicate_attribute VALUES (-852,'name','audit.archiver.ftp.config');
+INSERT INTO rbac_predicate_attribute VALUES (-852,'name','audit.archiver.ftp.config','eq');
 INSERT INTO rbac_permission VALUES (-853,0,-850,'UPDATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-854,0,-853);
-INSERT INTO rbac_predicate_attribute VALUES (-854,'name','audit.archiver.ftp.config');
+INSERT INTO rbac_predicate_attribute VALUES (-854,'name','audit.archiver.ftp.config','eq');
 INSERT INTO rbac_permission VALUES (-855,0,-850,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-856,0,-855);
-INSERT INTO rbac_predicate_attribute VALUES (-856,'name','audit.archiver.ftp.config');
+INSERT INTO rbac_predicate_attribute VALUES (-856,'name','audit.archiver.ftp.config','eq');
 INSERT INTO rbac_permission VALUES (-857,0,-850,'DELETE',NULL,'AUDIT_RECORD');
 -- No predicates implies all entities
 
-INSERT INTO rbac_role VALUES (-900,0,'Manage Email Listeners', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete email listeners.');
+INSERT INTO rbac_role VALUES (-900,0,'Manage Email Listeners', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete email listeners.',0);
 INSERT INTO rbac_permission VALUES (-901,0,-900,'READ',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-902,0,-900,'CREATE',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-903,0,-900,'UPDATE',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-904,0,-900,'DELETE',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-905,0,-900,'READ',NULL,'SERVICE');
 
-INSERT INTO rbac_role VALUES (-950,0,'Manage JDBC Connections', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JDBC connections.');
+INSERT INTO rbac_role VALUES (-950,0,'Manage JDBC Connections', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JDBC connections.',0);
 INSERT INTO rbac_permission VALUES (-951,0,-950,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-952,0,-950,'CREATE',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-953,0,-950,'UPDATE',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-954,0,-950,'DELETE',NULL,'JDBC_CONNECTION');
 
-INSERT INTO rbac_role VALUES (-1000,0,'Manage UDDI Registries', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete UDDI Registry connections.');
+INSERT INTO rbac_role VALUES (-1000,0,'Manage UDDI Registries', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete UDDI Registry connections.',0);
 INSERT INTO rbac_permission VALUES (-1001,0,-1000,'READ',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1002,0,-1000,'CREATE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1003,0,-1000,'UPDATE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1004,0,-1000,'DELETE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1005,0,-1000,'READ',NULL,'SERVICE');
 
-INSERT INTO rbac_role VALUES (-1050,0,'Manage Secure Passwords', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete any stored password.');
+INSERT INTO rbac_role VALUES (-1050,0,'Manage Secure Passwords', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete any stored password.',0);
 INSERT INTO rbac_permission VALUES (-1051,0,-1050,'READ',NULL,'SECURE_PASSWORD');
 INSERT INTO rbac_permission VALUES (-1052,0,-1050,'CREATE',NULL,'SECURE_PASSWORD');
 INSERT INTO rbac_permission VALUES (-1053,0,-1050,'UPDATE',NULL,'SECURE_PASSWORD');
 INSERT INTO rbac_permission VALUES (-1054,0,-1050,'DELETE',NULL,'SECURE_PASSWORD');
 
-INSERT INTO rbac_role VALUES (-1100,1,'Manage Private Keys',NULL,NULL,NULL,'Users in this role have the ability to read, create, update, and delete private keys, as well as the ability to change the designated special-purpose keys (eg, the SSL or CA key).');
+INSERT INTO rbac_role VALUES (-1100,1,'Manage Private Keys',NULL,NULL,NULL,'Users in this role have the ability to read, create, update, and delete private keys, as well as the ability to change the designated special-purpose keys (eg, the SSL or CA key).',0);
 INSERT INTO rbac_permission VALUES
     (-1101,0,-1100,'UPDATE',NULL,'CLUSTER_PROPERTY'),
     (-1102,0,-1100,'DELETE',NULL,'SSG_KEY_ENTRY'),
@@ -1395,24 +1397,24 @@ INSERT INTO rbac_predicate VALUES
     (-1121,0,-1121),
     (-1122,0,-1122);
 INSERT INTO rbac_predicate_attribute VALUES
-    (-1101,'name','keyStore.defaultSsl.alias'),
-    (-1103,'name','keyStore.defaultCa.alias'),
-    (-1105,'name','keyStore.defaultSsl.alias'),
-    (-1108,'name','keyStore.defaultCa.alias'),
-    (-1109,'name','keyStore.defaultSsl.alias'),
-    (-1110,'name','keyStore.defaultCa.alias'),
-    (-1111,'name','keyStore.defaultSsl.alias'),
-    (-1113,'name','keyStore.defaultCa.alias'),
-    (-1115,'name','keyStore.auditViewer.alias'),
-    (-1116,'name','keyStore.auditViewer.alias'),
-    (-1117,'name','keyStore.auditViewer.alias'),
-    (-1118,'name','keyStore.auditViewer.alias'),
-    (-1119,'name','keyStore.auditSigning.alias'),
-    (-1120,'name','keyStore.auditSigning.alias'),
-    (-1121,'name','keyStore.auditSigning.alias'),
-    (-1122,'name','keyStore.auditSigning.alias');
+    (-1101,'name','keyStore.defaultSsl.alias','eq'),
+    (-1103,'name','keyStore.defaultCa.alias','eq'),
+    (-1105,'name','keyStore.defaultSsl.alias','eq'),
+    (-1108,'name','keyStore.defaultCa.alias','eq'),
+    (-1109,'name','keyStore.defaultSsl.alias','eq'),
+    (-1110,'name','keyStore.defaultCa.alias','eq'),
+    (-1111,'name','keyStore.defaultSsl.alias','eq'),
+    (-1113,'name','keyStore.defaultCa.alias','eq'),
+    (-1115,'name','keyStore.auditViewer.alias','eq'),
+    (-1116,'name','keyStore.auditViewer.alias','eq'),
+    (-1117,'name','keyStore.auditViewer.alias','eq'),
+    (-1118,'name','keyStore.auditViewer.alias','eq'),
+    (-1119,'name','keyStore.auditSigning.alias','eq'),
+    (-1120,'name','keyStore.auditSigning.alias','eq'),
+    (-1121,'name','keyStore.auditSigning.alias','eq'),
+    (-1122,'name','keyStore.auditSigning.alias','eq');
 
-INSERT INTO rbac_role VALUES (-1150,0,'Manage Password Policies', null,null,null, 'Users assigned to the {0} role have the ability to read and update any stored password policy and view the identity providers.');
+INSERT INTO rbac_role VALUES (-1150,0,'Manage Password Policies', null,null,null, 'Users assigned to the {0} role have the ability to read and update any stored password policy and view the identity providers.',0);
 INSERT INTO rbac_permission VALUES (-1151,0,-1150,'READ',NULL,'PASSWORD_POLICY');
 -- INSERT INTO rbac_permission VALUES (-1052,0,-1050,'CREATE',NULL,'PASSWORD_POLICY');
 INSERT INTO rbac_permission VALUES (-1153,0,-1150,'UPDATE',NULL,'PASSWORD_POLICY');
@@ -1422,48 +1424,48 @@ INSERT INTO rbac_permission VALUES (-1155,0,-1150,'READ',NULL,'ID_PROVIDER_CONFI
 --
 -- New role to invoke the audit viewer policy. Requires READ on audits to be able to open the audit viewer.
 --
-INSERT INTO rbac_role VALUES (-1200,0,'Invoke Audit Viewer Policy', null,null,null, 'Allow the INTERNAL audit-viewer policy to be invoked for an audited message (request / response or detail)');
+INSERT INTO rbac_role VALUES (-1200,0,'Invoke Audit Viewer Policy', null,null,null, 'Allow the INTERNAL audit-viewer policy to be invoked for an audited message (request / response or detail)',0);
 INSERT INTO rbac_permission VALUES (-1201,0,-1200,'OTHER','audit-viewer policy', 'AUDIT_RECORD');
 INSERT INTO rbac_permission VALUES (-1202,0,-1200,'READ',NULL,'AUDIT_RECORD');
 INSERT INTO rbac_permission VALUES (-1203,0,-1200,'READ',NULL,'CLUSTER_INFO');
 
-INSERT INTO rbac_role VALUES (-1250,0,'Manage Administrative Accounts Configuration', null,null,null, 'Users assigned to the {0} role have the ability to create/read/update cluster properties applicable to administrative accounts configurations.');
+INSERT INTO rbac_role VALUES (-1250,0,'Manage Administrative Accounts Configuration', null,null,null, 'Users assigned to the {0} role have the ability to create/read/update cluster properties applicable to administrative accounts configurations.',0);
 INSERT INTO rbac_permission VALUES (-1251,0,-1250,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1252,0,-1251);
-INSERT INTO rbac_predicate_attribute VALUES (-1252,'name','logon.maxAllowableAttempts');
+INSERT INTO rbac_predicate_attribute VALUES (-1252,'name','logon.maxAllowableAttempts','eq');
 INSERT INTO rbac_permission VALUES (-1253,0,-1250,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1254,0,-1253);
-INSERT INTO rbac_predicate_attribute VALUES (-1254,'name','logon.lockoutTime');
+INSERT INTO rbac_predicate_attribute VALUES (-1254,'name','logon.lockoutTime','eq');
 INSERT INTO rbac_permission VALUES (-1255,0,-1250,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1256,0,-1255);
-INSERT INTO rbac_predicate_attribute VALUES (-1256,'name','logon.sessionExpiry');
+INSERT INTO rbac_predicate_attribute VALUES (-1256,'name','logon.sessionExpiry','eq');
 INSERT INTO rbac_permission VALUES (-1257,0,-1250,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1258,0,-1257);
-INSERT INTO rbac_predicate_attribute VALUES (-1258,'name','logon.inactivityPeriod');
+INSERT INTO rbac_predicate_attribute VALUES (-1258,'name','logon.inactivityPeriod','eq');
 INSERT INTO rbac_permission VALUES (-1259,0,-1250,'UPDATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1260,0,-1259);
-INSERT INTO rbac_predicate_attribute VALUES (-1260,'name','logon.maxAllowableAttempts');
+INSERT INTO rbac_predicate_attribute VALUES (-1260,'name','logon.maxAllowableAttempts','eq');
 INSERT INTO rbac_permission VALUES (-1261,0,-1250,'UPDATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1262,0,-1261);
-INSERT INTO rbac_predicate_attribute VALUES (-1262,'name','logon.lockoutTime');
+INSERT INTO rbac_predicate_attribute VALUES (-1262,'name','logon.lockoutTime','eq');
 INSERT INTO rbac_permission VALUES (-1263,0,-1250,'UPDATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1264,0,-1263);
-INSERT INTO rbac_predicate_attribute VALUES (-1264,'name','logon.sessionExpiry');
+INSERT INTO rbac_predicate_attribute VALUES (-1264,'name','logon.sessionExpiry','eq');
 INSERT INTO rbac_permission VALUES (-1265,0,-1250,'UPDATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1266,0,-1265);
-INSERT INTO rbac_predicate_attribute VALUES (-1266,'name','logon.inactivityPeriod');
+INSERT INTO rbac_predicate_attribute VALUES (-1266,'name','logon.inactivityPeriod','eq');
 INSERT INTO rbac_permission VALUES (-1267,0,-1250,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1268,0,-1267);
-INSERT INTO rbac_predicate_attribute VALUES (-1268,'name','logon.maxAllowableAttempts');
+INSERT INTO rbac_predicate_attribute VALUES (-1268,'name','logon.maxAllowableAttempts','eq');
 INSERT INTO rbac_permission VALUES (-1269,0,-1250,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1270,0,-1269);
-INSERT INTO rbac_predicate_attribute VALUES (-1270,'name','logon.lockoutTime');
+INSERT INTO rbac_predicate_attribute VALUES (-1270,'name','logon.lockoutTime','eq');
 INSERT INTO rbac_permission VALUES (-1271,0,-1250,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1272,0,-1271);
-INSERT INTO rbac_predicate_attribute VALUES (-1272,'name','logon.sessionExpiry');
+INSERT INTO rbac_predicate_attribute VALUES (-1272,'name','logon.sessionExpiry','eq');
 INSERT INTO rbac_permission VALUES (-1273,0,-1250,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1274,0,-1273);
-INSERT INTO rbac_predicate_attribute VALUES (-1274,'name','logon.inactivityPeriod');
+INSERT INTO rbac_predicate_attribute VALUES (-1274,'name','logon.inactivityPeriod','eq');
 
 --
 -- New role for viewing the default log (oid = -810)
@@ -1471,7 +1473,7 @@ INSERT INTO rbac_predicate_attribute VALUES (-1274,'name','logon.inactivityPerio
 -- NOTE: This is an entity specific role and will be deleted if the default log
 -- sink is removed.
 --
-INSERT INTO rbac_role VALUES (-1300,0,'View ssg Log Sink (#-1,300)',null,'LOG_SINK',-810, 'Users assigned to the {0} role have the ability to read the log sink and any associated log files.');
+INSERT INTO rbac_role VALUES (-1300,0,'View ssg Log Sink (#-1,300)',null,'LOG_SINK',-810, 'Users assigned to the {0} role have the ability to read the log sink and any associated log files.',0);
 INSERT INTO rbac_permission VALUES (-1301,0,-1300,'READ',NULL,'LOG_SINK');
 INSERT INTO rbac_predicate VALUES (-1301,0,-1301);
 INSERT INTO rbac_predicate_oid VALUES (-1301,'-810');
@@ -1509,16 +1511,16 @@ create table generic_entity (
 UPDATE rbac_role SET name='Manage Message Destinations', description='Users assigned to the {0} role have the ability to read, create, update and delete message destinations.' WHERE objectid=-650;
 INSERT INTO rbac_permission VALUES (-662,1,-650,'READ',NULL,'SSG_ACTIVE_CONNECTOR');
 INSERT INTO rbac_predicate VALUES (-663,0,-662);
-INSERT INTO rbac_predicate_attribute VALUES (-663,'type','MqNative');
+INSERT INTO rbac_predicate_attribute VALUES (-663,'type','MqNative','eq');
 INSERT INTO rbac_permission VALUES (-664,1,-650,'DELETE',NULL,'SSG_ACTIVE_CONNECTOR');
 INSERT INTO rbac_predicate VALUES (-665,0,-664);
-INSERT INTO rbac_predicate_attribute VALUES (-665,'type','MqNative');
+INSERT INTO rbac_predicate_attribute VALUES (-665,'type','MqNative','eq');
 INSERT INTO rbac_permission VALUES (-666,1,-650,'CREATE',NULL,'SSG_ACTIVE_CONNECTOR');
 INSERT INTO rbac_predicate VALUES (-667,0,-666);
-INSERT INTO rbac_predicate_attribute VALUES (-667,'type','MqNative');
+INSERT INTO rbac_predicate_attribute VALUES (-667,'type','MqNative','eq');
 INSERT INTO rbac_permission VALUES (-668,1,-650,'UPDATE',NULL,'SSG_ACTIVE_CONNECTOR');
 INSERT INTO rbac_predicate VALUES (-669,0,-668);
-INSERT INTO rbac_predicate_attribute VALUES (-669,'type','MqNative');
+INSERT INTO rbac_predicate_attribute VALUES (-669,'type','MqNative','eq');
 INSERT INTO rbac_permission VALUES (-670,0,-650,'READ',NULL,'SECURE_PASSWORD');
 
 

@@ -23,6 +23,10 @@ INSERT INTO sink_config VALUES (-811,0,'sspc','Process Controller Log','FILE',0,
 ALTER TABLE audit_message DROP FOREIGN KEY message_context_mapping;
 ALTER TABLE audit_message DROP COLUMN mapping_values_oid ;
 
+-- RBAC enhancements
+ALTER TABLE rbac_predicate_attribute ADD COLUMN mode varchar(255);
+ALTER TABLE rbac_role ADD COLUMN user_created tinyint(1) NOT NULL default 0;
+
 --
 -- Reenable FK at very end of script
 --

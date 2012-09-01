@@ -3,127 +3,130 @@
  */
 package com.l7tech.console.security.rbac;
 
-import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 class ScopeDialog extends JDialog {
     private JPanel mainPanel;
     private JButton okButton;
     private JButton cancelButton;
 
-    private JRadioButton allRadioButton;
-
-    private JRadioButton specificRadioButton;
-    private JButton specificFindButton;
-    private JPanel specificPanel;
-    private JTextField specificText;
-
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
 
-    private final List<ScopePredicate> scope = new ArrayList<ScopePredicate>();
+    private boolean confirmed = false;
     private Permission permission;
-    private ListModel emptyListModel = new DefaultListModel();
-    private RadioListener radioListener;
-    private EntityHeader specificEntity;
     private final EntityType entityType;
-    private JRadioButton attributeRadioButton;
-    private JTextField attrValue;
-    private JLabel attrNameLabel;
-    private JLabel attrValueLabel;
-    private JComboBox attrNamesList;
-    private JTextField folderText;
-    private JButton folderFindButton;
-    private JRadioButton folderRadioButton;
-    private JCheckBox transitiveCheckBox;
+    private EntityHeader specificEntity;
+    private JScrollPane scopesTableScrollPane;
+    private JTable scopesTable;
+    private JButton removeButton;
+    private JButton editButton;
+    private JButton addButton;
+    private JRadioButton noScopePredicatesRadioButton;
+    private JRadioButton scopePredicatesRadioButton;
+    private JRadioButton scopeSpecificRadioButton;
+    private JPanel specificPanel;
+    private JTextField specificText;
+    private JButton specificFindButton;
 
-    public ScopeDialog(Frame owner, Permission perm, EntityType etype) throws HeadlessException {
+    private SimpleTableModel<ScopePredicate> scopesTableModel;
+
+    static final String OPTION_FOLDER = resources.getString("scopeDialog.scope.folder.option");
+    static final String OPTION_FOLDER_ANCESTRY = resources.getString("scopeDialog.scope.folderAncestry.option");
+    static final String OPTION_ATTRIBUTE = resources.getString("scopeDialog.scope.attribute.option");
+
+    // Scope predicates to offer for folderable entities
+    private static final String[] SCOPE_OPTION_TYPES_FOLDER = {
+        OPTION_FOLDER,
+        OPTION_FOLDER_ANCESTRY,
+        OPTION_ATTRIBUTE
+    };
+
+    // Scope predicates to offer for EntityType.ANY
+    private static final String[] SCOPE_OPTION_TYPES_ANY = {
+        OPTION_FOLDER,   // Folder predicate will fail at runtime to grant permission for any non-folderable entity type
+        OPTION_ATTRIBUTE
+    };
+
+    // Scope predicates to offer for any other non-folderable entity type
+    private static final String[] SCOPE_OPTION_TYPES_NO_FOLDER = {
+        OPTION_ATTRIBUTE
+    };
+
+    public ScopeDialog(Window owner, Permission perm, EntityType etype) throws HeadlessException {
         super(owner);
         this.permission = perm;
-        this.scope.addAll(perm.getScope());
         this.entityType = etype;
         initialize();
     }
 
-    public ScopeDialog(Dialog owner, Permission perm, EntityType etype) throws HeadlessException {
-        super(owner);
-        this.permission = perm;
-        this.scope.addAll(perm.getScope());
-        this.entityType = etype;
-        initialize();
-    }
-
-    private class RadioListener implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
+    private final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
+        @Override
+        public void run() {
             enableDisable();
         }
-    }
+    });
 
     private void initialize() {
-        setupAttributeNames();
+        setTitle(resources.getString("scopeDialog.title"));
         setModal(true);
-        radioListener = new RadioListener();
 
         Utilities.equalizeButtonSizes(okButton, cancelButton);
 
-        setRadioText(allRadioButton, true);
-        setRadioText(specificRadioButton, false);
-        setRadioText(attributeRadioButton, true);
-        setRadioText(folderRadioButton, true);
+        noScopePredicatesRadioButton.addActionListener(changeListener);
+        scopePredicatesRadioButton.addActionListener(changeListener);
+        scopeSpecificRadioButton.addActionListener(changeListener);
 
-        allRadioButton.addActionListener(radioListener);
-        specificRadioButton.addActionListener(radioListener);
-        attributeRadioButton.addActionListener(radioListener);
-        folderRadioButton.addActionListener(radioListener);
-        transitiveCheckBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (scope.isEmpty()) return;
-                ScopePredicate pred = scope.get(0);
-                if (pred instanceof FolderPredicate) {
-                    FolderPredicate fp = (FolderPredicate)pred;
-                    fp.setTransitive(transitiveCheckBox.isSelected());
-                }
-            }
-        });
+        updateButtonLabel(noScopePredicatesRadioButton, true);
+        updateButtonLabel(scopeSpecificRadioButton, false);
+        updateButtonLabel(scopePredicatesRadioButton, true);
 
-        if (scope.size() == 0) {
-            allRadioButton.setSelected(true);
-        } else {
-            if (scope.get(0) instanceof ObjectIdentityPredicate) {
-                if (scope.size() > 1) throw new RuntimeException("Found an ObjectIdentityPredicate in a scope with size > 1");
-                specificRadioButton.setSelected(true);
-                specificText.setText(getSpecificLabel());
-            } else if (scope.get(0) instanceof FolderPredicate) {
-                folderRadioButton.setSelected(true);
-                folderText.setText(getFolderLabel());
-                transitiveCheckBox.setSelected(((FolderPredicate)scope.get(0)).isTransitive());
-            } else if (scope.get(0) instanceof AttributePredicate) {
-                AttributePredicate ap = (AttributePredicate)scope.get(0);
-                attributeRadioButton.setSelected(true);
-                attrNamesList.setSelectedItem(ap.getAttribute());
-                attrValue.setText(ap.getValue());
-            }
-        }
+        //noinspection unchecked
+        scopesTableModel = TableUtil.configureTable(
+            scopesTable,
+            TableUtil.column("Type", 100, 100, 500, scopeTypeGetter),
+            TableUtil.column("Value", 200, 300, 9999, scopeValueGetter)
+        );
+
+        final boolean allowSpecificScope = !EntityType.ANY.equals(entityType);
+        scopeSpecificRadioButton.setEnabled(allowSpecificScope);
+        scopeSpecificRadioButton.setVisible(allowSpecificScope);
+        specificPanel.setVisible(allowSpecificScope);
+
+        Set<ScopePredicate> scopes = permission.getScope();
+        boolean haveAnyScope = scopes != null && scopes.size() > 0;
+        ObjectIdentityPredicate scopeSpecific = findSpecificScope(scopes);
+        specificEntity = scopeSpecific == null ? null : scopeSpecific.getHeader();
+        if (specificEntity != null)
+            specificText.setText(specificEntity.getName());
+        boolean haveSpecificScope = scopeSpecific != null;
+        boolean haveCustomScope = haveAnyScope && !haveSpecificScope;
+        scopesTableModel.setRows(haveCustomScope ? new ArrayList<ScopePredicate>(scopes) : new ArrayList<ScopePredicate>());
+        scopesTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        scopesTable.getSelectionModel().addListSelectionListener(changeListener);
+
+        noScopePredicatesRadioButton.setSelected(!haveAnyScope);
+        scopeSpecificRadioButton.setSelected(haveSpecificScope);
+        scopePredicatesRadioButton.setSelected(haveAnyScope && !haveSpecificScope);
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -139,6 +142,9 @@ class ScopeDialog extends JDialog {
 
         specificFindButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                if (EntityType.ANY.equals(entityType))
+                    return;
+
                 final FindEntityDialog fed = new FindEntityDialog(ScopeDialog.this, entityType, null);
                 fed.pack();
                 Utilities.centerOnScreen(fed);
@@ -147,8 +153,6 @@ class ScopeDialog extends JDialog {
                         EntityHeader header = fed.getSelectedEntityHeader();
                         specificEntity = header;
                         if (header != null) {
-                            scope.clear();
-                            scope.add(new ObjectIdentityPredicate(permission, header.getOid()));
                             specificText.setText(header.getName());
                         }
                     }
@@ -156,27 +160,64 @@ class ScopeDialog extends JDialog {
             }
         });
 
-        folderFindButton.addActionListener(new ActionListener() {
+        removeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
-                final FindEntityDialog fed = new FindEntityDialog(ScopeDialog.this, EntityType.FOLDER, null);
-                fed.pack();
-                Utilities.centerOnScreen(fed);
-                DialogDisplayer.display(fed, new Runnable() {
-                    public void run() {
-                        EntityHeader header = fed.getSelectedEntityHeader();
-                        if (header != null) {
-                            Folder folder;
-                            try {
-                                folder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(header.getOid());
-                            } catch (FindException e1) {
-                                throw new RuntimeException("Couldn't lookup Folder", e1);
+                int row = scopesTable.getSelectedRow();
+                if (row >= 0)
+                    scopesTableModel.removeRowAt(row);
+            }
+        });
+
+        editButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int row = scopesTable.getSelectedRow();
+                ScopePredicate scope = scopesTableModel.getRowObject(row);
+                if (scope != null) {
+                    doEditScope(scope, row);
+                }
+            }
+        });
+
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final String[] optionTypes = EntityType.ANY.equals(entityType) ? SCOPE_OPTION_TYPES_ANY :
+                    canHaveFolder(entityType) ? SCOPE_OPTION_TYPES_FOLDER :
+                        SCOPE_OPTION_TYPES_NO_FOLDER;
+
+                final DialogDisplayer.OptionListener optionListener = new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option >= 0) {
+                            ScopePredicate scope;
+
+                            String optionStr = optionTypes[option];
+                            if (OPTION_ATTRIBUTE.equals(optionStr)) {
+                                scope = new AttributePredicate(permission, null, "");
+                            } else if (OPTION_FOLDER.equals(optionStr)) {
+                                scope = new FolderPredicate(permission, null, true);
+                            } else if (OPTION_FOLDER_ANCESTRY.equals(optionStr)) {
+                                scope = new EntityFolderAncestryPredicate(permission, entityType, -1L);
+                            } else {
+                                throw new IllegalStateException("Unknown option: " + optionStr + " index " + option);
                             }
-                            scope.clear();
-                            scope.add(new FolderPredicate(permission, folder, transitiveCheckBox.isSelected()));
-                            folderText.setText(header.getName());
+
+                            doEditScope(scope, -1);
                         }
                     }
-                });
+                };
+
+                DialogDisplayer.showOptionDialog(addButton,
+                    resources.getString("scopeDialog.add.scope.text"),
+                    resources.getString("scopeDialog.add.scope.title"),
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    optionTypes,
+                    null,
+                    optionListener);
             }
         });
 
@@ -185,81 +226,119 @@ class ScopeDialog extends JDialog {
         add(mainPanel);
     }
 
-    private void setupAttributeNames() {
-        List<String> names = new ArrayList<String>();
+    /**
+     * Check whether the specified entity type supports folder ancestry.
+     * This currently assumes that any entity type that can be placed in a folder will be assignable to HasFolder.
+     *
+     * @param entityType the entity type to check.  Required.
+     * @return true if it makes sense to have folder ancestor predicates for entities of this type.
+     */
+    public static boolean canHaveFolder(@NotNull EntityType entityType) {
+        return HasFolder.class.isAssignableFrom(entityType.getEntityClass());
+    }
 
-        Class eClazz = entityType.getEntityClass();
-        try {
-            BeanInfo info = Introspector.getBeanInfo(eClazz);
-            PropertyDescriptor[] props = info.getPropertyDescriptors();
-            for (PropertyDescriptor propertyDescriptor : props) {
-                Method getter = propertyDescriptor.getReadMethod();
-                if (getter != null)
-                    //there is a getter for this property, so use it in the list
-                    names.add(propertyDescriptor.getName());
+    private ObjectIdentityPredicate findSpecificScope(Set<ScopePredicate> scopes) {
+        ObjectIdentityPredicate oip = null;
+
+        if (scopes != null) {
+            for (ScopePredicate scope : scopes) {
+                if (scope instanceof ObjectIdentityPredicate) {
+                    oip = (ObjectIdentityPredicate) scope;
+                    break;
+                }
             }
-            attrNamesList.setModel(new DefaultComboBoxModel(names.toArray(new String[0])));
-        } catch (IntrospectionException e) {
-            e.printStackTrace();
         }
+
+        return oip;
     }
 
-    private void setRadioText(JRadioButton rb, boolean plural) {
-        rb.setText(MessageFormat.format(rb.getText(), plural ? entityType.getPluralName() : entityType.getName()));
-    }
+    private void doEditScope(ScopePredicate scope, final int existingRow) {
+        final OkCancelDialog<? extends ScopePredicate> dlg;
 
-    private String getSpecificLabel() {
-        if (scope.size() != 1  || !(scope.get(0) instanceof ObjectIdentityPredicate)) return "";
-        ObjectIdentityPredicate oidp = (ObjectIdentityPredicate) scope.get(0);
-        return oidp.toString();
-    }
+        if (scope instanceof AttributePredicate) {
+            AttributePredicate attributePredicate = (AttributePredicate) scope;
+            dlg = new OkCancelDialog<AttributePredicate>(this, "Restrict Permission by Attribute", true, new ScopeAttributePanel(attributePredicate, entityType));
+        } else if (scope instanceof FolderPredicate) {
+            FolderPredicate folderPredicate = (FolderPredicate) scope;
+            dlg = new OkCancelDialog<FolderPredicate>(this, "Restrict Permission by Folder", true, new ScopeFolderPanel(folderPredicate, entityType));
+        } else if (scope instanceof EntityFolderAncestryPredicate) {
+            EntityFolderAncestryPredicate entityFolderAncestryPredicate = (EntityFolderAncestryPredicate) scope;
+            dlg = new OkCancelDialog<EntityFolderAncestryPredicate>(this, "Restrict Permission to Folder Ancestors", true, new ScopeEntityFolderAncestryPanel(entityFolderAncestryPredicate, entityType));
+        } else if (scope instanceof ObjectIdentityPredicate) {
+            throw new UnsupportedOperationException("Unable to add ObjectIdentityPredicate as custom scope");
+        } else {
+            throw new UnsupportedOperationException("Unsupported scope predicate type: " + scope.getClass().getName());
+        }
 
-    private String getFolderLabel() {
-        if (scope.size() != 1  || !(scope.get(0) instanceof FolderPredicate)) return "";
-        FolderPredicate fp = (FolderPredicate) scope.get(0);
-        return fp.getFolder().getName();
+        dlg.pack();
+        Utilities.centerOnParentWindow(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                if (!dlg.wasOKed())
+                    return;
+
+                ScopePredicate newScope = dlg.getValue();
+                if (existingRow >= 0) {
+                    scopesTableModel.setRowObject(existingRow, newScope);
+                } else {
+                    scopesTableModel.addRow(newScope);
+                }
+            }
+        });
     }
 
     private void enableDisable() {
-        specificFindButton.setEnabled(specificRadioButton.isSelected());
-        specificText.setText(specificRadioButton.isSelected() ? getSpecificLabel() : "");
-        specificText.setEnabled(specificRadioButton.isSelected());
+        final boolean hasSpecificScope = scopeSpecificRadioButton.isSelected();
+        specificPanel.setEnabled(hasSpecificScope);
+        specificFindButton.setEnabled(hasSpecificScope);
 
-        attrNameLabel.setEnabled(attributeRadioButton.isSelected());
-        attrValueLabel.setEnabled(attributeRadioButton.isSelected());
-        attrNamesList.setEnabled(attributeRadioButton.isSelected());
-        attrValue.setEnabled(attributeRadioButton.isSelected());
-
-        folderFindButton.setEnabled(folderRadioButton.isSelected());
-        folderText.setText(folderRadioButton.isSelected() ? getFolderLabel() : "");
-        folderText.setEnabled(folderRadioButton.isSelected());
-        transitiveCheckBox.setEnabled(folderRadioButton.isSelected());
+        boolean hasCustomScopes = scopePredicatesRadioButton.isSelected();
+        scopesTableScrollPane.setEnabled(hasCustomScopes);
+        scopesTable.setEnabled(hasCustomScopes);
+        addButton.setEnabled(hasCustomScopes);
+        editButton.setEnabled(hasCustomScopes && scopesTable.getSelectedRow() >= 0);
+        removeButton.setEnabled(hasCustomScopes && scopesTable.getSelectedRow() >= 0);
     }
 
     void ok() {
-        if (attributeRadioButton.isSelected()) {
-            addAttributePredicate();
-        }
         permission.getScope().clear();
-        permission.getScope().addAll(scope);
+
+        if (scopeSpecificRadioButton.isSelected() && specificEntity != null) {
+            final ObjectIdentityPredicate pred = new ObjectIdentityPredicate(permission, specificEntity.getOid());
+            pred.setHeader(specificEntity);
+            permission.getScope().add(pred);
+        } else if (scopePredicatesRadioButton.isSelected()) {
+            permission.getScope().addAll(scopesTableModel.getRows());
+        }
+
+        confirmed = true;
         dispose();
     }
 
-    private void addAttributePredicate() {
-        AttributePredicate aPred = new AttributePredicate(permission, (String) attrNamesList.getSelectedItem(), attrValue.getText());
-        scope.add(aPred);
-    }
-
     void cancel() {
-        permission = null;
         dispose();
     }
 
     public Permission getPermission() {
-        return permission;
+        return confirmed ? permission : null;
     }
 
-    public EntityHeader getSpecificEntity() {
-        return specificEntity;
+    private Functions.Unary<String, ScopePredicate> scopeTypeGetter = new Functions.Unary<String, ScopePredicate>() {
+        @Override
+        public String call(ScopePredicate sp) {
+            return sp.getClass().getSimpleName();
+        }
+    };
+
+    private Functions.Unary<String, ScopePredicate> scopeValueGetter = new Functions.Unary<String, ScopePredicate>() {
+        @Override
+        public String call(ScopePredicate sp) {
+            return sp.toString();
+        }
+    };
+
+    private void updateButtonLabel(AbstractButton button, boolean plural) {
+        button.setText(MessageFormat.format(button.getText(), plural ? entityType.getPluralName() : entityType.getName()));
     }
 }

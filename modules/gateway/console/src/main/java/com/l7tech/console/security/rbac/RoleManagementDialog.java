@@ -1,23 +1,27 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.util.Filter;
 import com.l7tech.console.util.FilterListModel;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.security.rbac.RbacUtilities;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.PauseListenerAdapter;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.util.Functions;
-import com.l7tech.console.panels.PermissionFlags;
-import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.util.Functions;
+import com.l7tech.util.TextUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
-import javax.swing.table.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.TableColumn;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
@@ -51,6 +55,8 @@ public class RoleManagementDialog extends JDialog {
     };
     private final DefaultListModel roleListModel = new DefaultListModel();
     private final FilterListModel<RoleModel> filteredListRoleModel = new FilterListModel<RoleModel>(roleListModel);
+    private final boolean canEditRoles = RbacUtilities.isEnableRoleEditing();
+    private final boolean canEditBuiltinRoles = RbacUtilities.isEnableBuiltInRoleEditing();
     private RoleAssignmentTableModel roleAssignmentTableModel;
 
     public RoleManagementDialog(final Window parent) throws HeadlessException {
@@ -63,7 +69,7 @@ public class RoleManagementDialog extends JDialog {
         add(mainPanel);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
-        enableRoleManagmentButtons(RbacUtilities.isEnableRoleEditing());
+        enableRoleManagmentButtons(canEditRoles);
 
         // reset cached identity provider names
         IdentityHolder.reset();
@@ -234,7 +240,9 @@ public class RoleManagementDialog extends JDialog {
         boolean validRowSelected = roleList.getModel().getSize() != 0 &&
                 roleList.getSelectedValue() != null;
 
-        boolean canRemovePermissions = flags.canDeleteSome();
+        boolean customRole = validRowSelected && ((RoleModel)roleList.getSelectedValue()).role.isUserCreated();
+
+        boolean canRemovePermissions = flags.canDeleteSome() && (customRole || canEditBuiltinRoles);
 
         removeRole.setEnabled(canRemovePermissions && validRowSelected);
         editRole.setEnabled(validRowSelected);
@@ -248,22 +256,27 @@ public class RoleManagementDialog extends JDialog {
 
         JButton srcButton = (JButton) source;
         if (srcButton == addRole) {
-            showEditDialog(new Role(), new Functions.UnaryVoid<Role>() {
+            final Role role = new Role();
+            role.setUserCreated(true);
+            showEditDialog(role, new Functions.UnaryVoid<Role>() {
                 @Override
                 public void call(Role newRole) {
-                    if (newRole != null) populateList();
+                    if (newRole != null)
+                        populateList();
                     updatePropertiesSummary();
                 }
             });
         } else if (srcButton == editRole) {
-            showEditDialog(getSelectedRole(), new Functions.UnaryVoid<Role>() {
+            final Role selectedRole = getSelectedRole();
+            if (selectedRole == null)
+                return;
+            showEditDialog(selectedRole, new Functions.UnaryVoid<Role>() {
                 @Override
                 public void call(Role r) {
 
                     if (r != null){
                         populateList();
-                        RoleModel sel = (RoleModel) roleList.getSelectedValue();
-                        roleList.setSelectedValue(sel, true);
+                        roleList.setSelectedValue(r, true);
                         updatePropertiesSummary();
                         setUpRoleAssignmentTable(r);
                     }
@@ -271,7 +284,17 @@ public class RoleManagementDialog extends JDialog {
             });
         } else if (srcButton == removeRole) {
             final Role selectedRole = getSelectedRole();
-            if (selectedRole == null) return;
+            if (selectedRole == null)
+                return;
+            if (!selectedRole.isUserCreated() && !canEditBuiltinRoles) {
+                DialogDisplayer.showMessageDialog(
+                    this,
+                    "Roles built into or created automatically by the Gateway may not be removed.  Only custom roles may be removed.",
+                    "Not a Custom Role",
+                    JOptionPane.WARNING_MESSAGE,
+                    null );
+                return;
+            }
             Utilities.doWithConfirmation(
                 this,
                 resources.getString("manageRoles.deleteTitle"),
@@ -364,6 +387,9 @@ public class RoleManagementDialog extends JDialog {
 
         @Override
         public String toString() {
+            if (role.isUserCreated()) {
+                return "<HTML><b>(Custom)</b> " + TextUtils.escapeHtmlSpecialCharacters(name);
+            }
             return name;
         }
 

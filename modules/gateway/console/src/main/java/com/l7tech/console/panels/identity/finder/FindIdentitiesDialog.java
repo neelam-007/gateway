@@ -4,26 +4,26 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.panels.*;
+import com.l7tech.console.panels.EditorDialog;
+import com.l7tech.console.panels.EntityEditorPanel;
+import com.l7tech.console.panels.GroupPanel;
+import com.l7tech.console.panels.UserPanel;
 import com.l7tech.console.table.DynamicTableModel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.UserNode;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.LimitExceededMarkerIdentityHeader;
+import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.map;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.none;
-import static com.l7tech.util.Option.some;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -40,6 +40,10 @@ import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.some;
 
 /**
  * Find Dialog
@@ -353,6 +357,7 @@ public class FindIdentitiesDialog extends JDialog {
         try {
             final Set<IdentityHeader> tableModelHeaders;
             final EntityHeaderSet<IdentityHeader> headers =
+                    info.getProviderEntry() == null ? new EntityHeaderSet<IdentityHeader>() :
                     getIdentityAdmin().searchIdentities( info.getProviderEntry().getOid(), types, searchName);
             if (headers.isMaxExceeded()) {
                 tableModelHeaders = new LinkedHashSet<IdentityHeader>();
@@ -710,7 +715,10 @@ public class FindIdentitiesDialog extends JDialog {
                 @Override
                 public synchronized boolean isAuthorized() {
                     final int rows[] = searchResultTable.getSelectedRows();
-                    config = ((ProviderEntry)providersComboBox.getSelectedItem()).getConfig();
+                    final ProviderEntry providerEntry = (ProviderEntry) providersComboBox.getSelectedItem();
+                    if (providerEntry == null)
+                        return false;
+                    config = providerEntry.getConfig();
                     for (int i = 0; rows != null && i < rows.length; i++) {
                         final int row = rows[i];
                         EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
