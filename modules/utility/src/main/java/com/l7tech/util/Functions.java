@@ -859,7 +859,7 @@ public final class Functions {
                     return getterTransform(prop.getReadMethod());
             throw new IllegalArgumentException("Class " + clazz + " has no property named " + property);
         } catch (IntrospectionException e) {
-            throw new IllegalArgumentException("Unable to instrospect class " + clazz + ": " + ExceptionUtils.getMessage(e));
+            throw new IllegalArgumentException("Unable to instrospect class " + clazz + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 
