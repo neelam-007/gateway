@@ -3,6 +3,7 @@ package com.l7tech.server.util;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Config;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.core.io.Resource;
 
 import javax.sql.DataSource;
@@ -138,7 +139,7 @@ public class DerbyDbHelper {
 
             if ( created ) {
                 runScripts( connection, createScripts, false );
-            } else if ( config.getBooleanProperty("em.server.db.updates", false) ) {
+            } else if ( config.getBooleanProperty("em.server.db.updates", false) || SyspropUtil.getBoolean("com.l7tech.server.db.updates", false) ) {
                 runScripts( connection, updateScripts, config.getBooleanProperty( "em.server.db.updatesDeleted", true ) );
             }
         } catch ( SQLException se ) {
