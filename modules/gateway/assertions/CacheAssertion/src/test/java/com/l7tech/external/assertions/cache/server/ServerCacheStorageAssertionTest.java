@@ -32,6 +32,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
 
+    private final Long maxEntryAgeMillis = 100000000L * 1000L;
     private TestAudit testAudit;
 
     private PolicyEnforcementContext initPolicyContext() {
@@ -138,15 +139,26 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
     @Test
     public void testMaxSecondValue() throws Exception {
         PolicyEnforcementContext policyContext = initPolicyContext();
-        policyContext.setVariable("xyz", "-1");
-        final Long maxAge = 100000000L * 1000L;
-        final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("2", String.valueOf(maxAge), "34323");
+        final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("2", String.valueOf(maxEntryAgeMillis), "34323");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
         for (String s : testAudit) {
             System.out.println(s);
         }
 
         assertEquals(AssertionStatus.NONE, status);
+    }
+
+    /**
+     * Tests the boundary condition of the maximum entry age milliseconds.
+     * @throws Exception
+     */
+    @Test
+    public void testMaxSecondValueBoundaryCondition() throws Exception {
+        PolicyEnforcementContext policyContext = initPolicyContext();
+        final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("2", String.valueOf(maxEntryAgeMillis + 1), "3");
+        AssertionStatus status = serverAssertion.checkRequest(policyContext);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_ERROR));
+        assertEquals(AssertionStatus.FAILED, status);
     }
 
 }
