@@ -115,15 +115,15 @@ public class FederatedGroupMembership extends GroupMembership {
 
     public static final class FederatedGroupMembershipPK implements Serializable {
         private long thisGroupProviderOid;
-        private String thisGroupId;
-        private String memberUserId;
+        private long thisGroupId;
+        private long memberUserId;
 
         public FederatedGroupMembershipPK() {            
         }
 
         public FederatedGroupMembershipPK( final long thisGroupProviderOid,
-                                           final String thisGroupId,
-                                           final String memberUserId ) {
+                                           final long thisGroupId,
+                                           final long memberUserId ) {
             this.thisGroupProviderOid = thisGroupProviderOid;
             this.thisGroupId = thisGroupId;
             this.memberUserId = memberUserId;
@@ -141,21 +141,21 @@ public class FederatedGroupMembership extends GroupMembership {
 
         @Id
         @Column(name="fed_group_oid",nullable=false)
-        public String getThisGroupId() {
+        public long getThisGroupId() {
             return thisGroupId;
         }
 
-        public void setThisGroupId(String thisGroupId) {
+        public void setThisGroupId(long thisGroupId) {
             this.thisGroupId = thisGroupId;
         }
 
         @Id
         @Column(name="fed_user_oid",nullable=false)
-        public String getMemberUserId() {
+        public long getMemberUserId() {
             return memberUserId;
         }
 
-        public void setMemberUserId(String memberUserId) {
+        public void setMemberUserId(long memberUserId) {
             this.memberUserId = memberUserId;
         }
 
@@ -167,17 +167,17 @@ public class FederatedGroupMembership extends GroupMembership {
             FederatedGroupMembershipPK that = (FederatedGroupMembershipPK) o;
 
             if (thisGroupProviderOid != that.thisGroupProviderOid) return false;
-            if (!memberUserId.equals(that.memberUserId)) return false;
-            if (!thisGroupId.equals(that.thisGroupId)) return false;
+            if (memberUserId != that.memberUserId) return false;
+            if (thisGroupId != that.thisGroupId) return false;
 
             return true;
         }
 
+        @Override
         public int hashCode() {
-            int result;
-            result = (int) (thisGroupProviderOid ^ (thisGroupProviderOid >>> 32));
-            result = 31 * result + thisGroupId.hashCode();
-            result = 31 * result + memberUserId.hashCode();
+            int result = (int) (thisGroupProviderOid ^ (thisGroupProviderOid >>> 32));
+            result = 31 * result + (int) (thisGroupId ^ (thisGroupId >>> 32));
+            result = 31 * result + (int) (memberUserId ^ (memberUserId >>> 32));
             return result;
         }
     }
