@@ -38,12 +38,16 @@ class CryptoJWrapper {
     public static final String PROP_NON_FIPS_LIB_PATH = "com.l7tech.security.prov.rsa.libpath.nonfips";
     public static final String PROP_CERTJ_PATH = "com.l7tech.security.prov.rsa.libpath.certj";
     public static final String PROP_SSLJ_PATH = "com.l7tech.security.prov.rsa.libpath.sslj";
+    public static final String PROP_CRYPTOJCE_PATH = "com.l7tech.security.prov.rsa.libpath.cryptojce";
+    public static final String PROP_CRYPTOJCOMMON_PATH = "com.l7tech.security.prov.rsa.libpath.cryptojcommon";
     public static final String PROP_DISABLE_BLACKLISTED_SERVICES = "com.l7tech.security.prov.rsa.disableServices";
 
     static final String FIPS_LIB_PATH = ConfigFactory.getProperty( PROP_FIPS_LIB_PATH, null );
     static final String NON_FIPS_LIB_PATH = ConfigFactory.getProperty( PROP_NON_FIPS_LIB_PATH, null );
     static final String SSLJ_LIB_PATH = ConfigFactory.getProperty( PROP_SSLJ_PATH, replaceFilename( NON_FIPS_LIB_PATH, "sslj-6.0.jar" ) );
     static final String CERTJ_LIB_PATH = ConfigFactory.getProperty( PROP_CERTJ_PATH, replaceFilename( NON_FIPS_LIB_PATH, "certj-6.0.jar" ) );
+    static final String CRYPTOJCE_LIB_PATH = ConfigFactory.getProperty( PROP_CRYPTOJCE_PATH, replaceFilename( NON_FIPS_LIB_PATH, "cryptojce-6.0.0.1.jar" ) );
+    static final String CRYPTOJCOMMON_LIB_PATH = ConfigFactory.getProperty( PROP_CRYPTOJCOMMON_PATH, replaceFilename( NON_FIPS_LIB_PATH, "cryptojcommon-6.0.0.1.jar" ) );
     static final boolean DISABLE_BLACKLISTED_SERVICES = ConfigFactory.getBooleanProperty( PROP_DISABLE_BLACKLISTED_SERVICES, true );
 
     static final String CLASSNAME_CRYPTOJ = "com.rsa.jsafe.crypto.CryptoJ";
@@ -98,6 +102,8 @@ class CryptoJWrapper {
             throw new IllegalArgumentException("Crypto library path not found: " + file.getAbsolutePath());
         List<URL> jarUrls = new ArrayList<URL>();
         jarUrls.add(file.toURI().toURL());
+        addRequiredLib( jarUrls, CRYPTOJCOMMON_LIB_PATH );
+        addRequiredLib( jarUrls, CRYPTOJCE_LIB_PATH );
         addRequiredLib( jarUrls, SSLJ_LIB_PATH );
         addRequiredLib( jarUrls, CERTJ_LIB_PATH );
         return new URLClassLoader(jarUrls.toArray(new URL[jarUrls.size()]));
