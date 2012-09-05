@@ -159,9 +159,9 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         if (!justSaved.isActive() && isNameEmpty(justSaved))
             num++; // We won't try to delete the one we just saved, but if it would otherwise be a deletion candidate, it still uses up a slot
 
-        if (num > numToKeep) {
+        if (num >= numToKeep) {
             for (PolicyVersion revision : revisions) {
-                if (num > numToKeep && revision.getPolicyOid() == policyOid && revision.getOid() != justSavedOid) {
+                if (revision.getPolicyOid() == policyOid && revision.getOid() != justSavedOid) {
                     delete(revision);
                     num--;
                     if (num <= numToKeep)
