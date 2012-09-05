@@ -229,11 +229,12 @@
                     &lt;L7p:QueryString stringValue="${sigQuery}"/&gt;
                     &lt;L7p:RequestUrl stringValue="${url}"/&gt;
                     &lt;/L7p:GenerateOAuthSignatureBaseString&gt;
-                    &lt;L7p:GenerateHash&gt;
-                    &lt;L7p:DataToSignText stringValue="${oauth.sigBaseString}"/&gt;
+                    &lt;L7p:GenerateSecurityHash&gt;
+                    &lt;L7p:Base64Data stringValue="JHtvYXV0aC5zaWdCYXNlU3RyaW5nfQ=="/&gt;
                     &lt;L7p:KeyText stringValue="${consumer_key_secret}&amp;amp;${token_secret}"/&gt;
-                    &lt;L7p:VariableName stringValue="signature"/&gt;
-                    &lt;/L7p:GenerateHash&gt;
+                    &lt;L7p:LineBreak lineBreak="CR-LF"/&gt;
+                    &lt;L7p:TargetOutputVariable stringValue="signature"/&gt;
+                    &lt;/L7p:GenerateSecurityHash&gt;
                     &lt;L7p:EncodeDecode&gt;
                     &lt;L7p:SourceVariableName stringValue="signature"/&gt;
                     &lt;L7p:TargetDataType variableDataType="string"/&gt;

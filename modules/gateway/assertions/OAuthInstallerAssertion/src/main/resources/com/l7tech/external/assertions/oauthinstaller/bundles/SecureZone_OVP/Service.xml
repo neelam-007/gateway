@@ -3391,11 +3391,12 @@
                     &lt;L7p:UsageMode usageMode="SERVER"/&gt;
                     &lt;L7p:UseMessageTarget booleanValue="false"/&gt;
                     &lt;/L7p:GenerateOAuthSignatureBaseString&gt;
-                    &lt;L7p:GenerateHash&gt;
-                    &lt;L7p:DataToSignText stringValue="${oauth.sigBaseString}"/&gt;
+                    &lt;L7p:GenerateSecurityHash&gt;
+                    &lt;L7p:Base64Data stringValue="JHtvYXV0aC5zaWdCYXNlU3RyaW5nfQ=="/&gt;
                     &lt;L7p:KeyText stringValue="${secrets}"/&gt;
-                    &lt;L7p:VariableName stringValue="signature"/&gt;
-                    &lt;/L7p:GenerateHash&gt;
+                    &lt;L7p:LineBreak lineBreak="CR-LF"/&gt;
+                    &lt;L7p:TargetOutputVariable stringValue="signature"/&gt;
+                    &lt;/L7p:GenerateSecurityHash&gt;
                     &lt;L7p:AuditDetailAssertion&gt;
                     &lt;L7p:Detail stringValue="Comparison did not match: ${signature} is equal to
                     ${request.http.parameter.oauth_signature}, url: ${request.http.parameter.url}, params:
