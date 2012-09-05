@@ -49,9 +49,9 @@ public class RequireEmbeddedSignatureWizardStepPanel extends WizardStepPanel {
 
     @Override
     public String getDescription() {
-        return "Configure whether the Non SOAP SAML assertion must contain an embedded signature or not." +
-                " If configured then there must be a Signature element which is a child of the Assertion element that covers " +
-                "the SAML Assertion.";
+        return "Configure whether the SAML assertion must contain an embedded signature or\n" +
+                "not. If configured then there must be a Signature element which is a child of\n" +
+                "the Assertion element that signs the SAML Assertion.";
     }
 
     // - PRIVATE
