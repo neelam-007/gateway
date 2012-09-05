@@ -36,7 +36,7 @@ public class AddValidateNonSoapSamlAssertionAdvice implements Advice {
                       new SubjectConfirmationWizardStepPanel(
                         new SubjectConfirmationNameIdentifierWizardStepPanel(
                           new ConditionsWizardStepPanel(
-                            new RequireEmbeddedSignatureWizardStepPanel(null))))))))));
+                            new RequireEmbeddedSignatureWizardStepPanel(null))))))))), false, false);
 
         final Wizard w = new SamlPolicyAssertionWizard(assertion, f, p, false);
         w.addWizardListener(new WizardAdapter() {

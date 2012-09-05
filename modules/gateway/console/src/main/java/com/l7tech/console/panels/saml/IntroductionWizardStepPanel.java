@@ -22,19 +22,25 @@ public class IntroductionWizardStepPanel extends WizardStepPanel {
     private JLabel descriptionLabel;
     private JLabel extraTextLabel;
     private boolean issueMode;
+    private final boolean isSoap;
 
     /**
      * Creates new form WizardPanel
      */
-    public IntroductionWizardStepPanel(WizardStepPanel next, boolean issueMode) {
+    public IntroductionWizardStepPanel(WizardStepPanel next, boolean issueMode, boolean isSoap) {
         super(next);
         this.issueMode = issueMode;
+        this.isSoap = isSoap;
         setShowDescriptionPanel(false);
         setLayout(new BorderLayout());
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);
         initialize();
 
+    }
+
+    public IntroductionWizardStepPanel(WizardStepPanel next, boolean issueMode) {
+        this(next, issueMode, true);
     }
 
     public IntroductionWizardStepPanel(WizardStepPanel next) {
@@ -48,9 +54,15 @@ public class IntroductionWizardStepPanel extends WizardStepPanel {
             titleLabel.setText("Welcome to the SAML wizard.");
             extraTextLabel.setVisible(false);
         } else {
+            if (isSoap) {
+                titleLabel.setText("Welcome to the SAML Token Profile Wizard.");
+            } else {
+                titleLabel.setText("Welcome to the Validate SAML Assertion Wizard.");
+            }
+
             descriptionLabel.setText("<html>This wizard assists in specifying a SAML assertion and any " +
-                                     "associated <br>requirements and/or conditions against which the " +
-                                     "assertion is validated.</html>");
+                    "associated <br>requirements and/or conditions against which the " +
+                    "assertion is validated.</html>");
         }
     }
 
