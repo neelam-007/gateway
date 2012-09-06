@@ -43,7 +43,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         throwIfNullOrBlank(assertion.getRequestUrl(), "Request Url");
         throwIfNullOrBlank(assertion.getHttpMethod(), "Http method");
         throwIfNullOrBlank(assertion.getVariablePrefix(), "Variable prefix");
-        if(assertion.getUsageMode() == null){
+        if (assertion.getUsageMode() == null) {
             throw new PolicyAssertionException(assertion, "Usage mode cannot be null");
         }
         this.timeSource = new TimeSource();
@@ -63,9 +63,9 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
             final String requestUrl = ExpandVariables.process(assertion.getRequestUrl(), variableMap, audit);
             try {
                 final String encodedUrl = percentEncode(normalizeUrl(requestUrl));
-                final TreeMap<String, String> sortedParameters = getSortedParameters(variableMap, audit, context);
-                final String requestType = getRequestType(sortedParameters);
+                final TreeMap<String, Set<String>> sortedParameters = getSortedParameters(variableMap, audit, context);
                 validateParameters(sortedParameters);
+                final String requestType = getRequestType(sortedParameters);
 
                 final StringBuilder stringBuilder = new StringBuilder(httpMethod);
                 stringBuilder.append(AMPERSAND).append(encodedUrl).append(AMPERSAND);
@@ -74,9 +74,9 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
                 // set context variables
                 context.setVariable(assertion.getVariablePrefix() + "." + SIG_BASE_STRING, stringBuilder.toString());
                 context.setVariable(assertion.getVariablePrefix() + "." + REQUEST_TYPE, requestType);
-                for (final Map.Entry<String, String> entry : sortedParameters.entrySet()) {
+                for (final Map.Entry<String, Set<String>> entry : sortedParameters.entrySet()) {
                     if (entry.getKey().startsWith("oauth_")) {
-                        context.setVariable(assertion.getVariablePrefix() + "." + entry.getKey(), entry.getValue());
+                        context.setVariable(assertion.getVariablePrefix() + "." + entry.getKey(), entry.getValue().iterator().next());
                     }
                 }
             } catch (final DuplicateParameterException e) {
@@ -145,7 +145,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
      * @param sortedParameters the oauth parameters.
      * @return the request type based on the oauth parameters present.
      */
-    private String getRequestType(final TreeMap<String, String> sortedParameters) {
+    private String getRequestType(final TreeMap<String, Set<String>> sortedParameters) {
         String requestType;
         if (sortedParameters.get(OAUTH_TOKEN) != null) {
             if (sortedParameters.get(OAUTH_VERIFIER) != null) {
@@ -170,7 +170,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
      * @throws NoSuchVariableException if the request target message cannot be retrieved.
      */
     @SuppressWarnings({"JavaDoc"})
-    private TreeMap<String, String> getSortedParameters(final Map<String, Object> variableMap, final Audit audit, final PolicyEnforcementContext context)
+    private TreeMap<String, Set<String>> getSortedParameters(final Map<String, Object> variableMap, final Audit audit, final PolicyEnforcementContext context)
             throws IOException, NoSuchVariableException, DuplicateParameterException {
         final List<Pair<String, String>> unsortedParameters = new ArrayList<Pair<String, String>>();
         addParams(unsortedParameters, getQueryString(variableMap));
@@ -185,13 +185,12 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
 
         logAndAudit(AssertionMessages.OAUTH_PARAMETERS, unsortedParameters.toString());
 
-        final TreeMap<String, String> sortedParameters = new TreeMap<String, String>();
+        final TreeMap<String, Set<String>> sortedParameters = new TreeMap<String, Set<String>>();
         for (final Pair<String, String> parameter : unsortedParameters) {
-            if (sortedParameters.containsKey(parameter.getKey()) && !sortedParameters.get(parameter.getKey()).equals(parameter.getValue())) {
-                throw new DuplicateParameterException(parameter.getKey(),
-                        Arrays.asList(sortedParameters.get(parameter.getKey()), parameter.getValue()), "Duplicate oauth parameter detected");
+            if (!sortedParameters.containsKey(parameter.getKey())) {
+                sortedParameters.put(parameter.getKey(), new TreeSet<String>());
             }
-            sortedParameters.put(parameter.getKey(), parameter.getValue());
+            sortedParameters.get(parameter.getKey()).add(parameter.getValue());
         }
         // exclude realm and parameters according to the OAUTH 1.0 spec
         sortedParameters.remove(REALM);
@@ -209,7 +208,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
             addManualParam(parameters, OAUTH_CALLBACK, assertion.getOauthCallback(), variableMap, audit);
             addManualParam(parameters, OAUTH_CONSUMER_KEY, assertion.getOauthConsumerKey(), variableMap, audit);
             addManualParam(parameters, OAUTH_NONCE, generateNonce());
-            addManualParam(parameters, OAUTH_SIGNATURE_METHOD, HMAC_SHA1, variableMap, audit);
+            addManualParam(parameters, OAUTH_SIGNATURE_METHOD, assertion.getOauthSignatureMethod(), variableMap, audit);
             addManualParam(parameters, OAUTH_TIMESTAMP, String.valueOf(timeSource.currentTimeMillis() / MILLIS_PER_SEC));
             addManualParam(parameters, OAUTH_TOKEN, assertion.getOauthToken(), variableMap, audit);
             addManualParam(parameters, OAUTH_VERIFIER, assertion.getOauthVerifier(), variableMap, audit);
@@ -318,21 +317,19 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
      * Convert a parameter map to an encoded string.
      */
     @SuppressWarnings({"JavaDoc"})
-    private String buildEncodedParamString(final Map<String, String> parameterMap) throws UnsupportedEncodingException {
+    private String buildEncodedParamString(final TreeMap<String, Set<String>> parameterMap) throws UnsupportedEncodingException {
         final StringBuilder sb = new StringBuilder();
-        int count = 0;
-        for (final Map.Entry<String, String> entry : parameterMap.entrySet()) {
-            sb.append(percentEncode(entry.getKey()));
-            // equals symbol
-            sb.append(EQUALS_ENCODED);
-            sb.append(percentEncode(entry.getValue()));
-            if (count != parameterMap.size() - 1) {
-                // & symbol
+        for (final Map.Entry<String, Set<String>> entry : parameterMap.entrySet()) {
+            final Iterator<String> iterator = entry.getValue().iterator();
+            while (iterator.hasNext()) {
+                sb.append(percentEncode(entry.getKey()));
+                // equals symbol
+                sb.append(EQUALS_ENCODED);
+                sb.append(percentEncode(iterator.next()));
                 sb.append(AMPERSAND_ENCODED);
             }
-            count++;
         }
-        return sb.toString();
+        return sb.substring(0, sb.length() - AMPERSAND_ENCODED.length());
     }
 
     /**
@@ -377,23 +374,32 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         return result;
     }
 
-    private void validateParameters(final TreeMap<String, String> sortedParameters) throws MissingRequiredParameterException, InvalidParameterException {
+    private void validateParameters(final TreeMap<String, Set<String>> sortedParameters) throws DuplicateParameterException, MissingRequiredParameterException, InvalidParameterException {
         for (final String requiredParameter : REQUIRED_PARAMETERS) {
-            if (!sortedParameters.containsKey(requiredParameter) || StringUtils.isBlank(sortedParameters.get(requiredParameter))) {
+            if (!sortedParameters.containsKey(requiredParameter) || sortedParameters.get(requiredParameter).isEmpty() ||
+                    StringUtils.isBlank(sortedParameters.get(requiredParameter).iterator().next())) {
                 throw new MissingRequiredParameterException(requiredParameter, "Missing required oauth parameter");
             }
         }
-        final String foundVersion = sortedParameters.get(OAUTH_VERSION);
+        for (final Map.Entry<String, Set<String>> entry : sortedParameters.entrySet()) {
+            // oauth parameters cannot be specified more than once
+            if(entry.getKey().startsWith("oauth_") && entry.getValue().size() > 1){
+                throw new DuplicateParameterException(entry.getKey(), new ArrayList<String>(entry.getValue()), "Duplicate oauth parameter detected");
+            }
+        }
+        // version is not required
+        final String foundVersion = sortedParameters.get(OAUTH_VERSION) != null ? sortedParameters.get(OAUTH_VERSION).iterator().next() : null;
         if (foundVersion != null && !OAUTH_1_0.equals(foundVersion)) {
             throw new InvalidParameterException(OAUTH_VERSION, foundVersion, OAUTH_VERSION + " must be " + OAUTH_1_0 + " but found: " + foundVersion);
         }
-        final String foundSignatureMethod = sortedParameters.get(OAUTH_SIGNATURE_METHOD);
-        if (!HMAC_SHA1.equals(foundSignatureMethod)) {
-            throw new InvalidParameterException(OAUTH_SIGNATURE_METHOD, foundSignatureMethod, OAUTH_SIGNATURE_METHOD + " must be " + HMAC_SHA1 + " but found: " + foundSignatureMethod);
+        // signature method is required
+        final String foundSignatureMethod = sortedParameters.get(OAUTH_SIGNATURE_METHOD).iterator().next();
+        if (!SIGNATURE_METHODS.contains(foundSignatureMethod.toUpperCase())){
+            throw new InvalidParameterException(OAUTH_SIGNATURE_METHOD, foundSignatureMethod, OAUTH_SIGNATURE_METHOD + " is invalid: " + foundSignatureMethod);
         }
     }
 
-    private void throwIfNullOrBlank(final String toTest, final String fieldName) throws PolicyAssertionException{
+    private void throwIfNullOrBlank(final String toTest, final String fieldName) throws PolicyAssertionException {
         if (StringUtils.isBlank(toTest)) {
             throw new PolicyAssertionException(assertion, fieldName + " cannot be null or empty");
         }
@@ -426,6 +432,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
     private static final String TILDE_ENCODED = "%7E";
     private static final String QUESTION = "?";
     private static final List<String> REQUIRED_PARAMETERS;
+    private static final List<String> SIGNATURE_METHODS;
     private TimeSource timeSource;
 
     /**
@@ -437,5 +444,10 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         REQUIRED_PARAMETERS.add(OAUTH_SIGNATURE_METHOD);
         REQUIRED_PARAMETERS.add(OAUTH_TIMESTAMP);
         REQUIRED_PARAMETERS.add(OAUTH_NONCE);
+
+        SIGNATURE_METHODS = new ArrayList<String>(3);
+        SIGNATURE_METHODS.add(HMAC_SHA1);
+        SIGNATURE_METHODS.add(RSA_SHA1);
+        SIGNATURE_METHODS.add(PLAINTEXT);
     }
 }

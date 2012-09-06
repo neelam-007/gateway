@@ -22,6 +22,7 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
     private JTextField authHeaderTextField;
     private JCheckBox authHeaderCheckBox;
     private JTextField oauthConsumerKeyTextField;
+    private JComboBox oauthSignatureMethodComboBox;
     private JCheckBox oauthVersionCheckBox;
     private JTextField oauthTokenTextField;
     private JTextField oauthCallbackTextField;
@@ -98,6 +99,7 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
         authHeaderCheckBox.setSelected(assertion.isUseAuthorizationHeader());
         authHeaderTextField.setText(assertion.getAuthorizationHeader());
         oauthConsumerKeyTextField.setText(assertion.getOauthConsumerKey());
+        oauthSignatureMethodComboBox.setSelectedItem(assertion.getOauthSignatureMethod());
         oauthVersionCheckBox.setSelected(assertion.isUseOAuthVersion());
         oauthTokenTextField.setText(assertion.getOauthToken());
         oauthCallbackTextField.setText(assertion.getOauthCallback());
@@ -132,6 +134,7 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
 
         // client side only
         assertion.setUseOAuthVersion(oauthVersionCheckBox.isSelected());
+        assertion.setOauthSignatureMethod(oauthSignatureMethodComboBox.getSelectedItem().toString());
         assertion.setOauthConsumerKey(getTrimmedValueOrNull(oauthConsumerKeyTextField));
         assertion.setOauthToken(getTrimmedValueOrNull(oauthTokenTextField));
         assertion.setOauthCallback(getTrimmedValueOrNull(oauthCallbackTextField));

@@ -355,7 +355,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         request.setRequestURI("/photos" + QUERY_STRING);
         request.setMethod(HTTP_METHOD);
         final String body = "oauth_consumer_key=" + CONSUMER_KEY + "&" +
-                "oauth_signature_method=RSA-SHA1&" +
+                "oauth_signature_method=blah&" +
                 "oauth_timestamp=" + TIMESTAMP + "&" +
                 "oauth_nonce=" + NONCE + "&" +
                 "oauth_callback=" + CALLBACK + "&" +
@@ -370,7 +370,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_PARAMETER));
-        assertEquals("Invalid oauth_signature_method: RSA-SHA1", (String) policyContext.getVariable("oauth.error"));
+        assertEquals("Invalid oauth_signature_method: blah", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
@@ -1020,6 +1020,46 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
         assertCommonVariables("oauth");
         assertContextVariablesDoNotExist("oauth." + OAUTH_CALLBACK, "oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
+    }
+
+    @Test
+    public void paramWithMultipleValues() throws Exception {
+        setParamsForRequestToken(assertion);
+        assertion.setQueryString(QUERY_STRING + ",a=secondvalue");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3Dfirst%26a%3Dsecondvalue%26" +
+                "oauth_callback%3D" + CALLBACK_ENCODED + "%26oauth_consumer_key%3Ddpf43f3p2l4k3l03%26" +
+                "oauth_nonce%3Dstubgeneratednonce%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1000%26" +
+                "oauth_version%3D1.0%26p%3Dmiddle%26z%3Dlast";
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertRequestTokenVariables();
+        assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
+    }
+
+    @Test
+    public void paramWithEmptyValue() throws Exception {
+        setParamsForRequestToken(assertion);
+        assertion.setQueryString(QUERY_STRING + ",x=");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3Dfirst%26" +
+                "oauth_callback%3D" + CALLBACK_ENCODED + "%26oauth_consumer_key%3Ddpf43f3p2l4k3l03%26" +
+                "oauth_nonce%3Dstubgeneratednonce%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1000%26" +
+                "oauth_version%3D1.0%26p%3Dmiddle%26x%3D%26z%3Dlast";
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertRequestTokenVariables();
+        assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
     }
 
     private void assertContextVariablesDoNotExist(final String... names) throws NoSuchVariableException {

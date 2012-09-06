@@ -6,7 +6,6 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 
@@ -16,7 +15,6 @@ import java.util.Arrays;
 public class GenerateOAuthSignatureBaseStringAssertion extends Assertion implements UsesVariables, SetsVariables {
     public static final String SIG_BASE_STRING = "sigBaseString";
     public static final String REQUEST_TYPE = "requestType";
-    public static final String HMAC_SHA1 = "HMAC-SHA1";
     public static final String OAUTH_1_0 = "1.0";
     public static final String OAUTH_CALLBACK = "oauth_callback";
     public static final String OAUTH_CONSUMER_KEY = "oauth_consumer_key";
@@ -31,6 +29,9 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
     public static final String AUTHORIZED_REQUEST_TOKEN = "authorized request token";
     public static final String ACCESS_TOKEN = "access token";
     public static final String ERROR = "error";
+    public static final String HMAC_SHA1 = "HMAC-SHA1";
+    public static final String RSA_SHA1 = "RSA-SHA1";
+    public static final String PLAINTEXT = "PLAINTEXT";
 
     public static enum UsageMode {
         /**
@@ -166,6 +167,14 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
         this.oauthConsumerKey = oauthConsumerKey;
     }
 
+    public String getOauthSignatureMethod() {
+        return oauthSignatureMethod;
+    }
+
+    public void setOauthSignatureMethod(final String oauthSignatureMethod) {
+        this.oauthSignatureMethod = oauthSignatureMethod;
+    }
+
     public String getOauthToken() {
         return oauthToken;
     }
@@ -232,6 +241,7 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
     // applies to CLIENT
     private boolean useOAuthVersion = true;
     private String oauthConsumerKey;
+    private String oauthSignatureMethod = HMAC_SHA1;
     private String oauthToken;
     private String oauthCallback;
     private String oauthVerifier;
