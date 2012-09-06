@@ -246,8 +246,11 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         sortNodes(nodes, serviceNodes, serviceAliasNodes, policyNodes, policyNodesWithInclude,
                 policyAliasNodes, folderNodes);
 
+        final int totalNodes = serviceNodes.size() + serviceAliasNodes.size() + policyNodes.size() +
+                policyNodesWithInclude.size() + policyAliasNodes.size() + folderNodes.size();
+
         final List<ServiceHeader> servicesInUDDI = new ArrayList<ServiceHeader>();
-        if (nodes.size() > 1){
+        if (totalNodes > 1 && !serviceNodes.isEmpty()){
             //find out if any have uddi data
             final Set<Long> serviceIds = new HashSet<Long>();
             for(final ServiceNode serviceNode: serviceNodes){
