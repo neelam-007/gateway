@@ -45,7 +45,7 @@ public class CreateIncludeFragmentAction extends NodeAction {
     private final CompositeAssertionTreeNode parentNode;
 
     public CreateIncludeFragmentAction(final AssertionTreeNode assertionNode) {
-        super(assertionNode, "Create Include Fragment", "Create Include Fragment", "com/l7tech/console/resources/folder.gif");
+        super(assertionNode, "Create Included Fragment", "Create Include Fragment", "com/l7tech/console/resources/folder.gif");
         this.assertionNode = assertionNode;
         final TreeNode parent = assertionNode.getParent();
         if (parent instanceof CompositeAssertionTreeNode) {
