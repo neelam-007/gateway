@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.WsdlComposer;
+import com.l7tech.gui.util.DialogDisplayer;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -171,6 +172,15 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
      */
     public String getStepLabel() {
         return "Definition";
+    }
+
+    @Override
+    public boolean onNextButton() {
+        if(targetNameSpaceField.getText().trim().isEmpty()){
+            DialogDisplayer.display(new JOptionPane("Target Namespace can not be empty."), this, "Error", null);
+            return false;
+        }
+        return super.onNextButton();
     }
 
 }

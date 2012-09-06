@@ -7,6 +7,7 @@ import com.l7tech.console.util.WsdlComposer;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.xmlviewer.Viewer;
+import org.apache.commons.lang.StringUtils;
 import org.dom4j.DocumentException;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -94,8 +95,12 @@ public class WsdlCreateWizard extends Wizard {
                 public void actionPerformed(ActionEvent e) {
                     // ensure model is up to date
                     getSelectedWizardPanel().storeSettings(wizardInput);
+                    final String tns = ((WsdlComposer)wizardInput).getTargetNamespace();
+                    if(StringUtils.isEmpty(tns)){
+                        DialogDisplayer.display(new JOptionPane("Target Namespace can not be empty."), getSelectedWizardPanel(), "Error", null);
+                        return;
+                    }
                     collect();
-
                     // 
                     try {
                         WSDLFactory fac = wsdlComposer.getWsdlFactory();
