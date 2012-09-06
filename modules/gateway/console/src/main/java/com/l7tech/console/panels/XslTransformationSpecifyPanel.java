@@ -298,7 +298,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
     }
 
     private synchronized static void docIsXsl(Document doc, String xsltVersion) throws SAXException {
-        final java.util.List<String> errors = new ArrayList<>();
+        final java.util.List<String> errors = new ArrayList<String>();
         try {
             final ErrorListener errorListener = new ErrorListener() {
                 @Override
