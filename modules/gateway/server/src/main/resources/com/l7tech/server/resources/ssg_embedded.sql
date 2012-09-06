@@ -42,7 +42,7 @@ create table audit_main (
     time bigint not null,
     name varchar(255),
     nodeid varchar(32) not null,
-    signature varchar(175),
+    signature varchar(1024),
     audit_level varchar(12) not null,
     user_id varchar(255),
     user_name varchar(255),
