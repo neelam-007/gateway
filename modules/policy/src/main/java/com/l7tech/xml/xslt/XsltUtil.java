@@ -43,7 +43,7 @@ public class XsltUtil {
      * @throws SAXException if the stylesheet could not be parsed as XML.
      */
     public static List<String> getVariablesUsedByStylesheet(String xslSrc, String xsltVersion) throws TransformerConfigurationException, IOException, SAXException, ParseException {
-        TransformerFactory tf = createTransformerFactory(xsltVersion);
+        TransformerFactory tf = createTransformerFactory(xsltVersion, true);
         tf.setURIResolver( new URIResolver(){
             public Source resolve( String href, String base ) throws TransformerException {
                 return new StreamSource(new StringReader("<a xsl:version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"/>"));
@@ -82,15 +82,17 @@ public class XsltUtil {
         } else if (templates instanceof PreparedStylesheet) {
             PreparedStylesheet ps = (PreparedStylesheet) templates;
             HashMap<StructuredQName, GlobalVariable> cgv = ps.getCompiledGlobalVariables();
-            for (Map.Entry<StructuredQName, GlobalVariable> gve : cgv.entrySet()) {
-                StructuredQName qn = gve.getKey();
-                GlobalVariable gv = gve.getValue();
+            if (cgv != null) {
+                for (Map.Entry<StructuredQName, GlobalVariable> gve : cgv.entrySet()) {
+                    StructuredQName qn = gve.getKey();
+                    GlobalVariable gv = gve.getValue();
 
-                // Only mark an xsl:param as needing an external value provided if it does not include an initializer of its own
-                Expression expr = gv.getSelectExpression();
-                final boolean isEmptyStringLiteral = expr instanceof StringLiteral && (expr.toString().isEmpty() || expr.toString().equals("\"\""));
-                if (isEmptyStringLiteral)
-                    vars.add(qn.getLocalPart());
+                    // Only mark an xsl:param as needing an external value provided if it does not include an initializer of its own
+                    Expression expr = gv.getSelectExpression();
+                    final boolean isEmptyStringLiteral = expr instanceof StringLiteral && (expr.toString().isEmpty() || expr.toString().equals("\"\""));
+                    if (isEmptyStringLiteral)
+                        vars.add(qn.getLocalPart());
+                }
             }
         } else {
             throw new IllegalArgumentException("Compiled XSLT was not a recognized Xalan or Saxon stylesheet class -- can't get declared variables");
@@ -102,10 +104,16 @@ public class XsltUtil {
      * Create a TransformerFactory that can be used to compile a stylesheet.
      *
      * @param xsltVersion the XSLT version we expect to have to compile, or null if not known.  If null, the system default TransformerFactory will be used.
+     * @param useSharedConfiguration for Saxon, true if a shared global Configuration should be used; false if a new Configuration should be created
+     *                               just for this transformer factory.
+     *                               <p/>
+     *                               The Gateway should always use a shared configuration to use the shared NamePool.
+     *                               <p/>
+     *                               The SSM may choose to use a fresh configuration in order to use a custom error listener for each compile.
      * @return a new TransformerFactory configured for safety.  Its configuration can be overridden before it is used.  Never null.
      * @throws TransformerConfigurationException if a transformer factory could not be created.
      */
-    public static TransformerFactory createTransformerFactory(@Nullable String xsltVersion) throws TransformerConfigurationException {
+    public static TransformerFactory createTransformerFactory(@Nullable String xsltVersion, boolean useSharedConfiguration) throws TransformerConfigurationException {
         final boolean useSaxon = shouldUseSaxon(xsltVersion);
         final Class<TransformerFactoryImpl> factoryClass = useSaxon ? TransformerFactoryImpl.class : null;
         TransformerFactory transfactory = factoryClass == null
@@ -113,7 +121,7 @@ public class XsltUtil {
                 : TransformerFactory.newInstance(factoryClass.getName(), factoryClass.getClassLoader());
 
         if (useSaxon) {
-            SaxonUtils.configureSecureSaxonTransformerFactory(transfactory);
+            SaxonUtils.configureSecureSaxonTransformerFactory(transfactory, useSharedConfiguration);
         }
 
         transfactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
@@ -138,14 +146,19 @@ public class XsltUtil {
      *
      * @param doc a DOM Document that might contain an XSLT stylesheet.  Required.
      * @param xsltVersion minimum XLST version required to compile this stylesheet, or null to assume the system default TransformerFactory can handle it.
+     * @param errorListener custom error listener to set, or null.
      * @throws TransformerConfigurationException if the stylesheet could not be compiled
      * @throws ParseException if the stylesheet could not be compiled
      * @throws IOException if an I/O error occurs while parsing the stylesheet XML.  This is probably impossible in practice given that the input is a string.
      * @throws SAXException if the stylesheet could not be parsed as XML.
      */
-    public static void checkXsltSyntax(@NotNull Document doc, @Nullable String xsltVersion) throws TransformerConfigurationException, IOException, SAXException, ParseException {
-        TransformerFactory tf = createTransformerFactory(xsltVersion);
-        tf.setErrorListener(new DefaultErrorHandler(true));
+    public static void checkXsltSyntax(@NotNull Document doc, @Nullable String xsltVersion, @Nullable ErrorListener errorListener) throws TransformerConfigurationException, IOException, SAXException, ParseException {
+        TransformerFactory tf = createTransformerFactory(xsltVersion, false);
+        if (errorListener != null) {
+            tf.setErrorListener(errorListener);
+        } else {
+            tf.setErrorListener(new DefaultErrorHandler(true));
+        }
         tf.setURIResolver( new URIResolver(){
             public Source resolve( String href, String base ) throws TransformerException {
                 return new StreamSource(new StringReader("<a xsl:version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"/>"));

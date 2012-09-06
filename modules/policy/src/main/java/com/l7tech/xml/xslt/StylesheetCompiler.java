@@ -79,7 +79,7 @@ public class StylesheetCompiler {
         // Prepare a software template
         try {
             // Configure transformer
-            TransformerFactory transfactory = XsltUtil.createTransformerFactory(xsltVersion);
+            TransformerFactory transfactory = XsltUtil.createTransformerFactory(xsltVersion, true);
 
             // create the XSL transform template
             Templates result = transfactory.newTemplates(new DOMSource(document));

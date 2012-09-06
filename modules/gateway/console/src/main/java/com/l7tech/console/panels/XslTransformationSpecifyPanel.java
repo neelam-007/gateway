@@ -22,16 +22,20 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.TextUtils;
 import com.l7tech.xml.xslt.XsltUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
+import javax.xml.transform.ErrorListener;
+import javax.xml.transform.TransformerException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -293,12 +297,28 @@ public class XslTransformationSpecifyPanel extends JPanel {
         docIsXsl(doc, xsltVersion);
     }
 
-    private static void docIsXsl(Document doc, String xsltVersion) throws SAXException {
+    private synchronized static void docIsXsl(Document doc, String xsltVersion) throws SAXException {
+        final java.util.List<String> errors = new ArrayList<>();
         try {
-            XsltUtil.checkXsltSyntax(doc, xsltVersion);
+            final ErrorListener errorListener = new ErrorListener() {
+                @Override
+                public void warning(TransformerException exception) throws TransformerException {
+                    errors.add("Warning: " + ExceptionUtils.getMessage(exception));
+                }
+
+                @Override
+                public void error(TransformerException exception) throws TransformerException {
+                    errors.add("Error: " + ExceptionUtils.getMessage(exception));
+                }
+
+                @Override
+                public void fatalError(TransformerException exception) throws TransformerException {
+                    errors.add("Fatal: " + ExceptionUtils.getMessage(exception));
+                }
+            };
+            XsltUtil.checkXsltSyntax(doc, xsltVersion, errorListener);
         } catch (Exception e) {
-            throw new SAXException(ExceptionUtils.getMessage(e), e);
+            throw new SAXException(ExceptionUtils.getMessage(e) + "\n" + TextUtils.join("\n", errors), e);
         }
     }
-
 }

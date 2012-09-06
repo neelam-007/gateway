@@ -54,22 +54,22 @@ public class XsltUtilTest {
 
     @Test
     public void testCheckXsltSyntax() throws Exception {
-        XsltUtil.checkXsltSyntax(XmlUtil.stringAsDocument(TEST_XSLT_10), "1.0");
+        XsltUtil.checkXsltSyntax(XmlUtil.stringAsDocument(TEST_XSLT_10), "1.0", null);
     }
 
     @Test(expected = ParseException.class)
     public void testCheckXsltSyntaxBad() throws Exception {
-        XsltUtil.checkXsltSyntax(XmlUtil.stringAsDocument(TEST_XSLT_10.replace("xsl:stylesheet", "xsl:stilesheet")), "1.0");
+        XsltUtil.checkXsltSyntax(XmlUtil.stringAsDocument(TEST_XSLT_10.replace("xsl:stylesheet", "xsl:stilesheet")), "1.0", null);
     }
 
     @Test
     public void testCheckXsltSyntaxXS20() throws Exception {
-        XsltUtil.checkXsltSyntax(XmlUtil.stringAsDocument(TEST_XSLT_20), "2.0");
+        XsltUtil.checkXsltSyntax(XmlUtil.stringAsDocument(TEST_XSLT_20), "2.0", null);
     }
 
     @Test(expected = ParseException.class)
     public void testCheckXsltSyntaxBadXS20() throws Exception {
-        XsltUtil.checkXsltSyntax(XmlUtil.stringAsDocument(TEST_XSLT_20.replace("xsl:copy", "xsl:floppy")), "2.0");
+        XsltUtil.checkXsltSyntax(XmlUtil.stringAsDocument(TEST_XSLT_20.replace("xsl:copy", "xsl:floppy")), "2.0", null);
     }
 
 }

@@ -60,12 +60,17 @@ public class SaxonUtils {
      * Configure the specified Saxon TransformerFactory to be secure, to the extent possible, even when processing
      * not-entirely-trusted stylesheets.
      *
+     *
      * @param transfactory a Saxon TransformerFactory.  Required.
+     * @param useSharedConfiguration true to use the global shared Configuration; false to create a new one for this factory.
      * @throws TransformerConfigurationException if an error occurs while attempting to configure the transformer factory.
      */
-    public static void configureSecureSaxonTransformerFactory(@NotNull TransformerFactory transfactory) throws TransformerConfigurationException {
+    public static void configureSecureSaxonTransformerFactory(@NotNull TransformerFactory transfactory, boolean useSharedConfiguration) throws TransformerConfigurationException {
         // Share global configuration for now
-        transfactory.setAttribute(FeatureKeys.CONFIGURATION, getConfiguration());
+        final Configuration config = useSharedConfiguration
+                                        ? getConfiguration()
+                                        : Configuration.newConfiguration();
+        transfactory.setAttribute(FeatureKeys.CONFIGURATION, config);
 
         // disable calls to reflexive Java extension functions, system property access, relative result-document URIs, and XSLT extension instructions
         transfactory.setFeature(FeatureKeys.ALLOW_EXTERNAL_FUNCTIONS, false);
