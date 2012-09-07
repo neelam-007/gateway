@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+        >
+    <soapenv:Body>
+        <addPlayer xmlns="http://playerstatsws.test.l7tech.com"><![CDATA["#"]]>
+            <player>
+                <FName>John</FName>
+                <LName>SqlAttack</LName>
+                <age>30</age>
+                <dob>1975-02-02</dob>
+                <draftDetails>
+                    <pick>23</pick>
+                    <round>1</round>
+                    <team>Islanders</team>
+                    <year>1993</year>
+                </draftDetails>
+                <number>923</number>
+                <offensiveStats>
+                    <assists>43</assists>
+                    <gamesPlayed>69</gamesPlayed>
+                    <goals>17</goals>
+                    <penaltyMins>122</penaltyMins>
+                    <plusMinus>21</plusMinus>
+                    <points>60</points>
+                </offensiveStats>
+                <physicalStats>
+                    <height>6-3</height>
+                    <position>RW</position>
+                    <shoots>Left</shoots>
+                    <weight>245</weight>
+                </physicalStats>
+            </player>
+            <delay>0</delay>
+        </addPlayer>
+    </soapenv:Body>
+</soapenv:Envelope>

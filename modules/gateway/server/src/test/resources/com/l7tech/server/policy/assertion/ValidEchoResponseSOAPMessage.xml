@@ -1,0 +1,7 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <soap:Body>
+        <Echo2Response xmlns="http://echoall.com/ws">
+            <Echo2Result>Echo!</Echo2Result>
+        </Echo2Response>
+    </soap:Body>
+</soap:Envelope>
