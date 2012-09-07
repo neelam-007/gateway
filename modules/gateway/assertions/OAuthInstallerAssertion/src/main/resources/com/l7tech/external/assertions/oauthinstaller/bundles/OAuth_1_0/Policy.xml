@@ -585,10 +585,6 @@
                     &lt;L7p:VariableToSet stringValue="oauth_consumer_key"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtvYXV0aC5hdXRoSGVhZGVyfQ=="/&gt;
-                    &lt;L7p:VariableToSet stringValue="authorizationHeader"/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtvYXV0aC5vYXV0aF90aW1lc3RhbXB9"/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth_timestamp"/&gt;
                     &lt;/L7p:SetVariable&gt;
@@ -598,40 +594,9 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="b2F1dGhfY29uc3VtZXJfa2V5PSR7b2F1dGhfY29uc3VtZXJfa2V5fSZvYXV0aF90aW1lc3RhbXA9JHtvYXV0aF90aW1lc3RhbXB9Jm9hdXRoX25vbmNlPSR7b2F1dGhfbm9uY2V9Jm9hdXRoX3NpZ25hdHVyZT0ke29hdXRoX3NpZ25hdHVyZX0mb2F1dGhfc2lnbmF0dXJlX21ldGhvZD0ke29hdXRoX3NpZ25hdHVyZV9tZXRob2R9"/&gt;
+                    stringValue="b2F1dGhfc2lnbmF0dXJlPSR7b2F1dGhfc2lnbmF0dXJlfSZvYXV0aF9jb25zdW1lcl9rZXk9JHtvYXV0aC5vYXV0aF9jb25zdW1lcl9rZXl9"/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
                     &lt;/L7p:SetVariable&gt;
-                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${oauth.oauth_version}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtvYXV0aF9wYXJhbXN9Jm9hdXRoX3ZlcnNpb249JHtvYXV0aC5vYXV0aF92ZXJzaW9ufQ=="/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;L7p:TrueAssertion/&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="set oauth_version"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:OneOrMore&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
@@ -646,11 +611,6 @@
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtvYXV0aC5vYXV0aF9jYWxsYmFja30="/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth_callback"/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtvYXV0aF9wYXJhbXN9Jm9hdXRoX2NhbGxiYWNrPSR7b2F1dGgub2F1dGhfY2FsbGJhY2t9"/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -680,12 +640,8 @@
                     &lt;L7p:VariableToSet stringValue="oauth_verifier"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtvYXV0aF9wYXJhbXN9Jm9hdXRoX3Rva2VuPSR7b2F1dGhfdG9rZW59"/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="JHtvYXV0aF9wYXJhbXN9Jm9hdXRoX3ZlcmlmaWVyPSR7b2F1dGhfdmVyaWZpZXJ9"/&gt;
+                    stringValue="JHtvYXV0aF9wYXJhbXN9Jm9hdXRoX3Rva2VuPSR7b2F1dGhfdG9rZW59Jm9hdXRoX3ZlcmlmaWVyPSR7b2F1dGhfdmVyaWZpZXJ9"/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth_params"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
@@ -733,9 +689,15 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth.sigBaseString"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth.sigBaseString"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="JHtvYXV0aF9wYXJhbXN9Jm1ldGhvZD0ke3JlcXVlc3QuaHR0cC5tZXRob2R9JnVybD0ke3VybH0ke3F1ZXJ5fQ=="/&gt;
+                    stringValue="JHtvYXV0aF9wYXJhbXN9JnNpZ25hdHVyZUJhc2VTdHJpbmc9JHtvYXV0aC5zaWdCYXNlU3RyaW5nfQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="params"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;

@@ -13,8 +13,10 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.xpath.*;
+import java.io.UnsupportedEncodingException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,12 +44,20 @@ public class OAuthToolkitIntegrationTest {
     private static final String ACCESS_TOKEN_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/token";
     private static final String CLIENT_DOWNLOAD_RESOURCE = "https://" + BASE_URL + ":8443/oauth/v1/client?state=download";
     private static final String OTK_CLIENT_CALLBACK = "https://" + BASE_URL + ":8443/oauth/v1/client?state=authorized";
-    private static final String AUTH_HEADER = "OAuth realm=\"http://" + BASE_URL + "\",oauth_consumer_key=\"acf89db2-994e-427b-ac2c-88e6101f9433\",oauth_signature_method=\"HMAC-SHA1\",oauth_timestamp=\"1344979213\",oauth_nonce=\"ca6e55f3-3e1c-41d6-8584-41c7e2611d34\",oauth_callback=\"https://" + BASE_URL + ":8443/oauth/v1/client?state=authorized\",oauth_version=\"1.0\",oauth_signature=\"" + SIGNATURE + "\"";
+    private static String OTK_CLIENT_CALLBACK_ENCODED;
+    static {
+        try {
+            OTK_CLIENT_CALLBACK_ENCODED = URLEncoder.encode(OTK_CLIENT_CALLBACK, "UTF-8");
+        } catch (final UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
+    private static final String AUTH_HEADER = "OAuth realm=\"http://" + BASE_URL + "\",oauth_consumer_key=\"acf89db2-994e-427b-ac2c-88e6101f9433\",oauth_signature_method=\"HMAC-SHA1\",oauth_timestamp=\"1344979213\",oauth_nonce=\"ca6e55f3-3e1c-41d6-8584-41c7e2611d34\",oauth_callback=\"" + OTK_CLIENT_CALLBACK_ENCODED + "\",oauth_version=\"1.0\",oauth_signature=\"" + SIGNATURE + "\"";
     private static final String USER = "admin";
     private static final String PASSWORD = "password";
     private static final String OTK_CLIENT_CONSUMER_KEY = "acf89db2-994e-427b-ac2c-88e6101f9433";
-
     private GenericHttpClient client;
+
     private PasswordAuthentication passwordAuthentication;
 
     @Before
