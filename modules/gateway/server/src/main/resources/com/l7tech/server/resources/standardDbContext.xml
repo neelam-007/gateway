@@ -72,4 +72,8 @@
         <constructor-arg ref="clusterNodeId"/>
     </bean>
 
+    <bean id="auditExporterDbDialect" class="com.l7tech.server.audit.AuditExporterImpl$Dialect" factory-method="valueOf">
+        <constructor-arg value="MYSQL"/>
+    </bean>
+
 </beans>

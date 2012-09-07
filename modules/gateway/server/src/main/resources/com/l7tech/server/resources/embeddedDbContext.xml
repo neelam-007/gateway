@@ -70,4 +70,8 @@
 
     <bean id="serviceMetricsServices" class="com.l7tech.server.service.DisabledServiceMetricsServices"/>
 
+    <bean id="auditExporterDbDialect" class="com.l7tech.server.audit.AuditExporterImpl$Dialect" factory-method="valueOf">
+        <constructor-arg value="DERBY"/>
+    </bean>
+
 </beans>

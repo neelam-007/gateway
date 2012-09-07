@@ -1296,6 +1296,7 @@
     </bean>
     <!-- server side audit exporter -->
     <bean id="auditExporter" class="com.l7tech.server.audit.AuditExporterImpl" scope="prototype">
+        <constructor-arg index="0" ref="auditExporterDbDialect"/>
         <property name="sessionFactory" ref="sessionFactory"/>
         <property name="config" ref="serverConfig"/>
     </bean>
