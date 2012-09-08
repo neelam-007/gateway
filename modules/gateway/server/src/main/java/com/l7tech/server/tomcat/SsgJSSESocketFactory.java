@@ -1,7 +1,6 @@
 package com.l7tech.server.tomcat;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
-import static com.l7tech.server.tomcat.SsgServerSocketFactory.wrapSocket;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.transport.tls.SsgConnectorSslHelper;
 import com.l7tech.util.ConfigFactory;
@@ -17,6 +16,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Hashtable;
+import java.util.concurrent.TimeUnit;
+
+import static com.l7tech.server.tomcat.SsgServerSocketFactory.wrapSocket;
 
 /**
  * Gateway's TLS socket factory for Tomcat, which knows how to obtain key, cert and socket information with the rest of the SSG.
@@ -96,15 +98,19 @@ public class SsgJSSESocketFactory extends org.apache.tomcat.util.net.ServerSocke
         protected final synchronized void initialize() throws IOException {
             if (sslHelper != null)
                 return;
+            HttpTransportModule httpTransportModule = null;
             try {
                 transportModuleId = getRequiredLongAttr(HttpTransportModule.CONNECTOR_ATTR_TRANSPORT_MODULE_ID);
                 connectorOid = getRequiredLongAttr(HttpTransportModule.CONNECTOR_ATTR_CONNECTOR_OID);
-                HttpTransportModule httpTransportModule = HttpTransportModule.getInstance(transportModuleId);
+                httpTransportModule = HttpTransportModule.getInstance(transportModuleId);
                 if (httpTransportModule == null)
                     throw new IllegalStateException("No HttpTransportModule with ID " + transportModuleId + " was found");
                 SsgConnector ssgConnector = httpTransportModule.getActiveConnectorByOid(connectorOid);
                 sslHelper = new SsgConnectorSslHelper(httpTransportModule, ssgConnector);
             } catch (Exception e) {
+                if (httpTransportModule != null)
+                    httpTransportModule.reportMisconfiguredConnector(connectorOid);
+                delay(TimeUnit.SECONDS.toMillis(30));
                 throw new IOException("Unable to initialize TLS socket factory: " + ExceptionUtils.getMessage(e), e);
             }
         }
@@ -118,6 +124,14 @@ public class SsgJSSESocketFactory extends org.apache.tomcat.util.net.ServerSocke
 
         private long getRequiredLongAttr(String attrName) {
             return Long.parseLong(getRequiredStringAttr(attrName));
+        }
+    }
+
+    private static void delay(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

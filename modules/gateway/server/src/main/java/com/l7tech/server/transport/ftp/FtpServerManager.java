@@ -32,7 +32,6 @@ import org.apache.ftpserver.listener.ConnectionManager;
 import org.apache.ftpserver.listener.Listener;
 import org.apache.ftpserver.listener.mina.MinaConnection;
 import org.apache.mina.common.support.BaseIoSession;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationEvent;
 
 import java.io.IOException;
@@ -122,9 +121,9 @@ public class FtpServerManager extends TransportModule {
     }
 
     @Override
-    public void reportMisconfiguredConnector(@NotNull SsgConnector connector) {
-        logger.log(Level.WARNING, "Shutting down FTP connector for control port " + connector.getPort() + " because it cannot be opened with its current configuration");
-        removeConnector(connector.getOid());
+    public void reportMisconfiguredConnector(long connectorOid) {
+        logger.log(Level.WARNING, "Shutting down FTP connector for control port of connector OID " + connectorOid + " because it cannot be opened with its current configuration");
+        removeConnector(connectorOid);
     }
 
     @Override

@@ -537,7 +537,7 @@ public class SsgConnectorSslHelper {
             socket.accept();
             /* NEVER REACHED */
         } catch (SSLException e) {
-            transportModule.reportMisconfiguredConnector(ssgConnector);
+            transportModule.reportMisconfiguredConnector(ssgConnector.getOid());
             throw new IOException(e);
         } catch (Exception e) {
             // Ignore it; it's either the expected SocketTimeoutException, or else something that will recur and

@@ -22,7 +22,6 @@ import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.*;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
@@ -210,9 +209,9 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     }
 
     @Override
-    public void reportMisconfiguredConnector(@NotNull SsgConnector connector) {
+    public void reportMisconfiguredConnector(long connectorOid) {
         // Ignore, can't currently happen for simple raw
-        logger.log(Level.WARNING, "Raw connector reported misconfigured: OID " + connector.getOid());
+        logger.log(Level.WARNING, "Raw connector reported misconfigured: OID " + connectorOid);
     }
 
     private void startInitialConnectors() throws FindException {

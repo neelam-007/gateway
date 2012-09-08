@@ -1,14 +1,11 @@
 package com.l7tech.server.transport.http;
 
-import static com.l7tech.gateway.common.Component.GW_HTTPRECV;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import static com.l7tech.gateway.common.transport.SsgConnector.*;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.DefaultKey;
-import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
@@ -22,10 +19,7 @@ import com.l7tech.server.transport.SsgConnectorActivationListener;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.util.*;
-import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
-import static com.l7tech.util.ExceptionUtils.getDebugException;
 import com.l7tech.util.Functions.UnaryVoid;
-import static com.l7tech.util.ValidationUtils.isValidInteger;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.Connector;
@@ -41,7 +35,6 @@ import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.http11.Http11Protocol;
 import org.apache.naming.resources.FileDirContext;
 import org.apache.tomcat.util.IntrospectionUtils;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 
@@ -64,7 +57,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.gateway.common.Component.GW_HTTPRECV;
 import static com.l7tech.gateway.common.transport.SsgConnector.Endpoint.*;
+import static com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTP;
+import static com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTPS;
+import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
+import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ValidationUtils.isValidInteger;
 
 /**
  * Bean that owns the Tomcat servlet container and all the HTTP/HTTPS connectors.
@@ -992,9 +992,11 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     @Override
-    public void reportMisconfiguredConnector(@NotNull SsgConnector connector) {
-        logger.log(Level.WARNING, "Shutting down HTTP connector for port " + connector.getPort() + " because it cannot be opened with its current configuration");
-        removeConnector(connector.getOid());
+    public void reportMisconfiguredConnector(long connectorOid) {
+        Pair<SsgConnector, Connector> got = activeConnectors.get( connectorOid );
+        String desc = got == null ? null : got.left == null ? null : " (port " + got.left.getPort() + ")";
+        logger.log(Level.WARNING, "Shutting down HTTP connector OID " + connectorOid + desc + " because it cannot be opened with its current configuration");
+        removeConnector(connectorOid);
     }
 
     public static final class WebappClassLoaderEx extends WebappClassLoader {

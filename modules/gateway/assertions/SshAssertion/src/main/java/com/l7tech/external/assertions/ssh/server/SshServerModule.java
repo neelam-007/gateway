@@ -214,9 +214,9 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     }
 
     @Override
-    public void reportMisconfiguredConnector(@NotNull SsgConnector connector) {
+    public void reportMisconfiguredConnector(long connectorOid) {
         // Ignore, can't currently happen for SSH
-        logger.log(Level.WARNING, "SSH connector reported misconfigured: OID " + connector.getOid());
+        logger.log(Level.WARNING, "SSH connector reported misconfigured: OID " + connectorOid);
     }
 
     private void startInitialConnectors() throws FindException {

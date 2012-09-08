@@ -334,9 +334,9 @@ public abstract class TransportModule extends LifecycleBean {
     /**
      * Called by transport level code to notify that a particular connector has a configuration problem that prevents it from being opened in its current configuration.
      *
-     * @param connector the connector that won't open. Required.
+     * @param connectorOid the OID of the connector that won't open.
      */
-    public abstract void reportMisconfiguredConnector(@NotNull SsgConnector connector);
+    public abstract void reportMisconfiguredConnector(long connectorOid);
     
 
     protected String describe( final SsgConnector connector ) {
