@@ -11,6 +11,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.TestTimeSource;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
@@ -1060,6 +1061,42 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
         assertRequestTokenVariables();
         assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
+    }
+
+    @BugNumber(12963)
+    @Test
+    public void requestTokenEmptyOAuthTokenParameter() throws Exception {
+        assertion.setUsageMode(UsageMode.SERVER);
+        assertion.setUseMessageTarget(true);
+        request.setServerName(SERVER_NAME);
+        request.setRequestURI("/photos");
+        request.setQueryString(QUERY_STRING);
+        request.setMethod(HTTP_METHOD);
+        final String body = "oauth_consumer_key=" + CONSUMER_KEY + "&" +
+                "oauth_signature_method=" + SIG_METHOD + "&" +
+                "oauth_timestamp=" + TIMESTAMP + "&" +
+                "oauth_nonce=" + NONCE + "&" +
+                "oauth_callback=" + CALLBACK + "&" +
+                "oauth_version=" + VERSION + "&" +
+                "oauth_token=";
+        request.setContent(body.getBytes());
+        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        request.setMethod("POST");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        final String expected = "POST&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3Dfirst%26" +
+                "oauth_callback%3D" + CALLBACK_ENCODED + "%26oauth_consumer_key%3Ddpf43f3p2l4k3l03%26" +
+                "oauth_nonce%3Dnongeneratednonce%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D2000%26" +
+                "oauth_token%3D%26oauth_version%3D1.0%26p%3Dmiddle%26z%3Dlast";
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertTrue(((String) policyContext.getVariable("oauth." + OAUTH_TOKEN)).isEmpty());
+        assertRequestTokenVariables();
+        assertContextVariablesDoNotExist("oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
     }
 
     private void assertContextVariablesDoNotExist(final String... names) throws NoSuchVariableException {

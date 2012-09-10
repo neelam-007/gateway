@@ -4,6 +4,7 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -38,6 +39,8 @@ public class OAuthToolkitIntegrationTest {
     //private static final String SIGNATURE = "qBZINGunNf/GiqJkf6PXGUsorh8=";
     //private static final String SIGNATURE = "pwvUKSVVqeU4nZsBfbm1Pr6lEpk=";
     private static final String SIGNATURE = "zQQtKbwhcAcDnwzI8gg6f2tBHUQ=";
+    //private static final String SIGNATURE_EMPTY_TOKEN = "zMX7NBnryxDm+x3MJTJx2KP/eQw=";
+    private static final String SIGNATURE_EMPTY_TOKEN = "pMitXg+kdUV34iFDDV6UnuhWkps=";
     private static final String CLIENT_REQUEST_TOKEN = "http://" + BASE_URL + ":8080/oauth/v1/client?state=request_token";
     private static final String REQUEST_TOKEN_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/request";
     private static final String AUTHORIZE_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/authorize";
@@ -300,6 +303,21 @@ public class OAuthToolkitIntegrationTest {
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
         assertEquals("Duplicate oauth parameter: oauth_token", responseBody);
+    }
+
+    @BugNumber(12963)
+    @Test
+    public void requestTokenEndpointEmptyOAuthTokenParameter() throws Exception {
+        // signature generated using OTK client consumer secret
+        final Map<String, String> parameters = createDefaultRequestTokenParameters();
+        parameters.put("oauth_signature", SIGNATURE_EMPTY_TOKEN);
+        parameters.put("oauth_token", "");
+        final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
+        assertEquals(200, response.getStatus());
+
+        final String responseAsString = response.getAsString(false, Integer.MAX_VALUE);
+        final Map<String, String> responseParameters = extractParamsFromString(responseAsString);
+        assertParamsFromRequestTokenEndpoint(responseParameters);
     }
 
     private GenericHttpRequest createAccessTokenEndpointRequest(final Map<String, String> parameters) throws Exception {

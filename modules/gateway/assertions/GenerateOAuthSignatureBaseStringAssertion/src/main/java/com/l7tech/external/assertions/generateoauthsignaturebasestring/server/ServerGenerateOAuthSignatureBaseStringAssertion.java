@@ -147,11 +147,14 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
      */
     private String getRequestType(final TreeMap<String, Set<String>> sortedParameters) {
         String requestType;
-        if (sortedParameters.get(OAUTH_TOKEN) != null) {
+        final Set<String> oauthToken = sortedParameters.get(OAUTH_TOKEN);
+        if (oauthToken != null) {
             if (sortedParameters.get(OAUTH_VERIFIER) != null) {
                 requestType = AUTHORIZED_REQUEST_TOKEN;
-            } else {
+            } else if (!oauthToken.iterator().next().isEmpty()) {
                 requestType = ACCESS_TOKEN;
+            } else {
+                requestType = REQUEST_TOKEN;
             }
         } else {
             requestType = REQUEST_TOKEN;
@@ -383,7 +386,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         }
         for (final Map.Entry<String, Set<String>> entry : sortedParameters.entrySet()) {
             // oauth parameters cannot be specified more than once
-            if(entry.getKey().startsWith("oauth_") && entry.getValue().size() > 1){
+            if (entry.getKey().startsWith("oauth_") && entry.getValue().size() > 1) {
                 throw new DuplicateParameterException(entry.getKey(), new ArrayList<String>(entry.getValue()), "Duplicate oauth parameter detected");
             }
         }
@@ -394,7 +397,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         }
         // signature method is required
         final String foundSignatureMethod = sortedParameters.get(OAUTH_SIGNATURE_METHOD).iterator().next();
-        if (!SIGNATURE_METHODS.contains(foundSignatureMethod.toUpperCase())){
+        if (!SIGNATURE_METHODS.contains(foundSignatureMethod.toUpperCase())) {
             throw new InvalidParameterException(OAUTH_SIGNATURE_METHOD, foundSignatureMethod, OAUTH_SIGNATURE_METHOD + " is invalid: " + foundSignatureMethod);
         }
     }

@@ -409,6 +409,12 @@
                     &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLm9hdXRoX3NpZ25hdHVyZX0="/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth_signature"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth_signature"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth_signature"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;
