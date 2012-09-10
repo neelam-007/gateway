@@ -126,6 +126,43 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     }
 
     @Test
+    public void authorizationHeaderRequestTokenPostNoContentType() throws Exception {
+        setParamsForRequestToken(request, true, false);
+        request.setMethod(POST);
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+        assertion.setUsageMode(UsageMode.SERVER);
+        assertion.setQueryString("${request.url}");
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(buildExpectedString(POST, REQUEST_TOKEN, false), (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertRequestTokenVariables();
+        assertEquals(request.getHeader("Authorization"), policyContext.getVariable("oauth." + AUTH_HEADER));
+        assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER);
+    }
+
+    @Test
+    public void authorizationHeaderRequestTokenUnrecognizedContentType() throws Exception {
+        setParamsForRequestToken(request, true, false);
+        request.setMethod(POST);
+        request.setContentType("unrecognized");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+        assertion.setUsageMode(UsageMode.SERVER);
+        assertion.setQueryString("${request.url}");
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(buildExpectedString(POST, REQUEST_TOKEN, false), (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertRequestTokenVariables();
+        assertEquals(request.getHeader("Authorization"), policyContext.getVariable("oauth." + AUTH_HEADER));
+        assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER);
+    }
+
+    @Test
     public void authorizationHeaderAuthorizedRequestToken() throws Exception {
         setParamsForAuthRequestToken(request, true, false);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));

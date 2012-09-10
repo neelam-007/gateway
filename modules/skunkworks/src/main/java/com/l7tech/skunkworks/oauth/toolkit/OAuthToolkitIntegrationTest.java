@@ -97,7 +97,6 @@ public class OAuthToolkitIntegrationTest {
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(REQUEST_TOKEN_ENDPOINT));
         requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
         requestParams.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader("Authorization", AUTH_HEADER)});
-        requestParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
 
         final GenericHttpResponse response = request.getResponse();

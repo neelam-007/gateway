@@ -246,13 +246,16 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         if (assertion.isUseMessageTarget()) {
             final Message targetMessage = context.getTargetMessage(assertion.getMessageTargetableSupport());
             final HttpServletRequestKnob httpRequestKnob = targetMessage.getKnob(HttpServletRequestKnob.class);
-            final Map<String, String[]> parameterMap = httpRequestKnob.getRequestBodyParameterMap();
-            // parameters retrieved from request knob will be decoded
-            for (final Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
-                // duplicates are checked later
-                for (int i = 0; i < entry.getValue().length; i++) {
-                    // re-encode the parameter
-                    parameters.add(new Pair<String, String>(entry.getKey(), percentEncode(entry.getValue()[i])));
+            final String contentType = httpRequestKnob.getHeaderFirstValue("Content-Type");
+            if (contentType != null) {
+                final Map<String, String[]> parameterMap = httpRequestKnob.getRequestBodyParameterMap();
+                // parameters retrieved from request knob will be decoded
+                for (final Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
+                    // duplicates are checked later
+                    for (int i = 0; i < entry.getValue().length; i++) {
+                        // re-encode the parameter
+                        parameters.add(new Pair<String, String>(entry.getKey(), percentEncode(entry.getValue()[i])));
+                    }
                 }
             }
         }
