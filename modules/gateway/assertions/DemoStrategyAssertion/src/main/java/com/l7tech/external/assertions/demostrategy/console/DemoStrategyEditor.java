@@ -1,22 +1,25 @@
 package com.l7tech.external.assertions.demostrategy.console;
 
 import com.l7tech.common.io.failover.FailoverStrategyEditor;
+import com.l7tech.external.assertions.demostrategy.DemoStrategy;
+import com.l7tech.external.assertions.demostrategy.DemoStrategyAssertion;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Map;
 
-public class ContentAwareStrategyEditor extends FailoverStrategyEditor {
+public class DemoStrategyEditor extends FailoverStrategyEditor {
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
     private JTextArea propertiesTextArea;
 
-    public ContentAwareStrategyEditor(Frame frame, Map<String, String> prop) {
+    public DemoStrategyEditor(Frame frame, Map<String, String> prop) {
         super(frame, prop);
         setContentPane(contentPane);
         setModal(true);
+        setTitle("Type \"true\" to return no route");
         getRootPane().setDefaultButton(buttonOK);
 
         buttonOK.addActionListener(new ActionListener() {
@@ -44,11 +47,11 @@ public class ContentAwareStrategyEditor extends FailoverStrategyEditor {
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
-        propertiesTextArea.setText(properties.get("TEXT"));
+        propertiesTextArea.setText(properties.get(DemoStrategy.RETURN_NO_ROUTE));
     }
 
     private void onOK() {
-        properties.put("TEXT", propertiesTextArea.getText());
+        properties.put(DemoStrategy.RETURN_NO_ROUTE, propertiesTextArea.getText());
         dispose();
     }
 

@@ -1,18 +1,22 @@
 package com.l7tech.external.assertions.demostrategy;
 
 import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.io.failover.*;
+import com.l7tech.common.io.failover.AbstractFailoverStrategy;
+import com.l7tech.common.io.failover.ConfigurableFailoverStrategy;
+import com.l7tech.common.io.failover.Feedback;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 public class DemoStrategy<ST> extends AbstractFailoverStrategy<ST> implements ConfigurableFailoverStrategy {
 
-
+    private static final Logger logger = Logger.getLogger(DemoStrategy.class.getName());
     private Map<String, String> properties = new HashMap<String,String>();
+    public static final String RETURN_NO_ROUTE = "returnNoRoute";
 
     /**
      * Create a new instance based on the specified server array, which must be non-null and non-empty.
@@ -26,6 +30,12 @@ public class DemoStrategy<ST> extends AbstractFailoverStrategy<ST> implements Co
 
     @Override
     public ST selectService() {
+        if (properties != null) {
+            String s = properties.get(RETURN_NO_ROUTE);
+            if (Boolean.parseBoolean(s)) {
+                return null;
+            }
+        }
         return servers[0];
     }
 
@@ -54,18 +64,18 @@ public class DemoStrategy<ST> extends AbstractFailoverStrategy<ST> implements Co
 
     @Override
     public String getEditorClass() {
-        return "com.l7tech.external.assertions.demostrategy.console.ContentAwareStrategyEditor";
+        return "com.l7tech.external.assertions.demostrategy.console.DemoStrategyEditor";
     }
 
     @Override
     public void reportContent(Object content, Feedback feedback) {
         PolicyEnforcementContext pec = (PolicyEnforcementContext) content;
-        System.out.println("HTTP Status:" + pec.getResponse().getHttpResponseKnob().getStatus());
+        logger.info("HTTP Status:" + pec.getResponse().getHttpResponseKnob().getStatus());
         Set<HttpCookie> cookies  = pec.getCookies();
         if (cookies != null) {
             for (Iterator<HttpCookie> iterator = cookies.iterator(); iterator.hasNext(); ) {
                 HttpCookie next =  iterator.next();
-                System.out.println(next);
+                logger.info(next.toString());
             }
         }
     }
