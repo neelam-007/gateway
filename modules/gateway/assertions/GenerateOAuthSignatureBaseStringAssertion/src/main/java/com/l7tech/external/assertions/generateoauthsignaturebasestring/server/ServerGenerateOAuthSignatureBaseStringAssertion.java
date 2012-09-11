@@ -228,11 +228,9 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
     private void addHeaderParams(final Map<String, Object> variableMap, final Audit audit, final PolicyEnforcementContext context, final List<Pair<String, String>> parameters) {
         if (assertion.isUseAuthorizationHeader() && assertion.getAuthorizationHeader() != null) {
             String authorizationHeader = ExpandVariables.process(assertion.getAuthorizationHeader(), variableMap, audit);
-            if (!authorizationHeader.isEmpty()) {
+            if (!authorizationHeader.isEmpty() && authorizationHeader.toLowerCase().startsWith(OAUTH)) {
                 context.setVariable(assertion.getVariablePrefix() + "." + AUTH_HEADER, authorizationHeader);
-                if (authorizationHeader.startsWith(OAUTH)) {
-                    authorizationHeader = authorizationHeader.replaceFirst(OAUTH, StringUtils.EMPTY);
-                }
+                authorizationHeader = authorizationHeader.replaceFirst("(oauth|OAuth)", StringUtils.EMPTY);
                 addParams(parameters, authorizationHeader);
             }
         }
@@ -422,7 +420,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
     private static final String REALM = "realm";
     private static final String OAUTH_SIGNATURE = "oauth_signature";
     private static final Integer MILLIS_PER_SEC = 1000;
-    private static final String OAUTH = "OAuth";
+    private static final String OAUTH = "oauth";
     private static final String HTTP = "http";
     private static final String HTTPS = "https";
     private static final String UTF_8 = "UTF-8";
