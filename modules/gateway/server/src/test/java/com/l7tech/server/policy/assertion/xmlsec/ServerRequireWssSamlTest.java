@@ -22,6 +22,7 @@ import com.l7tech.xml.saml.SamlAssertionV1;
 import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Before;
 import org.junit.Test;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -29,8 +30,7 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -132,6 +132,7 @@ public class ServerRequireWssSamlTest {
 
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
+        assertFalse("Policy violation should not be flagged for successful request", context.isRequestPolicyViolated());
     }
 
     /**
@@ -191,6 +192,7 @@ public class ServerRequireWssSamlTest {
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
+        assertFalse("Policy violation should not be flagged if a SAML token was actually included with the request", context.isRequestPolicyViolated());
     }
 
     /**
@@ -309,6 +311,66 @@ public class ServerRequireWssSamlTest {
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
         AssertionStatus result = serverRequireWssSaml.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
+    }
+
+    @Test
+    @BugNumber(12970)
+    public void testNoSamlTokenPresentInDefaultRequest() throws Exception {
+        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        requireWssSaml.setVersion(1);
+        requireWssSaml.setCheckAssertionValidity(false);
+        requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml11Uri()});
+
+        requireWssSaml.setRequireHolderOfKeyWithMessageSignature(false);
+        requireWssSaml.setRequireSenderVouchesWithMessageSignature(false);
+        requireWssSaml.setNoSubjectConfirmation(true);
+
+        final SamlAuthenticationStatement authStmt = new SamlAuthenticationStatement();
+        authStmt.setAuthenticationMethods(new String[]{SamlConstants.UNSPECIFIED_AUTHENTICATION});
+        requireWssSaml.setAuthenticationStatement(authStmt);
+
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml);
+        SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
+
+        // Use a completely undecordated request
+        Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV));
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
+
+        AssertionStatus result = serverRequireWssSaml.checkRequest(context);
+        assertEquals(AssertionStatus.AUTH_REQUIRED, result);
+        assertTrue("Policy violation should be flagged by the lack of SAML token in the default request", context.isRequestPolicyViolated());
+    }
+
+    @Test
+    @BugNumber(12970)
+    public void testNoSecurityHeaderPresentInDefaultRequest() throws Exception {
+        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        requireWssSaml.setVersion(1);
+        requireWssSaml.setCheckAssertionValidity(false);
+        requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml11Uri()});
+
+        requireWssSaml.setRequireHolderOfKeyWithMessageSignature(false);
+        requireWssSaml.setRequireSenderVouchesWithMessageSignature(false);
+        requireWssSaml.setNoSubjectConfirmation(true);
+
+        final SamlAuthenticationStatement authStmt = new SamlAuthenticationStatement();
+        authStmt.setAuthenticationMethods(new String[]{SamlConstants.UNSPECIFIED_AUTHENTICATION});
+        requireWssSaml.setAuthenticationStatement(authStmt);
+
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml);
+        SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
+
+        // Use a completely undecordated request
+        Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV));
+        Element securityHeader = SoapUtil.getSecurityElement(request.getXmlKnob().getDocumentWritable());
+        securityHeader.getParentNode().removeChild(securityHeader);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
+
+        AssertionStatus result = serverRequireWssSaml.checkRequest(context);
+        assertEquals(AssertionStatus.AUTH_REQUIRED, result);
+        assertTrue("Policy violation should be flagged by the lack of SAML token in the default request", context.isRequestPolicyViolated());
     }
 
     static Message getDecoratedMessage(SamlAssertion samlAssertion) throws SAXException, InvalidDocumentFormatException, IOException, GeneralSecurityException, DecoratorException {

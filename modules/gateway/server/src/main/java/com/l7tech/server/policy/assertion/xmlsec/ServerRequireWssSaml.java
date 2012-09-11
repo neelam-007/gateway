@@ -52,7 +52,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends ServerRequi
 
     @NotNull
     @Override
-    protected Triple<AssertionStatus, ProcessorResult, SamlSecurityToken> getSamlSecurityTokenAndContext(Message message, String messageDesc, AuthenticationContext context) throws IOException {
+    protected Triple<AssertionStatus, ProcessorResult, SamlSecurityToken> getSamlSecurityTokenAndContext(Message message, String messageDesc, AuthenticationContext authContext) throws IOException {
 
         try {
             if (!message.isSoap()) {
@@ -73,7 +73,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends ServerRequi
         if (wssResults == null) {
             logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED, messageDesc);
             if (isRequest())
-                context.setAuthenticationMissing();
+                authContext.setAuthenticationMissing();
             return new Triple<AssertionStatus, ProcessorResult, SamlSecurityToken>(AssertionStatus.AUTH_REQUIRED, null, null);
         }
 
@@ -81,7 +81,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends ServerRequi
         if (tokens == null) {
             logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED, messageDesc);
             if (isRequest())
-                context.setAuthenticationMissing();
+                authContext.setAuthenticationMissing();
             return new Triple<AssertionStatus, ProcessorResult, SamlSecurityToken>(AssertionStatus.AUTH_REQUIRED, null, null);
         }
         SamlSecurityToken samlAssertion = null;

@@ -93,6 +93,8 @@ public abstract class ServerRequireSaml<AT extends RequireSaml> extends Abstract
 
         final Triple<AssertionStatus, ProcessorResult, SamlSecurityToken> resultPair = getSamlSecurityTokenAndContext(message, messageDesc, authContext);
         if (resultPair.left != AssertionStatus.NONE) {
+            if (isRequest() && AssertionStatus.AUTH_REQUIRED.equals(resultPair.left))
+                context.setAuthenticationMissing();
             return resultPair.left;
         }
 
