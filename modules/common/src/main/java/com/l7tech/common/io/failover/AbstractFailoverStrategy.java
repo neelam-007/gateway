@@ -5,13 +5,15 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.TimeSource;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serializable;
+
 /**
  * Superclass for implementations of {@link FailoverStrategy}.
  */
-public abstract class AbstractFailoverStrategy<ST> implements FailoverStrategy<ST> {
-    protected final ST[] servers;
+public abstract class AbstractFailoverStrategy<ST> implements FailoverStrategy<ST>, Serializable {
+    protected final transient ST[] servers;
     @NotNull
-    protected TimeSource timeSource;
+    protected transient TimeSource timeSource;
 
     /**
      * Create a new instance based on the specified server array, which must be non-null and non-empty.
@@ -49,6 +51,10 @@ public abstract class AbstractFailoverStrategy<ST> implements FailoverStrategy<S
 
     @Override
     abstract public void reportFailure(ST service);
+
+    @Override
+    public void reportContent(Object content, Feedback feedback) {
+    }
 
     @Override
     abstract public void reportSuccess(ST service);
@@ -89,6 +95,11 @@ public abstract class AbstractFailoverStrategy<ST> implements FailoverStrategy<S
             @Override
             public synchronized String getDescription() {
                 return strat.getDescription();
+            }
+
+            @Override
+            public synchronized void reportContent(Object content, Feedback feedback) {
+                strat.reportContent(content, feedback);
             }
         };
     }

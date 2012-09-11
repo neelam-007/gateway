@@ -128,6 +128,11 @@ public class SimpleTableModel<RT> extends AbstractTableModel {
         fireTableRowsInserted( rows.size()-1, rows.size()-1 );
     }
 
+    public void addRow( int index, final RT row ) {
+        rows.add(index, row );
+        fireTableRowsInserted( index, index );
+    }
+
     /**
      * Get the row index of the specified object.
      *

@@ -3,6 +3,7 @@ package com.l7tech.server.ems.gateway;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
+import com.l7tech.common.io.failover.Feedback;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.management.api.node.GatewayApi;
@@ -345,6 +346,10 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
         @Override
         public String getDescription() {
             return "Failover Strategy that always fails";
+        }
+
+        @Override
+        public void reportContent(Object content, Feedback feedback) {
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.l7tech.gateway.common.cluster;
 
+import com.l7tech.common.io.failover.FailoverStrategy;
+import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
@@ -293,4 +295,10 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     public Collection<TrustedEsmUser> getTrustedEsmUserMappings(long trustedEsmId) throws FindException {
         return Collections.emptyList();
     }
+
+    @Override
+    public FailoverStrategy[] getAllFailoverStrategies() {
+        return FailoverStrategyFactory.getFailoverStrategyNames();
+    }
+
 }

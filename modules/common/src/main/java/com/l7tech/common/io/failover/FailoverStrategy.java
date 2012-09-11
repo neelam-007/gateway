@@ -48,4 +48,11 @@ public interface FailoverStrategy<ST> {
 
     /** @return the longer human-readable name of this FailoverStrategy. */
     String getDescription();
+
+    /**
+     * Report with the content of the request after success or failed
+     * @param content The content of the request
+     * @param feedback The feedback data
+     */
+    void reportContent(Object content, Feedback feedback);
 }

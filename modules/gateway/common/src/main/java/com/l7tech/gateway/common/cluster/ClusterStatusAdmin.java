@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.cluster;
 
+import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.admin.Administrative;
@@ -531,6 +532,13 @@ public interface ClusterStatusAdmin {
      */
     @Secured(types=EntityType.TRUSTED_ESM_USER, stereotype=MethodStereotype.FIND_ENTITIES)
     Collection<TrustedEsmUser> getTrustedEsmUserMappings(long trustedEsmId) throws FindException;
+
+
+    /**
+     * Retrieve all the failover strategies
+     * @return an array of Failover strategy, should not be empty.
+     */
+    FailoverStrategy[] getAllFailoverStrategies();
 
     /**
      * Query for this capability to see if hardware XPath acceleration is available.

@@ -58,6 +58,14 @@ import java.util.zip.GZIPInputStream;
  * </ul>
  */
 public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingAssertion<HttpRoutingAssertion> {
+
+    //Define the failed reason code.
+    public static final int HOST_NOT_FOUND = -1; // The Host can not be reached
+    public static final int BAD_URL = -2;  // the URL is incorrect.  Most times this will mean the server name contains invalid characters.
+    public static final int CONNECTION_TIMEOUT = -3;  // this will indicate connecting to a host timed out.  Thus, no ACK was ever received for the first SYN
+    public static final int READ_TIMEOUT = -4;
+    public static final int UNDEFINED = -5;
+    
     public static final String USER_AGENT = HttpConstants.HEADER_USER_AGENT;
     public static final String HOST = HttpConstants.HEADER_HOST;
 
@@ -253,6 +261,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         URL u = null;
         try {
             context.routingStarted();
+            context.setVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE, UNDEFINED);
 
             if (! customURLList) {
                 PublishedService service = context.getService();
@@ -262,6 +271,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
                     return AssertionStatus.FAILED;
                 } catch (MalformedURLException mue) {
+                    setReasonCode(context, mue);
                     logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Invalid routing URL, " + ExceptionUtils.getMessage( mue )}, ExceptionUtils.getDebugException(mue));
                     return AssertionStatus.FAILED;
                 }
@@ -643,6 +653,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
 
             status = routedResponse.getStatus();
+            context.setVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE, status);
 
             // Determines the routed response destination.
             routedResponseDestination = context.getResponse();
@@ -732,22 +743,28 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             return AssertionStatus.NONE;
         } catch (MalformedURLException mfe) {
+            setReasonCode(context, mfe);
             logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(mfe));
             logger.log(Level.FINEST, "Problem routing: " + mfe.getMessage(), mfe);
         } catch (UnknownHostException uhe) {
+            setReasonCode(context, uhe);
             logAndAudit(AssertionMessages.HTTPROUTE_UNKNOWN_HOST, ExceptionUtils.getMessage(uhe));
             return AssertionStatus.FAILED;
         } catch (SocketException se) {
+            setReasonCode(context, se);
             logAndAudit(AssertionMessages.HTTPROUTE_SOCKET_EXCEPTION, ExceptionUtils.getMessage(se));
             return AssertionStatus.FAILED;
         } catch (IOException ioe) {
             // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
+            setReasonCode(context, ioe);
             logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(ioe));
             logger.log(Level.FINEST, "Problem routing: " + ioe.getMessage(), ioe);
         } catch (NoSuchPartException e) {
+            setReasonCode(context, e);
             logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(e));
             logger.log(Level.FINEST, "Problem routing: " + e.getMessage(), e);
         } catch (NoSuchVariableException e) {
+            setReasonCode(context, e);
             logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(e));
             logger.log(Level.FINEST, "Problem routing: " + e.getMessage(), e);
         } finally {
@@ -766,6 +783,25 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         return AssertionStatus.FAILED;
+    }
+    
+    private void setReasonCode(PolicyEnforcementContext context, Exception e) {
+
+        Throwable cause = e.getCause();
+        if (cause == null) {
+            cause = e;
+        }
+
+        // either host not found or bad url for the hostname
+        if (cause instanceof java.net.UnknownHostException || cause instanceof java.net.ConnectException) {
+            context.setVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE, HOST_NOT_FOUND);
+        } else if (cause instanceof java.net.SocketTimeoutException) {
+            context.setVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE, READ_TIMEOUT);
+        } else if (cause instanceof org.apache.commons.httpclient.ConnectTimeoutException) {
+            context.setVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE, CONNECTION_TIMEOUT);
+        } else if (cause instanceof MalformedURLException) {
+            context.setVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE, BAD_URL);
+        }
     }
 
     /**

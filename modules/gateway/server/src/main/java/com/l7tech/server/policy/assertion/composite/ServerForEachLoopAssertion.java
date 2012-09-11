@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.jboss.util.collection.ArrayIterator;
 import org.springframework.beans.factory.BeanFactory;
@@ -26,6 +27,8 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
     private final int iterationLimit;
     private final String iterationsVar;
     private final String hitLimitVar;
+    private final String breakVar;
+
     private final AssertionResultListener assertionResultListener = new AssertionResultListener() {
         @Override
         public boolean assertionFinished(PolicyEnforcementContext context, AssertionStatus result) {
@@ -45,6 +48,7 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
         this.currentValueVar = prefix + ".current";
         this.iterationsVar = prefix + ".iterations";
         this.hitLimitVar = prefix + ".exceededlimit";
+        this.breakVar = prefix + ForEachLoopAssertion.BREAK;
     }
 
     @Override
@@ -69,7 +73,16 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
                 failed = true;
                 break;
             }
+
             iterations++;
+            try {
+                String exitValue = (String) context.getVariable(breakVar);
+                if (exitValue.equalsIgnoreCase(Boolean.TRUE.toString())) {
+                    break;
+                }
+            } catch (NoSuchVariableException e) {
+                //TODO: add error handling
+            }
         }
 
         context.setVariable(iterationsVar, iterations);

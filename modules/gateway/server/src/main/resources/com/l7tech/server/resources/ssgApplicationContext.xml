@@ -2368,6 +2368,8 @@
         <property name="config" ref="serverConfig" />
     </bean>
 
+    <bean id="failoverStrategyFactory" class="com.l7tech.common.io.failover.FailoverStrategyFactory"/>
+
     <!-- export beans to JMX -->
     <context:mbean-export/>
 

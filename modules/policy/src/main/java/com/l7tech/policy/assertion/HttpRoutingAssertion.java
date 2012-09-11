@@ -45,6 +45,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = -1;
     public static final String VAR_ROUTING_LATENCY = "httpRouting.latency";
     public static final String VAR_HTTP_ROUTING_URL = "httpRouting.url";
+    public static final String VAR_HTTP_ROUTING_REASON_CODE = "httpRouting.reasonCode";
     public static final String VAR_HTTP_ROUTING_URL_SUFFIX_HOST = "host";
     public static final String VAR_HTTP_ROUTING_URL_SUFFIX_PROTOCOL = "protocol";
     public static final String VAR_HTTP_ROUTING_URL_SUFFIX_PORT = "port";
@@ -639,6 +640,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
             // kerberos data may be set
             vars.add(new VariableMetadata(KERBEROS_DATA, false, false, null, false, DataType.UNKNOWN));
         }
+        vars.add(new VariableMetadata(VAR_HTTP_ROUTING_REASON_CODE, false, false, VAR_HTTP_ROUTING_REASON_CODE, false, DataType.INTEGER));
         return vars.toArray(new VariableMetadata[vars.size()]);
     }
 

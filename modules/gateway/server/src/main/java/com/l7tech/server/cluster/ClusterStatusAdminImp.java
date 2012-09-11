@@ -1,5 +1,7 @@
 package com.l7tech.server.cluster;
 
+import com.l7tech.common.io.failover.FailoverStrategy;
+import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.util.DateTimeConfigUtils;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
@@ -482,6 +484,11 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     @Override
     public Collection<TrustedEsmUser> getTrustedEsmUserMappings(long trustedEsmId) throws FindException {
         return trustedEsmUserManager.findByEsmId(trustedEsmId);
+    }
+
+    @Override
+    public FailoverStrategy[] getAllFailoverStrategies() {
+        return ((FailoverStrategyFactory)context.getBean("failoverStrategyFactory")).getAllFailoverStrategy();
     }
 
     private CollectionUpdateProducer<ClusterNodeInfo, FindException> clusterNodesUpdateProducer =

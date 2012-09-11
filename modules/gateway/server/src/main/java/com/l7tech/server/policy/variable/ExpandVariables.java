@@ -190,7 +190,9 @@ public final class ExpandVariables {
         "com.l7tech.server.policy.variable.SecureConversationSessionSelector",
         "com.l7tech.server.policy.variable.BuildVersionContext$BuildVersionContextSelector",
         "com.l7tech.server.policy.variable.KerberosAuthorizationDataSelector",
-        "com.l7tech.server.policy.variable.DateTimeSelector"
+        "com.l7tech.server.policy.variable.DateTimeSelector",
+        "com.l7tech.server.policy.variable.FeedbackSelector",
+        "com.l7tech.server.policy.variable.ServiceSelector"
     };
 
     private static final List<Selector<?>> selectors = Collections.unmodifiableList(new ArrayList<Selector<?>>() {{

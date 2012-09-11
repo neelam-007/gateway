@@ -189,6 +189,18 @@ public class ServerForEachLoopAssertionTest {
         verifyNoMoreInteractions(mockPec);
     }
 
+    @Test
+    public void testBreak() throws Exception {
+        ass.setLoopVariableName("stringsArray");
+        ass.setVariablePrefix("i");
+        context = context();
+        context.setVariable("i.break", "true");
+        checkRequest(AssertionStatus.NONE, sass(), context);
+        assertEquals(",0-foo", context.getVariable("accum"));
+        assertEquals("foo", context.getVariable("i.current"));
+        assertEquals(1, context.getVariable("i.iterations"));
+    }
+
     private void assertNoSuchVariable(String var) {
         try {
             context.getVariable(var);
