@@ -356,6 +356,25 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                   null));
             }
         }
+        
+        if ( assertion instanceof HttpRoutingAssertion ) {
+            HttpRoutingAssertion httpRoutingAssertion = (HttpRoutingAssertion) assertion;
+            if (httpRoutingAssertion.isKrbDelegatedAuthentication() || httpRoutingAssertion.isKrbUseGatewayKeytab()) {
+                try {
+                    KerberosClient.validateKerberosPrincipals();
+                }
+                catch(KerberosConfigException kce) {
+                    result.addError(new PolicyValidatorResult.Error( assertion,
+                            "Kerberos is not configured on the Gateway.",
+                            null));
+                }
+                catch(KerberosException ke) {
+                    result.addError(new PolicyValidatorResult.Error( assertion,
+                            "Gateway Kerberos configuration is invalid.",
+                            null));
+                }
+            }
+        }
 
         if ( assertion instanceof UsesEntities && !(assertion instanceof IdentityAssertion || assertion instanceof JmsRoutingAssertion)) {
             UsesEntities uea = (UsesEntities) assertion;
