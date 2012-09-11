@@ -90,6 +90,12 @@ public class KerberosDialog extends JDialog {
         closeButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
+                KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
+                try {
+                    kerberosAdmin.setKeytabValidate(performValidateCheckBox.isSelected());
+                } catch (KerberosException e1) {
+                    ErrorManager.getDefault().notify(Level.WARNING, e1, "Error persist Perform KDC Validation status." );
+                }
                 KerberosDialog.this.dispose();
             }
         });
@@ -162,6 +168,16 @@ public class KerberosDialog extends JDialog {
 
                 ((KeyTabTableModel)keytabTable.getModel()).fireTableDataChanged();
 
+            }
+
+            try {
+                if (kerberosAdmin.getKeytabValidate()) {
+                    performValidateCheckBox.setSelected(true);
+                } else {
+                    performValidateCheckBox.setSelected(false);
+                }
+            } catch (KerberosException e) {
+                performValidateCheckBox.setSelected(true);
             }
         }
         else {

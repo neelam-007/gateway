@@ -85,4 +85,23 @@ public interface KerberosAdmin  {
     @Secured(types= EntityType.CLUSTER_PROPERTY,stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
     @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
     public void deleteKeytab() throws KerberosException;
+
+    /**
+     * Set validate required when loading the keytab file
+     * @param validate True for validate is required, false for validate is not required
+     */
+    @Secured(types= EntityType.CLUSTER_PROPERTY,stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
+    @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
+    public void setKeytabValidate(boolean validate) throws KerberosException;
+
+    /**
+     * Retrieve validate required when loading the keytab file
+     * @return True for validate is required, false for validate is not required.
+     */
+    public boolean getKeytabValidate() throws KerberosException;
+
+
+
+
+
 }

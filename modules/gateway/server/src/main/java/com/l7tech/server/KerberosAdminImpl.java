@@ -148,10 +148,46 @@ public class KerberosAdminImpl implements KerberosAdmin {
         }
     }
 
+    @Override
+    public void setKeytabValidate(boolean validate) throws KerberosException {
+        try {
+            ClusterProperty property = clusterPropertyManager.findByUniqueName(KEYTAB_VALIDATE);
+            if (property == null) {
+                property = new ClusterProperty();
+                property.setName(KEYTAB_VALIDATE);
+            }
+            property.setValue(Boolean.toString(validate));
+
+            long oid = property.getOid();
+            if ( oid == ClusterProperty.DEFAULT_OID ) {
+                clusterPropertyManager.save(property);
+            } else {
+                clusterPropertyManager.update(property);
+            }
+        } catch ( ObjectModelException ome ) {
+            throw new KerberosException( "Error persisting " + KEYTAB_VALIDATE, ome );
+        }
+    }
+
+    @Override
+    public boolean getKeytabValidate() throws KerberosException {
+        try {
+            ClusterProperty property = clusterPropertyManager.findByUniqueName(KEYTAB_VALIDATE);
+            if (property == null) {
+                //Default to true;
+                return true;
+            }
+            return Boolean.parseBoolean(property.getValue());
+        } catch ( ObjectModelException ome ) {
+            throw new KerberosException( "Error retrieving " + KEYTAB_VALIDATE, ome );
+        }
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(KerberosAdminImpl.class.getName());
     private static final String KEYTAB_PROPERTY = "krb5.keytab";
+    private static final String KEYTAB_VALIDATE = "krb5.keytab.validate";
 
     private final ClusterPropertyManager clusterPropertyManager;
     private final MasterPasswordManager clusterEncryptionManager;

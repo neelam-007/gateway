@@ -76,4 +76,18 @@ public class KerberosAdminImplTest {
         kerberosAdmin.deleteKeytab();
         assertNull(clusterPropertyManager.getProperty("krb5.keytab"));
     }
+
+    @Test
+    public void testDefaultGetKeytabValidate() throws Exception {
+        assertTrue(kerberosAdmin.getKeytabValidate());
+    }
+
+    @Test
+    public void testKeytabValidate() throws Exception {
+        kerberosAdmin.setKeytabValidate(false);
+        assertFalse(kerberosAdmin.getKeytabValidate());
+        kerberosAdmin.setKeytabValidate(true);
+        assertTrue(kerberosAdmin.getKeytabValidate());
+    }
+
 }
