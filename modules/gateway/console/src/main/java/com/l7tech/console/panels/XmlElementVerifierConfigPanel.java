@@ -56,6 +56,7 @@ public class XmlElementVerifierConfigPanel extends ValidatedPanel<XmlElementVeri
     public XmlElementVerifierConfigPanel(XmlElementVerifierConfig model) {
         super("model");
         this.model = model;
+        certVariableNameField.setValueWillBeWritten(false);
         init();
         setData(model);
     }
