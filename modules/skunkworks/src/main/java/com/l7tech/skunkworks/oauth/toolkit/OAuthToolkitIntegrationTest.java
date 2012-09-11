@@ -33,14 +33,17 @@ import static org.junit.Assert.*;
  */
 @Ignore
 public class OAuthToolkitIntegrationTest {
-    //private static final String BASE_URL = "daesm62t.l7tech.com";
-    //private static final String BASE_URL = "aleeoauth.l7tech.com";
+    //localhost
     private static final String BASE_URL = "localhost";
-    //private static final String SIGNATURE = "qBZINGunNf/GiqJkf6PXGUsorh8=";
-    //private static final String SIGNATURE = "pwvUKSVVqeU4nZsBfbm1Pr6lEpk=";
-    private static final String SIGNATURE = "zQQtKbwhcAcDnwzI8gg6f2tBHUQ=";
-    //private static final String SIGNATURE_EMPTY_TOKEN = "zMX7NBnryxDm+x3MJTJx2KP/eQw=";
+    private static final String SIGNATURE = "zQQtKbwhcAcDnwzI8gg6f2tBHUQ="; // method = POST
+    private static final String SIGNATURE_GET = "y9ktczNolnPv+DlvlWjijIEcrfY="; // method = GET
     private static final String SIGNATURE_EMPTY_TOKEN = "pMitXg+kdUV34iFDDV6UnuhWkps=";
+
+    //aleeoauth.l7tech.com
+    //private static final String BASE_URL = "aleeoauth.l7tech.com";
+    //private static final String SIGNATURE = "pwvUKSVVqeU4nZsBfbm1Pr6lEpk=";
+    //private static final String SIGNATURE_EMPTY_TOKEN = "zMX7NBnryxDm+x3MJTJx2KP/eQw=";
+
     private static final String CLIENT_REQUEST_TOKEN = "http://" + BASE_URL + ":8080/oauth/v1/client?state=request_token";
     private static final String REQUEST_TOKEN_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/request";
     private static final String AUTHORIZE_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/authorize";
@@ -48,6 +51,7 @@ public class OAuthToolkitIntegrationTest {
     private static final String CLIENT_DOWNLOAD_RESOURCE = "https://" + BASE_URL + ":8443/oauth/v1/client?state=download";
     private static final String OTK_CLIENT_CALLBACK = "https://" + BASE_URL + ":8443/oauth/v1/client?state=authorized";
     private static String OTK_CLIENT_CALLBACK_ENCODED;
+
     static {
         try {
             OTK_CLIENT_CALLBACK_ENCODED = URLEncoder.encode(OTK_CLIENT_CALLBACK, "UTF-8");
@@ -55,6 +59,7 @@ public class OAuthToolkitIntegrationTest {
             e.printStackTrace();
         }
     }
+
     private static final String AUTH_HEADER = "OAuth realm=\"http://" + BASE_URL + "\",oauth_consumer_key=\"acf89db2-994e-427b-ac2c-88e6101f9433\",oauth_signature_method=\"HMAC-SHA1\",oauth_timestamp=\"1344979213\",oauth_nonce=\"ca6e55f3-3e1c-41d6-8584-41c7e2611d34\",oauth_callback=\"" + OTK_CLIENT_CALLBACK_ENCODED + "\",oauth_version=\"1.0\",oauth_signature=\"" + SIGNATURE + "\"";
     private static final String USER = "admin";
     private static final String PASSWORD = "password";
@@ -98,6 +103,38 @@ public class OAuthToolkitIntegrationTest {
         requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
         requestParams.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader("Authorization", AUTH_HEADER)});
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
+
+        final GenericHttpResponse response = request.getResponse();
+
+        assertEquals(200, response.getStatus());
+        final Map<String, String> responseParameters = extractParamsFromString(response.getAsString(false, Integer.MAX_VALUE));
+        assertParamsFromRequestTokenEndpoint(responseParameters);
+    }
+
+    /**
+     * All oauth parameters are in the URL.
+     *
+     * Note: this test will not pass on the tactical OTK.
+     */
+    @BugNumber(12974)
+    @Test
+    public void requestTokenEndpointUrlParameters() throws Exception {
+        final StringBuilder stringBuilder = new StringBuilder(REQUEST_TOKEN_ENDPOINT);
+        stringBuilder.append("?");
+        final Map<String, String> oauthParameters = createDefaultRequestTokenParameters();
+        oauthParameters.put("oauth_callback", OTK_CLIENT_CALLBACK_ENCODED);
+        oauthParameters.put("oauth_signature", URLEncoder.encode(SIGNATURE_GET, "UTF-8"));
+        for (final Map.Entry<String, String> entry : oauthParameters.entrySet()) {
+            stringBuilder.append(entry.getKey());
+            stringBuilder.append("=");
+            stringBuilder.append(entry.getValue());
+            stringBuilder.append("&");
+        }
+        stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+        final String url = stringBuilder.toString();
+        final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(url));
+        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, requestParams);
 
         final GenericHttpResponse response = request.getResponse();
 
