@@ -69,9 +69,6 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
 
     private static final Logger logger = Logger.getLogger(SslClientHostnameVerifier.class.getName());
 
-    private static final int NAME_TYPE_IPADDRESS = 7;
-    private static final int NAME_TYPE_DNS = 2;
-
     private final Config config;
     private final TrustedCertServices trustedCertServices;
     private final boolean hostnameWildcardsOnly; // When wildcards are enabled, are they only allowed for hostnames?
@@ -116,7 +113,7 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
             return false;
 
         boolean isIPaddress = InetAddressUtil.looksLikeIpAddressV4OrV6(expectedHostname);
-        Collection<String> certificateNames = getSubjectAlternativeNames( certificate, isIPaddress ? NAME_TYPE_IPADDRESS : NAME_TYPE_DNS );
+        Collection<String> certificateNames = CertUtils.getSubjectAlternativeNames( certificate, isIPaddress ? CertUtils.SUBJALT_NAME_TYPE_IPADDRESS : CertUtils.SUBJALT_NAME_TYPE_DNS );
 
         if ( certificateNames.isEmpty() ) {
             String cnValue = CertUtils.extractFirstCommonNameFromCertificate(certificate);
@@ -137,24 +134,6 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
         }
 
         return match;
-    }
-
-    private Collection<String> getSubjectAlternativeNames( final X509Certificate certificate, final Integer nameType ) throws CertificateParsingException {
-        Collection<String> names = new ArrayList<String>();
-
-        Collection<List<?>> altNames = certificate.getSubjectAlternativeNames();
-        if ( altNames != null ) {
-            for ( List<?> item : altNames ) {
-                if ( item.size() == 2 ) {
-                    Object type = item.get(0);
-                    if ( nameType.equals(type) ) {
-                        names.add((String) item.get(1));
-                    }
-                }
-            }
-        }
-
-        return names;
     }
 
     private boolean isCertSignerTrustedWithoutHostnameVerification( final X509Certificate certificate ) throws FindException {

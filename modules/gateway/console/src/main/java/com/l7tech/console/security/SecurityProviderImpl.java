@@ -41,8 +41,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -391,6 +393,29 @@ public class SecurityProviderImpl extends SecurityProvider
 
                 if (hostBuffer.length()==0 || hostBuffer.toString().equals(peerHost)) {
                     return true;
+                }
+
+                // Check SubAltNames as well
+                Collection<String> names = null;
+                Collection<String> ipAddresses = null;
+                try {
+                    
+                    names = CertUtils.getSubjectAlternativeNames(chain[0], CertUtils.SUBJALT_NAME_TYPE_DNS);
+                    for ( String altName : names ) {
+                        if ( hostBuffer.toString().equals(altName) ) {
+                            return true;
+                        }
+                    }
+                    
+                    ipAddresses = CertUtils.getSubjectAlternativeNames(chain[0], CertUtils.SUBJALT_NAME_TYPE_IPADDRESS);
+                    for ( String altName : ipAddresses ) {
+                        if ( hostBuffer.toString().equals(altName) ) {
+                            return true;
+                        }
+                    }
+
+                } catch (CertificateParsingException e1) {
+                    logger.warning("Certificate with SubjectDN " + CertUtils.getSubjectDN(chain[0]) + " cannot be parsed");
                 }
 
                 throw new RuntimeException(INVALID_PEER_HOST_PREFIX + peerHost);

@@ -60,6 +60,10 @@ public class CertUtils {
     private static final String X509_PROVIDER = ConfigFactory.getProperty( "com.l7tech.common.x509Provider" );
     private static final DnFormatter dnFormatter = findDnFormatter();
 
+    // For getSubjectAlternativeNames
+    public static final int SUBJALT_NAME_TYPE_IPADDRESS = 7;
+    public static final int SUBJALT_NAME_TYPE_DNS = 2;
+
     public static final String ALG_MD5 = "MD5";
     public static final String ALG_SHA1 = "SHA1";
     public static final String FINGERPRINT_HEX = "hex";
@@ -1124,6 +1128,33 @@ public class CertUtils {
         }
 
         return l;
+    }
+
+    /**
+     * Get the collection of SubjectAlternativeNames of a particular type from a Certificate.
+     *
+     * @param certificate The certificate to analyze
+     * @param nameType the type of the SubAltName (dNSName or iPAddress)
+     *                 (constants defined above: SUBJALT_NAME_TYPE_IPADDRESS, SUBJALT_NAME_TYPE_DNS)
+     * @return a List of Strings - names of the particular type
+     * @throws CertificateEncodingException if the cert could not be decoded
+     */
+    public static Collection<String> getSubjectAlternativeNames( final X509Certificate certificate, final Integer nameType ) throws CertificateParsingException {
+        Collection<String> names = new ArrayList<String>();
+
+        Collection<List<?>> altNames = certificate.getSubjectAlternativeNames();
+        if ( altNames != null ) {
+            for ( List<?> item : altNames ) {
+                if ( item.size() == 2 ) {
+                    Object type = item.get(0);
+                    if ( nameType.equals(type) ) {
+                        names.add((String) item.get(1));
+                    }
+                }
+            }
+        }
+
+        return names;
     }
 
     static final Class<? extends ECPublicKey> sunECPublicKeyImpl;
