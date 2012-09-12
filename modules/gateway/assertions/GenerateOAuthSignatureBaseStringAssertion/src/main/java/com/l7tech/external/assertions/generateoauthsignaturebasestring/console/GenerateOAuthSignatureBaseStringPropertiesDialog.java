@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.generateoauthsignaturebasestring.console;
 
-import com.l7tech.common.http.HttpMethod;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.generateoauthsignaturebasestring.GenerateOAuthSignatureBaseStringAssertion;
@@ -33,6 +32,7 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
     private JPanel serverPanel;
     private JPanel clientPanel;
     private JLabel oauthVersionLabel;
+    private JCheckBox allowCustomOAuthQueryParamsCheckBox;
     private InputValidator validators;
     private InputValidator.ValidationRule authHeaderRule;
 
@@ -95,6 +95,7 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
         requestUrlTextField.setText(assertion.getRequestUrl());
         methodComboBox.setSelectedItem(assertion.getHttpMethod());
         queryStringTextField.setText(assertion.getQueryString());
+        allowCustomOAuthQueryParamsCheckBox.setSelected(assertion.isAllowCustomOAuthQueryParams());
         useMessageTargetAsCheckBox.setSelected(assertion.isUseMessageTarget());
         authHeaderCheckBox.setSelected(assertion.isUseAuthorizationHeader());
         authHeaderTextField.setText(assertion.getAuthorizationHeader());
@@ -126,6 +127,7 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
         assertion.setHttpMethod(methodComboBox.getSelectedItem().toString());
         assertion.setVariablePrefix(targetVariablePanel.getVariable().trim());
         assertion.setQueryString(getTrimmedValueOrNull(queryStringTextField));
+        assertion.setAllowCustomOAuthQueryParams(allowCustomOAuthQueryParamsCheckBox.isSelected());
 
         // server side only
         assertion.setUseMessageTarget(useMessageTargetAsCheckBox.isSelected());

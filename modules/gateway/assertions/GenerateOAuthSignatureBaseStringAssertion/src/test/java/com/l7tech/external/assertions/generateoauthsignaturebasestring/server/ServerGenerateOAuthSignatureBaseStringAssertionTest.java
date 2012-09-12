@@ -1195,6 +1195,109 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER);
     }
 
+    @BugNumber(12868)
+    @Test
+    public void unrecognizedOAuthParamInQuery() throws Exception {
+        setParamsForRequestToken(assertion);
+        assertion.setQueryString("?oauth_unrecognized=shouldberejected");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_QUERY_PARAMETER));
+        assertEquals("Query parameter oauth_unrecognized is not allowed", (String) policyContext.getVariable("oauth.error"));
+    }
+
+    @BugNumber(12868)
+    @Test
+    public void unrecognizedOAuthParamInQueryAllowed() throws Exception {
+        setParamsForRequestToken(assertion);
+        assertion.setAllowCustomOAuthQueryParams(true);
+        assertion.setQueryString("?oauth_unrecognized=okay");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&oauth_callback%3D" + CALLBACK_ENCODED + "%26" +
+                "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dstubgeneratednonce%26oauth_signature_method%3D" +
+                "HMAC-SHA1%26oauth_timestamp%3D1000%26oauth_unrecognized%3Dokay%26oauth_version%3D1.0";
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertRequestTokenVariables();
+        assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
+    }
+
+    @BugNumber(12868)
+    @Test
+    public void unrecognizedOAuthParamInBody() throws Exception {
+        request.setServerName(SERVER_NAME);
+        request.setRequestURI("/photos");
+        request.setQueryString(QUERY_STRING);
+        request.setMethod(HTTP_METHOD);
+        final String body = "oauth_consumer_key=" + CONSUMER_KEY + "&" +
+                "oauth_signature_method=" + SIG_METHOD + "&" +
+                "oauth_timestamp=" + TIMESTAMP + "&" +
+                "oauth_nonce=" + NONCE + "&" +
+                "oauth_callback=" + CALLBACK + "&" +
+                "oauth_version=" + VERSION + "&" +
+                "oauth_unrecognized=okay";
+        request.setContent(body.getBytes());
+        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        request.setMethod("POST");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+        assertion.setUsageMode(UsageMode.SERVER);
+        assertion.setQueryString("${request.url}");
+
+        final String expected = "POST&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3Dfirst%26oauth_callback%3D" + CALLBACK_ENCODED + "%26" +
+                "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dnongeneratednonce%26oauth_signature_method%3D" +
+                "HMAC-SHA1%26oauth_timestamp%3D2000%26oauth_unrecognized%3Dokay%26oauth_version%3D1.0%26p%3Dmiddle%26z%3Dlast";
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertRequestTokenVariables();
+        assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
+    }
+
+    @BugNumber(12868)
+    @Test
+    public void unrecognizedOAuthParamInAuthHeader() throws Exception {
+        request.setServerName(SERVER_NAME);
+        request.setRequestURI("/photos");
+        request.setQueryString(QUERY_STRING);
+        request.setMethod(HTTP_METHOD);
+        final String authorizationHeader = "OAuth realm=\"http://photos.example.net/\"," +
+                "oauth_consumer_key=\"" + CONSUMER_KEY + "\"," +
+                "oauth_signature_method=\"" + SIG_METHOD + "\"," +
+                "oauth_timestamp=\"" + TIMESTAMP + "\"," +
+                "oauth_nonce=\"" + NONCE + "\"," +
+                "oauth_callback=\"" + CALLBACK + "\"," +
+                "oauth_version=\"" + VERSION + "\"," +
+                "oauth_unrecognized=\"okay\"";
+        request.addHeader("Authorization", authorizationHeader);
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+        assertion.setUsageMode(UsageMode.SERVER);
+        assertion.setQueryString("${request.url}");
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3Dfirst%26oauth_callback%3D" + CALLBACK_ENCODED + "%26" +
+                "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dnongeneratednonce%26oauth_signature_method%3D" +
+                "HMAC-SHA1%26oauth_timestamp%3D2000%26oauth_unrecognized%3Dokay%26oauth_version%3D1.0%26p%3Dmiddle%26z%3Dlast";
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertRequestTokenVariables();
+        assertEquals(request.getHeader("Authorization"), policyContext.getVariable("oauth." + AUTH_HEADER));
+        assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER);
+    }
+
     private void assertContextVariablesDoNotExist(final String... names) throws NoSuchVariableException {
         for (final String name : names) {
             try {

@@ -91,6 +91,10 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
                 logAndAudit(AssertionMessages.OAUTH_INVALID_PARAMETER, new String[]{e.getParameter(), e.getInvalidValue()}, ExceptionUtils.getDebugException(e));
                 context.setVariable(assertion.getVariablePrefix() + "." + ERROR, "Invalid " + e.getParameter() + ": " + e.getInvalidValue());
                 assertionStatus = AssertionStatus.FALSIFIED;
+            } catch (final ParameterException e) {
+                logAndAudit(AssertionMessages.OAUTH_INVALID_QUERY_PARAMETER, new String[]{e.getParameter()}, ExceptionUtils.getDebugException(e));
+                context.setVariable(assertion.getVariablePrefix() + "." + ERROR, "Query parameter " + e.getParameter() + " is not allowed");
+                assertionStatus = AssertionStatus.FALSIFIED;
             } catch (final URISyntaxException e) {
                 logAndAudit(AssertionMessages.OAUTH_INVALID_REQUEST_URL, new String[]{requestUrl}, ExceptionUtils.getDebugException(e));
                 context.setVariable(assertion.getVariablePrefix() + "." + ERROR, "Invalid request url: " + requestUrl);
@@ -174,9 +178,9 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
      */
     @SuppressWarnings({"JavaDoc"})
     private TreeMap<String, Set<String>> getSortedParameters(final Map<String, Object> variableMap, final Audit audit, final PolicyEnforcementContext context)
-            throws IOException, NoSuchVariableException, DuplicateParameterException {
+            throws IOException, NoSuchVariableException, DuplicateParameterException, ParameterException {
         final List<Pair<String, String>> unsortedParameters = new ArrayList<Pair<String, String>>();
-        addParams(unsortedParameters, getQueryString(variableMap));
+        addParams(unsortedParameters, getQueryString(variableMap), assertion.isAllowCustomOAuthQueryParams());
         switch (assertion.getUsageMode()) {
             case CLIENT:
                 addManualParams(variableMap, audit, unsortedParameters);
@@ -225,13 +229,14 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
      * Add any parameters detected in the Authorization header and set authHeader context variable.
      */
     @SuppressWarnings({"JavaDoc"})
-    private void addHeaderParams(final Map<String, Object> variableMap, final Audit audit, final PolicyEnforcementContext context, final List<Pair<String, String>> parameters) {
+    private void addHeaderParams(final Map<String, Object> variableMap, final Audit audit,
+                                 final PolicyEnforcementContext context, final List<Pair<String, String>> parameters) throws ParameterException{
         if (assertion.isUseAuthorizationHeader() && assertion.getAuthorizationHeader() != null) {
             String authorizationHeader = ExpandVariables.process(assertion.getAuthorizationHeader(), variableMap, audit);
             if (!authorizationHeader.isEmpty() && authorizationHeader.toLowerCase().startsWith(OAUTH)) {
                 context.setVariable(assertion.getVariablePrefix() + "." + AUTH_HEADER, authorizationHeader);
                 authorizationHeader = authorizationHeader.replaceFirst("(oauth|OAuth)", StringUtils.EMPTY);
-                addParams(parameters, authorizationHeader);
+                addParams(parameters, authorizationHeader, true);
             }
         }
     }
@@ -294,7 +299,8 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
      * Add any parameters detected in the parameter string.
      */
     @SuppressWarnings({"JavaDoc"})
-    private void addParams(final List<Pair<String, String>> parameters, final String parameterString) {
+    private void addParams(final List<Pair<String, String>> parameters, final String parameterString,
+                           final boolean allowUnrecognizedOAuthParams) throws ParameterException {
         if (parameterString != null && parameterString.contains(EQUALS)) {
             String params = parameterString;
             // remove leading '/' from parameterString, if any
@@ -307,10 +313,15 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
                 }
                 String[] splitString = s.split(EQUALS, 2);
                 if (splitString[0].length() > 0) {
+                    final String parameterName = splitString[0].trim();
+                    if (!allowUnrecognizedOAuthParams && parameterName.startsWith(OAUTH_PREFIX) &&
+                            !OAUTH_PARAMETERS.contains(parameterName)) {
+                        throw new ParameterException(parameterName, "Unrecognized oauth parameter: " + parameterName);
+                    }
                     if (splitString.length == 1) {
-                        parameters.add(new Pair<String, String>(splitString[0].trim(), ""));
+                        parameters.add(new Pair<String, String>(parameterName, ""));
                     } else if (splitString.length == 2) {
-                        parameters.add(new Pair<String, String>(splitString[0].trim(), deQuote(splitString[1].trim())));
+                        parameters.add(new Pair<String, String>(parameterName, deQuote(splitString[1].trim())));
                     }
                 }
             }
@@ -409,6 +420,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         }
     }
 
+    private static final String OAUTH_PREFIX = "oauth_";
     private static final String OAUTH_CALLBACK = "oauth_callback";
     private static final String OAUTH_CONSUMER_KEY = "oauth_consumer_key";
     private static final String OAUTH_NONCE = "oauth_nonce";
@@ -417,8 +429,8 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
     private static final String OAUTH_TOKEN = "oauth_token";
     private static final String OAUTH_VERIFIER = "oauth_verifier";
     private static final String OAUTH_VERSION = "oauth_version";
-    private static final String REALM = "realm";
     private static final String OAUTH_SIGNATURE = "oauth_signature";
+    private static final String REALM = "realm";
     private static final Integer MILLIS_PER_SEC = 1000;
     private static final String OAUTH = "oauth";
     private static final String HTTP = "http";
@@ -436,6 +448,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
     private static final String TILDE_ENCODED = "%7E";
     private static final String QUESTION = "?";
     private static final List<String> REQUIRED_PARAMETERS;
+    private static final List<String> OAUTH_PARAMETERS;
     private static final List<String> SIGNATURE_METHODS;
     private TimeSource timeSource;
 
@@ -448,6 +461,13 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         REQUIRED_PARAMETERS.add(OAUTH_SIGNATURE_METHOD);
         REQUIRED_PARAMETERS.add(OAUTH_TIMESTAMP);
         REQUIRED_PARAMETERS.add(OAUTH_NONCE);
+
+        OAUTH_PARAMETERS = new ArrayList<String>(REQUIRED_PARAMETERS);
+        OAUTH_PARAMETERS.add(OAUTH_CALLBACK);
+        OAUTH_PARAMETERS.add(OAUTH_TOKEN);
+        OAUTH_PARAMETERS.add(OAUTH_VERIFIER);
+        OAUTH_PARAMETERS.add(OAUTH_VERSION);
+        OAUTH_PARAMETERS.add(OAUTH_SIGNATURE);
 
         SIGNATURE_METHODS = new ArrayList<String>(3);
         SIGNATURE_METHODS.add(HMAC_SHA1);

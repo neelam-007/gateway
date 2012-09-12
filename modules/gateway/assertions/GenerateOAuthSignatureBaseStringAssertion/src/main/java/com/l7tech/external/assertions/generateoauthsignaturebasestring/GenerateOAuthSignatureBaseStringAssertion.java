@@ -219,6 +219,14 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
         this.usageMode = usageMode;
     }
 
+    public boolean isAllowCustomOAuthQueryParams() {
+        return allowCustomOAuthQueryParams;
+    }
+
+    public void setAllowCustomOAuthQueryParams(final boolean allowCustomOAuthQueryParams) {
+        this.allowCustomOAuthQueryParams = allowCustomOAuthQueryParams;
+    }
+
     private static final String META_INITIALIZED = GenerateOAuthSignatureBaseStringAssertion.class.getName() + ".metadataInitialized";
     private static final String GENERATE_OAUTH_SIGNATURE_BASE_STRING = "Generate OAuth Signature Base String";
 
@@ -229,6 +237,7 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
     private String httpMethod = "${request.http.method}";
     private String queryString = "${request.url.query}";
     private String variablePrefix = "oauth";
+    private boolean allowCustomOAuthQueryParams; // whether we should allow non-protocol oauth_ prefixed query params
     // end applies to both CLIENT and SERVER
 
     // applies to SERVER

@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Integration tests for the OAuth Tool Kit. Each test requires the SSG to be running with an installed OTK that includes
@@ -354,6 +355,34 @@ public class OAuthToolkitIntegrationTest {
         final String responseAsString = response.getAsString(false, Integer.MAX_VALUE);
         final Map<String, String> responseParameters = extractParamsFromString(responseAsString);
         assertParamsFromRequestTokenEndpoint(responseParameters);
+    }
+
+    @BugNumber(12868)
+    @Test
+    public void unrecognizedOAuthQueryParameter() throws Exception {
+        final StringBuilder stringBuilder = new StringBuilder(REQUEST_TOKEN_ENDPOINT);
+        stringBuilder.append("?");
+        final Map<String, String> oauthParameters = createDefaultRequestTokenParameters();
+        oauthParameters.put("oauth_callback", OTK_CLIENT_CALLBACK_ENCODED);
+        oauthParameters.put("oauth_signature", URLEncoder.encode(SIGNATURE_GET, "UTF-8"));
+        oauthParameters.put("oauth_unrecognized", "shouldberejected");
+        for (final Map.Entry<String, String> entry : oauthParameters.entrySet()) {
+            stringBuilder.append(entry.getKey());
+            stringBuilder.append("=");
+            stringBuilder.append(entry.getValue());
+            stringBuilder.append("&");
+        }
+        stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+        final String url = stringBuilder.toString();
+        final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(url));
+        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, requestParams);
+
+        final GenericHttpResponse response = request.getResponse();
+
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Query parameter oauth_unrecognized is not allowed", responseBody);
     }
 
     private GenericHttpRequest createAccessTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
