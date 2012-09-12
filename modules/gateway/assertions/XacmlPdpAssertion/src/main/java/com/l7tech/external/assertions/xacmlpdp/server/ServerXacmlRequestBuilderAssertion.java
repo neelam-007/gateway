@@ -27,9 +27,6 @@ import org.jaxen.UnresolvableException;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.util.*;
@@ -55,17 +52,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
 
-        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        final DocumentBuilder builder;
-
-        try {
-            builder = factory.newDocumentBuilder();
-        } catch(ParserConfigurationException pce) {
-            logAndAudit(AssertionMessages.XACML_REQUEST_ERROR, ExceptionUtils.getMessage(pce));
-            return AssertionStatus.FAILED;
-        }
-
-        final Document xacmlRequestDocument = builder.newDocument();
+        final Document xacmlRequestDocument = XmlUtil.createEmptyDocument();
 
         Element rootParent = null;
         if(assertion.getSoapEncapsulation() != XacmlAssertionEnums.SoapVersion.NONE) {
