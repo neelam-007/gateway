@@ -75,9 +75,8 @@ create table audit_system (
 
 create table message_context_mapping_keys (
     objectid bigint not null,
-    create_time bigint,
+    version integer,
     digested varchar(36) not null,
-    guid varchar(255),
     mapping1_key varchar(128),
     mapping1_type varchar(36),
     mapping2_key varchar(128),
@@ -88,25 +87,24 @@ create table message_context_mapping_keys (
     mapping4_type varchar(36),
     mapping5_key varchar(128),
     mapping5_type varchar(36),
-    version integer,
+    create_time bigint,
     primary key (objectid)
 );
 
 create table message_context_mapping_values (
     objectid bigint not null,
-    auth_user_id varchar(255),
-    auth_user_provider_id bigint,
-    auth_user_unique_id varchar(255),
-    create_time bigint,
     digested varchar(36) not null,
-    guid varchar(255),
+    mapping_keys_oid bigint,
+    auth_user_provider_id bigint,
+    auth_user_id varchar(255),
+    auth_user_unique_id varchar(255),
+    service_operation varchar(255),
     mapping1_value varchar(255),
     mapping2_value varchar(255),
     mapping3_value varchar(255),
     mapping4_value varchar(255),
     mapping5_value varchar(255),
-    mapping_keys_oid bigint,
-    service_operation varchar(255),
+    create_time bigint,
     primary key (objectid)
 );
 
@@ -253,9 +251,16 @@ create table connector_property (
 );
 
 create table counters (
-    counterId bigint not null,
+    counterid bigint not null,
     countername varchar(255) not null,
-    primary key (counterId)
+    cnt_sec bigint default 0,
+    cnt_min bigint default 0,
+    cnt_hr bigint default 0,
+    cnt_day bigint default 0,
+    cnt_mnt bigint default 0,
+    last_update bigint default 0,
+    primary key (counterId),
+    unique (countername)
 );
 
 create table email_listener (

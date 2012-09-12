@@ -27,6 +27,7 @@ public class DerbyDbHelper {
     public static void runScripts( final Connection connection,
                                    final Resource[] scripts,
                                    final boolean deleteOnComplete ) throws SQLException {
+        String sql = null;
         for ( Resource scriptResource : scripts ) {
             if ( !scriptResource.exists() ) continue;
 
@@ -52,7 +53,7 @@ public class DerbyDbHelper {
                     if ( token == StreamTokenizer.TT_WORD ) {
                         builder.append( tokenizer.sval );
                     } else if ( token == ';' ) {
-                        final String sql = builder.toString().trim();
+                        sql = builder.toString().trim();
                         final int lastNewLine = builder.lastIndexOf( "\n" );
                         final int lastComment = builder.indexOf( "--", lastNewLine );
                         if ( lastComment >= 0 ) {
@@ -103,6 +104,9 @@ public class DerbyDbHelper {
                 }
             } catch (IOException ioe) {
                 logger.log( Level.WARNING, "Error processing DB script.", ioe );
+            } catch (SQLException e) {
+                logger.log( Level.INFO, "Last SQL statement attempted: " + sql);
+                throw e;
             }
         }
     }
