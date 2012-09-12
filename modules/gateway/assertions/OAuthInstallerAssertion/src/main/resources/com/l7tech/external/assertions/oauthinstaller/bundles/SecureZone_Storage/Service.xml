@@ -40,9 +40,6 @@
                     &lt;L7p:Comment stringValue="Stores clients"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Stores clients"/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="valid http method: POST | GET"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
@@ -779,7 +776,7 @@
                     description, organization, registered_by, created
                     from oauth_client
                     where registered_by = ${request.http.parameter.registered_by}
-                    and organization = ${request.htt.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    and organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
