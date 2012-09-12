@@ -8,7 +8,6 @@ import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.SAXParseException;
 
@@ -27,7 +26,6 @@ public class StylesheetCompilerTest {
     /*
      * Test for bug 12777 - throw xml parse exception when message is empty
      */
-    @Ignore
     @BugNumber(12777)
     @Test
     public void testEmptyInputFailsParseException() {

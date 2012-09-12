@@ -136,7 +136,7 @@ public class CompiledStylesheet {
             logger.finest("software xsl transformation completed");
         } catch ( TransformerException e ) {
             final SourceLocator locator = e.getLocator();
-            if ( e.getCause() == null && locator != null && SYSTEM_ID_MESSAGE.equals( locator.getSystemId() ) ) {
+            if ( e.getCause() == null && locator != null && (SYSTEM_ID_MESSAGE.equals( locator.getSystemId() ) || -1 == locator.getLineNumber()) ) {
                 // translate to a parse error for consistency
                 final LocatorImpl saxLocator = new LocatorImpl();
                 saxLocator.setColumnNumber( locator.getColumnNumber() );
