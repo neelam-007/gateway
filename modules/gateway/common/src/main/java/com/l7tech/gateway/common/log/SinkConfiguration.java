@@ -153,6 +153,8 @@ public class SinkConfiguration extends NamedEntityImp {
     public static final String PROP_SYSLOG_SSL_KEYSTORE_ID = "syslog.ssl.keystore.id";
     /** The property name for the SSL key alias */
     public static final String PROP_SYSLOG_SSL_KEY_ALIAS = "syslog.ssl.key.alias";
+    /** the property name for the format */
+    public static final String PROP_SYSLOG_FORMAT = "syslog.format";
 
     public static final String SYSLOG_PROTOCOL_TCP = "TCP";
     public static final String SYSLOG_PROTOCOL_UDP = "UDP";
@@ -161,6 +163,15 @@ public class SinkConfiguration extends NamedEntityImp {
             SYSLOG_PROTOCOL_TCP,
             SYSLOG_PROTOCOL_UDP,
             SYSLOG_PROTOCOL_SSL
+    );
+
+    public static final String SYSLOG_FORMAT_RAW = "RAW";
+    public static final String SYSLOG_FORMAT_STANDARD = "STANDARD";
+    public static final String SYSLOG_FORMAT_VERBOSE = "VERBOSE";
+    public static final Set<String> SYSLOG_FORMAT_SET = set(
+            SYSLOG_FORMAT_RAW,
+            SYSLOG_FORMAT_STANDARD,
+            SYSLOG_FORMAT_VERBOSE
     );
 
     /**

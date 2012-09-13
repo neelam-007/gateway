@@ -84,6 +84,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     private JList filtersList;
     private JCheckBox rollingLogFileField;
     private JComboBox rollingIntervalField;
+    private JComboBox syslogFormatField;
 
     private final FilterContext filterContext;
     private final SinkConfiguration sinkConfiguration;
@@ -514,6 +515,10 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         syslogLogHostnameField.setSelected(true);
 
+        syslogFormatField.setModel(new DefaultComboBoxModel(SinkConfiguration.SYSLOG_FORMAT_SET.toArray()));
+        syslogFormatField.setRenderer(new Renderers.KeyedResourceRenderer(resources, "syslogSettings.format.{0}.text"));
+        syslogFormatField.setSelectedIndex(1);
+
         // Currently only give options for ASCII, LATIN-1 and UTF-8. Are more encodings needed?
         syslogCharsetField.setModel(new DefaultComboBoxModel(new Object[] {
                 "ASCII",
@@ -802,6 +807,15 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         syslogFacilityField.setValue(value == null ? 1 : new Integer(value));
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_LOG_HOSTNAME);
         syslogLogHostnameField.setSelected( value == null || Boolean.parseBoolean( value ) );
+
+        value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_FORMAT);
+        if(value == null) {
+            // default to pre ssg 7 format
+            syslogFormatField.setSelectedItem( SinkConfiguration.SYSLOG_FORMAT_RAW );
+        } else {
+            syslogFormatField.setSelectedItem(value);
+        }
+
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_CHAR_SET);
         syslogCharsetField.setSelectedItem( value == null ? "UTF-8" : value );
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_TIMEZONE);
@@ -908,6 +922,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         } else {
             sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_LOG_HOSTNAME, Boolean.FALSE.toString());
         }
+
+        sinkConfiguration.setProperty( SinkConfiguration.PROP_SYSLOG_FORMAT, (String) syslogFormatField.getSelectedItem() );
 
         sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_CHAR_SET, (String) syslogCharsetField.getSelectedItem());
 

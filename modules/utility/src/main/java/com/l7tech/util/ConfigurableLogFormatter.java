@@ -46,6 +46,8 @@ import java.io.IOException;
  */
 public class ConfigurableLogFormatter extends DebugExceptionLogFormatter {
 
+
+    private static Object[] emptyArray = {};
     // - PUBLIC
 
     /**
@@ -73,6 +75,17 @@ public class ConfigurableLogFormatter extends DebugExceptionLogFormatter {
      * @return the formatted message
      */
     public String format(final LogRecord record) {
+        return format(record,emptyArray);
+    }
+
+    /**
+     * Format the given log record.
+     *
+     * @param record the log record
+     * @param additionalItems a sequence of additional items that format may need to generate log information
+     * @return the formatted message
+     */
+    public String format(final LogRecord record,Object[] additionalItems) {
         initConfig();
 
         String name = record.getLoggerName();
@@ -92,7 +105,21 @@ public class ConfigurableLogFormatter extends DebugExceptionLogFormatter {
             }
         }
         // Note that you need to edit the EXCEPTION_ARG if you change the exception index
-        Object[] formatArgs =  new Object[]{new Long(time), level.getName(), new FormattableLoggerName(name), message, new Integer(threadId), toMethodString(record), toString(thrown)};
+        //  and that EXCEPTION_ARG is one larger than the array index itself -- it's main
+        //  purpose is to be the String.format method index which is '1' based.
+        Object[] formatArgs = new Object[EXCEPTION_ARG + additionalItems.length];
+        //Object[] formatArgs =  new Object[]{new Long(time), level.getName(), new FormattableLoggerName(name), message, new Integer(threadId), toMethodString(record), toString(thrown)};
+        formatArgs[0] = new Long(time);
+        formatArgs[1] = level.getName();
+        formatArgs[2] = new FormattableLoggerName(name);
+        formatArgs[3] = message;
+        formatArgs[4] = new Integer(threadId);
+        formatArgs[5] = toMethodString(record);
+        formatArgs[6] = toString(thrown);
+        int k = EXCEPTION_ARG;
+        for ( Object item : additionalItems ) {
+             formatArgs[k++] = item;
+        }
 
         if ( thrown != null && !isLoggableException( record.getLoggerName() ) ) {
             thrown = null;

@@ -75,7 +75,8 @@ public abstract class ManagedSyslog implements Closeable {
         //  7 - process
         //  8 - thread id
         //  9 - message
-        Object[] formatArguments = new Object[10];
+        // 10 - LogSink name
+        Object[] formatArguments = new Object[11];
         formatArguments[0] = Integer.valueOf(facility);
         formatArguments[1] = Integer.valueOf(severity);
         formatArguments[2] = Integer.valueOf(priority);

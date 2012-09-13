@@ -1,6 +1,6 @@
 package com.l7tech.server.log;
 
-import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.ConfigurableLogFormatter;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.server.ServerConfig;
@@ -15,6 +15,7 @@ import java.text.MessageFormat;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 
 /**
@@ -36,8 +37,21 @@ class SyslogMessageSink extends MessageSinkSupport {
      */
     public static final String LOG_PATTERN_NO_HOST = "<{2}>{3} {7}[{8}]: {9}";
 
-    // TODO temporary code for CBP, look to replace with something more configurable
-    private static final String SYSTEM_PROP_SYSLOG_CBP_VERBOSE = "com.l7tech.server.log.syslogCbpVerbose";
+    /**
+     * Log formats for Syslog Settings format (RAW, STANDARD, VERBOSE)
+     *
+     * %1 - Java Time in millis
+     * %2 - Log Level (INFO, WARNING, ...)
+     * %3 - Logger Name (class originating log message)
+     * %4 - Actual log message
+     * %5 - Thread ID (already logged by Syslog by default)
+     * %6 - SourceMethod
+     * %7 - don't use - Exception string - already logged if it exists
+     * %8 - LogSink name
+     */
+    static final String SYSLOG_FORMAT_RAW = "%4$s";
+    static final String SYSLOG_FORMAT_STANDARD = "%2$s %3$s: %4$s";
+    static final String SYSLOG_FORMAT_VERBOSE = "[%8$s] %2$s %3$s %6$s: %4$s";
 
     @Override
     public void close() throws IOException {
@@ -64,13 +78,27 @@ class SyslogMessageSink extends MessageSinkSupport {
 
     @Override
     void processMessage(final MessageCategory category, final LogRecord record) {
-        // TODO temporary code for CBP, look to replace with something more configurable
-        String formattedMessage;
-        if (ConfigFactory.getBooleanProperty(SYSTEM_PROP_SYSLOG_CBP_VERBOSE, false)) {
-            formattedMessage = getFormattedMessage(getConfiguration().getName() + ": " + record.getLoggerName() + ": " +
-                    record.getMessage(), record.getResourceBundle(), record.getParameters());
-        } else {
-            formattedMessage = getFormattedMessage(record.getMessage(), record.getResourceBundle(), record.getParameters());
+        final String name = getConfiguration().getName();
+        final String formatName = getConfiguration().getProperty(SinkConfiguration.PROP_SYSLOG_FORMAT);
+
+        String formatPattern;
+
+        // see if customized in logging properties
+        formatPattern = LogManager.getLogManager().getProperty("sink.format." + name + "." + formatName);
+        if ( formatPattern == null ) {
+            formatPattern = LogManager.getLogManager().getProperty("sink.format." + formatName);
+        }
+
+        // use default if not set
+        if ( formatPattern == null ) {
+            if ( SinkConfiguration.SYSLOG_FORMAT_STANDARD.equals(formatName) ) {
+                formatPattern = SYSLOG_FORMAT_STANDARD;
+            } else if ( SinkConfiguration.SYSLOG_FORMAT_VERBOSE.equals(formatName) ) {
+                formatPattern = SYSLOG_FORMAT_VERBOSE;
+            } else {
+                // default to pre ssg 7 format
+                formatPattern = SYSLOG_FORMAT_RAW;
+            }
         }
 
         syslog.log(
@@ -78,7 +106,9 @@ class SyslogMessageSink extends MessageSinkSupport {
                 process,
                 record.getThreadID(),
                 record.getMillis(),
-                formattedMessage
+                new ConfigurableLogFormatter(formatPattern).format(record,new Object[] {this.getConfiguration().getName()})
+//                getFormattedMessage(record.getMessage(), record.getResourceBundle(), record.getParameters())
+//                getFormattedMessage(this.getConfiguration().getName() + ": " + record.getLoggerName() + ": " + record.getMessage(), record.getResourceBundle(), record.getParameters())
         );
     }
 
