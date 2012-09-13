@@ -371,7 +371,7 @@ public class RoleManagementDialog extends JDialog {
         return new Filter<RoleModel>(){
             @Override
             public boolean accept( final RoleModel o ) {
-                return pattern.matcher(o.name).find();
+                return pattern.matcher(o.toString()).find();
             }
         };
     }
