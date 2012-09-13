@@ -7,6 +7,7 @@ import com.ibm.mq.MQMessage;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.message.MqNativeKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
@@ -241,6 +242,14 @@ class MqNativeUtils {
                 if (mqHeader != null)
                     return mqHeader.length;
                 return 0;
+            }
+            @Override
+            public Map<String, Object> getMessagePropertyMap() {
+                return null;
+            }
+            @Override
+            public String getMessageFormat() {
+                return null;
             }
         };
     }

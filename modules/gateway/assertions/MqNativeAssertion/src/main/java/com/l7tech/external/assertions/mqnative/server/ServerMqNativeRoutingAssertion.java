@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.Message;
 import com.l7tech.message.MessageRole;
 import com.l7tech.message.MimeKnob;
+import com.l7tech.message.MqNativeKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;

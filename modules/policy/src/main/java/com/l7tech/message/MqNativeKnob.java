@@ -1,8 +1,6 @@
-package com.l7tech.external.assertions.mqnative.server;
+package com.l7tech.message;
 
-import com.l7tech.message.HasServiceOid;
-import com.l7tech.message.HasSoapAction;
-import com.l7tech.message.MessageKnob;
+import java.util.Map;
 
 
 /**
@@ -12,7 +10,9 @@ public interface MqNativeKnob extends MessageKnob, HasSoapAction, HasServiceOid 
 
     byte[] getMessageHeaderBytes();
 
-
     int getMessageHeaderLength();
 
+    Map<String, Object> getMessagePropertyMap();
+
+    String getMessageFormat();
 }
