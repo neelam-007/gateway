@@ -150,7 +150,6 @@ Section "SecureSpan XML VPN Client" SecCopyUI
   ;ADD YOUR OWN STUFF HERE!
 
   SetOutPath "$INSTDIR"
-  File "${BUILD_DIR}\..\native\win32\systray4j.dll"
   File "${BUILD_DIR}\..\native\win32\peerident\Release\peerident.dll"
   File "${BUILD_DIR}\..\native\win32\Microsoft.VC80.CRT\Microsoft.VC80.CRT.manifest"
   File "${BUILD_DIR}\..\native\win32\Microsoft.VC80.CRT\msvcp80.dll"
@@ -283,7 +282,6 @@ Section "Uninstall"
   Delete "$INSTDIR\${MUI_PRODUCT} in Text Mode.bat"
   Delete "$INSTDIR\ssxvcconfig.bat"
   Delete "$INSTDIR\Client.jar"
-  Delete "$INSTDIR\systray4j.dll"
   Delete "$INSTDIR\peerident.dll"
   Delete "$INSTDIR\Microsoft.VC80.CRT.manifest"
   Delete "$INSTDIR\msvcp80.dll"

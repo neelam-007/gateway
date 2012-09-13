@@ -4,13 +4,14 @@ import com.l7tech.gui.ExceptionDialog;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.HelpUtil;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JavaVersionChecker;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.Constants;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.client.gui.dialogs.AboutBox;
 import com.l7tech.client.gui.util.IconManager;
-import snoozesoft.systray4j.*;
+import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalTheme;
@@ -31,6 +32,8 @@ public class Gui {
     public static final String RESOURCE_PATH = "com/l7tech/proxy/resources";
 //    public static final String HELP_PATH = "com/l7tech/proxy/resources/helpset/SecureSpan_Bridge_Help_System.hs";
 
+    private static final boolean USE_SYSTEM_TRAY = SyspropUtil.getBoolean("com.l7tech.client.gui.useSystemTray", true);
+
     //the property name for the current applications home directory. If not set, this is defaulted to null by code
     // that uses it
     private static final String APPLICATION_HOME_PROPERTY = "com.l7tech.applicationHome";
@@ -39,7 +42,7 @@ public class Gui {
 
     private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
     private static final String KUNSTSTOFF_THEME_CLASSNAME = "com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme";
-    private static final String SYSTRAY_ICON = "com/l7tech/proxy/resources/logosm";
+    private static final String SYSTRAY_ICON = "com/l7tech/proxy/resources/logosm.gif";
 
     private static Gui instance;
     private boolean started = false;
@@ -65,7 +68,7 @@ public class Gui {
     private final boolean configOnly;
     private final boolean hideMenus;
     private final String bigQuitButtonLabel;
-    private SysTrayMenu sysTrayMenu = null;
+    private TrayIcon sysTrayMenu = null;
 
     /**
      * Get the singleton Gui.
@@ -214,58 +217,58 @@ public class Gui {
             return;
         }
 
-        if ( !SysTrayMenu.isAvailable() ) {
+        if ( !USE_SYSTEM_TRAY || !SystemTray.isSupported() ) {
             log.fine("System tray disabled: system tray support not available");
             return;
         }
 
-        final String systrayIconFilename = SYSTRAY_ICON + SysTrayMenuIcon.getExtension();
-        URL si = getClass().getClassLoader().getResource( systrayIconFilename );
+        URL si = getClass().getClassLoader().getResource(SYSTRAY_ICON);
         if ( si == null ) {
-            log.info("System tray disabled: system tray icon not found: " + systrayIconFilename);
+            log.info("System tray disabled: system tray icon not found: " + SYSTRAY_ICON);
             return;
         }
 
         log.info("Enabling system tray");
-        SysTrayMenuIcon systrayMenuIcon = new SysTrayMenuIcon( si );
+        SystemTray systemTray = SystemTray.getSystemTray();
+        Image image = Toolkit.getDefaultToolkit().getImage(si);
 
-        systrayMenuIcon.setActionCommand( "show" );
-        SysTrayMenuListener systrayListener = new SysTrayMenuListener() {
-            public void iconLeftClicked( SysTrayMenuEvent e ) {
-                doShow();
-            }
-
-            public void iconLeftDoubleClicked( SysTrayMenuEvent e ) {
-                doShow();
-            }
-
-            public void menuItemSelected( SysTrayMenuEvent e ) {
-                log.info( "System tray menu item selected.  Command=" + e.getActionCommand() );
-                if ( "show".equals( e.getActionCommand() ) ) {
-                    doShow();
-                } else if ( "exit".equals( e.getActionCommand() ) ) {
-                    Gui.this.closeFrame();
-                }
-            }
-
-            private void doShow() {
+        ActionListener defaultTrayAction = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
                 Gui.this.getFrame().setVisible(true);
                 Gui.this.getFrame().setState( Frame.NORMAL );
                 Gui.this.getFrame().toFront();
             }
         };
-        systrayMenuIcon.addSysTrayMenuListener( systrayListener );
 
-        SysTrayMenuItem smExit = new SysTrayMenuItem( "Exit", "exit" );
-        smExit.addSysTrayMenuListener( systrayListener );
-        SysTrayMenuItem smShow = new SysTrayMenuItem( "Show "+ Constants.APP_NAME+" window", "show" );
-        smShow.addSysTrayMenuListener( systrayListener );
+        PopupMenu menu = new PopupMenu();
 
-        sysTrayMenu = new SysTrayMenu( systrayMenuIcon, SYSTRAY_TOOLTIP );
-        sysTrayMenu.addItem( smExit );
-        sysTrayMenu.addSeparator();
-        sysTrayMenu.addItem( smShow );
-        sysTrayMenu.showIcon();
+        MenuItem showItem = new MenuItem("Show " + Constants.APP_NAME+ " window");
+        showItem.addActionListener(defaultTrayAction);
+        menu.add(showItem);
+
+        menu.addSeparator();
+
+        MenuItem exitItem = new MenuItem("Exit");
+        exitItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Gui.this.closeFrame();
+            }
+        });
+        menu.add(exitItem);
+
+
+        TrayIcon trayIcon = new TrayIcon(image, Constants.APP_NAME, menu);
+        trayIcon.setImageAutoSize(true);
+        trayIcon.addActionListener(defaultTrayAction);
+
+        try {
+            systemTray.add(trayIcon);
+            sysTrayMenu = trayIcon;
+        } catch (AWTException e) {
+            log.log(Level.FINE, "Unable to add system tray: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
     }
 
     /**
@@ -296,8 +299,7 @@ public class Gui {
             messageViewer.dispose();
             messageViewer = null;
         }
-        if ( sysTrayMenu != null )
-            sysTrayMenu.hideIcon();
+        hideSystemTrayIcon();
         frame.dispose();
         frame = null;
         started = false;
@@ -346,8 +348,8 @@ public class Gui {
                 public void windowIconified( WindowEvent e ) {
                     if ( sysTrayMenu != null ) {
                         frame.setVisible(false);
-                        frame.setState( Frame.NORMAL );
-                        sysTrayMenu.showIcon();
+                        frame.setState(Frame.NORMAL);
+                        showSystemTrayIcon();
                     }
                 }
 
@@ -355,7 +357,7 @@ public class Gui {
                     if ( sysTrayMenu != null ) {
                         frame.setVisible(false);
                         frame.setState( Frame.NORMAL );
-                        sysTrayMenu.showIcon();
+                        showSystemTrayIcon();
                     } else
                         closeFrame();
                 }
@@ -503,7 +505,7 @@ public class Gui {
 
         if ( sysTrayMenu != null ) {
             getFrame().setVisible(false);
-            sysTrayMenu.showIcon();
+            showSystemTrayIcon();
         } else
             getFrame().setVisible(true);
 
@@ -511,6 +513,25 @@ public class Gui {
             getSsgListPanel().getActionNewSsg().actionPerformed( new ActionEvent( this, 1, "NewDefault" ) );
         else
             getSsgListPanel().selectDefaultSsg();
+    }
+
+    private void showSystemTrayIcon() {
+        if (sysTrayMenu == null)
+            return;
+
+        SystemTray.getSystemTray().remove(sysTrayMenu);
+        try {
+            SystemTray.getSystemTray().add(sysTrayMenu);
+        } catch (AWTException e1) {
+            // Ignore
+        }
+    }
+
+    private void hideSystemTrayIcon() {
+        if (sysTrayMenu == null)
+            return;
+
+        SystemTray.getSystemTray().remove(sysTrayMenu);
     }
 
     /**
