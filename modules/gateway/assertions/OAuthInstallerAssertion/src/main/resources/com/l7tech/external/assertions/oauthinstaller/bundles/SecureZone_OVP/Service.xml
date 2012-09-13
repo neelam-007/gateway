@@ -2278,7 +2278,7 @@
                     &lt;/L7p:Include&gt;
                     &lt;L7p:CustomizeErrorResponse&gt;
                     &lt;L7p:Content stringValueReference="inline"&gt;&lt;![CDATA[&lt;validation&gt;
-                    &lt;result&gt;valid&lt;/result&gt;
+                    &lt;result&gt;invalid&lt;/result&gt;
                     &lt;/validation&gt;]]&gt;&lt;/L7p:Content&gt;
                     &lt;L7p:ContentType stringValue="text/xml; charset=UTF-8"/&gt;
                     &lt;L7p:ExtraHeaders nameValuePairArray="included"/&gt;
@@ -2398,6 +2398,7 @@
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue=""/&gt;
                     &lt;L7p:DataType variableDataType="dateTime"/&gt;
@@ -2417,6 +2418,7 @@
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;/wsp:All&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;

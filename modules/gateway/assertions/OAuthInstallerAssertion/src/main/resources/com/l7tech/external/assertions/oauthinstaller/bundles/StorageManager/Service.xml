@@ -302,7 +302,7 @@
                     &lt;L7p:PatternContainsVariables booleanValue="true"/&gt;
                     &lt;L7p:Regex stringValue="${date.current}"/&gt;
                     &lt;L7p:Replace booleanValue="true"/&gt;
-                    &lt;L7p:Replacement stringValue="${current.yyyy-MM-dd HH:mm:ss}"/&gt;
+                    &lt;L7p:Replacement stringValue="${current.yyyy-MM-dd HH:mm:ss z}"/&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;/L7p:Regex&gt;
                     &lt;/L7p:ForEachLoop&gt;
@@ -514,7 +514,7 @@
                     &lt;L7p:PatternContainsVariables booleanValue="true"/&gt;
                     &lt;L7p:Regex stringValue="${date.current}"/&gt;
                     &lt;L7p:Replace booleanValue="true"/&gt;
-                    &lt;L7p:Replacement stringValue="${current.yyyy-MM-dd HH:mm:ss}"/&gt;
+                    &lt;L7p:Replacement stringValue="${current.yyyy-MM-dd HH:mm:ss z}"/&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;/L7p:Regex&gt;
                     &lt;/L7p:ForEachLoop&gt;
@@ -1382,7 +1382,7 @@
                     &lt;L7p:PatternContainsVariables booleanValue="true"/&gt;
                     &lt;L7p:Regex stringValue="${date.current}"/&gt;
                     &lt;L7p:Replace booleanValue="true"/&gt;
-                    &lt;L7p:Replacement stringValue="${current.yyyy-MM-dd HH:mm:ss}"/&gt;
+                    &lt;L7p:Replacement stringValue="${current.yyyy-MM-dd HH:mm:ss z}"/&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;/L7p:Regex&gt;
                     &lt;/L7p:ForEachLoop&gt;
