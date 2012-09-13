@@ -29,7 +29,7 @@ import java.util.*;
  * by the parent PEC. The child PEC is responsible for variables, routing and
  * other instance specific duties.</p>
  */
-class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
+class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper implements HasOriginalContext {
 
     //- PUBLIC
 
@@ -291,12 +291,33 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
         context.setAssertionLatencyNanos(latency);
     }
 
+    @Override
+    public Message getOriginalRequest() {
+        return parentContext.getRequest();
+    }
+
+    @Override
+    public Message getOriginalResponse() {
+        return parentContext.getResponse();
+    }
+
+    @Override
+    public Object getOriginalContextVariable(String name) throws NoSuchVariableException {
+        return parentContext.getVariable(name);
+    }
+
+    @Override
+    public PolicyEnforcementContext getOriginalContext() {
+        return parentContext;
+    }
+
     //- PACKAGE
 
     ChildPolicyEnforcementContext( final PolicyEnforcementContext parent,
                                    final PolicyEnforcementContext context ) {
         super( parent );
         this.context = context;
+        this.parentContext = parent;
     }
 
     //- PRIVATE
@@ -316,4 +337,5 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
     }
 
     private final PolicyEnforcementContext context;
+    private final PolicyEnforcementContext parentContext;
 }
