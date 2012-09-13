@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestStashManagerFactory;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyException;
@@ -38,6 +39,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.Collections;
@@ -72,6 +74,7 @@ public class XslTransformationTest {
     private static final String EXPECTED_VAR_RESULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
     "VARIABLE CONTENT routingStatus=None" +
     "</soap:Envelope>";
+    private Auditor auditor = new Auditor(this, null, logger);
 
     private Document transform(String xslt, String src) throws Exception {
         TransformerFactory transfoctory = TransformerFactory.newInstance();
@@ -288,7 +291,7 @@ public class XslTransformationTest {
         BeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("httpClientFactory", new TestingHttpClientFactory());
         }});
-        ServerAssertion sa = new ServerXslTransformation(assertion, beanFactory);
+        ServerXslTransformation sa = new ServerXslTransformation(assertion, beanFactory);
 
         Message request = new Message(XmlUtil.stringToDocument(DUMMY_SOAP_XML));
         Message response = new Message();
@@ -299,6 +302,27 @@ public class XslTransformationTest {
         String res = new String( IOUtils.slurpStream(request.getMimeKnob().getFirstPart().getInputStream(false)));
 
         Assert.assertEquals(res, EXPECTED_VAR_RESULT);
+
+        // Ensure Saxon was actually used
+        CompiledStylesheet cs = sa.resourceGetter.getResource(request.getXmlKnob(), context.getVariableMap(assertion.getVariablesUsed(), auditor));
+        assertEquals("Saxon should have been used to compile the stylesheet", "net.sf.saxon.PreparedStylesheet", getSoftwareStylesheetClassname(cs));
+    }
+
+    private String getSoftwareStylesheetClassname(CompiledStylesheet cs) {
+        return getField(cs, "softwareStylesheet").getClass().getName();
+    }
+
+    // Gets a value of a private field
+    private static Object getField(Object obj, String fieldName) {
+        try {
+            Field field = obj.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(obj);
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test

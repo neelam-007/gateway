@@ -96,11 +96,11 @@ public class ServerXslTransformation
                 };
 
     /** A cache for remotely loaded stylesheets. */
-    private static UrlResolver<CompiledStylesheet> httpObjectCache = null;
+    static UrlResolver<CompiledStylesheet> httpObjectCache = null;
 
-    private final ResourceGetter<CompiledStylesheet, XmlKnob> resourceGetter;
-    private final boolean allowMessagesWithNoProcessingInstruction;
-    private final String[] urlVarsUsed;
+    final ResourceGetter<CompiledStylesheet, XmlKnob> resourceGetter;
+    final boolean allowMessagesWithNoProcessingInstruction;
+    final String[] urlVarsUsed;
 
     public ServerXslTransformation(XslTransformation assertion, BeanFactory beanFactory) throws ServerPolicyException {
         super(assertion);
