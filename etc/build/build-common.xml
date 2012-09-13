@@ -107,6 +107,7 @@
                    source="${module.compile.source}"
                    target="${module.compile.target}"
                    excludes="${module.compile.excludes}"
+		           encoding="UTF-8"
                    includeAntRuntime="no"
                     >
                 <compilerarg value="-Xlint${module.compile.xlint}" compiler="modern"/>
