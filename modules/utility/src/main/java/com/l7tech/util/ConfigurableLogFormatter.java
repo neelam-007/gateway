@@ -47,7 +47,7 @@ import java.io.IOException;
 public class ConfigurableLogFormatter extends DebugExceptionLogFormatter {
 
 
-    private static Object[] emptyArray = {};
+    private static final Object[] EMPTYARRAY = {};
     // - PUBLIC
 
     /**
@@ -75,7 +75,7 @@ public class ConfigurableLogFormatter extends DebugExceptionLogFormatter {
      * @return the formatted message
      */
     public String format(final LogRecord record) {
-        return format(record,emptyArray);
+        return format(record,EMPTYARRAY);
     }
 
     /**
@@ -108,7 +108,7 @@ public class ConfigurableLogFormatter extends DebugExceptionLogFormatter {
         //  and that EXCEPTION_ARG is one larger than the array index itself -- it's main
         //  purpose is to be the String.format method index which is '1' based.
         Object[] formatArgs = new Object[EXCEPTION_ARG + additionalItems.length];
-        //Object[] formatArgs =  new Object[]{new Long(time), level.getName(), new FormattableLoggerName(name), message, new Integer(threadId), toMethodString(record), toString(thrown)};
+        formatArgs[0] = new Long(time);
         formatArgs[0] = new Long(time);
         formatArgs[1] = level.getName();
         formatArgs[2] = new FormattableLoggerName(name);

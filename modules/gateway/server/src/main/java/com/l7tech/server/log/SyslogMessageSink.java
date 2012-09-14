@@ -107,8 +107,6 @@ class SyslogMessageSink extends MessageSinkSupport {
                 record.getThreadID(),
                 record.getMillis(),
                 new ConfigurableLogFormatter(formatPattern).format(record,new Object[] {this.getConfiguration().getName()})
-//                getFormattedMessage(record.getMessage(), record.getResourceBundle(), record.getParameters())
-//                getFormattedMessage(this.getConfiguration().getName() + ": " + record.getLoggerName() + ": " + record.getMessage(), record.getResourceBundle(), record.getParameters())
         );
     }
 
