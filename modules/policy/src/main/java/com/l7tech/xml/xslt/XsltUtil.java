@@ -137,7 +137,7 @@ public class XsltUtil {
      * @return true if Saxon should be used to compile this stylesheet.
      */
     private static boolean shouldUseSaxon(String xsltVersion) {
-        return "2.0".equals(xsltVersion) || ConfigFactory.getBooleanProperty(SaxonUtils.PROP_ALWAYS_USE_SAXON, false);
+        return "2.0".equals(xsltVersion) || ConfigFactory.getBooleanProperty(SaxonUtils.CONFIG_PROP_ALWAYS_USE_SAXON, false);
     }
 
     /**

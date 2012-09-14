@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 public class SaxonUtils {
     private static final Logger logger = Logger.getLogger(SaxonUtils.class.getName());
 
-    public static final String PROP_ALWAYS_USE_SAXON = "com.l7tech.xml.xslt.useSaxon";
+    public static final String CONFIG_PROP_ALWAYS_USE_SAXON = "xslt.engine.force20";
     private static final String PROP_SAXON_ALLOW_COLLATION = "com.l7tech.xml.xslt.saxon.allowCollation";
     private static final String PROP_SAXON_ALLOW_COLLECTIONS = "com.l7tech.xml.xslt.saxon.allowCollections";
     private static final String PROP_SAXON_ALLOW_ENTITY_RESOLUTION = "com.l7tech.xml.xslt.saxon.allowEntityResolution";
