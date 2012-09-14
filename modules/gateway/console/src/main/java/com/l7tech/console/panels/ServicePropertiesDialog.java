@@ -832,8 +832,9 @@ public class ServicePropertiesDialog extends JDialog {
                 return;
             }
         }
-        // validate service resolution for new services
-        if ( subject.getOid()==PublishedService.DEFAULT_OID && hasResolutionConflict() ) {
+
+        // validate service resolution
+        if (hasResolutionConflict()) {
             String msg = "The resolution parameters (SOAPAction, namespace, and possibly\n" +
                          "routing URI) for this Web service are already used by an existing\n" +
                          "published service.\n\nDo you want to save the service?";
