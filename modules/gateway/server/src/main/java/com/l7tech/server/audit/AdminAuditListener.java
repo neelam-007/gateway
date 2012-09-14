@@ -4,18 +4,20 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AdminAuditRecord;
+import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.LogonEvent;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.EntityChangeSet;
+import com.l7tech.server.event.HasAuditDetails;
 import com.l7tech.server.event.admin.*;
 import com.l7tech.server.event.system.BackupEvent;
 import com.l7tech.server.service.ServiceEvent;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -74,8 +76,19 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         }
 
         if (event instanceof AdminEvent || event instanceof LogonEvent) {
-            auditContextFactory.emitAuditRecord(makeAuditRecord(event));
+            auditContextFactory.emitAuditRecordWithDetails(makeAuditRecord(event), false, event.getSource(), makeAuditDetails(event));
         }
+    }
+
+    private static Collection<AuditDetail> makeAuditDetails(ApplicationEvent event) {
+        Collection<AuditDetail> ret = null;
+
+        if (event instanceof HasAuditDetails) {
+            HasAuditDetails hasAuditDetails = (HasAuditDetails) event;
+            ret = hasAuditDetails.getAuditDetails();
+        }
+
+        return ret;
     }
 
     public static class LevelMapping {

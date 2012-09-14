@@ -1,15 +1,16 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.Component;
+import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
+import com.l7tech.server.event.HasAuditDetails;
 import com.l7tech.server.event.system.*;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.Ordered;
 
+import java.util.Collection;
 import java.util.logging.Level;
-
-import static com.l7tech.util.CollectionUtils.join;
 
 /**
  * @author alex
@@ -40,16 +41,15 @@ public class SystemAuditListener implements ApplicationListener, Ordered {
                     ape.setSystemAuditRecord(record);
                 }
             } else {
-                if ( event instanceof AuditAwareSystemEvent ) {
-                    final AuditAwareSystemEvent aase = (AuditAwareSystemEvent) event;
-                    if ( !aase.shouldBeAudited( join(AuditContextFactory.getCurrent().getDetails().values()) ) ) {
-                        return;
-                    }
-                }
                 record = createSystemAuditRecord(se);
             }
 
-            auditContextFactory.emitAuditRecord(record, update);
+            Collection<AuditDetail> details = null;
+            if ( event instanceof HasAuditDetails) {
+                details = ((HasAuditDetails) event).getAuditDetails();
+            }
+
+            auditContextFactory.emitAuditRecordWithDetails(record, update, event.getSource(), details);
         }
     }
 

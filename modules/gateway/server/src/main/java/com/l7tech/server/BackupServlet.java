@@ -5,6 +5,7 @@ import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.io.ProcUtils;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.ServiceMessages;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
@@ -16,17 +17,12 @@ import com.l7tech.identity.MissingCredentialsException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.event.system.BackupEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.transport.ListenerException;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.FileUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -38,6 +34,7 @@ import java.io.*;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
@@ -61,7 +58,6 @@ public class BackupServlet extends AuthenticatableHttpServlet {
     private ClusterInfoManager _clusterInfoManager;
     private RoleManager _roleManager;
     private GenericHttpClientFactory _httpClientFactory;
-    private Auditor _auditor;
 
     @Override
     protected String getFeature() {
@@ -84,8 +80,6 @@ public class BackupServlet extends AuthenticatableHttpServlet {
         _clusterInfoManager = (ClusterInfoManager) _webApplicationContext.getBean("clusterInfoManager");
         _roleManager = (RoleManager) _webApplicationContext.getBean("roleManager");
         _httpClientFactory = (GenericHttpClientFactory) _webApplicationContext.getBean("internodeHttpClientFactory");
-
-        _auditor = new Auditor(this, _webApplicationContext, _logger);
     }
 
     @Override
@@ -443,12 +437,9 @@ public class BackupServlet extends AuthenticatableHttpServlet {
                              final AuditDetailMessage logMsg,
                              final Throwable e,
                              final String... logParams) {
-        if (e == null) {
-            _auditor.logAndAudit(logMsg, logParams);
-        } else {
-            _auditor.logAndAudit(logMsg, logParams, e);
-        }
-        _webApplicationContext.publishEvent(new BackupEvent(this, logMsg.getLevel(), eventMsg, clientAddr, user));
+        final BackupEvent backupEvent = new BackupEvent(this, logMsg.getLevel(), eventMsg, clientAddr, user);
+        backupEvent.setAuditDetails(Arrays.asList(new AuditDetail(logMsg, logParams, e)));
+        _webApplicationContext.publishEvent(backupEvent);
     }
 
     private String getOriginalClientHost(final HttpServletRequest request) {

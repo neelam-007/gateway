@@ -4,7 +4,7 @@
 package com.l7tech.server.event.system;
 
 import com.l7tech.identity.User;
-import com.l7tech.server.event.admin.AdminEvent;
+import com.l7tech.server.event.admin.DetailedAdminEvent;
 
 import java.util.logging.Level;
 
@@ -14,7 +14,7 @@ import java.util.logging.Level;
  * @since SecureSpan 4.3
  * @author rmak
  */
-public class BackupEvent extends AdminEvent {
+public class BackupEvent extends DetailedAdminEvent {
     private final Level _level;
     private final String _clientAddr;
     private final User _user;

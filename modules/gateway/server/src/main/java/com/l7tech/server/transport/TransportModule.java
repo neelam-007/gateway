@@ -2,19 +2,19 @@ package com.l7tech.server.transport;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditDetailEvent;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.LifecycleBean;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.event.MessageProcessed;
-import com.l7tech.server.event.system.AuditAwareConnectorTransportEvent;
+import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.util.Background;
 import com.l7tech.util.Config;
@@ -46,7 +46,6 @@ public abstract class TransportModule extends LifecycleBean {
     private final DefaultKey defaultKey;
     private final Config config;
     private final Object invalidationSync = new Object();
-    private Audit audit;
 
     protected TransportModule( @NotNull  final String name,
                                @NotNull  final Component component,
@@ -188,19 +187,7 @@ public abstract class TransportModule extends LifecycleBean {
             for (int i = 0; i < ids.length; i++) {
                 handleSsgConnectorOperation(operations[i], ids[i]);
             }
-            perhapsConnectorStateChanged();
         }
-    }
-
-    private void perhapsConnectorStateChanged() {
-        getApplicationContext().publishEvent(
-                new AuditAwareConnectorTransportEvent(
-                        this,
-                        component,
-                        null,
-                        Level.INFO,
-                        "State Changed",
-                        "Listener state changed" ) );
     }
 
     private void handleSsgConnectorOperation(char operation, long connectorId) {
@@ -243,7 +230,6 @@ public abstract class TransportModule extends LifecycleBean {
                 public void run() {
                     try {
                         addConnector(roc);
-                        perhapsConnectorStateChanged();
                     } catch (Exception e) {
                         //noinspection ThrowableResultOfMethodCallIgnored
                         logger.log(Level.WARNING, "Unable to start " + roc.getScheme() + " connector on port " + roc.getPort() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -344,25 +330,35 @@ public abstract class TransportModule extends LifecycleBean {
     }
 
     protected final void auditStart( final String scheme, final String connectorDescription ) {
-        getAudit().logAndAudit( CONNECTOR_START, scheme, connectorDescription);
+        auditListenerStateChanged(CONNECTOR_START, new String[]{scheme, connectorDescription}, null);
     }
 
     protected final void auditStop( final String scheme, String connectorDescription) {
-        getAudit().logAndAudit( CONNECTOR_STOP, scheme, connectorDescription);
+        auditListenerStateChanged(CONNECTOR_STOP, new String[]{scheme, connectorDescription}, null);
     }
 
     protected final void auditError( final String schemes, final String message, @Nullable final Throwable exception ) {
-        getAudit().logAndAudit( CONNECTOR_ERROR, new String[]{schemes, message}, exception);
+        auditListenerStateChanged(CONNECTOR_ERROR, new String[]{schemes, message}, exception);
     }
 
-    private Audit getAudit() {
-        Audit audit = this.audit;
+    /**
+     * Immediately emit a system audit record containing the specified detail message.
+     * Also sends the detail message to the log sinks.
+     *
+     * @param msg detail message.  Required.
+     * @param params detail params. May be null or empty.
+     * @param e  exception.  May be null.
+     */
+    protected final void auditListenerStateChanged(@NotNull AuditDetailMessage msg, @Nullable String[] params, @Nullable Throwable e) {
+        final TransportEvent event = new TransportEvent(
+            this,
+            component,
+            null,
+            Level.INFO,
+            "State Changed",
+            "Listener state changed");
 
-        if (audit == null) {
-            audit = new Auditor(this, getApplicationContext(), logger);
-            this.audit = audit;
-        }
-
-        return audit;
+        event.setAuditDetails(Arrays.asList(new AuditDetail(msg, params, e)));
+        getApplicationContext().publishEvent(event);
     }
 }

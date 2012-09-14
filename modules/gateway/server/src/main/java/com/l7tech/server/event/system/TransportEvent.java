@@ -7,7 +7,7 @@ import java.util.logging.Level;
 /**
  * Events related to transport modules.
  */
-public class TransportEvent extends SystemEvent {
+public class TransportEvent extends DetailedSystemEvent {
     private final String action;
 
     public TransportEvent(Object source, Component component, String ipAddress, Level level, String action, String message) {
