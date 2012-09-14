@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
  * At minimum you need to change the BASE_URL and SIGNATURE strings.
  */
 @Ignore
-public class OAuthToolkitIntegrationTest {
+public class OAuthToolkit1_0IntegrationTest {
     //localhost
     private static final String BASE_URL = "localhost";
     private static final String SIGNATURE = "zQQtKbwhcAcDnwzI8gg6f2tBHUQ="; // method = POST
