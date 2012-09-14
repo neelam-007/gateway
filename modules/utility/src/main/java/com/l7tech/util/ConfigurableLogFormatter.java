@@ -109,7 +109,6 @@ public class ConfigurableLogFormatter extends DebugExceptionLogFormatter {
         //  purpose is to be the String.format method index which is '1' based.
         Object[] formatArgs = new Object[EXCEPTION_ARG + additionalItems.length];
         formatArgs[0] = new Long(time);
-        formatArgs[0] = new Long(time);
         formatArgs[1] = level.getName();
         formatArgs[2] = new FormattableLoggerName(name);
         formatArgs[3] = message;
