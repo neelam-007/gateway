@@ -1876,7 +1876,7 @@
                     &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:CaseSensitive booleanValue=&quot;false&quot;/&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${gateway.oauth_v1_consumer_key_lifetime_m}&quot;/&gt;
+                    &lt;L7p:Expression1 stringValue=&quot;${oauth_v1_consumer_key_lifetime_m}&quot;/&gt;
                     &lt;L7p:Expression2 stringValue=&quot;0&quot;/&gt;
                     &lt;L7p:Operator operator=&quot;GT&quot;/&gt;
                     &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
@@ -1890,7 +1890,7 @@
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue=&quot;&quot;/&gt;
                     &lt;L7p:DataType variableDataType=&quot;dateTime&quot;/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=&quot;${gateway.oauth_v1_consumer_key_lifetime_m}&quot;/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue=&quot;${oauth_v1_consumer_key_lifetime_m}&quot;/&gt;
                     &lt;L7p:DateOffsetField intValue=&quot;12&quot;/&gt;
                     &lt;L7p:VariableToSet stringValue=&quot;expiration&quot;/&gt;
                     &lt;/L7p:SetVariable&gt;
