@@ -30,6 +30,12 @@ public class TextUtils {
      */
     public final static Pattern URI_STRING_SPLIT_PATTERN = Pattern.compile("\\s+");
 
+    /** Number of characters in front of the pattern being searched for to log when detected. */
+    private static final int EVIDENCE_MARGIN_BEFORE = 16;
+
+    /** Number of characters behind the pattern being searched for to log when detected. */
+    private static final int EVIDENCE_MARGIN_AFTER = 24;
+
     /**
      * String split pattern for comma separated values.
      *
@@ -655,6 +661,42 @@ public class TextUtils {
         }
 
         return value;
+    }
+
+    /**
+     * Scans for a string pattern.
+     *
+     * @param s         string to scan
+     * @param pattern   regular expression pattern to search for
+     * @param evidence  for passing back snippet of string surrounding the first
+     *                  (if found) match, for logging purpose
+     * @return starting character index if found (<code>evidence</code> is then populated); -1 if not found
+     */
+    public static int scanAndRecordMatch(final String s, final Pattern pattern, final StringBuilder evidence) {
+        final Matcher matcher = pattern.matcher(s);
+        if (matcher.find()) {
+            evidence.setLength(0);
+
+            int start = matcher.start() - EVIDENCE_MARGIN_BEFORE;
+            if (start <= 0) {
+                start = 0;
+            } else {
+                evidence.append("...");
+            }
+
+            int end = matcher.end() + EVIDENCE_MARGIN_AFTER;
+            if (end >= s.length()) {
+                end = s.length();
+                evidence.append(s.substring(start, end));
+            } else {
+                evidence.append(s.substring(start, end));
+                evidence.append("...");
+            }
+
+            return matcher.start();
+        } else {
+            return -1;
+        }
     }
 
     /**

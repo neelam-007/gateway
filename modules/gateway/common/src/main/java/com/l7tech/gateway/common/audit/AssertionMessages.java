@@ -714,15 +714,22 @@ public class AssertionMessages extends Messages {
     public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_JSON = m(7164, Level.FINE, "Scanning {0} message body as application/json.");
 
     // SqlAttackAssertion
-    public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");
+    public static final M SQLATTACK_ALREADY_ROUTED = m(7203, Level.WARNING, "Unable to protect against SQL attacks - the request has already been routed");
+    public static final M SQLATTACK_REJECTED = m(7204, Level.WARNING, true, false, "{0} was flagged by Protect Against SQL Attacks Assertion");
+    public static final M SQLATTACK_SKIP_RESPONSE_NOT_ROUTED = m(7205, Level.FINE, "No response body to check because request has not been routed yet.");
+    public static final M SQLATTACK_NOT_HTTP = m(7210, Level.FINE, "Request is not HTTP.");
+    public static final M SQLATTACK_SCANNING_URL = m(7211, Level.FINE, "Scanning request URL.");
+    public static final M SQLATTACK_SCANNING_BODY_TEXT = m(7212, Level.FINE, "Scanning {0} message body as text.");
+    public static final M SQLATTACK_CANNOT_PARSE = m(7213, Level.WARNING, "Cannot parse {0} as {1}.");
+    public static final M SQLATTACK_DETECTED_PARAM = m(7214, Level.WARNING, "{3} detected in {0} parameter \"{1}\": {2}");
+    public static final M SQLATTACK_DETECTED = m(7215, Level.WARNING, "{2} detected in {0}: {1}");
+
     /**
      * @deprecated
      */
     @Deprecated
+    public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");
     public static final M _UNUSED_SQLATTACK_REQUEST_REJECTED = m(7201, Level.WARNING, true, false, "Request was flagged by SQL attack protection assertion");
-    public static final M SQLATTACK_ALREADY_ROUTED = m(7203, Level.WARNING, "Unable to protect against SQL attacks - the request has already been routed");
-    public static final M SQLATTACK_REJECTED = m(7204, Level.WARNING, true, false, "{0} was flagged by Protect Against SQL Attacks Assertion");
-    public static final M SQLATTACK_SKIP_RESPONSE_NOT_ROUTED = m(7205, Level.FINE, "No response body to check because request has not been routed yet.");
 
     // RequestSizeLimit
     /**

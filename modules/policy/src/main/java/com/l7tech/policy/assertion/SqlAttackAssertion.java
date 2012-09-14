@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2005-2012 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.policy.assertion;
@@ -9,6 +8,7 @@ import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.util.Functions;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
@@ -21,34 +21,16 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
     public static final String PROT_MSSQL = "MsSql";
     public static final String PROT_ORASQL = "OraSql";
 
-    private static final int NAME = 0;
-    private static final int LABEL = 1;
-    private static final int DESC = 2;
-    private static final int REGEX = 3;
+    private static final List<String> ATTACK_PROTECTION_NAMES =
+            new ArrayList<String>(Arrays.asList(PROT_MSSQL, PROT_ORASQL, PROT_METATEXT, PROT_META));
+    private static final Map<String,SqlAttackProtectionType> ATTACK_PROTECTION_TYPES =
+            Collections.unmodifiableMap(createProtectionMap());
 
-    // Regex that matches SQL metacharacters, either directly or in SQL escape character form.
-    private static final String RE_SQLMETA = "--|['#]";
+    /** Whether to apply protections to request URL. */
+    private boolean includeRequestUrl;
 
-    private static final String PROTS[][] = {
-            { PROT_MSSQL,       "Known MS SQL Server Exploits Protection",
-                                "Blocks messages which appear to contain common MS SQL Server exploits.",
-                                "(?i)exec[\\s\\+]+(sp|xp)\\w+",
-            },
-            { PROT_ORASQL,      "Known Oracle Exploit Protection",
-                                "Blocks messages which appear to contain common Oracle exploits.",
-                                "(?i)\\bto_timestamp_tz\\b|\\btz_offset\\b|\\bbfilename\\b",
-            },
-            { PROT_METATEXT,    "Standard SQL Injection Attack Protection",
-                                "Blocks messages with SQL metacharacters in any XML TEXT or CDATA section.  Protects against most SQL injection attacks, but with many false positives.\n\nIn particular, any text containing a single-quote (') character will be blocked.",
-                                ">[^<]*(?:" + RE_SQLMETA +
-                                 ")[^>]*<|<\\s*!\\s*\\[CDATA\\s*\\[(?:(?!\\]\\s*\\]\\s*>).)*?(?:" +
-                                        RE_SQLMETA + ").*?\\]\\s*\\]\\s*>",
-            },
-            { PROT_META,        "Invasive SQL Injection Attack Protection",
-                                "Blocks messages with SQL metacharacters anywhere in the XML.  Protects against more SQL injection attacks, but with many more false positives.\n\nIn particular, any message containing a shorthand XPointer reference will be rejected, as will most messages containing signed XML.",
-                                RE_SQLMETA,
-            },
-    };
+    /** Whether to apply protections to request body. */
+    private boolean includeRequestBody;
 
     Set<String> protections = new HashSet<String>();
 
@@ -71,7 +53,6 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
         DefaultAssertionMetadata meta = defaultMeta();
         //Note PALETTE_FOLDERS is not defined as this assertion is added by type in ThreadProtectionFolderNode
         meta.put(SHORT_NAME, baseName);
-//        meta.put(AssertionMetadata.LONG_NAME, "Enable protection against SQL attacks.");
         meta.put(DESCRIPTION, "<html>Helps prevent <b>malicious code injection</b> and <b>common SQL injection</b> attacks by blocking common SQL exploits from reaching protected web services. </html>");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/SQLProtection16x16.gif");
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
@@ -94,11 +75,7 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
      * @return a list of protections that COULD be enabled.  Never null or empty.
      */
     public static List<String> getAllProtections() {
-        List<String> ret = new ArrayList<String>();
-        for (String[] prot : PROTS) {
-            ret.add(prot[NAME]);
-        }
-        return ret;
+        return ATTACK_PROTECTION_NAMES;
     }
 
     /**
@@ -154,10 +131,13 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
      * @throws PolicyAssertionException if no protection with this name is known to this assertion.
      */
     public static String getProtectionLabel(String protection) throws PolicyAssertionException {
-        String got = lookupName(protection, LABEL);
-        if (got == null)
+        SqlAttackProtectionType protectionType = ATTACK_PROTECTION_TYPES.get(protection);
+
+        if (protectionType == null) {
             throw new PolicyAssertionException(null, "No label for protection \"" + protection + "\"");
-        return got;
+        }
+
+        return protectionType.getDisplayName();
     }
 
     /**
@@ -168,28 +148,63 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
      * @throws PolicyAssertionException if no protection with this name is known to this assertion.
      */
     public static String getProtectionDescription(String protection) throws PolicyAssertionException {
-        String got = lookupName(protection, DESC);
-        if (got == null)
-            throw new PolicyAssertionException(null, "No label for protection \"" + protection + "\"");
-        return got;
+        SqlAttackProtectionType protectionType = ATTACK_PROTECTION_TYPES.get(protection);
+
+        if (protectionType == null) {
+            throw new PolicyAssertionException(null, "No description for protection \"" + protection + "\"");
+        }
+
+        return protectionType.getDescription();
     }
 
     /**
-     * Get the regular expression which detects the conditions blocked by this protection.
+     * Get the Pattern which detects the conditions blocked by the specified protection.
      *
-     * @param protection the protection name whose regular expression to look up.
-     * @return a String containing a regular expression, or null if no such regex was found.
+     * @param protection the protection name whose Pattern to look up.
+     * @return a Pattern, or null if no such protection was found.
      */
-    public static String getProtectionRegex(String protection) {
-        return lookupName(protection, REGEX);
+    public static Pattern getProtectionPattern(String protection) {
+        SqlAttackProtectionType protectionType = ATTACK_PROTECTION_TYPES.get(protection);
+
+        return protectionType == null
+                ? null
+                : protectionType.getPattern();
     }
 
-    private static String lookupName(String name, int column) {
-        for (String[] prot : PROTS) {
-            if (prot[NAME].equalsIgnoreCase(name)) {
-                return prot[column];
-            }
+    public boolean isIncludeRequestUrl() {
+        return includeRequestUrl;
+    }
+
+    public void setIncludeRequestUrl(boolean includeRequestUrl) {
+        this.includeRequestUrl = includeRequestUrl;
+    }
+
+    public boolean isIncludeRequestBody() {
+        return includeRequestBody;
+    }
+
+    public void setIncludeRequestBody(boolean includeRequestBody) {
+        this.includeRequestBody = includeRequestBody;
+    }
+
+    @Override
+    public void setTarget( final TargetMessageType target ) {
+        super.setTarget(target);
+        if ( target == TargetMessageType.REQUEST &&
+                !( includeRequestUrl || includeRequestBody) ) {
+            includeRequestUrl = true;
+            includeRequestBody = true;
         }
-        return null;
+    }
+
+    private static Map<String, SqlAttackProtectionType> createProtectionMap() {
+        HashMap<String, SqlAttackProtectionType> patternMap = new HashMap<String, SqlAttackProtectionType>(4);
+
+        patternMap.put(PROT_MSSQL, SqlAttackProtectionType.MS_SQL);
+        patternMap.put(PROT_ORASQL, SqlAttackProtectionType.ORACLE);
+        patternMap.put(PROT_METATEXT, SqlAttackProtectionType.META_TEXT);
+        patternMap.put(PROT_META, SqlAttackProtectionType.META);
+
+        return patternMap;
     }
 }

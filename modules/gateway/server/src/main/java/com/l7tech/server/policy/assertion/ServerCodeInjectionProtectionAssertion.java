@@ -27,8 +27,6 @@ import java.nio.charset.Charset;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Enforces the Code Injection Protection Assertion.
@@ -411,7 +409,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
 
         for (CodeInjectionProtectionType protection : protections) {
             final StringBuilder tmpEvidence = new StringBuilder();
-            final int index = scan(s, protection.getPattern(), tmpEvidence);
+            final int index = TextUtils.scanAndRecordMatch(s, protection.getPattern(), tmpEvidence);
             if (index != -1 && (minIndex == -1 || index < minIndex)) {
                 minIndex = index;
                 evidence.setLength(0);
@@ -421,41 +419,5 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
         }
 
         return protectionViolated;
-    }
-
-    /**
-     * Scans for a string pattern.
-     *
-     * @param s         string to scan
-     * @param pattern   regular expression pattern to search for
-     * @param evidence  for passing back snippet of string surrounding the first
-     *                  (if found) match, for logging purpose
-     * @return starting character index if found (<code>evidence</code> is then populated); -1 if not found
-     */
-    private static int scan(final String s, final Pattern pattern, final StringBuilder evidence) {
-        final Matcher matcher = pattern.matcher(s);
-        if (matcher.find()) {
-            evidence.setLength(0);
-
-            int start = matcher.start() - EVIDENCE_MARGIN_BEFORE;
-            if (start <= 0) {
-                start = 0;
-            } else {
-                evidence.append("...");
-            }
-
-            int end = matcher.end() + EVIDENCE_MARGIN_AFTER;
-            if (end >= s.length()) {
-                end = s.length();
-                evidence.append(s.substring(start, end));
-            } else {
-                evidence.append(s.substring(start, end));
-                evidence.append("...");
-            }
-
-            return matcher.start();
-        } else {
-            return -1;
-        }
     }
 }

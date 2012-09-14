@@ -1,8 +1,10 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.policy.assertion.SqlAttackAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.assertion.TargetMessageType;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputAdapter;
@@ -22,9 +24,17 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
     private JTextArea attackDescription;
     private JPanel attackNameList;
 
+    private JCheckBox requestUrlCheckBox;
+    private JRadioButton requestRadioButton;
+    private JCheckBox requestBodyCheckBox;
+    private JRadioButton responseRadioButton;
+    private JRadioButton contextVariableRadioButton;
+    private JTextField contextVarName;
+
     private SqlAttackAssertion sqlAssertion;
     private JButton okButton;
     private JButton cancelButton;
+
     private boolean confirmed = false;
     private List<JCheckBox> attacks;
 
@@ -58,13 +68,147 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
             }
         });
 
+        requestRadioButton.setSelected(TargetMessageType.REQUEST == sqlAssertion.getTarget());
+        requestUrlCheckBox.setSelected(sqlAssertion.isIncludeRequestUrl());
+        requestBodyCheckBox.setSelected(sqlAssertion.isIncludeRequestBody());
+        responseRadioButton.setSelected(TargetMessageType.RESPONSE == sqlAssertion.getTarget());
+        contextVariableRadioButton.setSelected(TargetMessageType.OTHER == sqlAssertion.getTarget());
+        contextVarName.setText(sqlAssertion.getOtherTargetMessageVariable());
+        contextVarName.setEnabled(contextVariableRadioButton.isSelected());
+
         Utilities.setEscKeyStrokeDisposes(this);
         populateProtectionList();
+        initAssertionTargetComponents();
+    }
+
+    private void initAssertionTargetComponents() {
+
+        requestRadioButton.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                requestUrlCheckBox.setEnabled(requestRadioButton.isSelected());
+                requestBodyCheckBox.setEnabled(requestRadioButton.isSelected());
+                enableOkButton();
+            }
+        });
+
+        requestRadioButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                attackDescription.setText("Scan request message URL or body. Effective only if this assertion is placed before routing assertion.");
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                attackDescription.setText("");
+            }
+        });
+
+        requestUrlCheckBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                enableOkButton();
+            }
+        });
+
+        requestUrlCheckBox.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                attackDescription.setText("Scan parameter values in URL query string.");
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                attackDescription.setText("");
+            }
+        });
+
+        requestBodyCheckBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                enableOkButton();
+            }
+        });
+
+        requestBodyCheckBox.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                attackDescription.setText("Scan request message body.");
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                attackDescription.setText("");
+            }
+        });
+
+        responseRadioButton.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                enableOkButton();
+            }
+        });
+
+        responseRadioButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                attackDescription.setText("Scan response message body. Applies only if this assertion is placed after routing assertion. Use this only if the response is not supposed to contain keywords being screened for.");
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                attackDescription.setText("");
+            }
+        });
+
+        contextVariableRadioButton.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                contextVarName.setEnabled(contextVariableRadioButton.isSelected());
+                enableOkButton();
+            }
+        });
+
+        contextVariableRadioButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                attackDescription.setText("Scan the contents of the selected context variable.");
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                attackDescription.setText("");
+            }
+        });
     }
 
     @Override
     protected void configureView() {
-        okButton.setEnabled( !isReadOnly() );
+        enableOkButton();
+    }
+
+    /**
+     * Enable/disable the OK button based on acceptability of settings.
+     */
+    private void enableOkButton() {
+        boolean ok = false;
+
+        // Ensures at least one protection type has been selected.
+        for (JCheckBox checkBox : attacks) {
+            if (checkBox.isSelected()) {
+                ok = true;
+                break;
+            }
+        }
+
+        // If applying to request messages, further ensures either URL or body is selected.
+        if (requestRadioButton.isSelected()) {
+            ok &= requestUrlCheckBox.isSelected() || requestBodyCheckBox.isSelected();
+        } else {
+            ok &= true;
+        }
+
+        okButton.setEnabled(ok && !isReadOnly());
     }
 
     private void doCancel() {
@@ -73,6 +217,18 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
     }
 
     private void doSave() {
+        sqlAssertion.setTarget( requestRadioButton.isSelected() ? TargetMessageType.REQUEST :
+                responseRadioButton.isSelected() ? TargetMessageType.RESPONSE : TargetMessageType.OTHER);
+
+        if ( contextVariableRadioButton.isSelected() ) {
+            sqlAssertion.setOtherTargetMessageVariable(VariablePrefixUtil.fixVariableName(contextVarName.getText()));
+        } else {
+            sqlAssertion.setOtherTargetMessageVariable(null);
+        }
+
+        sqlAssertion.setIncludeRequestUrl(requestUrlCheckBox.isSelected());
+        sqlAssertion.setIncludeRequestBody(requestBodyCheckBox.isSelected());
+
         for (JCheckBox checkBox : attacks) {
             String thekey = (String) checkBox.getClientProperty(PROTECTION_KEY);
             if (checkBox.isSelected()) {
@@ -81,6 +237,7 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
                 sqlAssertion.removeProtection(thekey);
             }
         }
+
         confirmed = true;
         dispose();
     }
@@ -126,6 +283,13 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
                 @Override
                 public void mouseMoved(MouseEvent e) {
                     updateDescription((JCheckBox)e.getComponent());
+                }
+            });
+
+            theCheckBox.addItemListener(new ItemListener() {
+                @Override
+                public void itemStateChanged(ItemEvent e) {
+                    enableOkButton();
                 }
             });
 
