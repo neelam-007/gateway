@@ -145,7 +145,7 @@ public class EditRoleDialog extends JDialog {
      * @see #updateButtonStates
      */
     private void applyFormSecurity() {
-        boolean canEdit = flags.canUpdateSome();
+        boolean canEdit = flags.canUpdateSome() || flags.canCreateSome();
 
         addPermission.setVisible(shouldAllowEdits);
         editPermission.setVisible(shouldAllowEdits);
@@ -154,7 +154,7 @@ public class EditRoleDialog extends JDialog {
         roleName.setEditable(canEdit && shouldAllowEdits);
         roleDescription.setEditable(canEdit && shouldAllowEdits);
         addPermission.setEnabled(canEdit && shouldAllowEdits);
-        addAssignment.setEnabled(flags.canUpdateSome());
+        addAssignment.setEnabled(flags.canUpdateSome() || flags.canCreateSome());
 
         // these are enabled later if selections / permissions allow
         editPermission.setEnabled(false);
@@ -166,7 +166,7 @@ public class EditRoleDialog extends JDialog {
         boolean validRowSelected = permissionsTable.getModel().getRowCount() != 0 &&
                 getSelectedPermission() != null;
 
-        boolean hasEditPermission = flags.canUpdateSome();
+        boolean hasEditPermission = flags.canUpdateSome() || flags.canCreateSome();
 
         //we should only enable the permission edit/remove buttons if a valid row is selected AND if we are allowing
         // edits because of the mode AND if the user has permission in the first place.
@@ -189,7 +189,7 @@ public class EditRoleDialog extends JDialog {
     private void enableAssignmentDeleteButton() {
         boolean validRowSelected = this.roleAssigneeTable.getSelectedRow() > -1;
 
-        boolean hasEditPermission = flags.canUpdateSome();
+        boolean hasEditPermission = flags.canUpdateSome() || flags.canCreateSome();
 
         //we should only enable the assignment remove button if a valid row is selected AND if the user has permission
         //in the first place.
@@ -424,7 +424,7 @@ public class EditRoleDialog extends JDialog {
     }
 
     private void onOK() {
-        if (flags.canUpdateSome()) {
+        if (flags.canUpdateSome() || flags.canCreateSome()) {
             if ( shouldAllowEdits ) {
                 role.setName(roleName.getText());
                 role.setDescription(roleDescription.getText());
