@@ -109,7 +109,7 @@ n     *
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            TrustedCertAdmin.JobId jobId = (TrustedCertAdmin.JobId)o;
+            JobId jobId = (JobId)o;
             return Arrays.equals(bytes, jobId.bytes);
         }
 

@@ -5,6 +5,7 @@ import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
@@ -29,9 +30,12 @@ public class OAuthInstallerAssertion extends Assertion  {
         meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
             @Override
             public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
-                return null;
+                final ExtensionInterfaceBinding<OAuthInstallerAdmin> binding = new ExtensionInterfaceBinding<OAuthInstallerAdmin>(OAuthInstallerAdmin.class, null, new OAuthInstallerAdminImpl());
+                return Collections.<ExtensionInterfaceBinding>singletonList(binding);
             }
         });
+
+        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAdminImpl");
 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 

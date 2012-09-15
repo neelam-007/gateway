@@ -38,7 +38,7 @@ public class ContentTypeHeader extends MimeHeader {
     public static final ContentTypeHeader OCTET_STREAM_DEFAULT; // application/octet-stream
     public static final ContentTypeHeader TEXT_DEFAULT; // text/plain; charset=UTF-8
     public static final ContentTypeHeader XML_DEFAULT; // text/xml; charset=UTF-8
-    public static final ContentTypeHeader SOAP_1_2_DEFAULT; // appliacation/soap+xml; charset=UTF-8
+    public static final ContentTypeHeader SOAP_1_2_DEFAULT; // application/soap+xml; charset=UTF-8
     public static final ContentTypeHeader APPLICATION_X_WWW_FORM_URLENCODED; // application/x-www-form-urlencoded
     public static final ContentTypeHeader APPLICATION_JSON; // appliacation//json; charset=UTF-8
     public static final String CHARSET = "charset";

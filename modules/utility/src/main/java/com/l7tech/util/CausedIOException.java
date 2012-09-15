@@ -9,6 +9,8 @@ package com.l7tech.util;
 import java.io.IOException;
 
 /**
+ * Required pre 1.6 to enable the 'initCause' hack as there was no constructor available before 1.6 to take a cause.
+ *
  * @author mike
  * @version $Revision$
  */

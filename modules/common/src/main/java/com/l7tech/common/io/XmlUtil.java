@@ -289,6 +289,9 @@ public class XmlUtil extends DomUtils {
     /**
      * Create a new empty XML document with the specified document element.
      *
+     * Favor this over using a builder factory to create a new Document yourself as this uses a thread local
+     * DocumentBuilder.
+     *
      * @param rootElementName the local name of the document element.  Required.
      * @param rootPrefix the namespace prefix to add to the document element, or null to leave it unprefixed.
      * @param rootNs the namespace URI in which to place the document element, or null to leave it in the empty namespace.
