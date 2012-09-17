@@ -15,6 +15,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.naming.Context;
 import javax.naming.NamingException;
+import java.util.Properties;
 
 /**
  * JmsEndpointConfig encapsulates all information necessary to use a JMS destination.
@@ -245,6 +246,22 @@ public class JmsEndpointConfig {
         if (jmsConnection.getJndiUrl() == null || "".equals(jmsConnection.getJndiUrl()))
             jmsConnection.setJndiUrl(overrides.getJndiUrl());
 
+        Properties jmsConnectionProperties = jmsConnection.properties();
+        boolean isModified = false;
+        String jndiUserName = (String) jmsConnectionProperties.get(Context.SECURITY_PRINCIPAL);
+        if (jndiUserName != null && "".equals(jndiUserName)) {
+            jmsConnectionProperties.setProperty(Context.SECURITY_PRINCIPAL, overrides.getJndiUserName());
+            isModified = true;
+        }
+        String jndiPassword = (String) jmsConnectionProperties.get(Context.SECURITY_CREDENTIALS);
+        if (jndiPassword != null && "".equals(jndiPassword)) {
+            jmsConnectionProperties.setProperty(Context.SECURITY_CREDENTIALS, overrides.getJndiPassword());
+            isModified = true;
+        }
+        if (isModified) {
+            jmsConnection.properties(jmsConnectionProperties);
+        }
+
         if (jmsConnection.getQueueFactoryUrl() == null || "".equals(jmsConnection.getQueueFactoryUrl()))
             jmsConnection.setQueueFactoryUrl(overrides.getQcfName());
 
@@ -253,6 +270,12 @@ public class JmsEndpointConfig {
 
         if (jmsEndpoint.getDestinationName() == null || "".equals(jmsEndpoint.getDestinationName()))
             jmsEndpoint.setDestinationName(overrides.getDestQName());
+
+        if (jmsEndpoint.getUsername() != null && "".equals(jmsEndpoint.getUsername()))
+            jmsEndpoint.setUsername(overrides.getDestUserName());
+
+        if (jmsEndpoint.getPassword() != null && "".equals(jmsEndpoint.getPassword()))
+            jmsEndpoint.setPassword(overrides.getDestPassword());
     }
 
     public static final class JmsEndpointKey {

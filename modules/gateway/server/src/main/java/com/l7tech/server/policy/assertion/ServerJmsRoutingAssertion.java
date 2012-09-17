@@ -876,8 +876,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         final Map<String,Object> variables = pec.getVariableMap( assertion.getVariablesUsed(), getAudit());
         try {
             jmsDynamicProperties.setDestQName( expandVariables( unprocessedProperties.getDestQName(), variables ) );
+            jmsDynamicProperties.setDestUserName( expandVariables( unprocessedProperties.getDestUserName(), variables ) );
+            jmsDynamicProperties.setDestPassword( expandVariables( unprocessedProperties.getDestPassword(), variables ) );
             jmsDynamicProperties.setReplytoQName( expandVariables( unprocessedProperties.getReplytoQName(), variables ) );
             jmsDynamicProperties.setJndiUrl( expandVariables( unprocessedProperties.getJndiUrl(), variables ) );
+            jmsDynamicProperties.setJndiUserName( expandVariables( unprocessedProperties.getJndiUserName(), variables ) );
+            jmsDynamicProperties.setJndiPassword( expandVariables( unprocessedProperties.getJndiPassword(), variables ) );
             jmsDynamicProperties.setIcfName( expandVariables( unprocessedProperties.getIcfName(), variables ) );
             jmsDynamicProperties.setQcfName( expandVariables( unprocessedProperties.getQcfName(), variables ) );
         } catch ( IllegalArgumentException iae ) {

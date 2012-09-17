@@ -4,6 +4,7 @@ import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.JmsUtilities;
+import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -19,6 +20,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
+import javax.naming.Context;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.table.DefaultTableModel;
@@ -31,6 +33,8 @@ import java.awt.event.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.apache.commons.lang.StringUtils.isEmpty;
 
 
 /**
@@ -153,8 +157,14 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JPanel dynamicPropertiesPanel;
     private JTextField dynamicICF;
     private JTextField dynamicJndiUrl;
+    private JTextField dynamicJndiUserName;
+    private JPasswordField dynamicJndiPassword;
+    private JCheckBox showDynamicJndiPassword;
     private JTextField dynamicQCF;
     private JTextField dynamicDestQueueName;
+    private JTextField dynamicDestUserName;
+    private JPasswordField dynamicDestPassword;
+    private JCheckBox showDynamicDestPassword;
     private JTextField dynamicReplyToName;
     private JTextField jmsResponseTimeout;
     private JComboBox requestTargetComboBox;
@@ -240,8 +250,14 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         Utilities.enableGrayOnDisabled(dynamicICF);
         Utilities.enableGrayOnDisabled(dynamicJndiUrl);
+        Utilities.enableGrayOnDisabled(dynamicJndiUserName);
+        Utilities.enableGrayOnDisabled(dynamicJndiPassword);
+        Utilities.enableGrayOnDisabled(showDynamicJndiPassword);
         Utilities.enableGrayOnDisabled(dynamicQCF);
         Utilities.enableGrayOnDisabled(dynamicDestQueueName);
+        Utilities.enableGrayOnDisabled(dynamicDestUserName);
+        Utilities.enableGrayOnDisabled(dynamicDestPassword);
+        Utilities.enableGrayOnDisabled(showDynamicDestPassword);
         Utilities.enableGrayOnDisabled(dynamicReplyToName); 
 
         ButtonGroup secButtonGroup = new ButtonGroup();
@@ -255,7 +271,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         inputValidator.constrainTextFieldToBeNonEmpty( "JNDI URL", dynamicJndiUrl, null );
         inputValidator.constrainTextFieldToBeNonEmpty( "Queue Connection Factory Name", dynamicQCF, null );
         inputValidator.constrainTextFieldToBeNonEmpty( "Destination Queue Name", dynamicDestQueueName, null );
-        inputValidator.constrainTextFieldToBeNonEmpty( "Wait for Reply on specified queue", dynamicReplyToName, null );
+        inputValidator.constrainTextFieldToBeNonEmpty("Wait for Reply on specified queue", dynamicReplyToName, null);
         final InputValidator.ValidationRule priorityRule =
                 inputValidator.buildTextFieldNumberRangeValidationRule( "Priority", requestPriorityTextField, 0L, 9L, false );
         inputValidator.constrainTextField( requestPriorityTextField,
@@ -405,19 +421,31 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                     JmsDynamicProperties dynProps = null;
                     if ( item.getQueue().isTemplate() ) {
                         dynProps = new JmsDynamicProperties();
-                        if (endpoint.getDestinationName() == null || endpoint.getDestinationName().equals(""))
+                        if (isEmpty(endpoint.getDestinationName()))
                             dynProps.setDestQName(dynamicDestQueueName.getText());
 
-                        if (isReplyToQueue(endpoint) && (endpoint.getReplyToQueueName() == null || endpoint.getReplyToQueueName().equals("")))
+                        if (isEmpty(endpoint.getUsername()))
+                            dynProps.setDestUserName(dynamicDestUserName.getText());
+
+                        if (isEmpty(endpoint.getPassword()))
+                            dynProps.setDestPassword(new String(dynamicDestPassword.getPassword()));
+
+                        if (isReplyToQueue(endpoint) && isEmpty(endpoint.getReplyToQueueName()))
                             dynProps.setReplytoQName(dynamicReplyToName.getText());
 
-                        if (conn.getJndiUrl() == null || conn.getJndiUrl().equals(""))
+                        if (isEmpty(conn.getJndiUrl()))
                             dynProps.setJndiUrl(dynamicJndiUrl.getText()) ;
 
-                        if (conn.getInitialContextFactoryClassname() == null || conn.getInitialContextFactoryClassname().equals(""))
+                        if (isEmpty((String) conn.properties().get(Context.SECURITY_PRINCIPAL)))
+                            dynProps.setJndiUserName(dynamicJndiUserName.getText());
+
+                        if (isEmpty((String) conn.properties().get(Context.SECURITY_CREDENTIALS)))
+                            dynProps.setJndiPassword(new String(dynamicJndiPassword.getPassword()));
+
+                        if (isEmpty(conn.getInitialContextFactoryClassname()))
                             dynProps.setIcfName(dynamicICF.getText());
 
-                        if (conn.getQueueFactoryUrl() == null || conn.getQueueFactoryUrl().equals(""))
+                        if (isEmpty(conn.getQueueFactoryUrl()))
                             dynProps.setQcfName(dynamicQCF.getText());
                     }
                     assertion.setDynamicJmsRoutingProperties(dynProps);
@@ -567,6 +595,21 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                     dynamicDestQueueName.setEnabled(false);
                 }
 
+                String destinationUserName = ep.getUsername();
+                dynamicDestUserName.setText(destinationUserName);
+                dynamicDestUserName.setCaretPosition( 0 );
+                if (destinationUserName == null || !"".equals(destinationUserName)) {
+                    dynamicDestUserName.setEnabled(false);
+                }
+
+                String destinationPassword = ep.getPassword();
+                dynamicDestPassword.setText(destinationPassword);
+                dynamicDestPassword.setCaretPosition( 0 );
+                if (destinationPassword == null || !"".equals(destinationUserName)) {
+                    dynamicDestPassword.setEnabled(false);
+                    showDynamicDestPassword.setEnabled(false);
+                }
+
                 String replyToQueueName = ep.getReplyToQueueName();
                 dynamicReplyToName.setText(replyToQueueName);
                 dynamicReplyToName.setCaretPosition( 0 );
@@ -579,6 +622,22 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 dynamicJndiUrl.setCaretPosition( 0 );
                 if (jndiUrl != null && !"".equals(jndiUrl.trim())){
                     dynamicJndiUrl.setEnabled(false);
+                }
+
+                Properties jmsConnectionProperties = conn.properties();
+                String jndiUserName = (String) jmsConnectionProperties.get(Context.SECURITY_PRINCIPAL);
+                dynamicJndiUserName.setText(jndiUserName);
+                dynamicJndiUserName.setCaretPosition( 0 );
+                if (jndiUserName == null || !"".equals(jndiUserName)){
+                    dynamicJndiUserName.setEnabled(false);
+                }
+
+                String jndiPassword = (String) jmsConnectionProperties.get(Context.SECURITY_CREDENTIALS);
+                dynamicJndiPassword.setText(jndiPassword);
+                dynamicJndiPassword.setCaretPosition( 0 );
+                if (jndiPassword == null || !"".equals(jndiPassword)){
+                    dynamicJndiPassword.setEnabled(false);
+                    showDynamicJndiPassword.setEnabled(false);
                 }
 
                 String icfClassName = conn.getInitialContextFactoryClassname();
@@ -596,16 +655,24 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 }
             } else {
                 dynamicDestQueueName.setText(null);
+                dynamicDestUserName.setText(null);
+                dynamicDestPassword.setText(null);
                 dynamicReplyToName.setText(null);
                 dynamicJndiUrl.setText(null);
+                dynamicJndiUserName.setText(null);
+                dynamicJndiPassword.setText(null);
                 dynamicICF.setText(null);
                 dynamicQCF.setText(null);
                 Utilities.setEnabled(dynamicPropertiesPanel, false);
             }
         } else {
             dynamicDestQueueName.setText(null);
+            dynamicDestUserName.setText(null);
+            dynamicDestPassword.setText(null);
             dynamicReplyToName.setText(null);
             dynamicJndiUrl.setText(null);
+            dynamicJndiUserName.setText(null);
+            dynamicJndiPassword.setText(null);
             dynamicICF.setText(null);
             dynamicQCF.setText(null);
             Utilities.setEnabled(dynamicPropertiesPanel, false);            
@@ -622,9 +689,29 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                         dynamicJndiUrl.setCaretPosition( 0 );
                     }
 
+                    if (assertion.getDynamicJmsRoutingProperties().getJndiUserName() != null && isDynamic(dynamicJndiUserName) ) {
+                        dynamicJndiUserName.setText(assertion.getDynamicJmsRoutingProperties().getJndiUserName());
+                        dynamicJndiUserName.setCaretPosition( 0 );
+                    }
+
+                    if (assertion.getDynamicJmsRoutingProperties().getJndiPassword() != null && isDynamic(dynamicJndiPassword) ) {
+                        dynamicJndiPassword.setText(assertion.getDynamicJmsRoutingProperties().getJndiPassword());
+                        dynamicJndiPassword.setCaretPosition( 0 );
+                    }
+
                     if (assertion.getDynamicJmsRoutingProperties().getDestQName() != null && isDynamic(dynamicDestQueueName) ) {
                         dynamicDestQueueName.setText(assertion.getDynamicJmsRoutingProperties().getDestQName());
                         dynamicDestQueueName.setCaretPosition( 0 );
+                    }
+
+                    if (assertion.getDynamicJmsRoutingProperties().getDestUserName() != null && isDynamic(dynamicDestUserName) ) {
+                        dynamicDestUserName.setText(assertion.getDynamicJmsRoutingProperties().getDestUserName());
+                        dynamicDestUserName.setCaretPosition( 0 );
+                    }
+
+                    if (assertion.getDynamicJmsRoutingProperties().getDestPassword() != null && isDynamic(dynamicDestPassword) ) {
+                        dynamicDestPassword.setText(assertion.getDynamicJmsRoutingProperties().getDestPassword());
+                        dynamicDestPassword.setCaretPosition( 0 );
                     }
 
                     if (assertion.getDynamicJmsRoutingProperties().getReplytoQName() != null && isDynamic(dynamicReplyToName) ) {
