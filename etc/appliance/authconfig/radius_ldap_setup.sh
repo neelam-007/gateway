@@ -518,8 +518,8 @@ else
                 else
                         # a file copied via scp on the SSG system will be used:
                         /bin/cp -a --backup=numbered $LDAP_CACERT_FILE /etc/openldap/cacerts/
-                        if [ $? -ne 0 ] || [ ! -s "$LDAP_CACERT_FILE" ]; then
-                                toLog "    ERROR - Copying the CA certificate file failed or the certificate file is empty. Exiting..."
+                        if [ $? -ne 0 ]; then
+                                toLog "    ERROR - Copying the CA certificate file failed. Exiting..."
                                 STATUS=1
                         fi
                         # If this point was reached the certificate file has been retrieved sucessfully and it is not empty.
