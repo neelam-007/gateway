@@ -115,7 +115,7 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
         }
 
         boolean isPublishedToUddi = false;
-        if(node instanceof ServiceNode){
+        if(node instanceof ServiceNode && !(node instanceof ServiceNodeAlias)){
             final ServiceNode serviceNode = (ServiceNode) node;            
             //if confirmation is enabled, it means that it's a single delete, so we should check if UDDI has data
             final Set<Long> serviceOidSet = new HashSet<Long>();
