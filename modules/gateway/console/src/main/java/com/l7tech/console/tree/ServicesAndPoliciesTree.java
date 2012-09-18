@@ -212,8 +212,8 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         if (nodes != null && !nodes.isEmpty()) {
             boolean confirmationEnabled = false;
             if(detectConfirmation){
-                if(nodes.size() == 1 && nodes.get(0) instanceof FolderNode && nodes.get(0).getChildCount() > 0){
-                    // it's a single non-empty folder
+                if(nodes.size() == 1 && nodes.get(0) instanceof FolderNode){
+                    // it's a single folder
                     DeleteFolderAction.confirmFolderDeletion(nodes.get(0).getName(), new DialogDisplayer.OptionListener() {
                         @Override
                         public void reportResult(int option) {
