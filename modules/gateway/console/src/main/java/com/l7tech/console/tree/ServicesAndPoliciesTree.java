@@ -353,29 +353,34 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
 
             final boolean hasMultipleSelection = tree.getSelectionCount() > 1;
 
-            if (KeyEvent.VK_DELETE == e.getKeyCode()) {
-                if (hasMultipleSelection) {
-                    new DeleteTargetsAction().actionPerformed(null);
-                } else {
-                    AbstractTreeNode node = abstractTreeNodes.get(0);
+            final boolean rootSelected = abstractTreeNodes.contains((RootNode)getModel().getRoot());
+            if (!rootSelected) {
+                if (KeyEvent.VK_DELETE == e.getKeyCode()) {
+                    if (hasMultipleSelection) {
+                        new DeleteTargetsAction().actionPerformed(null);
+                    } else {
+                        AbstractTreeNode node = abstractTreeNodes.get(0);
 
-                    // if we have only selected a single FolderNode and its deletion is not authorized, do nothing
-                    if (node instanceof FolderNode) {
-                        DeleteFolderAction a =
-                                new DeleteFolderAction((FolderNode) node,
-                                        Registry.getDefault().getFolderAdmin(), false);
+                        // if we have only selected a single FolderNode and its deletion is not authorized, do nothing
+                        if (node instanceof FolderNode) {
+                            DeleteFolderAction a =
+                                    new DeleteFolderAction((FolderNode) node,
+                                            Registry.getDefault().getFolderAdmin(), false);
 
-                        if(!a.isAuthorized()) {
-                            return;
+                            if(!a.isAuthorized()) {
+                                return;
+                            }
                         }
-                    }
 
-                    deleteMultipleEntities(abstractTreeNodes, true);
+                        deleteMultipleEntities(abstractTreeNodes, true);
+                    }
+                } else if (KeyEvent.VK_ENTER == e.getKeyCode() && !hasMultipleSelection) {
+                    AbstractTreeNode node = abstractTreeNodes.get(0);
+                    if (node instanceof EntityWithPolicyNode)
+                        new EditPolicyAction((EntityWithPolicyNode) node).actionPerformed(null);
                 }
-            } else if (KeyEvent.VK_ENTER == e.getKeyCode() && !hasMultipleSelection) {
-                AbstractTreeNode node = abstractTreeNodes.get(0);
-                if (node instanceof EntityWithPolicyNode)
-                    new EditPolicyAction((EntityWithPolicyNode) node).actionPerformed(null);
+            } else {
+                //can't delete or edit root node
             }
         }
     }
