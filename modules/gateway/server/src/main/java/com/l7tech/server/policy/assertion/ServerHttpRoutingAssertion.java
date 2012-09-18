@@ -673,9 +673,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 });
             }
 
-            boolean readOk = readResponse(context, routedResponse, routedResponseDestination, maxBytes);
+            AssertionStatus assertionStatus = readResponse(context, routedResponse, routedResponseDestination, maxBytes);
             long latencyTimerEnd = System.currentTimeMillis();
-            if (readOk) {
+            if (assertionStatus == AssertionStatus.NONE) {
                 long latency = latencyTimerEnd - latencyTimerStart;
                 context.setVariable(HttpRoutingAssertion.VAR_ROUTING_LATENCY, ""+latency);
             }
@@ -704,7 +704,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             httpInboundResponseKnob.setHeaderSource(routedResponse);
 
             HttpResponseKnob httpResponseKnob = routedResponseDestination.getKnob(HttpResponseKnob.class);
-            if (readOk && httpResponseKnob != null) {
+            if (assertionStatus == AssertionStatus.NONE && httpResponseKnob != null) {
                 httpResponseKnob.setStatus(status);
 
                 HttpForwardingRuleEnforcer.handleResponseHeaders(httpInboundResponseKnob,
@@ -739,9 +739,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             // notify listeners
             rrl.routed(url, status, routedResponse.getHeaders(), context);
 
-            if (!readOk) return AssertionStatus.FALSIFIED;
-
-            return AssertionStatus.NONE;
+            return assertionStatus;
         } catch (MalformedURLException mfe) {
             setReasonCode(context, mfe);
             logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(mfe));
@@ -832,13 +830,13 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
      * @param context           the policy enforcement context
      * @param routedResponse    response from back end
      * @param destination       the destination message object to copy <code>routedResponse</code> into
-     * @return <code>false</code> if error reading <code>routedResponse</code> or it is an error response
+     * @return <code>AssertionStatus</code> if error reading <code>routedResponse</code> or it is an error response or AssertionStatus.NONE otherwise
      */
-    private boolean readResponse(final PolicyEnforcementContext context,
-                                 final GenericHttpResponse routedResponse,
-                                 final Message destination,
-                                 final long responseMaxSize) {
-        boolean responseOk = true;
+    private AssertionStatus readResponse(final PolicyEnforcementContext context,
+                                         final GenericHttpResponse routedResponse,
+                                         final Message destination,
+                                         final long responseMaxSize) {
+        AssertionStatus assertionStatus = AssertionStatus.NONE;
         try {
             final int status = routedResponse.getStatus();
             InputStream responseStream = routedResponse.getInputStream();
@@ -869,10 +867,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (assertion.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
                 if ( outerContentType==null ) outerContentType = getDefaultContentType(true);
                 destination.initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream, responseMaxSize);
-                responseOk = false;
+                assertionStatus = AssertionStatus.AUTH_REQUIRED;
             } else if (status >= HttpConstants.STATUS_ERROR_RANGE_START && assertion.isFailOnErrorStatus() && !passthroughSoapFault) {
                 logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, Integer.toString(status));
-                responseOk = false;
+                assertionStatus = AssertionStatus.FALSIFIED;
             } else { // response OK
                 if ( outerContentType==null ) outerContentType = getDefaultContentType(false);
                 if ( outerContentType==null ) outerContentType = ContentTypeHeader.NONE;
@@ -885,12 +883,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
         } catch(EOFException eofe){
             logAndAudit(AssertionMessages.HTTPROUTE_BAD_GZIP_STREAM);
-            responseOk = false;
+            assertionStatus = AssertionStatus.FALSIFIED;
         } catch (Exception e) {
             logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
-            responseOk = false;
+            assertionStatus = AssertionStatus.FALSIFIED;
         }
-        return responseOk;
+        return assertionStatus;
     }
 
     private ContentTypeHeader getDefaultContentType( final boolean ensureDefault ) {

@@ -575,4 +575,81 @@ public class ServerHttpRoutingAssertionTest {
             fail("should not have this exception");
         }
     }
+
+
+    @Test
+    @BugNumber(10050)
+    public void testPassThroughUnauthorized() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl("http://localhost:17380/testPassthroughUnauthorized");
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        PolicyEnforcementContext pec = createTestPolicyEnforcementContext(401, hra, appContext);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.AUTH_REQUIRED, routingAssertion.checkRequest(pec));
+    }
+
+
+    @Test
+    @BugNumber(10050)
+    public void testPassThroughServerError() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl("http://localhost:17380/testPassthroughServerError");
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        PolicyEnforcementContext pec = createTestPolicyEnforcementContext(500, hra, appContext);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.FALSIFIED, routingAssertion.checkRequest(pec));
+    }
+
+    @Test
+    @BugNumber(10050)
+    public void testPassThroughSuccessful() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl("http://localhost:17380/testPassthroughSucceeded");
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        PolicyEnforcementContext pec = createTestPolicyEnforcementContext(200, hra, appContext);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+    }
+
+    private PolicyEnforcementContext createTestPolicyEnforcementContext( int status, HttpRoutingAssertion hra, ApplicationContext appContext) {
+        // Configure to combine passthrough auth with pass through all application headers
+        hra.setPassthroughHttpAuthentication(true);
+        hra.setRequestHeaderRules(new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{}));
+
+        Message request = new Message(XmlUtil.stringAsDocument("<foo/>"));
+
+        MockServletContext servletContext = new MockServletContext();
+        MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
+        hrequest.addHeader("Authorization", "NTLM JHY6798hjkaahjklkjsb");
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+
+        final String expectedResponse = "<bar/>";
+        MockHttpServletResponse hresponse = new MockHttpServletResponse();
+        Message response = new Message(XmlUtil.stringAsDocument(expectedResponse));
+        response.attachHttpResponseKnob(new HttpServletResponseKnob(hresponse));
+
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+
+        final Object[] requestRecordedExtraHeaders = {null};
+        final PasswordAuthentication[] requestRecordedPasswordAuthentication = {null};
+
+        final GenericHttpHeader[] genericHttpHeaders= {new GenericHttpHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, "NTLM")};
+        final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(genericHttpHeaders);
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient(status, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
+        mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
+            @Override
+            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                requestRecordedExtraHeaders[0] = params.getExtraHeaders();
+                requestRecordedPasswordAuthentication[0] = params.getPasswordAuthentication();
+                return request;
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        return pec;
+    }
 }
