@@ -91,6 +91,8 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         AuthPolicy.registerAuthScheme(Ntlm2AuthScheme.NTLM, Ntlm2AuthScheme.class);
         ArrayList schemes = new ArrayList();
         schemes.add(Ntlm2AuthScheme.NTLM);
+        schemes.add(AuthPolicy.DIGEST);
+        schemes.add(AuthPolicy.BASIC);
         //schemes.addAll((Collection) params.getParameter(AuthPolicy.AUTH_SCHEME_PRIORITY));
         defaultParams.setParameter(AuthPolicy.AUTH_SCHEME_PRIORITY, schemes);
         ////////////////////////////////////////////////////////////////////////////////////////
