@@ -26,6 +26,7 @@ import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -215,12 +216,14 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     }
 
     private void populateDriverClassComboBox() {
-        java.util.List<String> driverClassList;
-        JdbcAdmin admin = getJdbcConnectionAdmin();
+        final List<String> driverClassList;
+        final List<String> driverClassWhiteList;
+        final JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin == null) {
             return;
         } else {
             driverClassList = admin.getPropertyDefaultDriverClassList();
+            driverClassWhiteList = admin.getPropertyDriverClassWhiteList();
         }
 
         // Get the driver class of the current connection
@@ -235,6 +238,9 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         if (!currentDriverClass.isEmpty() && !driverClassList.contains(currentDriverClass)) {
             driverClassList.add(currentDriverClass);
         }
+
+        // Compute the intersection of the two lists.
+        driverClassList.retainAll(driverClassWhiteList);
 
         // Sort the driver class list
         Collections.sort(driverClassList);

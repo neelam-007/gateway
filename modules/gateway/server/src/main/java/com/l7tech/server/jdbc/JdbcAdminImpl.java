@@ -206,6 +206,24 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
         return driverClassList;
     }
 
+    @Override
+    public List<String> getPropertyDriverClassWhiteList() {
+        final List<String> driverClassWhiteList = new ArrayList<String>();
+
+        final String whiteListString = config.getProperty(ServerConfigParams.PARAM_JDBC_CONNECTION_DRIVERCLASS_WHITE_LIST);
+        if (whiteListString != null && (! whiteListString.isEmpty())) {
+            final StringTokenizer tokens = new StringTokenizer(whiteListString, "\n");
+            while (tokens.hasMoreTokens()) {
+                final String driverClass = tokens.nextToken();
+                if (driverClass != null && (! driverClass.isEmpty())) {
+                    driverClassWhiteList.add(driverClass);
+                }
+            }
+        }
+
+        return driverClassWhiteList;
+    }
+
     /**
      * Get a property, default maximum number of records returned by a query from the global cluser properties.  If failed
      * to get its value, then use the original maximum number of records returned by a query defined in this interface.

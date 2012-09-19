@@ -3,8 +3,11 @@ package com.l7tech.external.assertions.jdbcquery.server;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.TestAudit;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.TestLicenseManager;
@@ -286,6 +289,39 @@ public class ServerJdbcQueryAssertionTest {
     private ServerPolicyFactory serverPolicyFactory;
     @Mock
     private JdbcQueryingManager jdbcQueryingManager;
+    @Mock
+    private JdbcAdmin jdbcAdmin;
+
+    /**
+     * An empty white list of jdbc driver classes means the assertion should fail.
+     */
+    @BugNumber(12457)
+    @Test
+    public void testEmptyWhiteList() throws Exception {
+        final String mockDb = "mockDb";
+        MockitoAnnotations.initMocks(this);
+
+        final JdbcConnection connection = new JdbcConnection();
+        connection.setDriverClass("test.driver.class");
+        when(jdbcAdmin.getJdbcConnection(mockDb)).thenReturn(connection);
+        when(jdbcAdmin.getPropertyDriverClassWhiteList()).thenReturn(Collections.<String>emptyList());
+
+        final AssertionRegistry assertionRegistry = new AssertionRegistry();
+        assertionRegistry.afterPropertiesSet();
+        serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+        final GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcAdmin", jdbcAdmin);
+        }}));
+        serverPolicyFactory.setApplicationContext(applicationContext);
+
+        assertion.setConnectionName(mockDb);
+        final ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        final AssertionStatus status = sass.checkRequest(peCtx);
+        assertEquals(AssertionStatus.FAILED, status);
+    }
 
     @BugNumber(12512)
     @Test
