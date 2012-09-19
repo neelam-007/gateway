@@ -156,7 +156,6 @@ public interface ServerConfigParams {
     String PARAM_WSS_PROCESSOR_LAZY_REQUEST = "wss.processor.enableDeferredRequestProcessing";
     String PARAM_LOGON_WARNING_BANNER = "logon.warningBanner";
     String PARAM_JDBC_CONNECTION_DEFAULT_DRIVERCLASS_LIST = "jdbcConnection.driverClass.defaultList";
-    String PARAM_JDBC_CONNECTION_DRIVERCLASS_WHITE_LIST = "jdbcConnection.driverClass.whiteList";
     String PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT = "jdbcQuery.maxRecords.defaultValue";
     String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MINPOOLSIZE = "jdbcConnection.pooling.minPoolSize.defaultValue";
     String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE = "jdbcConnection.pooling.maxPoolSize.defaultValue";

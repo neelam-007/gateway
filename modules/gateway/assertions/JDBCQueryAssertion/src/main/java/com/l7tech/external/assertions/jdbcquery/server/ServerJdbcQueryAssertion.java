@@ -2,13 +2,9 @@ package com.l7tech.external.assertions.jdbcquery.server;
 
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.jdbc.JdbcAdmin;
-import com.l7tech.gateway.common.jdbc.JdbcConnection;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
-import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.jdbc.JdbcQueryUtils;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -31,7 +27,6 @@ import java.util.logging.Level;
 public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryAssertion> {
     private final String[] variablesUsed;
     private final JdbcQueryingManager jdbcQueryingManager;
-    private final JdbcAdmin jdbcAdmin;
     private final static String EMPTY_STRING = "";
     private final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\">";
     private final static String XML_RESULT_TAG_CLOSE = "</L7j:jdbcQueryResult>";
@@ -50,7 +45,6 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         variablesUsed = assertion.getVariablesUsed();
         jdbcQueryingManager = context.getBean("jdbcQueryingManager", JdbcQueryingManager.class);
-        jdbcAdmin = context.getBean("jdbcAdmin", JdbcAdmin.class);
     }
 
     @Override
@@ -63,14 +57,6 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             final String plainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), preparedStmtParams, context, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(), getAudit());
 
             final String connName = ExpandVariables.process(assertion.getConnectionName(), context.getVariableMap(variablesUsed, getAudit()), getAudit());
-            final JdbcConnection connection = jdbcAdmin.getJdbcConnection(connName);
-            final String connectionDriverClass = connection.getDriverClass();
-            final List<String> driverClassWhiteList = jdbcAdmin.getPropertyDriverClassWhiteList();
-            if (! driverClassWhiteList.contains(connectionDriverClass)) {
-                logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, "The connection's driver class [" + connectionDriverClass + "] is not in the driver class white list");
-                return AssertionStatus.FAILED;
-            }
-
             // Get result by querying.  The result could be a ResultSet object, an integer (updated rows), or a string (a warning message).
             final Object result = jdbcQueryingManager.performJdbcQuery(connName, plainQuery, assertion.getMaxRecords(), preparedStmtParams);
 
@@ -125,9 +111,6 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                 throw new IllegalStateException("Invalid returned result type, " + result.getClass().getSimpleName());
             }
 
-        } catch (final FindException e) {
-            logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, e.getMessage());
-            return AssertionStatus.FAILED;
         } catch (SQLException e) {
             logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, e.getMessage());
             return AssertionStatus.FAILED;

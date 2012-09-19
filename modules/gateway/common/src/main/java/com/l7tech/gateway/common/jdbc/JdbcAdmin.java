@@ -123,15 +123,6 @@ public interface JdbcAdmin extends AsyncAdminMethods{
     List<String> getPropertyDefaultDriverClassList();
 
     /**
-     * Get a property, a list of driver classes which the JDBC Query Assertion is allowed to use. Note: these driver classes may not be supported.
-     * The intersection of this list and {@link #getPropertyDefaultDriverClassList()} are the driver classes that are supported and usable by the JDBC Assertion.
-     *
-     * @return a white list of driver classes.
-     */
-    @Transactional(readOnly=true)
-    List<String> getPropertyDriverClassWhiteList();
-
-    /**
      * Get a property, default maximum number of records returned by a query from the global cluser properties.  If failed
      * to get its value, then use the original maximum number of records returned by a query defined in this interface.
      *
