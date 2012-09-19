@@ -31,6 +31,9 @@ import static org.junit.Assert.assertEquals;
  * Modify static Strings as needed and remove the Ignore annotation to execute the tests.
  * <p/>
  * At minimum you need to change the BASE_URL and SIGNATURE strings.
+ *
+ * Note: These tests will FAIL if they are executed more than once and the Protect Against Message Replay assertion is enabled in policy.
+ * Either disable the assertion or shorten the expiry period.
  */
 @Ignore
 public class OAuthToolkit1_0IntegrationTest {

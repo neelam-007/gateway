@@ -726,7 +726,6 @@
                     &lt;L7p:CustomIdentifierVariable stringValue="replay_arg"/&gt;
                     &lt;L7p:CustomProtection booleanValue="true"/&gt;
                     &lt;L7p:CustomScope stringValue="${service.oid}"/&gt;
-                    &lt;L7p:Enabled booleanValue="false"/&gt;
                     &lt;/L7p:WssReplayProtection&gt;
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
