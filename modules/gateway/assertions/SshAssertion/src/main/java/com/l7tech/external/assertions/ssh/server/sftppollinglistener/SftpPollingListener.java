@@ -32,8 +32,7 @@ import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.SSH
 import static com.l7tech.external.assertions.ssh.server.client.SshClientConfiguration.defaultCipherOrder;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.util.CollectionUtils.toSet;
-import static com.l7tech.util.Functions.grep;
-import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.Functions.*;
 import static com.l7tech.util.TextUtils.isNotEmpty;
 import static com.l7tech.util.TextUtils.trim;
 import static java.text.MessageFormat.format;
@@ -64,6 +63,7 @@ abstract class SftpPollingListener {
     protected final SsgActiveConnector ssgActiveConnector;
     protected final ApplicationEventPublisher eventPublisher;
     private final SecurePasswordManager securePasswordManager;
+    private List<String> ignoredFileExtensionList = new ArrayList<String>(0);
 
     /** The listener thread that performs the polling loop, it's responsible for looking for messages on the SFTP server */
     protected final SftpPollingListenerPollThread listenerThread;
@@ -285,8 +285,7 @@ abstract class SftpPollingListener {
         // look for any unprocessed files
         for ( final SftpFile file : list((Enumeration<SftpFile>) sftp.getDirListing()) ) {
             final String fileName = file.getFilename();
-            if(!file.isDirectory() && file.exists() && !fileName.endsWith(PROCESSING_FILE_EXTENSION) && !fileName.endsWith(PROCESSED_FILE_EXTENSION)
-                    && !fileName.endsWith(RESPONSE_FILE_EXTENSION) && !processedFiles.contains(fileName)) {
+            if(isFileForProcessing(file, processedFiles)) {
                 try {
                     sftp.renameFile(fileName, fileName + PROCESSING_FILE_EXTENSION);
                     fileNames.add(file);
@@ -297,6 +296,20 @@ abstract class SftpPollingListener {
         }
 
         return fileNames;
+    }
+
+    private boolean isFileForProcessing(@NotNull SftpFile file, @NotNull final Collection<String> processedFiles) throws SftpException {
+        final String fileName = file.getFilename();
+        return !file.isDirectory() && file.exists()
+                && !fileName.endsWith(PROCESSING_FILE_EXTENSION) && !fileName.endsWith(PROCESSED_FILE_EXTENSION) && !fileName.endsWith(RESPONSE_FILE_EXTENSION)
+                && !processedFiles.contains(fileName)
+                && !exists(ignoredFileExtensionList,
+                new Unary<Boolean, String>() {
+                    @Override
+                    public Boolean call(String fileNameInList) {
+                        return !"".equals(fileNameInList) && fileName.endsWith(fileNameInList);
+                    }
+                });
     }
 
     /**
@@ -410,5 +423,9 @@ abstract class SftpPollingListener {
 
         logger.log(Level.CONFIG, "Updated SFTP Polling error sleep time to {0}ms.", newErrorSleepTime);
         listenerThread.setOopsSleep((int)newErrorSleepTime);
+    }
+
+    public void setIgnoredFileExtensionList(List<String> ignoredFileExtensionList) {
+        this.ignoredFileExtensionList = ignoredFileExtensionList;
     }
 }

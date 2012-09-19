@@ -45,8 +45,11 @@ import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.message.Message.getMaxBytes;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT;
 import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
+import static com.l7tech.util.CollectionUtils.list;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.ExceptionUtils.getMessage;
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.TextUtils.trim;
 
 /**
  * SFTP polling listener module (aka boot process).
@@ -185,6 +188,8 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
                 }
             };
             newListener.setErrorSleepTime(serverConfig.getProperty(SFTP_POLLING_CONNECT_ERROR_SLEEP_PROPERTY));
+            newListener.setIgnoredFileExtensionList(
+                    map(list(serverConfig.getProperty(SFTP_POLLING_IGNORED_FILE_EXTENSION_LIST_PROPERTY).split("\\s*,\\s*")), trim()));
             newListener.start();
             activeListeners.put( ssgActiveConnector.getOid(), newListener );
         } catch (LifecycleException e) {

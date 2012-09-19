@@ -23,6 +23,10 @@ public interface SftpPollingListenerConstants {
     String SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_UI_PROPERTY = "sftpPolling.downloadThreadWait";
     String SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_DESC = "Maximum wait time limit for file download thread to run (in seconds).";
 
+    String SFTP_POLLING_IGNORED_FILE_EXTENSION_LIST_PROPERTY = "l7.ssh.sftpPolling.ignoredFileExtensionList";
+    String SFTP_POLLING_IGNORED_FILE_EXTENSION_LIST_UI_PROPERTY = "sftpPolling.ignoredFileExtensionList";
+    String SFTP_IGNORED_FILE_EXTENSION_LIST_DESC = "List of file extension(s) to ignore (comma delimited).";
+
     /**
      * This is a complete list of cluster-wide properties used by the SFTP polling listener module.
      */
@@ -31,5 +35,6 @@ public interface SftpPollingListenerConstants {
             new String[] { LISTENER_THREAD_LIMIT_PROPERTY, LISTENER_THREAD_LIMIT_UI_PROPERTY, LISTENER_THREAD_LIMIT_DESC, "25" },
             new String[] { SFTP_POLLING_CONNECT_ERROR_SLEEP_PROPERTY, SFTP_POLLING_CONNECT_ERROR_SLEEP_UI_PROPERTY, SFTP_POLLING_CONNECT_ERROR_SLEEP_DESC, "10s",},
             new String[] { SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_PROPERTY, SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_UI_PROPERTY, SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_DESC, "3"},
+            new String[] { SFTP_POLLING_IGNORED_FILE_EXTENSION_LIST_PROPERTY, SFTP_POLLING_IGNORED_FILE_EXTENSION_LIST_UI_PROPERTY, SFTP_IGNORED_FILE_EXTENSION_LIST_DESC, ".filepart"},
     };
 }
