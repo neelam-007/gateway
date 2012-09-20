@@ -31,12 +31,19 @@ import static org.junit.Assert.*;
  */
 @Ignore
 public class OAuthToolkit2_0ScribeIntegrationTest {
-    private static String GATEWAY = "localhost";
-    private static final Token EMPTY_TOKEN = null;
-    private static final String PROTECTED_RESOURCE_URI = "http://" + GATEWAY + ":8080/oauth/v2/protectedapi";
+    // ALEEOAUTH
+//    private static final String GATEWAY = "aleeoauth.l7tech.com";
+//    private static final String CONSUMER_KEY = "e5f0bfb6-a981-4ef4-b4b4-2716e7904b84";
+//    private static final String CONSUMER_SECRET = "fbebc8b9-2165-4bd0-98c8-a74e03f0298e";
+
+    //LOCALHOST
+    private static final String GATEWAY = "localhost";
     private static final String CONSUMER_KEY = "182637fd-8b6b-4dca-9192-3d1e23d556b5";
     private static final String CONSUMER_SECRET = "de88c414-fb69-4107-aac0-d1fdf0986017";
+
+    private static final String PROTECTED_RESOURCE_URI = "http://" + GATEWAY + ":8080/oauth/v2/protectedapi";
     private static final String CALLBACK = "https://" + GATEWAY + ":8443/oauth_callback";
+    private static final Token EMPTY_TOKEN = null;
     private OAuthService service;
     private Layer720Api api;
 
@@ -55,12 +62,12 @@ public class OAuthToolkit2_0ScribeIntegrationTest {
     public void happyPath() throws Exception {
         // Obtain the Authorization Code
         System.out.println("Fetching Authorization Code...");
-        final Verifier verifier = api.authorize(CONSUMER_KEY, CALLBACK);
-        System.out.println("Received Authorization Code: " + verifier.getValue());
+        final String authCode = api.authorize(CONSUMER_KEY, CALLBACK);
+        System.out.println("Received Authorization Code: " + authCode);
 
         // Trade the Request Token and Verifier for the Access Token
         System.out.println("Trading the Request Token for an Access Token...");
-        final Token accessToken = service.getAccessToken(EMPTY_TOKEN, verifier);
+        final Token accessToken = service.getAccessToken(EMPTY_TOKEN, new Verifier(authCode));
         System.out.println("Received the Access Token: " + accessToken.getToken());
 
         // Ask for a protected resource
