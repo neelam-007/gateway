@@ -848,6 +848,12 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         return selectedNodes;
     }
 
+    @NotNull
+    public RootNode getRootNode() {
+        DefaultTreeModel model = (DefaultTreeModel) getModel();
+        return (RootNode) model.getRoot();
+    }
+
     public void updateAllAliases(Long entityOid){
         DefaultTreeModel model = (DefaultTreeModel) getModel();
         RootNode rootNode = (RootNode) model.getRoot();

@@ -2,8 +2,8 @@ package com.l7tech.external.assertions.oauthinstaller;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
@@ -15,9 +15,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.*;
@@ -66,38 +65,58 @@ public class OAuthInstallerAdminImplTest {
 //        for (String bundleName : ALL_BUNDLE_NAMES) {
 //            testInstallFolders_NoneExist(bundleName);
 //        }
-        testInstallFolders_NoneExist("OAuth_2_0");
+        // OAuth_2_0
+        testInstallFolders_NoneExist("ba525763-6e55-4748-9376-76055247c8b1");
     }
 
+    //todo fix test coverage for resources loaded from an aar
+    @Ignore
     @Test
     public void testListAllBundles() throws Exception {
+                //todo test unique ids
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl();
+        admin.loadBundles();
 
-        final OAuthInstallerAdmin admin = new OAuthInstallerAdminImpl();
-        final List<Pair<String, String>> allBundles = admin.getAllAvailableBundles();
+        final List<BundleInfo> allBundles = admin.getAllOtkComponents();
         assertNotNull(allBundles);
-        assertTrue(allBundles.contains(new Pair<String, String>("OAuth 1.0", "Core Services and Test Client")));
-        assertTrue(allBundles.contains(new Pair<String, String>("Secure Zone", "OVP - OAuth Validation Point")));
-        assertTrue(allBundles.contains(new Pair<String, String>("SecureZone Storage", "Token and Client Store")));
-        assertTrue(allBundles.contains(new Pair<String, String>("OAuth Manager", "Manager utility for Client and Token store for OAuth 1.0 and 2.0")));
-        assertTrue(allBundles.contains(new Pair<String, String>("OAuth 2.0", "Auth Server and Test Clients")));
+
+        BundleInfo expected;
+
+        expected = new BundleInfo("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "1.0", "OAuth 1.0", "Core Services and Test Client");
+        assertTrue(expected.toString(), allBundles.contains(expected));
+
+        expected = new BundleInfo("ba525763-6e55-4748-9376-76055247c8b1", "1.0", "OAuth 2.0", "Auth Server and Test Clients");
+        assertTrue(expected.toString(), allBundles.contains(expected));
+
+        expected = new BundleInfo("f69c7d15-4999-4761-ab26-d29d58c0dd57", "1.0", "Secure Zone OVP", "OVP - OAuth Validation Point");
+        assertTrue(expected.toString(), allBundles.contains(expected));
+
+        expected = new BundleInfo("b082274b-f00e-4fbf-bbb7-395a95ca2a35", "1.0", "SecureZone Storage", "Token and Client Store");
+        assertTrue(expected.toString(), allBundles.contains(expected));
+
+        expected = new BundleInfo("a07924c0-0265-42ea-90f1-2428e31ae5ae", "1.0", "OAuth Manager", "Manager utility for Client and Token store for OAuth 1.0 and 2.0");
+        assertTrue(expected.toString(), allBundles.contains(expected));
     }
 
     /**
      * Test the success case when no folders already exist.
      */
-    public void testInstallFolders_NoneExist(String bundleName) throws Exception {
+    public void testInstallFolders_NoneExist(String bundleId) throws Exception {
 
-        final OAuthInstallerAdminImpl oAuthInstallerAdmin = new OAuthInstallerAdminImpl() {
-
+        final BundleResolver bundleResolver = getBundleResolver();
+        final BundleInstaller bundleInstaller = new BundleInstaller(bundleResolver){
             @NotNull
             @Override
-            protected Pair<AssertionStatus, Document> callManagementAssertion(String requestXml) throws IOException, PolicyAssertionException {
+            protected Pair<AssertionStatus, Document> callManagementAssertion(String requestXml) {
                 return cannedIdResponse(requestXml);
             }
         };
 
-        final Document oAuth_1_0 = oAuthInstallerAdmin.getItemFromBundle(bundleName, "Folder.xml");
-        final Map<Long,Long> oldToNewMap = oAuthInstallerAdmin.installFolders(-5002, oAuth_1_0, new HashMap<Long, Long>());
+        final OAuthInstallerAdminImpl oAuthInstallerAdmin = new OAuthInstallerAdminImpl();
+        oAuthInstallerAdmin.setBundleInstaller(bundleInstaller);
+
+        final Document oAuth_1_0 = bundleResolver.getBundleItem(bundleId, "Folder.xml", false);
+        final Map<Long,Long> oldToNewMap = bundleInstaller.installFolders(-5002, oAuth_1_0, new HashMap<Long, Long>());
         assertNotNull(oldToNewMap);
         assertFalse(oldToNewMap.isEmpty());
 
@@ -106,7 +125,7 @@ public class OAuthInstallerAdminImplTest {
         }
     }
 
-    private Pair<AssertionStatus, Document> cannedIdResponse(String requestXml) throws IOException {
+    private Pair<AssertionStatus, Document> cannedIdResponse(String requestXml) {
         try {
             System.out.println(XmlUtil.nodeToFormattedString(XmlUtil.parse(requestXml)));
             final String format = MessageFormat.format(CANNED_CREATE_ID_RESPONSE_TEMPLATE, String.valueOf(nextOid++));
@@ -116,8 +135,8 @@ public class OAuthInstallerAdminImplTest {
             return new Pair<AssertionStatus, Document>(
                     AssertionStatus.NONE,
                     parse);
-        } catch (SAXException e) {
-            throw new IOException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -129,11 +148,11 @@ public class OAuthInstallerAdminImplTest {
     public void testInstallFolders_AllExist() throws Exception {
         final Map<String, Integer> nameToIdMap = new HashMap<String, Integer>();
 
-        final OAuthInstallerAdminImpl oAuthInstallerAdmin = new OAuthInstallerAdminImpl() {
-
+        final BundleResolver bundleResolver = getBundleResolver();
+        final BundleInstaller bundleInstaller = new BundleInstaller(bundleResolver){
             @NotNull
             @Override
-            protected Pair<AssertionStatus, Document> callManagementAssertion(String requestXml) throws IOException, PolicyAssertionException {
+            protected Pair<AssertionStatus, Document> callManagementAssertion(String requestXml) {
                 try {
                     if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/transfer/Create")) {
                         System.out.println(XmlUtil.nodeToFormattedString(XmlUtil.parse(requestXml)));
@@ -165,14 +184,18 @@ public class OAuthInstallerAdminImplTest {
                         final Document parse = XmlUtil.parse(response);
                         return new Pair<AssertionStatus, Document>(AssertionStatus.NONE, parse);
                     }
-                } catch (SAXException e) {
-                    throw new IOException(e);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
             }
         };
 
-        final Document oAuth_1_0 = oAuthInstallerAdmin.getItemFromBundle("OAuth_1_0", "Folder.xml");
-        final Map<Long,Long> oldToNewMap = oAuthInstallerAdmin.installFolders(-5002, oAuth_1_0, new HashMap<Long, Long>());
+        final OAuthInstallerAdminImpl oAuthInstallerAdmin = new OAuthInstallerAdminImpl();
+        oAuthInstallerAdmin.setBundleInstaller(bundleInstaller);
+
+        //OAuth_1_0
+        final Document oAuth_1_0 = bundleResolver.getBundleItem("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "Folder.xml", false);
+        final Map<Long,Long> oldToNewMap = bundleInstaller.installFolders(-5002, oAuth_1_0, new HashMap<Long, Long>());
         assertNotNull(oldToNewMap);
         assertFalse(oldToNewMap.isEmpty());
 
@@ -182,14 +205,14 @@ public class OAuthInstallerAdminImplTest {
 
     }
 
-    final static List<String> ALL_BUNDLE_NAMES =
+    final static List<Pair<String, String>> ALL_BUNDLE_NAMES =
             Collections.unmodifiableList(
                     Arrays.asList(
-                            "OAuth_1_0",
-                            "OAuth_2_0",
-                            "SecureZone_OVP",
-                            "SecureZone_Storage",
-                            "StorageManager"));
+                            new Pair<String, String>("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "OAuth_1_0"),
+                            new Pair<String, String>("ba525763-6e55-4748-9376-76055247c8b1", "OAuth_2_0"),
+                            new Pair<String, String>("f69c7d15-4999-4761-ab26-d29d58c0dd57", "SecureZone_OVP"),
+                            new Pair<String, String>("b082274b-f00e-4fbf-bbb7-395a95ca2a35", "SecureZone_Storage"),
+                            new Pair<String, String>("a07924c0-0265-42ea-90f1-2428e31ae5ae", "StorageManager")));
 
     @Test
     public void testAllPolicyBundlesInstall() throws Exception {
@@ -205,18 +228,18 @@ public class OAuthInstallerAdminImplTest {
                 return super.put(key, value);
             }
         };
-        for (String bundleName : ALL_BUNDLE_NAMES) {
-            if (bundleName.equals("SecureZone_Storage")) {
+        for (Pair<String, String> bundlePair : ALL_BUNDLE_NAMES) {
+            if (bundlePair.right.equals("SecureZone_Storage")) {
                 //it contains no policies.
-                final URL policyUrl = this.getClass().getResource("/com/l7tech/external/assertions/oauthinstaller/bundles/" + bundleName + "/Policy.xml");
+                final URL policyUrl = this.getClass().getResource("/com/l7tech/external/assertions/oauthinstaller/bundles/" + bundlePair.right + "/Policy.xml");
                 if (policyUrl != null) {
                     fail("Bundle SecureZone_Storage now contains a Policy.xml. Update test case to include it.");
                 }
 
                 continue;
             }
-            System.out.println("Testing install of policies from bundle " + bundleName);
-            installPoliciesTest(bundleName, oldGuidsToNewGuids);
+            System.out.println("Testing install of policies from bundle " + bundlePair);
+            installPoliciesTest(bundlePair.left, oldGuidsToNewGuids);
         }
     }
 
@@ -231,21 +254,22 @@ public class OAuthInstallerAdminImplTest {
      * Note: This also tests policy includes as almost all oath policies contain policy includes.
      *
      */
-    public void installPoliciesTest(String bundleName, final Map<String, String> oldGuidsToNewGuids) throws Exception {
+    public void installPoliciesTest(String bundleId, final Map<String, String> oldGuidsToNewGuids) throws Exception {
         final Map<String, String> nameToPreviousGuid = new HashMap<String, String>();
-        final OAuthInstallerAdminImpl oAuthInstallerAdmin = new OAuthInstallerAdminImpl(){
+
+        final BundleResolver bundleResolver = getBundleResolver();
+        final BundleInstaller bundleInstaller = new BundleInstaller(bundleResolver){
             @NotNull
             @Override
-            protected Pair<AssertionStatus, Document> callManagementAssertion(String requestXml) throws IOException, PolicyAssertionException {
-
+            protected Pair<AssertionStatus, Document> callManagementAssertion(String requestXml) {
                 try {
                     if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/transfer/Create")) {
 
                         // validate that the request contained policy XML which does not reference any old GUIDS
                         // e.g. policy includes have been udpated correctly.
 //                        System.out.println(requestXml);
-                        final Element policyResourceElmWritable = GatewayManagementDocumentUtilities.getPolicyResourceElement(XmlUtil.parse(requestXml).getDocumentElement());
-                        final Document includedPolicyDoc = GatewayManagementDocumentUtilities.getPolicyDocumentFromResource(policyResourceElmWritable);
+                        final Element policyResourceElmWritable = BundleInstaller.getPolicyResourceElement(XmlUtil.parse(requestXml).getDocumentElement(), "Policy", "canned id");
+                        final Document includedPolicyDoc = BundleInstaller.getPolicyDocumentFromResource(policyResourceElmWritable, "Policy", "canned id");
                         final List<Element> policyIncludes = GatewayManagementDocumentUtilities.getPolicyIncludes(includedPolicyDoc);
 
                         //validate that these guids are not canned guids shipped with the OTK policies.
@@ -275,12 +299,15 @@ public class OAuthInstallerAdminImplTest {
                         return new Pair<AssertionStatus, Document>(AssertionStatus.NONE, XmlUtil.parse(response));
                     }
                 } catch (Exception e) {
-                    throw new IOException(e);
+                    throw new RuntimeException(e);
                 }
             }
         };
 
-        final Document policyFromBundleDoc = oAuthInstallerAdmin.getItemFromBundle(bundleName, "Policy.xml");
+        final OAuthInstallerAdminImpl oAuthInstallerAdmin = new OAuthInstallerAdminImpl();
+        oAuthInstallerAdmin.setBundleInstaller(bundleInstaller);
+
+        final Document policyFromBundleDoc = bundleResolver.getBundleItem(bundleId, "Policy.xml", false);
 
         ElementCursor cursor = new DomElementCursor(policyFromBundleDoc);
         final XpathResult xpathResult = cursor.getXpathResult(
@@ -301,12 +328,12 @@ public class OAuthInstallerAdminImplTest {
             final Element policyDetailElm = elementCursor.asDomElement();
             final String guid = policyDetailElm.getAttribute("guid");
             final String name = DomUtils.getTextValue(
-                    XmlUtil.findExactlyOneChildElementByName(policyDetailElm, OAuthInstallerAdminImpl.L7_NS_GW_MGMT, "Name"), true);
+                    XmlUtil.findExactlyOneChildElementByName(policyDetailElm, BundleInstaller.L7_NS_GW_MGMT, "Name"), true);
 
             policyNameToGuid.put(name, guid);
         }
 
-        oAuthInstallerAdmin.installPolicies(getFolderIds(), oldGuidsToNewGuids, policyFromBundleDoc);
+        bundleInstaller.installPolicies(getFolderIds(), oldGuidsToNewGuids, policyFromBundleDoc);
 
         // verify that each known policy name was installed
         for (Map.Entry<String, String> bundlePolicy : policyNameToGuid.entrySet()) {
@@ -319,8 +346,9 @@ public class OAuthInstallerAdminImplTest {
 
     @Test
     public void testServiceXpathExpression() throws Exception {
-        OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl();
-        final Document oAuth_1_0 = admin.getItemFromBundle("OAuth_1_0", "Service.xml");
+        final BundleResolver resolver = getBundleResolver();
+        // OAuth_1_0
+        final Document oAuth_1_0 = resolver.getBundleItem("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "Service.xml", false);
         ElementCursor cursor = new DomElementCursor(oAuth_1_0);
 
         final String urlMapping = "/auth/oauth/v1/token";
@@ -334,16 +362,21 @@ public class OAuthInstallerAdminImplTest {
 
     @Test
     public void testInstallServices() throws Exception {
-        OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(){
+        final BundleResolver bundleResolver = getBundleResolver();
+        final BundleInstaller bundleInstaller = new BundleInstaller(bundleResolver){
             @NotNull
             @Override
-            protected Pair<AssertionStatus, Document> callManagementAssertion(String requestXml) throws IOException, PolicyAssertionException {
+            protected Pair<AssertionStatus, Document> callManagementAssertion(String requestXml) {
                 return cannedIdResponse(requestXml);
             }
         };
 
-        final Document serviceFromBundleDoc = admin.getItemFromBundle("OAuth_1_0", "Service.xml");
-        admin.installServices(getFolderIds(), new HashMap<Long, Long>(), getPolicyGuids(), serviceFromBundleDoc);
+        final OAuthInstallerAdminImpl oAuthInstallerAdmin = new OAuthInstallerAdminImpl();
+        oAuthInstallerAdmin.setBundleInstaller(bundleInstaller);
+
+        // OAuth_1_0
+        final Document serviceFromBundleDoc = bundleResolver.getBundleItem("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "Service.xml", false);
+        bundleInstaller.installServices(getFolderIds(), new HashMap<Long, Long>(), getPolicyGuids(), serviceFromBundleDoc);
 
     }
 
@@ -379,6 +412,49 @@ public class OAuthInstallerAdminImplTest {
     }
 
     // - PRIVATE
+
+    @NotNull
+    private BundleResolver getBundleResolver(){
+
+        final Map<String, Map<String, Document>> bundleToItemAndDocMap = new HashMap<String, Map<String, Document>>();
+        bundleToItemAndDocMap.put("1c2a2874-df8d-4e1d-b8b0-099b576407e1", getItemsToDocs("OAuth_1_0", true));
+        bundleToItemAndDocMap.put("ba525763-6e55-4748-9376-76055247c8b1", getItemsToDocs("OAuth_2_0", true));
+        bundleToItemAndDocMap.put("f69c7d15-4999-4761-ab26-d29d58c0dd57", getItemsToDocs("SecureZone_OVP", true));
+        bundleToItemAndDocMap.put("b082274b-f00e-4fbf-bbb7-395a95ca2a35", getItemsToDocs("SecureZone_Storage", false));
+        bundleToItemAndDocMap.put("a07924c0-0265-42ea-90f1-2428e31ae5ae", getItemsToDocs("StorageManager", true));
+
+        return new BundleResolver() {
+            @Override
+            public Document getBundleItem(@NotNull String bundleId, @NotNull String bundleItem, boolean allowMissing) throws UnknownBundleException, BundleResolverException {
+                final Map<String, Document> itemToDocMap = bundleToItemAndDocMap.get(bundleId);
+                return itemToDocMap.get(bundleItem);
+            }
+        };
+    }
+
+    private Document getDocumentFromResource(String resource) {
+        final URL resourceUrl = getClass().getResource(resource);
+        final byte[] bytes;
+        try {
+            bytes = IOUtils.slurpUrl(resourceUrl);
+            return XmlUtil.parse(new ByteArrayInputStream(bytes));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Map<String, Document> getItemsToDocs(String bundleFolderName, boolean hasPolicy) {
+        final Map<String, Document> itemsToDocs = new HashMap<String, Document>();
+        final String baseName = "/com/l7tech/external/assertions/oauthinstaller/bundles/";
+        itemsToDocs.put("Folder.xml", getDocumentFromResource(baseName + bundleFolderName + "/Folder.xml"));
+        itemsToDocs.put("Service.xml", getDocumentFromResource(baseName + bundleFolderName + "/Service.xml"));
+
+        if (hasPolicy) {
+            itemsToDocs.put("Policy.xml", getDocumentFromResource(baseName + bundleFolderName + "/Policy.xml"));
+        }
+
+        return itemsToDocs;
+    }
 
     private Map<Long, Long> getFolderIds() {
         // fake the folder ids

@@ -9,7 +9,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,6 +38,12 @@ public class GatewayManagementDocumentUtilities {
         return nsMap;
     }
 
+    public static class UnexpectedManagementResponse extends Exception{
+        public UnexpectedManagementResponse(String message) {
+            super(message);
+        }
+    }
+
     /**
      * Get the id values from all found wsman:Selector elements with Name attribute equal to 'id'.
      *
@@ -48,17 +53,14 @@ public class GatewayManagementDocumentUtilities {
      * @throws Exception parsing or xpath
      */
     @NotNull
-    public static List<Long> getSelectorId(final Document response, final boolean allowMultiple) throws Exception {
+    public static List<Long> getSelectorId(final Document response, final boolean allowMultiple) throws UnexpectedManagementResponse{
         final ElementCursor cursor = new DomElementCursor(response.getDocumentElement());
 
         // Find the Selector result either from a create response of from an enumeration filter with
         // EnumerateObjectAndEPR response.
 
         //todo - update xpath to select the string value directly from the node
-        final XpathResult xpathResult = cursor.getXpathResult(
-                new XpathExpression(
-                        "//wsman:Selector[@Name='id']",
-                        getNamespaceMap()).compile());
+        final XpathResult xpathResult = XpathUtil.getXpathResultQuietly(cursor, getNamespaceMap(), "//wsman:Selector[@Name='id']");
 
         final List<Long> foundIds = new ArrayList<Long>();
         if (xpathResult.getType() == XpathResult.TYPE_NODESET && !xpathResult.getNodeSet().isEmpty()) {
@@ -66,8 +68,12 @@ public class GatewayManagementDocumentUtilities {
             final XpathResultNodeSet nodeSet = xpathResult.getNodeSet();
             if (!allowMultiple && nodeSet.size() != 1) {
                 final String msg = "Unexpected number of Selector id elements found in response.";
-                logger.warning(msg + ": " + XmlUtil.nodeToFormattedString(response));
-                throw new IOException(msg);
+                try {
+                    logger.warning(msg + ": " + XmlUtil.nodeToFormattedString(response));
+                } catch (IOException e) {
+                    logger.warning("Could not parse management response: " + e.getMessage());
+                }
+                throw new UnexpectedManagementResponse(msg);
             }
 
             final XpathResultIterator iterator = xpathResult.getNodeSet().getIterator();
@@ -89,7 +95,7 @@ public class GatewayManagementDocumentUtilities {
      * @return Long id. Null if not found. e.g. resource was not created
      */
     @Nullable
-    public static Long getCreatedId(final Document response) throws Exception {
+    public static Long getCreatedId(final Document response) throws UnexpectedManagementResponse {
         final List<Long> createdId = getSelectorId(response, false);
         return (createdId.isEmpty()) ? null : createdId.get(0);
     }
@@ -130,36 +136,6 @@ public class GatewayManagementDocumentUtilities {
     }
 
     /**
-     * Allow callers to deal with a not found element, so return is nullable.
-     *
-     * @param elementWithPolicyDescendant
-     * @return
-     * @throws Exception
-     */
-    @Nullable
-    public static Element getPolicyResourceElement(Element elementWithPolicyDescendant) throws Exception {
-        final ElementCursor policyCursor = new DomElementCursor(elementWithPolicyDescendant, false);
-        // The xpath expression below uses '.' to make sure it runs from the current element and not over the entire document.
-        final XpathResult xpathResult = policyCursor.getXpathResult(
-                new XpathExpression(
-                        ".//l7:Resource[@type='policy']",
-                        getNamespaceMap()).compile());
-
-        final Element returnElement;
-        if (xpathResult.getType() == XpathResult.TYPE_NODESET && !xpathResult.getNodeSet().isEmpty()) {
-            if (xpathResult.getNodeSet().size() != 1) {
-                // mgmt api updated exception - wrong version exception
-                throw new IOException("More than one policy found for element. Not supported.");
-            }
-            returnElement = xpathResult.getNodeSet().getIterator().nextElementAsCursor().asDomElement();
-        } else {
-            returnElement = null;
-        }
-
-        return returnElement;
-    }
-
-    /**
      * Get all policy includes for a policy element.
      * <p/>
      * WARNING: The returned Elements do not belong to PolicyElement.
@@ -168,11 +144,10 @@ public class GatewayManagementDocumentUtilities {
      * @throws Exception
      */
     @NotNull
-    public static List<Element> getPolicyIncludes(@NotNull Document policyDocument) throws Exception {
+    public static List<Element> getPolicyIncludes(@NotNull Document policyDocument) {
 
         final DomElementCursor includeCursor = new DomElementCursor(policyDocument.getDocumentElement(), false);
-        final XpathResult includeResult = includeCursor.getXpathResult(
-                new XpathExpression("//L7p:Include/L7p:PolicyGuid", getNamespaceMap()).compile());
+        final XpathResult includeResult = XpathUtil.getXpathResultQuietly(includeCursor, getNamespaceMap(), "//L7p:Include/L7p:PolicyGuid");
 
         final XpathResultIterator iterator = includeResult.getNodeSet().getIterator();
         final List<Element> allIncludedGuids = new ArrayList<Element>();
@@ -183,49 +158,25 @@ public class GatewayManagementDocumentUtilities {
         return allIncludedGuids;
     }
 
-    /**
-     * @param resourcePolicyElement element which can contain a resource of type policy. Should be an element of type
-     *                              &lt;l7:Resource type="policy"&gt;
-     * @return
-     * @throws java.io.IOException
-     */
-    public static Document getPolicyDocumentFromResource(@NotNull Element resourcePolicyElement) throws IOException {
-
-        if (!resourcePolicyElement.getLocalName().equals("Resource") ||
-                !resourcePolicyElement.getNamespaceURI().equals(OAuthInstallerAdminImpl.L7_NS_GW_MGMT) ||
-                !resourcePolicyElement.getAttribute("type").equals("policy")
-                ) {
-
-            // runtime programming error
-            throw new IllegalArgumentException("Invalid policy element. Cannot extract policy includes");
-        }
-
-        try {
-            return XmlUtil.parse(DomUtils.getTextValue(resourcePolicyElement));
-        } catch (SAXException e) {
-            throw new IOException(e);
-        }
-
-    }
-
     public static void updatePolicyIncludes(@NotNull Map<String, String> oldGuidsToNewGuids,
-                                     @NotNull String identifier,
-                                     @NotNull String entityType,
-                                     @NotNull List<Element> policyIncludes,
-                                     @NotNull Element policyResourceElement,
-                                     @NotNull Document policyDocumentFromResource) throws IOException {
+                                            @NotNull String identifier,
+                                            @NotNull String entityType,
+                                            @NotNull List<Element> policyIncludes,
+                                            @NotNull Element policyResourceElement,
+                                            @NotNull Document policyDocumentFromResource) {
         // update them now that they have been created.
         for (Element policyInclude : policyIncludes) {
             final String includeGuid = policyInclude.getAttribute("stringValue");
             if (!oldGuidsToNewGuids.containsKey(includeGuid)) {
-                throw new IOException("Required policy include #{" + includeGuid + "} was not created for " + entityType + " with identifier: #{" + identifier + "}");
+                // programming error
+                throw new RuntimeException("Required policy include #{" + includeGuid + "} was not created for " + entityType + " with identifier: #{" + identifier + "}");
             }
             final String newGuid = oldGuidsToNewGuids.get(includeGuid);
             policyInclude.setAttribute("stringValue", newGuid);
         }
 
         //write changes back to the resource document
-        DomUtils.setTextContent(policyResourceElement, XmlUtil.nodeToString(policyDocumentFromResource));
+        DomUtils.setTextContent(policyResourceElement, XmlUtil.nodeToStringQuiet(policyDocumentFromResource));
     }
 
     // - PRIVATE

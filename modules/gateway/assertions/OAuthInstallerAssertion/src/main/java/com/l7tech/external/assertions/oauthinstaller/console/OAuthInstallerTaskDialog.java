@@ -5,6 +5,7 @@ import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.external.assertions.oauthinstaller.BundleInfo;
 import com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.ExceptionUtils;
@@ -14,7 +15,6 @@ import javax.swing.*;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.List;
@@ -25,8 +25,6 @@ public class OAuthInstallerTaskDialog extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JComboBox comboBox1;
-    private JButton manageJDBCConnectionsButton;
     private JCheckBox oAuth10;
     private JCheckBox oAuth20;
     private JCheckBox oAuthManager;
@@ -37,8 +35,9 @@ public class OAuthInstallerTaskDialog extends JDialog {
     private JLabel otkVersionLabel;
     private JLabel parentFolderLabel;
     private JCheckBox oAuthOvp;
+    private JPanel componentsToInstallPanel;
     private long selectedFolderOid;
-    private List<Pair<String,String>> allBundles;
+    private final Map<String, Pair<JCheckBox, BundleInfo>> availableBundles = new HashMap<String, Pair<JCheckBox, BundleInfo>>();
 
     public OAuthInstallerTaskDialog(Frame owner) {
         super(owner, "OAuth Toolkit Installer", true);
@@ -78,11 +77,11 @@ public class OAuthInstallerTaskDialog extends JDialog {
     }
 
     private void initialize(){
-        JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+        ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
         final TreePath selectionPath = tree.getSelectionPath();
 
-        final String folderPath;
-        final Long parentFolderOid;
+        String folderPath = null;
+        Long parentFolderOid = null;
         if (selectionPath != null) {
             final Object[] path = selectionPath.getPath();
 
@@ -104,103 +103,109 @@ public class OAuthInstallerTaskDialog extends JDialog {
                 builder.append("/");  // if only root node then this captures that with a single /
                 folderPath = builder.toString();
                 parentFolderOid = lastParentOid;
-
-                final OAuthInstallerAdmin admin = Registry.getDefault().getExtensionInterface(OAuthInstallerAdmin.class, null);
-                try {
-                    allBundles = admin.getAllAvailableBundles();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                folderPath = null;
-                parentFolderOid = null;
             }
-        } else {
-            folderPath = null;
-            parentFolderOid = null;
         }
 
-        //todo refactor this is not idomatic and prone for errors
-        if (folderPath == null || parentFolderOid == null) {
-            parentFolderLabel.setText("Please select a folder.");
-            buttonOK.setEnabled(false);
-        } else {
-            selectedFolderOid = parentFolderOid;
-            parentFolderLabel.setText(folderPath);
+        if (parentFolderOid == null) {
+            final RootNode rootNode = tree.getRootNode();
+            parentFolderOid = rootNode.getOid();
+            folderPath = "/";
         }
 
+        selectedFolderOid = parentFolderOid;
+        parentFolderLabel.setText(folderPath);
+
+        final OAuthInstallerAdmin admin = Registry.getDefault().getExtensionInterface(OAuthInstallerAdmin.class, null);
+        try {
+            final String oAuthToolkitVersion = admin.getOAuthToolkitVersion();
+            otkVersionLabel.setText(oAuthToolkitVersion);
+
+            final List<BundleInfo> allAvailableBundles = admin.getAllOtkComponents();
+
+            componentsToInstallPanel.setLayout(new BoxLayout(componentsToInstallPanel, BoxLayout.Y_AXIS));
+
+            for (BundleInfo bundleInfo : allAvailableBundles) {
+                // create panel
+                BundleComponent bundleComp = new BundleComponent(bundleInfo.getName(), bundleInfo.getDescription(), bundleInfo.getVersion());
+                componentsToInstallPanel.add(bundleComp.getBundlePanel());
+                componentsToInstallPanel.add(Box.createRigidArea(new Dimension(10, 10)));
+                final Pair<JCheckBox, BundleInfo> checkBoxBundleInfoPair =
+                        new Pair<JCheckBox, BundleInfo>(bundleComp.getInstallCheckBox(), bundleInfo);
+
+                availableBundles.put(bundleInfo.getId(), checkBoxBundleInfoPair);
+            }
+        } catch (OAuthInstallerAdmin.OAuthToolkitInstallationException e) {
+            DialogDisplayer.showConfirmDialog(this, "Initialization problem: " + ExceptionUtils.getMessage(e),
+                    "Initialization problem", JOptionPane.WARNING_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
+        }
     }
 
     private void onOK() {
+        ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+
+        final List<String> bundlesToInstall = new ArrayList<String>();
+        for (Map.Entry<String, Pair<JCheckBox, BundleInfo>> entry : availableBundles.entrySet()) {
+            final JCheckBox checkBox = entry.getValue().left;
+            if (checkBox.isSelected()) {
+                bundlesToInstall.add(entry.getKey());
+            }
+        }
+
+        if (bundlesToInstall.isEmpty()) {
+            DialogDisplayer.showMessageDialog(this, "No components were selected for installation", "No component selected", JOptionPane.WARNING_MESSAGE, null);
+            return;
+        }
+
+        final OAuthInstallerAdmin admin = Registry.getDefault().getExtensionInterface(OAuthInstallerAdmin.class, null);
 
         try {
+            final ArrayList right = doAsyncAdmin(
+                    admin,
+                    OAuthInstallerTaskDialog.this,
+                    "OAuth Toolkit Installation",
+                    "The selected components of the OAuth toolkit are being installed.",
+                    admin.installOAuthToolkit(bundlesToInstall, selectedFolderOid, oAuthTextField.getText().trim())).right();
 
-            ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-
-            List<String> bundlesToInstall = new ArrayList<String>();
-            if (oAuth10.isSelected()) {
-                bundlesToInstall.add("OAuth_1_0");
-            }
-            if (oAuth20.isSelected()) {
-                bundlesToInstall.add("OAuth_2_0");
-            }
-            if (oAuthManager.isSelected()) {
-                bundlesToInstall.add("StorageManager");
-            }
-            if (oAuthOvp.isSelected()) {
-                bundlesToInstall.add("SecureZone_OVP");
-            }
-            if (oAuthStorage.isSelected()) {
-                bundlesToInstall.add("SecureZone_Storage");
-            }
-
-            if (bundlesToInstall.isEmpty()) {
-                DialogDisplayer.showMessageDialog(this, "No components were selected for installation", "No component selected", JOptionPane.WARNING_MESSAGE, null);
-                return;
-            }
-
-            final OAuthInstallerAdmin admin = Registry.getDefault().getExtensionInterface(OAuthInstallerAdmin.class, null);
-
-            try {
-                final ArrayList right = doAsyncAdmin(
-                        admin,
-                        OAuthInstallerTaskDialog.this,
-                        "OAuth Toolkit Installation",
-                        "The selected components of the OAuth toolkit are being installed.",
-                        admin.installBundles(bundlesToInstall, selectedFolderOid, oAuthTextField.getText().trim())).right();
-
-                final StringBuilder sb = new StringBuilder();
-                if (right.isEmpty()) {
-                    sb.append("No components were installed.");
-                } else {
-                    sb.append("Components installed: ");
-                    for (Object bundleObj : right) {
-                        sb.append(bundleObj.toString());
-                        sb.append("\\n");
-                    }
+            final StringBuilder sb = new StringBuilder();
+            if (right.isEmpty()) {
+                sb.append("No components were installed.");
+            } else {
+                sb.append("<html>Components installed: <br />");
+                for (Object bundleObj : right) {
+                    final String guid = bundleObj.toString();
+                    final Pair<JCheckBox, BundleInfo> bundleInfo = availableBundles.get(guid);
+                    sb.append("<br />");
+                    sb.append(bundleInfo.right.getName());
+                    sb.append(" - Version: ");
+                    sb.append(bundleInfo.right.getVersion());
                 }
-
-                DialogDisplayer.showMessageDialog(this, "OAuth Toolkit Installation Completed", sb.toString(),
-                        right.isEmpty() ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE, null);
-
-
-            } catch (InterruptedException e) {
-                // do nothing, user cancelled
-
-            } catch (InvocationTargetException e) {
-                DialogDisplayer.showMessageDialog(this, "Installation Problem",
-                        "Could not invoke installation on Gateway",
-                        JOptionPane.WARNING_MESSAGE, null);
-            } catch (RuntimeException e) {
-                DialogDisplayer.showMessageDialog(this, "Installation Problem",
-                        "Unexpected error occured during installation: \\n" + ExceptionUtils.getMessage(e),
-                        JOptionPane.WARNING_MESSAGE, null);
+                sb.append("<br /></html>");
             }
 
-            tree.refresh();
-        } catch (Exception e) {
-            e.printStackTrace();
+            final JLabel resultsLabel = new JLabel(sb.toString());
+
+            DialogDisplayer.showMessageDialog(this, resultsLabel, "Installation Completed",
+                    right.isEmpty() ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE, null);
+
+
+        } catch (InterruptedException e) {
+            // do nothing, user cancelled
+
+        } catch (InvocationTargetException e) {
+            DialogDisplayer.showMessageDialog(this, "Could not invoke installation on Gateway",
+                    "Installation Problem",
+                    JOptionPane.WARNING_MESSAGE, null);
+        } catch (RuntimeException e) {
+            DialogDisplayer.showMessageDialog(this, "Unexpected error occured during installation: \\n" + ExceptionUtils.getMessage(e),
+                    "Installation Problem",
+                    JOptionPane.WARNING_MESSAGE, null);
+        } catch (OAuthInstallerAdmin.OAuthToolkitInstallationException e) {
+            DialogDisplayer.showMessageDialog(this, "Error during installation: " + ExceptionUtils.getMessage(e),
+                    "Installation Problem",
+                    JOptionPane.WARNING_MESSAGE, null);
         }
+
+        tree.refresh();
         dispose();
     }
 

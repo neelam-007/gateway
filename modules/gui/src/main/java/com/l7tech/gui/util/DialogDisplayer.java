@@ -47,6 +47,7 @@ public class DialogDisplayer {
     /** Default images to use for dialogs. */
     private static List defaultWindowImages = null;
 
+    //todo this doesn't need to be an instance variable
     /** A dialog to safely make a confirmation. */
     private static JDialog safeConfirmationDialog;
 
@@ -626,7 +627,7 @@ public class DialogDisplayer {
      * @param result    callback to invoke with the result when dialog is dismissed.  optional
      */
     public static void showConfirmDialog(Component parent, Object mess, String title, int opType, int messType,
-                                        OptionListener result)
+                                        @Nullable OptionListener result)
     {
         showConfirmDialog(parent, mess, title, opType, messType, null, result);
     }
@@ -648,7 +649,7 @@ public class DialogDisplayer {
      * @param result    callback to invoke with the result when dialog is dismissed.  optional
      */
     public static void showConfirmDialog(Component parent, Object mess, String title, int opType, int messType,
-                                        @Nullable Icon icon, OptionListener result)
+                                        @Nullable Icon icon, @Nullable OptionListener result)
     {
         showOptionDialog(parent, mess, title, opType, messType, icon, null, null, result);
     }
@@ -680,7 +681,7 @@ public class DialogDisplayer {
                                        @Nullable Icon icon,
                                        @Nullable final Object[] options,
                                        @Nullable Object initialValue,
-                                       final OptionListener result)
+                                       @Nullable final OptionListener result)
     {
         final JOptionPane pane = new JOptionPane(mess, messType, opType, icon, options, initialValue);
         pane.setInitialValue(initialValue);

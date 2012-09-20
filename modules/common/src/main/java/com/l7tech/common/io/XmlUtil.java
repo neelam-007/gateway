@@ -643,6 +643,21 @@ public class XmlUtil extends DomUtils {
     }
 
     /**
+     * Quietly serialize the given node to a String.
+     *
+     * @param node The node to serialize(required)
+     * @return The String for the node.
+     * @see #nodeToString
+     */
+    public static String nodeToStringQuiet(final Node node) {
+        try {
+            return nodeToString(node);
+        } catch (IOException e) {
+            throw new RuntimeException("Unexpected error serializing XML: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * Serialize the given node to a String.
      *
      * @param node The node to serialize (required)

@@ -1,4 +1,6 @@
 <l7:Bundle xmlns:l7="http://ns.l7tech.com/2012/09/policy-bundle" >
+    <l7:Id>ba525763-6e55-4748-9376-76055247c8b1</l7:Id>
+    <l7:Version>1.0</l7:Version>
     <l7:Name>OAuth 2.0</l7:Name>
     <l7:Description>Auth Server and Test Clients</l7:Description>
 </l7:Bundle>

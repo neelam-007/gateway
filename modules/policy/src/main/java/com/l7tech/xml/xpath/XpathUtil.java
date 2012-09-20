@@ -343,6 +343,36 @@ public class XpathUtil {
     }
 
     /**
+     * Quietly evaluate the xpath expression. Only to be used where the xpath expression is hardcoded and is known
+     * to be correct. e.g. a runtime exception throw here is a programming error.
+     *
+     * @param cursor Cursor to evaluate expression against.
+     * @param namespaces Map of namespaces used in expression.
+     * @param xpath xpath expression to evaluate
+     * @return XpathResult result
+     */
+    @NotNull
+    public static XpathResult getXpathResultQuietly(@NotNull final ElementCursor cursor,
+                                                    final @Nullable Map<String, String> namespaces,
+                                                    @NotNull final String xpath) {
+        final XpathResult xpathResult;
+        try {
+            xpathResult = cursor.getXpathResult(
+                    new XpathExpression(
+                            xpath,
+                            namespaces).compile());
+        } catch (XPathExpressionException e) {
+            throw new RuntimeException("Unexpected error with xpath expression: " + e.getMessage(), e);
+        } catch (InvalidXpathException e) {
+            throw new RuntimeException("Unexpected error with xpath expression: " + e.getMessage(), e);
+        }
+
+        return xpathResult;
+    }
+
+    // - PRIVATE
+
+    /**
      * Create a Jaxen NamespaceContext from the specified namespace Map.
      *
      * @param namespaces a Map of prefix to namespace URI.  Required.
