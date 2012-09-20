@@ -76,21 +76,21 @@ public class HttpCookie {
         int parsedVersion = 0;
         for (int j=1; j<fields.length; j++) {
 
-            if ("secure".equalsIgnoreCase(fields[j])) {
+            if ("secure".equalsIgnoreCase(fields[j]) || "$Secure".equalsIgnoreCase(fields[j])) {
                 parsedSecure = true;
             } else if (fields[j].indexOf('=') > 0) {
                 String[] f = EQUALS.split(fields[j], 2);
                 if ("expires".equalsIgnoreCase(f[0])) {
                     parsedExpires = f[1];
-                } else if ("domain".equalsIgnoreCase(f[0])) {
+                } else if ("domain".equalsIgnoreCase(f[0]) || "$Domain".equalsIgnoreCase(f[0])) {
                     parsedDomain = f[1];
-                } else if ("path".equalsIgnoreCase(f[0])) {
+                } else if ("path".equalsIgnoreCase(f[0]) || "$Path".equalsIgnoreCase(f[0])) {
                     parsedPath = f[1];
-                } else if ("comment".equalsIgnoreCase(f[0])) {
+                } else if ("comment".equalsIgnoreCase(f[0]) || "$Comment".equalsIgnoreCase(f[0])) {
                     parsedComment = f[1];
-                } else if ("version".equalsIgnoreCase(f[0])) {
+                } else if ("version".equalsIgnoreCase(f[0]) || "$Version".equalsIgnoreCase(f[0])) {
                     parsedVersion = Integer.parseInt(trimQuotes(f[1],1));
-                } else if ("max-age".equalsIgnoreCase(f[0])) {
+                } else if ("max-age".equalsIgnoreCase(f[0]) || "$Max-Age".equalsIgnoreCase(f[0])) {
                     parsedMaxAge = Integer.parseInt(trimQuotes(f[1],1));
                 }
             }

@@ -92,18 +92,38 @@ class OutboundHeaderSupport implements HasOutboundHeaders {
     }
 
     @Override
+    public void removeHeader(final String name, final Object value) {
+        for ( final Iterator<Pair<String, Object>> headerIterator = headersToSend.iterator(); headerIterator.hasNext(); ) {
+            final Pair<String, Object> header = headerIterator.next();
+            if ( header.left.equalsIgnoreCase(name) && header.right.equals(value)) {
+                headerIterator.remove();
+            }
+        }
+    }
+
+    @Override
     public void clearHeaders() {
         headersToSend.clear();
     }
 
     @Override
     public void writeHeaders( final GenericHttpRequestParams target ) {
+        writeHeaders(target, null);
+    }
+
+    @Override
+    public void writeHeaders(GenericHttpRequestParams target, String givenHeaderName) {
         if ( target != null ) {
             final Set<String> addedHeaders = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
             for ( final Pair<String, Object> pair : headersToSend ) {
                 final String headerName = pair.left;
                 final Object headerValue = pair.right;
                 final HttpHeader header;
+
+                if (givenHeaderName != null && !givenHeaderName.equalsIgnoreCase(headerName)) {
+                    continue;
+                }
+
                 if ( headerValue instanceof Long ) {
                     header = GenericHttpHeader.makeDateHeader( headerName, new Date((Long)headerValue));
                 } else if ( headerValue instanceof String ) {
@@ -130,5 +150,4 @@ class OutboundHeaderSupport implements HasOutboundHeaders {
      * Values are expected to be Long or String
      */
     final List<Pair<String, Object>> headersToSend = new ArrayList<Pair<String, Object>>();
-
 }

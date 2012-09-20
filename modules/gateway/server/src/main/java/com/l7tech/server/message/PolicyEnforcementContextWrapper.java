@@ -244,6 +244,11 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
+    public void deleteCookie(HttpCookie cookie) {
+        delegate.deleteCookie(cookie);
+    }
+
+    @Override
     public ArrayList<String> getIncrementedCounters() {
         return delegate.getIncrementedCounters();
     }

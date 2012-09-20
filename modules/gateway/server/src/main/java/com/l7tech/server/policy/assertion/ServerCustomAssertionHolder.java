@@ -419,6 +419,25 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             return context;
         }
 
+        @Override
+        public void onCompletion() {
+            Vector cookies = (Vector) context.get("updatedCookies");
+            Collection originals = (Collection) context.get("originalCookies");
+            for ( final Object cooky : cookies ) {
+                Cookie cookie = (Cookie) cooky;
+                if ( !originals.contains( cookie ) ) {
+                    // doesn't really matter if this has already been added
+                    pec.addCookie( CookieUtils.fromServletCookie( cookie, true ) );
+                }
+            }
+
+            try {
+                handleCookieInOutboundRequest(pec, context, pec.getResponse());
+            } catch (HttpCookie.IllegalFormatException e) {
+                throw new IllegalArgumentException("Invalid cookie format");
+            }
+        }
+
         /**
          * Access a context variable from the policy enforcement context
          */
@@ -527,6 +546,12 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                     pec.addCookie( CookieUtils.fromServletCookie( cookie, true ) );
                 }
             }
+
+            try {
+                handleCookieInOutboundRequest(pec, context, pec.getRequest());
+            } catch (HttpCookie.IllegalFormatException e) {
+                throw new IllegalArgumentException("Invalid cookie format");
+            }
         }
 
         /**
@@ -548,6 +573,56 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         @Override
         public void setVariable(String name, Object value) {
             pec.setVariable(name, value);
+        }
+    }
+
+    /**
+     * Include or exclude some specific cookie in or from the outbound request.
+     * @param pec Policy Enforcement Context
+     * @param context A map of context variables
+     * @param message Request or Response message
+     * @throws HttpCookie.IllegalFormatException thrown if cookies are not well format against HttpCookie format
+     */
+    private void handleCookieInOutboundRequest(PolicyEnforcementContext pec, Map context, Message message) throws HttpCookie.IllegalFormatException {
+        Boolean toExcludeOamCookie = (Boolean) context.get("isCookieExcludedInOutboundRequest");
+        String cookieFullValue = (String) context.get("cookieExcludedOrIncludedInOutboundRequest");
+        if (toExcludeOamCookie == null || cookieFullValue == null) return;
+
+        String cookieName = new HttpCookie(".", "/", cookieFullValue).getCookieName();
+
+        HasOutboundHeaders oh = message.getKnob(OutboundHeadersKnob.class);
+        if (oh == null) {
+            oh = HttpOutboundRequestFacet.getOrCreateHttpOutboundRequestKnob(message);
+        }
+
+        HttpRequestKnob hrk = message.getKnob(HttpRequestKnob.class);
+        if (hrk != null && !oh.containsHeader("Cookie")) {
+            String[] oldValues = hrk.getHeaderValues("Cookie");
+            for (String oldValue : oldValues) {
+                oh.addHeader("Cookie", oldValue);
+            }
+        }
+
+        // Delete or update/add the cookie
+        // Delete the old cookies with the same cookie name
+        if (oh.containsHeader("Cookie")) {
+            String[] values = oh.getHeaderValues("Cookie");
+
+            for (String value: values) {
+                if (cookieName.equals(new HttpCookie(".", "/", value).getCookieName())) {
+                    oh.removeHeader("Cookie", value);
+                }
+            }
+        }
+        Set<HttpCookie> contextCookies = pec.getCookies();
+        for (HttpCookie cookie: contextCookies) {
+            if (cookie.getCookieName().equals(cookieName)) {
+                pec.deleteCookie(cookie);
+            }
+        }
+        // Add back new/updated cookies with the same cookie name if applicable
+        if (! toExcludeOamCookie) {
+            oh.addHeader("Cookie", cookieFullValue);
         }
     }
 }
