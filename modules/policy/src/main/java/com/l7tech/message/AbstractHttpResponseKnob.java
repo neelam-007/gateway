@@ -59,11 +59,6 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
     }
 
     @Override
-    public void removeHeader(final String name, final Object value) {
-        headerSupport.removeHeader( name, value );
-    }
-
-    @Override
     public void clearHeaders() {
         headerSupport.clearHeaders();
     }
@@ -71,11 +66,6 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
     @Override
     public void writeHeaders( final GenericHttpRequestParams target ) {
         headerSupport.writeHeaders( target );
-    }
-
-    @Override
-    public void writeHeaders(GenericHttpRequestParams target, String headerName) {
-        headerSupport.writeHeaders(target, headerName);
     }
 
     @Override

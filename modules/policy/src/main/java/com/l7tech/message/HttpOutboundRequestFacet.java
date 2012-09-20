@@ -52,11 +52,6 @@ public class HttpOutboundRequestFacet implements HttpOutboundRequestKnob {
     }
 
     @Override
-    public void removeHeader(String name, Object value) {
-        headerSupport.removeHeader(name, value);
-    }
-
-    @Override
     public void clearHeaders() {
         headerSupport.clearHeaders();
     }
@@ -64,11 +59,6 @@ public class HttpOutboundRequestFacet implements HttpOutboundRequestKnob {
     @Override
     public void writeHeaders( final GenericHttpRequestParams target ) {
         headerSupport.writeHeaders( target );
-    }
-
-    @Override
-    public void writeHeaders(GenericHttpRequestParams target, String headerName) {
-        headerSupport.writeHeaders(target, headerName);
     }
 
     /**

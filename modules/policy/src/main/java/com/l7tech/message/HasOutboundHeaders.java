@@ -57,14 +57,6 @@ public interface HasOutboundHeaders extends HasHeaders {
     void removeHeader(String name);
 
     /**
-     * Remove a specific header with the given name and value
-     *
-     * @param name The name of the header to remove
-     * @param value The value of the header to remove
-     */
-    void removeHeader(String name, Object value);
-
-    /**
      * Remove all headers.
      */
     void clearHeaders();
@@ -77,11 +69,4 @@ public interface HasOutboundHeaders extends HasHeaders {
      * @param target The target of the header flush.
      */
     void writeHeaders(GenericHttpRequestParams target);
-
-    /**
-     * Write the specific headers with given headerName to GenericHttpRequestParams.
-     * @param target  The target of the header flush.
-     * @param headerName The name of headers to be added.
-     */
-    void writeHeaders(GenericHttpRequestParams target, String headerName);
 }

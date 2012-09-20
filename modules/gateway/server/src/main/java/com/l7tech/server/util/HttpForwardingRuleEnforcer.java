@@ -140,9 +140,6 @@ public class HttpForwardingRuleEnforcer {
                             if (!res.isEmpty()) {
                                 httpRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE,
                                                                                          HttpCookie.getCookieHeader(res)));
-                            } else {
-                                // Check if there are any cookies left from the HasOutboundHeaders object, source
-                                source.writeHeaders(httpRequestParams, HttpConstants.HEADER_COOKIE);
                             }
                         } else if (headerNameFromRule.equalsIgnoreCase(SoapUtil.SOAPACTION)) {
                             handleSoapActionHeader( httpRequestParams, sourceMessage, source );
