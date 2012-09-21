@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.mqnative.server;
 
 import com.ibm.mq.MQException;
 import com.ibm.mq.MQMessage;
+import com.ibm.mq.headers.MQDataException;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
@@ -116,12 +117,12 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
 
     @Test
     public void handleMessageRequestSizeTooLarge() throws MqNativeException, IOException, MessageProcessingSuspendedException,
-            LicenseException, PolicyVersionException, MethodNotAllowedException, PolicyAssertionException {
+            LicenseException, PolicyVersionException, MethodNotAllowedException, PolicyAssertionException, MQDataException {
 
         handleMessageInitialize();
 
         // set maxMessageBytes to less than our test mqMessage
-        final Pair<byte[], byte[]> parsedRequest = MqNativeUtils.parseHeader(mqMessage);
+        final Pair<byte[], byte[]> parsedRequest = MqNativeUtils.parseHeaderPayload(mqMessage);
         final Long maxMessageBytes = (long) parsedRequest.right.length - 1;
         serverConfig.putProperty(ServerConfigParams.PARAM_IO_MQ_MESSAGE_MAX_BYTES, maxMessageBytes.toString());
         when(ssgActiveConnector.getLongProperty(SsgActiveConnector.PROPERTIES_KEY_REQUEST_SIZE_LIMIT, maxMessageBytes )).thenReturn(maxMessageBytes);
@@ -154,9 +155,11 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
             public Object answer(InvocationOnMock invocation) {
                 final MQMessage responseMessage = (MQMessage) invocation.getArguments()[1];
                 try {
-                    final Pair<byte[], byte[]> parsedRequest = MqNativeUtils.parseHeader(responseMessage);
+                    final Pair<byte[], byte[]> parsedRequest = MqNativeUtils.parseHeaderPayload(responseMessage);
                     assertEquals(new String(parsedRequest.right), AssertionStatus.FAILED.getMessage());
                 } catch (IOException e) {
+                    fail(e.getMessage());
+                } catch (MQDataException e) {
                     fail(e.getMessage());
                 }
                 return null;

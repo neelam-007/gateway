@@ -1,13 +1,10 @@
 package com.l7tech.external.assertions.mqnative.server;
 
-import com.ibm.mq.MQC;
-import com.ibm.mq.MQException;
-import com.ibm.mq.MQManagedObject;
-import com.ibm.mq.MQMessage;
+import com.ibm.mq.*;
+import com.ibm.mq.headers.*;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import com.l7tech.message.MqNativeKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
@@ -47,81 +44,31 @@ import static com.l7tech.util.ValidationUtils.getMinMaxPredicate;
 class MqNativeUtils {
     private static final Logger logger = Logger.getLogger(MqNativeUtils.class.getName());
 
-    /*
-       Sample RFH2 header builder
-       theMsg.format = MQC.MQFMT_RF_HEADER_2; // Msg Format
-       theMsg.writeString(MQC.MQRFH_STRUC_ID); // StrucId
-       theMsg.writeInt4(MQC.MQRFH_VERSION_2); // Version
-       theMsg.writeInt4(MQC.MQRFH_STRUC_LENGTH_FIXED_2 + folderLength + 4);
-       //4) + rf); // StrucLength
-       theMsg.writeInt4(MQC.MQENC_NATIVE); // Encoding
-       theMsg.writeInt4(MQC.MQCCSI_DEFAULT); // CodedCharacterSetId
-       theMsg.writeString(MQC.MQFMT_NONE); // Format (content)
-       theMsg.writeInt4(MQC.MQRFH_NO_FLAGS); // Flags
-       theMsg.writeInt4(1208); // NameValueCCSID = UTF-8
-       theMsg.writeInt4(folderLength);
-       theMsg.writeString(pubCommand);
-       theMsg.writeString("begin payload");
-    */
-    static class RFH2Header
-    {
-        String structId;
-        int version;
-        int length;
-        int encoding;
-        int ccsid;
-        String format;
-        int flags;
-        int nameValueCCSID;
-    }
-
-    static Pair<byte[], byte[]> parseHeader(MQMessage msg) throws IOException {
-        byte[] headType = new byte[4];
-        boolean hasHeader = false;
-
-        // Parse RFH header
-        RFH2Header rfh = new RFH2Header();
-        if (msg.getTotalMessageLength() > 4) {
-            msg.setDataOffset(0);
-            msg.readFully(headType, 0, 4);
-
-            if (MQRFH_STRUC_ID.equals(new String(headType)) ) {
-                hasHeader = true;
-                rfh.structId = new String(headType);
-                rfh.version = msg.readInt4();
-                if (rfh.version == 2) {
-                    // RFH 2
-                    rfh.length = msg.readInt4();
-                    rfh.encoding = msg.readInt4();
-                    rfh.ccsid = msg.readInt4();
-                    rfh.format = msg.readStringOfByteLength(8);
-                    rfh.flags = msg.readInt4();
-                    rfh.nameValueCCSID = msg.readInt4();
-                } else {
-                    // RFH 1
-                    rfh.length = msg.readInt4();
-                }
-            }
-        }
-
+    static Pair<byte[], byte[]> parseHeaderPayload(MQMessage msg) throws IOException, MQDataException {
         byte[] headerBytes;
         byte[] payloadBytes;
-        if (hasHeader) {
 
-            headerBytes = new byte[rfh.length];
+        int headerLength = 0;
+        int payloadLength;
+
+        // parse header
+        MQHeaderList headerList = new MQHeaderList(msg);
+        if (!headerList.isEmpty()) {
+            headerLength = headerList.asMQData().size();
+            headerBytes = new byte[headerLength];
             msg.seek(0);
             msg.readFully(headerBytes);
 
-            payloadBytes = new byte[msg.getTotalMessageLength() - rfh.length];
-            msg.seek(rfh.length);
-            msg.readFully(payloadBytes);
-
+            payloadLength = msg.getTotalMessageLength() - headerLength;
         } else {
             headerBytes = new byte[0];
-            payloadBytes = new byte[msg.getTotalMessageLength()];
-            msg.setDataOffset(0);
-            msg.readFully(payloadBytes);
+            payloadLength = msg.getMessageLength();
         }
+
+        // parse payload
+        payloadBytes = new byte[payloadLength];
+        msg.seek(headerLength);
+        msg.readFully(payloadBytes);
 
         return new Pair<byte[], byte[]>(headerBytes, payloadBytes);
     }
@@ -213,7 +160,7 @@ class MqNativeUtils {
     /*
      * Create an MqNativeKnob.
      */
-    static MqNativeKnob buildMqNativeKnob( final byte[] mqHeader ) {
+    static MqNativeKnob buildMqNativeKnob(@Nullable final byte[] mqHeader) {
         return buildMqNativeKnob( null, mqHeader );
     }
 
@@ -243,18 +190,10 @@ class MqNativeUtils {
                     return mqHeader.length;
                 return 0;
             }
-            @Override
-            public Map<String, Object> getMessagePropertyMap() {
-                return null;
-            }
-            @Override
-            public String getMessageFormat() {
-                return null;
-            }
         };
     }
 
-    static MQMessage buildMqMessage(SsgActiveConnector connector) throws MqNativeException {
+    static MQMessage buildMqMessage(final SsgActiveConnector connector) throws MqNativeException {
         MQMessage mqMessage = new MQMessage();
         mqMessage.applicationIdData = connector.getProperty(MQ_PROPERTY_APPDATA);
         mqMessage.applicationOriginData = connector.getProperty(MQ_PROPERTY_APPORIGIN);

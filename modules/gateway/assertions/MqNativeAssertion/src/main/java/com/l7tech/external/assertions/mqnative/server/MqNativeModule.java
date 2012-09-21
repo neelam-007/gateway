@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.mqnative.server;
 
 import com.ibm.mq.*;
+import com.ibm.mq.headers.MQDataException;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
@@ -354,7 +355,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             ctype = ContentTypeHeader.parseValue(contentTypeValue);
 
             // parse the request message
-            parsedRequest = MqNativeUtils.parseHeader(requestMessage); // reading message into memory
+            parsedRequest = MqNativeUtils.parseHeaderPayload(requestMessage); // reading message into memory
             mqHeader = parsedRequest.left;
 
             // enforce size restriction
@@ -367,8 +368,10 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             if ( requestSizeLimit > 0 && size > requestSizeLimit ) {
                 messageTooLarge = true;
             }
-        } catch (IOException ioe) {
-            throw new MqNativeException("Error processing request message.  " + getMessage( ioe ), ioe);
+        } catch (IOException e) {
+            throw new MqNativeException("Error processing request message.  " + getMessage( e ), e);
+        } catch (MQDataException e) {
+            throw new MqNativeException("Error processing request message.  " + getMessage( e ), e);
         }
 
         PolicyEnforcementContext context = null;

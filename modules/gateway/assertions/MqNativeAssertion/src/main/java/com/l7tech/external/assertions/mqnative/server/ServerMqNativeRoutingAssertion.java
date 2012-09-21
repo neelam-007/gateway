@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.mqnative.server;
 
 import com.ibm.mq.*;
+import com.ibm.mq.headers.MQDataException;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
@@ -14,7 +15,6 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.Message;
 import com.l7tech.message.MessageRole;
 import com.l7tech.message.MimeKnob;
-import com.l7tech.message.MqNativeKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -365,7 +365,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
                 // Create the response
                 enforceResponseSizeLimit(mqResponse);
-                final Pair<byte[], byte[]> parsedResponse = MqNativeUtils.parseHeader(mqResponse);
+                final Pair<byte[], byte[]> parsedResponse = MqNativeUtils.parseHeaderPayload(mqResponse);
                 final StashManager stashManager = stashManagerFactory.createStashManager();
 
                 final com.l7tech.message.Message responseMessage;
@@ -386,6 +386,8 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 // todo: move to abstract routing assertion
                 requestMessage.notifyMessage(responseMessage, MessageRole.RESPONSE);
                 responseMessage.notifyMessage(requestMessage, MessageRole.REQUEST);
+            } catch ( MQDataException e ) {
+                exception = e;
             } catch ( MQException e ) {
                 exception = e;
             } catch ( MqNativeRuntimeException e ) {
