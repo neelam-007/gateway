@@ -49,6 +49,9 @@ public final class LdapUtils {
     public static final String ENV_VALUE_REFERRAL = "follow";
     public static final String ENV_VALUE_SECURITY_PROTOCOL = "ssl";
 
+    private static final int LDAP_MAX_RANGE_ITERATIONS = ConfigFactory.getIntProperty("com.l7tech.server.ldap.maxRangeIterations", 1000);
+    private static final String RANGE_SPLIT_STRING = ";range=";
+
     private LdapUtils() { }
 
     /**
@@ -551,10 +554,121 @@ public final class LdapUtils {
          */
         void attributes( final DirContext context, final String dn, final LdapListener listener ) throws NamingException {
             try {
-                listener.attributes( dn, context.getAttributes( name(dn), returningAttributes ));
+                Attributes responseAttributes =  context.getAttributes(name(dn), returningAttributes);
+                // memberRange is like "member;range=100-200" if LDAP responded with a range - null otherwise
+                String memberRange = rangedResponseOfAttribute("member", responseAttributes);
+                if ( memberRange != null ) {
+                    NamingEnumeration<String> rangeValues = (NamingEnumeration<String>) responseAttributes.get(memberRange).getAll();
+                    String attributeValues[] = obtainAllRangedResponsesOfAttribute(memberRange,rangeValues,context,dn);
+                    Attribute member = responseAttributes.get("member");
+                    for ( String s : attributeValues ) {
+                        member.add(s);
+                    }
+                }
+                listener.attributes( dn, responseAttributes );
             } finally {
                 ResourceUtils.closeQuietly( context );
             }
+        }
+
+        /**
+         * Searches input attributes for an LDAP attribute range response for the attribute
+         * with name attributeName. For example, if the attribute is "member" the ranged
+         * response will look like "member;range=100-200"
+         *
+         * If LDAP responded with a range of the potential response this returns
+         * the name of the ranged attribute, ie "member;range=100-200"
+         *
+         * The key point is that LDAP treats "member;range=100-200" as if it were an actual
+         * attribute.
+         *
+         * @param attributeName  attribute name to check and see if there is a ranged response ("member")
+         * @param attributes     attributes previously obtained from LDAP.
+         * @return               attribute name of the actual ranged response ("member;range=0-200")
+         * @throws NamingException
+         */
+        String rangedResponseOfAttribute(String attributeName,Attributes attributes) throws NamingException {
+
+            NamingEnumeration<String> responseAttributeNames = attributes.getIDs();
+
+            while ( responseAttributeNames.hasMore() ) {
+                String responseAttributeName = responseAttributeNames.next();
+                String[] test = responseAttributeName.split(RANGE_SPLIT_STRING);
+                if ( test.length != 1 && attributeName.equals(test[0]) ) {
+                    return responseAttributeName;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Uses the ranged attribute name string ("member;range=0-1000") to make multiple requests
+         * to LDAP for all of the ranges of the member attribute associated with a particular dn.
+         * Assembles all the values into a single array of String.
+         *
+         * @param rangedResponseAttributeName like "member;range=0-1000"
+         * @param firstRange this should be the Attribute Values that correspond to the rangedResponseAttributeName
+         *                   LDAP returned these with the response that signaled it was going to respond in
+         *                   ranges.  This is to avoid asking LDAP for the same information multiple times.
+         * @param context    LDAP DirContext - for queries
+         * @param dn         the name of the object we're getting values of.
+         * @return           an array of all the String values from all of the ranges returned from LDAP
+         * @throws NamingException
+         */
+        String[] obtainAllRangedResponsesOfAttribute(String rangedResponseAttributeName,
+                                                     NamingEnumeration<String> firstRange,
+                                                     final DirContext context,
+                                                     final String dn) throws NamingException {
+
+            String[] responseId = rangedResponseAttributeName.split(RANGE_SPLIT_STRING);
+            String[] rangeStrings = responseId[1].split("-");
+
+            String baseAttributeName = responseId[0];
+            int resultBeginRange = Integer.parseInt(rangeStrings[0]);
+            int resultEndRange = Integer.parseInt(rangeStrings[1]);
+
+            int pageSize = (resultEndRange-resultBeginRange)+1;
+
+            Vector<String> results = new Vector<String>();
+
+            // copy in the initial response
+            while ( firstRange.hasMore() ) {
+                results.add(firstRange.next());
+            }
+
+            /* Repeat asking LDAP for more rang responses of page size until
+             * a range end value is '*' -- ie  'member;range=3500-*' indicating
+             * the last page.  Protect ourselves by iterating up to a configurable
+               maximum.
+             */
+            for ( int count = 0; count < LDAP_MAX_RANGE_ITERATIONS; count++ ) {
+                resultBeginRange = resultEndRange + 1;
+                resultEndRange += pageSize;
+                String rangedAttributeName = String.format("%s;range=%d-%d",baseAttributeName,resultBeginRange,resultEndRange);
+                String[] returningAttributes = { rangedAttributeName };
+                Attributes attributes = context.getAttributes(name(dn),returningAttributes);
+
+                // There should only be one attribute returned
+                String nextResponseName =  attributes.getIDs().next();
+                NamingEnumeration<String> nextResponse = (NamingEnumeration<String>) attributes.get(nextResponseName).getAll();
+
+                // add additional responses for each range
+                while ( nextResponse.hasMore() ) {
+                    results.add(nextResponse.next());
+                }
+
+                responseId = nextResponseName.split(RANGE_SPLIT_STRING);
+                rangeStrings = responseId[1].split("-");
+                if (rangeStrings[1].equals("*")) {
+                    // we're done!
+                    return results.toArray(new String[results.size()]);
+                }
+                resultBeginRange = Integer.parseInt(rangeStrings[0]);
+                resultEndRange = Integer.parseInt(rangeStrings[1]);
+            }
+
+            logger.warning("Failed to obtain all values of attribute '"+ baseAttributeName + "' from object '" + dn + "'. Giving up after obtaining " + LDAP_MAX_RANGE_ITERATIONS + " response blocks from LDAP.");
+            throw new NamingException("Exceeded configured max number LDAP ranged attribute requests");
         }
 
         /**
