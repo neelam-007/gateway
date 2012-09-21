@@ -108,7 +108,7 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
 
     //
     private HttpConnectionManagerListener listener = new HttpConnectionManagerListenerAdapter();
-    private HttpConnectionManager connectionManager;
+    protected HttpConnectionManager connectionManager;
     private Map<Object,Object> parameterMap;
 
     /**

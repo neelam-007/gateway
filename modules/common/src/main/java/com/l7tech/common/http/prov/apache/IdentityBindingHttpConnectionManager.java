@@ -281,6 +281,10 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
     private Map<Object,HttpConnectionInfo> connectionsById;
     private ThreadLocal<ThreadLocalInfo> info;
 
+    public Map<Object,HttpConnectionInfo> getConnectionsById() {
+        return connectionsById;
+    }
+
     /**
      * Get the HttpConnection bound to the given identity.
      *

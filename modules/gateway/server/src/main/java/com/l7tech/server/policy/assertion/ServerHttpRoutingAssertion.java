@@ -65,7 +65,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     public static final int CONNECTION_TIMEOUT = -3;  // this will indicate connecting to a host timed out.  Thus, no ACK was ever received for the first SYN
     public static final int READ_TIMEOUT = -4;
     public static final int UNDEFINED = -5;
-    
+
     public static final String USER_AGENT = HttpConstants.HEADER_USER_AGENT;
     public static final String HOST = HttpConstants.HEADER_HOST;
 
@@ -507,9 +507,32 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (contentLength > Integer.MAX_VALUE)
                 throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
 
+
+            // this will forward soapaction, content-type, cookies, etc based on assertion settings
+            HttpForwardingRuleEnforcer.handleRequestHeaders(
+                    requestMessage.getKnob( HttpOutboundRequestKnob.class ),
+                    requestMessage,
+                    routedRequestParams,
+                    context,
+                    url.getHost(),
+                    assertion.getRequestHeaderRules(),
+                    getAudit(),
+                    vars,
+                    varNames);
+
             Object connectionId = null;
-            if (assertion.isPassthroughHttpAuthentication() && context.getRequest().isHttpRequest()){
-                connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
+            if (context.getRequest().isHttpRequest()){
+                if (assertion.isPassthroughHttpAuthentication()) {
+                    connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
+                } else {
+                    //Fix for bug #10257, do the binding when Authorization is pass through.
+                    for ( final HttpHeader header : routedRequestParams.getExtraHeaders() ) {
+                        if ( HttpConstants.HEADER_AUTHORIZATION.equalsIgnoreCase(header.getName()) ) {
+                            connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
+                            break;
+                        }
+                    }
+                }
             }
 
             GenericHttpClient httpClient = httpClientFactory.createHttpClient(
@@ -525,18 +548,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 routedRequestParams.getPasswordAuthentication() == null)) {
                 routedRequestParams.setContentLength(contentLength);
             }
-
-            // this will forward soapaction, content-type, cookies, etc based on assertion settings
-            HttpForwardingRuleEnforcer.handleRequestHeaders(
-                    requestMessage.getKnob( HttpOutboundRequestKnob.class ),
-                    requestMessage,
-                    routedRequestParams,
-                    context,
-                    url.getHost(),
-                    assertion.getRequestHeaderRules(),
-                    getAudit(),
-                    vars,
-                    varNames);
 
             final HttpMethod method = methodFromRequest(context, routedRequestParams);
 
@@ -782,7 +793,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
         return AssertionStatus.FAILED;
     }
-    
+
     private void setReasonCode(PolicyEnforcementContext context, Exception e) {
 
         Throwable cause = e.getCause();

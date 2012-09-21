@@ -6,43 +6,50 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.*;
+import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.transport.http.HttpAdmin;
-import com.l7tech.message.HttpResponseKnob;
-import com.l7tech.message.HttpServletRequestKnob;
-import com.l7tech.message.HttpServletResponseKnob;
-import com.l7tech.message.Message;
+import com.l7tech.message.*;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.ServerConfigStub;
+import com.l7tech.server.TestLicenseManager;
+import com.l7tech.server.TestStashManagerFactory;
+import com.l7tech.server.identity.cert.TestTrustedCertManager;
+import com.l7tech.server.identity.cert.TrustedCertServicesImpl;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.transport.http.HttpAdminImpl;
-import com.l7tech.server.util.TestingHttpClientFactory;
+import com.l7tech.server.transport.http.SslClientHostnameVerifier;
+import com.l7tech.server.util.*;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
+import org.apache.commons.httpclient.HttpConnectionManager;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 
+import javax.net.ssl.HttpsURLConnection;
 import java.io.InputStream;
 import java.net.PasswordAuthentication;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 
@@ -652,4 +659,149 @@ public class ServerHttpRoutingAssertionTest {
         testingHttpClientFactory.setMockHttpClient(mockClient);
         return pec;
     }
+
+    @BugNumber(10257)
+    @Test
+    public void testConnectionBinding() throws Exception {
+        //Setup Http server
+        MockHttpServer httpServer = new MockHttpServer(17800);
+        httpServer.start();
+
+        try {
+            //Setup applicationcontext
+            final AssertionRegistry assertionRegistry = new AssertionRegistry();
+            assertionRegistry.afterPropertiesSet();
+            final ServerPolicyFactory serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+            final HttpClientFactory identityBindingHttpClientFactory = new HttpClientFactory();
+
+            ApplicationContext ac = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+                put("assertionRegistry", assertionRegistry);
+                put("policyFactory", serverPolicyFactory);
+                put("auditFactory", new TestAudit().factory());
+                put("messageProcessingEventChannel", new EventChannel());
+                put("serverConfig", new ServerConfigStub());
+                put("hostnameVerifier", new SslClientHostnameVerifier(new ServerConfigStub(), new TrustedCertServicesImpl(new TestTrustedCertManager())));
+                put("stashManagerFactory", TestStashManagerFactory.getInstance());
+                put("httpRoutingHttpClientFactory", identityBindingHttpClientFactory);
+            }}));
+
+            serverPolicyFactory.setApplicationContext(ac);
+            //Simulate NTLM request
+            List<HttpHeader> headers = new ArrayList<HttpHeader>();
+            headers.add(new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, "NTLM"));
+
+            //Simulate Connection ID
+            Random r = new Random();
+            final int connectionID = r.nextInt();
+            HttpRequestKnobStub requestKnob = new HttpRequestKnobStub(headers) {
+                @Override
+                public Object getConnectionIdentifier() {
+                    return connectionID;
+                }
+            };
+            Message requestMessage = new Message();
+            requestMessage.attachHttpRequestKnob(requestKnob);
+            PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, new Message());
+
+            HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+            assertion.setPassthroughHttpAuthentication(true);
+            assertion.setProtectedServiceUrl("http://localhost:" +httpServer.getPort() );
+
+            ServerAssertion sass = serverPolicyFactory.compilePolicy(assertion, false);
+
+            httpServer.setResponseCode(HttpsURLConnection.HTTP_UNAUTHORIZED);
+            AssertionStatus result = sass.checkRequest(peCtx);
+            assertEquals(peCtx.getVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE), HttpsURLConnection.HTTP_UNAUTHORIZED);
+            assertEquals(AssertionStatus.AUTH_REQUIRED, result);
+            peCtx.close();
+
+            //Make sure the connection is bound
+            Map map = ((IdentityBindingHttpConnectionManager)identityBindingHttpClientFactory.getConnectionManager()).getConnectionsById();
+            assertNotNull(map.get(connectionID));
+
+            //Resubmit the request
+            httpServer.setResponseCode(HttpsURLConnection.HTTP_OK);
+            requestMessage = new Message();
+            requestMessage.attachHttpRequestKnob(requestKnob);
+            peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, new Message());
+            result = sass.checkRequest(peCtx);
+            assertEquals(result, AssertionStatus.NONE);
+            map = ((IdentityBindingHttpConnectionManager)identityBindingHttpClientFactory.getConnectionManager()).getConnectionsById();
+            //Make sure the connection is bound
+            assertNotNull(map.get(connectionID));
+        } finally {
+            httpServer.stop();
+        }
+    }
+
+
+    @BugNumber(10257)
+    @Test
+    public void testConnectionWithoutBinding() throws Exception {
+        //Setup Http server
+        MockHttpServer httpServer = new MockHttpServer(17800);
+        httpServer.start();
+
+        try {
+            //Setup applicationcontext
+            final AssertionRegistry assertionRegistry = new AssertionRegistry();
+            assertionRegistry.afterPropertiesSet();
+            final ServerPolicyFactory serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+            final HttpClientFactory identityBindingHttpClientFactory = new HttpClientFactory();
+
+            ApplicationContext ac = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+                put("assertionRegistry", assertionRegistry);
+                put("policyFactory", serverPolicyFactory);
+                put("auditFactory", new TestAudit().factory());
+                put("messageProcessingEventChannel", new EventChannel());
+                put("serverConfig", new ServerConfigStub());
+                put("hostnameVerifier", new SslClientHostnameVerifier(new ServerConfigStub(), new TrustedCertServicesImpl(new TestTrustedCertManager())));
+                put("stashManagerFactory", TestStashManagerFactory.getInstance());
+                put("httpRoutingHttpClientFactory", identityBindingHttpClientFactory);
+            }}));
+
+            serverPolicyFactory.setApplicationContext(ac);
+            //Simulate Basic request
+            List<HttpHeader> headers = new ArrayList<HttpHeader>();
+            headers.add(new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, "Basic"));
+
+            //Simulate Connection ID
+            Random r = new Random();
+            final int connectionID = r.nextInt();
+            HttpRequestKnobStub requestKnob = new HttpRequestKnobStub(headers) {
+                @Override
+                public Object getConnectionIdentifier() {
+                    return connectionID;
+                }
+            };
+            Message requestMessage = new Message();
+            requestMessage.attachHttpRequestKnob(requestKnob);
+            PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMessage, new Message());
+
+            HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+            assertion.setPassthroughHttpAuthentication(true);
+            assertion.setProtectedServiceUrl("http://localhost:" +httpServer.getPort());
+            ServerAssertion sass = serverPolicyFactory.compilePolicy(assertion, false);
+
+            httpServer.setResponseCode(HttpsURLConnection.HTTP_UNAUTHORIZED);
+            AssertionStatus result = sass.checkRequest(peCtx);
+            assertEquals(peCtx.getVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_REASON_CODE), HttpsURLConnection.HTTP_UNAUTHORIZED);
+            assertEquals(AssertionStatus.AUTH_REQUIRED, result);
+            peCtx.close();
+
+            //Make sure the connection is not bound
+            Map map = ((IdentityBindingHttpConnectionManager)identityBindingHttpClientFactory.getConnectionManager()).getConnectionsById();
+            assertNull(map.get(connectionID));
+
+        } finally {
+            httpServer.stop();
+        }
+    }
+
+    private static class HttpClientFactory extends IdentityBindingHttpClientFactory {
+        public HttpConnectionManager getConnectionManager() {
+            return super.connectionManager;
+        }
+    }
+
 }
