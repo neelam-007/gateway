@@ -3,7 +3,7 @@
   <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="48" y="54" width="617" height="281"/>
+      <xy x="48" y="54" width="617" height="291"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -34,7 +34,7 @@
                 <children>
                   <component id="3017" class="javax.swing.JButton" binding="removeService">
                     <constraints>
-                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text resource-bundle="com/l7tech/external/assertions/createroutingstrategy/console/resources/CreateRoutingStrategyResources" key="main.button.removeRoute"/>
@@ -50,18 +50,10 @@
                   </component>
                   <component id="a1fc9" class="javax.swing.JButton" binding="editService">
                     <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text resource-bundle="com/l7tech/external/assertions/createroutingstrategy/console/resources/CreateRoutingStrategyResources" key="main.button.editRoute"/>
-                    </properties>
-                  </component>
-                  <component id="e6bb1" class="javax.swing.JButton" binding="cloneButton" default-binding="true">
-                    <constraints>
-                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <text resource-bundle="com/l7tech/external/assertions/createroutingstrategy/console/resources/CreateRoutingStrategyResources" key="main.button.clone"/>
                     </properties>
                   </component>
                   <vspacer id="8987">
@@ -69,6 +61,14 @@
                       <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                     </constraints>
                   </vspacer>
+                  <component id="e6bb1" class="javax.swing.JButton" binding="cloneButton" default-binding="true">
+                    <constraints>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/createroutingstrategy/console/resources/CreateRoutingStrategyResources" key="main.button.clone"/>
+                    </properties>
+                  </component>
                 </children>
               </grid>
               <scrollpane id="7ba82">
