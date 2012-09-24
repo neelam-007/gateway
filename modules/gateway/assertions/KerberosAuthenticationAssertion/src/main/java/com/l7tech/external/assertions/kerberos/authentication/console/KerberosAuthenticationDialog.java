@@ -10,12 +10,11 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -88,7 +87,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
             @Override
             public String getValidationError() {
                 Matcher m = KerberosAuthenticationAssertion.spnPattern.matcher(servicePrincipalTextField.getText());
-                if(!m.matches()){
+                if(!m.matches() && !Syntax.isAnyVariableReferenced(servicePrincipalTextField.getText())){
                     return "Invalid Service Principal name " + servicePrincipalTextField.getText();
                 }
                 return null;
