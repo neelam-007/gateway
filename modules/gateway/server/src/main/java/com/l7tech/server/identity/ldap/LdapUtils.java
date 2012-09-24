@@ -629,7 +629,7 @@ public final class LdapUtils {
 
             int pageSize = (resultEndRange-resultBeginRange)+1;
 
-            Vector<String> results = new Vector<String>();
+            ArrayList<String> results = new ArrayList<String>();
 
             // copy in the initial response
             while ( firstRange.hasMore() ) {
@@ -663,7 +663,6 @@ public final class LdapUtils {
                     // we're done!
                     return results.toArray(new String[results.size()]);
                 }
-                resultBeginRange = Integer.parseInt(rangeStrings[0]);
                 resultEndRange = Integer.parseInt(rangeStrings[1]);
             }
 
