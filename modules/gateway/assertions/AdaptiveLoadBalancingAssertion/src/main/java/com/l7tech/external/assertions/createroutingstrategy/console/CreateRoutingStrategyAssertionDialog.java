@@ -20,6 +20,8 @@ import com.l7tech.util.Functions;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -64,6 +66,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
         initComponents();
         intializeServiceListSection(parent);
         initAdminConnection();
+
         strategy.setModel(new DefaultComboBoxModel(clusterStatusAdmin.getAllFailoverStrategies()));
         strategyField = new TargetVariablePanel();
         prefixPanel.setLayout(new BorderLayout());
@@ -71,7 +74,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
         this.assertion = assertion;
         final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
             public void run() {
-                enableOrDisableOkButton();
+                enableDisableComponents();
             }
         });
         enableOrDisableConfigureStrategyButton();
@@ -135,12 +138,15 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
     }
 
 
-    private void enableOrDisableOkButton() {
-        if (!strategyField.isEntryValid() || propertiesTableModel.getRows().size() < 1) {
-            getOkButton().setEnabled(false);
-        } else {
-            getOkButton().setEnabled(true);
-        }
+    private void enableDisableComponents() {
+        boolean enable = propertiesTableModel.getRowCount() > 0;
+        getOkButton().setEnabled(strategyField.isEntryValid() && enable);
+
+        boolean selected = propertyTable.getSelectedRowCount() == 1;
+        boolean selectedMany = propertyTable.getSelectedRowCount() > 1;
+        editService.setEnabled(enable & selected);
+        cloneButton.setEnabled(enable & selected);
+        removeService.setEnabled(enable & (selected | selectedMany) );
     }
 
     private void enableOrDisableConfigureStrategyButton() {
@@ -150,13 +156,6 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
         } else {
             configureStrategyButton.setEnabled(false);
         }
-    }
-
-    private boolean isEmpty(JTextField textField) {
-        if (textField.getText() == null || textField.getText().trim().isEmpty()) {
-            return true;
-        }
-        return false;
     }
 
     private void intializeServiceListSection(final Window parent) {
@@ -177,6 +176,14 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
                 int index = propertyTable.getSelectedRow();
                 upButton.setEnabled(index > 0);
                 downButton.setEnabled(index >= 0 && index < propertiesTableModel.getRowCount() - 1);
+                enableDisableComponents();
+            }
+        });
+
+        propertiesTableModel.addTableModelListener( new TableModelListener() {
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                enableDisableComponents();
             }
         });
 
@@ -209,7 +216,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
                         propertiesTableModel.removeRowAt(propertyTable.getSelectedRow());
                     }
                 }
-                enableOrDisableOkButton();
+                enableDisableComponents();
             }
         });
         upButton.addActionListener(new ActionListener() {
@@ -225,7 +232,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
                     propertiesTableModel.swapRows(prevIndex, viewRow);
                     propertyTable.changeSelection(prevIndex, 0, false, false);
                 }
-                enableOrDisableOkButton();
+                enableDisableComponents();
             }
         });
         downButton.addActionListener(new ActionListener() {
@@ -241,7 +248,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
                     propertiesTableModel.swapRows(viewRow, nextIndex);
                     propertyTable.changeSelection(nextIndex, 0, false, false);
                 }
-                enableOrDisableOkButton();
+                enableDisableComponents();
             }
         });
         cloneButton.addActionListener(new ActionListener() {
@@ -255,7 +262,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
                 if (viewRow > -1) {
                     editProperty(null, propertiesTableModel.getRowObject(propertyTable.convertRowIndexToModel(viewRow)));
                 }
-                enableOrDisableOkButton();
+                enableDisableComponents();
             }
         });
     }
@@ -285,10 +292,10 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
                         propertiesTableModel.setRowObject(i, property);
                     }
                 }
-                enableOrDisableOkButton();
+                enableDisableComponents();
             }
         });
-        enableOrDisableOkButton();
+        enableDisableComponents();
     }
 
     private static Functions.Unary<String, Service> property(final String propName) {

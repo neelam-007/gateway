@@ -9,9 +9,10 @@ import com.l7tech.gui.util.*;
 import com.l7tech.util.Functions;
 import com.l7tech.util.NameValuePair;
 import com.l7tech.util.Pair;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
-import javax.swing.text.JTextComponent;
+import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
@@ -27,14 +28,17 @@ public class CreateRoutingStrategyRoutingPropertiesDialog extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JTextField serviceTextField;
+    private JTextField routeTextField;
     private JButton addPropertyButton;
     private JButton deletePropertyButton;
     private JButton editPropertyButton;
     private JTable propertyTable;
+    private JLabel routeLabel;
     private boolean confirmed;
     private final Set<String> predecessorVariables;
     private SimpleTableModel<NameValuePair> propertiesTableModel;
+
+    private final InputValidator inputValidator;
 
     public CreateRoutingStrategyRoutingPropertiesDialog(final Window parent, String title, CreateRoutingStrategyAssertion assertion) {
         this(parent, title, assertion, null);
@@ -42,45 +46,6 @@ public class CreateRoutingStrategyRoutingPropertiesDialog extends JDialog {
 
     public CreateRoutingStrategyRoutingPropertiesDialog(final Window parent, String title, CreateRoutingStrategyAssertion assertion, Service service) {
         super(parent, title);
-        setContentPane(contentPane);
-        setModal(true);
-        getRootPane().setDefaultButton(buttonOK);
-        buttonOK.setEnabled(false);
-
-        TextComponentPauseListenerManager.registerPauseListener(
-                serviceTextField,
-                new PauseListener() {
-                    @Override
-                    public void textEntryPaused(JTextComponent component, long msecs) {
-                        validateService();
-                    }
-
-                    @Override
-                    public void textEntryResumed(JTextComponent component) {
-                    }
-                },
-                300);
-
-        buttonOK.addActionListener(new
-
-                ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        onOK();
-                    }
-                }
-
-        );
-
-        buttonCancel.addActionListener(new
-
-                ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        onCancel();
-                    }
-                }
-
-        );
-
         Set<String> vars = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
         // convert all vars to lower
         predecessorVariables = new TreeSet<String>();
@@ -88,6 +53,28 @@ public class CreateRoutingStrategyRoutingPropertiesDialog extends JDialog {
             predecessorVariables.add(var.toLowerCase());
         }
 
+        inputValidator = new InputValidator(this, getTitle() );
+
+        initComponents();
+        setService(service);
+    }
+
+    private void initComponents() {
+        setContentPane(contentPane);
+        setModal(true);
+        getRootPane().setDefaultButton(buttonOK);
+        buttonOK.setEnabled(false);
+
+
+        buttonCancel.addActionListener(new
+
+                                       ActionListener() {
+                                           public void actionPerformed(ActionEvent e) {
+                                               onCancel();
+                                           }
+                                       }
+
+        );
         // call onCancel() when cross is clicked
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
@@ -98,22 +85,9 @@ public class CreateRoutingStrategyRoutingPropertiesDialog extends JDialog {
         }
         );
 
-// call onCancel() on ESCAPE
-        contentPane.registerKeyboardAction(new
+        Utilities.setEscKeyStrokeDisposes(this);
 
-                ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        onCancel();
-                    }
-                }
 
-                , KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-
-        initComponents();
-        setService(service);
-    }
-
-    private void initComponents() {
         propertiesTableModel = TableUtil.configureTable(
                 propertyTable,
                 TableUtil.column(resources.getString(NAME), 50, 100, 100000, property("key"), String.class),
@@ -121,6 +95,20 @@ public class CreateRoutingStrategyRoutingPropertiesDialog extends JDialog {
         );
         propertyTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         propertyTable.getTableHeader().setReorderingAllowed(false);
+        propertyTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                enableDisableComponents();
+            }
+        });
+
+        propertiesTableModel.addTableModelListener(new TableModelListener() {
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                enableDisableComponents();
+            }
+        });
+
 
         addPropertyButton.addActionListener(new ActionListener() {
             @Override
@@ -148,6 +136,25 @@ public class CreateRoutingStrategyRoutingPropertiesDialog extends JDialog {
                 }
             }
         });
+
+        RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
+            @Override
+            public void run() {
+                enableDisableComponents();
+            }
+        };
+
+        inputValidator.constrainTextFieldToBeNonEmpty(routeLabel.getText(), this.routeTextField,null);
+        routeTextField.getDocument().addDocumentListener(enableDisableListener);
+
+        inputValidator.attachToButton(buttonOK, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onOK();
+            }
+        });
+
+        enableDisableComponents();
     }
 
     private void editProperty(final NameValuePair nameValuePair) {
@@ -178,13 +185,6 @@ public class CreateRoutingStrategyRoutingPropertiesDialog extends JDialog {
         return Functions.propertyTransform(NameValuePair.class, propName);
     }
 
-    private void validateService() {
-        if (serviceTextField.getText().trim().isEmpty()) {
-            buttonOK.setEnabled(false);
-        } else {
-            buttonOK.setEnabled(true);
-        }
-    }
 
     private void onOK() {
         confirmed = true;
@@ -206,12 +206,12 @@ public class CreateRoutingStrategyRoutingPropertiesDialog extends JDialog {
                 map.put(next.getKey().trim(), next.getValue().trim());
             }
         }
-        return new Service(serviceTextField.getText().trim(), map);
+        return new Service(routeTextField.getText().trim(), map);
     }
 
     public void setService(Service service) {
         if (service != null) {
-            serviceTextField.setText(service.getName());
+            routeTextField.setText(service.getName());
             Map<String, String> props = service.getProperties();
             if (props != null) {
                 List<NameValuePair> propList = new ArrayList<NameValuePair>(props.size());
@@ -227,6 +227,19 @@ public class CreateRoutingStrategyRoutingPropertiesDialog extends JDialog {
     public boolean isConfirmed() {
         return confirmed;
     }
+
+    private void enableDisableComponents() {
+        boolean enable = StringUtils.isNotBlank(routeTextField.getText());
+        addPropertyButton.setEnabled(enable);
+
+        boolean selected = propertyTable.getSelectedRowCount() > 0;
+        deletePropertyButton.setEnabled(enable && selected);
+        editPropertyButton.setEnabled(enable && selected);
+
+        buttonOK.setEnabled(enable);
+
+    }
+
 
 
 }
