@@ -198,13 +198,15 @@ public class CreateRoutingStrategyRoutingPropertiesDialog extends JDialog {
 
     public Service getService() {
         List<NameValuePair> props = propertiesTableModel.getRows();
-        Map<String, String> map = new HashMap<String, String>();
-        for (Iterator<NameValuePair> iterator = props.iterator(); iterator.hasNext(); ) {
-            NameValuePair next = iterator.next();
-            map.put(next.getKey().trim(), next.getValue().trim());
+        Map<String, String> map = null;
+        if (!props.isEmpty()) {
+            map = new HashMap<String, String>();
+            for (Iterator<NameValuePair> iterator = props.iterator(); iterator.hasNext(); ) {
+                NameValuePair next = iterator.next();
+                map.put(next.getKey().trim(), next.getValue().trim());
+            }
         }
         return new Service(serviceTextField.getText().trim(), map);
-
     }
 
     public void setService(Service service) {
