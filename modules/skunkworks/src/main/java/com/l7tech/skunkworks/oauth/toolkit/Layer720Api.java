@@ -81,7 +81,7 @@ public class Layer720Api extends DefaultApi20 {
         final GenericHttpResponse sessionIdResponse = sessionIdRequest.getResponse();
         assertEquals(200, sessionIdResponse.getStatus());
         final String html = sessionIdResponse.getAsString(false, Integer.MAX_VALUE);
-        final String sessionId = getSessionIdFromHtmlForm(html);
+        final String sessionId = Layer7ApiUtil.getSessionIdFromHtmlForm(html);
         assertFalse(sessionId.isEmpty());
 
         final GenericHttpRequestParams authParams = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
@@ -94,17 +94,5 @@ public class Layer720Api extends DefaultApi20 {
         final String authCode = authResponse.getAsString(false, Integer.MAX_VALUE);
         assertFalse(authCode.isEmpty());
         return authCode;
-    }
-
-    private String getSessionIdFromHtmlForm(final String html) throws SAXException, XPathExpressionException {
-        // sessionId is inside an html form as a hidden field
-        final Integer start = html.indexOf("<form ");
-        final Integer end = html.indexOf("</form>") + 7;
-        final String formXml = html.substring(start, end);
-        final Document document = XmlUtil.parse(formXml);
-        final XPath xPath = XPathFactory.newInstance().newXPath();
-        final XPathExpression expression = xPath.compile("/form/input[@name='sessionID']");
-        final Node node = (Node) expression.evaluate(document, XPathConstants.NODE);
-        return node.getAttributes().getNamedItem("value").getTextContent();
     }
 }

@@ -7,7 +7,6 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import org.scribe.builder.api.DefaultApi10a;
 import org.scribe.model.Token;
-import org.scribe.model.Verifier;
 
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -44,30 +43,54 @@ public class Layer710aApi extends DefaultApi10a {
     }
 
     /**
-     * Authorize the token using admin user.
+     * Authorize the token.
+     *
+     * @param oob true if callback is oob false otherwise
+     * @return verification code if oob=true or an access code if oob= false
      */
-    public Verifier authorize(final Token requestToken) throws Exception {
-        final CommonsHttpClient client = new CommonsHttpClient();
-        final PasswordAuthentication admin = new PasswordAuthentication("admin", "password".toCharArray());
-
-        final String url = "https://" + gatewayHost + ":8443/auth/oauth/v1/authorize?state=authenticate&oauth_token=" + requestToken.getToken();
-        final GenericHttpRequestParams authenticateParams = new GenericHttpRequestParams(new URL(url));
-        authenticateParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
-        authenticateParams.setPasswordAuthentication(admin);
-        final GenericHttpRequest authenticateRequest = client.createRequest(HttpMethod.GET, authenticateParams);
-        final GenericHttpResponse authenticateResponse = authenticateRequest.getResponse();
-        assertEquals(200, authenticateResponse.getStatus());
-
-        final GenericHttpRequestParams grantedParams = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
-                ":8443/auth/oauth/v1/authorize?oauth_token=" + requestToken.getToken() + "&state=granted"));
-        grantedParams.setFollowRedirects(true);
-        grantedParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
-        grantedParams.setPasswordAuthentication(admin);
-        final GenericHttpRequest grantedRequest = client.createRequest(HttpMethod.GET, grantedParams);
-        final GenericHttpResponse grantResponse = grantedRequest.getResponse();
+    public String authorizeAndRetrieve(final String requestToken, boolean oob, final PasswordAuthentication passwordAuthentication) throws Exception {
+        final GenericHttpResponse grantResponse = authorize(requestToken, passwordAuthentication);
         assertEquals(200, grantResponse.getStatus());
         final String asString = grantResponse.getAsString(false, Integer.MAX_VALUE);
-        return new Verifier(getVerifierFromHtml(asString));
+        System.out.println(asString);
+        if (oob) {
+            final String verifier = getVerifierFromHtml(asString);
+            System.out.println("Received verifier: " + verifier);
+            return verifier;
+        } else {
+            // access token is in a hidden field
+            final String accessToken = Layer7ApiUtil.getTokenFromHtmlForm(asString);
+            System.out.println("Received access token: " + accessToken);
+            return accessToken;
+        }
+    }
+
+    /**
+     * Authorize the token.
+     *
+     * @return GenericHttpResponse the auth response.
+     */
+    public GenericHttpResponse authorize(final String requestToken, final PasswordAuthentication passwordAuthentication) throws Exception {
+        final CommonsHttpClient client = new CommonsHttpClient();
+
+        final String url = "https://" + gatewayHost + ":8443/auth/oauth/v1/authorize?state=authorized&oauth_token=" + requestToken;
+        final GenericHttpRequestParams authenticateParams = new GenericHttpRequestParams(new URL(url));
+        authenticateParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        authenticateParams.setPasswordAuthentication(passwordAuthentication);
+        final GenericHttpRequest authenticateRequest = client.createRequest(HttpMethod.GET, authenticateParams);
+        final GenericHttpResponse authenticateResponse = authenticateRequest.getResponse();
+        final String authenticateResponseBody = authenticateResponse.getAsString(false, Integer.MAX_VALUE);
+        assertEquals(200, authenticateResponse.getStatus());
+        final String sessionId = Layer7ApiUtil.getSessionIdFromHtmlForm(authenticateResponseBody);
+        System.out.println("Received sessionId: " + sessionId);
+
+        final GenericHttpRequestParams grantParams = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
+                ":8443/auth/oauth/v1/authorize?sessionID=" + sessionId + "&action=Grant"));
+        grantParams.setFollowRedirects(true);
+        grantParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        grantParams.setPasswordAuthentication(passwordAuthentication);
+        final GenericHttpRequest grantedRequest = client.createRequest(HttpMethod.GET, grantParams);
+        return grantedRequest.getResponse();
     }
 
     private String getVerifierFromHtml(final String html) {

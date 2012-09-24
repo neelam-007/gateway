@@ -6,9 +6,11 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.scribe.model.Token;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -22,7 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Integration tests for the OAuth Tool Kit. Each test requires the SSG to be running with an installed OTK that includes
@@ -31,7 +32,7 @@ import static org.junit.Assert.assertEquals;
  * Modify static Strings as needed and remove the Ignore annotation to execute the tests.
  * <p/>
  * At minimum you need to change the BASE_URL and SIGNATURE strings.
- *
+ * <p/>
  * Note: These tests will FAIL if they are executed more than once and the Protect Against Message Replay assertion is enabled in policy.
  * Either disable the assertion or shorten the expiry period.
  */
@@ -44,9 +45,10 @@ public class OAuthToolkit1_0IntegrationTest {
     private static final String SIGNATURE_EMPTY_TOKEN = "pMitXg+kdUV34iFDDV6UnuhWkps=";
 
     //aleeoauth.l7tech.com
-    //private static final String BASE_URL = "aleeoauth.l7tech.com";
-    //private static final String SIGNATURE = "pwvUKSVVqeU4nZsBfbm1Pr6lEpk=";
-    //private static final String SIGNATURE_EMPTY_TOKEN = "zMX7NBnryxDm+x3MJTJx2KP/eQw=";
+//    private static final String BASE_URL = "aleeoauth.l7tech.com";
+//    private static final String SIGNATURE = "pwvUKSVVqeU4nZsBfbm1Pr6lEpk=";
+//    private static final String SIGNATURE_GET = ""; // method = GET
+//    private static final String SIGNATURE_EMPTY_TOKEN = "zMX7NBnryxDm+x3MJTJx2KP/eQw=";
 
     private static final String CLIENT_REQUEST_TOKEN = "http://" + BASE_URL + ":8080/oauth/v1/client?state=request_token";
     private static final String REQUEST_TOKEN_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/request";
@@ -117,7 +119,7 @@ public class OAuthToolkit1_0IntegrationTest {
 
     /**
      * All oauth parameters are in the URL.
-     *
+     * <p/>
      * Note: this test will not pass on the tactical OTK.
      */
     @BugNumber(12974)
@@ -223,40 +225,6 @@ public class OAuthToolkit1_0IntegrationTest {
         final GenericHttpResponse response = request.getResponse();
         assertEquals(400, response.getStatus());
         assertEquals("PUT not permitted", new String(IOUtils.slurpStream(response.getInputStream())));
-    }
-
-    /**
-     * Authorize a request token using the OTK endpoint.
-     */
-    @Test
-    public void authorizeRequestToken() throws Exception {
-        // must first get a non-expired request token
-        final String requestToken = getRequestTokenFromEndpoint().get("oauth_token");
-
-        final GenericHttpResponse authenticateResponse = authorizeRequestToken(requestToken);
-        assertEquals(200, authenticateResponse.getStatus());
-        System.out.println("Request token authentication successful");
-    }
-
-    /**
-     * Token not specified.
-     */
-    @Test
-    public void authorizeRequestTokenMissingToken() throws Exception {
-        final GenericHttpResponse authenticateResponse = authorizeRequestToken(null);
-        assertEquals(401, authenticateResponse.getStatus());
-    }
-
-    /**
-     * Username/password not recognized.
-     */
-    @Test
-    public void authorizeRequestTokenUnauthorized() throws Exception {
-        final String requestToken = getRequestTokenFromEndpoint().get("oauth_token");
-
-        final GenericHttpResponse authenticateResponse = authorizeRequestToken(requestToken,
-                new PasswordAuthentication("unauthorized", "unauthorized".toCharArray()));
-        assertEquals(401, authenticateResponse.getStatus());
     }
 
     /**
@@ -401,49 +369,23 @@ public class OAuthToolkit1_0IntegrationTest {
     }
 
     private String getAccessTokenFromClient() throws Exception {
-        // must first get a non-expired request token
         final String requestToken = getRequestTokenFromClient();
-
-        // then authorize the request token
-        final GenericHttpResponse authenticateResponse = authorizeRequestToken(requestToken);
-        assertEquals(200, authenticateResponse.getStatus());
-        System.out.println("Request token authentication successful");
-
-        // finally get the access token
-        System.out.println("Requesting access token from: " + AUTHORIZE_ENDPOINT);
-        final GenericHttpRequestParams grantedParams = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT +
-                "?state=granted&oauth_token=" + requestToken));
-        grantedParams.setFollowRedirects(true);
-        grantedParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
-        grantedParams.setPasswordAuthentication(passwordAuthentication);
-        final GenericHttpRequest grantedRequest = client.createRequest(HttpMethod.GET, grantedParams);
-
-        // when the granted request is sent it is redirected to the callback url
-        final GenericHttpResponse grantedResponse = grantedRequest.getResponse();
-        assertEquals(200, grantedResponse.getStatus());
-
-        // response is in html format
-        final String html = grantedResponse.getAsString(false, Integer.MAX_VALUE);
-
-        final String accessToken = getTokenFromHtmlForm(html);
+        final String accessToken = new Layer710aApi(BASE_URL).authorizeAndRetrieve(requestToken, false, passwordAuthentication);
         assertFalse(accessToken.equalsIgnoreCase(requestToken));
-        System.out.println("Received access token: " + accessToken);
         return accessToken;
     }
 
     private String getRequestTokenFromClient() throws Exception {
         System.out.println("Requesting request token from " + CLIENT_REQUEST_TOKEN);
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(CLIENT_REQUEST_TOKEN));
-        requestParams.setFollowRedirects(true);
+        requestParams.setFollowRedirects(false);
         requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, requestParams);
-
         final GenericHttpResponse response = request.getResponse();
-        assertEquals(200, response.getStatus());
-
-        // response is in html format
-        final String html = response.getAsString(false, Integer.MAX_VALUE);
-        final String token = getTokenFromHtmlForm(html);
+        // redirect
+        assertEquals(302, response.getStatus());
+        final String locationHeader = response.getHeaders().getFirstValue("Location");
+        final String token = StringUtils.substringBetween(locationHeader, "oauth_token=", "&");
         System.out.println("Received oauth_token: " + token);
         return token;
     }
@@ -503,22 +445,6 @@ public class OAuthToolkit1_0IntegrationTest {
         oauthParameters.put("oauth_token", "testToken");
         oauthParameters.put("oauth_version", "1.0");
         return oauthParameters;
-    }
-
-    private String getTokenFromHtmlForm(final String html) throws SAXException, XPathExpressionException {
-        // oauth_token is inside an html form as a hidden field
-        final Integer start = html.indexOf("<form ");
-        final Integer end = html.indexOf("</form>") + 7;
-        final String formXml = html.substring(start, end);
-        final Document document = XmlUtil.parse(formXml);
-        final XPath xPath = XPathFactory.newInstance().newXPath();
-        final XPathExpression expression = xPath.compile("/form/input[@name='oauth_token']");
-        final Node oathTokenNode = (Node) expression.evaluate(document, XPathConstants.NODE);
-        return oathTokenNode.getAttributes().getNamedItem("value").getTextContent();
-    }
-
-    private GenericHttpResponse authorizeRequestToken(final String requestToken) throws Exception {
-        return authorizeRequestToken(requestToken, passwordAuthentication);
     }
 
     private GenericHttpResponse authorizeRequestToken(final String requestToken, final PasswordAuthentication passwordAuthentication) throws Exception {
