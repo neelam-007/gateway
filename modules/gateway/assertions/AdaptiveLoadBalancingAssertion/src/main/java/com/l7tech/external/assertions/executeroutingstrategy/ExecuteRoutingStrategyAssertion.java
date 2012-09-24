@@ -64,7 +64,7 @@ public class ExecuteRoutingStrategyAssertion extends AbstractAdaptiveLoadBalanci
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[]{
                 new VariableMetadata(route, false, false, null, false, DataType.STRING),
-                new VariableMetadata(feedback, false, false, null, false, DataType.UNKNOWN),
+                new VariableMetadata(feedback, false, true, null, false, DataType.UNKNOWN),
                 new VariableMetadata(feedback + CURRENT_FEEDBACK  , true, false, null, false, DataType.STRING),
                 new VariableMetadata(feedback + CURRENT_FEEDBACK + FEEDBACK_ROUTE  , false, false, null, false, DataType.STRING),
         };

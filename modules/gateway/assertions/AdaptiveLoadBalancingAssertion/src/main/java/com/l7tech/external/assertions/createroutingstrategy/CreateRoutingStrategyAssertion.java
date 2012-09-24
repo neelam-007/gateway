@@ -85,7 +85,7 @@ public class CreateRoutingStrategyAssertion extends AbstractAdaptiveLoadBalancin
 
         return new VariableMetadata[]{
                 new VariableMetadata(getStrategy(), true, false, null, false, DataType.UNKNOWN),
-                new VariableMetadata(getRouteList(), false, false, null, false, DataType.UNKNOWN),
+                new VariableMetadata(getRouteList(), false, true, null, false, DataType.UNKNOWN),
         };
     }
 
