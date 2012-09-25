@@ -29,6 +29,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -105,7 +106,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
                                         FailoverStrategyEditor.class,
                                         new Class[]{Frame.class, Map.class});
                         dialog = constructor.newInstance(parent, strategyProperties);
-                        
+
                     } catch (ClassNotFoundException e1) {
                         throw new RuntimeException(e1);
                     } catch (ConstructorInvocation.WrongSuperclassException e1) {
@@ -146,7 +147,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
         boolean selectedMany = propertyTable.getSelectedRowCount() > 1;
         editService.setEnabled(enable & selected);
         cloneButton.setEnabled(enable & selected);
-        removeService.setEnabled(enable & (selected | selectedMany) );
+        removeService.setEnabled(enable & (selected | selectedMany));
     }
 
     private void enableOrDisableConfigureStrategyButton() {
@@ -181,7 +182,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
             }
         });
 
-        propertiesTableModel.addTableModelListener( new TableModelListener() {
+        propertiesTableModel.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
                 enableDisableComponents();
@@ -209,8 +210,21 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
             public void actionPerformed(ActionEvent e) {
                 final int[] viewRows = propertyTable.getSelectedRows();
                 if (viewRows.length > 0) {
+                    StringBuilder sb = new StringBuilder();
                     for (int i = 0; i < viewRows.length; i++) {
-                        propertiesTableModel.removeRowAt(propertyTable.getSelectedRow());
+                        sb.append(propertiesTableModel.getRowObject(viewRows[i]).getName());
+                        if (i != viewRows.length - 1) {
+                            sb.append(",");
+                        }
+                    }
+                    Object[] options = {resources.getString("button.remove"), resources.getString("button.cancel")};
+                    int result = JOptionPane.showOptionDialog(
+                            parent, MessageFormat.format(resources.getString("confirmation.remove.route"), sb),
+                            resources.getString("confirmation.title.remove.route"), 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+                    if (result == 0) {
+                        for (int i = 0; i < viewRows.length; i++) {
+                            propertiesTableModel.removeRowAt(propertyTable.getSelectedRow());
+                        }
                     }
                 }
                 enableDisableComponents();
@@ -305,7 +319,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
         strategyField.setVariable(assertion.getStrategy());
         strategyField.setAssertion(assertion, getPreviousAssertion());
 
-        strategyProperties = (Map<String, String>) ((HashMap)assertion.getStrategyProperties()).clone();
+        strategyProperties = (Map<String, String>) ((HashMap) assertion.getStrategyProperties()).clone();
         settingData = false;
     }
 
@@ -326,7 +340,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
         }
         assertion.getStrategyProperties().clear();
 
-        for(Map.Entry<String, String> entry : strategyProperties.entrySet()){
+        for (Map.Entry<String, String> entry : strategyProperties.entrySet()) {
             assertion.getStrategyProperties().put(entry.getKey(), entry.getValue());
         }
 
