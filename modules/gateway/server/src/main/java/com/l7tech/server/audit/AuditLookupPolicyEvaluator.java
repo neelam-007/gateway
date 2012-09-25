@@ -210,6 +210,7 @@ public class AuditLookupPolicyEvaluator  {
             Object[] name_var = (Object[])context.getVariable(prefix+".name");
             Object[] message_var = (Object[])context.getVariable(prefix+".message");
             Object[] signature_var = (Object[])context.getVariable(prefix+".signature");
+            Object[] type_var = (Object[])context.getVariable(prefix+".type");
 
             for(int i = 0 ; i < (Integer)sizeObj ; ++i){
                 String id = ExternalAuditsUtils.getStringData(id_var[i]);
@@ -234,11 +235,12 @@ public class AuditLookupPolicyEvaluator  {
                     String name = ExternalAuditsUtils.getStringData(name_var[i]);
                     String message = ExternalAuditsUtils.getStringData(message_var[i]);
                     String signature = ExternalAuditsUtils.getStringData(signature_var[i]);
+                    String type = ExternalAuditsUtils.getStringData(type_var[i]);
 
                     header = new AuditRecordGuidHeader(
                             id,
                             oid,
-                            name,
+                            type.equals("message")? name : "",
                             message,
                             null,
                             signature,

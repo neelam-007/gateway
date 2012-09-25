@@ -96,7 +96,7 @@ public class ExternalAuditsCommonUtils {
     }
     private static String defaultLookupQuery(String recordTable,String dbType) {
         return
-                lookupPrefix(dbType, "recordQueryLimit", false)+" id,nodeid,time,audit_level,name,message,signature from "+recordTable+" where " +
+                lookupPrefix(dbType, "recordQueryLimit", false)+" id,nodeid,time,audit_level,name,message,signature,type from "+recordTable+" where " +
                         "time>=${audit.recordQuery.minTime} and time&lt;${audit.recordQuery.maxTime} " +
                         "and audit_level in (${audit.recordQuery.levels}) " +
                         "and "+ getColumnQuery("nodeid",dbType)+ " like ${audit.recordQuery.nodeId} " +
@@ -114,7 +114,7 @@ public class ExternalAuditsCommonUtils {
 
     private static String lookupQueryWithAuditId(String recordTable,String dbType){
         return
-                lookupPrefix(dbType, "recordQueryLimit", false)+ " id,nodeid,time,audit_level,name,message,signature from "+recordTable+" where " +
+                lookupPrefix(dbType, "recordQueryLimit", false)+ " id,nodeid,time,audit_level,name,message,signature,type from "+recordTable+" where " +
                         "id in (${recordIdQuery.audit_oid}) " +
                         "and time>=${audit.recordQuery.minTime} and time&lt;=${audit.recordQuery.maxTime} " +
                         "and audit_level in (${audit.recordQuery.levels}) " +

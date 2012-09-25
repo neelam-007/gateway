@@ -35,7 +35,10 @@ public class AuditRecordGuidHeader extends AuditRecordHeader {
               auditRecordHeader.getVersion() );
     }
 
-    //todo: version should not be required.
+    /**
+     *
+     * @param name should be empty if not an message summary audit record
+     */
     public AuditRecordGuidHeader(String guid, long id, String name, String description, byte[] signatureDigest, String signature, String nodeId, long timestamp, Level level, int version) {
         super( id, name, description,  signatureDigest, signature, nodeId, timestamp, level, version);
         this.guid = guid;
