@@ -229,15 +229,6 @@ public class OAuthInstallerAdminImplTest {
             }
         };
         for (Pair<String, String> bundlePair : ALL_BUNDLE_NAMES) {
-            if (bundlePair.right.equals("SecureZone_Storage")) {
-                //it contains no policies.
-                final URL policyUrl = this.getClass().getResource("/com/l7tech/external/assertions/oauthinstaller/bundles/" + bundlePair.right + "/Policy.xml");
-                if (policyUrl != null) {
-                    fail("Bundle SecureZone_Storage now contains a Policy.xml. Update test case to include it.");
-                }
-
-                continue;
-            }
             System.out.println("Testing install of policies from bundle " + bundlePair);
             installPoliciesTest(bundlePair.left, oldGuidsToNewGuids);
         }
@@ -420,7 +411,7 @@ public class OAuthInstallerAdminImplTest {
         bundleToItemAndDocMap.put("1c2a2874-df8d-4e1d-b8b0-099b576407e1", getItemsToDocs("OAuth_1_0", true));
         bundleToItemAndDocMap.put("ba525763-6e55-4748-9376-76055247c8b1", getItemsToDocs("OAuth_2_0", true));
         bundleToItemAndDocMap.put("f69c7d15-4999-4761-ab26-d29d58c0dd57", getItemsToDocs("SecureZone_OVP", true));
-        bundleToItemAndDocMap.put("b082274b-f00e-4fbf-bbb7-395a95ca2a35", getItemsToDocs("SecureZone_Storage", false));
+        bundleToItemAndDocMap.put("b082274b-f00e-4fbf-bbb7-395a95ca2a35", getItemsToDocs("SecureZone_Storage", true));
         bundleToItemAndDocMap.put("a07924c0-0265-42ea-90f1-2428e31ae5ae", getItemsToDocs("StorageManager", true));
 
         return new BundleResolver() {

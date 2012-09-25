@@ -2,7 +2,6 @@ package com.l7tech.skunkworks.oauth.toolkit;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
@@ -10,12 +9,7 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.scribe.model.Token;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
-import javax.xml.xpath.*;
 import java.io.UnsupportedEncodingException;
 import java.net.PasswordAuthentication;
 import java.net.URL;

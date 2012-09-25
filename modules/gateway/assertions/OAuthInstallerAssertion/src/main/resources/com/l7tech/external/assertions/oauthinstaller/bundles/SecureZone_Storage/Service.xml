@@ -40,6 +40,9 @@
                     &lt;L7p:Comment stringValue="Stores clients"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Stores clients"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="valid http method: POST | GET"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
@@ -1267,7 +1270,7 @@
                     &lt;L7p:DisallowOtherFields booleanValue="true"/&gt;
                     &lt;L7p:FieldSpecs htmlFormFieldSpecArray="included"&gt;
                     &lt;L7p:item htmlFormFieldSpec="included"&gt;
-                    &lt;L7p:AllowEmpty boxedBooleanValue="false"/&gt;
+                    &lt;L7p:AllowEmpty boxedBooleanValue="true"/&gt;
                     &lt;L7p:DataType fieldDataType="any"/&gt;
                     &lt;L7p:MaxOccurs intValue="1"/&gt;
                     &lt;L7p:MinOccurs intValue="1"/&gt;
@@ -1288,7 +1291,7 @@
                     &lt;L7p:Name stringValue="client_key"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;L7p:item htmlFormFieldSpec="included"&gt;
-                    &lt;L7p:AllowEmpty boxedBooleanValue="false"/&gt;
+                    &lt;L7p:AllowEmpty boxedBooleanValue="true"/&gt;
                     &lt;L7p:DataType fieldDataType="any"/&gt;
                     &lt;L7p:MaxOccurs intValue="1"/&gt;
                     &lt;L7p:MinOccurs intValue="1"/&gt;
@@ -1309,7 +1312,7 @@
                     &lt;L7p:Name stringValue="registered_by"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;L7p:item htmlFormFieldSpec="included"&gt;
-                    &lt;L7p:AllowEmpty boxedBooleanValue="false"/&gt;
+                    &lt;L7p:AllowEmpty boxedBooleanValue="true"/&gt;
                     &lt;L7p:DataType fieldDataType="any"/&gt;
                     &lt;L7p:MaxOccurs intValue="1"/&gt;
                     &lt;L7p:MinOccurs intValue="1"/&gt;
@@ -1331,6 +1334,9 @@
                     &lt;/L7p:item&gt;
                     &lt;/L7p:FieldSpecs&gt;
                     &lt;/L7p:HtmlFormDataAssertion&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="8ac0e0fc-b08a-4f00-b78d-0cead654d943"/&gt;
+                    &lt;/L7p:Include&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_client_key
@@ -1339,9 +1345,9 @@
                     values (
                     ${request.http.parameter.client_key},
                     ${request.http.parameter.secret},
-                    ${request.http.parameter.scope},
-                    ${request.http.parameter.callback},
-                    ${request.http.parameter.environment},
+                    ${scope},
+                    ${callback},
+                    ${environment},
                     ${request.http.parameter.expiration},
                     ${request.http.parameter.status},
                     ${request.http.parameter.client_ident},
@@ -1379,7 +1385,7 @@
                     &lt;L7p:DisallowOtherFields booleanValue="true"/&gt;
                     &lt;L7p:FieldSpecs htmlFormFieldSpecArray="included"&gt;
                     &lt;L7p:item htmlFormFieldSpec="included"&gt;
-                    &lt;L7p:AllowEmpty boxedBooleanValue="false"/&gt;
+                    &lt;L7p:AllowEmpty boxedBooleanValue="true"/&gt;
                     &lt;L7p:DataType fieldDataType="any"/&gt;
                     &lt;L7p:MaxOccurs intValue="1"/&gt;
                     &lt;L7p:MinOccurs intValue="1"/&gt;
@@ -1406,7 +1412,7 @@
                     &lt;L7p:Name stringValue="description"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;L7p:item htmlFormFieldSpec="included"&gt;
-                    &lt;L7p:AllowEmpty boxedBooleanValue="false"/&gt;
+                    &lt;L7p:AllowEmpty boxedBooleanValue="true"/&gt;
                     &lt;L7p:DataType fieldDataType="any"/&gt;
                     &lt;L7p:MaxOccurs intValue="1"/&gt;
                     &lt;L7p:MinOccurs intValue="1"/&gt;
@@ -1441,7 +1447,7 @@
                     &lt;L7p:Name stringValue="registered_by"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;L7p:item htmlFormFieldSpec="included"&gt;
-                    &lt;L7p:AllowEmpty boxedBooleanValue="false"/&gt;
+                    &lt;L7p:AllowEmpty boxedBooleanValue="true"/&gt;
                     &lt;L7p:DataType fieldDataType="any"/&gt;
                     &lt;L7p:MaxOccurs intValue="1"/&gt;
                     &lt;L7p:MinOccurs intValue="1"/&gt;
@@ -1486,6 +1492,9 @@
                     ${request.http.parameter.description}, ${request.http.parameter.org},
                     ${request.http.parameter.registered_by}, ${request.http.parameter.type}, ${now.millis});]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="8ac0e0fc-b08a-4f00-b78d-0cead654d943"/&gt;
+                    &lt;/L7p:Include&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -1502,9 +1511,9 @@
                     values (
                     ${request.http.parameter.client_key},
                     ${request.http.parameter.secret},
-                    ${request.http.parameter.scope},
-                    ${request.http.parameter.callback},
-                    ${request.http.parameter.environment},
+                    ${scope},
+                    ${callback},
+                    ${environment},
                     ${request.http.parameter.expiration},
                     ${request.http.parameter.status},
                     ${request.http.parameter.client_ident},
@@ -1861,7 +1870,7 @@
                     &lt;L7p:DisallowOtherFields booleanValue="true"/&gt;
                     &lt;L7p:FieldSpecs htmlFormFieldSpecArray="included"&gt;
                     &lt;L7p:item htmlFormFieldSpec="included"&gt;
-                    &lt;L7p:AllowEmpty boxedBooleanValue="false"/&gt;
+                    &lt;L7p:AllowEmpty boxedBooleanValue="true"/&gt;
                     &lt;L7p:DataType fieldDataType="any"/&gt;
                     &lt;L7p:MaxOccurs intValue="1"/&gt;
                     &lt;L7p:MinOccurs intValue="1"/&gt;
@@ -1875,14 +1884,14 @@
                     &lt;L7p:Name stringValue="client_key"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;L7p:item htmlFormFieldSpec="included"&gt;
-                    &lt;L7p:AllowEmpty boxedBooleanValue="false"/&gt;
+                    &lt;L7p:AllowEmpty boxedBooleanValue="true"/&gt;
                     &lt;L7p:DataType fieldDataType="any"/&gt;
                     &lt;L7p:MaxOccurs intValue="1"/&gt;
                     &lt;L7p:MinOccurs intValue="1"/&gt;
                     &lt;L7p:Name stringValue="environment"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;L7p:item htmlFormFieldSpec="included"&gt;
-                    &lt;L7p:AllowEmpty boxedBooleanValue="false"/&gt;
+                    &lt;L7p:AllowEmpty boxedBooleanValue="true"/&gt;
                     &lt;L7p:DataType fieldDataType="any"/&gt;
                     &lt;L7p:MaxOccurs intValue="1"/&gt;
                     &lt;L7p:MinOccurs intValue="1"/&gt;
@@ -1893,25 +1902,28 @@
                     &lt;L7p:DataType fieldDataType="any"/&gt;
                     &lt;L7p:MaxOccurs intValue="1"/&gt;
                     &lt;L7p:MinOccurs intValue="1"/&gt;
-                    &lt;L7p:Name stringValue="status"/&gt;
+                    &lt;L7p:Name stringValue="secret"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;L7p:item htmlFormFieldSpec="included"&gt;
                     &lt;L7p:AllowEmpty boxedBooleanValue="false"/&gt;
                     &lt;L7p:DataType fieldDataType="any"/&gt;
                     &lt;L7p:MaxOccurs intValue="1"/&gt;
                     &lt;L7p:MinOccurs intValue="1"/&gt;
-                    &lt;L7p:Name stringValue="secret"/&gt;
+                    &lt;L7p:Name stringValue="status"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:FieldSpecs&gt;
                     &lt;/L7p:HtmlFormDataAssertion&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="8ac0e0fc-b08a-4f00-b78d-0cead654d943"/&gt;
+                    &lt;/L7p:Include&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_client_key
                     set status=${request.http.parameter.status},
-                    scope=${request.http.parameter.scope},
-                    callback=${request.http.parameter.callback},
-                    environment=${request.http.parameter.environment},
+                    scope=${scope},
+                    callback=${callback},
+                    environment=${environment},
                     secret=${request.http.parameter.secret}
                     where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;

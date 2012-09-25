@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<enumeration ObjectType="Policy" ExportDate="20120924 0330" ExporterVersion="6.2 (4248)">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="8ac0e0fc-b08a-4f00-b78d-0cead654d943"
+               id="52297728" version="1">
+        <l7:PolicyDetail folderId="123600913" guid="8ac0e0fc-b08a-4f00-b78d-0cead654d943" id="52297728" version="1">
+            <l7:Name>setClientKeyOptionalValues</l7:Name>
+            <l7:PolicyType>Include</l7:PolicyType>
+            <l7:Properties>
+                <l7:Property key="revision">
+                    <l7:LongValue>2</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:PolicyDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Used at two positions within the clientstore policy"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${request.http.parameter.scope}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="b29i"/&gt;
+                    &lt;L7p:VariableToSet stringValue="scope"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnNjb3BlfQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="scope"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="handle optional scope"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${request.http.parameter.environment}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="QUxM"/&gt;
+                    &lt;L7p:VariableToSet stringValue="environment"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLmVudmlyb25tZW50fQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="environment"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="handle optional environment"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${request.http.parameter.callback}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="b29i"/&gt;
+                    &lt;L7p:VariableToSet stringValue="callback"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLmNhbGxiYWNrfQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="callback"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="handle optional callback"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Policy>
+</enumeration>
