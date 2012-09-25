@@ -351,16 +351,18 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     }
 
     @Test
+    @BugNumber(13108)
     public void paramDetectedMoreThanOnceButEqual() throws Exception {
-        setParamsForRequestToken(request, true, true);
+        setParamsForRequestToken(request, true, false);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
-        assertion.setQueryString("${request.url}");
+        assertion.setQueryString("oauth_consumer_key=" + CONSUMER_KEY);
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
-        assertEquals(AssertionStatus.NONE, assertionStatus);
-        assertEquals(buildExpectedString(POST, REQUEST_TOKEN, false), (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_DUPLICATE_PARAMETER));
+        assertEquals("Duplicate oauth parameter: oauth_consumer_key", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
@@ -1081,6 +1083,28 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     }
 
     @Test
+    @BugNumber(13108)
+    public void paramWithEqualMultipleValues() throws Exception {
+        setParamsForRequestToken(assertion);
+        //a=first specified twice which is okay as long as it's not an oauth parameter
+        assertion.setQueryString(QUERY_STRING + ",a=first");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3Dfirst%26a%3Dfirst%26" +
+                "oauth_callback%3D" + CALLBACK_ENCODED + "%26oauth_consumer_key%3Ddpf43f3p2l4k3l03%26" +
+                "oauth_nonce%3Dstubgeneratednonce%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1000%26" +
+                "oauth_version%3D1.0%26p%3Dmiddle%26z%3Dlast";
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertRequestTokenVariables();
+        assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
+    }
+
+    @Test
     public void paramWithEmptyValue() throws Exception {
         setParamsForRequestToken(assertion);
         assertion.setQueryString(QUERY_STRING + ",x=");
@@ -1222,6 +1246,48 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&oauth_callback%3D" + CALLBACK_ENCODED + "%26" +
                 "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dstubgeneratednonce%26oauth_signature_method%3D" +
                 "HMAC-SHA1%26oauth_timestamp%3D1000%26oauth_unrecognized%3Dokay%26oauth_version%3D1.0";
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertRequestTokenVariables();
+        assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
+    }
+
+    @Test
+    @BugNumber(13108)
+    public void unrecognizedOAuthParamInQueryAllowedMultiple() throws Exception {
+        setParamsForRequestToken(assertion);
+        assertion.setAllowCustomOAuthQueryParams(true);
+        assertion.setQueryString("?oauth_unrecognized=okay&oauth_unrecognized=dokay");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&oauth_callback%3D" + CALLBACK_ENCODED + "%26" +
+                "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dstubgeneratednonce%26oauth_signature_method%3D" +
+                "HMAC-SHA1%26oauth_timestamp%3D1000%26oauth_unrecognized%3Ddokay%26oauth_unrecognized%3Dokay%26oauth_version%3D1.0";
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertRequestTokenVariables();
+        assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER, "oauth." + AUTH_HEADER);
+    }
+
+    @Test
+    @BugNumber(13108)
+    public void unrecognizedOAuthParamInQueryAllowedEqualMultiple() throws Exception {
+        setParamsForRequestToken(assertion);
+        assertion.setAllowCustomOAuthQueryParams(true);
+        assertion.setQueryString("?oauth_unrecognized=okay&oauth_unrecognized=okay");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&oauth_callback%3D" + CALLBACK_ENCODED + "%26" +
+                "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dstubgeneratednonce%26oauth_signature_method%3D" +
+                "HMAC-SHA1%26oauth_timestamp%3D1000%26oauth_unrecognized%3Dokay%26oauth_unrecognized%3Dokay%26oauth_version%3D1.0";
 
         assertEquals(AssertionStatus.NONE, assertionStatus);
         assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));

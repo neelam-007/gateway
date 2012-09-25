@@ -63,7 +63,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
             final String requestUrl = ExpandVariables.process(assertion.getRequestUrl(), variableMap, audit);
             try {
                 final String encodedUrl = percentEncode(normalizeUrl(requestUrl));
-                final TreeMap<String, Set<String>> sortedParameters = getSortedParameters(variableMap, audit, context);
+                final TreeMap<String, List<String>> sortedParameters = getSortedParameters(variableMap, audit, context);
                 validateParameters(sortedParameters);
                 final String requestType = getRequestType(sortedParameters);
 
@@ -74,7 +74,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
                 // set context variables
                 context.setVariable(assertion.getVariablePrefix() + "." + SIG_BASE_STRING, stringBuilder.toString());
                 context.setVariable(assertion.getVariablePrefix() + "." + REQUEST_TYPE, requestType);
-                for (final Map.Entry<String, Set<String>> entry : sortedParameters.entrySet()) {
+                for (final Map.Entry<String, List<String>> entry : sortedParameters.entrySet()) {
                     if (entry.getKey().startsWith("oauth_")) {
                         context.setVariable(assertion.getVariablePrefix() + "." + entry.getKey(), entry.getValue().iterator().next());
                     }
@@ -149,9 +149,9 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
      * @param sortedParameters the oauth parameters.
      * @return the request type based on the oauth parameters present.
      */
-    private String getRequestType(final TreeMap<String, Set<String>> sortedParameters) {
+    private String getRequestType(final TreeMap<String, List<String>> sortedParameters) {
         String requestType;
-        final Set<String> oauthToken = sortedParameters.get(OAUTH_TOKEN);
+        final List<String> oauthToken = sortedParameters.get(OAUTH_TOKEN);
         if (oauthToken != null) {
             if (sortedParameters.get(OAUTH_VERIFIER) != null) {
                 requestType = AUTHORIZED_REQUEST_TOKEN;
@@ -177,7 +177,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
      * @throws NoSuchVariableException if the request target message cannot be retrieved.
      */
     @SuppressWarnings({"JavaDoc"})
-    private TreeMap<String, Set<String>> getSortedParameters(final Map<String, Object> variableMap, final Audit audit, final PolicyEnforcementContext context)
+    private TreeMap<String, List<String>> getSortedParameters(final Map<String, Object> variableMap, final Audit audit, final PolicyEnforcementContext context)
             throws IOException, NoSuchVariableException, DuplicateParameterException, ParameterException {
         final List<Pair<String, String>> unsortedParameters = new ArrayList<Pair<String, String>>();
         addParams(unsortedParameters, getQueryString(variableMap), assertion.isAllowCustomOAuthQueryParams());
@@ -192,16 +192,20 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
 
         logAndAudit(AssertionMessages.OAUTH_PARAMETERS, unsortedParameters.toString());
 
-        final TreeMap<String, Set<String>> sortedParameters = new TreeMap<String, Set<String>>();
+        final TreeMap<String, List<String>> sortedParameters = new TreeMap<String, List<String>>();
         for (final Pair<String, String> parameter : unsortedParameters) {
             if (!sortedParameters.containsKey(parameter.getKey())) {
-                sortedParameters.put(parameter.getKey(), new TreeSet<String>());
+                sortedParameters.put(parameter.getKey(), new ArrayList<String>());
             }
             sortedParameters.get(parameter.getKey()).add(parameter.getValue());
         }
         // exclude realm and parameters according to the OAUTH 1.0 spec
         sortedParameters.remove(REALM);
         sortedParameters.remove(OAUTH_SIGNATURE);
+
+        for (final List<String> paramValues : sortedParameters.values()) {
+            Collections.sort(paramValues);
+        }
 
         return sortedParameters;
     }
@@ -332,9 +336,9 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
      * Convert a parameter map to an encoded string.
      */
     @SuppressWarnings({"JavaDoc"})
-    private String buildEncodedParamString(final TreeMap<String, Set<String>> parameterMap) throws UnsupportedEncodingException {
+    private String buildEncodedParamString(final TreeMap<String, List<String>> parameterMap) throws UnsupportedEncodingException {
         final StringBuilder sb = new StringBuilder();
-        for (final Map.Entry<String, Set<String>> entry : parameterMap.entrySet()) {
+        for (final Map.Entry<String, List<String>> entry : parameterMap.entrySet()) {
             final Iterator<String> iterator = entry.getValue().iterator();
             while (iterator.hasNext()) {
                 sb.append(percentEncode(entry.getKey()));
@@ -389,16 +393,16 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         return result;
     }
 
-    private void validateParameters(final TreeMap<String, Set<String>> sortedParameters) throws DuplicateParameterException, MissingRequiredParameterException, InvalidParameterException {
+    private void validateParameters(final TreeMap<String, List<String>> sortedParameters) throws DuplicateParameterException, MissingRequiredParameterException, InvalidParameterException {
         for (final String requiredParameter : REQUIRED_PARAMETERS) {
             if (!sortedParameters.containsKey(requiredParameter) || sortedParameters.get(requiredParameter).isEmpty() ||
                     StringUtils.isBlank(sortedParameters.get(requiredParameter).iterator().next())) {
                 throw new MissingRequiredParameterException(requiredParameter, "Missing required oauth parameter");
             }
         }
-        for (final Map.Entry<String, Set<String>> entry : sortedParameters.entrySet()) {
+        for (final Map.Entry<String, List<String>> entry : sortedParameters.entrySet()) {
             // oauth parameters cannot be specified more than once
-            if (entry.getKey().startsWith("oauth_") && entry.getValue().size() > 1) {
+            if (OAUTH_PARAMETERS.contains(entry.getKey()) && entry.getValue().size() > 1) {
                 throw new DuplicateParameterException(entry.getKey(), new ArrayList<String>(entry.getValue()), "Duplicate oauth parameter detected");
             }
         }
