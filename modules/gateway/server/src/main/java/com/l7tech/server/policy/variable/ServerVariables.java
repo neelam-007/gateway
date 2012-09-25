@@ -710,6 +710,33 @@ public class ServerVariables {
             }),
 
             new Variable("audit", new AuditContextGetter("audit")),
+            new Variable("audit.code",  new AbstractAuditGetter() {
+
+                @Override
+                boolean isValidForContext(PolicyEnforcementContext context) {
+                    return  context instanceof AuditSinkPolicyEnforcementContext;
+                }
+
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    name = name.substring("audit.code.".length());
+                    int dot = name.indexOf('.');
+                    int index;
+                    try {
+                        if (dot == -1) {
+                            index = Integer.parseInt(name);
+                        } else {
+                            index = Integer.parseInt(name.substring(0, dot));
+                        }
+                        AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(index);
+                        String output = message == null ? null : message.getMessage();
+                        return output;
+                    } catch (NumberFormatException nfe) {
+                        logger.info("Invalid numeric index for audit detail message lookup");
+                        return null;
+                    }
+                }
+            }),
             new Variable("audit.recordQuery", new AuditQueryGetter("audit.recordQuery")),
             new Variable("audit.request", new AuditOriginalMessageGetter("audit.request", false, false)),
             new Variable("audit.requestContentLength", new AuditOriginalMessageSizeGetter(false)),
