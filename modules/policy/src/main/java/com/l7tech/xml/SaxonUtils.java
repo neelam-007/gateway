@@ -3,6 +3,8 @@ package com.l7tech.xml;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.xpath.XpathVersion;
+import com.saxonica.config.EnterpriseConfiguration;
+import com.saxonica.config.ProfessionalConfiguration;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.expr.XPathContext;
 import net.sf.saxon.lib.CollationURIResolver;
@@ -21,7 +23,9 @@ import org.xml.sax.SAXException;
 
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -36,7 +40,33 @@ public class SaxonUtils {
     private static final String PROP_SAXON_ALLOW_COLLECTIONS = "com.l7tech.xml.xslt.saxon.allowCollections";
     private static final String PROP_SAXON_ALLOW_ENTITY_RESOLUTION = "com.l7tech.xml.xslt.saxon.allowEntityResolution";
 
-    private static final Processor processor = new Processor(false);
+    // Layer 7 Technologies license key for Saxon HE
+    private static final String key =
+        "j0j0kbj09b3b0bv0v0b0q0kbj0000bj0k00bf0kb0bq03bv0fbf00bj0a030" +
+        "90bb0bbb3ba0q0j0k0q0a0a090f0k0a0b00bq03bfb0bb0k0bbf030j00030" +
+        "a0b0q0j0q09090q0q090j0j00bfbj030a00bk0k0kb00309bv030b0f0k0a0" +
+        "bbk0a000r093kj9jbjf3w3j3q309zaza303000r00jqjf3bb9303w3f3w393" +
+        "bjw3q3f3rbza303000r00jqjf3bb93b3f3kjj3aj99zakj933j93w3r0w3d3" +
+        "q3bjf3kjq3ajvj9bzad3w3r0w3d3q3bjf39j$3f33j9bzaf0a0a0a0a9r0kj" +
+        "930j99zav030a0a0a0a0j9r0$3f3q3kj9309zaj9r00j93q3kj9309zab0k0" +
+        "rkq0a0rkk0f0a0k0r0b3939j0j0jqbza0j93qjr039fb09za0j93qjr0f9fb" +
+        "09za0j93qjr0b9fb09za9b9br0w3d3q3bjq3b39bzar3d303wkv30393bjj0" +
+        "kj93qjf3$3ab$3$3f3w3q333f3r0$3q3f3r39bzaj0akkj93qjf3$bakrb9b" +
+        "dbr0qjw3f3ajr3d30bza$3$3f3w3q33bakjj93kjb3w3fbr093930jw39303" +
+        "q3$bzaf303q3w3d3vjf309r0kjd30jw39303q3$b";
+
+    private static final Configuration configuration;
+    private static final Processor processor;
+
+    static {
+        // Activate licensed configuration and s9api processor
+        EnterpriseConfiguration conf = new EnterpriseConfiguration();
+        activate(conf);
+        configuration = conf;
+
+        processor = new Processor(configuration);
+        activate(processor);
+    }
 
     /**
      * Get a singleton Processor instance.
@@ -53,7 +83,7 @@ public class SaxonUtils {
      * @return the singleton configuration.  Never null.
      */
     public static Configuration getConfiguration() {
-        return processor.getUnderlyingConfiguration();
+        return configuration;
     }
 
     /**
@@ -214,5 +244,27 @@ public class SaxonUtils {
             logger.warning( msg );
             throw new SAXException(msg);
         }
+    }
+
+
+    private static String deobfuscate(String x) {
+        String digits = "afk0b93jvqz;$rwd";
+        StringBuilder buff = new StringBuilder(x.length());
+        for (int i = x.length() - 1; i >= 0; i -= 2) {
+            int c1 = digits.indexOf(x.charAt(i));
+            int c2 = digits.indexOf(x.charAt(i - 1));
+            buff.append((char) (c1 << 4 | c2));
+        }
+        return buff.toString();
+    }
+
+    // Activate a ProfessionalConfiguration or EnterpriseConfiguration
+    public static void activate(ProfessionalConfiguration config) {
+        config.supplyLicenseKey(new BufferedReader(new StringReader(deobfuscate(key))));
+    }
+
+    // Activate Saxon at the level of a s9api Processor
+    public static void activate(Processor processor) {
+        processor.setConfigurationProperty("http://saxonica.com/oem-data", deobfuscate(key));
     }
 }
