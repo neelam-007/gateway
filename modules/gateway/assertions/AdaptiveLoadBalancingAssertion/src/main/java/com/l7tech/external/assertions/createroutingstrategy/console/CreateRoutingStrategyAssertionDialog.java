@@ -174,8 +174,9 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 int index = propertyTable.getSelectedRow();
-                upButton.setEnabled(index > 0);
-                downButton.setEnabled(index >= 0 && index < propertiesTableModel.getRowCount() - 1);
+                boolean selectedMany = propertyTable.getSelectedRowCount() > 1;
+                upButton.setEnabled(index > 0 && !selectedMany);
+                downButton.setEnabled(index >= 0 && index < propertiesTableModel.getRowCount() - 1 && !selectedMany);
                 enableDisableComponents();
             }
         });
@@ -196,10 +197,6 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
         editService.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (propertyTable.getSelectedRows().length > 1) {
-                    showMultipleSelectionMsg(parent);
-                    return;
-                }
                 final int viewRow = propertyTable.getSelectedRow();
                 if (viewRow > -1) {
                     editProperty(propertiesTableModel.getRowObject(propertyTable.convertRowIndexToModel(viewRow)), null);
@@ -222,10 +219,6 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
         upButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (propertyTable.getSelectedRows().length > 1) {
-                    showMultipleSelectionMsg(parent);
-                    return;
-                }
                 final int viewRow = propertyTable.getSelectedRow();
                 if (viewRow > 0) {
                     int prevIndex = viewRow - 1;
@@ -238,10 +231,6 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
         downButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (propertyTable.getSelectedRows().length > 1) {
-                    showMultipleSelectionMsg(parent);
-                    return;
-                }
                 final int viewRow = propertyTable.getSelectedRow();
                 if (viewRow > -1 && viewRow < propertiesTableModel.getRowCount() - 1) {
                     int nextIndex = viewRow + 1;
@@ -254,10 +243,6 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
         cloneButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (propertyTable.getSelectedRows().length > 1) {
-                    showMultipleSelectionMsg(parent);
-                    return;
-                }
                 final int viewRow = propertyTable.getSelectedRow();
                 if (viewRow > -1) {
                     editProperty(null, propertiesTableModel.getRowObject(propertyTable.convertRowIndexToModel(viewRow)));
@@ -286,6 +271,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
                         } else {
                             propertiesTableModel.addRow(new Service(property.getName(), property.getProperties()));
                         }
+                        propertyTable.getSelectionModel().clearSelection();
 
                     } else {
                         int i = propertiesTableModel.getRowIndex(service);
@@ -350,10 +336,6 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
     @Override
     protected JPanel createPropertyPanel() {
         return contentPane;
-    }
-
-    private void showMultipleSelectionMsg(Component parent) {
-        DialogDisplayer.showMessageDialog(parent, "Multiple selection is not allowed.", null, JOptionPane.ERROR_MESSAGE, null);
     }
 
 }
