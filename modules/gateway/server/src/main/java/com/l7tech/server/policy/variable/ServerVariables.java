@@ -710,13 +710,7 @@ public class ServerVariables {
             }),
 
             new Variable("audit", new AuditContextGetter("audit")),
-            new Variable("audit.code",  new AbstractAuditGetter() {
-
-                @Override
-                boolean isValidForContext(PolicyEnforcementContext context) {
-                    return  context instanceof AuditSinkPolicyEnforcementContext;
-                }
-
+            new Variable("audit.code",  new Getter() {
                 @Override
                 Object get(String name, PolicyEnforcementContext context) {
                     name = name.substring("audit.code.".length());
