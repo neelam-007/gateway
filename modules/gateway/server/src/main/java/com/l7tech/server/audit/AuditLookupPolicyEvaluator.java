@@ -243,7 +243,7 @@ public class AuditLookupPolicyEvaluator  {
                             type.equals("message")? name : "",
                             message,
                             null,
-                            signature,
+                            signature.isEmpty()? null: signature,
                             nodeid,
                             time,
                             Level.parse(auditLevel),
@@ -442,7 +442,7 @@ public class AuditLookupPolicyEvaluator  {
         final List<String> auditsToRetrieve = new ArrayList<String>();
         for(String guid: auditRecordIds){
             AuditRecord record = getAuditRecordFromCache(guid);
-            if(record !=null)
+            if(record !=null && record.getSignature()!=null)
                 returnMap.put(guid,record.computeSignatureDigest());
             else if(auditsToRetrieve.size()< maxRecords)
                 auditsToRetrieve.add(guid);
@@ -477,7 +477,7 @@ public class AuditLookupPolicyEvaluator  {
 
             for(String guid: auditsToRetrieve){
                 AuditRecord record = getAuditRecordFromCache(guid);
-                if(record !=null){
+                if(record !=null && record.getSignature()!=null){
                     returnMap.put(guid,record.computeSignatureDigest());
                 }
             }
