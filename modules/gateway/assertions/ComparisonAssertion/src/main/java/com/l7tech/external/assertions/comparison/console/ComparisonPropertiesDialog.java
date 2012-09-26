@@ -178,7 +178,7 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
             @Override
             public void actionPerformed(ActionEvent e) {
                 int sel = predicatesTable.getSelectionModel().getMinSelectionIndex();
-                if (sel < 0 || sel > predicates.size()-1) return;
+                if (sel < 0 || sel > predicates.size() - 1) return;
                 predicates.remove(sel);
                 predicatesTableModel.fireTableDataChanged();
             }
@@ -187,9 +187,13 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                updateModel();
-                ok = true;
-                dispose();
+                if(0 == predicatesTable.getRowCount()) {
+                    showErrorDialog();
+                } else {
+                    updateModel();
+                    ok = true;
+                    dispose();
+                }
             }
         });
 
@@ -237,6 +241,13 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         int sel = predicatesTable.getSelectionModel().getMinSelectionIndex();
         editPredicateButton.setEnabled(sel >= 0);
         removePredicateButton.setEnabled(sel >= 0);
+    }
+
+    void showErrorDialog() {
+        DialogDisplayer.showMessageDialog(this,
+                "At least one Rule required.",
+                "Error",
+                JOptionPane.ERROR_MESSAGE, null);
     }
 
     @Override
