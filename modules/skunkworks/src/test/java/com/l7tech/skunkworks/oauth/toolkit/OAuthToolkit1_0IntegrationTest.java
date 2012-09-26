@@ -50,6 +50,7 @@ public class OAuthToolkit1_0IntegrationTest {
     private static final String ACCESS_TOKEN_ENDPOINT = "https://" + BASE_URL + ":8443/auth/oauth/v1/token";
     private static final String CLIENT_DOWNLOAD_RESOURCE = "https://" + BASE_URL + ":8443/oauth/v1/client?state=download";
     private static final String OTK_CLIENT_CALLBACK = "https://" + BASE_URL + ":8443/oauth/v1/client?state=authorized";
+    private static final String PROTECTED_RESOURCE_ENDPOINT = "https://" + BASE_URL + ":8443/protected/resource";
     private static String OTK_CLIENT_CALLBACK_ENCODED;
 
     static {
@@ -158,11 +159,14 @@ public class OAuthToolkit1_0IntegrationTest {
      * Consumer key isn't recognized by the OTK.
      */
     @Test
+    @BugNumber(13103)
     public void requestTokenEndpointUnrecognizedConsumerKey() throws Exception {
         final Map<String, String> parameters = createDefaultRequestTokenParameters();
         parameters.put("oauth_consumer_key", "unregisteredClient");
         final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
-        assertEquals(500, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(401, response.getStatus());
+        assertEquals("oauth_consumer_key invalid or expired", responseBody);
     }
 
     /**
@@ -362,6 +366,28 @@ public class OAuthToolkit1_0IntegrationTest {
         assertEquals("Invalid oauth_callback: 123", responseBody);
     }
 
+    @Test
+    @BugNumber(13103)
+    public void accessTokenEndpointUnrecognizedConsumerKey() throws Exception {
+        final Map<String, String> parameters = createDefaultAccessTokenParameters();
+        parameters.put("oauth_consumer_key", "unregistered");
+        final GenericHttpResponse response = createAccessTokenEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(401, response.getStatus());
+        assertEquals("oauth_consumer_key invalid or expired", responseBody);
+    }
+
+    @Test
+    @BugNumber(13103)
+    public void protectedResourceEndpointUnrecognizedConsumerKey() throws Exception {
+        final Map<String, String> parameters = createDefaultProtectedResourceParameters();
+        parameters.put("oauth_consumer_key", "unregistered");
+        final GenericHttpResponse response = createProtectedResourceEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(401, response.getStatus());
+        assertEquals("oauth_consumer_key invalid or expired", responseBody);
+    }
+
     private GenericHttpRequest createAccessTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(ACCESS_TOKEN_ENDPOINT));
         params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
@@ -429,6 +455,18 @@ public class OAuthToolkit1_0IntegrationTest {
         return request;
     }
 
+    private GenericHttpRequest createProtectedResourceEndpointRequest(final Map<String, String> parameters) throws Exception {
+        System.out.println("Requesting protected resource from " + PROTECTED_RESOURCE_ENDPOINT);
+        final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(PROTECTED_RESOURCE_ENDPOINT));
+        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        requestParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
+        final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
+        for (final Map.Entry<String, String> entry : parameters.entrySet()) {
+            request.addParameter(entry.getKey(), entry.getValue());
+        }
+        return request;
+    }
+
     private Map<String, String> createDefaultRequestTokenParameters() {
         final Map<String, String> parameterMap = new HashMap<String, String>();
         parameterMap.put("oauth_consumer_key", OTK_CLIENT_CONSUMER_KEY);
@@ -451,6 +489,18 @@ public class OAuthToolkit1_0IntegrationTest {
         oauthParameters.put("oauth_token", "testToken");
         oauthParameters.put("oauth_version", "1.0");
         return oauthParameters;
+    }
+
+    private Map<String, String> createDefaultProtectedResourceParameters() {
+        final Map<String, String> parameterMap = new HashMap<String, String>();
+        parameterMap.put("oauth_consumer_key", OTK_CLIENT_CONSUMER_KEY);
+        parameterMap.put("oauth_signature_method", "HMAC-SHA1");
+        parameterMap.put("oauth_timestamp", "1344979213");
+        parameterMap.put("oauth_nonce", "ca6e55f3-3e1c-41d6-8584-41c7e2611d34");
+        parameterMap.put("oauth_version", "1.0");
+        parameterMap.put("oauth_signature", "test");
+        parameterMap.put("oauth_token", "test");
+        return parameterMap;
     }
 
     private GenericHttpResponse authorizeRequestToken(final String requestToken, final PasswordAuthentication passwordAuthentication) throws Exception {
