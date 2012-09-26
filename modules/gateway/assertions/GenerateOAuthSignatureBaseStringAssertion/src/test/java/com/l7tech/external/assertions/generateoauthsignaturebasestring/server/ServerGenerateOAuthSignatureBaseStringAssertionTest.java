@@ -1355,6 +1355,46 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER);
     }
 
+    @Test
+    @BugNumber(13097)
+    public void invalidCallback() throws Exception {
+        setParamsForRequestToken(assertion);
+        assertion.setOauthCallback("123");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_PARAMETER));
+        assertEquals("Invalid oauth_callback: 123", (String) policyContext.getVariable("oauth.error"));
+    }
+
+    @Test
+    @BugNumber(13097)
+    public void emptyCallback() throws Exception {
+        request.setServerName(SERVER_NAME);
+        request.setRequestURI("/photos");
+        request.setQueryString(QUERY_STRING);
+        request.setMethod(HTTP_METHOD);
+        final String authorizationHeader = "OAuth realm=\"http://photos.example.net/\"," +
+                "oauth_consumer_key=\"" + CONSUMER_KEY + "\"," +
+                "oauth_signature_method=\"" + SIG_METHOD + "\"," +
+                "oauth_timestamp=\"" + TIMESTAMP + "\"," +
+                "oauth_nonce=\"" + NONCE + "\"," +
+                "oauth_callback=\"\"," +
+                "oauth_version=\"" + VERSION + "\"";
+        request.addHeader("Authorization", authorizationHeader);
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+        assertion.setUsageMode(UsageMode.SERVER);
+        assertion.setQueryString("${request.url}");
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_PARAMETER));
+        assertEquals("Invalid oauth_callback: ", (String) policyContext.getVariable("oauth.error"));
+    }
+
     private void assertContextVariablesDoNotExist(final String... names) throws NoSuchVariableException {
         for (final String name : names) {
             try {

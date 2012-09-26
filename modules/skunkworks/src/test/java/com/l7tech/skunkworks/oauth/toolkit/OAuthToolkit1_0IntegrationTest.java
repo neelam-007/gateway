@@ -351,6 +351,17 @@ public class OAuthToolkit1_0IntegrationTest {
         assertEquals("Query parameter oauth_unrecognized is not allowed", responseBody);
     }
 
+    @Test
+    @BugNumber(13097)
+    public void requestTokenEndpointInvalidCallback() throws Exception {
+        final Map<String, String> parameters = createDefaultRequestTokenParameters();
+        parameters.put("oauth_callback", "123");
+        final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Invalid oauth_callback: 123", responseBody);
+    }
+
     private GenericHttpRequest createAccessTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(ACCESS_TOKEN_ENDPOINT));
         params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
