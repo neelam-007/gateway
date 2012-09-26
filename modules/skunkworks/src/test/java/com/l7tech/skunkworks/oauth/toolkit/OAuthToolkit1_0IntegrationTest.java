@@ -188,6 +188,7 @@ public class OAuthToolkit1_0IntegrationTest {
         assertRequestEndpointMissingParameter("oauth_timestamp");
         assertRequestEndpointMissingParameter("oauth_nonce");
         assertRequestEndpointMissingParameter("oauth_signature");
+        assertRequestEndpointMissingParameter("oauth_callback");
     }
 
     @Test

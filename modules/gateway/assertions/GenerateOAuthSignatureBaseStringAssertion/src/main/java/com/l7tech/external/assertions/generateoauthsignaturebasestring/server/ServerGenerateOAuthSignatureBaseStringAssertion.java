@@ -234,7 +234,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
      */
     @SuppressWarnings({"JavaDoc"})
     private void addHeaderParams(final Map<String, Object> variableMap, final Audit audit,
-                                 final PolicyEnforcementContext context, final List<Pair<String, String>> parameters) throws ParameterException{
+                                 final PolicyEnforcementContext context, final List<Pair<String, String>> parameters) throws ParameterException {
         if (assertion.isUseAuthorizationHeader() && assertion.getAuthorizationHeader() != null) {
             String authorizationHeader = ExpandVariables.process(assertion.getAuthorizationHeader(), variableMap, audit);
             if (!authorizationHeader.isEmpty() && authorizationHeader.toLowerCase().startsWith(OAUTH)) {
@@ -405,6 +405,10 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
             if (OAUTH_PARAMETERS.contains(entry.getKey()) && entry.getValue().size() > 1) {
                 throw new DuplicateParameterException(entry.getKey(), new ArrayList<String>(entry.getValue()), "Duplicate oauth parameter detected");
             }
+        }
+        // callback is required if there is no token
+        if (!sortedParameters.containsKey(OAUTH_TOKEN) && !sortedParameters.containsKey(OAUTH_CALLBACK)) {
+            throw new MissingRequiredParameterException(OAUTH_CALLBACK, "Missing required oauth parameter");
         }
         // version is not required
         final String foundVersion = sortedParameters.get(OAUTH_VERSION) != null ? sortedParameters.get(OAUTH_VERSION).iterator().next() : null;
