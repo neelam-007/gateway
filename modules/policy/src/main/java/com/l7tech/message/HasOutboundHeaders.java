@@ -57,6 +57,14 @@ public interface HasOutboundHeaders extends HasHeaders {
     void removeHeader(String name);
 
     /**
+     * Remove a specific header matching the given name and value
+     *
+     * @param name The name of the header to remove
+     * @param value The value of the header to remove
+     */
+    void removeHeader(String name, Object value);
+
+    /**
      * Remove all headers.
      */
     void clearHeaders();

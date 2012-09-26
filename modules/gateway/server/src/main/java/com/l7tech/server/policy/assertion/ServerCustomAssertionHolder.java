@@ -527,6 +527,13 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                     pec.addCookie( CookieUtils.fromServletCookie( cookie, true ) );
                 }
             }
+
+            try {
+                String[] cookieNames = (String[]) context.get("customAssertionsCookiesToOmit");
+                removeCookies(cookieNames, pec);
+            } catch (HttpCookie.IllegalFormatException e) {
+                throw new IllegalArgumentException("Invalid cookie format");
+            }
         }
 
         /**
@@ -549,5 +556,51 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         public void setVariable(String name, Object value) {
             pec.setVariable(name, value);
         }
+    }
+
+    /**
+     * Remove those cookies with the specified cookie names
+     *
+     * @param cookieNames The names of the cookie(s) to be removed
+     * @param pec Policy Enforcement Context
+     * @throws HttpCookie.IllegalFormatException thrown if cookies are not well format against HttpCookie format
+     */
+    private void removeCookies(final String[] cookieNames, final PolicyEnforcementContext pec) throws HttpCookie.IllegalFormatException {
+        if (cookieNames == null || cookieNames.length == 0 || pec == null || pec.getRequest() == null) return;
+
+        final Message message = pec.getRequest();
+        HasOutboundHeaders oh = message.getKnob(OutboundHeadersKnob.class);
+        if (oh == null) {
+            oh = HttpOutboundRequestFacet.getOrCreateHttpOutboundRequestKnob(message);
+        }
+
+        HttpRequestKnob hrk = message.getKnob(HttpRequestKnob.class);
+        if (hrk != null && !oh.containsHeader("Cookie")) {
+            String[] oldValues = hrk.getHeaderValues("Cookie");
+            for (String oldValue : oldValues) {
+                oh.addHeader("Cookie", oldValue);
+            }
+        }
+
+        for (String cookieName: cookieNames) {
+            // Remove the cookies with the same cookie name from OutboundHeaders
+            if (oh.containsHeader("Cookie")) {
+                String[] values = oh.getHeaderValues("Cookie");
+
+                for (String value: values) {
+                    if (cookieName.equals(new HttpCookie(".", "/", value).getCookieName())) {
+                        oh.removeHeader("Cookie", value);
+                    }
+                }
+            }
+
+            // Also remove the cookies with the same cookie name from pec context
+            Set<HttpCookie> contextCookies = pec.getCookies();
+            for (HttpCookie cookie: contextCookies) {
+                if (cookie.getCookieName().equals(cookieName)) {
+                    pec.deleteCookie(cookie);
+                }
+            }
+        }// for
     }
 }

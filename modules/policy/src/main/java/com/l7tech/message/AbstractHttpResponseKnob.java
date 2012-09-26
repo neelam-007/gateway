@@ -59,6 +59,11 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
     }
 
     @Override
+    public void removeHeader(final String name, final Object value) {
+        headerSupport.removeHeader( name, value );
+    }
+
+    @Override
     public void clearHeaders() {
         headerSupport.clearHeaders();
     }

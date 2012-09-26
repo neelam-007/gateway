@@ -306,6 +306,17 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     }
 
     @Override
+    public void deleteCookie(HttpCookie cookie) {
+        Set<HttpCookie> toRemove = new HashSet<HttpCookie>();
+        for (HttpCookie currentCookie : cookies) {
+            if (currentCookie.getCookieName().equals(cookie.getCookieName())) {
+                toRemove.add(currentCookie);
+            }
+        }
+        cookies.removeAll(toRemove);
+    }
+
+    @Override
     public ArrayList<String> getIncrementedCounters() {
         return incrementedCounters;
     }

@@ -180,6 +180,8 @@ public interface PolicyEnforcementContext extends Closeable {
 
     void addCookie(HttpCookie cookie);
 
+    void deleteCookie(HttpCookie cookie);
+
     ArrayList<String> getIncrementedCounters();
 
     /**

@@ -92,6 +92,16 @@ class OutboundHeaderSupport implements HasOutboundHeaders {
     }
 
     @Override
+    public void removeHeader(final String name, final Object value) {
+        for ( final Iterator<Pair<String, Object>> headerIterator = headersToSend.iterator(); headerIterator.hasNext(); ) {
+            final Pair<String, Object> header = headerIterator.next();
+            if ( header.left.equalsIgnoreCase(name) && header.right.equals(value)) {
+                headerIterator.remove();
+            }
+        }
+    }
+
+    @Override
     public void clearHeaders() {
         headersToSend.clear();
     }
@@ -130,5 +140,4 @@ class OutboundHeaderSupport implements HasOutboundHeaders {
      * Values are expected to be Long or String
      */
     final List<Pair<String, Object>> headersToSend = new ArrayList<Pair<String, Object>>();
-
 }
