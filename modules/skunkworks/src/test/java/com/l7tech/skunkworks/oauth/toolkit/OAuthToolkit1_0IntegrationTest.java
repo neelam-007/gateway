@@ -388,6 +388,17 @@ public class OAuthToolkit1_0IntegrationTest {
         assertEquals("oauth_consumer_key invalid or expired", responseBody);
     }
 
+    @Test
+    @BugNumber(13103)
+    public void requestTokenEndpointInvalidTimestamp() throws Exception {
+        final Map<String, String> parameters = createDefaultRequestTokenParameters();
+        parameters.put("oauth_timestamp", "abc");
+        final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Invalid oauth_timestamp: abc", responseBody);
+    }
+
     private GenericHttpRequest createAccessTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(ACCESS_TOKEN_ENDPOINT));
         params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
@@ -501,20 +512,6 @@ public class OAuthToolkit1_0IntegrationTest {
         parameterMap.put("oauth_signature", "test");
         parameterMap.put("oauth_token", "test");
         return parameterMap;
-    }
-
-    private GenericHttpResponse authorizeRequestToken(final String requestToken, final PasswordAuthentication passwordAuthentication) throws Exception {
-        System.out.println("Authenticating request token: " + requestToken + " via " + AUTHORIZE_ENDPOINT);
-        String url = AUTHORIZE_ENDPOINT + "?state=authenticate";
-        if (requestToken != null) {
-            url = url + "&oauth_token=" + requestToken;
-        }
-        final GenericHttpRequestParams authenticateParams = new GenericHttpRequestParams(new URL(url));
-        authenticateParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
-        authenticateParams.setPasswordAuthentication(passwordAuthentication);
-        final GenericHttpRequest authenticateRequest = client.createRequest(HttpMethod.GET, authenticateParams);
-
-        return authenticateRequest.getResponse();
     }
 
     private void assertTokenEndpointMissingParameter(final String missingParameter) throws Exception {

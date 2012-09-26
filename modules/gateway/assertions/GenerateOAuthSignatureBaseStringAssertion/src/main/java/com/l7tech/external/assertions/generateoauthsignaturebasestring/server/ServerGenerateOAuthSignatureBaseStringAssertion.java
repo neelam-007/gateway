@@ -11,9 +11,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.TimeSource;
+import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -421,13 +419,19 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
             throw new InvalidParameterException(OAUTH_SIGNATURE_METHOD, foundSignatureMethod, OAUTH_SIGNATURE_METHOD + " is invalid: " + foundSignatureMethod);
         }
         // callback must be oob or start with http/https and be a max of 200 characters
-        if(sortedParameters.get(OAUTH_CALLBACK) != null){
+        if (sortedParameters.get(OAUTH_CALLBACK) != null) {
             final String foundCallback = sortedParameters.get(OAUTH_CALLBACK).iterator().next();
-            if(!foundCallback.matches("oob|http[s]?[^\"]{1,200}")){
+            if (!foundCallback.matches("oob|http[s]?[^\"]{1,200}")) {
                 throw new InvalidParameterException(OAUTH_CALLBACK, foundCallback, OAUTH_CALLBACK + " is invalid: " + foundCallback);
             }
         }
 
+        // timestamp must be positive integer
+        final String foundTimestamp = sortedParameters.get(OAUTH_TIMESTAMP).iterator().next();
+        final Option<Integer> option = ConversionUtils.getTextToIntegerConverter().call(foundTimestamp);
+        if (!option.isSome() || option.some() < 0) {
+            throw new InvalidParameterException(OAUTH_TIMESTAMP, foundTimestamp, OAUTH_TIMESTAMP + " is invalid: " + foundTimestamp);
+        }
     }
 
     private void throwIfNullOrBlank(final String toTest, final String fieldName) throws PolicyAssertionException {
