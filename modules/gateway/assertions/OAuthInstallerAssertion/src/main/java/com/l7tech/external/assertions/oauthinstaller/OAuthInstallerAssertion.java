@@ -30,8 +30,10 @@ public class OAuthInstallerAssertion extends Assertion  {
         meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
             @Override
             public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
+                final OAuthInstallerAdminImpl instance = OAuthInstallerAdminImpl.INSTANCE_HOLDER.instance;
+
                 final ExtensionInterfaceBinding<OAuthInstallerAdmin> binding =
-                        new ExtensionInterfaceBinding<OAuthInstallerAdmin>(OAuthInstallerAdmin.class, null, new OAuthInstallerAdminImpl());
+                        new ExtensionInterfaceBinding<OAuthInstallerAdmin>(OAuthInstallerAdmin.class, null, instance);
                 return Collections.<ExtensionInterfaceBinding>singletonList(binding);
             }
         });

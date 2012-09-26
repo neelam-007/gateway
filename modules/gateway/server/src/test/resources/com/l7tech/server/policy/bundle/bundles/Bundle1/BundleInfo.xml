@@ -1,0 +1,6 @@
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2012/09/policy-bundle" >
+    <l7:Id>565da90b-e7bf-4aea-a750-c32b9fd6cb19</l7:Id>
+    <l7:Version>1.0</l7:Version>
+    <l7:Name>Test resource - Bundle One</l7:Name>
+    <l7:Description>A bundle which contains folders, services and policies, which contain JDBC references</l7:Description>
+</l7:Bundle>

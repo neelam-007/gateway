@@ -1,7 +1,6 @@
-package com.l7tech.external.assertions.oauthinstaller;
+package com.l7tech.server.policy.bundle;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.DomUtils;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.xpath.*;
@@ -135,35 +134,10 @@ public class GatewayManagementDocumentUtilities {
         return errorDetails.contains("env:Sender") && errorDetails.contains("wsman:AlreadyExists");
     }
 
-    /**
-     * Get all policy includes for a policy element.
-     * <p/>
-     * WARNING: The returned Elements do not belong to PolicyElement.
-     *
-     * @return List of l7:PolicyGuid Elements found the policyElement
-     * @throws Exception
-     */
-    @NotNull
-    public static List<Element> getPolicyIncludes(@NotNull Document policyDocument) {
-
-        final DomElementCursor includeCursor = new DomElementCursor(policyDocument.getDocumentElement(), false);
-        final XpathResult includeResult = XpathUtil.getXpathResultQuietly(includeCursor, getNamespaceMap(), "//L7p:Include/L7p:PolicyGuid");
-
-        final XpathResultIterator iterator = includeResult.getNodeSet().getIterator();
-        final List<Element> allIncludedGuids = new ArrayList<Element>();
-        while (iterator.hasNext()) {
-            allIncludedGuids.add(iterator.nextElementAsCursor().asDomElement());
-        }
-
-        return allIncludedGuids;
-    }
-
     public static void updatePolicyIncludes(@NotNull Map<String, String> oldGuidsToNewGuids,
                                             @NotNull String identifier,
                                             @NotNull String entityType,
-                                            @NotNull List<Element> policyIncludes,
-                                            @NotNull Element policyResourceElement,
-                                            @NotNull Document policyDocumentFromResource) {
+                                            @NotNull List<Element> policyIncludes) {
         // update them now that they have been created.
         for (Element policyInclude : policyIncludes) {
             final String includeGuid = policyInclude.getAttribute("stringValue");
@@ -174,9 +148,6 @@ public class GatewayManagementDocumentUtilities {
             final String newGuid = oldGuidsToNewGuids.get(includeGuid);
             policyInclude.setAttribute("stringValue", newGuid);
         }
-
-        //write changes back to the resource document
-        DomUtils.setTextContent(policyResourceElement, XmlUtil.nodeToStringQuiet(policyDocumentFromResource));
     }
 
     // - PRIVATE

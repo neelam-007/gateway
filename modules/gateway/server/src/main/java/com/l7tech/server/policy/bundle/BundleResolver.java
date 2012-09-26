@@ -1,8 +1,11 @@
-package com.l7tech.external.assertions.oauthinstaller;
+package com.l7tech.server.policy.bundle;
 
+import com.l7tech.policy.bundle.BundleInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
+
+import java.util.List;
 
 
 /**
@@ -10,8 +13,29 @@ import org.w3c.dom.Document;
  */
 public interface BundleResolver {
 
+    public enum BundleItem{
+        FOLDER("Folder.xml"), POLICY("Policy.xml"), SERVICE("Service.xml");
+
+        private BundleItem(String fileName) {
+            this.fileName = fileName;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        private String fileName;
+    }
+
+    /**
+     * @return all BundleInfo's known by this resolver.
+     */
+    @NotNull
+    List<BundleInfo> getResultList();
+
     /**
      * Get a Document representing the bundle item from the specified bundle with id bundleId
+     *
      * @param bundleId bundle identifier
      * @param bundleItem item in the bundle, Folder.xml, Policy.xml or Service.xml
      * @param allowMissing true if no exception should be thrown if the item is missing. Provided as a convenience
@@ -19,8 +43,8 @@ public interface BundleResolver {
      * @throws UnknownBundleException if the bundle item or bundle is not known and allowMissing is false.
      */
     @Nullable
-    Document getBundleItem(@NotNull final String bundleId, @NotNull final String bundleItem, final boolean allowMissing)
-            throws UnknownBundleException, BundleResolverException;
+    Document getBundleItem(@NotNull final String bundleId, @NotNull final BundleItem bundleItem, final boolean allowMissing)
+            throws UnknownBundleException, BundleResolverException, InvalidBundleException;
 
     public static class UnknownBundleException extends Exception{
         public UnknownBundleException(String message) {
@@ -44,6 +68,20 @@ public interface BundleResolver {
 
         public BundleResolverException(Throwable cause) {
             super(cause);
+        }
+    }
+
+    class InvalidBundleException extends Exception{
+        public InvalidBundleException(String message) {
+            super(message);
+        }
+
+        public InvalidBundleException(Throwable cause) {
+            super(cause);
+        }
+
+        public InvalidBundleException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 }

@@ -5,9 +5,11 @@ import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.external.assertions.oauthinstaller.BundleInfo;
+import com.l7tech.policy.bundle.BundleInfo;
+import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 
@@ -18,8 +20,10 @@ import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Logger;
 
 import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
+import static com.l7tech.policy.bundle.BundleMapping.EntityType.JDBC_CONNECTION;
 
 public class OAuthInstallerTaskDialog extends JDialog {
     private JPanel contentPane;
@@ -37,7 +41,8 @@ public class OAuthInstallerTaskDialog extends JDialog {
     private JCheckBox oAuthOvp;
     private JPanel componentsToInstallPanel;
     private long selectedFolderOid;
-    private final Map<String, Pair<JCheckBox, BundleInfo>> availableBundles = new HashMap<String, Pair<JCheckBox, BundleInfo>>();
+    private final Map<String, Pair<BundleComponent, BundleInfo>> availableBundles = new HashMap<String, Pair<BundleComponent, BundleInfo>>();
+    private static final Logger logger = Logger.getLogger(OAuthInstallerTaskDialog.class.getName());
 
     public OAuthInstallerTaskDialog(Frame owner) {
         super(owner, "OAuth Toolkit Installer", true);
@@ -126,17 +131,18 @@ public class OAuthInstallerTaskDialog extends JDialog {
 
             for (BundleInfo bundleInfo : allAvailableBundles) {
                 // create panel
-                BundleComponent bundleComp = new BundleComponent(bundleInfo.getName(), bundleInfo.getDescription(), bundleInfo.getVersion());
+                BundleComponent bundleComp = new BundleComponent(bundleInfo);
                 componentsToInstallPanel.add(bundleComp.getBundlePanel());
                 componentsToInstallPanel.add(Box.createRigidArea(new Dimension(10, 10)));
-                final Pair<JCheckBox, BundleInfo> checkBoxBundleInfoPair =
-                        new Pair<JCheckBox, BundleInfo>(bundleComp.getInstallCheckBox(), bundleInfo);
+                final Pair<BundleComponent, BundleInfo> checkBoxBundleInfoPair =
+                        new Pair<BundleComponent, BundleInfo>(bundleComp, bundleInfo);
 
                 availableBundles.put(bundleInfo.getId(), checkBoxBundleInfoPair);
             }
         } catch (OAuthInstallerAdmin.OAuthToolkitInstallationException e) {
             DialogDisplayer.showConfirmDialog(this, "Initialization problem: " + ExceptionUtils.getMessage(e),
                     "Initialization problem", JOptionPane.WARNING_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
+            logger.warning(e.getMessage());
         }
     }
 
@@ -144,10 +150,19 @@ public class OAuthInstallerTaskDialog extends JDialog {
         ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
 
         final List<String> bundlesToInstall = new ArrayList<String>();
-        for (Map.Entry<String, Pair<JCheckBox, BundleInfo>> entry : availableBundles.entrySet()) {
-            final JCheckBox checkBox = entry.getValue().left;
-            if (checkBox.isSelected()) {
-                bundlesToInstall.add(entry.getKey());
+        final Map<String, BundleMapping> bundleMappings = new HashMap<String, BundleMapping>();
+        for (Map.Entry<String, Pair<BundleComponent, BundleInfo>> entry : availableBundles.entrySet()) {
+            final BundleComponent bundleComponent = entry.getValue().left;
+            if (bundleComponent.getInstallCheckBox().isSelected()) {
+                final String componentId = entry.getKey();
+                bundlesToInstall.add(componentId);
+                // does it contain any mappings?
+                final Map<String, String> mappedJdbcConnections = bundleComponent.getMappedJdbcConnections();
+                final BundleMapping bundleMapping = new BundleMapping();
+                for (Map.Entry<String, String> mappedEntry : mappedJdbcConnections.entrySet()) {
+                    bundleMapping.addMapping(JDBC_CONNECTION, mappedEntry.getKey(), mappedEntry.getValue());
+                }
+                bundleMappings.put(componentId, bundleMapping);
             }
         }
 
@@ -159,50 +174,63 @@ public class OAuthInstallerTaskDialog extends JDialog {
         final OAuthInstallerAdmin admin = Registry.getDefault().getExtensionInterface(OAuthInstallerAdmin.class, null);
 
         try {
-            final ArrayList right = doAsyncAdmin(
+            final Either<String,ArrayList> resultEither = doAsyncAdmin(
                     admin,
                     OAuthInstallerTaskDialog.this,
                     "OAuth Toolkit Installation",
                     "The selected components of the OAuth toolkit are being installed.",
-                    admin.installOAuthToolkit(bundlesToInstall, selectedFolderOid, oAuthTextField.getText().trim())).right();
+                    admin.installOAuthToolkit(bundlesToInstall, selectedFolderOid, oAuthTextField.getText().trim(), bundleMappings));
+            if (resultEither.isRight()) {
+                final ArrayList right = resultEither.right();
 
-            final StringBuilder sb = new StringBuilder();
-            if (right.isEmpty()) {
-                sb.append("No components were installed.");
-            } else {
-                sb.append("<html>Components installed: <br />");
-                for (Object bundleObj : right) {
-                    final String guid = bundleObj.toString();
-                    final Pair<JCheckBox, BundleInfo> bundleInfo = availableBundles.get(guid);
-                    sb.append("<br />");
-                    sb.append(bundleInfo.right.getName());
-                    sb.append(" - Version: ");
-                    sb.append(bundleInfo.right.getVersion());
+                final StringBuilder sb = new StringBuilder();
+                if (right.isEmpty()) {
+                    sb.append("No components were installed.");
+                } else {
+                    sb.append("<html>Components installed: <br />");
+                    for (Object bundleObj : right) {
+                        final String guid = bundleObj.toString();
+                        final Pair<BundleComponent, BundleInfo> bundleInfo = availableBundles.get(guid);
+                        sb.append("<br />");
+                        sb.append(bundleInfo.right.getName());
+                        sb.append(" - Version: ");
+                        sb.append(bundleInfo.right.getVersion());
+                    }
+                    sb.append("<br /></html>");
                 }
-                sb.append("<br /></html>");
+
+                final JLabel resultsLabel = new JLabel(sb.toString());
+
+                DialogDisplayer.showMessageDialog(this, resultsLabel, "Installation Completed",
+                        right.isEmpty() ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE, null);
+            } else {
+                // error occurred
+                DialogDisplayer.showMessageDialog(this, resultEither.left(),
+                        "Installation Problem",
+                        JOptionPane.WARNING_MESSAGE, null);
             }
-
-            final JLabel resultsLabel = new JLabel(sb.toString());
-
-            DialogDisplayer.showMessageDialog(this, resultsLabel, "Installation Completed",
-                    right.isEmpty() ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE, null);
 
 
         } catch (InterruptedException e) {
             // do nothing, user cancelled
+            logger.info("User cancelled installation of the OAuth Toolkit.");
 
         } catch (InvocationTargetException e) {
             DialogDisplayer.showMessageDialog(this, "Could not invoke installation on Gateway",
                     "Installation Problem",
                     JOptionPane.WARNING_MESSAGE, null);
+            logger.warning(e.getMessage());
+
         } catch (RuntimeException e) {
             DialogDisplayer.showMessageDialog(this, "Unexpected error occured during installation: \\n" + ExceptionUtils.getMessage(e),
                     "Installation Problem",
                     JOptionPane.WARNING_MESSAGE, null);
+            logger.warning(e.getMessage());
         } catch (OAuthInstallerAdmin.OAuthToolkitInstallationException e) {
             DialogDisplayer.showMessageDialog(this, "Error during installation: " + ExceptionUtils.getMessage(e),
                     "Installation Problem",
                     JOptionPane.WARNING_MESSAGE, null);
+            logger.warning(e.getMessage());
         }
 
         tree.refresh();
