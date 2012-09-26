@@ -7,6 +7,7 @@ import com.ibm.mq.MQQueue;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
 import com.l7tech.gateway.common.Component;
+import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
@@ -22,7 +23,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.util.Collection;
 import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,6 +33,7 @@ import static com.ibm.mq.constants.CMQC.MQRC_NO_MSG_AVAILABLE;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeMessages.INFO_EVENT_CONNECT_FAIL;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeMessages.INFO_EVENT_NOT_PUBLISHABLE;
+import static com.l7tech.gateway.common.audit.SystemMessages.CONNECTOR_ERROR;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.util.Option.some;
 import static java.text.MessageFormat.format;
@@ -70,6 +74,7 @@ public abstract class MqNativeListener {
     private long lastAuditErrorTime;
     private int concurrentId;
 	private long preventAuditFloodPeriod;
+    private Collection<AuditDetail> auditDetails = new LinkedList<AuditDetail>();
 
     public MqNativeListener(@NotNull final SsgActiveConnector ssgActiveConnector,
                                      final int concurrentId,
@@ -118,6 +123,14 @@ public abstract class MqNativeListener {
 
     void auditError(final String message) {
         auditError(message, null);
+    }
+
+    void addAuditDetail(final String message, @Nullable final Throwable exception) {
+        auditDetails.add(new AuditDetail(CONNECTOR_ERROR, new String[]{ssgActiveConnector.getType(), message}, exception));
+    }
+
+    void addAuditDetail(final String message) {
+        addAuditDetail(message, null);
     }
 
     /**
@@ -302,7 +315,9 @@ public abstract class MqNativeListener {
             long timeNow = System.currentTimeMillis();
             if ((lastAuditErrorTime + preventAuditFloodPeriod) < timeNow) {
                 lastAuditErrorTime = timeNow;
-                eventPublisher.publishEvent( event );
+                event.setAuditDetails(auditDetails);
+                eventPublisher.publishEvent(event);
+                auditDetails.clear();
             } else {
                 log(Level.INFO, MqNativeMessages.INFO_EVENT_NOT_PUBLISHED, event.getMessage());
             }
