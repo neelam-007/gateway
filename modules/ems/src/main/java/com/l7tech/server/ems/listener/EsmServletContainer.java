@@ -105,6 +105,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         } catch ( Exception e ) {
             logger.log( Level.WARNING, "Error installing Jetty logger.", e );        
         }
+        Resource.setDefaultUseCaches(false);
     }
 
     @Override
@@ -215,6 +216,8 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         initParams.put("org.mortbay.jetty.servlet.Default.cacheControl", "max-age=1800");        
         initParams.put("org.mortbay.jetty.servlet.SessionCookie", "ESMSESSIONID");
         initParams.put("org.mortbay.jetty.servlet.SessionURL", "none"); // disable url sessionid
+//        <Set class="org.eclipse.jetty.util.resource.Resource" name="defaultUseCaches">false</Set>
+
 
         // Add security handler
         final Filter securityFilter = new EsmSecurityFilter();
@@ -490,6 +493,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
                 Resource r=null;
                 try {
                     r = _resourceBase.addPath(pathInContext);
+
                 } catch (IOException e) {
                     logger.log( Level.INFO, "Missing resource.", e );
                 }
