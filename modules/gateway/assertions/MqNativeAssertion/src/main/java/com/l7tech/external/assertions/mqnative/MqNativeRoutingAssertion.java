@@ -12,6 +12,8 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.server.util.EntityUseUtils.EntityTypeOverride;
+import com.l7tech.server.util.EntityUseUtils.EntityUse;
 import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -357,6 +359,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     }
 
     @Override
+    @EntityUse(@EntityTypeOverride(type = EntityType.SSG_ACTIVE_CONNECTOR, description = "MQ Native Queue"))
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         if( ssgActiveConnectorId != null) {

@@ -40,6 +40,7 @@ import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
+import static com.l7tech.server.util.EntityUseUtils.getTypeName;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -399,7 +400,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                 }
                 if (entity == null)
                     result.addError(new PolicyValidatorResult.Error( assertion,
-                            "Assertion refers to a " + header.getType().getName() +
+                            "Assertion refers to a " + getTypeName( uea, header.getType() ) +
                                     " that cannot be located on this system", thrown));
             }
 
