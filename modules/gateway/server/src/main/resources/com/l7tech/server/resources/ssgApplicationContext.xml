@@ -495,6 +495,11 @@
                                 <value>db.replicationErrorAuditInterval</value>
                             </list>
                         </entry>
+                        <entry key="auditLookupPolicyEvaluator">
+                            <list>
+                                <value>audit.lookup.cache.messageSizeLimit</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>

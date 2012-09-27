@@ -14,11 +14,14 @@ import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.util.*;
 import com.whirlycott.cache.Cache;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
@@ -31,7 +34,7 @@ import java.util.logging.Logger;
  * Executes the audit lookup policy to retrieve audits.
  * <p/>
  */
-public class AuditLookupPolicyEvaluator  {
+public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
     private static final Logger logger = Logger.getLogger(AuditLookupPolicyEvaluator.class.getName());
 
     private final Config config;
@@ -41,6 +44,7 @@ public class AuditLookupPolicyEvaluator  {
     private final Cache auditRecordsIDCache; // guid -> oid for retrieved audit record
 //    private final AuditDetailPropertiesDomUnmarshaller detailUnmarshaller = new AuditDetailPropertiesDomUnmarshaller();
     private static final AtomicLong nextFakeOid = new AtomicLong(100);
+    private long messageLimitSize;
 
     public AuditLookupPolicyEvaluator(Config config, PolicyCache policyCache) {
         this.config = config;
@@ -51,6 +55,18 @@ public class AuditLookupPolicyEvaluator  {
         this.auditRecordsIDCache =
                 WhirlycacheFactory.createCache("AuditLookupPolicyIDCache", 100000, 120, WhirlycacheFactory.POLICY_LRU);
 
+        validatedConfig.setMinimumValue( ServerConfigParams.PARAM_AUDIT_LOOKUP_CACHE_MESSAGE_LIMIT_SIZE, 0);
+        validatedConfig.setMaximumValue( ServerConfigParams.PARAM_AUDIT_LOOKUP_CACHE_MESSAGE_LIMIT_SIZE, Long.MAX_VALUE);
+        this.messageLimitSize = this.validatedConfig.getLongProperty( ServerConfigParams.PARAM_AUDIT_LOOKUP_CACHE_MESSAGE_LIMIT_SIZE, 10485760);  // 10MB
+
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        String propertyName = evt.getPropertyName();
+        if (propertyName != null && propertyName.equals( ServerConfigParams.PARAM_AUDIT_LOOKUP_CACHE_MESSAGE_LIMIT_SIZE)) {
+            this.messageLimitSize = this.validatedConfig.getLongProperty( ServerConfigParams.PARAM_AUDIT_LOOKUP_CACHE_MESSAGE_LIMIT_SIZE, 10485760);
+        }
     }
 
     private String loadAuditSinkPolicyGuid() {
@@ -89,7 +105,13 @@ public class AuditLookupPolicyEvaluator  {
     }
 
 
-    private void makeAuditRecords(PolicyEnforcementContext context){
+    /**
+     *
+     * @param context policy context containing the query results
+     * @return a map of audit records with messages too large to save in the cache
+     */
+    private Map<String , AuditRecord> makeAuditRecords(PolicyEnforcementContext context){
+        Map<String , AuditRecord> largeMessageAudits = new HashMap <String , AuditRecord>();
         try {
 
             final String prefix = "recordQuery";
@@ -97,7 +119,7 @@ public class AuditLookupPolicyEvaluator  {
             Object sizeObj = context.getVariable(prefix + ".queryresult.count");
             List<AuditRecord> records = new ArrayList<AuditRecord> ();
             if((Integer)sizeObj == 0){
-                return ;
+                return largeMessageAudits;
             }
 
             Object[] id_var = (Object[])context.getVariable(prefix + ".id");
@@ -176,18 +198,25 @@ public class AuditLookupPolicyEvaluator  {
 
                     Long oid = (Long)auditRecordsIDCache.retrieve(id);
                     record.setOid(oid== null? nextFakeOid.incrementAndGet():oid);
-                    auditRecordsCache.store(id,record);
+                    if(messageLimitSize > 0L && (requestLength > messageLimitSize || responseLength > messageLimitSize)){
+                        auditRecordsIDCache.store(id,oid);
+                        largeMessageAudits.put(id, record);
+                    }else{
+                        auditRecordsCache.store(id,record);
+                    }
                 }
 
                 records.add(record);
             }
-            makeAuditDetails(context);
+            makeAuditDetails(context,largeMessageAudits);
 
         } catch (NoSuchVariableException e) {
             logger.warning("Error creating audit records, some fields not present: "+e.getMessage());
         } catch (ClassCastException e){
             logger.warning("Error creating audit records, field type mismatch: "+e.getMessage());
         }
+
+        return largeMessageAudits;
 
     }
         
@@ -217,7 +246,7 @@ public class AuditLookupPolicyEvaluator  {
                 AuditRecordGuidHeader header;
 
                 // try getting id from audit records
-                AuditRecord record = getAuditRecordFromCache(id);
+                AuditRecord record = getAuditRecordFromCache(id,null);
                 Long oid ;
                 if(record == null ){
                     Object get  = auditRecordsIDCache.retrieve(id);
@@ -267,7 +296,7 @@ public class AuditLookupPolicyEvaluator  {
         return new ArrayList<AuditRecordHeader>();
     }
 
-    private void makeAuditDetails(PolicyEnforcementContext context) {
+    private void makeAuditDetails(PolicyEnforcementContext context, Map<String , AuditRecord> largeAuditMessages) {
         String prefix = "detailQuery";
         Integer numDetails = 0;
         try {
@@ -313,7 +342,11 @@ public class AuditLookupPolicyEvaluator  {
                 detail.setComponentId(componentId);
                 detail.setOid(ordinal);
 
-                AuditRecord record = getAuditRecordFromCache(audit_oid);
+                AuditRecord record = getAuditRecordFromCache(audit_oid,largeAuditMessages);
+                if(record == null){
+                    logger.warning("Error creating audit record id: "+audit_oid);
+                    continue;
+                }
                 detail.setAuditRecord(record);
                 Set<AuditDetail> details = record.getDetails();
                 details.add(detail);
@@ -327,7 +360,7 @@ public class AuditLookupPolicyEvaluator  {
     }
 
     public AuditRecord findByGuid(final String guid) throws FindException{
-        AuditRecord record = getAuditRecordFromCache(guid);
+        AuditRecord record = getAuditRecordFromCache(guid,null);
         if(record !=null)
             return record;
 
@@ -350,8 +383,8 @@ public class AuditLookupPolicyEvaluator  {
             if(assertionStatus != AssertionStatus.NONE){
                 throw new FindException("Audit Lookup Policy Failed");
             }
-            makeAuditRecords(context);
-            record = getAuditRecordFromCache(guid);
+            Map<String , AuditRecord> largeAudits = makeAuditRecords(context);
+            record = getAuditRecordFromCache(guid,largeAudits);
             return record;
 
         } catch (Exception e) {
@@ -441,9 +474,9 @@ public class AuditLookupPolicyEvaluator  {
         final int maxRecords = validatedConfig.getIntProperty( ServerConfigParams.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
         final List<String> auditsToRetrieve = new ArrayList<String>();
         for(String guid: auditRecordIds){
-            AuditRecord record = getAuditRecordFromCache(guid);
+            AuditRecord record = getAuditRecordFromCache(guid,null);
             if(record !=null && record.getSignature()!=null)
-                returnMap.put(guid,record.computeSignatureDigest());
+                returnMap.put(guid, record.computeSignatureDigest());
             else if(auditsToRetrieve.size()< maxRecords)
                 auditsToRetrieve.add(guid);
         }
@@ -476,7 +509,7 @@ public class AuditLookupPolicyEvaluator  {
             makeAuditRecords(context);
 
             for(String guid: auditsToRetrieve){
-                AuditRecord record = getAuditRecordFromCache(guid);
+                AuditRecord record = getAuditRecordFromCache(guid,null);
                 if(record !=null && record.getSignature()!=null){
                     returnMap.put(guid,record.computeSignatureDigest());
                 }
@@ -490,8 +523,12 @@ public class AuditLookupPolicyEvaluator  {
         }
     }
 
-    private AuditRecord getAuditRecordFromCache(String guid){
-        return (AuditRecord)auditRecordsCache.retrieve(guid);
+    private AuditRecord getAuditRecordFromCache(String guid, @Nullable Map<String , AuditRecord> otherSource){
+        Object get = auditRecordsCache.retrieve(guid);
+        if(otherSource!= null && get == null){
+            return otherSource.get(guid);
+        }
+        return (AuditRecord)get;
     }
 
 }
