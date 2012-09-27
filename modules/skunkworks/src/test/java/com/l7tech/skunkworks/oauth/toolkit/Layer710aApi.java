@@ -76,7 +76,6 @@ public class Layer710aApi extends DefaultApi10a {
         final String url = "https://" + gatewayHost + ":8443/auth/oauth/v1/authorize?state=authorized&oauth_token=" + requestToken;
         final GenericHttpRequestParams authenticateParams = new GenericHttpRequestParams(new URL(url));
         authenticateParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
-        authenticateParams.setPasswordAuthentication(passwordAuthentication);
         final GenericHttpRequest authenticateRequest = client.createRequest(HttpMethod.GET, authenticateParams);
         final GenericHttpResponse authenticateResponse = authenticateRequest.getResponse();
         final String authenticateResponseBody = authenticateResponse.getAsString(false, Integer.MAX_VALUE);

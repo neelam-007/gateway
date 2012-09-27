@@ -404,6 +404,10 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
                 throw new DuplicateParameterException(entry.getKey(), new ArrayList<String>(entry.getValue()), "Duplicate oauth parameter detected");
             }
         }
+        // token is required if there is a verifier
+        if (sortedParameters.containsKey(OAUTH_VERIFIER) && !sortedParameters.containsKey(OAUTH_TOKEN)) {
+            throw new MissingRequiredParameterException(OAUTH_TOKEN, "Missing required oauth parameter");
+        }
         // callback is required if there is no token
         if (!sortedParameters.containsKey(OAUTH_TOKEN) && !sortedParameters.containsKey(OAUTH_CALLBACK)) {
             throw new MissingRequiredParameterException(OAUTH_CALLBACK, "Missing required oauth parameter");
@@ -425,7 +429,6 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
                 throw new InvalidParameterException(OAUTH_CALLBACK, foundCallback, OAUTH_CALLBACK + " is invalid: " + foundCallback);
             }
         }
-
         // timestamp must be positive integer
         final String foundTimestamp = sortedParameters.get(OAUTH_TIMESTAMP).iterator().next();
         final Option<Integer> option = ConversionUtils.getTextToIntegerConverter().call(foundTimestamp);

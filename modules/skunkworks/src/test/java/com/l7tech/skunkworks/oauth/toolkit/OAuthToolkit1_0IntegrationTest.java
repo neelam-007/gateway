@@ -411,6 +411,50 @@ public class OAuthToolkit1_0IntegrationTest {
         assertEquals("oauth_token is invalid or expired", responseBody);
     }
 
+    @Test
+    @BugNumber(13124)
+    public void tokenEndpointNoVerifier() throws Exception {
+        final Map<String, String> parameters = createDefaultAccessTokenParameters();
+        parameters.remove("oauth_verifier");
+        final GenericHttpResponse response = createAccessTokenEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Invalid oauth parameters", responseBody);
+    }
+
+    @Test
+    @BugNumber(13124)
+    public void requestTokenEndpointWithToken() throws Exception {
+        final Map<String, String> parameters = createDefaultRequestTokenParameters();
+        parameters.put("oauth_token", "shouldnotbehere");
+        final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Invalid oauth parameters", responseBody);
+    }
+
+    @Test
+    @BugNumber(13124)
+    public void tokenEndpointVerifierWithoutToken() throws Exception {
+        final Map<String, String> parameters = createDefaultAccessTokenParameters();
+        parameters.remove("oauth_token");
+        final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Missing oauth_token", responseBody);
+    }
+
+    @Test
+    @BugNumber(13124)
+    public void protectedResourceEndpointWithVerifier() throws Exception {
+        final Map<String, String> parameters = createDefaultProtectedResourceParameters();
+        parameters.put("oauth_verifier", "shouldnotbehere");
+        final GenericHttpResponse response = createProtectedResourceEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Invalid oauth parameters", responseBody);
+    }
+
     private GenericHttpRequest createAccessTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(ACCESS_TOKEN_ENDPOINT));
         params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());

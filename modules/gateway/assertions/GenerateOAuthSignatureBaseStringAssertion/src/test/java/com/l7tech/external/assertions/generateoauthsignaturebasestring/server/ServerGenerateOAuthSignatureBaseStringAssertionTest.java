@@ -668,11 +668,12 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         setParamsForAuthRequestToken(assertion);
         assertion.setOauthToken(null);
         assertion.setOauthCallback("oob");
+        assertion.setOauthVerifier(null);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
 
         final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3Dfirst%26oauth_callback%3Doob%26oauth_consumer_key%3Ddpf43f3p2l4k3l03%26" +
                 "oauth_nonce%3Dstubgeneratednonce%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1000%26" +
-                "oauth_verifier%3D473f82d3%26oauth_version%3D1.0%26p%3Dmiddle%26z%3Dlast";
+                "oauth_version%3D1.0%26p%3Dmiddle%26z%3Dlast";
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
@@ -1445,6 +1446,23 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_PARAMETER));
         assertEquals("Invalid oauth_timestamp: -1", (String) policyContext.getVariable("oauth.error"));
+    }
+
+    /**
+     * You can't have a verifier without a token.
+     */
+    @Test
+    @BugNumber(13124)
+    public void verifierWithoutToken() throws Exception {
+        setParamsForAuthRequestToken(assertion);
+        assertion.setOauthToken(null);
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
+        assertEquals("Missing oauth_token", (String) policyContext.getVariable("oauth.error"));
     }
 
     private void assertContextVariablesDoNotExist(final String... names) throws NoSuchVariableException {
