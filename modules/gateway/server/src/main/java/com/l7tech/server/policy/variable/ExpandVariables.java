@@ -189,6 +189,7 @@ public final class ExpandVariables {
         "com.l7tech.server.policy.variable.SecurePasswordSelector",
         "com.l7tech.server.policy.variable.SecureConversationSessionSelector",
         "com.l7tech.server.policy.variable.BuildVersionContext$BuildVersionContextSelector",
+        "com.l7tech.server.policy.variable.ListSelector",
         "com.l7tech.server.policy.variable.KerberosAuthorizationDataSelector",
         "com.l7tech.server.policy.variable.DateTimeSelector",
         "com.l7tech.server.policy.variable.FeedbackSelector",
