@@ -18,10 +18,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -61,13 +58,13 @@ public class OAuthToolkitIntegrationTest {
         final Map<String, String> params = buildClientParams();
         final String clientIdentity = params.get(CLIENT_IDENT);
 
-        store(params);
+        store("client", params);
 
         final OAuthClient client = getClient(clientIdentity);
         assertDefaultValues(clientIdentity, client);
 
         // restore initial state
-        deleteClient(clientIdentity);
+        delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
     @Test
@@ -75,19 +72,19 @@ public class OAuthToolkitIntegrationTest {
         // must first store a client
         final Map<String, String> clientParams = buildClientParams();
         final String clientIdentity = clientParams.get(CLIENT_IDENT);
-        store(clientParams);
+        store("client", clientParams);
 
         final Map<String, String> keyParams = buildKeyParams(OOB, OOB, ALL);
         final String clientKey = keyParams.get(CLIENT_KEY);
         final String expiration = keyParams.get(EXPIRATION);
         keyParams.put(CLIENT_IDENT, clientIdentity);
-        store(keyParams);
+        store("client", keyParams);
 
         final ClientKey key = getKey(clientKey);
         assertDefaultValues(clientIdentity, clientKey, expiration, key);
 
         // restore initial state
-        deleteClient(clientIdentity);
+        delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
     /**
@@ -99,19 +96,19 @@ public class OAuthToolkitIntegrationTest {
         // must first store a client
         final Map<String, String> clientParams = buildClientParams();
         final String clientIdentity = clientParams.get(CLIENT_IDENT);
-        store(clientParams);
+        store("client", clientParams);
 
         final Map<String, String> keyParams = buildKeyParams("", OOB, ALL);
         final String clientKey = keyParams.get(CLIENT_KEY);
         final String expiration = keyParams.get(EXPIRATION);
         keyParams.put(CLIENT_IDENT, clientIdentity);
-        store(keyParams);
+        store("client", keyParams);
 
         final ClientKey key = getKey(clientKey);
         assertDefaultValues(clientIdentity, clientKey, expiration, key);
 
         // restore initial state
-        deleteClient(clientIdentity);
+        delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
     /**
@@ -123,19 +120,19 @@ public class OAuthToolkitIntegrationTest {
         // must first store a client
         final Map<String, String> clientParams = buildClientParams();
         final String clientIdentity = clientParams.get(CLIENT_IDENT);
-        store(clientParams);
+        store("client", clientParams);
 
         final Map<String, String> keyParams = buildKeyParams(OOB, "", ALL);
         final String clientKey = keyParams.get(CLIENT_KEY);
         final String expiration = keyParams.get(EXPIRATION);
         keyParams.put(CLIENT_IDENT, clientIdentity);
-        store(keyParams);
+        store("client", keyParams);
 
         final ClientKey key = getKey(clientKey);
         assertDefaultValues(clientIdentity, clientKey, expiration, key);
 
         // restore initial state
-        deleteClient(clientIdentity);
+        delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
     /**
@@ -147,19 +144,19 @@ public class OAuthToolkitIntegrationTest {
         // must first store a client
         final Map<String, String> clientParams = buildClientParams();
         final String clientIdentity = clientParams.get(CLIENT_IDENT);
-        store(clientParams);
+        store("client", clientParams);
 
         final Map<String, String> keyParams = buildKeyParams(OOB, OOB, "");
         final String clientKey = keyParams.get(CLIENT_KEY);
         final String expiration = keyParams.get(EXPIRATION);
         keyParams.put(CLIENT_IDENT, clientIdentity);
-        store(keyParams);
+        store("client", keyParams);
 
         final ClientKey key = getKey(clientKey);
         assertDefaultValues(clientIdentity, clientKey, expiration, key);
 
         // restore initial state
-        deleteClient(clientIdentity);
+        delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
     @Test
@@ -169,7 +166,7 @@ public class OAuthToolkitIntegrationTest {
         final String clientKey = params.get(CLIENT_KEY);
         final String expiration = params.get(EXPIRATION);
 
-        store(params);
+        store("client", params);
 
         final OAuthClient client = getClient(clientIdentity);
         assertDefaultValues(clientIdentity, client);
@@ -177,7 +174,7 @@ public class OAuthToolkitIntegrationTest {
         assertDefaultValues(clientIdentity, clientKey, expiration, key);
 
         // restore initial state
-        deleteClient(clientIdentity);
+        delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
     /**
@@ -191,7 +188,7 @@ public class OAuthToolkitIntegrationTest {
         final String clientKey = params.get(CLIENT_KEY);
         final String expiration = params.get(EXPIRATION);
 
-        store(params);
+        store("client", params);
 
         final OAuthClient client = getClient(clientIdentity);
         assertDefaultValues(clientIdentity, client);
@@ -199,7 +196,7 @@ public class OAuthToolkitIntegrationTest {
         assertDefaultValues(clientIdentity, clientKey, expiration, key);
 
         // restore initial state
-        deleteClient(clientIdentity);
+        delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
     /**
@@ -213,7 +210,7 @@ public class OAuthToolkitIntegrationTest {
         final String clientKey = params.get(CLIENT_KEY);
         final String expiration = params.get(EXPIRATION);
 
-        store(params);
+        store("client", params);
 
         final OAuthClient client = getClient(clientIdentity);
         assertDefaultValues(clientIdentity, client);
@@ -221,7 +218,7 @@ public class OAuthToolkitIntegrationTest {
         assertDefaultValues(clientIdentity, clientKey, expiration, key);
 
         // restore initial state
-        deleteClient(clientIdentity);
+        delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
     /**
@@ -235,7 +232,7 @@ public class OAuthToolkitIntegrationTest {
         final String clientKey = params.get(CLIENT_KEY);
         final String expiration = params.get(EXPIRATION);
 
-        store(params);
+        store("client", params);
 
         final OAuthClient client = getClient(clientIdentity);
         assertDefaultValues(clientIdentity, client);
@@ -243,7 +240,7 @@ public class OAuthToolkitIntegrationTest {
         assertDefaultValues(clientIdentity, clientKey, expiration, key);
 
         // restore initial state
-        deleteClient(clientIdentity);
+        delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
     @Test
@@ -252,7 +249,7 @@ public class OAuthToolkitIntegrationTest {
         final Map<String, String> storeParams = buildClientAndKeyParams(OOB, OOB, ALL);
         final String clientIdentity = storeParams.get(CLIENT_IDENT);
         final String clientKey = storeParams.get(CLIENT_KEY);
-        store(storeParams);
+        store("client", storeParams);
 
         final ClientKey beforeUpdate = getKey(clientKey);
         assertDefaultValues(clientIdentity, clientKey, storeParams.get(EXPIRATION), beforeUpdate);
@@ -266,7 +263,7 @@ public class OAuthToolkitIntegrationTest {
         assertEquals("test", afterUpdate.getEnvironment());
 
         // restore initial state
-        deleteClient(clientIdentity);
+        delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
     /**
@@ -280,7 +277,7 @@ public class OAuthToolkitIntegrationTest {
         final String clientIdentity = storeParams.get(CLIENT_IDENT);
         final String clientKey = storeParams.get(CLIENT_KEY);
         final String expiration = storeParams.get(EXPIRATION);
-        store(storeParams);
+        store("client", storeParams);
 
         final ClientKey beforeUpdate = getKey(clientKey);
         assertDefaultValues(clientIdentity, clientKey, expiration, beforeUpdate);
@@ -292,7 +289,7 @@ public class OAuthToolkitIntegrationTest {
         assertDefaultValues(clientIdentity, clientKey, expiration, afterUpdate);
 
         // restore initial state
-        deleteClient(clientIdentity);
+        delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
     /**
@@ -306,7 +303,7 @@ public class OAuthToolkitIntegrationTest {
         final String clientIdentity = storeParams.get(CLIENT_IDENT);
         final String clientKey = storeParams.get(CLIENT_KEY);
         final String expiration = storeParams.get(EXPIRATION);
-        store(storeParams);
+        store("client", storeParams);
 
         final ClientKey beforeUpdate = getKey(clientKey);
         assertDefaultValues(clientIdentity, clientKey, expiration, beforeUpdate);
@@ -318,7 +315,7 @@ public class OAuthToolkitIntegrationTest {
         assertDefaultValues(clientIdentity, clientKey, expiration, afterUpdate);
 
         // restore initial state
-        deleteClient(clientIdentity);
+        delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
     /**
@@ -332,7 +329,7 @@ public class OAuthToolkitIntegrationTest {
         final String clientIdentity = storeParams.get(CLIENT_IDENT);
         final String clientKey = storeParams.get(CLIENT_KEY);
         final String expiration = storeParams.get(EXPIRATION);
-        store(storeParams);
+        store("client", storeParams);
 
         final ClientKey beforeUpdate = getKey(clientKey);
         assertDefaultValues(clientIdentity, clientKey, expiration, beforeUpdate);
@@ -344,7 +341,54 @@ public class OAuthToolkitIntegrationTest {
         assertDefaultValues(clientIdentity, clientKey, expiration, afterUpdate);
 
         // restore initial state
-        deleteClient(clientIdentity);
+        delete(CLIENT_IDENT, clientIdentity, "client");
+    }
+
+    @Test
+    public void storeToken() throws Exception {
+        final Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        final String token = UUID.randomUUID().toString();
+        final Map<String, String> storeParams = new HashMap<String, String>();
+        storeParams.put("callback", "oob");
+        storeParams.put("client_key", OAUTH_TOOLKIT_INTEGRATION_TEST);
+        storeParams.put("client_name", OAUTH_TOOLKIT_INTEGRATION_TEST);
+        storeParams.put("expiration", String.valueOf(calendar.getTimeInMillis()));
+        storeParams.put("resource_owner", USER);
+        storeParams.put("scope", "test_scope");
+        storeParams.put("secret", UUID.randomUUID().toString());
+        storeParams.put("token", token);
+
+        store("token", storeParams);
+
+        final String tokenXml = get("token", token, "https://" + BASE_URL + ":8443/oauth/tokenstore/getTemp");
+        assertFalse(tokenXml.isEmpty());
+
+        delete("temp_token", token, "token");
+    }
+
+    @Test
+    @BugNumber(13149)
+    public void storeTokenWithEscapeChars() throws Exception {
+        final Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        final String token = UUID.randomUUID().toString();
+        final Map<String, String> storeParams = new HashMap<String, String>();
+        storeParams.put("callback", "http://localhost:8080/callback?p1=a&p2=b");
+        storeParams.put("client_key", OAUTH_TOOLKIT_INTEGRATION_TEST);
+        storeParams.put("client_name", OAUTH_TOOLKIT_INTEGRATION_TEST);
+        storeParams.put("expiration", String.valueOf(calendar.getTimeInMillis()));
+        storeParams.put("resource_owner", USER);
+        storeParams.put("scope", "test_scope");
+        storeParams.put("secret", UUID.randomUUID().toString());
+        storeParams.put("token", token);
+
+        store("token", storeParams);
+
+        final String tokenXml = get("token", token, "https://" + BASE_URL + ":8443/oauth/tokenstore/getTemp");
+        assertFalse(tokenXml.isEmpty());
+
+        delete("temp_token", token, "token");
     }
 
     private void assertDefaultValues(final String clientIdentity, final OAuthClient client) {
@@ -371,8 +415,8 @@ public class OAuthToolkitIntegrationTest {
         assertEquals(USER, key.getCreatedBy());
     }
 
-    private void store(final Map<String, String> parameters) throws Exception {
-        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/clientstore/store"));
+    private void store(final String type, final Map<String, String> parameters) throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/" + type + "store/store"));
         params.setSslSocketFactory(SSLUtil.getSSLSocketFactoryWithKeyManager());
         params.setPasswordAuthentication(passwordAuthentication);
         params.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
@@ -445,30 +489,34 @@ public class OAuthToolkitIntegrationTest {
         return params;
     }
 
-    private void deleteClient(final String clientIdentity) throws Exception {
-        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/clientstore/delete"));
+    private void delete(final String paramName, final String paramValue, final String type) throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/" + type + "store/delete"));
         params.setSslSocketFactory(SSLUtil.getSSLSocketFactoryWithKeyManager());
         params.setPasswordAuthentication(passwordAuthentication);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
-        request.addParameter(CLIENT_IDENT, clientIdentity);
+        request.addParameter(paramName, paramValue);
 
         final GenericHttpResponse response = request.getResponse();
 
         assertEquals(200, response.getStatus());
-        assertEquals("1 client(s) deleted", new String(IOUtils.slurpStream(response.getInputStream())));
+        assertEquals("1 " + type + "(s) deleted", new String(IOUtils.slurpStream(response.getInputStream())));
+    }
+
+    private String get(final String paramName, final String paramValue, final String endpoint) throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(endpoint));
+        params.setSslSocketFactory(SSLUtil.getSSLSocketFactoryWithKeyManager());
+        params.setPasswordAuthentication(passwordAuthentication);
+        final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
+        request.addParameter(paramName, paramValue);
+
+        final GenericHttpResponse response = request.getResponse();
+
+        assertEquals(200, response.getStatus());
+        return new String(IOUtils.slurpStream(response.getInputStream()));
     }
 
     private ClientKey getKey(final String clientKey) throws Exception {
-        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/clientstore/getKey"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactoryWithKeyManager());
-        params.setPasswordAuthentication(passwordAuthentication);
-        final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
-        request.addParameter(CLIENT_KEY, clientKey);
-
-        final GenericHttpResponse response = request.getResponse();
-
-        assertEquals(200, response.getStatus());
-        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        final String responseBody = get(CLIENT_KEY, clientKey, "https://" + BASE_URL + ":8443/oauth/clientstore/getKey");
         final Document document = XmlUtil.parse(responseBody);
         final ClientKey key = new ClientKey();
         key.setClientIdentity(getValue(document, "/values/value/client_ident"));
@@ -486,16 +534,7 @@ public class OAuthToolkitIntegrationTest {
     }
 
     private OAuthClient getClient(final String clientIdentity) throws Exception {
-        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/clientstore/get"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactoryWithKeyManager());
-        params.setPasswordAuthentication(passwordAuthentication);
-        final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
-        request.addParameter(CLIENT_IDENT, clientIdentity);
-
-        final GenericHttpResponse response = request.getResponse();
-
-        assertEquals(200, response.getStatus());
-        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        final String responseBody = get(CLIENT_IDENT, clientIdentity, "https://" + BASE_URL + ":8443/oauth/clientstore/get");
         final Document document = XmlUtil.parse(responseBody);
         final OAuthClient client = new OAuthClient();
         client.setClientIdentity(getValue(document, "/values/value/client_ident"));
