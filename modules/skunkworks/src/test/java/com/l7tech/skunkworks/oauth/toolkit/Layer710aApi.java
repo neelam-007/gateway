@@ -5,6 +5,7 @@ import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.GenericHttpResponse;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.util.IOUtils;
 import org.scribe.builder.api.DefaultApi10a;
 import org.scribe.model.Token;
 
@@ -52,7 +53,6 @@ public class Layer710aApi extends DefaultApi10a {
         final GenericHttpResponse grantResponse = authorize(requestToken, passwordAuthentication);
         assertEquals(200, grantResponse.getStatus());
         final String asString = grantResponse.getAsString(false, Integer.MAX_VALUE);
-        System.out.println(asString);
         if (oob) {
             final String verifier = getVerifierFromHtml(asString);
             System.out.println("Received verifier: " + verifier);

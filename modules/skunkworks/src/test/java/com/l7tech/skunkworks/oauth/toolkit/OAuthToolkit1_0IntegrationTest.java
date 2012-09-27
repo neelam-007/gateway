@@ -399,6 +399,18 @@ public class OAuthToolkit1_0IntegrationTest {
         assertEquals("Invalid oauth_timestamp: abc", responseBody);
     }
 
+    @Test
+    @BugNumber(13117)
+    public void tokenEndpointInvalidToken() throws Exception {
+        final Map<String, String> parameters = createDefaultAccessTokenParameters();
+        parameters.put("oauth_token", "invalid");
+        parameters.put("oauth_signature", "invalidTokenSignature");
+        final GenericHttpResponse response = createAccessTokenEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(401, response.getStatus());
+        assertEquals("oauth_token is invalid or expired", responseBody);
+    }
+
     private GenericHttpRequest createAccessTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(ACCESS_TOKEN_ENDPOINT));
         params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
@@ -498,6 +510,7 @@ public class OAuthToolkit1_0IntegrationTest {
         oauthParameters.put("oauth_consumer_key", OTK_CLIENT_CONSUMER_KEY);
         oauthParameters.put("oauth_timestamp", "1000000000");
         oauthParameters.put("oauth_token", "testToken");
+        oauthParameters.put("oauth_verifier", "testVerifier");
         oauthParameters.put("oauth_version", "1.0");
         return oauthParameters;
     }
