@@ -96,7 +96,9 @@ public class ExecuteRoutingStrategyAssertion extends AbstractAdaptiveLoadBalanci
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.LONG_NAME, "Execute Routing Strategy Assertion");
-        meta.put(AssertionMetadata.DESCRIPTION, "Retrieve the Routing Strategy from defined Routing Strategy Prefix, acquire available route destination, and set the route destination to Output Variable Name.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Retrieve the Routing Strategy from defined Routing Strategy Prefix, " +
+                "acquire available route destination, and set the route destination to route variable name. A empty Feedback List will be created to " +
+                "store the feedback data.");
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"policyLogic"});
 
