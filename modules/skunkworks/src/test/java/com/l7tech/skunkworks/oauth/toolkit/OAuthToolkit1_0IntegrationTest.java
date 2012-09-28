@@ -455,6 +455,41 @@ public class OAuthToolkit1_0IntegrationTest {
         assertEquals("Invalid oauth parameters", responseBody);
     }
 
+    @Test
+    public void authorizeEndpoint() throws Exception {
+        final String requestToken = getRequestTokenFromEndpoint().get("oauth_token");
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT + "?oauth_token=" + requestToken));
+        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+        assertEquals(200, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertTrue(responseBody.contains("sessionID"));
+    }
+
+    @Test
+    public void authorizeEndpointNoToken() throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT));
+        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+        assertEquals(200, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertTrue(responseBody.contains("The session has expired"));
+    }
+
+    @Test
+    @BugNumber(13112)
+    public void authorizeEndpointDuplicateToken() throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT + "?oauth_token=one&oauth_token=two"));
+        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+        assertEquals(400, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals("Duplicate oauth_token parameter", responseBody);
+    }
+
     private GenericHttpRequest createAccessTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(ACCESS_TOKEN_ENDPOINT));
         params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
