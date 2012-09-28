@@ -128,6 +128,12 @@ public class JdbcConnectionPoolManager implements InitializingBean {
             return new Pair<ComboPooledDataSource, String>(null, null);
         }
 
+        if (!jdbcConnectionManager.isDriverClassSupported(connection.getDriverClass())) {
+            String errMsg = "Jdbc Driver class " + connection.getDriverClass() + " is not supported.";
+            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL,  connection.getName(), errMsg);
+            return new Pair<ComboPooledDataSource, String>(null, errMsg);
+        }
+
         // Check if a data source associated with such connection name already exists or not.
         DataSource ds;
         try {

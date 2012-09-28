@@ -5,6 +5,8 @@ import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 
+import java.util.List;
+
 /**
  * An interface of managing JDBC Connection Entity
  *
@@ -19,4 +21,20 @@ public interface JdbcConnectionManager extends EntityManager<JdbcConnection, Ent
      * @throws FindException: thrown when errors finding the JDBC Connection entity.
      */
     JdbcConnection getJdbcConnection(String connectionName) throws FindException;
+
+    /**
+     * To retrieve a list of driver classes which the JDBC Query Assertion is allowed to use.
+     *
+     * @return a list of support driver classes.
+     */
+    List<String> getSupportedDriverClass();
+
+    /**
+     * See if the jdbc drive Class is supported, the jdbcConnection.driverClass.whiteList under serverConfig.properties
+     * defined all the supported jdbc driver class.
+     *
+     * @param driverClass The driver class
+     * @return True if the jdbc driver class is supported, False if the jdbc driver class is not supported.
+     */
+    boolean isDriverClassSupported(String driverClass);
 }

@@ -26,6 +26,7 @@ import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -65,6 +66,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     private JdbcConnection connection;
     private final Map<String, Object> additionalPropMap = new TreeMap<String,Object>();
     private AbstractTableModel additionalPropertyTableModel;
+    private List<String> driverClassWhiteList = new ArrayList<String>();
 
     private boolean confirmed;
     private PermissionFlags flags;
@@ -179,9 +181,16 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
 
         PasswordGuiUtils.configureOptionalSecurePasswordField(passwordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
+        final JdbcAdmin admin = getJdbcConnectionAdmin();
+        if (admin != null) {
+            driverClassWhiteList = admin.getPropertySupportedDriverClass();
+        }
+
         modelToView();
         enableOrDisableButtons();
         Utilities.setMinimumSize( this );
+
+
     }
 
     private void modelToView() {
@@ -235,6 +244,9 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         if (!currentDriverClass.isEmpty() && !driverClassList.contains(currentDriverClass)) {
             driverClassList.add(currentDriverClass);
         }
+
+        // Compute the intersection of the two lists.
+        driverClassList.retainAll(driverClassWhiteList);
 
         // Sort the driver class list
         Collections.sort(driverClassList);
@@ -533,6 +545,11 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
             DialogDisplayer.showMessageDialog( JdbcConnectionPropertiesDialog.this, resources.getString( "warning.minpoolsize.greaterthan.maxpoolsize" ),
                     resources.getString( "dialog.title.error.saving.conn" ), JOptionPane.WARNING_MESSAGE, null);
             return;
+        } else if (!isDriverClassSupported()) {
+            DialogDisplayer.showMessageDialog( JdbcConnectionPropertiesDialog.this,
+                    MessageFormat.format(resources.getString( "warning.message.invalid.driverClass" ), driverClassComboBox.getSelectedItem()),
+                    resources.getString( "dialog.title.error.saving.conn" ), JOptionPane.WARNING_MESSAGE, null);
+            return;
         }
 
         // Assign new attributes to the connect
@@ -570,5 +587,23 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         int min = (Integer) minPoolSizeSpinner.getValue();
         int max = (Integer) maxPoolSizeSpinner.getValue();
         return min > max;
+    }
+
+    /**
+     * Check to see the defined driver class is supported by the Gateway
+     * @return True when support, False when not support
+     */
+    private boolean isDriverClassSupported() {
+        final JdbcAdmin admin = getJdbcConnectionAdmin();
+        if (admin != null) {
+            if (driverClassComboBox.getSelectedItem() != null) {
+                String driverClass = ((String)driverClassComboBox.getSelectedItem()).trim();
+                if (!driverClass.isEmpty()) {
+                    return admin.isDriverClassSupported(((String)driverClassComboBox.getSelectedItem()).trim());
+                }
+            }
+            return false;
+        }
+        return true;
     }
 }

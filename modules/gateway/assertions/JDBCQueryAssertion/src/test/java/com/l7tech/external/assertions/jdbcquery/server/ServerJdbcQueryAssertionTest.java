@@ -3,14 +3,17 @@ package com.l7tech.external.assertions.jdbcquery.server;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.TestAudit;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.TestLicenseManager;
-import com.l7tech.server.jdbc.JdbcQueryUtils;
-import com.l7tech.server.jdbc.JdbcQueryingManager;
-import com.l7tech.server.jdbc.MockJdbcDatabaseManager;
+import com.l7tech.server.jdbc.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
@@ -50,6 +53,8 @@ public class ServerJdbcQueryAssertionTest {
     private PolicyEnforcementContext peCtx;
 
     private JdbcQueryAssertion assertion;
+    
+    private JdbcConnectionManager connectionManager;
 
     @Before
     public void setUp() throws Exception {
@@ -57,6 +62,12 @@ public class ServerJdbcQueryAssertionTest {
         peCtx = makeContext("<myrequest/>", "<myresponse/>");
         //create assertion
         assertion = new JdbcQueryAssertion();
+
+        final JdbcConnection connection = new JdbcConnection();
+        connection.setName("mockDb");
+        connection.setDriverClass("com.mysql.jdbc.Driver");
+
+        connectionManager = new JdbcConnectionManagerStub(connection);
     }
 
     /**
@@ -287,6 +298,71 @@ public class ServerJdbcQueryAssertionTest {
     @Mock
     private JdbcQueryingManager jdbcQueryingManager;
 
+    @BugNumber(12457)
+    @Test
+    public void testInvalidDriverClass() throws Exception {
+        MockitoAnnotations.initMocks(this);
+
+        final String connectionName = "TestConnection";
+        final JdbcConnection connection = new JdbcConnection();
+        connection.setName(connectionName);
+        connection.setDriverClass("test.driver.class");
+
+        final JdbcConnectionManager cm = new JdbcConnectionManagerStub(connection);
+        JdbcConnectionPoolManager cpm = new JdbcConnectionPoolManager(cm);
+        cpm.afterPropertiesSet();
+        final JdbcQueryingManager qm = new JdbcQueryingManagerImpl(cpm);
+
+        final AssertionRegistry assertionRegistry = new AssertionRegistry();
+        assertionRegistry.afterPropertiesSet();
+        serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+        final GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("jdbcQueryingManager", qm);
+            put("jdbcConnectionManager", cm);
+        }}));
+        serverPolicyFactory.setApplicationContext(applicationContext);
+
+        assertion.setConnectionName(connectionName);
+        ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        AssertionStatus result = sass.checkRequest(peCtx);
+        assertEquals(AssertionStatus.FAILED, result);
+
+    }
+
+    @BugNumber(12457)
+    @Test
+    public void testDriverClassNotFound() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        final String connectionName = "TestConnection";
+        final JdbcConnection connection = new JdbcConnection();
+        connection.setName(connectionName);
+        connection.setDriverClass("test.driver.class");
+
+        final JdbcConnectionManager cm = new JdbcConnectionManagerStub();
+        JdbcConnectionPoolManager cpm = new JdbcConnectionPoolManager(cm);
+        cpm.afterPropertiesSet();
+        final JdbcQueryingManager qm = new JdbcQueryingManagerImpl(cpm);
+
+        final AssertionRegistry assertionRegistry = new AssertionRegistry();
+        assertionRegistry.afterPropertiesSet();
+        serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+        final GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("assertionRegistry", assertionRegistry);
+            put("policyFactory", serverPolicyFactory);
+            put("jdbcQueryingManager", qm);
+            put("jdbcConnectionManager", cm);
+        }}));
+        serverPolicyFactory.setApplicationContext(applicationContext);
+
+        assertion.setConnectionName(connectionName);
+        ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        AssertionStatus result = sass.checkRequest(peCtx);
+        assertEquals(AssertionStatus.FAILED, result);
+
+    }
+
     @BugNumber(12512)
     @Test
     public void testXmlResult() throws Exception {
@@ -299,6 +375,7 @@ public class ServerJdbcQueryAssertionTest {
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
             put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
         }}));
         serverPolicyFactory.setApplicationContext(applicationContext);
         assertion.setSqlQuery("SELECT * FROM myTest");
@@ -325,6 +402,7 @@ public class ServerJdbcQueryAssertionTest {
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
             put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
         }}));
         serverPolicyFactory.setApplicationContext(applicationContext);
         sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
@@ -348,6 +426,7 @@ public class ServerJdbcQueryAssertionTest {
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
             put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
         }}));
         serverPolicyFactory.setApplicationContext(applicationContext);
         sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
@@ -463,6 +542,7 @@ public class ServerJdbcQueryAssertionTest {
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
             put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
         }}));
         serverPolicyFactory.setApplicationContext(applicationContext);
         assertion.setSqlQuery("SELECT * FROM myTest");
@@ -475,6 +555,7 @@ public class ServerJdbcQueryAssertionTest {
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
             put("jdbcQueryingManager", jdbcQueryingManager);
+            put("jdbcConnectionManager", connectionManager);
         }}));
         serverPolicyFactory.setApplicationContext(applicationContext);
         ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);

@@ -206,6 +206,11 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
         return driverClassList;
     }
 
+    @Override
+    public List<String> getPropertySupportedDriverClass() {
+        return jdbcConnectionManager.getSupportedDriverClass();
+    }
+
     /**
      * Get a property, default maximum number of records returned by a query from the global cluser properties.  If failed
      * to get its value, then use the original maximum number of records returned by a query defined in this interface.
@@ -239,5 +244,9 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
         return config.getIntProperty(ServerConfigParams.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE, ORIGINAL_C3P0_BASIC_POOL_CONFIG_MAXPOOLSIZE);
     }
 
+    @Override
+    public boolean isDriverClassSupported(String driverClass) {
+        return jdbcConnectionManager.isDriverClassSupported(driverClass);
+    }
 
 }
