@@ -71,11 +71,11 @@ class AsyncHttpRequestHandler extends SimpleChannelUpstreamHandler {
     }
 
     private void submitRequest(final MessageEvent e) {
-        final boolean keepAlive = isKeepAlive(request);
+        final boolean keepAlive = false && isKeepAlive(request); // TODO reenable keepalives after issue debugged
         final HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
         final String correlationId = generateCorrelationId();
         PendingAsyncRequest pendingRequest = new PendingAsyncRequest(correlationId, listenerInfo, response, e.getChannel(), keepAlive);
-        listenerInfo.getTransportModule().submitRequestToMessageProcessor(pendingRequest, request, new ByteBuffersInputStream(requestBody), (InetSocketAddress) e.getRemoteAddress());
+        listenerInfo.getTransportModule().submitRequestToMessageProcessor(pendingRequest, request, response, new ByteBuffersInputStream(requestBody), (InetSocketAddress) e.getRemoteAddress());
     }
 
     private String generateCorrelationId() {

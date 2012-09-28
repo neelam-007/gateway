@@ -25,7 +25,9 @@ import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.*;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -251,7 +253,7 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
         return SUPPORTED_SCHEMES;
     }
 
-    void submitRequestToMessageProcessor(@NotNull PendingAsyncRequest pendingRequest, @NotNull HttpRequest httpRequest, @NotNull InputStream bodyInputStream, @Nullable InetSocketAddress clientAddress) {
+    void submitRequestToMessageProcessor(@NotNull PendingAsyncRequest pendingRequest, @NotNull HttpRequest httpRequest, @NotNull HttpResponse httpResponse, @NotNull InputStream bodyInputStream, @Nullable InetSocketAddress clientAddress) {
         final AsyncHttpListenerInfo listenerInfo = pendingRequest.getListenerInfo();
         final SsgConnector connector = listenerInfo.getConnector();
         long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L);
@@ -266,15 +268,28 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
             Message response = new Message();
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
 
-            String ctypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
+            String pinnedCtypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
+            ContentTypeHeader pinnedCtype = pinnedCtypeStr == null ? null : ContentTypeHeader.create(pinnedCtypeStr);
 
-            ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.create(ctypeStr);
+            final ContentTypeHeader ctype;
+            if (pinnedCtype != null) {
+                // Hardwired override content type on this connector
+                ctype = pinnedCtype;
+            } else {
+                String ctypeStr = httpRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE);
+                if (ctypeStr != null) {
+                    ctype = ContentTypeHeader.parseValue(ctypeStr);
+                } else {
+                    ctype = ContentTypeHeader.OCTET_STREAM_DEFAULT;
+                }
+            }
+
             request.initialize(stashManagerFactory.createStashManager(), ctype, bodyInputStream);
 
             final InetSocketAddress serverAddress = listenerInfo.getBindAddress();
             URL requestUrl = new URL("http", serverAddress.getHostString(), serverAddress.getPort(), httpRequest.getUri());
             request.attachHttpRequestKnob(new NettyHttpRequestKnob(httpRequest, clientAddress, serverAddress, requestUrl));
-            response.attachHttpResponseKnob(new NettyHttpResponseKnob(pendingRequest));
+            response.attachHttpResponseKnob(new NettyHttpResponseKnob(httpResponse));
 
             context.setVariable("ahttp.correlationId", pendingRequest.getCorrelationId());
 
@@ -282,6 +297,8 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
                 request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
             }
 
+            final String correlationId = pendingRequest.getCorrelationId();
+            activeAsyncRequests.put(correlationId, pendingRequest);
             AssertionStatus status = messageProcessor.processMessage(context);
 
             if (status != AssertionStatus.NONE) {
@@ -297,7 +314,6 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
             } else {
                 // Response not initialized -- this is the common case.  Register an async request, set a timer task
                 // to clean it up if it goes unclaimed for too long, and return without invoking the listener.
-                final String correlationId = pendingRequest.getCorrelationId();
                 if (logger.isLoggable(Level.FINE))
                     logger.log(Level.FINE, "Registering pending async response with correlation ID " + pendingRequest.getCorrelationId());
                 // TODO use pool of timers rather than having a single shared timer thread trying to do it all
@@ -311,7 +327,6 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
                         }
                     }
                 }, ASYNC_RESPONSE_TIMEOUT_MILLIS);
-                activeAsyncRequests.put(correlationId, pendingRequest);
             }
 
         } catch (IOException e) {

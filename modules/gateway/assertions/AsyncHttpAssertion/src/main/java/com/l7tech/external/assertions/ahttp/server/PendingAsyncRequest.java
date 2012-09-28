@@ -15,10 +15,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jetbrains.annotations.NotNull;
 
-import javax.servlet.http.Cookie;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,7 +36,6 @@ public class PendingAsyncRequest {
     private final HttpResponse httpResponse;
     private final Channel channel;
     private final boolean keepAlive;
-    private final List<Cookie> cookiesToSend = new ArrayList<Cookie>(); // TODO synchronization required?
 
     /**
      *
@@ -70,21 +66,8 @@ public class PendingAsyncRequest {
         return listenerInfo;
     }
 
-    public boolean isKeepAlive() {
-        return keepAlive;
-    }
-
     public HttpResponse getHttpResponse() {
         return httpResponse;
-    }
-
-    public Channel getChannel() {
-        return channel;
-    }
-
-    // TODO synchronization?  avoid providing raw access?
-    public List<Cookie> getCookiesToSend() {
-        return cookiesToSend;
     }
 
     void errorAndClose(HttpResponseStatus status, String message) {

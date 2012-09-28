@@ -12,8 +12,10 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
 import javax.servlet.http.Cookie;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SET_COOKIE;
 
@@ -21,19 +23,18 @@ import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SET_COOKIE;
  *
  */
 public class NettyHttpResponseKnob extends AbstractHttpResponseKnob {
-    private final PendingAsyncRequest pendingRequest;
     private final HttpResponse httpResponse;
+    private final List<Cookie> cookiesToSend = new ArrayList<Cookie>();
 
 
-    public NettyHttpResponseKnob(PendingAsyncRequest pendingRequest) {
-        this.pendingRequest = pendingRequest;
-        this.httpResponse = pendingRequest.getHttpResponse();
+    public NettyHttpResponseKnob(HttpResponse httpResponse) {
+        this.httpResponse = httpResponse;
         statusToSet = HttpResponseStatus.OK.getCode();
     }
 
     @Override
     public void addCookie(HttpCookie cookie) {
-        pendingRequest.getCookiesToSend().add(CookieUtils.toServletCookie(cookie));
+        cookiesToSend.add(CookieUtils.toServletCookie(cookie));
     }
 
     /**
@@ -52,7 +53,7 @@ public class NettyHttpResponseKnob extends AbstractHttpResponseKnob {
         }
 
         CookieEncoder cookieEncoder = new CookieEncoder(true);
-        for ( final Cookie cookie : pendingRequest.getCookiesToSend() ) {
+        for ( final Cookie cookie : cookiesToSend ) {
             org.jboss.netty.handler.codec.http.Cookie c = new DefaultCookie(cookie.getName(), cookie.getValue());
             c.setDomain(cookie.getDomain());
             c.setComment(cookie.getComment());

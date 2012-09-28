@@ -40,7 +40,7 @@ public class SubmitAsyncHttpResponseAssertion extends MessageTargetableAssertion
             return meta;
 
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.ahttp.server.AsyncHttpTransportModule");
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "routing" });
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
