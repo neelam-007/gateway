@@ -7,7 +7,7 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
 *
@@ -23,7 +23,15 @@ class AsyncHttpListenerInfo implements Closeable {
         this.connector = connector;
         this.bindSockAddr = bindSockAddr;
         // TODO better thread pool management
-        bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
+
+        final int CORE_POOL_SIZE = 50;
+        final int MAX_POOL_SIZE = 200;
+        long KEEPALIVE_SECONDS = 5L * 60L;
+        BlockingQueue<Runnable> requestQueue = new LinkedBlockingQueue<Runnable>(MAX_POOL_SIZE * 2);
+        ExecutorService requestExecutor = new ThreadPoolExecutor(CORE_POOL_SIZE, MAX_POOL_SIZE, KEEPALIVE_SECONDS, TimeUnit.SECONDS, requestQueue);
+
+        bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), requestExecutor));
+        bootstrap.setOption("child.keepAlive", true);
         bootstrap.setPipelineFactory(new AsyncHttpInboundPipelineFactory(this));
     }
 

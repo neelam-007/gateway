@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
 
 /**
@@ -110,8 +111,10 @@ public class PendingAsyncRequest {
                 httpResponse.setHeader("Content-Type", mk.getOuterContentType().getFullValue());
                 // TODO large message support
                 httpResponse.setContent(ChannelBuffers.copiedBuffer(IOUtils.slurpStream(mk.getEntireMessageBodyAsInputStream(destroyAsRead))));
-                if (keepAlive)
+                if (keepAlive) {
                     httpResponse.setHeader(CONTENT_LENGTH, httpResponse.getContent().readableBytes());
+                    httpResponse.setHeader(CONNECTION, "keep-alive");
+                }
             } catch (IOException e) {
                 logger.log(Level.INFO, "I/O error reading async response: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 errorAndClose(HttpResponseStatus.BAD_GATEWAY, "Error reading async response: " + ExceptionUtils.getMessage(e));

@@ -12,7 +12,7 @@
 		<artifact name="IcapAntivirusScannerAssertion" type="aar" ext="aar" conf="master"/>
 	</publications>
 	<dependencies>
-		<dependency org="org.jboss.netty" name="netty" rev="3.4.5.Final" force="true" conf="core"/>
+		<dependency org="org.jboss.netty" name="netty" rev="3.5.7.Final" force="true" conf="core"/>
         <dependency org="ch.mimo" name="netty-icap" rev="1.0.1.GA" force="true" conf="core"/>
         <dependency name="layer7-modular-assertions" rev="latest.integration"
                     conf="compile->compile;runtime->runtime;test->test"/>
