@@ -274,6 +274,10 @@ public class RestServiceInfoPanel extends WizardStepPanel {
         for(int i = 0; i < serviceDescriptorsTableModel.getRowCount(); i++){
             String value = (String)serviceDescriptorsTableModel.getValueAt(i, 2);
             String serviceName = (String) serviceDescriptorsTableModel.getValueAt(i, 1);
+            if(serviceName.trim().isEmpty()){
+                DialogDisplayer.display(new JOptionPane("Service Name Missing"), getOwner().getContentPane(), "Service Name Missing",  null);
+                return false;
+            }
             if(serviceName.trim().length() > 255){
                 DialogDisplayer.display(new JOptionPane("Service Name exceed maximum allowable number of characters (255)"), getOwner().getContentPane(), "Invalid Service Name",  null);
                 return false;
