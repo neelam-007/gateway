@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.net.URL;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Integration tests for the OAuth Tool Kit (oauth version 2.0). Each test requires the SSG to be running with an installed OTK that includes
@@ -19,7 +20,10 @@ import static org.junit.Assert.*;
  */
 @Ignore
 public class OAuthToolkit2_0IntegrationTest {
+    //LOCALHOST
     private static final String BASE_URL = "localhost";
+    private static final String CONSUMER_KEY = "182637fd-8b6b-4dca-9192-3d1e23d556b5";
+    private static final String CALLBACK = "https://" + BASE_URL + ":8443/oauth_callback";
     private GenericHttpClient client;
 
     @Before
@@ -55,5 +59,17 @@ public class OAuthToolkit2_0IntegrationTest {
         assertEquals(200, response.getStatus());
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertTrue(responseBody.contains("Access was denied"));
+    }
+
+    @Test
+    @BugNumber(13155)
+    public void authorizeWithInvalidCookie() throws Exception {
+        final GenericHttpResponse response = new Layer720Api(BASE_URL).authorize(CONSUMER_KEY, CALLBACK, null, "invalid");
+
+        assertEquals(401, response.getStatus());
+        final String body = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertFalse(body.contains("verifier"));
+        assertTrue(body.contains("Authentication failed"));
+        assertEquals("l7otk2a=", response.getHeaders().getFirstValue("Set-Cookie"));
     }
 }

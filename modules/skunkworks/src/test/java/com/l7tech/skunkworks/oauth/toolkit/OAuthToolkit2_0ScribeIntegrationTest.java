@@ -7,6 +7,8 @@ import org.scribe.builder.ServiceBuilder;
 import org.scribe.model.*;
 import org.scribe.oauth.OAuthService;
 
+import java.net.PasswordAuthentication;
+
 import static org.junit.Assert.*;
 
 /**
@@ -62,7 +64,7 @@ public class OAuthToolkit2_0ScribeIntegrationTest {
     public void happyPath() throws Exception {
         // Obtain the Authorization Code
         System.out.println("Fetching Authorization Code...");
-        final String authCode = api.authorize(CONSUMER_KEY, CALLBACK);
+        final String authCode = api.authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null);
         System.out.println("Received Authorization Code: " + authCode);
 
         // Trade the Request Token and Verifier for the Access Token

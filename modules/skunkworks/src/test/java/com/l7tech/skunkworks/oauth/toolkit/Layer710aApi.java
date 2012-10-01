@@ -1,11 +1,7 @@
 package com.l7tech.skunkworks.oauth.toolkit;
 
-import com.l7tech.common.http.GenericHttpRequest;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.util.IOUtils;
 import org.scribe.builder.api.DefaultApi10a;
 import org.scribe.model.Token;
 
@@ -71,6 +67,14 @@ public class Layer710aApi extends DefaultApi10a {
      * @return GenericHttpResponse the auth response.
      */
     public GenericHttpResponse authorize(final String requestToken, final PasswordAuthentication passwordAuthentication) throws Exception {
+        return authorize(requestToken, passwordAuthentication, null);
+    }
+
+    public GenericHttpResponse authorize(final String requestToken, final String cookie) throws Exception {
+        return authorize(requestToken, null, cookie);
+    }
+
+    private GenericHttpResponse authorize(final String requestToken, final PasswordAuthentication passwordAuthentication, final String cookie) throws Exception {
         final CommonsHttpClient client = new CommonsHttpClient();
 
         final String url = "https://" + gatewayHost + ":8443/auth/oauth/v1/authorize?state=authorized&oauth_token=" + requestToken;
@@ -87,7 +91,12 @@ public class Layer710aApi extends DefaultApi10a {
                 ":8443/auth/oauth/v1/authorize?sessionID=" + sessionId + "&action=Grant"));
         grantParams.setFollowRedirects(true);
         grantParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
-        grantParams.setPasswordAuthentication(passwordAuthentication);
+        if (passwordAuthentication != null) {
+            grantParams.setPasswordAuthentication(passwordAuthentication);
+        }
+        if (cookie != null) {
+            grantParams.addExtraHeader(new GenericHttpHeader("Cookie", "l7otk1a=" + cookie));
+        }
         final GenericHttpRequest grantedRequest = client.createRequest(HttpMethod.GET, grantParams);
         return grantedRequest.getResponse();
     }

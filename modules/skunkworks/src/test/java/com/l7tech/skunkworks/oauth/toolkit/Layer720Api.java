@@ -1,23 +1,14 @@
 package com.l7tech.skunkworks.oauth.toolkit;
 
-import com.l7tech.common.http.GenericHttpRequest;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.io.XmlUtil;
 import org.scribe.builder.api.DefaultApi20;
 import org.scribe.extractors.AccessTokenExtractor;
 import org.scribe.extractors.JsonTokenExtractor;
 import org.scribe.model.OAuthConfig;
 import org.scribe.model.Verb;
-import org.scribe.model.Verifier;
 import org.scribe.utils.OAuthEncoder;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
-import javax.xml.xpath.*;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 
@@ -69,7 +60,16 @@ public class Layer720Api extends DefaultApi20 {
         return authUrl.toString();
     }
 
-    public String authorize(final String consumerKey, final String callback) throws Exception {
+    public String authorizeAndRetrieve(final String consumerKey, final String callback, final PasswordAuthentication passwordAuthentication,
+                            final String cookie) throws Exception {
+        final GenericHttpResponse authResponse = authorize(consumerKey, callback, passwordAuthentication, cookie);
+        assertEquals(200, authResponse.getStatus());
+        final String authCode = authResponse.getAsString(false, Integer.MAX_VALUE);
+        assertFalse(authCode.isEmpty());
+        return authCode;
+    }
+
+    public GenericHttpResponse authorize(String consumerKey, String callback, PasswordAuthentication passwordAuthentication, String cookie) throws Exception {
         final CommonsHttpClient client = new CommonsHttpClient();
 
         final GenericHttpRequestParams sessionIdParams = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
@@ -85,14 +85,16 @@ public class Layer720Api extends DefaultApi20 {
         assertFalse(sessionId.isEmpty());
 
         final GenericHttpRequestParams authParams = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
-                ":8443/auth/oauth/v2/authorize?action=Grant&username=admin&password=password&sessionID=" + sessionId));
+                ":8443/auth/oauth/v2/authorize?action=Grant&sessionID=" + sessionId));
+        if (passwordAuthentication != null) {
+            authParams.setPasswordAuthentication(passwordAuthentication);
+        }
+        if (cookie != null) {
+            authParams.addExtraHeader(new GenericHttpHeader("Cookie", "l7otk2a=" + cookie));
+        }
         authParams.setFollowRedirects(true);
         authParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
         final GenericHttpRequest authRequest = client.createRequest(HttpMethod.GET, authParams);
-        final GenericHttpResponse authResponse = authRequest.getResponse();
-        assertEquals(200, authResponse.getStatus());
-        final String authCode = authResponse.getAsString(false, Integer.MAX_VALUE);
-        assertFalse(authCode.isEmpty());
-        return authCode;
+        return authRequest.getResponse();
     }
 }

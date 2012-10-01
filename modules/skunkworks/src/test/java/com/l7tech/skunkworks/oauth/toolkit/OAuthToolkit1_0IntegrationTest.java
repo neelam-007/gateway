@@ -37,6 +37,7 @@ public class OAuthToolkit1_0IntegrationTest {
     private static final String SIGNATURE = "zQQtKbwhcAcDnwzI8gg6f2tBHUQ="; // method = POST
     private static final String SIGNATURE_GET = "y9ktczNolnPv+DlvlWjijIEcrfY="; // method = GET
     private static final String SIGNATURE_EMPTY_TOKEN = "pMitXg+kdUV34iFDDV6UnuhWkps=";
+    private static final String SIGNATURE_OOB = "Ggy6504qjHwaGG/lBJrRGSBDd+0=";
 
     //aleeoauth.l7tech.com
 //    private static final String BASE_URL = "aleeoauth.l7tech.com";
@@ -465,6 +466,8 @@ public class OAuthToolkit1_0IntegrationTest {
         assertEquals(200, response.getStatus());
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertTrue(responseBody.contains("sessionID"));
+        assertTrue(responseBody.contains("username"));
+        assertTrue(responseBody.contains("password"));
     }
 
     @Test
@@ -488,6 +491,26 @@ public class OAuthToolkit1_0IntegrationTest {
         assertEquals(400, response.getStatus());
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals("Duplicate oauth_token parameter", responseBody);
+    }
+
+    @Test
+    @BugNumber(13155)
+    public void authorizeWithInvalidCookie() throws Exception {
+        // first get a valid request token
+        final Map<String, String> params = createDefaultRequestTokenParameters();
+        params.put("oauth_callback", "oob");
+        params.put("oauth_signature", SIGNATURE_OOB);
+        final GenericHttpResponse requestTokenResponse = createRequestTokenEndpointRequest(params).getResponse();
+        assertEquals(200, requestTokenResponse.getStatus());
+        final String requestToken = extractParamsFromString(requestTokenResponse.getAsString(false, Integer.MAX_VALUE)).get("oauth_token");
+
+        // try to authorize the token using an invalid cookie
+        final GenericHttpResponse authorizeResponse = new Layer710aApi(BASE_URL).authorize(requestToken, "invalid");
+        assertEquals(401, authorizeResponse.getStatus());
+        final String authorizeResponseBody = new String(IOUtils.slurpStream(authorizeResponse.getInputStream()));
+        assertFalse(authorizeResponseBody.contains("verifier"));
+        assertTrue(authorizeResponseBody.contains("Authentication failed"));
+        assertEquals("l7otk1a=", authorizeResponse.getHeaders().getFirstValue("Set-Cookie"));
     }
 
     private GenericHttpRequest createAccessTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
