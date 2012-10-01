@@ -471,14 +471,15 @@ public class OAuthToolkit1_0IntegrationTest {
     }
 
     @Test
+    @BugNumber(13180)
     public void authorizeEndpointNoToken() throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT));
         params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
         final GenericHttpResponse response = request.getResponse();
-        assertEquals(200, response.getStatus());
+        assertEquals(400, response.getStatus());
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
-        assertTrue(responseBody.contains("The session has expired"));
+        assertTrue(responseBody.contains("Missing oauth_token parameter"));
     }
 
     @Test
