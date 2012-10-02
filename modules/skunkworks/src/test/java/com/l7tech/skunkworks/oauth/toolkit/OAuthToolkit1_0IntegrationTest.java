@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Integration tests for the OAuth Tool Kit. Each test requires the SSG to be running with an installed OTK that includes
@@ -38,6 +39,7 @@ public class OAuthToolkit1_0IntegrationTest {
     private static final String SIGNATURE_GET = "y9ktczNolnPv+DlvlWjijIEcrfY="; // method = GET
     private static final String SIGNATURE_EMPTY_TOKEN = "pMitXg+kdUV34iFDDV6UnuhWkps=";
     private static final String SIGNATURE_OOB = "Ggy6504qjHwaGG/lBJrRGSBDd+0=";
+    private static final String SIGNATURE_INVALID_TOKEN = "TnSzZi5/MQr9dTIBxrH9Jei0DhQ=";
 
     //aleeoauth.l7tech.com
 //    private static final String BASE_URL = "aleeoauth.l7tech.com";
@@ -409,6 +411,30 @@ public class OAuthToolkit1_0IntegrationTest {
         final GenericHttpResponse response = createAccessTokenEndpointRequest(parameters).getResponse();
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(401, response.getStatus());
+        assertEquals("oauth_token is invalid or expired", responseBody);
+    }
+
+    @Test
+    @BugNumber(13117)
+    public void authorizeEndpointInvalidToken() throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT + "?oauth_token=10056aed-2b18-43bd-ac48-3e8b43560031"));
+        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(401, response.getStatus());
+        assertEquals("oauth_token is invalid or expired", responseBody);
+    }
+
+    @Test
+    @BugNumber(13117)
+    public void protectedResourceEndpointInvalidToken() throws Exception {
+        final Map<String, String> parameters = createDefaultProtectedResourceParameters();
+        parameters.put("oauth_token", "invalid");
+        parameters.put("oauth_signature", SIGNATURE_INVALID_TOKEN);
+        final GenericHttpResponse response = createProtectedResourceEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        //assertEquals(400, response.getStatus());
         assertEquals("oauth_token is invalid or expired", responseBody);
     }
 
