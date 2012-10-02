@@ -443,6 +443,7 @@ public class AssociatedLogsTable extends JTable {
                 JComponent tempButtonComponent = buildButtonComponent(button);
                 final String escapedValue = wrapInHtml(getCellEditorValue());
                 JLabel textLabel = new JLabel(escapedValue, SwingConstants.LEFT);
+                textLabel.setVerticalAlignment(SwingConstants.TOP);
                 textLabel.setPreferredSize(new Dimension(getLogColumnModel().getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX).getWidth() - 45, 25));
                 JPanel messagePane = new JPanel();
                 messagePane.setBackground(getColour());
