@@ -173,7 +173,7 @@ public class RestServiceInfoPanel extends WizardStepPanel {
                         "Gateway URI: http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]/ssg/twitter/";
             }
             else {
-                description = "Specify the location to a WADL file and click Load to import the REST service endpoint(s).  The Gateway URI must be unique will mimic the Resource Base URL.<br/>" +
+                description = "Specify the location to a WADL file and click Load to import the REST service endpoint(s).  The Gateway URI must be unique and will mimic the Resource Base URL unless overridden.<br/>" +
                         "<br/>* denotes required fields.<br/>" +
                         "<br/>Example:<br/>" +
                         "Location: c:\\services\\wadl\\echo_service.wadl (Windows)<br/>" +
