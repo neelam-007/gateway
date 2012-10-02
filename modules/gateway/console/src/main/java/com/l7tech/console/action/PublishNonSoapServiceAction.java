@@ -50,7 +50,7 @@ public class PublishNonSoapServiceAction extends SecureAction {
 
     @Override
     public String getName() {
-        return "Publish REST, Web API, or Other Service";
+        return "Publish Web API";
     }
 
     @Override
