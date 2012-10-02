@@ -540,6 +540,13 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         if (getSelectedDataType() == DataType.INTEGER) {
             String text = _expressionTextArea.getText();
 
+            if(Syntax.isAnyVariableReferenced(text)){
+                _expressionStatusLabel.setIcon(OK_ICON);
+                _expressionStatusLabel.setText("OK");
+                _okButton.setEnabled(!readOnly);
+                return;
+            }
+
             try{
                 Integer val = Integer.parseInt(text);
                 if(val <= Integer.MAX_VALUE && val >= Integer.MIN_VALUE)
