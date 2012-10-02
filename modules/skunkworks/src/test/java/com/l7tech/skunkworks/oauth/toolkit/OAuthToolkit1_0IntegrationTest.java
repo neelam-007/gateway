@@ -439,7 +439,7 @@ public class OAuthToolkit1_0IntegrationTest {
     public void tokenEndpointVerifierWithoutToken() throws Exception {
         final Map<String, String> parameters = createDefaultAccessTokenParameters();
         parameters.remove("oauth_token");
-        final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
+        final GenericHttpResponse response = createAccessTokenEndpointRequest(parameters).getResponse();
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
         assertEquals("Missing oauth_token", responseBody);
@@ -512,6 +512,63 @@ public class OAuthToolkit1_0IntegrationTest {
         assertFalse(authorizeResponseBody.contains("verifier"));
         assertTrue(authorizeResponseBody.contains("Authentication failed"));
         assertEquals("l7otk1a=", authorizeResponse.getHeaders().getFirstValue("Set-Cookie"));
+    }
+
+    @Test
+    @BugNumber(12868)
+    public void authorizeEndpointUnrecognizedOAuthQueryParameter() throws Exception {
+        final String requestToken = getRequestTokenFromEndpoint().get("oauth_token");
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT + "?oauth_token=" + requestToken + "&oauth_unrecognized=invalid"));
+        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+        assertEquals(400, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals("Invalid oauth parameter(s)", responseBody);
+    }
+
+    @Test
+    public void authorizeEndpointExtraNonOAuthParameter() throws Exception {
+        final String requestToken = getRequestTokenFromEndpoint().get("oauth_token");
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT + "?oauth_token=" + requestToken + "&test=okay"));
+        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+        assertEquals(200, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertTrue(responseBody.contains("sessionID"));
+        assertTrue(responseBody.contains("username"));
+        assertTrue(responseBody.contains("password"));
+    }
+
+    @Test
+    public void authorizeEndpointExtraOAuthParameter() throws Exception {
+        final String requestToken = getRequestTokenFromEndpoint().get("oauth_token");
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT + "?oauth_token=" + requestToken + "&oauth_version=1.0"));
+        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+        assertEquals(200, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertTrue(responseBody.contains("sessionID"));
+        assertTrue(responseBody.contains("username"));
+        assertTrue(responseBody.contains("password"));
+    }
+
+    @Test
+    @BugNumber(12868)
+    public void tokenEndpointUnrecognizedOAuthQueryParameter() throws Exception {
+        final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(ACCESS_TOKEN_ENDPOINT + "?oauth_unrecognized=invalid"));
+        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        requestParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
+        final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
+        for (final Map.Entry<String, String> entry : createDefaultAccessTokenParameters().entrySet()) {
+            request.addParameter(entry.getKey(), entry.getValue());
+        }
+        final GenericHttpResponse response = request.getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Query parameter oauth_unrecognized is not allowed", responseBody);
     }
 
     private GenericHttpRequest createAccessTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
