@@ -241,10 +241,6 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
 
         variableTreatmentCheckBox.setEnabled(Syntax.isOnlyASingleVariableReferenced(expr));
 
-        if(!variableTreatmentCheckBox.isEnabled()) {
-            variableTreatmentCheckBox.setSelected(false);
-        }
-
         boolean canOk = expr != null && expr.length() > 0;
 
         okButton.setEnabled(!isReadOnly() && canOk);
