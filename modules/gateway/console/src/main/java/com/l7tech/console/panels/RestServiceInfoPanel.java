@@ -287,7 +287,7 @@ public class RestServiceInfoPanel extends WizardStepPanel {
                 return false;
             }
             if(duplicate.contains(value)){
-                DialogDisplayer.display(new JOptionPane("Duplicate Gateway URL '" + value + "' found.  Please ensure all Gateway URLs are unique."), getOwner().getContentPane(), "Duplicate Gateway URL", null);
+                DialogDisplayer.display(new JOptionPane("Duplicate Gateway URI '" + value + "' found.  Please ensure all Gateway URIs are unique."), getOwner().getContentPane(), "Duplicate Gateway URL", null);
                 return false;
             }
             duplicate.add(value);
