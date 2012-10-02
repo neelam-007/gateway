@@ -25,7 +25,9 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -362,9 +364,8 @@ public class RestServiceInfoPanel extends WizardStepPanel {
                 DialogDisplayer.display(new JOptionPane("Specified file is not a WADL document."), getOwner().getContentPane(), "Invalid WADL", null);
                 return;
             }
-            for(int i = serviceDescriptorsTableModel.getRowCount(); i > 0; i--){
-                serviceDescriptorsTableModel.removeRow(0);
-            }
+
+            java.util.List<String[]> data = new ArrayList<String[]>();
             for(Node n = application.getFirstChild(); n != null; n = n.getNextSibling()){
                 if(n.getNodeType() == Node.ELEMENT_NODE && n.getLocalName().equals("resources") && n.hasAttributes()){
                     NamedNodeMap attributes = n.getAttributes();
@@ -377,13 +378,20 @@ public class RestServiceInfoPanel extends WizardStepPanel {
                             if(!path.isEmpty()){
                                 path = path.substring(1);
                             }
-                            serviceDescriptorsTableModel.addRow(new String[]{baseUrl, baseUrl, path});
+                            data.add(new String[]{baseUrl, baseUrl, path});
                         }
-                        catch(Exception e){
-
+                        catch(MalformedURLException e){
+                            DialogDisplayer.display(new JOptionPane("Invalid or malformed Resource Base URL '" + baseUrl + "' found in WADL."), getOwner().getContentPane(), "Malformed Resource URL", null);
+                            return;
                         }
                     }
                 }
+            }
+            for(int i = serviceDescriptorsTableModel.getRowCount(); i > 0; i--){
+                serviceDescriptorsTableModel.removeRow(0);
+            }
+            for(String[] d : data){
+                serviceDescriptorsTableModel.addRow(d);
             }
         } catch (Exception e) {
             DialogDisplayer.display(new JOptionPane("Unable to import WADL at specified location: " + location), getOwner().getContentPane(), "Error Importing WADL", null);
