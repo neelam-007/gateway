@@ -51,10 +51,15 @@ public class ServerComparisonAssertion extends AbstractServerAssertion<Compariso
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
         final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
 
-        final Object left = getValue( assertion.getExpression1(), vars, getAudit() );
+        Object left = getValue( assertion.getExpression1(), vars, getAudit() );
+
         if (left == null) {
-            logAndAudit( AssertionMessages.COMPARISON_NULL );
-            return AssertionStatus.FAILED;
+            if(!assertion.isTreatVariableAsExpression()) {
+                logAndAudit(AssertionMessages.COMPARISON_NULL);
+                return AssertionStatus.FAILED;
+            }
+
+            left = "";
         }
 
         final State state = makeState( left, vars );

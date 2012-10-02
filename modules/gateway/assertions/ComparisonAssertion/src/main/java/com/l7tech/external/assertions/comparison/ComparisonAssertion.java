@@ -44,6 +44,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
     private String leftValue;
     private Predicate[] predicates = new Predicate[0];
     private MultivaluedComparison multivaluedComparison = MultivaluedComparison.ALL;
+    private boolean treatVariableAsExpression = false;
     public static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.comparison.ComparisonAssertion");
 
     /**
@@ -103,6 +104,14 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         this.multivaluedComparison = multivaluedComparison == null ?
                 MultivaluedComparison.ALL :
                 multivaluedComparison;
+    }
+
+    public boolean isTreatVariableAsExpression() {
+        return treatVariableAsExpression;
+    }
+
+    public void setTreatVariableAsExpression(boolean treatVariableAsExpression) {
+        this.treatVariableAsExpression = treatVariableAsExpression;
     }
 
     private boolean check() {
@@ -234,7 +243,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         meta.put(DESCRIPTION, "Evaluate an expression against a series of rules during the runtime processing of a policy.");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
-        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.comparison.console.ComparisonAssertionAdvice");
 
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.comparison.console.ComparisonPropertiesDialog");
         meta.put(PROPERTIES_ACTION_NAME, "Compare Expression Properties");

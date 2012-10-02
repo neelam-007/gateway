@@ -10,6 +10,7 @@ import com.l7tech.external.assertions.comparison.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
@@ -40,6 +41,7 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
     private JButton removePredicateButton;
     private JPanel mainPanel;
     private JButton editPredicateButton;
+    private JCheckBox variableTreatmentCheckBox;
 
     private boolean ok;
 
@@ -145,6 +147,8 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         } ));
         multivaluedComboBox.setSelectedItem(assertion.getMultivaluedComparison());
 
+        variableTreatmentCheckBox.setSelected(assertion.isTreatVariableAsExpression());
+
         addPredicateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent event) {
@@ -229,10 +233,17 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         assertion.setExpression1(expressionField.getText());
         assertion.setMultivaluedComparison((MultivaluedComparison)multivaluedComboBox.getSelectedItem());
         assertion.setPredicates(newPreds.toArray(new Predicate[newPreds.size()]));
+        assertion.setTreatVariableAsExpression(variableTreatmentCheckBox.isSelected());
     }
 
     void enableButtons() {
         String expr = expressionField.getText();
+
+        variableTreatmentCheckBox.setEnabled(Syntax.isOnlyASingleVariableReferenced(expr));
+
+        if(!variableTreatmentCheckBox.isEnabled()) {
+            variableTreatmentCheckBox.setSelected(false);
+        }
 
         boolean canOk = expr != null && expr.length() > 0;
 
@@ -273,7 +284,6 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
             }
         });
     }
-
 
     private class PredicatesTableModel extends AbstractTableModel {
         @Override

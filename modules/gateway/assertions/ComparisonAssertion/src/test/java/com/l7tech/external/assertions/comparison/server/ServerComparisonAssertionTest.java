@@ -191,6 +191,20 @@ public class ServerComparisonAssertionTest {
     }
 
     @Test
+    @BugNumber(12677)
+    public void testNullLeftValueWithVariableAsExpression() throws Exception {
+        String comparisonValue = "shouldNotMatch";
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        ComparisonAssertion comp = new ComparisonAssertion();
+        comp.setExpression1("${nonexistent}");
+        comp.setPredicates(new BinaryPredicate(ComparisonOperator.EQ, comparisonValue, true, false));
+        comp.setTreatVariableAsExpression(true);
+        AssertionStatus stat = doit(context, comp);
+        assertEquals(AssertionStatus.FALSIFIED, stat);
+        testAudit.isAuditPresent(AssertionMessages.COMPARISON_NOT);
+    }
+
+    @Test
     public void testMultivaluedComparisonForDataTypes() throws Exception {
         final Object[] stringValues = new String[]{"12345", "12346"};
         doTestMultivalueComparisonForDataTypes(AssertionStatus.NONE, MultivaluedComparison.ALL, stringValues);
