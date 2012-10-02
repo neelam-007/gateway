@@ -134,7 +134,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_clientstore_server}/oauth/clientstore/get"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/get"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -343,7 +343,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/get"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/get"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -691,7 +691,7 @@
                     &lt;L7p:PolicyGuid stringValue="585c3a3d-8fd7-4337-8d91-46846bfc4194"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_clientstore_server}/oauth/clientstore/store"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/store"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -793,7 +793,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/revoke"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/revoke"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -846,7 +846,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/update"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/update"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -904,7 +904,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_clientstore_server}/oauth/clientstore/delete"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/delete"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -957,7 +957,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_clientstore_server}/oauth/clientstore/get"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/get"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1152,7 +1152,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_clientstore_server}/oauth/clientstore/update"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/update"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1217,7 +1217,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_clientstore_server}/oauth/clientstore/getKey"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/getKey"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1419,7 +1419,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_clientstore_server}/oauth/clientstore/revoke"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/revoke"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1575,7 +1575,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_clientstore_server}/oauth/clientstore/store"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/store"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1663,7 +1663,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_clientstore_server}/oauth/clientstore/getKey"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/getKey"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1810,7 +1810,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_clientstore_server}/oauth/clientstore/update"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/update"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;

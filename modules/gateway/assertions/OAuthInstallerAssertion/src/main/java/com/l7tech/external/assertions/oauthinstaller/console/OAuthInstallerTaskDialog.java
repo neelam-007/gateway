@@ -34,7 +34,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
     private JCheckBox oAuthManager;
     private JCheckBox oAuthStorage;
     private JCheckBox prefixResolutionURIsAndCheckBox;
-    private JTextField ma1TextField;
+    private JTextField installationPrefixTextField;
     private JTextField oAuthTextField;
     private JLabel otkVersionLabel;
     private JLabel parentFolderLabel;
@@ -144,8 +144,23 @@ public class OAuthInstallerTaskDialog extends JDialog {
                     "Initialization problem", JOptionPane.WARNING_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
             logger.warning(e.getMessage());
         }
+
+        prefixResolutionURIsAndCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableDisableComponents();
+            }
+        });
+        enableDisableComponents();
     }
 
+    private void enableDisableComponents() {
+        if (prefixResolutionURIsAndCheckBox.isSelected()) {
+            installationPrefixTextField.setEnabled(true);
+        } else {
+            installationPrefixTextField.setEnabled(false);
+        }
+    }
     private void onOK() {
         ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
 
@@ -174,12 +189,17 @@ public class OAuthInstallerTaskDialog extends JDialog {
         final OAuthInstallerAdmin admin = Registry.getDefault().getExtensionInterface(OAuthInstallerAdmin.class, null);
 
         try {
-            final Either<String,ArrayList> resultEither = doAsyncAdmin(
+            final Either<String, ArrayList> resultEither = doAsyncAdmin(
                     admin,
                     OAuthInstallerTaskDialog.this,
                     "OAuth Toolkit Installation",
                     "The selected components of the OAuth toolkit are being installed.",
-                    admin.installOAuthToolkit(bundlesToInstall, selectedFolderOid, oAuthTextField.getText().trim(), bundleMappings));
+                    admin.installOAuthToolkit(
+                            bundlesToInstall,
+                            selectedFolderOid,
+                            oAuthTextField.getText().trim(),
+                            bundleMappings,
+                            (prefixResolutionURIsAndCheckBox.isSelected()) ? installationPrefixTextField.getText() : null));
             if (resultEither.isRight()) {
                 final ArrayList right = resultEither.right();
 

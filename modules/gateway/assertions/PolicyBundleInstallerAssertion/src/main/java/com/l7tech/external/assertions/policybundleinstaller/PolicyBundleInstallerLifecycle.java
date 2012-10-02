@@ -13,6 +13,7 @@ import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
 import com.l7tech.server.util.ApplicationEventProxy;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
@@ -43,7 +44,8 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
         // process event
         final InstallPolicyBundleEvent bundleEvent = (InstallPolicyBundleEvent) applicationEvent;
         final BundleResolver bundleResolver = bundleEvent.getBundleResolver();
-        PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+        final PreBundleSavePolicyCallback savePolicyCallback = bundleEvent.getPreBundleSavePolicyCallback();
+        final PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, savePolicyCallback, new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
                 return serverMgmtAssertion.checkRequest(context);

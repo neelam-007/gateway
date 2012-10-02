@@ -413,11 +413,11 @@
                     &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth_tokenstore_server&quot;/&gt;
+                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_tokenstore_server&quot;/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth_clientstore_server&quot;/&gt;
+                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_clientstore_server&quot;/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:All&gt;
                     &lt;/wsp:Policy&gt;

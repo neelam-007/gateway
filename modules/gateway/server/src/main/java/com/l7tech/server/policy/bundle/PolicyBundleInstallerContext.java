@@ -19,12 +19,14 @@ public class PolicyBundleInstallerContext {
                                         long folderOid,
                                         @Nullable String installFolder,
                                         @NotNull Map<String, Object> contextMap,
-                                        @Nullable BundleMapping bundleMapping) {
+                                        @Nullable BundleMapping bundleMapping,
+                                        @Nullable String installationPrefix) {
         this.bundleInfo = bundleInfo;
         this.folderOid = folderOid;
         this.installFolder = installFolder;
         this.contextMap = contextMap;
         this.bundleMapping = bundleMapping;
+        this.installationPrefix = installationPrefix;
     }
 
     @NotNull
@@ -51,6 +53,16 @@ public class PolicyBundleInstallerContext {
         return bundleMapping;
     }
 
+    /**
+     * If not null, this returned value should be used to prefix each installed policy and each routing URI of
+     * each published service.
+     * @return installation prefix.
+     */
+    @Nullable
+    public String getInstallationPrefix() {
+        return installationPrefix;
+    }
+
     // - PRIVATE
 
     @NotNull
@@ -62,5 +74,7 @@ public class PolicyBundleInstallerContext {
     private final Map<String, Object> contextMap;
     @Nullable
     private final BundleMapping bundleMapping;
+    @Nullable
+    private final String installationPrefix;
 
 }

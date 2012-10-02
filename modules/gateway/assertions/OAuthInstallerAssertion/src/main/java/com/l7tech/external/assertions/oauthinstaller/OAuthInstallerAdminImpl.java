@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.oauthinstaller;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.event.InstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.*;
@@ -23,6 +24,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 
 import static com.l7tech.server.event.AdminInfo.find;
 
@@ -89,11 +91,12 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
      * All bundles in bundleNames MUST USE the same GUIDS for all policies which have the same name. The name of a policy
      * is unique on a Gateway. If the bundles contain the same policy with different guids the bundles will not install.
      *
-     * @param otkComponentId names of all bundles to install. Bundles may depend on each others items, but there is no
-     *                       install dependency order.
-     * @param folderOid      oid of the folder to install into.
-     * @param installFolder  if not null or empty, this folder will be the install into folder. It may already exist.
-     *                       If it does not exist it will be created.
+     * @param otkComponentId     names of all bundles to install. Bundles may depend on each others items, but there is no
+     *                           install dependency order.
+     * @param folderOid          oid of the folder to install into.
+     * @param installFolder      if not null or empty, this folder will be the install into folder. It may already exist.
+     *                           If it does not exist it will be created.
+     * @param installationPrefix prefix to version the installation with
      * @return Job ID, which will report on which bundles were installed.
      * @throws IOException for any problem installing. Installation is cancelled on the first error.
      */
@@ -102,12 +105,13 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     public JobId<ArrayList> installOAuthToolkit(@NotNull final Collection<String> otkComponentId,
                                                 final long folderOid,
                                                 @Nullable final String installFolder,
-                                                @NotNull final Map<String, BundleMapping> bundleMappings) throws OAuthToolkitInstallationException {
+                                                @NotNull final Map<String, BundleMapping> bundleMappings,
+                                                @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
 
         final FutureTask<ArrayList> future = new FutureTask<ArrayList>(find(false).wrapCallable(new Callable<ArrayList>() {
             @Override
             public ArrayList call() throws Exception {
-                return new ArrayList<String>(doInstallOAuthToolkit(otkComponentId, folderOid, installFolder, bundleMappings));
+                return new ArrayList<String>(doInstallOAuthToolkit(otkComponentId, folderOid, installFolder, bundleMappings, installationPrefix));
             }
         }));
 
@@ -125,7 +129,8 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     protected List<String> doInstallOAuthToolkit(@NotNull final Collection<String> otkComponentId,
                                                  final long folderOid,
                                                  @Nullable final String installFolder,
-                                                 @NotNull Map<String, BundleMapping> bundleMappings) throws OAuthToolkitInstallationException {
+                                                 @NotNull Map<String, BundleMapping> bundleMappings,
+                                                 @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
 
         //todo check version of bundle to ensure it's supported.
 
@@ -150,7 +155,52 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                 final InstallPolicyBundleEvent bundleEvent =
                                         new InstallPolicyBundleEvent(this, bundleResolver,
                                                 new PolicyBundleInstallerContext(
-                                                        bundleInfo, folderOid, installFolder, contextMap, bundleMappings.get(bundleId)));
+                                                        bundleInfo, folderOid, installFolder, contextMap, bundleMappings.get(bundleId), installationPrefix),
+                                                new PreBundleSavePolicyCallback() {
+                                                    @Override
+                                                    public void prePublishCallback(BundleInfo bundleInfo, String resourceType, Document writeablePolicyDoc) throws PolicyUpdateException {
+                                                        if (installationPrefix != null) {
+                                                            // if we have prefixed the installation, then we need to be able to update routing assertions to route to the
+                                                            // prefixed URIs
+
+                                                            // 1 - find routing URIs
+                                                            final List<Element> protectedUrls = PolicyUtils.findProtectedUrls(writeablePolicyDoc.getDocumentElement());
+                                                            for (Element protectedUrl : protectedUrls) {
+                                                                final String routingUrlValue = protectedUrl.getAttribute("stringValue");
+                                                                final String updatedHostValue = getUpdatedHostValue(installationPrefix, routingUrlValue);
+                                                                if (updatedHostValue != null) {
+                                                                    protectedUrl.setAttribute("stringValue", updatedHostValue);
+                                                                    logger.fine("Updated routing URL from '" + routingUrlValue + "' to '" + updatedHostValue + "'");
+                                                                }
+                                                            }
+
+                                                            // 2 - find context variables
+                                                            final List<Element> contextVariables = PolicyUtils.findContextVariables(writeablePolicyDoc.getDocumentElement());
+                                                            for (Element contextVariable : contextVariables) {
+                                                                final Element variableToSetElm;
+                                                                final Element base64ExpressionElm;
+                                                                try {
+                                                                    base64ExpressionElm = XmlUtil.findExactlyOneChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "Base64Expression");
+                                                                    variableToSetElm = XmlUtil.findExactlyOneChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "VariableToSet");
+                                                                } catch (TooManyChildElementsException e) {
+                                                                    throw new PolicyUpdateException("Problem finding variable value: " + ExceptionUtils.getMessage(e));
+                                                                } catch (MissingRequiredElementException e) {
+                                                                    throw new PolicyUpdateException("Problem finding variable value: " + ExceptionUtils.getMessage(e));
+                                                                }
+                                                                final String variableName = variableToSetElm.getAttribute("stringValue");
+                                                                if (!variableName.startsWith("host_")) {
+                                                                    final String base64Value = base64ExpressionElm.getAttribute("stringValue");
+                                                                    final String decodedValue = new String(HexUtils.decodeBase64(base64Value, true), Charsets.UTF8);
+                                                                    final String updatedHostValue = getUpdatedHostValue(installationPrefix, decodedValue);
+                                                                    if (updatedHostValue != null) {
+                                                                        base64ExpressionElm.setAttribute("stringValue", HexUtils.encodeBase64(HexUtils.encodeUtf8(updatedHostValue), true));
+                                                                        logger.fine("Updated context variable value from from '" + decodedValue + "' to '" + updatedHostValue + "'");
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                });
 
                                 spring.publishEvent(bundleEvent);
                                 if (!bundleEvent.isProcessed()) {
@@ -187,6 +237,61 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
 
         return installedBundles;
 
+    }
+
+    /**
+     * If the valueWithPossibleHost starts with a context variable that begins with 'host_', then update the value
+     * of the string to have the installationPrefix inserted after the varaible reference.
+     *
+     * @param installationPrefix prefix to insert
+     * @param valueWithPossibleHost value which may need to be udpated in a prefixed installation.
+     * @return Updated value. Null if no new value is needed.
+     */
+    @Nullable
+    protected static String getUpdatedHostValue(@NotNull final String installationPrefix,
+                                       @NotNull final String valueWithPossibleHost) {
+
+        final List<String> vars = Arrays.asList(Syntax.getReferencedNames(valueWithPossibleHost));
+        if (vars.size() == 1 && Syntax.getVariableExpression(vars.get(0)).equals(valueWithPossibleHost)) {
+            return null;
+        }
+
+        Matcher matcher = Syntax.regexPattern.matcher(valueWithPossibleHost);
+        List<Object> result = new ArrayList<Object>();
+
+        int previousMatchEndIndex = 0;
+        boolean hostVarFound = false;
+        while (matcher.find()) {
+            int matchingCount = matcher.groupCount();
+            if (matchingCount != 1) {
+                throw new IllegalStateException("Expecting 1 matching group, received: " + matchingCount);
+            }
+            final String preceedingText = valueWithPossibleHost.substring(previousMatchEndIndex, matcher.start());
+            //note if there is actually an empty space, we will preserve it, so no .trim() before .isEmpty()
+            if (!preceedingText.isEmpty()) result.add(valueWithPossibleHost.substring(previousMatchEndIndex, matcher.start()));
+
+            final String group = matcher.group(1);
+            if (group.startsWith("host_")) {
+                result.add(Syntax.getVariableExpression(group) + "/" + installationPrefix);
+                hostVarFound = true;
+            } else {
+                result.add(Syntax.getVariableExpression(group));
+            }
+
+            previousMatchEndIndex = matcher.end();
+        }
+        if (previousMatchEndIndex < valueWithPossibleHost.length())
+            result.add(valueWithPossibleHost.substring(previousMatchEndIndex, valueWithPossibleHost.length()));
+
+        if (!hostVarFound) {
+            return null;
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (Object o : result) {
+                sb.append(o);
+            }
+            return sb.toString();
+        }
     }
 
     @NotNull

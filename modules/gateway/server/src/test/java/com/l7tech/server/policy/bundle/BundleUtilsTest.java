@@ -2,12 +2,14 @@ package com.l7tech.server.policy.bundle;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.bundle.BundleInfo;
+import com.l7tech.util.DomUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.io.ByteArrayInputStream;
 import java.net.URL;
@@ -15,12 +17,11 @@ import java.util.*;
 
 import static org.junit.Assert.*;
 
-@Ignore("Resources not found on team city - need to investigate")
 public class BundleUtilsTest {
 
     @Test
     public void testGetBundleInfos() throws Exception {
-        final List<Pair<BundleInfo,String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), "/com/l7tech/server/policy/bundle/bundles/");
+        final List<Pair<BundleInfo,String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), "/com/l7tech/server/policy/bundle/bundles");
         assertNotNull(bundleInfos);
         assertEquals("Incorrect number of bundles found. Check if only 2 test bundles exist", 2, bundleInfos.size());
         for (Pair<BundleInfo, String> bundleInfo : bundleInfos) {
@@ -66,4 +67,22 @@ public class BundleUtilsTest {
         assertEquals("Unexpected JDBC Connection found", "OAuth", strings.get(0));
     }
 
+    /**
+     * Test extracting the PolicyDetail element from a l7:Policy gateway management element
+     * @throws Exception
+     */
+    @Test
+    public void testGetPolicyNameElement() throws Exception {
+        final URL resourceUrl = getClass().getResource("/com/l7tech/server/policy/bundle/bundles/Bundle1/Policy.xml");
+        final byte[] bytes = IOUtils.slurpUrl(resourceUrl);
+        final Document enumPolicy = XmlUtil.parse(new ByteArrayInputStream(bytes));
+        final List<Element> policyElms = GatewayManagementDocumentUtilities.getEntityElements(enumPolicy.getDocumentElement(), "Policy");
+        for (Element policyElm : policyElms) {
+            final Element policyDetailElm = PolicyUtils.getPolicyDetailElement(policyElm, "Policy", "Not used");
+//            System.out.println(XmlUtil.nodeToFormattedString(policyDetailElm));
+            final Element nameElement = PolicyUtils.getPolicyNameElement(policyDetailElm, "Policy", "Not Used");
+            System.out.println(DomUtils.getTextValue(nameElement));
+        }
+
+    }
 }

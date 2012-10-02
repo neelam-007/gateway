@@ -121,7 +121,7 @@
                     &lt;L7p:Comment stringValue="========== Get client registration information =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_clientstore_server}/oauth/clientstore/getAll"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/getAll"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1428,7 +1428,7 @@
                     &lt;L7p:VariableToSet stringValue="getTokenValues"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/get"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/get"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -2022,7 +2022,7 @@
                     &lt;L7p:HttpStatus stringValue="401"/&gt;
                     &lt;/L7p:CustomizeErrorResponse&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/getTemp"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/getTemp"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -2319,7 +2319,7 @@
                     &lt;/L7p:FieldSpecs&gt;
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_clientstore_server}/oauth/clientstore/getAll"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/getAll"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -2636,7 +2636,7 @@
                     &lt;L7p:VariableToSet stringValue="params"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_clientstore_server}/oauth/clientstore/getKey"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/getKey"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -2910,7 +2910,7 @@
                     &lt;L7p:VariableToSet stringValue="params"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/get"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/get"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -3140,7 +3140,7 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:HttpMethod httpMethod="POST"/&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/getTemp"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/getTemp"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -3385,7 +3385,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/getTemp"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/getTemp"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -3495,7 +3495,7 @@
                     &lt;L7p:VariableToSet stringValue="messageBody"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/update"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/update"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -3619,7 +3619,7 @@
                     &lt;L7p:VariableToSet stringValue="scope"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/get"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/get"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;

@@ -17,13 +17,16 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * Common utilities for working with Gateway Management API documents - responses and requests.
+ * Utilities related to processing Gateway management API document - requests and responses, including the SOAP
+ * envelope they are contained within.
  *
+ * //todo verify this is no longer the case
  * There is currently some OTK installer possible logic baked in here.
  *
  * // TODO - look at verifying version information to validate assumptions about document contents
  */
 public class GatewayManagementDocumentUtilities {
+    //todo turn into enum class
     public static Map<String, String> getNamespaceMap() {
         Map<String, String> nsMap = new HashMap<String, String>();
         nsMap.put("env", "http://www.w3.org/2003/05/soap-envelope");
@@ -35,6 +38,10 @@ public class GatewayManagementDocumentUtilities {
         nsMap.put("wsa", "http://schemas.xmlsoap.org/ws/2004/08/addressing");
 
         return nsMap;
+    }
+
+    public static List<Element> getEntityElements(Element enumerationElement, String type) {
+        return XmlUtil.findChildElementsByName(enumerationElement, BundleUtils.L7_NS_GW_MGMT, type);
     }
 
     public static class UnexpectedManagementResponse extends Exception{
@@ -132,22 +139,6 @@ public class GatewayManagementDocumentUtilities {
     public static boolean resourceAlreadyExists(final Document response) throws Exception {
         final List<String> errorDetails = getErrorDetails(response);
         return errorDetails.contains("env:Sender") && errorDetails.contains("wsman:AlreadyExists");
-    }
-
-    public static void updatePolicyIncludes(@NotNull Map<String, String> oldGuidsToNewGuids,
-                                            @NotNull String identifier,
-                                            @NotNull String entityType,
-                                            @NotNull List<Element> policyIncludes) {
-        // update them now that they have been created.
-        for (Element policyInclude : policyIncludes) {
-            final String includeGuid = policyInclude.getAttribute("stringValue");
-            if (!oldGuidsToNewGuids.containsKey(includeGuid)) {
-                // programming error
-                throw new RuntimeException("Required policy include #{" + includeGuid + "} was not created for " + entityType + " with identifier: #{" + identifier + "}");
-            }
-            final String newGuid = oldGuidsToNewGuids.get(includeGuid);
-            policyInclude.setAttribute("stringValue", newGuid);
-        }
     }
 
     // - PRIVATE

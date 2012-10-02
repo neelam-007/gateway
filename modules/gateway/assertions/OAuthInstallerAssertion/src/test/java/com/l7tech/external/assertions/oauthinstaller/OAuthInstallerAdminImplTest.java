@@ -86,6 +86,30 @@ public class OAuthInstallerAdminImplTest {
         fail("Test to ensure that all bundle names contain the same folder ids");
     }
 
+    @Test
+    @Ignore
+    public void testHostnamesDoNotContainTraililngSlash() throws Exception {
+        fail("Test to ensure no hostnames contain a trailing slash");
+    }
+
+    @Test
+    public void testGetUpdatedHostValue() throws Exception {
+        String test = "https://${host_target}${request.url.path}";
+        String actual = OAuthInstallerAdminImpl.getUpdatedHostValue("version1", test);
+        System.out.println(actual);
+        assertEquals("https://${host_target}/version1${request.url.path}", actual);
+
+        actual = OAuthInstallerAdminImpl.getUpdatedHostValue("version1", "https://${host_target}/auth/oauth/v1/token");
+        System.out.println(actual);
+        assertEquals("https://${host_target}/version1/auth/oauth/v1/token", actual);
+
+        actual = OAuthInstallerAdminImpl.getUpdatedHostValue("version1", "${host_target}");
+        assertNull(actual);
+
+        actual = OAuthInstallerAdminImpl.getUpdatedHostValue("version1", "https://${host_target}");
+        assertEquals("https://${host_target}/version1", actual);
+    }
+
     // - PRIVATE
     private final static List<Pair<BundleInfo, String>> ALL_BUNDLE_NAMES =
             Collections.unmodifiableList(

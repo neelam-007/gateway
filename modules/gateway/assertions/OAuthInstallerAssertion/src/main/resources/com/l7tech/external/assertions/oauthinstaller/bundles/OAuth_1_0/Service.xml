@@ -106,7 +106,7 @@
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
                     &lt;L7p:ProtectedServiceUrl
-                    stringValue="${oauth_ovp_server}/oauth/validation/validate/v1/signature"/&gt;
+                    stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v1/signature"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -202,7 +202,7 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:HttpMethod httpMethod="POST"/&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/store"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/store"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -237,7 +237,7 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:HttpMethod httpMethod="POST"/&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/delete"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/delete"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -358,7 +358,7 @@
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
                     &lt;L7p:ProtectedServiceUrl
-                    stringValue="${oauth_v1_server_website_baseuri}${uri}${request.http.query}"/&gt;
+                    stringValue="${host_oauth_v1_server_website_baseuri}${uri}${request.http.query}"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -579,7 +579,7 @@
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
                     &lt;L7p:ProtectedServiceUrl
-                    stringValue="${oauth_ovp_server}/oauth/validation/validate/v1/signature"/&gt;
+                    stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v1/signature"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -703,7 +703,7 @@
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
                     &lt;L7p:HttpMethod httpMethod="POST"/&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/store"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/store"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -847,7 +847,7 @@
                     &lt;L7p:SslAssertion/&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_v1_server_website}"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_v1_server_website_baseuri}${oauth_v2_website_path}"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1288,7 +1288,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/update"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/update"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1371,7 +1371,7 @@
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_ovp_server}/oauth/validation/v1/authorize"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_ovp_server}/oauth/validation/v1/authorize"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1725,7 +1725,7 @@
                     &lt;L7p:VariableToSet stringValue="messageBody"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/getTemp"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/getTemp"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1765,7 +1765,7 @@
                     &lt;L7p:VariableToSet stringValue="messageBody"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/delete"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/delete"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -2113,7 +2113,7 @@
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:ProtectedServiceUrl
-                    stringValue="${oauth_tokenstore_server}/oauth/tokenstore/getTemp?token=${request.http.parameter.oauth_token}"/&gt;
+                    stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/getTemp?token=${request.http.parameter.oauth_token}"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -2416,16 +2416,15 @@
                     &lt;L7p:Comment stringValue=" ============== CONFIGURE VALUES HERE START ============== "/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0LnVybC5ob3N0fQ=="/&gt;
-                    &lt;L7p:VariableToSet stringValue="target.host"/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0LnVybC5ob3N0fTo4NDQz"/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_target"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="T0F1dGhWMUNsaWVudA=="/&gt;
                     &lt;L7p:VariableToSet stringValue="this.app.name"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="aHR0cHM6Ly8ke3RhcmdldC5ob3N0fTo4NDQzJHtyZXF1ZXN0LnVybC5wYXRofQ=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly8ke3JlcXVlc3QudXJsLmhvc3R9Ojg0NDMke3JlcXVlc3QudXJsLnBhdGh9"/&gt;
                     &lt;L7p:VariableToSet stringValue="this.app.url"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
@@ -2470,8 +2469,11 @@
                     &lt;L7p:VariableToSet stringValue="api.endpoint.httpMetod"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="aHR0cDovL2xvY2FsaG9zdDo4MDgwL3Byb3RlY3RlZC9yZXNvdXJjZT93aXRoPXF1ZXJ5I2FuZEZyYWdtZW50"/&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cDovL2xvY2FsaG9zdDo4MDgw"/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_api_endpoint"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtob3N0X2FwaV9lbmRwb2ludH0vcHJvdGVjdGVkL3Jlc291cmNlP3dpdGg9cXVlcnkjYW5kRnJhZ21lbnQ="/&gt;
                     &lt;L7p:VariableToSet stringValue="api.endpoint.url"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
@@ -2483,16 +2485,20 @@
                     &lt;L7p:VariableToSet stringValue="consumer_key_secret"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0My9hdXRoL29hdXRoL3YxL3JlcXVlc3Q="/&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_endpoint"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtob3N0X29hdXRoX2VuZHBvaW50fS9hdXRoL29hdXRoL3YxL3JlcXVlc3Q="/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth.endpoint.request"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="aHR0cHM6Ly8ke3RhcmdldC5ob3N0fTo4NDQzL2F1dGgvb2F1dGgvdjEvYXV0aG9yaXpl"/&gt;
+                    stringValue="aHR0cHM6Ly8ke2hvc3RfdGFyZ2V0fS9hdXRoL29hdXRoL3YxL2F1dGhvcml6ZQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth.endpoint.authorize"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0My9hdXRoL29hdXRoL3YxL3Rva2Vu"/&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly8ke2hvc3RfdGFyZ2V0fS9hdXRoL29hdXRoL3YxL3Rva2Vu"/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth.endpoint.token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:CommentAssertion&gt;

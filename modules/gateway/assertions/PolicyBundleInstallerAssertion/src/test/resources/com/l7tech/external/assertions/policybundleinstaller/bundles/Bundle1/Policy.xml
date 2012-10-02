@@ -25,22 +25,22 @@
                     &lt;/L7p:AuditDetailAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth_ovp_server"/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_ovp_server"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
                     stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0My9hdXRoL29hdXRoL3YxL2F1dGhvcml6ZS93ZWJzaXRl"/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth_v1_server_website"/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_v1_server_website"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth_v1_server_website_baseuri"/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_v1_server_website_baseuri"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:ExportVariables&gt;
                     &lt;L7p:ExportedVars stringArrayValue="included"&gt;
-                    &lt;L7p:item stringValue="oauth_ovp_server"/&gt;
-                    &lt;L7p:item stringValue="oauth_v1_server_website"/&gt;
-                    &lt;L7p:item stringValue="oauth_v1_server_website_baseuri"/&gt;
+                    &lt;L7p:item stringValue="host_oauth_ovp_server"/&gt;
+                    &lt;L7p:item stringValue="host_oauth_v1_server_website"/&gt;
+                    &lt;L7p:item stringValue="host_oauth_v1_server_website_baseuri"/&gt;
                     &lt;/L7p:ExportedVars&gt;
                     &lt;/L7p:ExportVariables&gt;
                     &lt;/wsp:All&gt;
@@ -98,7 +98,7 @@
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
                     &lt;L7p:HttpMethod httpMethod="POST"/&gt;
                     &lt;L7p:ProtectedServiceUrl
-                    stringValue="${oauth_ovp_server}/oauth/validation/validate/v1/signature"/&gt;
+                    stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v1/signature"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1122,11 +1122,11 @@
                     &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth_tokenstore_server&quot;/&gt;
+                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_tokenstore_server&quot;/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth_clientstore_server&quot;/&gt;
+                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_clientstore_server&quot;/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:All&gt;
                     &lt;/wsp:Policy&gt;

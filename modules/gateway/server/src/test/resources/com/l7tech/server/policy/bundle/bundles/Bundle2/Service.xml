@@ -63,7 +63,7 @@
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
                     &lt;L7p:ProtectedServiceUrl
-                    stringValue="${oauth_ovp_server}/oauth/validation/validate/v1/signature"/&gt;
+                    stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v1/signature"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -117,7 +117,7 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:HttpMethod httpMethod="POST"/&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/store"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/store"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -152,7 +152,7 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:HttpMethod httpMethod="POST"/&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/delete"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/delete"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -273,7 +273,7 @@
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
                     &lt;L7p:ProtectedServiceUrl
-                    stringValue="${oauth_v1_server_website_baseuri}${uri}${request.http.query}"/&gt;
+                    stringValue="${host_oauth_v1_server_website_baseuri}${uri}${request.http.query}"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -451,7 +451,7 @@
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
                     &lt;L7p:ProtectedServiceUrl
-                    stringValue="${oauth_ovp_server}/oauth/validation/validate/v1/signature"/&gt;
+                    stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v1/signature"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -533,7 +533,7 @@
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
                     &lt;L7p:HttpMethod httpMethod="POST"/&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/store"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/store"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -765,7 +765,7 @@
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_v1_server_website}"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_v1_server_website}"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -849,7 +849,7 @@
                     &lt;L7p:HttpBasic/&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_v1_server_website}"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_v1_server_website}"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -926,7 +926,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:ProtectedServiceUrl
-                    stringValue="${oauth_tokenstore_server}/oauth/tokenstore/update?token=${request.http.parameter.oauth_token}&amp;amp;resource_owner=${request.username}"/&gt;
+                    stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/update?token=${request.http.parameter.oauth_token}&amp;amp;resource_owner=${request.username}"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -942,7 +942,7 @@
                     &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:ProtectedServiceUrl
-                    stringValue="${oauth_tokenstore_server}/oauth/tokenstore/getTemp?token=${request.http.parameter.oauth_token}"/&gt;
+                    stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/getTemp?token=${request.http.parameter.oauth_token}"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1041,7 +1041,7 @@
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_ovp_server}/oauth/validation/v1/authorize"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_ovp_server}/oauth/validation/v1/authorize"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1100,7 +1100,7 @@
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_v1_server_website}"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_v1_server_website}"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1276,7 +1276,7 @@
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_v1_server_website}"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_v1_server_website}"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -1357,7 +1357,7 @@
                     &lt;L7p:VariableToSet stringValue="messageBody"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${oauth_tokenstore_server}/oauth/tokenstore/delete"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/delete"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;

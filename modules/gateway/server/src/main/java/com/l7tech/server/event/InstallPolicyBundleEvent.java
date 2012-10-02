@@ -2,6 +2,7 @@ package com.l7tech.server.event;
 
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
@@ -13,10 +14,12 @@ public class InstallPolicyBundleEvent extends ApplicationEvent {
 
     public InstallPolicyBundleEvent(final Object source,
                                     final BundleResolver bundleResolver,
-                                    final PolicyBundleInstallerContext context) {
+                                    final PolicyBundleInstallerContext context,
+                                    final PreBundleSavePolicyCallback preBundleSavePolicyCallback) {
         super(source);
         this.bundleResolver = bundleResolver;
         this.context = context;
+        this.preBundleSavePolicyCallback = preBundleSavePolicyCallback;
     }
 
     /**
@@ -32,6 +35,11 @@ public class InstallPolicyBundleEvent extends ApplicationEvent {
     @NotNull
     public BundleResolver getBundleResolver() {
         return bundleResolver;
+    }
+
+    @Nullable
+    public PreBundleSavePolicyCallback getPreBundleSavePolicyCallback() {
+        return preBundleSavePolicyCallback;
     }
 
     /**
@@ -69,6 +77,8 @@ public class InstallPolicyBundleEvent extends ApplicationEvent {
     final BundleResolver bundleResolver;
     @NotNull
     final PolicyBundleInstallerContext context;
+    @Nullable
+    final PreBundleSavePolicyCallback preBundleSavePolicyCallback;
     @Nullable
     private Exception processingException;
     private boolean processed = false;

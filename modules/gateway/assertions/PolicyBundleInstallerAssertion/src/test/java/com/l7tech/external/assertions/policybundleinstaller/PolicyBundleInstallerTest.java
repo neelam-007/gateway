@@ -17,7 +17,7 @@ import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathResultIterator;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Ignore;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -35,7 +35,6 @@ import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
-@Ignore("Resources not found on team city - need to investigate")
 public class PolicyBundleInstallerTest {
 
     private int nextOid = 1000000;
@@ -131,19 +130,6 @@ public class PolicyBundleInstallerTest {
 
     }
 
-    private void setResponse(PolicyEnforcementContext context, String response) {
-        try {
-            setResponse(context, XmlUtil.parse(response));
-        } catch (SAXException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void setResponse(PolicyEnforcementContext context, Document response) {
-        final Message responseMsg = context.getResponse();
-        responseMsg.initialize(response);
-    }
-
     @Test
     public void testServiceXpathExpression() throws Exception {
         final BundleResolver resolver = getBundleResolver();
@@ -177,7 +163,7 @@ public class PolicyBundleInstallerTest {
 
         final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), "/com/l7tech/external/assertions/policybundleinstaller/bundles/");
         for (Pair<BundleInfo, String> bundleInfo : bundleInfos) {
-            installPoliciesTest(bundleInfo.left, oldGuidsToNewGuids);
+            installPoliciesTest(bundleInfo.left, oldGuidsToNewGuids, null);
         }
     }
 
@@ -189,10 +175,12 @@ public class PolicyBundleInstallerTest {
      * The test then verifies that all guids from the test bundle were created via an old to new mapping post the
      * call to installPolicies().
      *
-     * Note: This also tests policy includes as almost all oath policies contain policy includes.
+     * Note: This also tests policy includes as almost all test policies in resources folder contain policy includes.
      *
      */
-    public void installPoliciesTest(BundleInfo bundleInfo, final Map<String, String> oldGuidsToNewGuids) throws Exception {
+    public void installPoliciesTest(final @NotNull BundleInfo bundleInfo,
+                                    final @NotNull Map<String, String> oldGuidsToNewGuids,
+                                    final @Nullable String installationPrefix) throws Exception {
         final Map<String, String> nameToPreviousGuid = new HashMap<String, String>();
 
         final BundleResolver bundleResolver = getBundleResolver();
@@ -201,14 +189,15 @@ public class PolicyBundleInstallerTest {
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
                 try {
                     final String requestXml = XmlUtil.nodeToString(context.getRequest().getXmlKnob().getDocumentReadOnly());
+                    final Document enumPolicyDocument = XmlUtil.parse(requestXml);
                     if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/transfer/Create")) {
 
                         // validate that the request contained policy XML which does not reference any old GUIDS
-                        // e.g. policy includes have been udpated correctly.
+                        // e.g. policy includes have been updated correctly.
 //                        System.out.println(requestXml);
-                        final Element policyResourceElmWritable = BundleUtils.getPolicyResourceElement(XmlUtil.parse(requestXml).getDocumentElement(), "Policy", "canned id");
-                        final Document includedPolicyDoc = BundleUtils.getPolicyDocumentFromResource(policyResourceElmWritable, "Policy", "canned id");
-                        final List<Element> policyIncludes = BundleUtils.getPolicyIncludes(includedPolicyDoc);
+                        final Element policyResourceElmWritable = PolicyUtils.getPolicyResourceElement(enumPolicyDocument.getDocumentElement(), "Policy", "canned id");
+                        final Document includedPolicyDoc = PolicyUtils.getPolicyDocumentFromResource(policyResourceElmWritable, "Policy", "canned id");
+                        final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(includedPolicyDoc);
 
                         //validate that these guids are not canned guids shipped with the OTK policies.
                         for (Element policyInclude : policyIncludes) {
@@ -218,13 +207,22 @@ public class PolicyBundleInstallerTest {
                             assertTrue(oldGuidsToNewGuids.containsValue(guid));
                         }
 
+                        // validate any prefix was correctly applied
+                        if (installationPrefix != null) {
+                            final Element policyDetailElm = PolicyUtils.getPolicyDetailElement(enumPolicyDocument.getDocumentElement(), "Policy", "Not important");
+                            final Element policyNameElm = PolicyUtils.getPolicyNameElement(policyDetailElm, "Policy", "Not important");
+                            final String policyName = DomUtils.getTextValue(policyNameElm);
+                            System.out.println("Policy name: " + policyName);
+                            assertTrue("Policy name was not prefixed", policyName.startsWith(installationPrefix));
+                        }
+
                         setResponse(context, alreadyExistsResponse);
                         return AssertionStatus.NONE;
                     } else {
 
                         // Create a new GUID for each policy. Return the same GUID for the same include
 
-                        ElementCursor cursor = new DomElementCursor(XmlUtil.parse(requestXml));
+                        ElementCursor cursor = new DomElementCursor(enumPolicyDocument);
                         System.out.println(requestXml);
                         final XpathResult xpathResult = cursor.getXpathResult(
                                 new XpathExpression(
@@ -270,7 +268,7 @@ public class PolicyBundleInstallerTest {
             policyNameToGuid.put(name, guid);
         }
 
-        bundleInstaller.installPolicies(bundleInfo, getFolderIds(), oldGuidsToNewGuids, policyFromBundleDoc, null);
+        bundleInstaller.installPolicies(bundleInfo, getFolderIds(), oldGuidsToNewGuids, policyFromBundleDoc, null, installationPrefix);
 
         // verify that each known policy name was installed
         for (Map.Entry<String, String> bundlePolicy : policyNameToGuid.entrySet()) {
@@ -287,7 +285,6 @@ public class PolicyBundleInstallerTest {
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
-                final String requestXml;
                 try {
                     final Pair<AssertionStatus, Document> documentPair = cannedIdResponse(context.getRequest().getXmlKnob().getDocumentReadOnly());
                     setResponse(context, documentPair.right);
@@ -302,7 +299,7 @@ public class PolicyBundleInstallerTest {
         // OAuth_1_0
         final String bundleId = "4e321ca1-83a0-4df5-8216-c2d2bb36067d";
         final Document serviceFromBundleDoc = bundleResolver.getBundleItem(bundleId, SERVICE, false);
-        bundleInstaller.installServices(new BundleInfo(bundleId, "OAuth 1.0", "1.0", "Desc"), getFolderIds(), new HashMap<Long, Long>(), getPolicyGuids(), serviceFromBundleDoc, null);
+        bundleInstaller.installServices(new BundleInfo(bundleId, "OAuth 1.0", "1.0", "Desc"), getFolderIds(), new HashMap<Long, Long>(), getPolicyGuids(), serviceFromBundleDoc, null, null);
 
     }
 
@@ -363,7 +360,7 @@ public class PolicyBundleInstallerTest {
                         servicesFound.put(id, true);
                         System.out.println("Testing service: " + id);
                         try {
-                            final Element policyResourceElement = BundleUtils.getPolicyResourceElement(serviceElement, "Service not important", id);
+                            final Element policyResourceElement = PolicyUtils.getPolicyResourceElement(serviceElement, "Service not important", id);
 //                            System.out.println(XmlUtil.nodeToFormattedString(policyResourceElement));
                             final Set<String> jdbcConnsFound = BundleUtils.searchForJdbcReferences(policyResourceElement, "Service", id);
                             jdbcPerService.put(id, jdbcConnsFound);
@@ -392,7 +389,7 @@ public class PolicyBundleInstallerTest {
                         -5002,
                         null,
                         new HashMap<String, Object>(),
-                        null));
+                        null, null));
 
 //        assertEquals(1, jdbcConnsFound.size());
 //        assertEquals("Invalid JDBC connection name found", "OAuth", jdbcConnsFound.iterator().next());
@@ -419,11 +416,109 @@ public class PolicyBundleInstallerTest {
 
     }
 
+    /**
+     * That that an installation prefix is appended to each saved policy.
+     * @throws Exception
+     */
+    @Test
+    public void testPolicyNamePrefixedInstallation() throws Exception {
+        final Map<String, String> oldGuidsToNewGuids = new HashMap<String, String>(){
+            @Override
+            public String put(String key, String value) {
+
+                if (containsKey(key)) {
+                    fail("Key already recorded - map should be checked before creating any new guids");
+                }
+
+                return super.put(key, value);
+            }
+        };
+
+        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), "/com/l7tech/external/assertions/policybundleinstaller/bundles/");
+        for (Pair<BundleInfo, String> bundleInfo : bundleInfos) {
+            installPoliciesTest(bundleInfo.left, oldGuidsToNewGuids, "Version 1 - ");
+        }
+
+    }
+
+    @Test
+    public void testServicesUriPrefixedInstallation() throws Exception {
+        final BundleResolver bundleResolver = getBundleResolver();
+        final Map<String, String> serviceIdToUri = new HashMap<String, String>();
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+            @Override
+            public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
+                try {
+                    final Document documentReadOnly = context.getRequest().getXmlKnob().getDocumentReadOnly();
+                    final String requestXml = XmlUtil.nodeToString(documentReadOnly);
+                    if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate")) {
+                        final Document response = XmlUtil.parse(FILTER_NO_RESULTS);
+                        setResponse(context, response);
+                        return AssertionStatus.NONE;
+                    } else if(requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/transfer/Create")){
+
+                        ElementCursor cursor = new DomElementCursor(documentReadOnly);
+                        // validate the prefix supplied
+                        try {
+                            XpathResult xpathResult = cursor.getXpathResult(
+                                    new XpathExpression(".//l7:UrlPattern", GatewayManagementDocumentUtilities.getNamespaceMap()).compile());
+                            final Element urlElement = xpathResult.getNodeSet().getIterator().nextElementAsCursor().asDomElement();
+                            final String url = DomUtils.getTextValue(urlElement);
+
+                            // Get service id
+                            cursor.moveToDocumentElement();
+                            xpathResult = cursor.getXpathResult(new XpathExpression(".//l7:Service", GatewayManagementDocumentUtilities.getNamespaceMap()).compile());
+                            final Element serviceElm = xpathResult.getNodeSet().getIterator().nextElementAsCursor().asDomElement();
+                            final String serviceId = serviceElm.getAttribute("id");
+                            if (serviceId.trim().isEmpty()) {
+                                throw new RuntimeException("Serivce id not found");
+                            }
+
+                            serviceIdToUri.put(serviceId, url);
+                            System.out.println("Found url: " + url);
+                        } catch (XPathExpressionException e) {
+                            throw new RuntimeException(e);
+                        } catch (InvalidXpathException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        final Pair<AssertionStatus, Document> documentPair = cannedIdResponse(documentReadOnly);
+                        setResponse(context, documentPair.right);
+                        return documentPair.left;
+                    }
+
+                    throw new RuntimeException("Unexpected request");
+                } catch (SAXException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        // OAuth_1_0
+        final String bundleId = "4e321ca1-83a0-4df5-8216-c2d2bb36067d";
+        final Document serviceFromBundleDoc = bundleResolver.getBundleItem(bundleId, SERVICE, false);
+
+        final String prefix = "version1a";
+        bundleInstaller.installServices(new BundleInfo(bundleId, "OAuth 1.0", "1.0", "Desc"), getFolderIds(), new HashMap<Long, Long>(), getPolicyGuids(), serviceFromBundleDoc, null, prefix);
+
+        // validate all services were found and all URIs were prefixed correctly
+        assertEquals("Incorrect number of services created", 7, serviceIdToUri.size());
+
+        // hardcoded test resources - validate each service found and correct URI was published
+        assertEquals("/" + prefix + "/auth/oauth/v1/token", serviceIdToUri.get("123797510"));
+        assertEquals("/" + prefix + "/auth/oauth/v1/*", serviceIdToUri.get("123797505"));
+        assertEquals("/" + prefix + "/protected/resource", serviceIdToUri.get("123797504"));
+        assertEquals("/" + prefix + "/auth/oauth/v1/request", serviceIdToUri.get("123797507"));
+        assertEquals("/" + prefix + "/auth/oauth/v1/authorize", serviceIdToUri.get("123797506"));
+        assertEquals("/" + prefix + "/oauth/v1/client", serviceIdToUri.get("123797509"));
+        assertEquals("/" + prefix + "/auth/oauth/v1/authorize/website", serviceIdToUri.get("123797508"));
+    }
+
     @NotNull
     private BundleResolver getBundleResolver(){
 
         final Map<String, Map<String, Document>> bundleToItemAndDocMap = new HashMap<String, Map<String, Document>>();
-        bundleToItemAndDocMap.put("4e321ca1-83a0-4df5-8216-c2d2bb36067d", getItemsToDocs("Bundle1", true));
+        bundleToItemAndDocMap.put("4e321ca1-83a0-4df5-8216-c2d2bb36067d", getItemsToDocs(true));
 
         return new BundleResolver() {
             @Override
@@ -451,14 +546,15 @@ public class PolicyBundleInstallerTest {
         }
     }
 
-    private Map<String, Document> getItemsToDocs(String bundleFolderName, boolean hasPolicy) {
+    private Map<String, Document> getItemsToDocs(boolean hasPolicy) {
         final Map<String, Document> itemsToDocs = new HashMap<String, Document>();
-        final String baseName = "/com/l7tech/external/assertions/policybundleinstaller/bundles/";
-        itemsToDocs.put("Folder.xml", getDocumentFromResource(baseName + bundleFolderName + "/Folder.xml"));
-        itemsToDocs.put("Service.xml", getDocumentFromResource(baseName + bundleFolderName + "/Service.xml"));
+        //com.l7tech.external.assertions.policybundleinstaller.bundles.Bundle1
+        final String baseName = "/com/l7tech/external/assertions/policybundleinstaller/bundles/Bundle1";
+        itemsToDocs.put("Folder.xml", getDocumentFromResource(baseName + "/Folder.xml"));
+        itemsToDocs.put("Service.xml", getDocumentFromResource(baseName + "/Service.xml"));
 
         if (hasPolicy) {
-            itemsToDocs.put("Policy.xml", getDocumentFromResource(baseName + bundleFolderName + "/Policy.xml"));
+            itemsToDocs.put("Policy.xml", getDocumentFromResource(baseName + "/Policy.xml"));
         }
 
         return itemsToDocs;
@@ -509,6 +605,18 @@ public class PolicyBundleInstallerTest {
         }
     }
 
+    private void setResponse(PolicyEnforcementContext context, String response) {
+        try {
+            setResponse(context, XmlUtil.parse(response));
+        } catch (SAXException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void setResponse(PolicyEnforcementContext context, Document response) {
+        final Message responseMsg = context.getResponse();
+        responseMsg.initialize(response);
+    }
 
     /**
      * This is a canned response useful for faking a create ID - don't use to verify types, message ids etc
@@ -632,22 +740,22 @@ public class PolicyBundleInstallerTest {
             "                    &lt;/L7p:AuditDetailAssertion&gt;\n" +
             "                    &lt;L7p:SetVariable&gt;\n" +
             "                    &lt;L7p:Base64Expression stringValue=\"aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==\"/&gt;\n" +
-            "                    &lt;L7p:VariableToSet stringValue=\"oauth_ovp_server\"/&gt;\n" +
+            "                    &lt;L7p:VariableToSet stringValue=\"host_oauth_ovp_server\"/&gt;\n" +
             "                    &lt;/L7p:SetVariable&gt;\n" +
             "                    &lt;L7p:SetVariable&gt;\n" +
             "                    &lt;L7p:Base64Expression\n" +
             "                    stringValue=\"aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0My9hdXRoL29hdXRoL3YxL2F1dGhvcml6ZS93ZWJzaXRl\"/&gt;\n" +
-            "                    &lt;L7p:VariableToSet stringValue=\"oauth_v1_server_website\"/&gt;\n" +
+            "                    &lt;L7p:VariableToSet stringValue=\"host_oauth_v1_server_website\"/&gt;\n" +
             "                    &lt;/L7p:SetVariable&gt;\n" +
             "                    &lt;L7p:SetVariable&gt;\n" +
             "                    &lt;L7p:Base64Expression stringValue=\"aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==\"/&gt;\n" +
-            "                    &lt;L7p:VariableToSet stringValue=\"oauth_v1_server_website_baseuri\"/&gt;\n" +
+            "                    &lt;L7p:VariableToSet stringValue=\"host_oauth_v1_server_website_baseuri\"/&gt;\n" +
             "                    &lt;/L7p:SetVariable&gt;\n" +
             "                    &lt;L7p:ExportVariables&gt;\n" +
             "                    &lt;L7p:ExportedVars stringArrayValue=\"included\"&gt;\n" +
-            "                    &lt;L7p:item stringValue=\"oauth_ovp_server\"/&gt;\n" +
-            "                    &lt;L7p:item stringValue=\"oauth_v1_server_website\"/&gt;\n" +
-            "                    &lt;L7p:item stringValue=\"oauth_v1_server_website_baseuri\"/&gt;\n" +
+            "                    &lt;L7p:item stringValue=\"host_oauth_ovp_server\"/&gt;\n" +
+            "                    &lt;L7p:item stringValue=\"host_oauth_v1_server_website\"/&gt;\n" +
+            "                    &lt;L7p:item stringValue=\"host_oauth_v1_server_website_baseuri\"/&gt;\n" +
             "                    &lt;/L7p:ExportedVars&gt;\n" +
             "                    &lt;/L7p:ExportVariables&gt;\n" +
             "                    &lt;/wsp:All&gt;\n" +
@@ -692,4 +800,30 @@ public class PolicyBundleInstallerTest {
             "    </env:Body>\n" +
             "</env:Envelope>";
 
+    private static final String FILTER_NO_RESULTS = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
+            "    xmlns:mdo=\"http://schemas.wiseman.dev.java.net/metadata/messagetypes\"\n" +
+            "    xmlns:mex=\"http://schemas.xmlsoap.org/ws/2004/09/mex\"\n" +
+            "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
+            "    xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\"\n" +
+            "    xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\"\n" +
+            "    xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"\n" +
+            "    xmlns:wsmeta=\"http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd\"\n" +
+            "    xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+            "    <env:Header>\n" +
+            "        <wsa:Action env:mustUnderstand=\"true\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">http://schemas.xmlsoap.org/ws/2004/09/enumeration/EnumerateResponse</wsa:Action>\n" +
+            "        <wsman:TotalItemsCountEstimate xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">135</wsman:TotalItemsCountEstimate>\n" +
+            "        <wsa:MessageID env:mustUnderstand=\"true\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">uuid:19c6ab84-e9e7-4bf1-8114-b2d74ba41f6d</wsa:MessageID>\n" +
+            "        <wsa:RelatesTo xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">uuid:cdf8352f-eb06-4d90-a728-c7fa7560adca</wsa:RelatesTo>\n" +
+            "        <wsa:To env:mustUnderstand=\"true\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>\n" +
+            "    </env:Header>\n" +
+            "    <env:Body>\n" +
+            "        <wsen:EnumerateResponse xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+            "            <wsen:Expires>2147483647-12-31T23:59:59.999-14:00</wsen:Expires>\n" +
+            "            <wsen:EnumerationContext>85bc6f2a-3c00-45df-87fa-056f623d0dd8</wsen:EnumerationContext>\n" +
+            "            <wsman:Items/>\n" +
+            "            <wsman:EndOfSequence/>\n" +
+            "        </wsen:EnumerateResponse>\n" +
+            "    </env:Body>\n" +
+            "</env:Envelope>\n";
 }
