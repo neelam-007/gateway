@@ -11,7 +11,9 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.wsp.*;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,14 +61,14 @@ public class AsyncHttpRoutingAssertion extends HttpRoutingAssertion implements U
         return super.getHttpMethod();
     }
 
-    @Override
+
     public GenericHttpRequestParams.HttpVersion getHttpVersion() {
-        return super.getHttpVersion();
+        return GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_1;
     }
 
-    @Override
+
     public void setHttpVersion(GenericHttpRequestParams.HttpVersion httpVersion) {
-        super.setHttpVersion(httpVersion);
+        //super.setHttpVersion(httpVersion);
     }
 
     @Override
@@ -117,7 +119,7 @@ public class AsyncHttpRoutingAssertion extends HttpRoutingAssertion implements U
     @Override
     @Migration(mapName = MigrationMappingSelection.OPTIONAL, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
-        List<EntityHeader> ret = new ArrayList<EntityHeader>(Arrays.asList(super.getEntitiesUsed()));
+        List<EntityHeader> ret = new ArrayList<EntityHeader>();
 
         GuidEntityHeader header = new GuidEntityHeader(policyGuid, EntityType.POLICY, null, null, null);
         header.setGuid( policyGuid );
@@ -130,8 +132,6 @@ public class AsyncHttpRoutingAssertion extends HttpRoutingAssertion implements U
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if (newEntityHeader instanceof PolicyHeader)
             policyGuid = ((GuidEntityHeader) newEntityHeader).getGuid();
-        else
-            super.replaceEntity(oldEntityHeader, newEntityHeader);
     }
 
     private static final String META_INITIALIZED = AsyncHttpRoutingAssertion.class.getName() + ".metadataInitialized";
@@ -146,9 +146,9 @@ public class AsyncHttpRoutingAssertion extends HttpRoutingAssertion implements U
 
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new Java5EnumTypeMapping(HttpMethod.class, "httpMethod"),
-            new Java5EnumTypeMapping(GenericHttpRequestParams.HttpVersion.class, "httpVersion"),
-            new CollectionTypeMapping(List.class, HttpRoutingServiceParameter.class, ArrayList.class, "parameters"),
-            new BeanTypeMapping(HttpRoutingServiceParameter.class, "parameter")
+            new Java5EnumTypeMapping(GenericHttpRequestParams.HttpVersion.class, "httpVersion")
+            //new CollectionTypeMapping(List.class, HttpRoutingServiceParameter.class, ArrayList.class, "parameters"),
+            //new BeanTypeMapping(HttpRoutingServiceParameter.class, "parameter")
         )));
 
         meta.put(META_INITIALIZED, Boolean.TRUE);

@@ -6,7 +6,6 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.ahttp.AsyncHttpRoutingAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.OutboundHeadersKnob;
@@ -15,7 +14,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditLogFormatter;
 import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -41,7 +39,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 import static com.l7tech.util.Option.optional;
@@ -56,7 +53,7 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
     private PolicyCache policyCache;
 
     @Inject
-    private AuditContextFactory auditContextFactory;
+    private AuditContext auditContext;
 
     @Inject
     private MessageSummaryAuditFactory messageSummaryAuditFactory;
@@ -67,10 +64,12 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
     public ServerAsyncHttpRoutingAssertion(final AsyncHttpRoutingAssertion assertion, final ApplicationContext applicationContext) throws ServerPolicyException {
         super(assertion, applicationContext);
         varsUsed = assertion.getVariablesUsed();
+        auditContext = applicationContext.getBean("auditContext", AuditContext.class);
     }
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+
         ResponseContextInfo responseContextInfo = new ResponseContextInfo();
         try {
             String guid = assertion.getPolicyGuid();
@@ -216,12 +215,15 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
             final PolicyEnforcementContext context = responseContextInfo.clonedContext;
 
             final AssertionStatus status[] = { AssertionStatus.UNDEFINED };
-            auditContextFactory.doWithNewAuditContext(
-                new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        final AuditContext auditContext = AuditContextFactory.getCurrent();
-                        context.setAuditContext(auditContext);
+            auditContext.clear();
+
+            try {
+            //auditContextFactory.doWithNewAuditContext(
+//                new Callable<Void>() {
+//                    @Override
+//                    public Void call() throws Exception {
+//                        //final AuditContext auditContext = AuditContextFactory.getCurrent();
+//                        context.setAuditContext(auditContext);
                         try {
                             // Copy response headers and body, or generate a fault message/fault variable in context
                             if (Eithers.isSuccess(result)) {
@@ -267,16 +269,20 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
                             }
                         }
 
-                        return null; // Void
-                    }
-                },
-                new Functions.Nullary<com.l7tech.gateway.common.audit.AuditRecord>() {
-                    @Override
-                    public AuditRecord call() {
-                        return messageSummaryAuditFactory.makeEvent(context, status[0]);
-                    }
-                }
-            );
+                        //return null; // Void
+                   // }
+               // }
+//                new Functions.Nullary<com.l7tech.gateway.common.audit.AuditRecord>() {
+//                    @Override
+//                    public AuditRecord call() {
+//                        return messageSummaryAuditFactory.makeEvent(context, status[0]);
+//                    }
+//                }
+            //);
+            } finally {
+                auditContext.setCurrentRecord(messageSummaryAuditFactory.makeEvent(context, status[0]));
+                auditContext.flush();
+            }
         } catch (Exception e) {
             // Nowhere to audit it, if it hasn't already been audited, so log it
             logger.log(Level.WARNING, "Unexpected exception while delivering async HTTP response: " + ExceptionUtils.getMessage(e), e);

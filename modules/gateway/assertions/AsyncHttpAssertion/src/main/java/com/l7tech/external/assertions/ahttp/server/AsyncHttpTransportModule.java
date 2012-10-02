@@ -360,11 +360,19 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
         return context;
     }
 
+//    @Override
+//    public void reportMisconfiguredConnector(long connectorOid) {
+//        logger.log(Level.WARNING, "Shutting down async HTTP connector OID " + connectorOid + " because it cannot be opened in its current configuration");
+//        removeConnector(connectorOid);
+//    }
+
     @Override
-    public void reportMisconfiguredConnector(long connectorOid) {
-        logger.log(Level.WARNING, "Shutting down async HTTP connector OID " + connectorOid + " because it cannot be opened in its current configuration");
-        removeConnector(connectorOid);
+    public void reportMisconfiguredConnector(@NotNull SsgConnector connector) {
+        logger.log(Level.WARNING, "Shutting down async HTTP connector OID " + connector.getOid() + " because it cannot be opened in its current configuration");
+        removeConnector(connector.getOid());
     }
+
+
 
     static AsyncHttpTransportModule createModule( final ApplicationContext appContext ) {
         LicenseManager licenseManager = appContext.getBean("licenseManager", LicenseManager.class);
