@@ -5,6 +5,7 @@ import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.ManageHttpConfigurationAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.ValidatorUtils;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
@@ -170,9 +171,9 @@ public class RestServiceInfoPanel extends WizardStepPanel {
                 description = "Specify a Service Name, Resource Base URL and optionally overriding the default Gateway URI.  The Gateway URI will mimic the path from the Resource Base URL unless overridden.<br/>" +
                         "<br/>* denotes required fields.<br/>" +
                         "<br/>Example:<br/>" +
-                        "Service Name: Twitter Search API<br/>" +
-                        "Resource Base URL: http://search.twitter.com<br/>" +
-                        "Gateway URI: http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]/ssg/twitter/";
+                        "Service Name: Layer7 Search API<br/>" +
+                        "Resource Base URL: http://search.layer7.com<br/>" +
+                        "Gateway URI: http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]/test/echo/";
             }
             else {
                 description = "Specify the location to a WADL file and click Load to import the REST service endpoint(s).  The Gateway URI must be unique and will mimic the Resource Base URL unless overridden.<br/>" +
@@ -259,10 +260,18 @@ public class RestServiceInfoPanel extends WizardStepPanel {
             DialogDisplayer.display(new JOptionPane("Invalid Backend URL"), getOwner().getContentPane(), "Invalid Backend URL", null);
             return false;
         }
-        if(overrideGatewayUrl.isSelected() && tfGatewayUrl.getText().trim().isEmpty()){
+        String gatewayUrl = tfGatewayUrl.getText().trim();
+        if(overrideGatewayUrl.isSelected() && gatewayUrl.isEmpty()){
             DialogDisplayer.display(new JOptionPane("Gateway URI can not be empty."), getOwner().getContentPane(), "Invalid Gateway URI", null);
             return false;
         }
+        if(!gatewayUrl.startsWith("/")) gatewayUrl = "/" + gatewayUrl;
+        final String message = ValidatorUtils.validateResolutionPath(gatewayUrl, false, false);
+        if ( message != null ) {
+            DialogDisplayer.display(new JOptionPane(message), getOwner().getContentPane(), "Invalid Gateway URI", null);
+            return false;
+        }
+
         return true;
     }
 
@@ -290,6 +299,14 @@ public class RestServiceInfoPanel extends WizardStepPanel {
             }
             if(duplicate.contains(value)){
                 DialogDisplayer.display(new JOptionPane("Duplicate Gateway URI '" + value + "' found.  Please ensure all Gateway URIs are unique."), getOwner().getContentPane(), "Duplicate Gateway URL", null);
+                return false;
+            }
+            String gatewayUrl = value;
+            if(!gatewayUrl.startsWith("/")) gatewayUrl = "/" + gatewayUrl;
+            final String message = ValidatorUtils.validateResolutionPath(gatewayUrl, false, false);
+            if ( message != null ) {
+                //don't use the returned 'message' in the dialog as the message refers to the field as 'custom resolution path'
+                DialogDisplayer.display(new JOptionPane(message), getOwner().getContentPane(), "Invalid Gateway URI", null);
                 return false;
             }
             duplicate.add(value);
