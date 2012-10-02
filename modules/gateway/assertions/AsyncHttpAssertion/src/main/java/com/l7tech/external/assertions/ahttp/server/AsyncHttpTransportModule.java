@@ -57,6 +57,7 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
     private static final long ASYNC_RESPONSE_TIMEOUT_MILLIS = SyspropUtil.getLong("com.l7tech.http.async.responseTimeout", 30L * 1000L);
     private static AsyncHttpTransportModule instance;
 
+
     private static final String SCHEME_ASYNC_HTTP = "AHTTP";
     private static final Set<String> SUPPORTED_SCHEMES = caseInsensitiveSet(
         SCHEME_ASYNC_HTTP
@@ -360,19 +361,11 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
         return context;
     }
 
-//    @Override
-//    public void reportMisconfiguredConnector(long connectorOid) {
-//        logger.log(Level.WARNING, "Shutting down async HTTP connector OID " + connectorOid + " because it cannot be opened in its current configuration");
-//        removeConnector(connectorOid);
-//    }
-
     @Override
-    public void reportMisconfiguredConnector(@NotNull SsgConnector connector) {
-        logger.log(Level.WARNING, "Shutting down async HTTP connector OID " + connector.getOid() + " because it cannot be opened in its current configuration");
-        removeConnector(connector.getOid());
+    public void reportMisconfiguredConnector(long connectorOid) {
+        logger.log(Level.WARNING, "Shutting down async HTTP connector OID " + connectorOid + " because it cannot be opened in its current configuration");
+        removeConnector(connectorOid);
     }
-
-
 
     static AsyncHttpTransportModule createModule( final ApplicationContext appContext ) {
         LicenseManager licenseManager = appContext.getBean("licenseManager", LicenseManager.class);
