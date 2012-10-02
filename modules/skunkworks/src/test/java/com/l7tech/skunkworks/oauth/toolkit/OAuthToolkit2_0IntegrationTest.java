@@ -64,7 +64,7 @@ public class OAuthToolkit2_0IntegrationTest {
     @Test
     @BugNumber(13155)
     public void authorizeWithInvalidCookie() throws Exception {
-        final GenericHttpResponse response = new Layer720Api(BASE_URL).authorize(CONSUMER_KEY, CALLBACK, null, "invalid");
+        final GenericHttpResponse response = new Layer720Api(BASE_URL).authorize("code", CONSUMER_KEY, CALLBACK, null, "invalid", true);
 
         assertEquals(401, response.getStatus());
         final String body = new String(IOUtils.slurpStream(response.getInputStream()));

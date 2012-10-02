@@ -1,5 +1,7 @@
 package com.l7tech.skunkworks.oauth.toolkit;
 
+import com.l7tech.common.http.GenericHttpResponse;
+import com.l7tech.util.IOUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -61,8 +63,8 @@ public class OAuthToolkit2_0ScribeIntegrationTest {
     }
 
     @Test
-    public void happyPath() throws Exception {
-        // Obtain the Authorization Code
+    public void authCode() throws Exception {
+        // Obtain the Authorization Code from callback plain text response body
         System.out.println("Fetching Authorization Code...");
         final String authCode = api.authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null);
         System.out.println("Received Authorization Code: " + authCode);
@@ -72,6 +74,55 @@ public class OAuthToolkit2_0ScribeIntegrationTest {
         final Token accessToken = service.getAccessToken(EMPTY_TOKEN, new Verifier(authCode));
         System.out.println("Received the Access Token: " + accessToken.getToken());
 
+        getProtectedResource(accessToken);
+    }
+
+    @Test
+    public void implicit() throws Exception {
+        // Obtain an Access Token from location header fragment
+        System.out.println("Fetching Access Token ...");
+        final GenericHttpResponse accessTokenResponse = api.authorize("token", CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null, false);
+        final String locationHeader = accessTokenResponse.getHeaders().getFirstValue("Location");
+        final String accessToken = locationHeader.substring(locationHeader.indexOf("#access_token=") + 14, locationHeader.indexOf("&"));
+        System.out.println("Received Access Token: " + accessToken);
+
+        getProtectedResource(new Token(accessToken, ""));
+    }
+
+    @Test
+    public void clientCredentials() throws Exception {
+        // Obtain an Access Token from JSON response body
+        System.out.println("Fetching Access Token ...");
+        final GenericHttpResponse accessTokenResponse = api.authorizeWithClientCredentials(new PasswordAuthentication(CONSUMER_KEY, CONSUMER_SECRET.toCharArray()));
+        final String accessToken = getAccessTokenFromJsonResponse(accessTokenResponse);
+        System.out.println("Received Access Token: " + accessToken);
+
+        getProtectedResource(new Token(accessToken, ""));
+    }
+
+    @Test
+    public void resourceOwnerCredentials() throws Exception {
+        // Obtain an Access Token from JSON response body
+        System.out.println("Fetching Access Token ...");
+        final GenericHttpResponse accessTokenResponse = api.authorizeWithResourceOwnerCredentials(new PasswordAuthentication(CONSUMER_KEY, CONSUMER_SECRET.toCharArray()), "admin", "password");
+        final String accessToken = getAccessTokenFromJsonResponse(accessTokenResponse);
+        System.out.println("Received Access Token: " + accessToken);
+
+        getProtectedResource(new Token(accessToken, ""));
+    }
+
+    @Test
+    public void saml() throws Exception {
+        // Obtain an Access Token from JSON response body
+        System.out.println("Fetching Access Token ...");
+        final GenericHttpResponse accessTokenResponse = api.authorizeWithSAMLToken(new PasswordAuthentication(CONSUMER_KEY, CONSUMER_SECRET.toCharArray()), new PasswordAuthentication("admin", "password".toCharArray()));
+        final String accessToken = getAccessTokenFromJsonResponse(accessTokenResponse);
+        System.out.println("Received Access Token: " + accessToken);
+
+        getProtectedResource(new Token(accessToken, ""));
+    }
+
+    private void getProtectedResource(final Token accessToken) {
         // Ask for a protected resource
         System.out.println("Accessing a protected resource...");
         final OAuthRequest request = new OAuthRequest(Verb.GET, PROTECTED_RESOURCE_URI);
@@ -80,5 +131,10 @@ public class OAuthToolkit2_0ScribeIntegrationTest {
         assertEquals(200, response.getCode());
         System.out.println("Obtained protected resource: ");
         System.out.println(response.getBody());
+    }
+
+    private String getAccessTokenFromJsonResponse(final GenericHttpResponse response) throws Exception {
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        return responseBody.substring(responseBody.indexOf("\"access_token\":\"") + 16, responseBody.indexOf("\","));
     }
 }
