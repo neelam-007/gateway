@@ -3325,8 +3325,7 @@
                     &lt;/L7p:Include&gt;
                     &lt;L7p:SslAssertion/&gt;
                     &lt;L7p:CustomizeErrorResponse&gt;
-                    &lt;L7p:Content stringValue="An error occured. Please contact the system administrator or try again
-                    later."/&gt;
+                    &lt;L7p:Content stringValue="An error occurred. Please contact the system administrator or try again later."/&gt;
                     &lt;L7p:ExtraHeaders nameValuePairArray="included"/&gt;
                     &lt;L7p:HttpStatus stringValue="400"/&gt;
                     &lt;/L7p:CustomizeErrorResponse&gt;
