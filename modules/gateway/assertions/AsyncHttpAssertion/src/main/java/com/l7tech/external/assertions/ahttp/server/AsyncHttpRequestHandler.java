@@ -8,14 +8,12 @@ import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.is100ContinueExpected;
@@ -32,50 +30,41 @@ class AsyncHttpRequestHandler extends SimpleChannelUpstreamHandler {
 
     private final AsyncHttpListenerInfo listenerInfo;
 
-    private final List<ByteBuffer> requestBody = new ArrayList<ByteBuffer>();
-
-    private HttpRequest request;
-    private boolean readingChunks;
-
     AsyncHttpRequestHandler(AsyncHttpListenerInfo listenerInfo) {
         this.listenerInfo = listenerInfo;
     }
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-        if (!readingChunks) {
-            HttpRequest request = this.request = (HttpRequest) e.getMessage();
+        HttpRequest request = (HttpRequest) e.getMessage();
 
-            if (is100ContinueExpected(request)) {
-                send100Continue(e);
-            }
-
-            if (request.isChunked()) {
-                readingChunks = true;
-            } else {
-                ChannelBuffer content = request.getContent();
-                requestBody.add(content.toByteBuffer());
-                submitRequest(e);
-            }
-        } else {
-            HttpChunk chunk = (HttpChunk) e.getMessage();
-            if (chunk.isLast()) {
-                readingChunks = false;
-                // TODO grab chunked encoding HTTP trailers here if we care
-                submitRequest(e);
-            } else {
-                requestBody.add(chunk.getContent().toByteBuffer());
-            }
+        if (is100ContinueExpected(request)) {
+            send100Continue(e);
         }
 
+        if (request.isChunked()) {
+            // Not supposed to happen with HttpChunkAggregator ahead of us in the upstream pipeline
+            e.getChannel().close();
+            throw new IOException("Chunked encoding request not automatically deaggregated");
+        } else {
+            ChannelBuffer content = request.getContent();
+            if (content.readable()) {
+                submitRequest(e, request, content);
+            }
+        }
     }
 
-    private void submitRequest(final MessageEvent e) {
-        final boolean keepAlive = false && isKeepAlive(request); // TODO reenable keepalives after issue debugged
+    private void submitRequest(final MessageEvent e, HttpRequest request, ChannelBuffer content) {
+        final boolean keepAlive = isKeepAlive(request);
         final HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
         final String correlationId = generateCorrelationId();
         PendingAsyncRequest pendingRequest = new PendingAsyncRequest(correlationId, listenerInfo, response, e.getChannel(), keepAlive);
-        listenerInfo.getTransportModule().submitRequestToMessageProcessor(pendingRequest, request, response, new ByteBuffersInputStream(requestBody), (InetSocketAddress) e.getRemoteAddress());
+        listenerInfo.getTransportModule().submitRequestToMessageProcessor(
+            pendingRequest,
+            request,
+            response,
+            new ByteBuffersInputStream(Arrays.asList(content.toByteBuffers())),
+            (InetSocketAddress) e.getRemoteAddress());
     }
 
     private String generateCorrelationId() {
