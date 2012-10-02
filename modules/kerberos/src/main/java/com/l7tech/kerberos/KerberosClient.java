@@ -520,6 +520,9 @@ public class KerberosClient {
         Boolean valid = acceptPrincipalCache.get(principal);
         if (valid != null) {
             if (valid) {
+                if (logger.isLoggable(Level.INFO)) {
+                    logger.log( Level.INFO, "Accept Principal is cached:" + principal );
+                }
                 return principal;
             } else {
                 throw new KerberosException("Principal detection failed.");
@@ -607,6 +610,9 @@ public class KerberosClient {
      * Reset any cached information
      */
     public static void reset() {
+        if (logger.isLoggable(Level.INFO)) {
+            logger.log( Level.INFO, "Reset the accept Principal Cache" );
+        }
         acceptPrincipalCache.clear();
     }
 
