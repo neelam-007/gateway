@@ -1,0 +1,19 @@
+<project name="layer7-portal-metrics" default="compile">
+    <property name="module.package.root" value="com/l7tech/portal"/>
+    <property name="module.main" value="com.l7tech.portal.metrics.PortalMetricsSyncUtilityMain"/>
+    <import file="../../etc/build/build-common.xml" as="common"/>
+    <target name="package.custom.post" description="create zip file">
+        <echo level="info">Creating ApiPortal.zip file</echo>
+        <mkdir dir="${build.dir}/ApiPortal/lib"/>
+        <copy todir="${build.dir}/ApiPortal">
+            <fileset dir="${src.main.res.dir}" includes="*.sh,*.cron,*.properties"/>
+            <fileset dir="${build.dir}" includes="*.jar"/>
+        </copy>
+        <copy todir="${build.dir}/ApiPortal/lib">
+            <fileset dir="${build.dir}/dependency" includes="*.jar"/>
+        </copy>
+        <zip destfile="${build.dir}/ApiPortal.zip" basedir="${build.dir}/ApiPortal"/>
+        <delete dir="${build.dir}/ApiPortal"/>
+    </target>
+</project>
+

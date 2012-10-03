@@ -1,0 +1,75 @@
+package com.l7tech.external.assertions.apiportalintegration.server.apikey.manager;
+
+import com.l7tech.external.assertions.apiportalintegration.server.AbstractPortalGenericEntity;
+import com.l7tech.external.assertions.apiportalintegration.server.AbstractPortalGenericEntityManager;
+import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.policy.GenericEntityHeader;
+import com.l7tech.server.entity.GenericEntityManager;
+import com.l7tech.util.ConfigFactory;
+import org.springframework.context.ApplicationContext;
+
+import java.util.concurrent.ConcurrentMap;
+/**
+ * An API key manager that uses a generic entity manager to store/retrieve API keys.
+ * <p/>
+ * Loaded API keys will be cached in RAM.  The cache is cleared occasionally (daily by default), and specific
+ * entries are removed whenever their corresponding generic entity is updated (anywhere on the cluster).
+ * <p/>
+ * No caching of failed lookups (negative caching) is currently performed.
+ */
+public class ApiKeyManager extends AbstractPortalGenericEntityManager<ApiKey> {
+    public static ApiKeyManager getInstance(final ApplicationContext context) {
+        if (instance == null) {
+            instance = new ApiKeyManager(context);
+        }
+        return instance;
+    }
+
+    @Override
+    public EntityManager<ApiKey, GenericEntityHeader> getEntityManager() {
+        return entityManager;
+    }
+
+    @Override
+    public Object[] getUpdateLocks() {
+        return updateLocks;
+    }
+
+    @Override
+    public String getCacheWipeIntervalConfigProperty() {
+        return "apiKeyManager.cacheWipeInterval";
+    }
+
+    ApiKeyManager(final ApplicationContext context) {
+        super(context);
+        GenericEntityManager gem = context.getBean("genericEntityManager", GenericEntityManager.class);
+        gem.registerClass(ApiKey.class);
+        entityManager = gem.getEntityManager(ApiKey.class);
+    }
+
+    /**
+     * Provide restricted access to the name cache for unit tests.
+     */
+    ConcurrentMap<Long, String> getNameCache() {
+        return nameCache;
+    }
+
+    /**
+     * Provide restricted access to the cache for unit tests.
+     */
+    ConcurrentMap<String, AbstractPortalGenericEntity> getCache() {
+        return cache;
+    }
+
+    private final EntityManager<ApiKey, GenericEntityHeader> entityManager;
+    private static ApiKeyManager instance;
+    private static final int NUM_UPDATE_LOCKS = ConfigFactory.getIntProperty("com.l7tech.apiportal.ApiKeyManager.numUpdateLocks", DEFAULT_NUM_UPDATE_LOCKS);
+
+    private static final Object[] updateLocks = new Object[NUM_UPDATE_LOCKS];
+
+    static {
+        for (int i = 0; i < updateLocks.length; i++) {
+            updateLocks[i] = new Object();
+        }
+    }
+}

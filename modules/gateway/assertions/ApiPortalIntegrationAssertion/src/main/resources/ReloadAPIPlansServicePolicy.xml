@@ -1,0 +1,893 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <wsp:OneOrMore wsp:Usage="Required">
+            <wsp:All wsp:Usage="Required">
+                <L7p:SslAssertion>
+                    <L7p:RequireClientAuthentication booleanValue="true"/>
+                </L7p:SslAssertion>
+                <L7p:AuditDetailAssertion>
+                    <L7p:Detail stringValue="username: ${request.username}"/>
+                </L7p:AuditDetailAssertion>
+                <L7p:Authentication>
+                    <L7p:IdentityProviderOid longValue="-2"/>
+                </L7p:Authentication>
+            </wsp:All>
+            <wsp:All wsp:Usage="Required">
+                <L7p:SslAssertion/>
+                <L7p:HttpBasic/>
+                <L7p:AuditDetailAssertion>
+                    <L7p:Detail stringValue="username: ${request.username}"/>
+                </L7p:AuditDetailAssertion>
+                <L7p:Authentication>
+                    <L7p:IdentityProviderOid longValue="-2"/>
+                </L7p:Authentication>
+            </wsp:All>
+        </wsp:OneOrMore>
+        <L7p:AuditDetailAssertion>
+            <L7p:Detail stringValue="auth_user: ${request.authenticateduser}"/>
+        </L7p:AuditDetailAssertion>
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="QVBJIFBsYW5zIEZyYWdtZW50"/>
+            <L7p:VariableToSet stringValue="FRAGMENT_NAME"/>
+        </L7p:SetVariable>
+        <L7p:SetVariable>
+            <L7p:AssertionComment assertionComment="included">
+                <L7p:Properties mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="RIGHT.COMMENT"/>
+                        <L7p:value stringValue="// successful errorCode"/>
+                    </L7p:entry>
+                </L7p:Properties>
+            </L7p:AssertionComment>
+            <L7p:Base64Expression stringValue="MA=="/>
+            <L7p:VariableToSet stringValue="errorCode"/>
+        </L7p:SetVariable>
+        <wsp:OneOrMore wsp:Usage="Required">
+            <wsp:All wsp:Usage="Required">
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="PHM6RW52ZWxvcGUgeG1sbnM6cz0iaHR0cDovL3d3dy53My5vcmcvMjAwMy8wNS9zb2FwLWVudmVsb3BlIiB4bWxuczphPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA0LzA4L2FkZHJlc3NpbmciIHhtbG5zOnc9Imh0dHA6Ly9zY2hlbWFzLmRtdGYub3JnL3diZW0vd3NtYW4vMS93c21hbi54c2QiPg0KICAgPHM6SGVhZGVyPg0KICAgICAgPGE6TWVzc2FnZUlEPndzbS1nZXQtaWQtJHtyZXF1ZXN0SWR9PC9hOk1lc3NhZ2VJRD4NCiAgICAgIDxhOlRvPmh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC93c21hbjwvYTpUbz4NCiAgICAgIDxhOlJlcGx5VG8+DQogICAgICAgICA8YTpBZGRyZXNzIHM6bXVzdFVuZGVyc3RhbmQ9InRydWUiPmh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDQvMDgvYWRkcmVzc2luZy9yb2xlL2Fub255bW91czwvYTpBZGRyZXNzPg0KICAgICAgPC9hOlJlcGx5VG8+DQogICAgICA8YTpBY3Rpb24gczptdXN0VW5kZXJzdGFuZD0idHJ1ZSI+aHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNC8wOS90cmFuc2Zlci9HZXQ8L2E6QWN0aW9uPg0KICAgICAgPHc6UmVzb3VyY2VVUkkgczptdXN0VW5kZXJzdGFuZD0idHJ1ZSI+aHR0cDovL25zLmw3dGVjaC5jb20vMjAxMC8wNC9nYXRld2F5LW1hbmFnZW1lbnQvcG9saWNpZXM8L3c6UmVzb3VyY2VVUkk+DQogICAgICA8dzpTZWxlY3RvclNldD4NCiAgICAgICAgIDx3OlNlbGVjdG9yIE5hbWU9Im5hbWUiPiR7RlJBR01FTlRfTkFNRX08L3c6U2VsZWN0b3I+DQogICAgICA8L3c6U2VsZWN0b3JTZXQ+DQogICAgICA8dzpPcGVyYXRpb25UaW1lb3V0PlBUNjAuMDAwUzwvdzpPcGVyYXRpb25UaW1lb3V0Pg0KICAgPC9zOkhlYWRlcj4NCiAgIDxzOkJvZHkvPg0KPC9zOkVudmVsb3BlPg=="/>
+                    <L7p:VariableToSet stringValue="wsmRequestMessage"/>
+                </L7p:SetVariable>
+                <L7p:CommentAssertion>
+                    <L7p:Comment stringValue="// This fragment performs the WS-Mgmt operation call (note that the request/response messages are both overwritten)"/>
+                </L7p:CommentAssertion>
+                <L7p:CommentAssertion>
+                    <L7p:Comment stringValue="// Requires: authenticatedUser with &quot;admin&quot; privileges"/>
+                </L7p:CommentAssertion>
+                <L7p:CommentAssertion>
+                    <L7p:Comment stringValue="// Requires: var wsmRequestMessage set with complete SOAP request"/>
+                </L7p:CommentAssertion>
+                <L7p:CommentAssertion>
+                    <L7p:Comment stringValue="// Requires: var wsmRequestMessage must be of type &quot;String&quot;"/>
+                </L7p:CommentAssertion>
+                <L7p:SetVariable>
+                    <L7p:AssertionComment assertionComment="included">
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="RIGHT.COMMENT"/>
+                                <L7p:value stringValue="// Must contain complete WS-Management SOAP request"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:AssertionComment>
+                    <L7p:Base64Expression stringValue="JHt3c21SZXF1ZXN0TWVzc2FnZX0="/>
+                    <L7p:VariableToSet stringValue="wsmRequestMessage"/>
+                </L7p:SetVariable>
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="JHt3c21SZXF1ZXN0TWVzc2FnZX0="/>
+                    <L7p:ContentType stringValue="application/soap+xml; charset=utf-8"/>
+                    <L7p:DataType variableDataType="message"/>
+                    <L7p:VariableToSet stringValue="request"/>
+                </L7p:SetVariable>
+                <L7p:GatewayManagement>
+                    <L7p:AssertionComment assertionComment="included">
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="RIGHT.COMMENT"/>
+                                <L7p:value stringValue="// execute WS-Mgmt call"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="LEFT.COMMENT"/>
+                                <L7p:value stringValue="performWsmCall()"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:AssertionComment>
+                </L7p:GatewayManagement>
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="JHtyZXNwb25zZS5tYWlucGFydH0="/>
+                    <L7p:ContentType stringValue="text/xml; charset=utf-8"/>
+                    <L7p:DataType variableDataType="message"/>
+                    <L7p:VariableToSet stringValue="wsmResponseMessage"/>
+                </L7p:SetVariable>
+                <L7p:SetVariable>
+                    <L7p:AssertionComment assertionComment="included">
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="RIGHT.COMMENT"/>
+                                <L7p:value stringValue="// clear request message"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="LEFT.COMMENT"/>
+                                <L7p:value stringValue="set request = (empty)"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:AssertionComment>
+                    <L7p:Base64Expression stringValue=""/>
+                    <L7p:ContentType stringValue="text/plain; charset=utf-8"/>
+                    <L7p:DataType variableDataType="message"/>
+                    <L7p:VariableToSet stringValue="request"/>
+                </L7p:SetVariable>
+                <L7p:SetVariable>
+                    <L7p:AssertionComment assertionComment="included">
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="RIGHT.COMMENT"/>
+                                <L7p:value stringValue="// clear response message"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="LEFT.COMMENT"/>
+                                <L7p:value stringValue="set response = (empty)"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:AssertionComment>
+                    <L7p:Base64Expression stringValue=""/>
+                    <L7p:ContentType stringValue="text/plain; charset=utf-8"/>
+                    <L7p:DataType variableDataType="message"/>
+                    <L7p:VariableToSet stringValue="response"/>
+                </L7p:SetVariable>
+                <L7p:ResponseXpathAssertion>
+                    <L7p:VariablePrefix stringValue="wsmPolicy"/>
+                    <L7p:XmlMsgSrc stringValue="wsmResponseMessage"/>
+                    <L7p:XpathExpression xpathExpressionValue="included">
+                        <L7p:Expression stringValue="//l7:Policy"/>
+                        <L7p:Namespaces mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="wsp"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2002/12/policy"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="l7"/>
+                                <L7p:value stringValue="http://ns.l7tech.com/2010/04/gateway-management"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="xs"/>
+                                <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wsen"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/enumeration"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="env"/>
+                                <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="mex"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/mex"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wsa"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/08/addressing"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="mdo"/>
+                                <L7p:value stringValue="http://schemas.wiseman.dev.java.net/metadata/messagetypes"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="s"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wxf"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/transfer"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wsman"/>
+                                <L7p:value stringValue="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wsmeta"/>
+                                <L7p:value stringValue="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wse"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/08/eventing"/>
+                            </L7p:entry>
+                        </L7p:Namespaces>
+                    </L7p:XpathExpression>
+                </L7p:ResponseXpathAssertion>
+                <L7p:ResponseXpathAssertion>
+                    <L7p:VariablePrefix stringValue="policyXpath"/>
+                    <L7p:XmlMsgSrc stringValue="wsmResponseMessage"/>
+                    <L7p:XpathExpression xpathExpressionValue="included">
+                        <L7p:Expression stringValue="//l7:Resource[@type='policy']/text()"/>
+                        <L7p:Namespaces mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="wsa"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/08/addressing"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="mdo"/>
+                                <L7p:value stringValue="http://schemas.wiseman.dev.java.net/metadata/messagetypes"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="s"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="l7"/>
+                                <L7p:value stringValue="http://ns.l7tech.com/2010/04/gateway-management"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="xs"/>
+                                <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wxf"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/transfer"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wsen"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/enumeration"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="env"/>
+                                <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wsman"/>
+                                <L7p:value stringValue="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wsmeta"/>
+                                <L7p:value stringValue="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wse"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/08/eventing"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="mex"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/mex"/>
+                            </L7p:entry>
+                        </L7p:Namespaces>
+                    </L7p:XpathExpression>
+                </L7p:ResponseXpathAssertion>
+            </wsp:All>
+            <wsp:All wsp:Usage="Required">
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="NTAw"/>
+                    <L7p:VariableToSet stringValue="errorCode"/>
+                </L7p:SetVariable>
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="RXJyb3IgcmVhZGluZyBmcmFnbWVudDogJHtGUkFHTUVOVF9OQU1FfQ=="/>
+                    <L7p:VariableToSet stringValue="errorMessage"/>
+                </L7p:SetVariable>
+            </wsp:All>
+            <L7p:assertionComment>
+                <L7p:Properties mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="RIGHT.COMMENT"/>
+                        <L7p:value stringValue="// Get API Plans policy fragment"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="LEFT.COMMENT"/>
+                        <L7p:value stringValue="getPolicyFragment()"/>
+                    </L7p:entry>
+                </L7p:Properties>
+            </L7p:assertionComment>
+        </wsp:OneOrMore>
+        <wsp:OneOrMore wsp:Usage="Required">
+            <wsp:All wsp:Usage="Required">
+                <L7p:ComparisonAssertion>
+                    <L7p:CaseSensitive booleanValue="false"/>
+                    <L7p:Expression1 stringValue="${errorCode}"/>
+                    <L7p:Operator operatorNull="null"/>
+                    <L7p:Predicates predicates="included">
+                        <L7p:item dataType="included">
+                            <L7p:Type variableDataType="string"/>
+                        </L7p:item>
+                        <L7p:item binary="included">
+                            <L7p:Negated booleanValue="true"/>
+                            <L7p:RightValue stringValue="0"/>
+                        </L7p:item>
+                    </L7p:Predicates>
+                </L7p:ComparisonAssertion>
+                <L7p:TrueAssertion/>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="RIGHT.COMMENT"/>
+                            <L7p:value stringValue="// on error, skip step"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:All>
+            <wsp:All wsp:Usage="Required">
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="JHtnYXRld2F5LnBvcnRhbC5hcGlwbGFuc30="/>
+                    <L7p:ContentType stringValue="text/xml; charset=utf-8"/>
+                    <L7p:DataType variableDataType="message"/>
+                    <L7p:VariableToSet stringValue="apiPlans"/>
+                </L7p:SetVariable>
+                <L7p:XslTransformation>
+                    <L7p:Direction intValue="-1"/>
+                    <L7p:OtherTargetMessageVariable stringValue="apiPlans"/>
+                    <L7p:ResourceInfo staticResourceInfo="included">
+                        <L7p:Document stringValue="&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;>    &lt;xsl:output method=&quot;xml&quot; indent=&quot;no&quot; version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; omit-xml-declaration=&quot;yes&quot;/>    &lt;xsl:template match=&quot;/L7p:PlanPolicies&quot;>        &lt;!-- create the at-least-one branch for all non-default plans -->        &lt;xsl:element name=&quot;wsp:OneOrMore&quot; namespace=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;>            &lt;xsl:attribute name=&quot;wsp:Usage&quot; namespace=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;>&lt;xsl:value-of select=&quot;'Required'&quot;/>&lt;/xsl:attribute>            &lt;xsl:element name=&quot;L7p:assertionComment&quot; namespace=&quot;http://www.layer7tech.com/ws/policy&quot;>                &lt;xsl:element name=&quot;L7p:Properties&quot; namespace=&quot;http://www.layer7tech.com/ws/policy&quot;>                    &lt;xsl:element name=&quot;L7p:entry&quot; namespace=&quot;http://www.layer7tech.com/ws/policy&quot;>                        &lt;xsl:element name=&quot;L7p:key&quot; namespace=&quot;http://www.layer7tech.com/ws/policy&quot;>&lt;xsl:value-of select=&quot;'RIGHT.COMMENT'&quot;/>&lt;/xsl:element>                        &lt;xsl:element name=&quot;L7p:value&quot; namespace=&quot;http://www.layer7tech.com/ws/policy&quot;>&lt;xsl:value-of select=&quot;'// api plans'&quot;/>&lt;/xsl:element>                    &lt;/xsl:element>                &lt;/xsl:element>            &lt;/xsl:element>            &lt;!-- copy over the policy assertions pushed by the portal -->            &lt;xsl:apply-templates select=&quot;wsp:Policy/wsp:All&quot;/>        &lt;/xsl:element>    &lt;/xsl:template>    &lt;xsl:template match=&quot;wsp:Policy/wsp:All&quot;>        &lt;xsl:copy-of select=&quot;wsp:All&quot;/>    &lt;/xsl:template>&lt;/xsl:stylesheet>"/>
+                    </L7p:ResourceInfo>
+                    <L7p:Target target="OTHER"/>
+                    <L7p:TransformName stringValue=""/>
+                </L7p:XslTransformation>
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="JHtwb2xpY3lYcGF0aC5lbGVtZW50fQ=="/>
+                    <L7p:ContentType stringValue="text/xml; charset=utf-8"/>
+                    <L7p:DataType variableDataType="message"/>
+                    <L7p:VariableToSet stringValue="policyFragment"/>
+                </L7p:SetVariable>
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="JHthcGlQbGFucy5tYWlucGFydH0="/>
+                    <L7p:VariableToSet stringValue="updatePolicySection"/>
+                </L7p:SetVariable>
+                <L7p:ResponseXpathAssertion>
+                    <L7p:VariablePrefix stringValue="replacePolicySection"/>
+                    <L7p:XmlMsgSrc stringValue="policyFragment"/>
+                    <L7p:XpathExpression xpathExpressionValue="included">
+                        <L7p:Expression stringValue="/wsp:Policy/wsp:All/wsp:OneOrMore[1]"/>
+                        <L7p:Namespaces mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="wsp"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2002/12/policy"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="l7"/>
+                                <L7p:value stringValue="http://ns.l7tech.com/2010/04/gateway-management"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="xs"/>
+                                <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="env"/>
+                                <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wsen"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/enumeration"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="mex"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/mex"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wsa"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/08/addressing"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="mdo"/>
+                                <L7p:value stringValue="http://schemas.wiseman.dev.java.net/metadata/messagetypes"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="s"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="L7p"/>
+                                <L7p:value stringValue="http://www.layer7tech.com/ws/policy"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wxf"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/transfer"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wsman"/>
+                                <L7p:value stringValue="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wse"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/08/eventing"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="wsmeta"/>
+                                <L7p:value stringValue="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"/>
+                            </L7p:entry>
+                        </L7p:Namespaces>
+                    </L7p:XpathExpression>
+                </L7p:ResponseXpathAssertion>
+                <L7p:RemoveElement>
+                    <L7p:ElementFromVariable stringValue="replacePolicySection.elements"/>
+                    <L7p:ElementToInsertVariable stringValue="updatePolicySection"/>
+                    <L7p:InsertedElementLocation insertedElementLocation="PREVIOUS_SIBLING"/>
+                    <L7p:OtherTargetMessageVariable stringValue="policyFragment"/>
+                    <L7p:Target target="OTHER"/>
+                </L7p:RemoveElement>
+                <L7p:RemoveElement>
+                    <L7p:ElementFromVariable stringValue="replacePolicySection.elements"/>
+                    <L7p:ElementToInsertVariable stringValue="updatePolicySection"/>
+                    <L7p:OtherTargetMessageVariable stringValue="policyFragment"/>
+                    <L7p:Target target="OTHER"/>
+                </L7p:RemoveElement>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="RIGHT.COMMENT"/>
+                            <L7p:value stringValue="// create updated policy fragment"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:All>
+            <wsp:All wsp:Usage="Required">
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="NTAw"/>
+                    <L7p:VariableToSet stringValue="errorCode"/>
+                </L7p:SetVariable>
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="RXJyb3IgY3JlYXRpbmcgdXBkYXRlIGZyYWdtZW50"/>
+                    <L7p:VariableToSet stringValue="errorMessage"/>
+                </L7p:SetVariable>
+            </wsp:All>
+            <L7p:assertionComment>
+                <L7p:Properties mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="RIGHT.COMMENT"/>
+                        <L7p:value stringValue="// Generate new API Plans policy fragment"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="LEFT.COMMENT"/>
+                        <L7p:value stringValue="createUpdateFragment()"/>
+                    </L7p:entry>
+                </L7p:Properties>
+            </L7p:assertionComment>
+        </wsp:OneOrMore>
+        <wsp:OneOrMore wsp:Usage="Required">
+            <wsp:All wsp:Usage="Required">
+                <L7p:ComparisonAssertion>
+                    <L7p:CaseSensitive booleanValue="false"/>
+                    <L7p:Expression1 stringValue="${errorCode}"/>
+                    <L7p:Operator operatorNull="null"/>
+                    <L7p:Predicates predicates="included">
+                        <L7p:item dataType="included">
+                            <L7p:Type variableDataType="string"/>
+                        </L7p:item>
+                        <L7p:item binary="included">
+                            <L7p:Negated booleanValue="true"/>
+                            <L7p:RightValue stringValue="0"/>
+                        </L7p:item>
+                    </L7p:Predicates>
+                </L7p:ComparisonAssertion>
+                <L7p:TrueAssertion/>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="RIGHT.COMMENT"/>
+                            <L7p:value stringValue="// on error, skip step"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:All>
+            <wsp:All wsp:Usage="Required">
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="JHtwb2xpY3lGcmFnbWVudC5tYWlucGFydH0="/>
+                    <L7p:VariableToSet stringValue="newFragmentValue"/>
+                </L7p:SetVariable>
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="JHt3c21Qb2xpY3kuZWxlbWVudH0="/>
+                    <L7p:ContentType stringValue="text/xml; charset=utf-8"/>
+                    <L7p:DataType variableDataType="message"/>
+                    <L7p:VariableToSet stringValue="updatedPolicy"/>
+                </L7p:SetVariable>
+                <L7p:SetVariable>
+                    <L7p:AssertionComment assertionComment="included">
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="RIGHT.COMMENT"/>
+                                <L7p:value stringValue="// do not change"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="LEFT.COMMENT"/>
+                                <L7p:value stringValue="Constant: "/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:AssertionComment>
+                    <L7p:Base64Expression stringValue="QVBJIFBsYW5zIEZyYWdtZW50"/>
+                    <L7p:VariableToSet stringValue="FRAGMENT_NAME"/>
+                </L7p:SetVariable>
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="JHtuZXdGcmFnbWVudFZhbHVlfQ=="/>
+                    <L7p:VariableToSet stringValue="newFragmentValue"/>
+                </L7p:SetVariable>
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="JHt1cGRhdGVkUG9saWN5Lm1haW5wYXJ0fQ=="/>
+                    <L7p:ContentType stringValue="text/xml; charset=utf-8"/>
+                    <L7p:DataType variableDataType="message"/>
+                    <L7p:VariableToSet stringValue="updatedPolicy"/>
+                </L7p:SetVariable>
+                <L7p:AuditDetailAssertion>
+                    <L7p:Detail stringValue="updatedPolicy:${updatedPolicy.mainpart}"/>
+                    <L7p:Enabled booleanValue="false"/>
+                </L7p:AuditDetailAssertion>
+                <L7p:ResponseXpathAssertion>
+                    <L7p:VariablePrefix stringValue="previousVersion"/>
+                    <L7p:XmlMsgSrc stringValue="updatedPolicy"/>
+                    <L7p:XpathExpression xpathExpressionValue="included">
+                        <L7p:Expression stringValue="//l7:Policy/@version"/>
+                        <L7p:Namespaces mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="s"/>
+                                <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="l7"/>
+                                <L7p:value stringValue="http://ns.l7tech.com/2010/04/gateway-management"/>
+                            </L7p:entry>
+                        </L7p:Namespaces>
+                    </L7p:XpathExpression>
+                </L7p:ResponseXpathAssertion>
+                <L7p:XslTransformation>
+                    <L7p:Direction intValue="-1"/>
+                    <L7p:OtherTargetMessageVariable stringValue="updatedPolicy"/>
+                    <L7p:ResourceInfo staticResourceInfo="included">
+                        <L7p:Document stringValue="&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;>    &lt;xsl:output encoding=&quot;UTF-8&quot; indent=&quot;no&quot; method=&quot;xml&quot; omit-xml-declaration=&quot;yes&quot; version=&quot;1.0&quot;/>    &lt;xsl:param name=&quot;newFragmentValue&quot;/>    &lt;xsl:template match=&quot;/&quot;>        &lt;xsl:copy>            &lt;xsl:apply-templates select=&quot;*|@*|text()|processing-instruction()|comment()&quot;/>        &lt;/xsl:copy>    &lt;/xsl:template>    &lt;xsl:template match=&quot;l7:Resource&quot;>        &lt;xsl:choose>            &lt;xsl:when test=&quot;@type='policy'&quot;>                &lt;xsl:copy>                    &lt;xsl:apply-templates select=&quot;@*&quot;/>&lt;xsl:value-of disable-output-escaping=&quot;no&quot; select=&quot;$newFragmentValue&quot;/>                &lt;/xsl:copy>            &lt;/xsl:when>            &lt;xsl:otherwise>                &lt;xsl:copy>                    &lt;xsl:apply-templates select=&quot;*|@*|text()|processing-instruction()|comment()&quot;/>                &lt;/xsl:copy>            &lt;/xsl:otherwise>        &lt;/xsl:choose>    &lt;/xsl:template>    &lt;!-- Identity transform -->    &lt;xsl:template match=&quot;@*|*|processing-instruction()|comment()&quot;>        &lt;xsl:copy>            &lt;xsl:apply-templates select=&quot;*|@*|text()|processing-instruction()|comment()&quot;/>        &lt;/xsl:copy>    &lt;/xsl:template>&lt;/xsl:stylesheet>"/>
+                    </L7p:ResourceInfo>
+                    <L7p:Target target="OTHER"/>
+                    <L7p:TransformName stringValue=""/>
+                </L7p:XslTransformation>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:SetVariable>
+                        <L7p:Base64Expression stringValue="PHM6RW52ZWxvcGUgeG1sbnM6cz0iaHR0cDovL3d3dy53My5vcmcvMjAwMy8wNS9zb2FwLWVudmVsb3BlIiB4bWxuczp3c2E9Imh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDQvMDgvYWRkcmVzc2luZyIgeG1sbnM6d3NtYW49Imh0dHA6Ly9zY2hlbWFzLmRtdGYub3JnL3diZW0vd3NtYW4vMS93c21hbi54c2QiIHhtbG5zOmw3PSJodHRwOi8vbnMubDd0ZWNoLmNvbS8yMDEwLzA0L2dhdGV3YXktbWFuYWdlbWVudCI+DQogICA8czpIZWFkZXI+DQogICAgICA8d3NhOkFjdGlvbiBzOm11c3RVbmRlcnN0YW5kPSJ0cnVlIj5odHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA0LzA5L3RyYW5zZmVyL1B1dDwvd3NhOkFjdGlvbj4NCiAgICAgIDx3c2E6VG8gczptdXN0VW5kZXJzdGFuZD0idHJ1ZSI+aHR0cDovL2xvY2FsaG9zdDo4MDgwL3dzbWFuPC93c2E6VG8+DQogICAgICA8d3NtYW46UmVzb3VyY2VVUkkgczptdXN0VW5kZXJzdGFuZD0idHJ1ZSI+aHR0cDovL25zLmw3dGVjaC5jb20vMjAxMC8wNC9nYXRld2F5LW1hbmFnZW1lbnQvcG9saWNpZXM8L3dzbWFuOlJlc291cmNlVVJJPg0KICAgICAgPHdzYTpNZXNzYWdlSUQgczptdXN0VW5kZXJzdGFuZD0idHJ1ZSI+d3NtLXB1dC1pZC0ke3JlcXVlc3RJZH08L3dzYTpNZXNzYWdlSUQ+DQogICAgICA8d3NhOlJlcGx5VG8+DQogICAgICAgICA8d3NhOkFkZHJlc3M+aHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNC8wOC9hZGRyZXNzaW5nL3JvbGUvYW5vbnltb3VzPC93c2E6QWRkcmVzcz4NCiAgICAgIDwvd3NhOlJlcGx5VG8+DQogICAgICA8d3NtYW46U2VsZWN0b3JTZXQ+DQogICAgICAgICA8d3NtYW46U2VsZWN0b3IgTmFtZT0ibmFtZSI+JHtGUkFHTUVOVF9OQU1FfTwvd3NtYW46U2VsZWN0b3I+DQogICAgICA8L3dzbWFuOlNlbGVjdG9yU2V0Pg0KICAgPC9zOkhlYWRlcj4NCiAgIDxzOkJvZHk+DQoke3VwZGF0ZWRQb2xpY3kubWFpbnBhcnR9DQogICA8L3M6Qm9keT4NCjwvczpFbnZlbG9wZT4="/>
+                        <L7p:VariableToSet stringValue="wsmRequestMessage"/>
+                    </L7p:SetVariable>
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="// This fragment performs the WS-Mgmt operation call (note that the request/response messages are both overwritten)"/>
+                    </L7p:CommentAssertion>
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="// Requires: authenticatedUser with &quot;admin&quot; privileges"/>
+                    </L7p:CommentAssertion>
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="// Requires: var wsmRequestMessage set with complete SOAP request"/>
+                    </L7p:CommentAssertion>
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="// Requires: var wsmRequestMessage must be of type &quot;String&quot;"/>
+                    </L7p:CommentAssertion>
+                    <L7p:SetVariable>
+                        <L7p:AssertionComment assertionComment="included">
+                            <L7p:Properties mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="RIGHT.COMMENT"/>
+                                    <L7p:value stringValue="// Must contain complete WS-Management SOAP request"/>
+                                </L7p:entry>
+                            </L7p:Properties>
+                        </L7p:AssertionComment>
+                        <L7p:Base64Expression stringValue="JHt3c21SZXF1ZXN0TWVzc2FnZX0="/>
+                        <L7p:VariableToSet stringValue="wsmRequestMessage"/>
+                    </L7p:SetVariable>
+                    <L7p:SetVariable>
+                        <L7p:Base64Expression stringValue="JHt3c21SZXF1ZXN0TWVzc2FnZX0="/>
+                        <L7p:ContentType stringValue="application/soap+xml; charset=utf-8"/>
+                        <L7p:DataType variableDataType="message"/>
+                        <L7p:VariableToSet stringValue="request"/>
+                    </L7p:SetVariable>
+                    <L7p:GatewayManagement>
+                        <L7p:AssertionComment assertionComment="included">
+                            <L7p:Properties mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="RIGHT.COMMENT"/>
+                                    <L7p:value stringValue="// execute WS-Mgmt call"/>
+                                </L7p:entry>
+                                <L7p:entry>
+                                    <L7p:key stringValue="LEFT.COMMENT"/>
+                                    <L7p:value stringValue="performWsmCall()"/>
+                                </L7p:entry>
+                            </L7p:Properties>
+                        </L7p:AssertionComment>
+                    </L7p:GatewayManagement>
+                    <L7p:SetVariable>
+                        <L7p:Base64Expression stringValue="JHtyZXNwb25zZS5tYWlucGFydH0="/>
+                        <L7p:ContentType stringValue="text/xml; charset=utf-8"/>
+                        <L7p:DataType variableDataType="message"/>
+                        <L7p:VariableToSet stringValue="wsmResponseMessage"/>
+                    </L7p:SetVariable>
+                    <L7p:SetVariable>
+                        <L7p:AssertionComment assertionComment="included">
+                            <L7p:Properties mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="RIGHT.COMMENT"/>
+                                    <L7p:value stringValue="// clear request message"/>
+                                </L7p:entry>
+                                <L7p:entry>
+                                    <L7p:key stringValue="LEFT.COMMENT"/>
+                                    <L7p:value stringValue="set request = (empty)"/>
+                                </L7p:entry>
+                            </L7p:Properties>
+                        </L7p:AssertionComment>
+                        <L7p:Base64Expression stringValue=""/>
+                        <L7p:ContentType stringValue="text/plain; charset=utf-8"/>
+                        <L7p:DataType variableDataType="message"/>
+                        <L7p:VariableToSet stringValue="request"/>
+                    </L7p:SetVariable>
+                    <L7p:SetVariable>
+                        <L7p:AssertionComment assertionComment="included">
+                            <L7p:Properties mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="RIGHT.COMMENT"/>
+                                    <L7p:value stringValue="// clear response message"/>
+                                </L7p:entry>
+                                <L7p:entry>
+                                    <L7p:key stringValue="LEFT.COMMENT"/>
+                                    <L7p:value stringValue="set response = (empty)"/>
+                                </L7p:entry>
+                            </L7p:Properties>
+                        </L7p:AssertionComment>
+                        <L7p:Base64Expression stringValue=""/>
+                        <L7p:ContentType stringValue="text/plain; charset=utf-8"/>
+                        <L7p:DataType variableDataType="message"/>
+                        <L7p:VariableToSet stringValue="response"/>
+                    </L7p:SetVariable>
+                    <L7p:SetVariable>
+                        <L7p:Base64Expression stringValue="JHt3c21SZXNwb25zZU1lc3NhZ2UubWFpbnBhcnR9"/>
+                        <L7p:ContentType stringValue="text/xml; charset=utf-8"/>
+                        <L7p:DataType variableDataType="message"/>
+                        <L7p:VariableToSet stringValue="RESP_putOp"/>
+                    </L7p:SetVariable>
+                    <L7p:assertionComment>
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="RIGHT.COMMENT"/>
+                                <L7p:value stringValue="// perform policy push"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:assertionComment>
+                </wsp:All>
+                <wsp:OneOrMore wsp:Usage="Required">
+                    <wsp:All wsp:Usage="Required">
+                        <L7p:ResponseXpathAssertion>
+                            <L7p:VariablePrefix stringValue="newVersion"/>
+                            <L7p:XmlMsgSrc stringValue="RESP_putOp"/>
+                            <L7p:XpathExpression xpathExpressionValue="included">
+                                <L7p:Expression stringValue="//l7:Policy/@version"/>
+                                <L7p:Namespaces mapValue="included">
+                                    <L7p:entry>
+                                    <L7p:key stringValue="s"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="l7"/>
+                                    <L7p:value stringValue="http://ns.l7tech.com/2010/04/gateway-management"/>
+                                    </L7p:entry>
+                                </L7p:Namespaces>
+                            </L7p:XpathExpression>
+                        </L7p:ResponseXpathAssertion>
+                        <L7p:ResponseXpathAssertion>
+                            <L7p:VariablePrefix stringValue="newPolicy"/>
+                            <L7p:XmlMsgSrc stringValue="RESP_putOp"/>
+                            <L7p:XpathExpression xpathExpressionValue="included">
+                                <L7p:Expression stringValue="//l7:Policy"/>
+                                <L7p:Namespaces mapValue="included">
+                                    <L7p:entry>
+                                    <L7p:key stringValue="s"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="l7"/>
+                                    <L7p:value stringValue="http://ns.l7tech.com/2010/04/gateway-management"/>
+                                    </L7p:entry>
+                                </L7p:Namespaces>
+                            </L7p:XpathExpression>
+                        </L7p:ResponseXpathAssertion>
+                        <L7p:AuditDetailAssertion>
+                            <L7p:Detail stringValue="Updated from version:${previousVersion.result} to version:${newVersion.result}Policy: ${newPolicy.element}"/>
+                            <L7p:LoggingOnly booleanValue="true"/>
+                        </L7p:AuditDetailAssertion>
+                        <L7p:assertionComment>
+                            <L7p:Properties mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="RIGHT.COMMENT"/>
+                                    <L7p:value stringValue="// success"/>
+                                </L7p:entry>
+                            </L7p:Properties>
+                        </L7p:assertionComment>
+                    </wsp:All>
+                    <wsp:All wsp:Usage="Required">
+                        <L7p:ResponseXpathAssertion>
+                            <L7p:VariablePrefix stringValue="fault"/>
+                            <L7p:XmlMsgSrc stringValue="RESP_putOp"/>
+                            <L7p:XpathExpression xpathExpressionValue="included">
+                                <L7p:Expression stringValue="/env:Envelope/env:Body/env:Fault"/>
+                                <L7p:Namespaces mapValue="included">
+                                    <L7p:entry>
+                                    <L7p:key stringValue="wsa"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/08/addressing"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="mdo"/>
+                                    <L7p:value stringValue="http://schemas.wiseman.dev.java.net/metadata/messagetypes"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="s"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="l7"/>
+                                    <L7p:value stringValue="http://ns.l7tech.com/2010/04/gateway-management"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="xs"/>
+                                    <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="wxf"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/transfer"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="wsen"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/enumeration"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="env"/>
+                                    <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="wsman"/>
+                                    <L7p:value stringValue="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="wsmeta"/>
+                                    <L7p:value stringValue="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="wse"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/08/eventing"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="mex"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2004/09/mex"/>
+                                    </L7p:entry>
+                                </L7p:Namespaces>
+                            </L7p:XpathExpression>
+                        </L7p:ResponseXpathAssertion>
+                        <L7p:SetVariable>
+                            <L7p:Base64Expression stringValue="JHtmYXVsdC5lbGVtZW50fQ=="/>
+                            <L7p:ContentType stringValue="text/xml; charset=utf-8"/>
+                            <L7p:DataType variableDataType="message"/>
+                            <L7p:VariableToSet stringValue="RESP_fault"/>
+                        </L7p:SetVariable>
+                        <wsp:OneOrMore wsp:Usage="Required">
+                            <wsp:All wsp:Usage="Required">
+                                <L7p:ResponseXpathAssertion>
+                                    <L7p:VariablePrefix stringValue="reason"/>
+                                    <L7p:XmlMsgSrc stringValue="RESP_fault"/>
+                                    <L7p:XpathExpression xpathExpressionValue="included">
+                                    <L7p:Expression stringValue="//s:Reason/s:Text/text()"/>
+                                    <L7p:Namespaces mapValue="included">
+                                    <L7p:entry>
+                                    <L7p:key stringValue="s"/>
+                                    <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="l7"/>
+                                    <L7p:value stringValue="http://ns.l7tech.com/2010/04/gateway-management"/>
+                                    </L7p:entry>
+                                    </L7p:Namespaces>
+                                    </L7p:XpathExpression>
+                                </L7p:ResponseXpathAssertion>
+                                <L7p:ResponseXpathAssertion>
+                                    <L7p:VariablePrefix stringValue="detail"/>
+                                    <L7p:XmlMsgSrc stringValue="RESP_fault"/>
+                                    <L7p:XpathExpression xpathExpressionValue="included">
+                                    <L7p:Expression stringValue="//s:Detail/s:Text/text()"/>
+                                    <L7p:Namespaces mapValue="included">
+                                    <L7p:entry>
+                                    <L7p:key stringValue="s"/>
+                                    <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="l7"/>
+                                    <L7p:value stringValue="http://ns.l7tech.com/2010/04/gateway-management"/>
+                                    </L7p:entry>
+                                    </L7p:Namespaces>
+                                    </L7p:XpathExpression>
+                                </L7p:ResponseXpathAssertion>
+                            </wsp:All>
+                            <L7p:TrueAssertion/>
+                        </wsp:OneOrMore>
+                        <L7p:AuditDetailAssertion>
+                            <L7p:Detail stringValue="Fault Reason: ${reason.result}Fault Detail: ${detail.result}"/>
+                            <L7p:LoggingOnly booleanValue="true"/>
+                        </L7p:AuditDetailAssertion>
+                        <L7p:FalseAssertion/>
+                        <L7p:assertionComment>
+                            <L7p:Properties mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="RIGHT.COMMENT"/>
+                                    <L7p:value stringValue="// error check"/>
+                                </L7p:entry>
+                            </L7p:Properties>
+                        </L7p:assertionComment>
+                    </wsp:All>
+                </wsp:OneOrMore>
+            </wsp:All>
+            <wsp:All wsp:Usage="Required">
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="NTAw"/>
+                    <L7p:VariableToSet stringValue="errorCode"/>
+                </L7p:SetVariable>
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="RXJyb3IgdXBkYXRpbmcgZnJhZ21lbnQ6ICR7RlJBR01FTlRfTkFNRX0="/>
+                    <L7p:VariableToSet stringValue="errorMessage"/>
+                </L7p:SetVariable>
+            </wsp:All>
+            <L7p:assertionComment>
+                <L7p:Properties mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="RIGHT.COMMENT"/>
+                        <L7p:value stringValue="// Update API Plans policy fragment"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="LEFT.COMMENT"/>
+                        <L7p:value stringValue="updatePolicyFragment()"/>
+                    </L7p:entry>
+                </L7p:Properties>
+            </L7p:assertionComment>
+        </wsp:OneOrMore>
+        <wsp:OneOrMore wsp:Usage="Required">
+            <wsp:All wsp:Usage="Required">
+                <L7p:ComparisonAssertion>
+                    <L7p:CaseSensitive booleanValue="false"/>
+                    <L7p:Expression1 stringValue="${errorCode}"/>
+                    <L7p:Operator operatorNull="null"/>
+                    <L7p:Predicates predicates="included">
+                        <L7p:item dataType="included">
+                            <L7p:Type variableDataType="string"/>
+                        </L7p:item>
+                        <L7p:item binary="included">
+                            <L7p:RightValue stringValue="0"/>
+                        </L7p:item>
+                    </L7p:Predicates>
+                </L7p:ComparisonAssertion>
+                <L7p:HardcodedResponse>
+                    <L7p:Base64ResponseBody stringValue="PGw3OkFwaVBsYW5SZXNwb25zZSB4bWxuczpsNz0iaHR0cDovL25zLmw3dGVjaC5jb20vMjAxMS8wOC9wb3J0YWwtYXBpLWtleXMiPgogICA8bDc6T3BlcmF0aW9uPnJlbG9hZDwvbDc6T3BlcmF0aW9uPgogICA8bDc6VGltZXN0YW1wPiR7cmVxdWVzdC50aW1lLmxvY2FsLk1NZGR5eXl5LUhIOm1tOnNzLlNTU308L2w3OlRpbWVzdGFtcD4KICAgPGw3OlN0YXR1cz4yMDA8L2w3OlN0YXR1cz4KICAgPGw3Ok1lc3NhZ2U+c3VjY2VzczwvbDc6TWVzc2FnZT4KICAgPGw3OkRldGFpbD48L2w3OkRldGFpbD4KICAgPGw3OlByb3BlcnRpZXM+CiAgICAgIDxsNzpQcm9wZXJ0eSBrZXk9ImNvcnJlbElkIj4KICAgICAgICAgPGw3OlN0cmluZ1ZhbHVlPiR7cmVxdWVzdElkfTwvbDc6U3RyaW5nVmFsdWU+CiAgICAgIDwvbDc6UHJvcGVydHk+CiAgICAgIDxsNzpQcm9wZXJ0eSBrZXk9Im9sZFBvbGljeVZlcnNpb24iPgogICAgICAgICA8bDc6U3RyaW5nVmFsdWU+JHtwcmV2aW91c1ZlcnNpb24ucmVzdWx0fTwvbDc6U3RyaW5nVmFsdWU+CiAgICAgIDwvbDc6UHJvcGVydHk+CiAgICAgIDxsNzpQcm9wZXJ0eSBrZXk9Im5ld1BvbGljeVZlcnNpb24iPgogICAgICAgICA8bDc6U3RyaW5nVmFsdWU+JHtuZXdWZXJzaW9uLnJlc3VsdH08L2w3OlN0cmluZ1ZhbHVlPgogICAgICA8L2w3OlByb3BlcnR5PgogICA8L2w3OlByb3BlcnRpZXM+CjwvbDc6QXBpUGxhblJlc3BvbnNlPg=="/>
+                </L7p:HardcodedResponse>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="RIGHT.COMMENT"/>
+                            <L7p:value stringValue="// Return response"/>
+                        </L7p:entry>
+                        <L7p:entry>
+                            <L7p:key stringValue="LEFT.COMMENT"/>
+                            <L7p:value stringValue="if (success path)"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:All>
+            <wsp:All wsp:Usage="Required">
+                <L7p:CustomizeErrorResponse>
+                    <L7p:Content stringValue="&lt;l7:ApiPlanResponse xmlns:l7=&quot;http://ns.l7tech.com/2011/08/portal-api-keys&quot;>   &lt;l7:Operation>reload&lt;/l7:Operation>   &lt;l7:Timestamp>${request.time.local.MMddyyyy-HH:mm:ss.SSS}&lt;/l7:Timestamp>   &lt;l7:Status>500&lt;/l7:Status>   &lt;l7:Message>${errorMessage}&lt;/l7:Message>   &lt;l7:Detail>&lt;/l7:Detail>   &lt;l7:Properties>      &lt;l7:Property key=&quot;correlId&quot;>         &lt;l7:StringValue>${requestId}&lt;/l7:StringValue>      &lt;/l7:Property>      &lt;l7:Property key=&quot;oldPolicyVersion&quot;>         &lt;l7:StringValue>${previousVersion.result}&lt;/l7:StringValue>      &lt;/l7:Property>      &lt;l7:Property key=&quot;newPolicyVersion&quot;>         &lt;l7:StringValue>${newVersion.result}&lt;/l7:StringValue>      &lt;/l7:Property>   &lt;/l7:Properties>&lt;/l7:ApiPlanResponse>"/>
+                    <L7p:ContentType stringValue="text/xml; charset=UTF-8"/>
+                    <L7p:HttpStatus stringValue="${errorCode}"/>
+                </L7p:CustomizeErrorResponse>
+                <L7p:FalseAssertion/>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="RIGHT.COMMENT"/>
+                            <L7p:value stringValue="// Return error, falsify policy"/>
+                        </L7p:entry>
+                        <L7p:entry>
+                            <L7p:key stringValue="LEFT.COMMENT"/>
+                            <L7p:value stringValue="Else (error)"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:All>
+            <L7p:assertionComment>
+                <L7p:Properties mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="RIGHT.COMMENT"/>
+                        <L7p:value stringValue="// Build response"/>
+                    </L7p:entry>
+                </L7p:Properties>
+            </L7p:assertionComment>
+        </wsp:OneOrMore>
+    </wsp:All>
+</wsp:Policy>

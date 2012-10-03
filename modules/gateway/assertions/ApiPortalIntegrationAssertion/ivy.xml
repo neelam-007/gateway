@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.l7tech"
+		module="ApiPortalIntegrationAssertion"
+        status="integration"
+	>
+	</info>
+	<configurations defaultconfmapping="compile->default; core->default; runtime->default; test->default; optional->default">
+        <conf name="core" description="Core dependencies for all configurations" visibility="private"/>
+        <conf name="default" description="Runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
+        <conf name="master" description="Contains only the artifact published by this module itself, with no transitive dependencies"/>
+        <conf name="compile" description="The dependency is required at compile time." extends="core,optional"/>
+        <conf name="runtime" description="The dependency is required at runtime." extends="core"/>
+        <conf name="test" description="The dependency required for building/running tests only." extends="runtime,compile"/>
+        <conf name="optional" description="Contains all optional dependencies"/>
+        <conf name="client" description="Client assertion"/>
+	</configurations>
+	<publications>
+		<artifact name="ApiPortalIntegrationAssertion" type="aar" ext="aar" conf="master"/>
+	</publications>
+	<dependencies>
+        <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
+                    conf="compile->compile;runtime->runtime;test->test"/>
+        <dependency org="org.mockito" name="mockito-core" rev="1.9.0" force="true" conf="test"/>
+        <dependency org="org.hsqldb" name="hsqldb" rev="2.2.4" force="true" conf="test"/>
+
+	</dependencies>
+</ivy-module>
