@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.ahttp.server;
 
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.RandomUtil;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -14,6 +15,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.is100ContinueExpected;
@@ -48,9 +50,7 @@ class AsyncHttpRequestHandler extends SimpleChannelUpstreamHandler {
             throw new IOException("Chunked encoding request not automatically deaggregated");
         } else {
             ChannelBuffer content = request.getContent();
-            if (content.readable()) {
-                submitRequest(e, request, content);
-            }
+            submitRequest(e, request, content);
         }
     }
 
@@ -79,10 +79,8 @@ class AsyncHttpRequestHandler extends SimpleChannelUpstreamHandler {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-        // TODO report errors properly
-        //noinspection ThrowableResultOfMethodCallIgnored
-        e.getCause().printStackTrace();
-        e.getChannel().close();
+    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent ee) throws Exception {
+        Throwable e = ee.getCause();
+        logger.log(Level.INFO, "I/O error while processing async HTTP request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
     }
 }

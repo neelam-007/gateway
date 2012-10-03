@@ -97,7 +97,7 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
                 port = 80; // TODO use 443 as default for https when supported
 
             final ResponseContextInfo finalResponseContextInfo = responseContextInfo;
-            NettyHttpClient.issueAsyncHttpRequest(uri.getHost(), port, httpRequest, new Functions.UnaryVoid<Either<IOException, HttpResponse>>() {
+            NettyHttpClient.issueAsyncHttpRequest(uri.getHost(), port, httpRequest, assertion.isUseKeepAlives(), new Functions.UnaryVoid<Either<IOException, HttpResponse>>() {
                 @Override
                 public void call(Either<IOException, HttpResponse> ioExceptionHttpResponseEither) {
                     try {
@@ -173,8 +173,7 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
             httpRequest.setContent(ChannelBuffers.copiedBuffer(IOUtils.slurpStream(mk.getEntireMessageBodyAsInputStream(false))));
             httpRequest.setHeader(HttpHeaders.Names.CONTENT_LENGTH, mk.getContentLength());
 
-            // TODO keepalive support, with per-host connection pooling
-            httpRequest.setHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
+            httpRequest.setHeader(HttpHeaders.Names.CONNECTION, assertion.isUseKeepAlives() ? HttpHeaders.Values.KEEP_ALIVE : HttpHeaders.Values.CLOSE);
         }
 
         OutboundHeadersKnob heads = targetMessage.getKnob(OutboundHeadersKnob.class);

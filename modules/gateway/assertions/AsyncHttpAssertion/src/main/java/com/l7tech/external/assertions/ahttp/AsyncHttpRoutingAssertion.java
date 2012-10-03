@@ -70,6 +70,16 @@ public class AsyncHttpRoutingAssertion extends HttpRoutingAssertion implements U
     }
 
     @Override
+    public boolean isUseKeepAlives() {
+        return super.isUseKeepAlives();
+    }
+
+    @Override
+    public void setUseKeepAlives(boolean useKeepAlives) {
+        super.setUseKeepAlives(useKeepAlives);
+    }
+
+    @Override
     public boolean initializesRequest() {
         return false;
     }
