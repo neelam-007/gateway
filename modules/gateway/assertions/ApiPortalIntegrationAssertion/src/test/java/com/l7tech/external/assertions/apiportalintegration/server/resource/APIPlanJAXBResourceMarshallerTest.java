@@ -6,7 +6,10 @@ import org.junit.Test;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 import static org.junit.Assert.*;
 
@@ -15,15 +18,20 @@ public class APIPlanJAXBResourceMarshallerTest {
     private ApiPlanResource plan;
     // this is not the EXACT format that jaxb uses by default - jaxb actually adds a colon to the time zone
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+    private Date lastUpdate;
 
     @Before
     public void setup() throws Exception {
         marshaller = new DefaultJAXBResourceMarshaller();
+        final Calendar calendar = new GregorianCalendar(2012, Calendar.JANUARY, 1, 1, 1, 1);
+        calendar.set(Calendar.MILLISECOND, 1);
+        calendar.setTimeZone(TimeZone.getTimeZone("GMT-7:00"));
+        lastUpdate = calendar.getTime();
     }
 
     @Test
     public void marshall() throws Exception {
-        plan = new ApiPlanResource("p1", "pName", new Date(), "the xml", false);
+        plan = new ApiPlanResource("p1", "pName", lastUpdate, "the xml", false);
 
         final String xml = marshaller.marshal(plan);
 
@@ -32,7 +40,7 @@ public class APIPlanJAXBResourceMarshallerTest {
 
     @Test
     public void marshallNullPlanId() throws Exception {
-        plan = new ApiPlanResource(null, "pName", new Date(), "the xml", false);
+        plan = new ApiPlanResource(null, "pName", lastUpdate, "the xml", false);
 
         final String xml = marshaller.marshal(plan);
 
@@ -41,11 +49,13 @@ public class APIPlanJAXBResourceMarshallerTest {
 
     @Test
     public void marshallNullPlanName() throws Exception {
-        plan = new ApiPlanResource("p1", null, new Date(), "the xml", false);
+        plan = new ApiPlanResource("p1", null, lastUpdate, "the xml", false);
 
         final String xml = marshaller.marshal(plan);
 
-        assertEquals(StringUtils.deleteWhitespace(buildExpectedXml(plan)), StringUtils.deleteWhitespace(xml));
+        final String expected = StringUtils.deleteWhitespace(buildExpectedXml(plan));
+        System.out.println(expected);
+        assertEquals(expected, StringUtils.deleteWhitespace(xml));
     }
 
     @Test
@@ -59,7 +69,7 @@ public class APIPlanJAXBResourceMarshallerTest {
 
     @Test
     public void marshallNullPolicyXml() throws Exception {
-        plan = new ApiPlanResource("p1", "pName", new Date(), null, false);
+        plan = new ApiPlanResource("p1", "pName", lastUpdate, null, false);
 
         final String xml = marshaller.marshal(plan);
 
@@ -68,7 +78,7 @@ public class APIPlanJAXBResourceMarshallerTest {
 
     @Test
     public void marshallDefaultPlan() throws Exception {
-        plan = new ApiPlanResource("p1", "pName", new Date(), "the xml", true);
+        plan = new ApiPlanResource("p1", "pName", lastUpdate, "the xml", true);
 
         final String xml = marshaller.marshal(plan);
 
