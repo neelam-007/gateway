@@ -369,6 +369,29 @@ public class OAuthToolkit1_0IntegrationTest {
         assertEquals("Invalid oauth_callback: 123", responseBody);
     }
 
+    @BugNumber(13092)
+    @Test
+    public void requestTokenEndpointNoCallback() throws Exception {
+        final Map<String, String> parameters = createDefaultRequestTokenParameters();
+        parameters.remove("oauth_callback");
+        final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Missing oauth_callback", responseBody);
+    }
+
+    @BugNumber(13092)
+    @Test
+    public void requestTokenEndpointEmptyTokenNoCallback() throws Exception {
+        final Map<String, String> parameters = createDefaultRequestTokenParameters();
+        parameters.remove("oauth_callback");
+        parameters.put("oauth_token", "");
+        final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Missing oauth_callback", responseBody);
+    }
+
     @Test
     @BugNumber(13103)
     public void accessTokenEndpointUnrecognizedConsumerKey() throws Exception {

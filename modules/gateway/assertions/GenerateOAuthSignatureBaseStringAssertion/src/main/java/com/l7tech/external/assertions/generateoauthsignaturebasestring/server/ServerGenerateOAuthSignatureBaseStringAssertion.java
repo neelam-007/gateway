@@ -408,8 +408,8 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         if (sortedParameters.containsKey(OAUTH_VERIFIER) && !sortedParameters.containsKey(OAUTH_TOKEN)) {
             throw new MissingRequiredParameterException(OAUTH_TOKEN, "Missing required oauth parameter");
         }
-        // callback is required if there is no token
-        if (!sortedParameters.containsKey(OAUTH_TOKEN) && !sortedParameters.containsKey(OAUTH_CALLBACK)) {
+        // callback is required if there is no token or token is empty
+        if ((!sortedParameters.containsKey(OAUTH_TOKEN) || sortedParameters.get(OAUTH_TOKEN).get(0).isEmpty()) && !sortedParameters.containsKey(OAUTH_CALLBACK)) {
             throw new MissingRequiredParameterException(OAUTH_CALLBACK, "Missing required oauth parameter");
         }
         // version is not required

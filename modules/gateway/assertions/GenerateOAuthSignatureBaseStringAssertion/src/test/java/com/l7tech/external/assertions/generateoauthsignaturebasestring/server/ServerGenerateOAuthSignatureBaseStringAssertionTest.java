@@ -716,6 +716,31 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     }
 
     @Test
+    @BugNumber(13092)
+    public void nullCallbackAndEmptyToken() throws Exception {
+        request.setServerName(SERVER_NAME);
+        request.setRequestURI("/photos" + QUERY_STRING);
+        request.setMethod(HTTP_METHOD);
+        final String body = "oauth_consumer_key=" + CONSUMER_KEY + "&" +
+                "oauth_signature_method=" + SIG_METHOD + "&" +
+                "oauth_timestamp=" + TIMESTAMP + "&" +
+                "oauth_nonce=" + NONCE + "&" +
+                "oauth_token=&" +
+                "oauth_version=" + VERSION;
+        request.setContent(body.getBytes());
+        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        request.setMethod("POST");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+        assertion.setUsageMode(UsageMode.SERVER);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
+        assertEquals("Missing oauth_callback", (String) policyContext.getVariable("oauth.error"));
+    }
+
+    @Test
     public void nonDefaultPrefix() throws Exception {
         assertion.setVariablePrefix("nondefault");
         setParamsForRequestToken(assertion);
