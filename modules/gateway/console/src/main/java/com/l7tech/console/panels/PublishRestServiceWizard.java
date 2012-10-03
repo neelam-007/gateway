@@ -31,6 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Wizard that guides the administrator through the publication of a RESTful Service Proxy.
@@ -82,9 +83,9 @@ public class PublishRestServiceWizard extends Wizard {
         Regex regexAssertion = new Regex();
         regexAssertion.setRegexName("Remove Gateway URL from ${request.http.path}");
         regexAssertion.setCaseInsensitive(true);
-        String gatewayUrl = serviceInfo.getGatewayUrl();
+        String gatewayUrl = normalizeUrl(serviceInfo.getGatewayUrl());
         if(gatewayUrl.endsWith("/")) gatewayUrl = gatewayUrl.substring(0, gatewayUrl.length() - 1);
-        regexAssertion.setRegex("/?" + gatewayUrl + "(.*)");
+        regexAssertion.setRegex(Pattern.quote(gatewayUrl) + "(.*)");
         regexAssertion.setAutoTarget(false);
         regexAssertion.setTarget(TargetMessageType.OTHER);
         regexAssertion.setOtherTargetMessageVariable("request.http.uri");
@@ -124,6 +125,7 @@ public class PublishRestServiceWizard extends Wizard {
             service.setHttpMethods(EnumSet.of(HttpMethod.POST, HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE));
             service.setName(serviceInfo.getServiceName());
             gatewayUrl = normalizeUrl(gatewayUrl);
+            gatewayUrl = gatewayUrl.endsWith("/") ? gatewayUrl + "*" : gatewayUrl + "/*";
             service.setRoutingUri(gatewayUrl);
             final Runnable saver = new Runnable(){
                 @Override
@@ -171,14 +173,9 @@ public class PublishRestServiceWizard extends Wizard {
     private String normalizeUrl(final String url){
         String gatewayUrl = url;
         if(gatewayUrl != null){
+            gatewayUrl = gatewayUrl.replaceAll("\\\\+", "/").replaceAll("/{2,}", "/");
             if(!gatewayUrl.startsWith("/")){
                 gatewayUrl = "/" + gatewayUrl;
-            }
-            if(gatewayUrl.endsWith("/")){
-                gatewayUrl = gatewayUrl + "*";
-            }
-            else {
-                gatewayUrl = gatewayUrl + "/*";
             }
         }
         return gatewayUrl;
