@@ -1,21 +1,10 @@
 package com.l7tech.external.assertions.policybundleinstaller;
 
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
-import com.l7tech.message.*;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.bundle.BundleMapping;
-import com.l7tech.security.token.http.HttpBasicToken;
-import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.bundle.*;
-import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
@@ -36,13 +25,11 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.external.assertions.policybundleinstaller.InstallerUtils.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.*;
 
 //todo extract out interface. Allow installation folders, services and policies to be specified by clients.
 public class PolicyBundleInstaller {
-    public static final String FOLDER_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/folders";
-    public static final String POLICIES_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/policies";
-    public static final String SERVICES_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/services";
 
     public static final String FOLDERS_CONTEXT_KEY = "FOLDERS";
     public static final String POLICY_FRAGMENT_CONTEXT_KEY = "POLICY FRAGMENTS";
@@ -77,37 +64,7 @@ public class PolicyBundleInstaller {
         logger.info("Installing bundle: " + context.getBundleInfo().getId());
 
         // allow this code to attempt to create the install folder each time.
-        final long folderToInstallInto;
-        //noinspection ConstantConditions
-        if (context.getInstallFolder() != null && !context.getInstallFolder().trim().isEmpty()) {
-            // get or create root node
-            final String requestXml = MessageFormat.format(FOLDER_XML, getUuid(), String.valueOf(context.getFolderOid()), context.getInstallFolder());
-            final Pair<AssertionStatus, Document> pair;
-            try {
-                pair = callManagementAssertion(requestXml);
-                final Long createId = GatewayManagementDocumentUtilities.getCreatedId(pair.right);
-                if (createId != null) {
-                    context.getContextMap().put("INSTALL_FOLDER", createId);   //todo define and use later
-                    folderToInstallInto = createId;
-                } else {
-                    // validate the folder already existed
-                    Long existingFolderId = null;
-                    if (GatewayManagementDocumentUtilities.resourceAlreadyExists(pair.right)) {
-                        existingFolderId = getExistingFolderId(context.getFolderOid(), context.getInstallFolder());
-                    }
-
-                    if (existingFolderId == null) {
-                        throw new IOException("Folder to install into could not be created and did not already exist: " + context.getInstallFolder());
-                    } else {
-                        folderToInstallInto = existingFolderId;
-                    }
-                }
-            } catch (Exception e) {
-                throw new InstallationException(e);
-            }
-        } else {
-            folderToInstallInto = context.getFolderOid();
-        }
+        final long folderToInstallInto = context.getFolderOid();
 
         if (Thread.currentThread().isInterrupted()) {
             throw new InterruptedException();
@@ -302,17 +259,10 @@ public class PolicyBundleInstaller {
             final String serviceXmlTemplate = XmlUtil.nodeToStringQuiet(serviceElmWritable);
             final String createServiceXml = MessageFormat.format(CREATE_ENTITY_XML, getUuid(), SERVICES_MGMT_NS, serviceXmlTemplate);
 
-            final Pair<AssertionStatus, Document> pair = callManagementAssertion(createServiceXml);
+            final Pair<AssertionStatus, Document> pair = callManagementAssertion(gatewayManagementInvoker, createServiceXml);
 
             final Long createdId = GatewayManagementDocumentUtilities.getCreatedId(pair.right);
             if (createdId == null) {
-                if (logger.isLoggable(Level.FINEST)) {
-                    try {
-                        logger.finest(XmlUtil.nodeToFormattedString(pair.right));
-                    } catch (IOException e) {
-                        // ok cannot log
-                    }
-                }
                 throw new GatewayManagementDocumentUtilities.UnexpectedManagementResponse("Could not get the id for service from bundle with id: #{" + id + "}");
             }
 
@@ -430,12 +380,12 @@ public class PolicyBundleInstaller {
             final String folderXmlTemplate = XmlUtil.nodeToString(document.getDocumentElement());
             final String createFolderXml = MessageFormat.format(CREATE_ENTITY_XML, getUuid(), FOLDER_MGMT_NS, folderXmlTemplate);
 
-            final Pair<AssertionStatus, Document> pair = callManagementAssertion(createFolderXml);
+            final Pair<AssertionStatus, Document> pair = callManagementAssertion(gatewayManagementInvoker, createFolderXml);
             final Long newId = GatewayManagementDocumentUtilities.getCreatedId(pair.right);
             final Long idToRecord;
             if (newId == null) {
                 if (GatewayManagementDocumentUtilities.resourceAlreadyExists(pair.right)) {
-                    idToRecord = getExistingFolderId(newParentId, folderName);
+                    idToRecord = getExistingFolderId(gatewayManagementInvoker, newParentId, folderName);
                 } else {
                     idToRecord = null;
                 }
@@ -459,30 +409,6 @@ public class PolicyBundleInstaller {
     @Nullable private final PreBundleSavePolicyCallback savePolicyCallback;
     @NotNull private final GatewayManagementInvoker gatewayManagementInvoker;
     private static final Logger logger = Logger.getLogger(PolicyBundleInstaller.class.getName());
-
-    @NotNull
-    private Pair<AssertionStatus, Document> callManagementAssertion(String requestXml) {
-        final PolicyEnforcementContext context = getContext(requestXml);
-
-        final AssertionStatus assertionStatus;
-        try {
-            assertionStatus = gatewayManagementInvoker.checkRequest(context);
-        } catch (IOException e) {
-            throw new RuntimeException("Unexpected internal error invoking gateway management serivce: " + e.getMessage(), e);
-        } catch (PolicyAssertionException e) {
-            throw new RuntimeException("Unexpected internal error invoking gateway management serivce: " + e.getMessage(), e);
-        }
-        final Message response = context.getResponse();
-        final Document document;
-        try {
-            document = response.getXmlKnob().getDocumentReadOnly();
-        } catch (SAXException e) {
-            throw new RuntimeException("Unexpected internal error parsing gateway management response: " + e.getMessage(), e);
-        } catch (IOException e) {
-            throw new RuntimeException("Unexpected internal error parsing gateway management response: " + e.getMessage(), e);
-        }
-        return new Pair<AssertionStatus, Document>(assertionStatus, document);
-    }
 
     private Document parseQuietly(String inputXml) {
         try {
@@ -559,7 +485,7 @@ public class PolicyBundleInstaller {
         final String policyXmlTemplate = XmlUtil.nodeToString(enumPolicyElmWritable);
 
         final String createPolicyXml = MessageFormat.format(CREATE_ENTITY_XML, getUuid(), POLICIES_MGMT_NS, policyXmlTemplate);
-        final Pair<AssertionStatus, Document> pair = callManagementAssertion(createPolicyXml);
+        final Pair<AssertionStatus, Document> pair = callManagementAssertion(gatewayManagementInvoker, createPolicyXml);
 
         final Long createdId = GatewayManagementDocumentUtilities.getCreatedId(pair.right);
         String guidToUse = null;
@@ -631,18 +557,8 @@ public class PolicyBundleInstaller {
         final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
                 SERVICES_MGMT_NS, 10, "/l7:Service/l7:ServiceDetail/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern[text()='" + urlMapping + "']");
 
-        final Pair<AssertionStatus, Document> documentPair = callManagementAssertion(serviceFilter);
+        final Pair<AssertionStatus, Document> documentPair = callManagementAssertion(gatewayManagementInvoker, serviceFilter);
         return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
-    }
-
-    @Nullable
-    private Long getExistingFolderId(long parentId, String folderName) throws Exception {
-
-        final String folderFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
-                FOLDER_MGMT_NS, 10, "/l7:Folder[@folderId='" + parentId + "']/l7:Name[text()='" + folderName + "']");
-
-        final Pair<AssertionStatus, Document> documentPair = callManagementAssertion(folderFilter);
-        return GatewayManagementDocumentUtilities.getCreatedId(documentPair.right);
     }
 
     @Nullable
@@ -650,167 +566,11 @@ public class PolicyBundleInstaller {
 
         final String getPolicyXml = MessageFormat.format(GATEWAY_MGMT_GET_ENTITY, getUuid(), POLICIES_MGMT_NS, "name", policyName);
 
-        final Pair<AssertionStatus, Document> documentPair = callManagementAssertion(getPolicyXml);
+        final Pair<AssertionStatus, Document> documentPair = callManagementAssertion(gatewayManagementInvoker, getPolicyXml);
         final ElementCursor cursor = new DomElementCursor(documentPair.right);
 
         final XpathResult xpathResult = cursor.getXpathResult(
                 new XpathExpression("string(/env:Envelope/env:Body/l7:Policy/@guid)", GatewayManagementDocumentUtilities.getNamespaceMap()).compile());
         return xpathResult.getString();
     }
-
-    private String getUuid() {
-        return "uuid:" + UUID.randomUUID();
-    }
-
-    private PolicyEnforcementContext getContext(String requestXml) {
-
-        final Message request = new Message();
-        final ContentTypeHeader contentTypeHeader = ContentTypeHeader.SOAP_1_2_DEFAULT;
-        try {
-            request.initialize(contentTypeHeader, requestXml.getBytes(Charsets.UTF8));
-        } catch (IOException e) {
-            // this is a programming error. All requests are generated in this class.
-            throw new RuntimeException("Unexpected internal error preparing gateway management request: " + e.getMessage(), e);
-        }
-
-        HttpRequestKnob requestKnob = new HttpRequestKnobAdapter(){
-            @Override
-            public String getRemoteAddress() {
-                return "127.0.0.1";
-            }
-
-            @Override
-            public String getRequestUrl() {
-                //todo fix url - check it's usage in mgmt server assertion.
-                return "http://localhost:8080/wsman";
-            }
-        };
-        request.attachKnob(HttpRequestKnob.class, requestKnob);
-
-        HttpResponseKnob responseKnob = new AbstractHttpResponseKnob() {
-            @Override
-            public void addCookie(HttpCookie cookie) {
-
-            }
-        };
-
-        final Message response = new Message();
-        response.attachKnob(HttpResponseKnob.class, responseKnob);
-
-        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-        final User currentUser = JaasUtils.getCurrentUser();
-        if (currentUser != null) {
-            // convert logged on user into a UserBean as if the user was authenticated via policy.
-            final UserBean userBean = new UserBean(currentUser.getProviderId(), currentUser.getLogin());
-            userBean.setUniqueIdentifier(currentUser.getId());
-            context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(
-                    userBean,
-                    new HttpBasicToken(currentUser.getLogin(), "".toCharArray()), null, false)
-            );
-        } else {
-            // no action will be allowed - this will result in permission denied later
-            //todo deal with this here
-            logger.warning("No current user");
-        }
-
-        return context;
-    }
-
-
-    //todo remove and use CREATE_FOLDER_XML
-    private final String FOLDER_XML = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
-            "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
-            "    xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\"\n" +
-            "    xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\"\n" +
-            "    xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"\n" +
-            "    xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
-            "    <env:Header>\n" +
-            "        <wsa:Action env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action>\n" +
-            "        <wsa:ReplyTo>\n" +
-            "            <wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>\n" +
-            "        </wsa:ReplyTo>\n" +
-            "        <wsa:MessageID env:mustUnderstand=\"true\">{0}</wsa:MessageID>\n" +
-            "        <wsa:To env:mustUnderstand=\"true\">https://localhost:9443/wsman</wsa:To>\n" +
-            "        <wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/folders</wsman:ResourceURI>\n" +
-            "        <wsman:OperationTimeout>PT5M0.000S</wsman:OperationTimeout>\n" +
-            "    </env:Header>\n" +
-            "    <env:Body>\n" +
-            "        <l7:Folder folderId=\"{1}\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-            "            <l7:Name>{2}</l7:Name>\n" +
-            "        </l7:Folder>\n" +
-            "    </env:Body>\n" +
-            "</env:Envelope>";
-
-    private final String CREATE_ENTITY_XML = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
-            "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
-            "    xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\"\n" +
-            "    xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\"\n" +
-            "    xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"\n" +
-            "    xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
-            "    <env:Header>\n" +
-            "        <wsa:Action env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action>\n" +
-            "        <wsa:ReplyTo>\n" +
-            "            <wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>\n" +
-            "        </wsa:ReplyTo>\n" +
-            "        <wsa:MessageID env:mustUnderstand=\"true\">{0}</wsa:MessageID>\n" +
-            "        <wsa:To env:mustUnderstand=\"true\">https://localhost:9443/wsman</wsa:To>\n" +
-            "        <wsman:ResourceURI>{1}</wsman:ResourceURI>\n" +
-            "        <wsman:OperationTimeout>PT5M0.000S</wsman:OperationTimeout>\n" +
-            "    </env:Header>\n" +
-            "    <env:Body>\n" +
-            "       {2}\n" +
-            "    </env:Body>\n" +
-            "</env:Envelope>";
-
-    private final String GATEWAY_MGMT_ENUMERATE_FILTER = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
-            "    xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"\n" +
-            "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
-            "    xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\"\n" +
-            "    xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\"\n" +
-            "    xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"\n" +
-            "    xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
-            "    <env:Header>\n" +
-            "        <wsa:Action env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate</wsa:Action>\n" +
-            "        <wsa:ReplyTo>\n" +
-            "            <wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>\n" +
-            "        </wsa:ReplyTo>\n" +
-            "        <wsa:MessageID env:mustUnderstand=\"true\">{0}</wsa:MessageID>\n" +
-            "        <wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To>\n" +
-            "        <wsman:ResourceURI>{1}</wsman:ResourceURI>\n" +
-            "        <wsman:RequestTotalItemsCountEstimate/>\n" +
-            "    </env:Header>\n" +
-            "    <env:Body>\n" +
-            "        <wsen:Enumerate>\n" +
-            "            <wsman:OptimizeEnumeration/>\n" +
-            "            <wsman:MaxElements>{2}</wsman:MaxElements>\n" +
-            "            <wsman:Filter>{3}</wsman:Filter>\n" +
-            "<wsman:EnumerationMode>EnumerateObjectAndEPR</wsman:EnumerationMode>" +
-            "        </wsen:Enumerate>\n" +
-            "    </env:Body>\n" +
-            "</env:Envelope>";
-
-    /**
-     * Requires in this order: UUID, Resource URI, selector name (id or name), selector value
-     */
-    private final String GATEWAY_MGMT_GET_ENTITY = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
-            "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
-            "    xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\"\n" +
-            "    xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\"\n" +
-            "    xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"\n" +
-            "    xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
-            "    <env:Header>\n" +
-            "        <wsa:Action env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</wsa:Action>\n" +
-            "        <wsa:ReplyTo>\n" +
-            "            <wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>\n" +
-            "        </wsa:ReplyTo>\n" +
-            "        <wsa:MessageID env:mustUnderstand=\"true\">{0}</wsa:MessageID>\n" +
-            "        <wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To>\n" +
-            "        <wsman:ResourceURI>{1}</wsman:ResourceURI>\n" +
-            "        <wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout>\n" +
-            "        <wsman:SelectorSet>\n" +
-            "            <wsman:Selector Name=\"{2}\">{3}</wsman:Selector>\n" +
-            "        </wsman:SelectorSet>\n" +
-            "    </env:Header>\n" +
-            "    <env:Body/>\n" +
-            "</env:Envelope>";
 }

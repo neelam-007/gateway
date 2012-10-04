@@ -8,15 +8,24 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.BundleUtils;
+import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
+import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.xml.DomElementCursor;
+import com.l7tech.xml.xpath.XpathResult;
+import com.l7tech.xml.xpath.XpathResultIterator;
+import com.l7tech.xml.xpath.XpathUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.util.*;
+import java.util.logging.Logger;
 
 import static com.l7tech.util.Functions.map;
 
@@ -33,15 +42,17 @@ public class OAuthToolkitBundleResolver implements BundleResolver {
             guidMap.put(pair.left.getId(), pair.right);
         }
 
-        resultList.clear();
         resultList.addAll(map(bundleInfosFromJar, new Functions.Unary<BundleInfo, Pair<BundleInfo, String>>() {
             @Override
             public BundleInfo call(Pair<BundleInfo, String> bundleInfoStringPair) {
                 return bundleInfoStringPair.left;
             }
         }));
-        guidToResourceDirectory.clear();
         guidToResourceDirectory.putAll(guidMap);
+    }
+
+    public void setInstallationPrefix(@Nullable String installationPrefix) {
+        this.installationPrefix = installationPrefix;
     }
 
     @Override
@@ -78,6 +89,31 @@ public class OAuthToolkitBundleResolver implements BundleResolver {
             }
         }
 
+        if (itemName == BundleItem.FOLDER && installationPrefix != null) {
+            // rewrite the name of the OAuth folder
+            final XpathResult xpathResult =
+                    XpathUtil.getXpathResultQuietly(
+                            new DomElementCursor(itemDocument), GatewayManagementDocumentUtilities.getNamespaceMap(), ".//l7:Name");
+
+            final XpathResultIterator iterator = xpathResult.getNodeSet().getIterator();
+            final String newOAuthFolderName = "OAuth " + installationPrefix;
+            boolean oauthNameFound = false;
+            while (iterator.hasNext()) {
+                final Element nameElement = iterator.nextElementAsCursor().asDomElement();
+                final String nameValue = DomUtils.getTextValue(nameElement);
+                if ("OAuth".equals(nameValue)) {
+
+                    DomUtils.setTextContent(nameElement, newOAuthFolderName);
+                    oauthNameFound = true;
+                }
+            }
+
+            if (!oauthNameFound) {
+                throw new InvalidBundleException("OAuth folder could not be found for update with installation prefix.");
+            }
+            logger.fine("Updated OAuth folder for installation prefix: '" + newOAuthFolderName + "'");
+        }
+
         return itemDocument;
     }
 
@@ -91,5 +127,7 @@ public class OAuthToolkitBundleResolver implements BundleResolver {
 
     private final List<BundleInfo> resultList = new ArrayList<BundleInfo>();
     private final Map<String, String> guidToResourceDirectory = new HashMap<String, String>();
+    private String installationPrefix;
+    private static final Logger logger = Logger.getLogger(OAuthToolkitBundleResolver.class.getName());
 
 }

@@ -387,7 +387,6 @@ public class PolicyBundleInstallerTest {
                 new PolicyBundleInstallerContext(
                         new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc"),
                         -5002,
-                        null,
                         new HashMap<String, Object>(),
                         null, null));
 
@@ -613,7 +612,7 @@ public class PolicyBundleInstallerTest {
         }
     }
 
-    private void setResponse(PolicyEnforcementContext context, Document response) {
+    public static void setResponse(PolicyEnforcementContext context, Document response) {
         final Message responseMsg = context.getResponse();
         responseMsg.initialize(response);
     }

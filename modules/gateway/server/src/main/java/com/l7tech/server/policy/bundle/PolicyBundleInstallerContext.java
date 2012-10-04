@@ -12,18 +12,15 @@ public class PolicyBundleInstallerContext {
     /**
      * @param bundleInfo    bundle to install
      * @param folderOid     oid of the parent folder
-     * @param installFolder folder to install into. Required. May already exist.
      * @param bundleMapping Nullable Map of mappings for the bundle to install
      */
     public PolicyBundleInstallerContext(@NotNull BundleInfo bundleInfo,
                                         long folderOid,
-                                        @Nullable String installFolder,
                                         @NotNull Map<String, Object> contextMap,
                                         @Nullable BundleMapping bundleMapping,
                                         @Nullable String installationPrefix) {
         this.bundleInfo = bundleInfo;
         this.folderOid = folderOid;
-        this.installFolder = installFolder;
         this.contextMap = contextMap;
         this.bundleMapping = bundleMapping;
         this.installationPrefix = installationPrefix;
@@ -36,11 +33,6 @@ public class PolicyBundleInstallerContext {
 
     public long getFolderOid() {
         return folderOid;
-    }
-
-    @Nullable
-    public String getInstallFolder() {
-        return installFolder;
     }
 
     @NotNull
@@ -68,8 +60,6 @@ public class PolicyBundleInstallerContext {
     @NotNull
     private final BundleInfo bundleInfo;
     private final long folderOid;
-    @Nullable
-    private final String installFolder;
     @NotNull
     private final Map<String, Object> contextMap;
     @Nullable

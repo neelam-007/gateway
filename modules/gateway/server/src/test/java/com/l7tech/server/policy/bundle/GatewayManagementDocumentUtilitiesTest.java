@@ -1,8 +1,10 @@
 package com.l7tech.server.policy.bundle;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Test;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.util.List;
 
@@ -12,7 +14,7 @@ public class GatewayManagementDocumentUtilitiesTest {
 
     @Test
     public void testGetCreatedId() throws Exception {
-        final Document doc = XmlUtil.parse(createdResponse);
+        final Document doc = XmlUtil.parse(CREATED_RESPONSE);
         final Long createdId = GatewayManagementDocumentUtilities.getCreatedId(doc);
         assertNotNull(createdId);
         assertEquals(134807552L, createdId.longValue());
@@ -20,14 +22,14 @@ public class GatewayManagementDocumentUtilitiesTest {
 
     @Test
     public void testErrorResponse_GetCreatedId() throws Exception {
-        final Document doc = XmlUtil.parse(errorResponse);
+        final Document doc = XmlUtil.parse(ERROR_RESPONSE);
         final Long createdId = GatewayManagementDocumentUtilities.getCreatedId(doc);
         assertNull(createdId);
     }
 
     @Test
     public void testResponse_ErrorValues() throws Exception {
-        final Document doc = XmlUtil.parse(alreadyExistsResponse);
+        final Document doc = XmlUtil.parse(ALREADY_EXISTS_RESPONSE);
         final List<String> errorDetails = GatewayManagementDocumentUtilities.getErrorDetails(doc);
         assertTrue(errorDetails.contains("env:Sender"));
         assertTrue(errorDetails.contains("wsman:AlreadyExists"));
@@ -48,7 +50,7 @@ public class GatewayManagementDocumentUtilitiesTest {
 
     @Test
     public void testResponse_ResourceAlreadyExists() throws Exception {
-        final Document doc = XmlUtil.parse(alreadyExistsResponse);
+        final Document doc = XmlUtil.parse(ALREADY_EXISTS_RESPONSE);
         assertTrue(GatewayManagementDocumentUtilities.resourceAlreadyExists(doc));
     }
 
@@ -60,9 +62,19 @@ public class GatewayManagementDocumentUtilitiesTest {
 
     }
 
+    @Test
+    public void testGetEntityElements() throws Exception {
+        final Document response = XmlUtil.parse(SOAP_PUT_FOLDER_RESPONSE);
+        final Element bodyElement = SoapUtil.getBodyElement(response);
+        final List<Element> folder = GatewayManagementDocumentUtilities.getEntityElements(bodyElement, "Folder");
+        assertFalse(folder.isEmpty());
+        assertEquals(1, folder.size());
+        assertEquals("123456789", folder.get(0).getAttribute("id"));
+    }
+
     // - PRIVATE
 
-    final String createdResponse = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+    private static final String CREATED_RESPONSE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
             "    xmlns:mdo=\"http://schemas.wiseman.dev.java.net/metadata/messagetypes\"\n" +
             "    xmlns:mex=\"http://schemas.xmlsoap.org/ws/2004/09/mex\"\n" +
@@ -91,7 +103,7 @@ public class GatewayManagementDocumentUtilitiesTest {
             "    </env:Body>\n" +
             "</env:Envelope>";
 
-    private final static String errorResponse = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
+    private static final String ERROR_RESPONSE = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
             "    xmlns:mdo=\"http://schemas.wiseman.dev.java.net/metadata/messagetypes\"\n" +
             "    xmlns:mex=\"http://schemas.xmlsoap.org/ws/2004/09/mex\"\n" +
             "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
@@ -125,7 +137,7 @@ public class GatewayManagementDocumentUtilitiesTest {
             "    </env:Body>\n" +
             "</env:Envelope>\n";
 
-    final String alreadyExistsResponse = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
+    private final String ALREADY_EXISTS_RESPONSE = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
             "    xmlns:mdo=\"http://schemas.wiseman.dev.java.net/metadata/messagetypes\"\n" +
             "    xmlns:mex=\"http://schemas.xmlsoap.org/ws/2004/09/mex\"\n" +
             "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
@@ -157,5 +169,28 @@ public class GatewayManagementDocumentUtilitiesTest {
             "        </env:Fault>\n" +
             "    </env:Body>\n" +
             "</env:Envelope>";
+
+    private static final String SOAP_PUT_FOLDER_RESPONSE = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
+            "    xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"\n" +
+            "    xmlns:mdo=\"http://schemas.wiseman.dev.java.net/metadata/messagetypes\"\n" +
+            "    xmlns:mex=\"http://schemas.xmlsoap.org/ws/2004/09/mex\"\n" +
+            "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
+            "    xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\"\n" +
+            "    xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\"\n" +
+            "    xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"\n" +
+            "    xmlns:wsmeta=\"http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd\"\n" +
+            "    xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+            "    <env:Header>\n" +
+            "        <wsa:Action env:mustUnderstand=\"true\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">http://schemas.xmlsoap.org/ws/2004/09/transfer/PutResponse</wsa:Action>\n" +
+            "        <wsa:MessageID env:mustUnderstand=\"true\">uuid:e09654e2-b980-461e-a062-861849909e49</wsa:MessageID>\n" +
+            "        <wsa:RelatesTo>uuid:89834f79-9404-41dd-bad5-0a7f49d47255</wsa:RelatesTo>\n" +
+            "        <wsa:To env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>\n" +
+            "    </env:Header>\n" +
+            "    <env:Body>\n" +
+            "        <l7:Folder folderId=\"-5002\" id=\"123456789\" version=\"1\">\n" +
+            "            <l7:Name>Test Name</l7:Name>\n" +
+            "        </l7:Folder>\n" +
+            "    </env:Body>\n" +
+            "</env:Envelope>\n";
 
 }

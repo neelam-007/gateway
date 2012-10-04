@@ -3,12 +3,14 @@ package com.l7tech.server.policy.bundle;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,6 +49,14 @@ public class GatewayManagementDocumentUtilities {
     public static class UnexpectedManagementResponse extends Exception{
         public UnexpectedManagementResponse(String message) {
             super(message);
+        }
+
+        public UnexpectedManagementResponse(Throwable cause) {
+            super(cause);
+        }
+
+        public UnexpectedManagementResponse(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 
@@ -106,26 +116,33 @@ public class GatewayManagementDocumentUtilities {
         return (createdId.isEmpty()) ? null : createdId.get(0);
     }
 
-    public static List<String> getErrorDetails(final Document response) throws Exception {
+    public static List<String> getErrorDetails(final Document response) throws UnexpectedManagementResponse {
         final ElementCursor cursor = new DomElementCursor(response.getDocumentElement());
 
-        List<String> errorDetails = new ArrayList<String>();
-        final XpathResult xpathResult = cursor.getXpathResult(new XpathExpression("/env:Envelope/env:Body/env:Fault/env:Code", getNamespaceMap()).compile());
-        if (xpathResult.getType() == XpathResult.TYPE_NODESET) {
-            final XpathResultIterator iterator = xpathResult.getNodeSet().getIterator();
-            final ElementCursor resultCursor = iterator.nextElementAsCursor();
-            final XpathResult valueResult = resultCursor.getXpathResult(new XpathExpression("//env:Value", getNamespaceMap()).compile());
-            final XpathResultIterator valueIter = valueResult.getNodeSet().getIterator();
-            final XpathResultNode xpathResultNode = new XpathResultNode();
+        try {
+            List<String> errorDetails = new ArrayList<String>();
+            final XpathResult xpathResult = cursor.getXpathResult(new XpathExpression("/env:Envelope/env:Body/env:Fault/env:Code", getNamespaceMap()).compile());
+            if (xpathResult.getType() == XpathResult.TYPE_NODESET) {
+                final XpathResultIterator iterator = xpathResult.getNodeSet().getIterator();
+                final ElementCursor resultCursor = iterator.nextElementAsCursor();
+                final XpathResult valueResult = resultCursor.getXpathResult(new XpathExpression("//env:Value", getNamespaceMap()).compile());
+                final XpathResultIterator valueIter = valueResult.getNodeSet().getIterator();
+                final XpathResultNode xpathResultNode = new XpathResultNode();
 
-            while (valueIter.hasNext()) {
-                valueIter.next(xpathResultNode);
-                final String textValue = xpathResultNode.getNodeValue();
-                errorDetails.add(textValue);
+                while (valueIter.hasNext()) {
+                    valueIter.next(xpathResultNode);
+                    final String textValue = xpathResultNode.getNodeValue();
+                    errorDetails.add(textValue);
+                }
             }
-        }
 
-        return errorDetails;
+            return errorDetails;
+
+        } catch (XPathExpressionException e) {
+            throw new UnexpectedManagementResponse(e);
+        } catch (InvalidXpathException e) {
+            throw new UnexpectedManagementResponse(e);
+        }
     }
 
     /**
@@ -136,7 +153,7 @@ public class GatewayManagementDocumentUtilities {
      * @throws Exception If the entity was not created, was not allowed to already exist or an unexpected situation
      *                   occured e.g. permission denied.
      */
-    public static boolean resourceAlreadyExists(final Document response) throws Exception {
+    public static boolean resourceAlreadyExists(final Document response) throws UnexpectedManagementResponse {
         final List<String> errorDetails = getErrorDetails(response);
         return errorDetails.contains("env:Sender") && errorDetails.contains("wsman:AlreadyExists");
     }

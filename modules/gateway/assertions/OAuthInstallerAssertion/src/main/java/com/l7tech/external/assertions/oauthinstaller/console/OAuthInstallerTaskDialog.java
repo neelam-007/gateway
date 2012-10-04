@@ -4,16 +4,21 @@ import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SquigglyFieldUtils;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.util.PauseListenerAdapter;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.util.Either;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.*;
@@ -26,6 +31,7 @@ import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 import static com.l7tech.policy.bundle.BundleMapping.EntityType.JDBC_CONNECTION;
 
 public class OAuthInstallerTaskDialog extends JDialog {
+    public static final String OAUTH_FOLDER = "OAuth";
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -34,18 +40,19 @@ public class OAuthInstallerTaskDialog extends JDialog {
     private JCheckBox oAuthManager;
     private JCheckBox oAuthStorage;
     private JCheckBox prefixResolutionURIsAndCheckBox;
-    private JTextField installationPrefixTextField;
-    private JTextField oAuthTextField;
+    private SquigglyTextField installationPrefixTextField;
     private JLabel otkVersionLabel;
-    private JLabel parentFolderLabel;
+    private JLabel installToLabel;
     private JCheckBox oAuthOvp;
     private JPanel componentsToInstallPanel;
+    private JLabel exampleRoutingUrlLabel;
     private long selectedFolderOid;
     private final Map<String, Pair<BundleComponent, BundleInfo>> availableBundles = new HashMap<String, Pair<BundleComponent, BundleInfo>>();
     private static final Logger logger = Logger.getLogger(OAuthInstallerTaskDialog.class.getName());
+    private String folderPath;
 
     public OAuthInstallerTaskDialog(Frame owner) {
-        super(owner, "OAuth Toolkit Installer", true);
+        super(owner, OAUTH_FOLDER + " Toolkit Installer", true);
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
 
@@ -81,44 +88,57 @@ public class OAuthInstallerTaskDialog extends JDialog {
         initialize();
     }
 
-    private void initialize(){
+    /**
+     * Get the currently selected folder and it's id. If a policy or service is selected, then the folder which
+     * contains it will be returned.
+     *
+     * @return Pair, never null, but contents may be null. If one side is null, both are null.
+     */
+    public static Pair<String, Long> getSelectedFolderAndOid(){
         ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-        final TreePath selectionPath = tree.getSelectionPath();
 
         String folderPath = null;
         Long parentFolderOid = null;
-        if (selectionPath != null) {
-            final Object[] path = selectionPath.getPath();
 
-            if (path.length > 0) {
-                StringBuilder builder = new StringBuilder("");
+        if (tree != null) {
+            final TreePath selectionPath = tree.getSelectionPath();
+            if (selectionPath != null) {
+                final Object[] path = selectionPath.getPath();
 
-                // skip the root node, it is captured as /
-                RootNode rootFolder = (RootNode) path[0];
-                long lastParentOid = rootFolder.getOid();
-                for (int i = 1, pathLength = path.length; i < pathLength; i++) {
-                    Object o = path[i];
-                    if (o instanceof FolderNode) {
-                        FolderNode folderNode = (FolderNode) o;
-                        builder.append("/");
-                        builder.append(folderNode.getName());
-                        lastParentOid = folderNode.getOid();
+                if (path.length > 0) {
+                    StringBuilder builder = new StringBuilder("");
+
+                    // skip the root node, it is captured as /
+                    RootNode rootFolder = (RootNode) path[0];
+                    long lastParentOid = rootFolder.getOid();
+                    for (int i = 1, pathLength = path.length; i < pathLength; i++) {
+                        Object o = path[i];
+                        if (o instanceof FolderNode) {
+                            FolderNode folderNode = (FolderNode) o;
+                            builder.append("/");
+                            builder.append(folderNode.getName());
+                            lastParentOid = folderNode.getOid();
+                        }
                     }
+                    builder.append("/");  // if only root node then this captures that with a single /
+                    folderPath = builder.toString();
+                    parentFolderOid = lastParentOid;
                 }
-                builder.append("/");  // if only root node then this captures that with a single /
-                folderPath = builder.toString();
-                parentFolderOid = lastParentOid;
+            }
+
+            if (parentFolderOid == null) {
+                final RootNode rootNode = tree.getRootNode();
+                parentFolderOid = rootNode.getOid();
+                folderPath = "/";
             }
         }
+        return new Pair<String, Long>(folderPath, parentFolderOid);
+    }
 
-        if (parentFolderOid == null) {
-            final RootNode rootNode = tree.getRootNode();
-            parentFolderOid = rootNode.getOid();
-            folderPath = "/";
-        }
-
-        selectedFolderOid = parentFolderOid;
-        parentFolderLabel.setText(folderPath);
+    private void initialize(){
+        final Pair<String, Long> selectedFolderAndOid = getSelectedFolderAndOid();
+        folderPath = selectedFolderAndOid.left;
+        selectedFolderOid = selectedFolderAndOid.right;
 
         final OAuthInstallerAdmin admin = Registry.getDefault().getExtensionInterface(OAuthInstallerAdmin.class, null);
         try {
@@ -151,16 +171,72 @@ public class OAuthInstallerTaskDialog extends JDialog {
                 enableDisableComponents();
             }
         });
+
+        TextComponentPauseListenerManager.registerPauseListenerWhenFocused(installationPrefixTextField, new PauseListenerAdapter() {
+            @Override
+            public void textEntryPaused(JTextComponent component, long msecs) {
+                SquigglyFieldUtils.validateSquigglyTextFieldState(installationPrefixTextField, new Functions.Unary<String, String>() {
+                    @Override
+                    public String call(String s) {
+                        return getPrefixedUrlErrorMsg(s);
+                    }
+                });
+            }
+        }, 500);
+
+        installationPrefixTextField.getDocument().addDocumentListener(new RunOnChangeListener(){
+            @Override
+            protected void run() {
+                final String prefix = installationPrefixTextField.getText().trim();
+                setInstallToFolderText(prefix);
+                setExamplePrefixLabelText();
+            }
+        });
+
+        setInstallToFolderText(null);
+
+        setExamplePrefixLabelText();
         enableDisableComponents();
+    }
+
+    private void setExamplePrefixLabelText(){
+        final String prefix = installationPrefixTextField.getText().trim();
+        if (prefix.isEmpty()) {
+            exampleRoutingUrlLabel.setText("Example prefixed URL:");
+        } else {
+            String exampleUrl = "https://yourgateway.com:8443/" + prefix + "/query";
+            exampleRoutingUrlLabel.setText("Example prefixed URL: " + exampleUrl);
+        }
+    }
+
+    @Nullable
+    private String getPrefixedUrlErrorMsg(String prefix){
+        String testUri = "http://ssg.com:8080/" + prefix + "/query";
+        if (!ValidationUtils.isValidUrl(testUri)) {
+            return "It must be possible to construct a valid routing URI using the prefix.";
+        }
+
+        return null;
     }
 
     private void enableDisableComponents() {
         if (prefixResolutionURIsAndCheckBox.isSelected()) {
             installationPrefixTextField.setEnabled(true);
+            exampleRoutingUrlLabel.setEnabled(true);
         } else {
             installationPrefixTextField.setEnabled(false);
+            exampleRoutingUrlLabel.setEnabled(false);
         }
     }
+
+    private void setInstallToFolderText(@Nullable final String versionPrefix) {
+        if (versionPrefix == null || versionPrefix.isEmpty()) {
+            installToLabel.setText(folderPath + OAUTH_FOLDER);
+        } else {
+            installToLabel.setText(folderPath + OAUTH_FOLDER + " " + versionPrefix);
+        }
+    }
+
     private void onOK() {
         ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
 
@@ -186,18 +262,27 @@ public class OAuthInstallerTaskDialog extends JDialog {
             return;
         }
 
+        // validate installation prefix
+        final String prefix = installationPrefixTextField.getText().trim();
+        if (!prefix.isEmpty()) {
+            final String prefixedUrlErrorMsg = getPrefixedUrlErrorMsg(prefix);
+            if (prefixedUrlErrorMsg != null) {
+                DialogDisplayer.showMessageDialog(this, prefixedUrlErrorMsg, "Invalid installation prefix", JOptionPane.WARNING_MESSAGE, null);
+                return;
+            }
+        }
+
         final OAuthInstallerAdmin admin = Registry.getDefault().getExtensionInterface(OAuthInstallerAdmin.class, null);
 
         try {
             final Either<String, ArrayList> resultEither = doAsyncAdmin(
                     admin,
                     OAuthInstallerTaskDialog.this,
-                    "OAuth Toolkit Installation",
-                    "The selected components of the OAuth toolkit are being installed.",
+                    OAUTH_FOLDER + " Toolkit Installation",
+                    "The selected components of the " + OAUTH_FOLDER + " toolkit are being installed.",
                     admin.installOAuthToolkit(
                             bundlesToInstall,
                             selectedFolderOid,
-                            oAuthTextField.getText().trim(),
                             bundleMappings,
                             (prefixResolutionURIsAndCheckBox.isSelected()) ? installationPrefixTextField.getText() : null));
             if (resultEither.isRight()) {
@@ -233,7 +318,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
 
         } catch (InterruptedException e) {
             // do nothing, user cancelled
-            logger.info("User cancelled installation of the OAuth Toolkit.");
+            logger.info("User cancelled installation of the " + OAUTH_FOLDER + " Toolkit.");
 
         } catch (InvocationTargetException e) {
             DialogDisplayer.showMessageDialog(this, "Could not invoke installation on Gateway",

@@ -11,6 +11,7 @@ import com.l7tech.message.XmlKnob;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.MessageNotSoapException;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -93,6 +94,7 @@ public class SoapUtil extends SoapConstants {
      * @return the body, or null if there isn't one
      * @throws InvalidDocumentFormatException if the message is not SOAP or there is more than one Body element
      */
+    @Nullable
     public static Element getBodyElement(Document message) throws InvalidDocumentFormatException {
         Element env = getEnvelopeElement(message);
         String soapNs = env.getNamespaceURI();

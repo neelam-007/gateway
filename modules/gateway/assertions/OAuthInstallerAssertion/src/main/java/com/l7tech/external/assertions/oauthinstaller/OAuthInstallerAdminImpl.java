@@ -5,7 +5,7 @@ import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
-import com.l7tech.server.event.InstallPolicyBundleEvent;
+import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.*;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
@@ -94,8 +94,6 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
      * @param otkComponentId     names of all bundles to install. Bundles may depend on each others items, but there is no
      *                           install dependency order.
      * @param folderOid          oid of the folder to install into.
-     * @param installFolder      if not null or empty, this folder will be the install into folder. It may already exist.
-     *                           If it does not exist it will be created.
      * @param installationPrefix prefix to version the installation with
      * @return Job ID, which will report on which bundles were installed.
      * @throws IOException for any problem installing. Installation is cancelled on the first error.
@@ -104,14 +102,13 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     @Override
     public JobId<ArrayList> installOAuthToolkit(@NotNull final Collection<String> otkComponentId,
                                                 final long folderOid,
-                                                @Nullable final String installFolder,
                                                 @NotNull final Map<String, BundleMapping> bundleMappings,
                                                 @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
 
         final FutureTask<ArrayList> future = new FutureTask<ArrayList>(find(false).wrapCallable(new Callable<ArrayList>() {
             @Override
             public ArrayList call() throws Exception {
-                return new ArrayList<String>(doInstallOAuthToolkit(otkComponentId, folderOid, installFolder, bundleMappings, installationPrefix));
+                return new ArrayList<String>(doInstallOAuthToolkit(otkComponentId, folderOid, bundleMappings, installationPrefix));
             }
         }));
 
@@ -128,7 +125,6 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
 
     protected List<String> doInstallOAuthToolkit(@NotNull final Collection<String> otkComponentId,
                                                  final long folderOid,
-                                                 @Nullable final String installFolder,
                                                  @NotNull Map<String, BundleMapping> bundleMappings,
                                                  @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
 
@@ -140,6 +136,10 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         final List<String> installedBundles = new ArrayList<String>();
         if (isInstallInProgress.compareAndSet(false, true)) {
             try {
+                if (installationPrefix != null) {
+                    bundleResolver.setInstallationPrefix(installationPrefix);
+                }
+
                 //iterate through all the bundle names to install
                 for (String bundleId : otkComponentId) {
                     //todo search for and updated jdbc references as needed
@@ -155,7 +155,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                 final InstallPolicyBundleEvent bundleEvent =
                                         new InstallPolicyBundleEvent(this, bundleResolver,
                                                 new PolicyBundleInstallerContext(
-                                                        bundleInfo, folderOid, installFolder, contextMap, bundleMappings.get(bundleId), installationPrefix),
+                                                        bundleInfo, folderOid, contextMap, bundleMappings.get(bundleId), installationPrefix),
                                                 new PreBundleSavePolicyCallback() {
                                                     @Override
                                                     public void prePublishCallback(BundleInfo bundleInfo, String resourceType, Document writeablePolicyDoc) throws PolicyUpdateException {
@@ -213,7 +213,6 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                 }
                             }
                         }
-
                     } catch (Exception e) {
                         //todo log and audit with stack trace
                         if (!(e instanceof BundleResolver.UnknownBundleException)) {
@@ -229,6 +228,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                 }
 
             } finally {
+                bundleResolver.setInstallationPrefix(null);
                 isInstallInProgress.set(false);
             }
         } else {
@@ -337,7 +337,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
 
     // - PRIVATE
 
-    private BundleResolver bundleResolver;
+    private OAuthToolkitBundleResolver bundleResolver;
     private final AtomicBoolean isInstallInProgress = new AtomicBoolean(false);
     private static final Logger logger = Logger.getLogger(OAuthInstallerAdminImpl.class.getName());
     private final String oAuthInstallerVersion;

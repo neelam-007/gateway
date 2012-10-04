@@ -46,8 +46,6 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
      * @param otkComponentId     collection of all bundle ids to install. Bundles may depend on each others items, but there is no
      *                           install dependency order.
      * @param folderOid          oid of the folder to install into.
-     * @param installFolder      if not null or empty, this folder will be the install into folder. It may already exist.
-     *                           If it does not exist it will be created.
      * @param bundleMappings     Mapping of bundleId to mappings for that bundle. Required.
      * @param installationPrefix installation prefix. If not null and not empty this value will be prepended to the names
      *                           of all installed policies and the routing URIs of all installed services.
@@ -57,7 +55,6 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
     @NotNull
     AsyncAdminMethods.JobId<ArrayList> installOAuthToolkit(@NotNull Collection<String> otkComponentId,
                                                            long folderOid,
-                                                           @Nullable String installFolder,
                                                            @NotNull Map<String, BundleMapping> bundleMappings,
                                                            @Nullable String installationPrefix) throws OAuthToolkitInstallationException;
 

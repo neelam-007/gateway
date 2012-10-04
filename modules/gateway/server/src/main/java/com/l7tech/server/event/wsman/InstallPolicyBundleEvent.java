@@ -1,16 +1,15 @@
-package com.l7tech.server.event;
+package com.l7tech.server.event.wsman;
 
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.context.ApplicationEvent;
 
 /**
  * Event used to request the appropriate handler to install a policy bundle.
  */
-public class InstallPolicyBundleEvent extends ApplicationEvent {
+public class InstallPolicyBundleEvent extends WSManagementRequestEvent {
 
     public InstallPolicyBundleEvent(final Object source,
                                     final BundleResolver bundleResolver,
@@ -42,33 +41,12 @@ public class InstallPolicyBundleEvent extends ApplicationEvent {
         return preBundleSavePolicyCallback;
     }
 
-    /**
-     * Get any processing exception caused by processing this message.
-     * @return any exception which was thrown
-     */
-    @Nullable
-    public Exception getProcessingException() {
-        return processingException;
+    public String getPolicyBundleVersionNs() {
+        return policyBundleVersionNs;
     }
 
-    /**
-     * Set an exception caused during processing of this event.
-     * @param processingException event thrown
-     */
-    public void setProcessingException(@Nullable Exception processingException) {
-        this.processingException = processingException;
-    }
-
-    /**
-     * True when some module processed this event.
-     * @return
-     */
-    public boolean isProcessed() {
-        return processed;
-    }
-
-    public void setProcessed(boolean processed) {
-        this.processed = processed;
+    public void setPolicyBundleVersionNs(String policyBundleVersionNs) {
+        this.policyBundleVersionNs = policyBundleVersionNs;
     }
 
     // - PRIVATE
@@ -79,8 +57,9 @@ public class InstallPolicyBundleEvent extends ApplicationEvent {
     final PolicyBundleInstallerContext context;
     @Nullable
     final PreBundleSavePolicyCallback preBundleSavePolicyCallback;
-    @Nullable
-    private Exception processingException;
-    private boolean processed = false;
+
+    private final static String BUNDLE_VERSION_SEPT_12 = "http://ns.l7tech.com/2012/09/policy-bundle";
+
+    private String policyBundleVersionNs = BUNDLE_VERSION_SEPT_12;
 
 }

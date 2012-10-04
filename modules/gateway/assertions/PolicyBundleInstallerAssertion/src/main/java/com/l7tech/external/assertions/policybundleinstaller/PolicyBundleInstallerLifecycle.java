@@ -5,8 +5,9 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.event.InstallPolicyBundleEvent;
+import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.event.system.Initializing;
+import com.l7tech.server.event.wsman.WSManagementRequestEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
@@ -37,41 +38,59 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
         if (applicationEvent instanceof Initializing) {
             configureBeans();
             return;
-        } else if (!(applicationEvent instanceof InstallPolicyBundleEvent)) {
+        } else if (!(applicationEvent instanceof WSManagementRequestEvent)) {
             return;
         }
 
-        // process event
-        final InstallPolicyBundleEvent bundleEvent = (InstallPolicyBundleEvent) applicationEvent;
-        final BundleResolver bundleResolver = bundleEvent.getBundleResolver();
-        final PreBundleSavePolicyCallback savePolicyCallback = bundleEvent.getPreBundleSavePolicyCallback();
-        final PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, savePolicyCallback, new GatewayManagementInvoker() {
-            @Override
-            public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
-                return serverMgmtAssertion.checkRequest(context);
-            }
-        });
-
-        final PolicyBundleInstallerContext context = bundleEvent.getContext();
-        try {
-            installer.install(context);
-
-        } catch (PolicyBundleInstaller.InstallationException e) {
-            bundleEvent.setProcessingException(e);
-        } catch (BundleResolver.UnknownBundleException e) {
-            bundleEvent.setProcessingException(e);
-        } catch (BundleResolver.BundleResolverException e) {
-            bundleEvent.setProcessingException(e);
-        } catch (InterruptedException e) {
-            bundleEvent.setProcessingException(e);
-        } catch (BundleResolver.InvalidBundleException e) {
-            bundleEvent.setProcessingException(e);
-        } catch (Exception e) {
-            // catch all for any runtime exceptions
-            bundleEvent.setProcessingException(e);
+        WSManagementRequestEvent mgmtRequest = (WSManagementRequestEvent) applicationEvent;
+        if (mgmtRequest.isProcessed()) {
+            return;
         }
-        bundleEvent.setProcessed(true);
 
+        if(!"http://ns.l7tech.com/2010/04/gateway-management".equals(mgmtRequest.getBundleVersionNs())){
+            // not applicable
+            return;
+        }
+
+        if (applicationEvent instanceof InstallPolicyBundleEvent) {
+
+            // process event
+            final InstallPolicyBundleEvent bundleEvent = (InstallPolicyBundleEvent) applicationEvent;
+
+            if(!"http://ns.l7tech.com/2012/09/policy-bundle".equals(bundleEvent.getPolicyBundleVersionNs())){
+                // not applicable
+                return;
+            }
+
+            final BundleResolver bundleResolver = bundleEvent.getBundleResolver();
+            final PreBundleSavePolicyCallback savePolicyCallback = bundleEvent.getPreBundleSavePolicyCallback();
+            final PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, savePolicyCallback, new GatewayManagementInvoker() {
+                @Override
+                public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
+                    return serverMgmtAssertion.checkRequest(context);
+                }
+            });
+
+            final PolicyBundleInstallerContext context = bundleEvent.getContext();
+            try {
+                installer.install(context);
+
+            } catch (PolicyBundleInstaller.InstallationException e) {
+                bundleEvent.setProcessingException(e);
+            } catch (BundleResolver.UnknownBundleException e) {
+                bundleEvent.setProcessingException(e);
+            } catch (BundleResolver.BundleResolverException e) {
+                bundleEvent.setProcessingException(e);
+            } catch (InterruptedException e) {
+                bundleEvent.setProcessingException(e);
+            } catch (BundleResolver.InvalidBundleException e) {
+                bundleEvent.setProcessingException(e);
+            } catch (Exception e) {
+                // catch all for any runtime exceptions
+                bundleEvent.setProcessingException(e);
+            }
+            bundleEvent.setProcessed(true);
+        }
     }
 
     /**
