@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<enumeration ObjectType="Policy" ExportDate="20120924 0330" ExporterVersion="6.2 (4248)">
+<enumeration>
     <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="8ac0e0fc-b08a-4f00-b78d-0cead654d943"
                id="52297728" version="1">
         <l7:PolicyDetail folderId="123600913" guid="8ac0e0fc-b08a-4f00-b78d-0cead654d943" id="52297728" version="1">

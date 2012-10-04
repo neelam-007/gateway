@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<enumeration ObjectType="Folder" ExportDate="20120821 1101" ExporterVersion="6.2 (4248)">
+<enumeration>
     <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="123600911" id="123600912"
                version="0">
         <l7:Name>OAuthTokenStore</l7:Name>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<enumeration ObjectType="Service" ExportDate="20120815 0135" ExporterVersion="6.2 (4248)">
+<enumeration>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="123797518" version="2">
         <l7:ServiceDetail folderId="123600909" id="123797518" version="2">
             <l7:Name>implicit</l7:Name>
