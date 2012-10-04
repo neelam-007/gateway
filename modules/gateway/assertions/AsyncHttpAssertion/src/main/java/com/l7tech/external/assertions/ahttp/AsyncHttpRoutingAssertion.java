@@ -17,13 +17,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  *
  */
-public class AsyncHttpRoutingAssertion extends HttpRoutingAssertion implements UsesVariables, UsesEntities, PolicyReference {
+public class AsyncHttpRoutingAssertion extends HttpRoutingAssertion implements UsesVariables, UsesEntities, PolicyReference, MessageTargetable {
     private String policyGuid;
+    private MessageTargetableSupport messageTargetableSupport = new MessageTargetableSupport(TargetMessageType.REQUEST, false);
     private transient Policy fragmentPolicy;
 
     /**
@@ -37,46 +38,6 @@ public class AsyncHttpRoutingAssertion extends HttpRoutingAssertion implements U
 
     public void setPolicyGuid(String policyGuid) {
         this.policyGuid = policyGuid;
-    }
-
-    @Override
-    public void setProtectedServiceUrl(String protectedServiceUrl) {
-        super.setProtectedServiceUrl(protectedServiceUrl);
-    }
-
-    @Override
-    public String getProtectedServiceUrl() {
-        return super.getProtectedServiceUrl();
-    }
-
-    @Override
-    public void setHttpMethod(HttpMethod httpMethod) {
-        super.setHttpMethod(httpMethod);
-    }
-
-    @Override
-    public HttpMethod getHttpMethod() {
-        return super.getHttpMethod();
-    }
-
-    @Override
-    public GenericHttpRequestParams.HttpVersion getHttpVersion() {
-        return super.getHttpVersion();
-    }
-
-    @Override
-    public void setHttpVersion(GenericHttpRequestParams.HttpVersion httpVersion) {
-        super.setHttpVersion(httpVersion);
-    }
-
-    @Override
-    public boolean isUseKeepAlives() {
-        return super.isUseKeepAlives();
-    }
-
-    @Override
-    public void setUseKeepAlives(boolean useKeepAlives) {
-        super.setUseKeepAlives(useKeepAlives);
     }
 
     @Override
@@ -144,6 +105,13 @@ public class AsyncHttpRoutingAssertion extends HttpRoutingAssertion implements U
             super.replaceEntity(oldEntityHeader, newEntityHeader);
     }
 
+    @Override
+    public String[] getVariablesUsed() {
+        final MessageTargetableSupport.VariablesUsed varsUsed = messageTargetableSupport.getMessageTargetVariablesUsed();
+        varsUsed.addExpressions(super.getVariablesUsed());
+        return varsUsed.asArray();
+    }
+
     private static final String META_INITIALIZED = AsyncHttpRoutingAssertion.class.getName() + ".metadataInitialized";
 
     public AssertionMetadata meta() {
@@ -151,8 +119,11 @@ public class AsyncHttpRoutingAssertion extends HttpRoutingAssertion implements U
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "routing" });
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(SHORT_NAME, "Route via Asynchronous HTTP");
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
+        meta.put(PALETTE_FOLDERS, new String[] { "routing" });
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ahttp.console.AsyncHttpRoutingAssertionPropertiesDialog");
 
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new Java5EnumTypeMapping(HttpMethod.class, "httpMethod"),
@@ -165,4 +136,33 @@ public class AsyncHttpRoutingAssertion extends HttpRoutingAssertion implements U
         return meta;
     }
 
+    @Override
+    public TargetMessageType getTarget() {
+        return messageTargetableSupport.getTarget();
+    }
+
+    @Override
+    public void setTarget(TargetMessageType target) {
+        messageTargetableSupport.setTarget(target);
+    }
+
+    @Override
+    public String getOtherTargetMessageVariable() {
+        return messageTargetableSupport.getOtherTargetMessageVariable();
+    }
+
+    @Override
+    public void setOtherTargetMessageVariable(String otherMessageVariable) {
+        messageTargetableSupport.setOtherTargetMessageVariable(otherMessageVariable);
+    }
+
+    @Override
+    public String getTargetName() {
+        return messageTargetableSupport.getTargetName();
+    }
+
+    @Override
+    public boolean isTargetModifiedByGateway() {
+        return messageTargetableSupport.isTargetModifiedByGateway();
+    }
 }

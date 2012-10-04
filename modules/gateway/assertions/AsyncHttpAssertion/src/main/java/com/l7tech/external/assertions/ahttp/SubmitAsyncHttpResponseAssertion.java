@@ -7,6 +7,8 @@ import com.l7tech.policy.assertion.TargetMessageType;
 
 import java.util.logging.Logger;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+
 /**
  * 
  */
@@ -39,9 +41,10 @@ public class SubmitAsyncHttpResponseAssertion extends MessageTargetableAssertion
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.ahttp.server.AsyncHttpTransportModule");
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "routing" });
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(SHORT_NAME, "Respond to Asynchronous HTTP Request");
+        meta.put(MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.ahttp.server.AsyncHttpTransportModule");
+        meta.put(PALETTE_FOLDERS, new String[] { "routing" });
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

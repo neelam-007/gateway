@@ -12,12 +12,14 @@ import com.l7tech.message.MimeKnob;
 import com.l7tech.message.OutboundHeadersKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditLogFormatter;
 import com.l7tech.server.audit.MessageSummaryAuditFactory;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
@@ -71,7 +73,25 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
     }
 
     @Override
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest( final PolicyEnforcementContext context )
+        throws IOException, PolicyAssertionException {
+        final String messageDesc = assertion.getTargetName();
+        final Message message;
+        try {
+            message = context.getTargetMessage(assertion);
+        } catch (NoSuchVariableException e) {
+            logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
+            return AssertionStatus.FAILED;
+        }
+
+        return doCheckRequest( context, message, messageDesc, context.getAuthenticationContext(message) );
+    }
+
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message message,
+                                              final String messageDescription,
+                                              final AuthenticationContext authContext )
+        throws IOException, PolicyAssertionException {
         ResponseContextInfo responseContextInfo = new ResponseContextInfo();
         try {
             String guid = assertion.getPolicyGuid();
@@ -90,8 +110,7 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
             responseContextInfo.clonedContext = copyContext(context, varsToCopyMap);
 
             URI uri = parseUri(urlStr);
-            Message targetMessage = context.getRequest(); // TODO configurable target message to route
-            HttpRequest httpRequest = createNettyHttpRequest(uri, targetMessage);
+            HttpRequest httpRequest = createNettyHttpRequest(uri, message);
             int port = uri.getPort();
             if (-1 == port)
                 port = 80; // TODO use 443 as default for https when supported
@@ -119,7 +138,7 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to initiate asynchronous HTTP routing: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (NoSuchPartException e) {
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Unable to read request message parts for asynchronous HTTP routing: " + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Unable to read " + messageDescription + " message parts for asynchronous HTTP routing: " + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } finally {
             ResourceUtils.closeQuietly(responseContextInfo);
@@ -215,7 +234,7 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
         try {
             final PolicyEnforcementContext context = responseContextInfo.clonedContext;
 
-            final AssertionStatus status[] = { AssertionStatus.UNDEFINED };
+            final AssertionStatus assertionStatus[] = { AssertionStatus.UNDEFINED };
             auditContextFactory.doWithNewAuditContext(
                 new Callable<Void>() {
                     @Override
@@ -247,11 +266,11 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
                                 context.setVariable("async.response.success", Boolean.FALSE);
                             }
 
-                            status[0] = responseContextInfo.serverPolicyHandle.checkRequest(context);
+                            assertionStatus[0] = responseContextInfo.serverPolicyHandle.checkRequest(context);
 
-                            if (!AssertionStatus.NONE.equals(status[0])) {
+                            if (!AssertionStatus.NONE.equals(assertionStatus[0])) {
                                 getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                                    "Response policy failed while delivering async response with assertion status: " + status[0]);
+                                    "Response policy failed while delivering async response with assertion status: " + assertionStatus[0]);
                             }
 
                         } catch (PolicyAssertionException e) {
@@ -273,7 +292,7 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
                 new Functions.Nullary<com.l7tech.gateway.common.audit.AuditRecord>() {
                     @Override
                     public AuditRecord call() {
-                        return messageSummaryAuditFactory.makeEvent(context, status[0]);
+                        return messageSummaryAuditFactory.makeEvent(context, assertionStatus[0]);
                     }
                 }
             );
