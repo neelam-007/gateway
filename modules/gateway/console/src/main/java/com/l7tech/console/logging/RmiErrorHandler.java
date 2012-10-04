@@ -3,6 +3,7 @@ package com.l7tech.console.logging;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.TimeoutRuntimeException;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.identity.ValidationException;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.remoting.RemoteAccessException;
 
@@ -33,7 +34,6 @@ public class RmiErrorHandler implements ErrorHandler {
         final Throwable throwable = ExceptionUtils.unnestToRoot(e.getThrowable());
         final RemoteException rex = ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteException.class);
         final RemoteAccessException raex = ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteAccessException.class);
-
 
         final Frame topParent = TopComponents.getInstance().getTopParent();
         if (throwable instanceof SocketException ||
@@ -91,6 +91,13 @@ public class RmiErrorHandler implements ErrorHandler {
 
             // if t = null, show message dialog, otherwise, show error dialog.
             DialogDisplayer.showMessageDialog(topParent, null, message, t);
+        } else if (throwable instanceof ValidationException){
+            e.getLogger().log(Level.WARNING, "Invalid User.");
+            TopComponents.getInstance().setConnectionLost(true);
+            TopComponents.getInstance().disconnectFromGateway();
+            String message = "Invalid User.  Connection to the Gateway has been broken.";
+            refreshUI( topParent );
+            DialogDisplayer.showMessageDialog(topParent, null, message, throwable);
         } else {
             e.handle();
         }
