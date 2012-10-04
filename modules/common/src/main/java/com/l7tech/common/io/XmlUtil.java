@@ -261,12 +261,20 @@ public class XmlUtil extends DomUtils {
             }
         }
 
-        if ( ConfigFactory.getBooleanProperty( "com.l7tech.common.xmlSoftSymbolTable", false ) ) {
+        if ( "intern".equals(ConfigFactory.getProperty("com.l7tech.common.xmlSoftSymbolTable", null)) ) {
+            try {
+                dbf.setAttribute( XERCES_ATTR_SYMBOL_TABLE, new InternSymbolTable() );
+            } catch ( IllegalArgumentException e ) {
+                logger.log( Level.CONFIG,
+                    "Error configuring XML parser intern symbol table.",
+                    ExceptionUtils.getDebugException( e ) );
+            }
+        } else if ( ConfigFactory.getBooleanProperty( "com.l7tech.common.xmlSoftSymbolTable", false ) ) {
             try {
                 dbf.setAttribute( XERCES_ATTR_SYMBOL_TABLE, new org.apache.xerces.util.SoftReferenceSymbolTable() );
             } catch ( IllegalArgumentException e ) {
                 logger.log( Level.CONFIG,
-                        "Error configuring XML parser symbol table.",
+                        "Error configuring XML parser soft symbol table.",
                         ExceptionUtils.getDebugException( e ) );
             }
         }
@@ -610,7 +618,7 @@ public class XmlUtil extends DomUtils {
         ser.setOutputFormat(of);
         ser.setOutputByteStream(os);
         if (node instanceof Document)
-            ser.serialize((Document)node);
+            ser.serialize((Document) node);
         else if (node instanceof Element)
             ser.serialize((Element)node);
         else
@@ -914,7 +922,7 @@ public class XmlUtil extends DomUtils {
 
         final XMLInputFactory xif = XMLInputFactory.newInstance();
         xif.setXMLReporter( SILENT_REPORTER );
-        xif.setXMLResolver( resolver == null ? FAILING_RESOLVER : resolver );
+        xif.setXMLResolver(resolver == null ? FAILING_RESOLVER : resolver);
         XMLStreamReader reader = null;
         try {
             reader = xif.createXMLStreamReader( source );
@@ -1120,7 +1128,7 @@ public class XmlUtil extends DomUtils {
             elementNames.add( name );
         }
 
-        return elementNames.toArray( new String[ elementNames.size() ] );
+        return elementNames.toArray(new String[elementNames.size()]);
     }
 
     @SuppressWarnings({"ForLoopReplaceableByForEach"})
