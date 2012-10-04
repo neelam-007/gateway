@@ -197,6 +197,28 @@ public class ExpandVariablesTest {
         }
     }
 
+    @Test @BugNumber(9611)
+    public void testArrayLength() throws Exception {
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("foo", new Object[] { "bar", "baz" });
+        }};
+
+        assertEquals("2", ExpandVariables.process("${foo.length}", vars, audit));
+        assertEquals("2", ExpandVariables.process("${foo.leNGth}", vars, audit));
+        assertEquals("", ExpandVariables.process("${foo.length.blah}", vars, audit));
+    }
+
+    @Test @BugNumber(9611)
+    public void testListLength() throws Exception {
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("foo", Arrays.asList("bar", "baz" ));
+        }};
+
+        assertEquals("2", ExpandVariables.process("${foo.length}", vars, audit));
+        assertEquals("2", ExpandVariables.process("${foo.leNGth}", vars, audit));
+        assertEquals("", ExpandVariables.process("${foo.length.blah}", vars, audit));
+    }
+
     @Test @BugNumber(6455)
     public void testUnrecognizedSuffix() throws Exception {
         Map<String, Object> vars = new HashMap<String, Object>() {{

@@ -29,6 +29,9 @@ class ArraySelector implements ExpandVariables.Selector<Object[]> {
             remainingName = name.substring( indexOffset+1 );
         }
 
+        if ("length".equalsIgnoreCase(indexText))
+            return context == null ? null : new Selection(context.length, process(remainingName));
+
         try {
             int index = Integer.parseInt( indexText ) - 1; // selector is one based
             if ( index < 0 || index >= context.length ) {
