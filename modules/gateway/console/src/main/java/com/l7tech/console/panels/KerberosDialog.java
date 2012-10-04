@@ -80,6 +80,7 @@ public class KerberosDialog extends JDialog {
         setResizable(false);
         add(mainPanel);
 
+        performValidateCheckBox.setEnabled(Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdateAny(EntityType.CLUSTER_PROPERTY)));
         validateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -90,11 +91,13 @@ public class KerberosDialog extends JDialog {
         closeButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
-                try {
-                    kerberosAdmin.setKeytabValidate(performValidateCheckBox.isSelected());
-                } catch (KerberosException e1) {
-                    ErrorManager.getDefault().notify(Level.WARNING, e1, "Error persist Perform KDC Validation status." );
+                if(Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdateAny(EntityType.CLUSTER_PROPERTY))){
+                    KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
+                    try {
+                        kerberosAdmin.setKeytabValidate(performValidateCheckBox.isSelected());
+                    } catch (KerberosException e1) {
+                        ErrorManager.getDefault().notify(Level.WARNING, e1, "Error persist Perform KDC Validation status." );
+                    }
                 }
                 KerberosDialog.this.dispose();
             }
