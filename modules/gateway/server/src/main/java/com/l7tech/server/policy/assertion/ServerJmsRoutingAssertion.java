@@ -1,6 +1,5 @@
 package com.l7tech.server.policy.assertion;
 
-import com.ibm.msg.client.jms.DetailedMessageFormatException;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -348,7 +347,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 for ( String name : outboundRequestProps.keySet() ) {
                     try {
                         jmsOutboundRequest.setObjectProperty(name, outboundRequestProps.get(name));
-                    } catch ( DetailedMessageFormatException e ) {
+                    } catch ( MessageFormatException e ) {
                         logger.log(Level.WARNING,"Cannot set JMS Property '" + name + "' to value '" + outboundRequestProps.get(name) + "' on IBM MQ JMS Provider. " + ExceptionUtils.getMessage(e),ExceptionUtils.getDebugException(e));
                     }
                 }
