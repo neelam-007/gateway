@@ -97,8 +97,7 @@
                     &lt;L7p:Comment stringValue="Generates request MAC using HMAC-SHA1 algorithm"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Inputs: timestamp_sec, nonce, http_method, url, ext, mac_key,
-                    mac_algorithm"/&gt;
+                    &lt;L7p:Comment stringValue="Inputs: timestamp_sec, nonce, http_method, url, ext, mac_key, mac_algorithm"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="Outputs: mac"/&gt;
@@ -208,8 +207,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="========== Break URL into parts (protocol, hostname+port, path)
-                    =========="/&gt;
+                    &lt;L7p:Comment stringValue="========== Break URL into parts (protocol, hostname+port, path) =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:Regex&gt;
                     &lt;L7p:AutoTarget booleanValue="false"/&gt;
@@ -761,8 +759,7 @@
                     &lt;L7p:PolicyGuid stringValue="950d7c13-dcd8-472f-a7ae-2f4d50b8bfdd"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Include this policy in a service policy to authorize api access based
-                    on an oauth 2.0 access token"/&gt;
+                    &lt;L7p:Comment stringValue="Include this policy in a service policy to authorize api access based on an oauth 2.0 access token"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue=""/&gt;
@@ -1823,12 +1820,10 @@
                     &lt;L7p:Comment stringValue=&quot;Input: token_type=urt|art|at|ck|ac|at_2|rft&quot;/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;urt=unauthorized request token, art=authorized request token,
-                    at=access token, ck=client_key&quot;/&gt;
+                    &lt;L7p:Comment stringValue=&quot;urt=unauthorized request token, art=authorized request token, at=access token, ck=client_key&quot;/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;ac=authorization_code, at_2=access_token for oauth 2.0,
-                    rft=refresh_token&quot;/&gt;
+                    &lt;L7p:Comment stringValue=&quot;ac=authorization_code, at_2=access_token for oauth 2.0, rft=refresh_token&quot;/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue=&quot;Output: genToken, genSecret, genExpiration&quot;/&gt;

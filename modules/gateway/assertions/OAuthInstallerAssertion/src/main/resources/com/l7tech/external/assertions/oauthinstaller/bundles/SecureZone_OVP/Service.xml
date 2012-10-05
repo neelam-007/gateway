@@ -401,8 +401,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Confidential clients utilizing implicit grant_type must have registered
-                    redirect_uri"/&gt;
+                    &lt;L7p:Comment stringValue="Confidential clients utilizing implicit grant_type must have registered redirect_uri"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${xpathType.result}"/&gt;
@@ -493,8 +492,7 @@
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="If redirect_uri parameter is passed in, then it must match redirect_uri
-                    entered during client registration."/&gt;
+                    &lt;L7p:Comment stringValue="If redirect_uri parameter is passed in, then it must match redirect_uri entered during client registration."/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
@@ -587,8 +585,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="If redirect_uri parameter is not passed in, then use redirect_uri
-                    entered during client registration."/&gt;
+                    &lt;L7p:Comment stringValue="If redirect_uri parameter is not passed in, then use redirect_uri entered during client registration."/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
@@ -694,8 +691,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="If redirect_uri parameter is passed and none was registered use the one
-                    passed in"/&gt;
+                    &lt;L7p:Comment stringValue="If redirect_uri parameter is passed and none was registered use the one passed in"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
@@ -754,8 +750,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:AuditDetailAssertion&gt;
-                    &lt;L7p:Detail stringValue="Mismatching redirect uri. Given: ${request.http.parameter.callback},
-                    registered: ${xpathCallback.result}"/&gt;
+                    &lt;L7p:Detail stringValue="Mismatching redirect uri. Given: ${request.http.parameter.callback}, registered: ${xpathCallback.result}"/&gt;
                     &lt;L7p:Level stringValue="WARNING"/&gt;
                     &lt;/L7p:AuditDetailAssertion&gt;
                     &lt;L7p:HardcodedResponse&gt;
@@ -943,8 +938,7 @@
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:AuditDetailAssertion&gt;
-                    &lt;L7p:Detail stringValue="error: invalid_request, error_description&amp;quot;: Missing access
-                    token"/&gt;
+                    &lt;L7p:Detail stringValue="error: invalid_request, error_description&amp;quot;: Missing access token"/&gt;
                     &lt;L7p:Level stringValue="WARNING"/&gt;
                     &lt;/L7p:AuditDetailAssertion&gt;
                     &lt;L7p:FalseAssertion/&gt;
@@ -1573,8 +1567,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:AuditDetailAssertion&gt;
-                    &lt;L7p:Detail stringValue="error: invalid_request, error_description: Access token is invalid or
-                    revoked"/&gt;
+                    &lt;L7p:Detail stringValue="error: invalid_request, error_description: Access token is invalid or revoked"/&gt;
                     &lt;L7p:Level stringValue="WARNING"/&gt;
                     &lt;/L7p:AuditDetailAssertion&gt;
                     &lt;L7p:FalseAssertion/&gt;
@@ -1908,8 +1901,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:AuditDetailAssertion&gt;
-                    &lt;L7p:Detail stringValue="error: invalid_request, error_description: Access token expired or
-                    disabled, status: ${token_status}, expiration: ${token_expiration}, time_now: ${now.millis}"/&gt;
+                    &lt;L7p:Detail stringValue="error: invalid_request, error_description: Access token expired or disabled, status: ${token_status}, expiration: ${token_expiration}, time_now: ${now.millis}"/&gt;
                     &lt;L7p:Level stringValue="WARNING"/&gt;
                     &lt;/L7p:AuditDetailAssertion&gt;
                     &lt;L7p:FalseAssertion/&gt;
@@ -2140,8 +2132,7 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="redirect_uri parameter must match redirect_uri parameter used in
-                    authorization request."/&gt;
+                    &lt;L7p:Comment stringValue="redirect_uri parameter must match redirect_uri parameter used in authorization request."/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
@@ -2444,9 +2435,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:AuditDetailAssertion&gt;
-                    &lt;L7p:Detail stringValue="error: invalid_request, error_description: given client_secret is wrong
-                    or client_id has expired or it is disabled, given secret: ${request.http.parameter.secret}, status:
-                    ${token_status}, expiration: ${token_expiration}, time_now: ${now.millis}"/&gt;
+                    &lt;L7p:Detail stringValue="error: invalid_request, error_description: given client_secret is wrong or client_id has expired or it is disabled, given secret: ${request.http.parameter.secret}, status: ${token_status}, expiration: ${token_expiration}, time_now: ${now.millis}"/&gt;
                     &lt;L7p:Level stringValue="WARNING"/&gt;
                     &lt;/L7p:AuditDetailAssertion&gt;
                     &lt;L7p:FalseAssertion/&gt;
@@ -3807,8 +3796,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:AuditDetailAssertion&gt;
-                    &lt;L7p:Detail stringValue="refresh token was expired or disabled. expiration:
-                    ${xpathExpiration.result}, time_now: ${now.millis}, status: ${xpathStatus.result}"/&gt;
+                    &lt;L7p:Detail stringValue="refresh token was expired or disabled. expiration: ${xpathExpiration.result}, time_now: ${now.millis}, status: ${xpathStatus.result}"/&gt;
                     &lt;L7p:Level stringValue="WARNING"/&gt;
                     &lt;/L7p:AuditDetailAssertion&gt;
                     &lt;L7p:FalseAssertion/&gt;

@@ -37,8 +37,7 @@
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Implementtion of a simple oauth manager that uses API calls only to
-                    access the client- and tokenstore"/&gt;
+                    &lt;L7p:Comment stringValue="Implementtion of a simple oauth manager that uses API calls only to access the client- and tokenstore"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:Include&gt;
                     &lt;L7p:PolicyGuid stringValue="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3"/&gt;

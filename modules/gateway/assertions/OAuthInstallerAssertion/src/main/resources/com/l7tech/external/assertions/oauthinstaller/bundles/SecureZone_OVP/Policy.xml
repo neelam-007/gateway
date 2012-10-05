@@ -24,8 +24,7 @@
                     &lt;L7p:Comment stringValue="Generates request MAC using HMAC-SHA1 algorithm"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Inputs: timestamp_sec, nonce, http_method, url, ext, mac_key,
-                    mac_algorithm"/&gt;
+                    &lt;L7p:Comment stringValue="Inputs: timestamp_sec, nonce, http_method, url, ext, mac_key, mac_algorithm"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="Outputs: mac"/&gt;
@@ -135,8 +134,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="========== Break URL into parts (protocol, hostname+port, path)
-                    =========="/&gt;
+                    &lt;L7p:Comment stringValue="========== Break URL into parts (protocol, hostname+port, path) =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:Regex&gt;
                     &lt;L7p:AutoTarget booleanValue="false"/&gt;

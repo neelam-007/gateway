@@ -2947,8 +2947,7 @@
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="parameters: token, expiration, callback, client_key, secret,
-                    client_name"/&gt;
+                    &lt;L7p:Comment stringValue="parameters: token, expiration, callback, client_key, secret, client_name"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:AllowGet booleanValue="true"/&gt;
@@ -3051,8 +3050,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="parameters: token, secret, expiration, client, resource_owner, status,
-                    temp_token"/&gt;
+                    &lt;L7p:Comment stringValue="parameters: token, secret, expiration, client, resource_owner, status, temp_token"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:AllowGet booleanValue="true"/&gt;
@@ -3143,8 +3141,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="parameters: token, secret, expiration, client_key, resource_owner,
-                    status, scope(, refresh_token, refresh_expiration)?"/&gt;
+                    &lt;L7p:Comment stringValue="parameters: token, secret, expiration, client_key, resource_owner, status, scope(, refresh_token, refresh_expiration)?"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:AllowGet booleanValue="true"/&gt;
@@ -3251,8 +3248,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="parameters: token, secret, expiration, client_key, resource_owner,
-                    status, scope(, refresh_token, refresh_expiration)?"/&gt;
+                    &lt;L7p:Comment stringValue="parameters: token, secret, expiration, client_key, resource_owner, status, scope(, refresh_token, refresh_expiration)?"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:AllowGet booleanValue="true"/&gt;

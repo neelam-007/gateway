@@ -69,15 +69,13 @@
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="The fragment enables an API/ Service endpoint to require a valid oauth
-                    access token"/&gt;
+                    &lt;L7p:Comment stringValue="The fragment enables an API/ Service endpoint to require a valid oauth access token"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="Input: the http request including the oauth header"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Output: oauth_consumer_key, oauth_token, oauth_verifier,
-                    authorizationHeader"/&gt;
+                    &lt;L7p:Comment stringValue="Output: oauth_consumer_key, oauth_token, oauth_verifier, authorizationHeader"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:Include&gt;
                     &lt;L7p:PolicyGuid stringValue="60cec430-0767-429c-8eff-62891c2eb343"/&gt;
@@ -939,12 +937,10 @@
                     &lt;L7p:Comment stringValue=&quot;Input: token_type=urt|art|at|ck|ac|at_2|rft&quot;/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;urt=unauthorized request token, art=authorized request token,
-                    at=access token, ck=client_key&quot;/&gt;
+                    &lt;L7p:Comment stringValue=&quot;urt=unauthorized request token, art=authorized request token, at=access token, ck=client_key&quot;/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;ac=authorization_code, at_2=access_token for oauth 2.0,
-                    rft=refresh_token&quot;/&gt;
+                    &lt;L7p:Comment stringValue=&quot;ac=authorization_code, at_2=access_token for oauth 2.0, rft=refresh_token&quot;/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue=&quot;Output: genToken, genSecret, genExpiration&quot;/&gt;

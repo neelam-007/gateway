@@ -122,12 +122,10 @@
                     &lt;L7p:Comment stringValue=&quot;Input: token_type=urt|art|at|ck|ac|at_2|rft&quot;/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;urt=unauthorized request token, art=authorized request token,
-                    at=access token, ck=client_key&quot;/&gt;
+                    &lt;L7p:Comment stringValue=&quot;urt=unauthorized request token, art=authorized request token, at=access token, ck=client_key&quot;/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;ac=authorization_code, at_2=access_token for oauth 2.0,
-                    rft=refresh_token&quot;/&gt;
+                    &lt;L7p:Comment stringValue=&quot;ac=authorization_code, at_2=access_token for oauth 2.0, rft=refresh_token&quot;/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue=&quot;Output: genToken, genSecret, genExpiration&quot;/&gt;

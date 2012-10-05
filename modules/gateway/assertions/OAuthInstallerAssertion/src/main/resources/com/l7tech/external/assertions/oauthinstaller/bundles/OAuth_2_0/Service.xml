@@ -37,8 +37,7 @@
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the implicit
-                    grant type"/&gt;
+                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the implicit grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="aW1wbGljaXQ="/>
@@ -382,8 +381,7 @@
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the resource
-                    owner password credentials grant type"/&gt;
+                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the resource owner password credentials grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="cm9wYw=="/>
@@ -734,8 +732,7 @@
                     &lt;L7p:Comment stringValue="========== Add additional authorization rules here =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="========== Based on grant type, scope, client id, and subscriber id
-                    here =========="/&gt;
+                    &lt;L7p:Comment stringValue="========== Based on grant type, scope, client id, and subscriber id here =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;wsp:OneOrMore L7p:Enabled="false" wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
@@ -825,8 +822,7 @@
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the
-                    authorization code grant type"/&gt;
+                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the authorization code grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="YXV0aGNvZGU="/>
@@ -2387,8 +2383,7 @@
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="========== Delete the authorization code. The authorization code should
-                    be consumed at most once. =========="/&gt;
+                    &lt;L7p:Comment stringValue="========== Delete the authorization code. The authorization code should be consumed at most once. =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="dGVtcF90b2tlbj0ke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXIuY29kZX0="/&gt;
@@ -5074,8 +5069,7 @@
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the saml
-                    grant type"/&gt;
+                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the saml grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="c2FtbA=="/&gt;
@@ -5492,8 +5486,7 @@
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the client
-                    credentials grant type"/&gt;
+                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the client credentials grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="Y2xpZW50Y3JlZHM="/>
