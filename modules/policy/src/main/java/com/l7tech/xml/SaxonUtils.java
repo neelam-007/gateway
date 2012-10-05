@@ -40,7 +40,7 @@ public class SaxonUtils {
     private static final String PROP_SAXON_ALLOW_COLLECTIONS = "com.l7tech.xml.xslt.saxon.allowCollections";
     private static final String PROP_SAXON_ALLOW_ENTITY_RESOLUTION = "com.l7tech.xml.xslt.saxon.allowEntityResolution";
 
-    // Layer 7 Technologies license key for Saxon HE
+    // Layer 7 Technologies license key for Saxon Enterprise Edition
     private static final String key =
         "j0j0kbj09b3b0bv0v0b0q0kbj0000bj0k00bf0kb0bq03bv0fbf00bj0a030" +
         "90bb0bbb3ba0q0j0k0q0a0a090f0k0a0b00bq03bfb0bb0k0bbf030j00030" +
