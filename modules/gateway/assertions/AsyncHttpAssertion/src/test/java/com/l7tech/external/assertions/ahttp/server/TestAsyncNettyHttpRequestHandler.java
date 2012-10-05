@@ -19,7 +19,7 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  */
 public class TestAsyncNettyHttpRequestHandler extends SimpleChannelUpstreamHandler {
-    static final long RESPONSE_DELAY = Long.getLong("responseDelay", 5000L);
+    static final long RESPONSE_DELAY = Long.getLong("responseDelay", 1000L);
     static final int RESPONSE_TIMER_THREADS = Integer.getInteger("responseTimerThreads", 25);
 
     private static Timer[] timerPool = new Timer[RESPONSE_TIMER_THREADS];
@@ -44,7 +44,7 @@ public class TestAsyncNettyHttpRequestHandler extends SimpleChannelUpstreamHandl
         if (contentType != null)
             response.setHeader(CONTENT_TYPE, contentType);
 
-        Timer timer = timerPool[request.hashCode() % timerPool.length];
+        Timer timer = timerPool[Math.abs(request.hashCode()) % timerPool.length];
         timer.schedule(new TimerTask() {
             @Override
             public void run() {

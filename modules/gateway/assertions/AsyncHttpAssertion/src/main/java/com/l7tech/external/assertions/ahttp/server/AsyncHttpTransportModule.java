@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.ahttp.server;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
-import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.ahttp.SubmitAsyncHttpResponseAssertion;
 import com.l7tech.gateway.common.LicenseManager;
@@ -35,7 +34,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -54,9 +52,16 @@ import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
  */
 public class AsyncHttpTransportModule extends TransportModule implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(AsyncHttpTransportModule.class.getName());
-    private static final long ASYNC_RESPONSE_TIMEOUT_MILLIS = SyspropUtil.getLong("com.l7tech.http.async.responseTimeout", 30L * 1000L);
+    private static final long ASYNC_RESPONSE_TIMEOUT_MILLIS = SyspropUtil.getLong("com.l7tech.http.async.responseTimeout", 60L * 1000L);
+    private static final int ASYNC_RESPONSE_TIMER_THREADS = Integer.getInteger("com.l7tech.http.async.responseTimeoutTimerThreads", 16);
     private static AsyncHttpTransportModule instance;
 
+    private static Timer[] timerPool = new Timer[ASYNC_RESPONSE_TIMER_THREADS];
+    static {
+        for (int i = 0; i < timerPool.length; i++) {
+            timerPool[i] = new Timer("Async HTTP request timeout thread #" + i, true);
+        }
+    }
 
     private static final String SCHEME_ASYNC_HTTP = "AHTTP";
     private static final Set<String> SUPPORTED_SCHEMES = caseInsensitiveSet(
@@ -70,7 +75,7 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
     private final Config config;
     private final Map<Long, Pair<SsgConnector, AsyncHttpListenerInfo>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, AsyncHttpListenerInfo>>();
 
-    private static final Map<String, PendingAsyncRequest> activeAsyncRequests = new ConcurrentHashMap<String, PendingAsyncRequest>();
+    private static final Map<String, PendingAsyncRequest> activeAsyncRequests = new ConcurrentHashMap<String, PendingAsyncRequest>(2048, 0.75f, 256);
 
     protected AsyncHttpTransportModule(@NotNull final ApplicationEventProxy applicationEventProxy,
                                        @NotNull final GatewayState gatewayState,
@@ -259,6 +264,7 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
         final SsgConnector connector = listenerInfo.getConnector();
         long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L);
 
+        String idToCleanup = null;
         PolicyEnforcementContext context = null;
         InputStream responseStream = null;
         HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString(connector.getOid()));
@@ -299,7 +305,12 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
             }
 
             final String correlationId = pendingRequest.getCorrelationId();
+            idToCleanup = correlationId;
             activeAsyncRequests.put(correlationId, pendingRequest);
+
+            if (logger.isLoggable(Level.FINE))
+                logger.log(Level.FINE, "Registering pending async response with correlation ID " + pendingRequest.getCorrelationId());
+
             AssertionStatus status = messageProcessor.processMessage(context);
 
             if (status != AssertionStatus.NONE) {
@@ -315,16 +326,19 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
             } else {
                 // Response not initialized -- this is the common case.  Register an async request, set a timer task
                 // to clean it up if it goes unclaimed for too long, and return without invoking the listener.
-                if (logger.isLoggable(Level.FINE))
-                    logger.log(Level.FINE, "Registering pending async response with correlation ID " + pendingRequest.getCorrelationId());
-                // TODO use pool of timers rather than having a single shared timer thread trying to do it all
-                Background.scheduleOneShot(new TimerTask() {
+                idToCleanup = null;
+                Timer timer = timerPool[Math.abs(request.hashCode()) % timerPool.length];
+                timer.schedule(new TimerTask() {
                     @Override
                     public void run() {
-                        PendingAsyncRequest pending = activeAsyncRequests.remove(correlationId);
-                        if (pending != null) {
-                            // TODO customize response to send upon error?
-                            pending.errorAndClose(HttpResponseStatus.GATEWAY_TIMEOUT, "Timeout awaiting async response");
+                        try {
+                            PendingAsyncRequest pending = activeAsyncRequests.remove(correlationId);
+                            if (pending != null) {
+                                // TODO customize response to send upon error?
+                                pending.errorAndClose(HttpResponseStatus.GATEWAY_TIMEOUT, "Timeout awaiting async response");
+                            }
+                        } catch (Throwable t) {
+                            logger.log(Level.WARNING, "Error in response timeout task: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
                         }
                     }
                 }, ASYNC_RESPONSE_TIMEOUT_MILLIS);
@@ -341,6 +355,9 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
             logger.log(Level.WARNING, msg, e);
             pendingRequest.errorAndClose(HttpResponseStatus.INTERNAL_SERVER_ERROR, msg);
         } finally {
+            if (idToCleanup != null)
+                activeAsyncRequests.remove(idToCleanup);
+
             HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.LISTEN_PORT_ID );
             HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.CLIENT_IP );
             if (context != null)
@@ -348,17 +365,6 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
             if (responseStream != null)
                 ResourceUtils.closeQuietly(responseStream);
         }
-    }
-
-    private PolicyEnforcementContext setResponse(PolicyEnforcementContext context, String str) {
-        final byte[] msg = str.getBytes(Charsets.UTF8);
-        try {
-            context.getResponse().initialize(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream(msg));
-        } catch (IOException e) {
-            // Can't happen
-            logger.log(Level.WARNING, "Unexpected IOException setting response: " + ExceptionUtils.getMessage(e), e);
-        }
-        return context;
     }
 
     @Override
