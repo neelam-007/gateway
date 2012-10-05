@@ -113,6 +113,6 @@ public interface RbacServices {
      * @return the roles for this user.  May be empty but never null.
      * @throws com.l7tech.objectmodel.FindException if there is a problem looking up the necessary information.
      */
-    @Cacheable(relevantArg=0,maxAge=5000)
+    @Cacheable(relevantArg=0,maxAge=1000)
     Collection<Role> getAssignedRoles(@NotNull Pair<Long, String> providerAndUserId, @NotNull User user) throws FindException;
 }
