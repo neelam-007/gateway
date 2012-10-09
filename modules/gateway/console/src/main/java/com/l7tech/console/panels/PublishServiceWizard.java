@@ -21,13 +21,11 @@ import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import static com.l7tech.util.CollectionUtils.toSet;
+import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.uddi.WsdlPortInfo;
-import static java.util.Collections.emptySet;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -37,14 +35,17 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.MalformedURLException;
-import java.net.URL;
+
+import static com.l7tech.util.CollectionUtils.toSet;
+import static java.util.Collections.emptySet;
 
 /**
  * The wizard that drives the use case of publishing SOAP services.
@@ -245,7 +246,7 @@ public class PublishServiceWizard extends Wizard {
                 public void call( final Long oid ) throws Exception {
                     saBundle.service.setOid(oid);
                     Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-
+                    Thread.sleep(1000);
                     PublishServiceWizard.this.notify(new ServiceHeader(saBundle.service));
 
                     //was the service created from UDDI, if the WSDL url still matches what was saved, then

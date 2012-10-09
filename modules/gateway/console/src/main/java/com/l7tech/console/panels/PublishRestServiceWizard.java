@@ -134,6 +134,7 @@ public class PublishRestServiceWizard extends Wizard {
                         long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
                         Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                         service.setOid(oid);
+                        Thread.sleep(1000);
                         PublishRestServiceWizard.this.notify(new ServiceHeader(service));
                     } catch ( Exception e ) {
                         DialogDisplayer.display(new JOptionPane("Error saving the service '" + service.getName() + "'"), getParent(), "Error", null);

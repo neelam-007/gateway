@@ -91,6 +91,7 @@ public class PublishNonSoapServiceWizard extends Wizard {
                         long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
                         Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                         service.setOid(oid);
+                        Thread.sleep(1000);
                         PublishNonSoapServiceWizard.this.notify(new ServiceHeader(service));
                         PublishNonSoapServiceWizard.super.finish(evt);
                     } catch ( Exception e ) {
