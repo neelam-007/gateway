@@ -51,6 +51,8 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     private MqNativeDynamicProperties dynamicMqRoutingProperties;
     @Nullable
     private Map<String,String> requestMessageAdvancedProperties;
+    @Nullable
+    private Map<String,String> responseMessageAdvancedProperties;
     @NotNull
     private MqNativeMessagePropertyRuleSet requestMqMessagePropertyRuleSet = defaultMqNativeMessagePropertyRuleSet();
     @NotNull
@@ -207,6 +209,23 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      */
     public void setRequestMessageAdvancedProperties( @Nullable final Map<String, String> requestMessageAdvancedProperties ) {
         this.requestMessageAdvancedProperties = requestMessageAdvancedProperties;
+    }
+
+    /**
+     * Get the advanced properties for the outbound response message.
+     * @return The message properties or null.
+     */
+    @Nullable
+    public Map<String, String> getResponseMessageAdvancedProperties() {
+        return responseMessageAdvancedProperties;
+    }
+
+    /**
+     * Set the advanced properties for the outbound response message.
+     * @param responseMessageAdvancedProperties The properties to use.
+     */
+    public void setResponseMessageAdvancedProperties(@Nullable Map<String, String> responseMessageAdvancedProperties) {
+        this.responseMessageAdvancedProperties = responseMessageAdvancedProperties;
     }
 
     /**

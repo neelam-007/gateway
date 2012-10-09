@@ -108,7 +108,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
      */
     @Test
     public void handleMessage() throws MqNativeException, IOException, MessageProcessingSuspendedException,
-            LicenseException, PolicyVersionException, MethodNotAllowedException, PolicyAssertionException {
+            LicenseException, PolicyVersionException, MethodNotAllowedException, PolicyAssertionException, MqNativeConfigException {
 
         handleMessageInitialize();
         whenProcessMessageThenAnswer(AssertionStatus.NONE);
@@ -117,7 +117,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
 
     @Test
     public void handleMessageRequestSizeTooLarge() throws MqNativeException, IOException, MessageProcessingSuspendedException,
-            LicenseException, PolicyVersionException, MethodNotAllowedException, PolicyAssertionException, MQDataException {
+            LicenseException, PolicyVersionException, MethodNotAllowedException, PolicyAssertionException, MQDataException, MqNativeConfigException {
 
         handleMessageInitialize();
 

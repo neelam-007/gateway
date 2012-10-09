@@ -53,6 +53,7 @@ public interface MqNativeConstants {
     String MQ_CONNECTION_CACHE_MAX_SIZE_DESC = "The number of MQ Native connections to cache, this is not a hard limit, 0 for no caching (Integer)";
 
     // configurable MQ properties (from Queue config UI)
+    // these map to MQ message descriptor properties
     String MQ_PROPERTY_APPDATA = "applicationIdData";
     String MQ_PROPERTY_APPORIGIN = "applicationOriginData";
     String MQ_PROPERTY_CHARSET = "characterSet";

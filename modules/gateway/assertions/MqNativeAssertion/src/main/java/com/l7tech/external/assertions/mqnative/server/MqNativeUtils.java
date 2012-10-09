@@ -14,7 +14,6 @@ import com.l7tech.server.transport.jms.JmsSslCustomizerSupport;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryVoidThrows;
-import com.l7tech.util.HexUtils;
 import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
@@ -26,12 +25,11 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.ibm.mq.constants.MQConstants.*;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeMessageDescriptor.applyPropertiesToMessage;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.some;
@@ -52,7 +50,7 @@ class MqNativeUtils {
         int payloadLength;
 
         // parse header
-        MQHeaderList headerList = new MQHeaderList(msg);
+        final MQHeaderList headerList = new MQHeaderList(msg);
         if (!headerList.isEmpty()) {
             headerLength = headerList.asMQData().size();
             headerBytes = new byte[headerLength];
@@ -160,15 +158,27 @@ class MqNativeUtils {
     /*
      * Create an MqNativeKnob.
      */
-    static MqNativeKnob buildMqNativeKnob(@Nullable final byte[] mqHeader) {
-        return buildMqNativeKnob( null, mqHeader );
+    static MqNativeKnob buildMqNativeKnob(@Nullable final byte[] mqHeader,
+                                          @Nullable final MqNativeMessageDescriptor mqmd,
+                                          @Nullable final Map<String, String> mqmdOverride) {
+        return buildMqNativeKnob( null, mqHeader, mqmd, mqmdOverride );
+    }
+    /*
+     * Create an MqNativeKnob.
+     */
+    static MqNativeKnob buildMqNativeKnob( @Nullable final String soapAction,
+                                           @Nullable final byte[] mqHeader,
+                                           @Nullable final MqNativeMessageDescriptor mqmd) {
+        return buildMqNativeKnob( soapAction, mqHeader, mqmd, null );
     }
 
     /*
      * Create an MqNativeKnob.
      */
     static MqNativeKnob buildMqNativeKnob( @Nullable final String soapAction,
-                                           @Nullable final byte[] mqHeader) {
+                                           @Nullable final byte[] mqHeader,
+                                           @Nullable final MqNativeMessageDescriptor mqmd,
+                                           @Nullable final Map<String, String> mqmdOverride) {
         return new MqNativeKnob() {
             @Override
             public String getSoapAction() {
@@ -180,131 +190,42 @@ class MqNativeUtils {
             }
             @Override
             public byte[] getMessageHeaderBytes() {
-                if (mqHeader != null)
-                    return mqHeader;
-                return new byte[0];
+                return mqHeader != null ? mqHeader : new byte[0];
             }
             @Override
             public int getMessageHeaderLength() {
-                if (mqHeader != null)
-                    return mqHeader.length;
-                return 0;
+                return mqHeader != null ? mqHeader.length : 0;
+            }
+            @Override
+            public MqNativeMessageDescriptor getMessageDescriptor() {
+                return mqmd;
+            }
+            @Override
+            public Map<String, String> getMessageDescriptorOverride() {
+                return mqmdOverride;
             }
         };
     }
 
-    static MQMessage buildMqMessage(final SsgActiveConnector connector) throws MqNativeException {
-        MQMessage mqMessage = new MQMessage();
-        mqMessage.applicationIdData = connector.getProperty(MQ_PROPERTY_APPDATA);
-        mqMessage.applicationOriginData = connector.getProperty(MQ_PROPERTY_APPORIGIN);
-        /*mqMessage.characterSet = connector.getProperty(MqNativeConstants.);
-        mqMessage.encoding = connector.getProperty(MqNativeConstants.);
-        mqMessage.expiry = connector.getProperty(MqNativeConstants.);
-        mqMessage.feedback = connector.getProperty(MqNativeConstants.);
-        mqMessage.format = connector.getProperty(MqNativeConstants.);
-        mqMessage.groupId = connector.getProperty(MqNativeConstants.);
-        mqMessage. = connector.getProperty(MqNativeConstants.);
-        mqMessage. = connector.getProperty(MqNativeConstants.);
+    static void applyMqNativeKnobToMessage(final boolean isPassThroughHeaders,
+                                           @Nullable final MqNativeKnob mqNativeKnob,
+                                           @NotNull final MQMessage mqMessage) throws IOException, MQException, MqNativeConfigException {
+        if (mqNativeKnob != null) {
+            if (isPassThroughHeaders) {
+                // apply message descriptor
+                MqNativeMessageDescriptor mqmd = mqNativeKnob.getMessageDescriptor();
+                if (mqmd != null) {
+                    mqmd.copyTo(mqMessage);
+                }
 
-
-        Properties properties = mqResource.getProperties();
-        for(Object key : properties.keySet())
-        {
-            if(key == null)
-                continue;
-
-            String keyString = (String)key;
-            Object value = properties.get(key);
-
-            try{
-                if(keyString.equals(MqNativeConstants.MQ_PROPERTY_APPDATA))
-                    mqMessage.applicationIdData = ToString(value);
-                else if(keyString.equals(MQ_PROPERTY_APPORIGIN))
-                    mqMessage.applicationOriginData = ToString(value);
-                else if(keyString.equals(MQ_PROPERTY_CHARSET))
-                    mqMessage.characterSet = ToInt(value);
-                else if(keyString.equals(MQ_PROPERTY_ENCODING))
-                    mqMessage.encoding = ToInt(value);
-                else if(keyString.equals(MQ_PROPERTY_EXPIRY))
-                    mqMessage.expiry = ToInt(value);
-                else if(keyString.equals(MQ_PROPERTY_FEEDBACK))
-                    mqMessage.feedback = ToInt(value);
-                else if(keyString.equals(MQ_PROPERTY_FORMAT))
-                    mqMessage.format = ToString(value);
-                else if(keyString.equals(MQ_PROPERTY_GROUPID))
-                    mqMessage.groupId = ToByteArr(value);
-                else if(keyString.equals(MQ_PROPERTY_MSG_FLAGS))
-                    mqMessage.messageFlags = ToInt(value);
-                else if(keyString.equals(MQ_PROPERTY_MSG_SEQNUM))
-                    mqMessage.messageSequenceNumber = ToInt(value);
-                else if(keyString.equals(MQ_PROPERTY_MSG_TYPE))
-                    mqMessage.messageType = ToInt(value);
-                else if(keyString.equals(MQ_PROPERTY_OFFSET))
-                    mqMessage.offset = ToInt(value);
-                else if(keyString.equals(MQ_PROPERTY_PERSISTENCE))
-                    mqMessage.persistence = ToInt(value);
-                else if(keyString.equals(MQ_PROPERTY_PRIORITY))
-                    mqMessage.priority = ToInt(value);
-                else if(keyString.equals(MQ_PROPERTY_APPNAME))
-                    mqMessage.putApplicationName = ToString(value);
-                else if(keyString.equals(MQ_PROPERTY_APPTYPE))
-                    mqMessage.putApplicationType = ToInt(value);
-                else if(keyString.equals(MQ_PROPERTY_REPORT))
-                    mqMessage.report = ToInt(value);
-                else if(keyString.equals(MQ_PROPERTY_USERID))
-                    mqMessage.userId = ToString(value);
-            }catch(IllegalArgumentException ex){
-                String message = "Unable to set property:"+keyString+" value:"+value;
-                logger.warning(message);
-                throw new MqConfigException(message,ex);
+                // apply header bytes
+                if (mqNativeKnob.getMessageHeaderLength() > 0) {
+                    mqMessage.write(mqNativeKnob.getMessageHeaderBytes());
+                }
             }
-        }*/
-        return mqMessage;
-    }
 
-    static void applyPropertiesToMessage( @NotNull final MQMessage mqMessage,
-                                          @NotNull final Map<String,String> properties ) throws MqNativeConfigException {
-        for( final Entry<String,String> propertyEntry : properties.entrySet() ) {
-            final String name = propertyEntry.getKey();
-            final String value = propertyEntry.getValue();
-
-            if( MQ_PROPERTY_APPDATA.equals( name ) ) {
-                mqMessage.applicationIdData = value;
-            } else if( MQ_PROPERTY_APPORIGIN.equals( name ) ) {
-                mqMessage.applicationOriginData = value;
-            } else if( MQ_PROPERTY_CHARSET.equals( name ) ) {
-                mqMessage.characterSet = asInt( name, value );
-            } else if( MQ_PROPERTY_ENCODING.equals( name ) ){
-                mqMessage.encoding = asInt( name, value );
-            } else if( MQ_PROPERTY_EXPIRY.equals( name ) ) {
-                mqMessage.expiry = asInt( name, value );
-            } else if( MQ_PROPERTY_FEEDBACK.equals( name ) ) {
-                mqMessage.feedback = asInt( name, value );
-            } else if( MQ_PROPERTY_FORMAT.equals( name ) ) {
-                mqMessage.format = value;
-            } else if( MQ_PROPERTY_GROUPID.equals( name ) ) {
-                mqMessage.groupId = asBytes( value );
-            } else if( MQ_PROPERTY_MSG_FLAGS.equals( name ) ) {
-                mqMessage.messageFlags = asInt( name, value );
-            } else if( MQ_PROPERTY_MSG_SEQNUM.equals( name ) ){
-                mqMessage.messageSequenceNumber = asInt( name, value );
-            } else if( MQ_PROPERTY_MSG_TYPE.equals( name ) ){
-                mqMessage.messageType = asInt( name, value );
-            } else if( MQ_PROPERTY_OFFSET.equals( name ) ) {
-                mqMessage.offset = asInt( name, value );
-            } else if( MQ_PROPERTY_PERSISTENCE.equals( name ) ) {
-                mqMessage.persistence = asInt( name, value );
-            } else if( MQ_PROPERTY_PRIORITY.equals( name ) ){
-                mqMessage.priority = asInt( name, value );
-            } else if( MQ_PROPERTY_APPNAME.equals( name ) ){
-                mqMessage.putApplicationName = value;
-            } else if( MQ_PROPERTY_APPTYPE.equals( name ) ) {
-                mqMessage.putApplicationType = asInt( name, value );
-            } else if( MQ_PROPERTY_REPORT.equals( name ) ){
-                mqMessage.report = asInt( name, value );
-            } else if( MQ_PROPERTY_USERID.equals( name ) ) {
-                mqMessage.userId = value;
-            } // else not a message property
+            // always apply override
+            applyPropertiesToMessage(mqNativeKnob.getMessageDescriptorOverride(), mqMessage);
         }
     }
 
@@ -354,7 +275,7 @@ class MqNativeUtils {
      *      2085: MQRC_UNKNOWN_OBJECT_NAME
      *      2397: MQRC_JSSE_ERROR
      *
-     *      http://publib.boulder.ibm.com/infocenter/wmqv6/v6r0/topic/com.ibm.mq.csqsao.doc/zm36720_.htm
+     *      http://publib.boulder.ibm.com/infocenter/wmqv7/v7r1/topic/com.ibm.mq.doc/fm12030_.htm
      *
      * @param e MQ exception
      * @return original exception or if expected reason code, return exception only if in debug mode
@@ -407,15 +328,5 @@ class MqNativeUtils {
         return decrypted;
     }
 
-    private static int asInt( final String name, final String value ) throws MqNativeConfigException {
-        try {
-            return Integer.parseInt( value );
-        } catch ( NumberFormatException nfe ) {
-            throw new MqNativeConfigException( "Invalid value '"+value+"' for property '"+name+"'" );
-        }
-    }
 
-    private static byte[] asBytes( final String value ) throws MqNativeConfigException {
-        return HexUtils.decodeBase64( value );
-    }
 }

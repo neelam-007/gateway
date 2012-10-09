@@ -48,8 +48,7 @@ import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_LISTENER_MAX_CONCURRENT_CONNECTIONS_PROPERTY;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.QUEUE_OPEN_OPTIONS_INBOUND_FAILURE_QUEUE;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.isTransactional;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_MQNATIVE_MESSAGE_INPUT;
 import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
@@ -333,15 +332,15 @@ public class MqNativeModule extends ActiveTransportModule implements Application
      *
      * @param connector The MQ native listener configuration that this handler operates on
      * @param mqNativeClient  The MQ native client to access the MQ server
-     * @param requestMessage The request message to process
+     * @param mqRequestMessage The request message to process
      * @throws MqNativeException if an error occurs
      */
     public void handleMessageForConnector( @NotNull final SsgActiveConnector connector,
                                            @NotNull final MqNativeClient mqNativeClient,
-                                           @NotNull final MQMessage requestMessage) throws MqNativeException {
+                                           @NotNull final MQMessage mqRequestMessage) throws MqNativeException, MqNativeConfigException {
         final ContentTypeHeader ctype;
-        final Pair<byte[], byte[]> parsedRequest;
-        final byte[] mqHeader;
+        final Pair<byte[], byte[]> mqRequestHeaderPayload;
+        final byte[] mqRequestHeader;
         final long requestSizeLimit;
         boolean messageTooLarge = false;
         boolean responseSuccess = false;
@@ -354,14 +353,14 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             }
             ctype = ContentTypeHeader.parseValue(contentTypeValue);
 
-            // parse the request message
-            parsedRequest = MqNativeUtils.parseHeaderPayload(requestMessage); // reading message into memory
-            mqHeader = parsedRequest.left;
+            // parse the headers and payload from request mq message
+            mqRequestHeaderPayload = parseHeaderPayload(mqRequestMessage); // message payload in memory
+            mqRequestHeader = mqRequestHeaderPayload.left;
 
             // enforce size restriction
-            final int size = parsedRequest.right.length;
+            final int size = mqRequestHeaderPayload.right.length;
             requestSizeLimit = connector.getLongProperty(
-                PROPERTIES_KEY_REQUEST_SIZE_LIMIT,                                                    // prop value
+                PROPERTIES_KEY_REQUEST_SIZE_LIMIT, // prop value
                 serverConfig.getLongProperty(ServerConfigParams.PARAM_IO_MQ_MESSAGE_MAX_BYTES, DEFAULT_MESSAGE_MAX_BYTES) // default value
             );
 
@@ -380,10 +379,10 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
             // convert the payload into an input stream
-            final InputStream requestStream = new ByteArrayInputStream(parsedRequest.right);
+            final InputStream requestStream = new ByteArrayInputStream(mqRequestHeaderPayload.right);
 
-            Message request = new Message();
-            request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream, requestSizeLimit);
+            Message gatewayRequestMessage = new Message();
+            gatewayRequestMessage.initialize(stashManagerFactory.createStashManager(), ctype, requestStream, requestSizeLimit);
 
             // Gets the MQ message property to use as SOAPAction, if present.
             final String soapActionValue = null;
@@ -392,16 +391,17 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 // get SOAP action from custom MQ property -- TBD
             }
 
-            request.attachKnob(MqNativeKnob.class, MqNativeUtils.buildMqNativeKnob( soapActionValue, mqHeader ));
+            gatewayRequestMessage.attachKnob(MqNativeKnob.class, buildMqNativeKnob(soapActionValue, mqRequestHeader,
+                    new MqNativeMessageDescriptor(mqRequestMessage)));
 
             final Long hardwiredServiceOid = connector.getHardwiredServiceOid();
             if ( hardwiredServiceOid != null ) {
-                request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
+                gatewayRequestMessage.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
             }
 
             final boolean replyExpected = MqNativeReplyType.REPLY_NONE !=
                     connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class );
-            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, replyExpected);
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(gatewayRequestMessage, null, replyExpected);
             boolean stealthMode = false;
             InputStream responseStream = null;
             if ( !messageTooLarge ) {
@@ -472,37 +472,36 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
             if (!stealthMode) {
                 PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
-                final byte[] responseBytes;
+                final byte[] responsePayload;
                 try {
                     IOUtils.copyStream(responseStream, baos);
-                    responseBytes = baos.toByteArray();
+                    responsePayload = baos.toByteArray();
                 } finally {
                     baos.close();
                 }
 
-                final MQMessage responseMessage = MqNativeUtils.buildMqMessage(connector);
-                if (responseBytes != null && responseBytes.length > 0) {
-                    // if a MQRFH2 header is needed, it should be done here
-                    MqNativeKnob mqNativeKnob = context.getResponse().getKnob(MqNativeKnob.class);
-                    if (mqNativeKnob != null && mqNativeKnob.getMessageHeaderLength() > 0) {
-                        responseMessage.write(mqNativeKnob.getMessageHeaderBytes());
-                    }
-                    responseMessage.write(responseBytes);
+                final MQMessage mqResponseMessage = new MQMessage();
+                applyMqNativeKnobToMessage(true, context.getResponse().getKnob(MqNativeKnob.class), mqResponseMessage);
+                if (responsePayload != null && responsePayload.length > 0) {
+                    mqResponseMessage.write(responsePayload);
                 }
 
                 long startResp = System.currentTimeMillis();
-                responseSuccess = sendResponse( requestMessage, responseMessage, connector, mqNativeClient );
-                logger.log(Level.INFO, "Send response took {0} milliseconds; listener {1}", new Object[] {(System.currentTimeMillis() - startResp), connector.getName()});
+                responseSuccess = sendResponse( mqRequestMessage, mqResponseMessage, connector, mqNativeClient );
+                logger.log(Level.INFO, "Send response took {0} milliseconds; listener {1}",
+                        new Object[] {(System.currentTimeMillis() - startResp), connector.getName()});
             } else { // is stealth mode
                 responseSuccess = true;
             }
         } catch (IOException e) {
             throw new MqNativeException(e);
+        } catch(MQException e) {
+            throw new MqNativeException(e);
         } finally {
             ResourceUtils.closeQuietly(context);
 
             if ( isTransactional( connector ) ) {
-                boolean handledAnyFailure = status == AssertionStatus.NONE || postMessageToFailureQueue(requestMessage, connector, mqNativeClient);
+                boolean handledAnyFailure = status == AssertionStatus.NONE || postMessageToFailureQueue(mqRequestMessage, connector, mqNativeClient);
 
                 if ( responseSuccess && handledAnyFailure ) {
                     try {

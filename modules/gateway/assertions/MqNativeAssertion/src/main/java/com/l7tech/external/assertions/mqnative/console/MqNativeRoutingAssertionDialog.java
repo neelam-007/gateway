@@ -111,11 +111,17 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
     private JPanel targetMessageVariableHolderPanel;
     private JCheckBox sourcePassThroughHeadersCheckBox;
     private JCheckBox targetPassThroughHeadersCheckBox;
-    private JButton addButton;
-    private JButton editButton;
-    private JButton removeButton;
-    private JTable advancedPropertiesTable;
-    private AdvancedPropertyTableModel advancedTableModel;
+    private JButton requestAddButton;
+    private JButton requestEditButton;
+    private JButton requestRemoveButton;
+    private JTable requestAdvancedPropertiesTable;
+    private JTable responseAdvancedPropertiesTable;
+    private JButton responseAddButton;
+    private JButton responseEditButton;
+    private JButton responseRemoveButton;
+    private JTabbedPane tabbedPane;
+    private AdvancedPropertyTableModel requestAdvancedTableModel;
+    private AdvancedPropertyTableModel responseAdvancedTableModel;
     private TargetVariablePanel targetMessageVariablePanel;
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
@@ -222,33 +228,56 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
 
         inputValidator.attachToButton( getOkButton(), super.createOkAction() );
 
-        advancedPropertiesTable.setModel( getAdvancedPropertyTableModel() );
-        advancedPropertiesTable.getSelectionModel().addListSelectionListener( enableDisableListener );
-        advancedPropertiesTable.getTableHeader().setReorderingAllowed( false );
+        requestAdvancedPropertiesTable.setModel( getAdvancedRequestPropertyTableModel() );
+        requestAdvancedPropertiesTable.getSelectionModel().addListSelectionListener( enableDisableListener );
+        requestAdvancedPropertiesTable.getTableHeader().setReorderingAllowed( false );
 
-        addButton.addActionListener(new ActionListener() {
+        responseAdvancedPropertiesTable.setModel( getAdvancedResponsePropertyTableModel() );
+        responseAdvancedPropertiesTable.getSelectionModel().addListSelectionListener( enableDisableListener );
+        responseAdvancedPropertiesTable.getTableHeader().setReorderingAllowed( false );
+
+        requestAddButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent event) {
-                addAdvProp();
+                addAdvProp(requestAdvancedPropertiesTable, requestAdvancedTableModel);
             }
         });
-
-        editButton.addActionListener(new ActionListener() {
+        requestEditButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                editAdvProp();
+                editAdvProp(requestAdvancedPropertiesTable, requestAdvancedTableModel);
             }
         });
-        editButton.setEnabled(false);
-
-        removeButton.addActionListener(new ActionListener() {
+        requestEditButton.setEnabled(false);
+        requestRemoveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent event) {
-                removeAdvProp();
+                removeAdvProp(requestAdvancedPropertiesTable, requestAdvancedTableModel);
             }
         });
-        removeButton.setEnabled(false);
+        requestRemoveButton.setEnabled(false);
 
-        Utilities.setDoubleClickAction( advancedPropertiesTable, editButton );
+        responseAddButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                addAdvProp(responseAdvancedPropertiesTable, responseAdvancedTableModel);
+            }
+        });
+        responseEditButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                editAdvProp(responseAdvancedPropertiesTable, responseAdvancedTableModel);
+            }
+        });
+        responseEditButton.setEnabled(false);
+        responseRemoveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                removeAdvProp(responseAdvancedPropertiesTable, responseAdvancedTableModel);
+            }
+        });
+        responseRemoveButton.setEnabled(false);
+
+        Utilities.setDoubleClickAction(requestAdvancedPropertiesTable, requestEditButton);
+        Utilities.setDoubleClickAction(responseAdvancedPropertiesTable, responseEditButton);
 
         // Override message size
         responseByteLimitPanel = new ByteLimitPanel();
@@ -277,6 +306,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
 
     private void enableOrDisableComponents() {
         final boolean isPutToQueue = putToQueueRadioButton.isSelected();
+        tabbedPane.setEnabledAt( 1, isPutToQueue );
         messageSourceComboBox.setEnabled( isPutToQueue );
         sourcePassThroughHeadersCheckBox.setEnabled( isPutToQueue );
 
@@ -284,11 +314,15 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
             (messageTargetComboBox.isEnabled() &&  messageTargetComboBox.getSelectedItem() != null && ((MessageTargetable)messageTargetComboBox.getSelectedItem()).getTarget() == TargetMessageType.OTHER)
         );
 
-        final boolean enableAdvancedPropertyContextualControls = isPutToQueue && advancedPropertiesTable.getSelectedRow() >= 0;
-        advancedPropertiesTable.setEnabled( isPutToQueue );
-        addButton.setEnabled( isPutToQueue );
-        editButton.setEnabled( enableAdvancedPropertyContextualControls );
-        removeButton.setEnabled( enableAdvancedPropertyContextualControls );
+        final boolean enableRequestAdvancedPropertyContextualControls = isPutToQueue && requestAdvancedPropertiesTable.getSelectedRow() >= 0;
+        requestAdvancedPropertiesTable.setEnabled( isPutToQueue );
+        requestAddButton.setEnabled( isPutToQueue );
+        requestEditButton.setEnabled( enableRequestAdvancedPropertyContextualControls );
+        requestRemoveButton.setEnabled( enableRequestAdvancedPropertyContextualControls );
+
+        final boolean enableResponseAdvancedPropertyContextualControls = responseAdvancedPropertiesTable.getSelectedRow() >= 0;
+        responseEditButton.setEnabled( enableResponseAdvancedPropertyContextualControls );
+        responseRemoveButton.setEnabled( enableResponseAdvancedPropertyContextualControls );
 
         final boolean valid = responseByteLimitPanel.validateFields() == null;
         getOkButton().setEnabled(valid);
@@ -425,8 +459,10 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         assertion.setResponseTarget(targetMessageTargetable);
         assertion.getResponseMqNativeMessagePropertyRuleSet().setPassThroughHeaders(targetPassThroughHeadersCheckBox.isSelected());
 
-        final Map<String,String> properties = advancedTableModel.toMap();
-        assertion.setRequestMessageAdvancedProperties( properties.isEmpty() || !putToQueueRadioButton.isSelected() ? null : properties );
+        final Map<String,String> requestProperties = requestAdvancedTableModel.toMap();
+        assertion.setRequestMessageAdvancedProperties( requestProperties.isEmpty() || !putToQueueRadioButton.isSelected() ? null : requestProperties );
+        final Map<String,String> responseProperties = responseAdvancedTableModel.toMap();
+        assertion.setResponseMessageAdvancedProperties(responseProperties.isEmpty() ? null : responseProperties);
 
         String responseTimeoutOverride = mqResponseTimeout.getText();
         if (responseTimeoutOverride != null && ! responseTimeoutOverride.isEmpty()) {
@@ -471,7 +507,8 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         );
         targetMessageVariablePanel.setAssertion(assertion, getPreviousAssertion());
 
-        advancedTableModel.fromMap( assertion.getRequestMessageAdvancedProperties() );
+        requestAdvancedTableModel.fromMap(assertion.getRequestMessageAdvancedProperties());
+        responseAdvancedTableModel.fromMap(assertion.getResponseMessageAdvancedProperties());
 
         mqResponseTimeout.setText(assertion.getResponseTimeout()==null ? "":assertion.getResponseTimeout());
 
@@ -510,7 +547,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         };
     }
 
-    private void addAdvProp() {
+    private void addAdvProp(final JTable advancedPropertiesTable, final AdvancedPropertyTableModel advancedTableModel) {
         final MqNativeAdvancedPropertiesDialog dialog = new MqNativeAdvancedPropertiesDialog(this, null, advancedTableModel.toMap());
         dialog.setTitle("Advanced Property");
         dialog.pack();
@@ -519,14 +556,14 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
             @Override
             public void run() {
                 if (!dialog.isCanceled()) {
-                    updatePropertiesList(dialog.getTheProperty(), false);
+                    updatePropertiesList(advancedPropertiesTable, advancedTableModel, dialog.getTheProperty(), false);
                     dialog.dispose();
                 }
             }
         });
     }
 
-    private void editAdvProp() {
+    private void editAdvProp(final JTable advancedPropertiesTable, final AdvancedPropertyTableModel advancedTableModel) {
         int viewRow = advancedPropertiesTable.getSelectedRow();
         if (viewRow < 0) return;
 
@@ -541,30 +578,38 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
             @Override
             public void run() {
                 if ( !dialog.isCanceled() ) {
-                    updatePropertiesList( dialog.getTheProperty(), false );
+                    updatePropertiesList(advancedPropertiesTable, advancedTableModel, dialog.getTheProperty(), false);
                     dialog.dispose();
                 }
             }
         } );
     }
 
-    private void removeAdvProp() {
+    private void removeAdvProp(JTable advancedPropertiesTable, AdvancedPropertyTableModel advancedTableModel) {
         int viewRow = advancedPropertiesTable.getSelectedRow();
         if (viewRow < 0) return;
 
         String name = (String) advancedTableModel.getValueAt(viewRow, 0);
         String value = (String) advancedTableModel.getValueAt(viewRow, 1);
-        updatePropertiesList(new Pair<String, String>(name, value), true);
+        updatePropertiesList(advancedPropertiesTable, advancedTableModel, new Pair<String, String>(name, value), true);
     }
 
-    private AdvancedPropertyTableModel getAdvancedPropertyTableModel() {
-        if (advancedTableModel == null) {
-            advancedTableModel = new AdvancedPropertyTableModel();
+    private AdvancedPropertyTableModel getAdvancedRequestPropertyTableModel() {
+        if (requestAdvancedTableModel == null) {
+            requestAdvancedTableModel = new AdvancedPropertyTableModel();
         }
-        return advancedTableModel;
+        return requestAdvancedTableModel;
     }
 
-    private void updatePropertiesList(final Pair<String, String> selectedProperty, boolean deleted) {
+    private AdvancedPropertyTableModel getAdvancedResponsePropertyTableModel() {
+        if (responseAdvancedTableModel == null) {
+            responseAdvancedTableModel = new AdvancedPropertyTableModel();
+        }
+        return responseAdvancedTableModel;
+    }
+
+    private void updatePropertiesList(JTable advancedPropertiesTable, AdvancedPropertyTableModel advancedTableModel,
+                                      final Pair<String, String> selectedProperty, boolean deleted) {
         ArrayList<String> keyset = new ArrayList<String>();
         int currentRow;
 
