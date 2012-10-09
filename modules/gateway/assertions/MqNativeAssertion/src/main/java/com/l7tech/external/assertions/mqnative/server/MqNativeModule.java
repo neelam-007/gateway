@@ -495,6 +495,8 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             }
         } catch (IOException e) {
             throw new MqNativeException(e);
+        } catch(MQDataException e) {
+            throw new MqNativeException(e);
         } catch(MQException e) {
             throw new MqNativeException(e);
         } finally {

@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class MqNativeMessageDescriptorTest {
@@ -62,19 +63,19 @@ public class MqNativeMessageDescriptorTest {
         assertEquals(testValueStr, mqMessage.format);
         assertEquals(testValueInt, mqMessage.priority);
         assertEquals(testValueInt, mqMessage.persistence);
-        assertEquals(testValueByteArray.length, mqMessage.messageId.length);
-        assertEquals(testValueByteArray.length, mqMessage.correlationId.length);
+        assertArrayEquals(testValueByteArray, mqMessage.messageId);
+        assertArrayEquals(testValueByteArray, mqMessage.correlationId);
         assertEquals(testValueInt, mqMessage.backoutCount);
         assertEquals(testValueStr, mqMessage.replyToQueueName);
         assertEquals(testValueStr, mqMessage.replyToQueueManagerName);
         assertEquals(testValueStr, mqMessage.userId);
-        assertEquals(testValueByteArray.length, mqMessage.accountingToken.length);
+        assertArrayEquals(testValueByteArray, mqMessage.accountingToken);
         assertEquals(testValueStr, mqMessage.applicationIdData);
         assertEquals(testValueInt, mqMessage.putApplicationType);
         assertEquals(testValueStr, mqMessage.putApplicationName);
         assertEquals(testValueCalendar, mqMessage.putDateTime);
         assertEquals(testValueStr, mqMessage.applicationOriginData);
-        assertEquals(testValueByteArray.length, mqMessage.groupId.length);
+        assertArrayEquals(testValueByteArray, mqMessage.groupId);
         assertEquals(testValueInt, mqMessage.messageSequenceNumber);
         assertEquals(testValueInt, mqMessage.offset);
         assertEquals(testValueInt, mqMessage.messageFlags);
@@ -114,7 +115,7 @@ public class MqNativeMessageDescriptorTest {
         assertEquals(testValueInt, mqMessage.expiry);
         assertEquals(testValueInt, mqMessage.feedback);
         assertEquals(testValueStr, mqMessage.format);
-        assertEquals(HexUtils.decodeBase64(testValueStr).length, mqMessage.groupId.length);
+        assertArrayEquals(HexUtils.decodeBase64(testValueStr), mqMessage.groupId);
         assertEquals(testValueInt, mqMessage.messageFlags);
         assertEquals(testValueInt, mqMessage.messageType);
         assertEquals(testValueInt, mqMessage.offset);

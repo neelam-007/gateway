@@ -432,7 +432,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
         private MQMessage writeMessageToQueue(MQQueue writeQueue, @Nullable MQQueue replyQueue,
                                               MQPutMessageOptions pmoOptions, int timeout)
-                throws IOException, MqNativeRuntimeException, MqNativeConfigException, MQException {
+                throws IOException, MQDataException, MqNativeRuntimeException, MqNativeConfigException, MQException {
 
             // create the MQMessage to be routed
             final MQMessage outboundRequest = makeRequest(
@@ -646,7 +646,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
     private MQMessage makeRequest( final PolicyEnforcementContext context,
                                    final MqNativeEndpointConfig endpointCfg,
                                    @Nullable final String replyQueueName )
-        throws IOException, MQException, MqNativeRuntimeException, MqNativeConfigException
+        throws IOException, MQDataException, MQException, MqNativeRuntimeException, MqNativeConfigException
     {
         final PoolByteArrayOutputStream outputStream = new PoolByteArrayOutputStream();
         final byte[] outboundRequestBytes;

@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.SSLSocketFactory;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Hashtable;
@@ -42,12 +44,14 @@ import static com.l7tech.util.ValidationUtils.getMinMaxPredicate;
 class MqNativeUtils {
     private static final Logger logger = Logger.getLogger(MqNativeUtils.class.getName());
 
-    static Pair<byte[], byte[]> parseHeaderPayload(MQMessage msg) throws IOException, MQDataException {
+    static Pair<byte[], byte[]> parseHeaderPayload(@NotNull MQMessage msg) throws IOException, MQDataException {
         byte[] headerBytes;
         byte[] payloadBytes;
 
         int headerLength = 0;
         int payloadLength;
+
+        msg.seek(0);
 
         // parse header
         final MQHeaderList headerList = new MQHeaderList(msg);
@@ -209,7 +213,7 @@ class MqNativeUtils {
 
     static void applyMqNativeKnobToMessage(final boolean isPassThroughHeaders,
                                            @Nullable final MqNativeKnob mqNativeKnob,
-                                           @NotNull final MQMessage mqMessage) throws IOException, MQException, MqNativeConfigException {
+                                           @NotNull final MQMessage mqMessage) throws IOException, MQDataException, MQException, MqNativeConfigException {
         if (mqNativeKnob != null) {
             if (isPassThroughHeaders) {
                 // apply message descriptor
@@ -220,7 +224,12 @@ class MqNativeUtils {
 
                 // apply header bytes
                 if (mqNativeKnob.getMessageHeaderLength() > 0) {
-                    mqMessage.write(mqNativeKnob.getMessageHeaderBytes());
+                    if (MQFMT_RF_HEADER_2.equals(mqMessage.format)) {
+                        MQRFH2 rfh2 = new MQRFH2(new DataInputStream(new ByteArrayInputStream(mqNativeKnob.getMessageHeaderBytes())));
+                        rfh2.write(mqMessage);
+                    } else {
+                        mqMessage.write(mqNativeKnob.getMessageHeaderBytes());
+                    }
                 }
             }
 
