@@ -57,7 +57,7 @@ public class IntroductionWizardStepPanel extends WizardStepPanel {
             if (isSoap) {
                 titleLabel.setText("Welcome to the SAML Token Profile Wizard.");
             } else {
-                titleLabel.setText("Welcome to the Validate SAML Assertion Wizard.");
+                titleLabel.setText("Welcome to the Validate SAML Token Wizard.");
             }
 
             descriptionLabel.setText("<html>This wizard assists in specifying a SAML assertion and any " +

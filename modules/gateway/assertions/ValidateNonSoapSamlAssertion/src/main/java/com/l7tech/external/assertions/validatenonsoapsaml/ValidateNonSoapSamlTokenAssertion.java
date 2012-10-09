@@ -9,11 +9,11 @@ import java.util.logging.Logger;
 /**
  * Validate a SAML assertion not received via WS-Security in a SOAP message
  */
-public class ValidateNonSoapSamlAssertion extends RequireSaml implements HasOptionalSamlSignature {
-    public ValidateNonSoapSamlAssertion() {
+public class ValidateNonSoapSamlTokenAssertion extends RequireSaml implements HasOptionalSamlSignature {
+    public ValidateNonSoapSamlTokenAssertion() {
     }
 
-    public ValidateNonSoapSamlAssertion(final ValidateNonSoapSamlAssertion copyFrom) {
+    public ValidateNonSoapSamlTokenAssertion(final ValidateNonSoapSamlTokenAssertion copyFrom) {
         copyFrom(copyFrom);
     }
 
@@ -30,15 +30,15 @@ public class ValidateNonSoapSamlAssertion extends RequireSaml implements HasOpti
     @Override
     public void copyFrom(RequireSaml requestWssSaml) {
         super.copyFrom(requestWssSaml);
-        ValidateNonSoapSamlAssertion nonSoap = (ValidateNonSoapSamlAssertion) requestWssSaml;
+        ValidateNonSoapSamlTokenAssertion nonSoap = (ValidateNonSoapSamlTokenAssertion) requestWssSaml;
         setRequireDigitalSignature(nonSoap.isRequireDigitalSignature());
     }
 
-    final static String baseName = "(Non-SOAP) Validate SAML Assertion";
+    final static String baseName = "(Non-SOAP) Validate SAML Token";
 
-    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ValidateNonSoapSamlAssertion>(){
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ValidateNonSoapSamlTokenAssertion>(){
         @Override
-        public String getAssertionName( final ValidateNonSoapSamlAssertion assertion, final boolean decorate) {
+        public String getAssertionName( final ValidateNonSoapSamlTokenAssertion assertion, final boolean decorate) {
             return (decorate)? assertion.describe(): baseName;
         }
     };
@@ -51,15 +51,15 @@ public class ValidateNonSoapSamlAssertion extends RequireSaml implements HasOpti
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.DESCRIPTION, "Validate a SAML assertion not received using WS-Security");
+        meta.put(AssertionMetadata.DESCRIPTION, "Validate a SAML token not received using WS-Security");
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlWithCert16.gif");
 
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.validatenonsoapsaml.console.AddValidateNonSoapSamlAssertionAdvice");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.validatenonsoapsaml.console.AddValidateNonSoapSamlTokenAssertionAdvice");
 
         meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/Edit16.gif");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.external.assertions.validatenonsoapsaml.console.EditValidateNonSoapSamlAssertionAction");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.external.assertions.validatenonsoapsaml.console.EditValidateNonSoapSamlTokenAssertionAction");
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
@@ -71,7 +71,7 @@ public class ValidateNonSoapSamlAssertion extends RequireSaml implements HasOpti
 
     // - PROTECTED
 
-    protected static final Logger logger = Logger.getLogger(ValidateNonSoapSamlAssertion.class.getName());
+    protected static final Logger logger = Logger.getLogger(ValidateNonSoapSamlTokenAssertion.class.getName());
 
     @Override
     protected String getAssertionDisplayName() {
@@ -81,5 +81,5 @@ public class ValidateNonSoapSamlAssertion extends RequireSaml implements HasOpti
     // - PRIVATE
     private boolean requireDigitalSignature = true;
 
-    private static final String META_INITIALIZED = ValidateNonSoapSamlAssertion.class.getName() + ".metadataInitialized";
+    private static final String META_INITIALIZED = ValidateNonSoapSamlTokenAssertion.class.getName() + ".metadataInitialized";
 }

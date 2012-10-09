@@ -11,12 +11,12 @@ import java.util.Set;
 
 import static org.junit.Assert.*;
 
-public class ValidateNonSoapSamlAssertionTest {
+public class ValidateNonSoapSamlTokenAssertionTest {
 
     @Test
     public void testAllVariablesUsed() throws Exception {
 
-        final ValidateNonSoapSamlAssertion assertion = new ValidateNonSoapSamlAssertion();
+        final ValidateNonSoapSamlTokenAssertion assertion = new ValidateNonSoapSamlTokenAssertion();
         //message target
         assertion.setTarget(TargetMessageType.OTHER);
         final String myInputVariable = "myInputVariable";

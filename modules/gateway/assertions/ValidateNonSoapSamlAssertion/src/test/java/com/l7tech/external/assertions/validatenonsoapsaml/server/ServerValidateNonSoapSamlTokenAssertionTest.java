@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.validatenonsoapsaml.ValidateNonSoapSamlAssertion;
+import com.l7tech.external.assertions.validatenonsoapsaml.ValidateNonSoapSamlTokenAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.HttpServletRequestKnob;
@@ -35,9 +35,9 @@ import java.util.logging.Logger;
 /**
  * Test the ValidateNonSoapSamlAssertion
  */
-public class ServerValidateNonSoapSamlAssertionTest {
+public class ServerValidateNonSoapSamlTokenAssertionTest {
 
-    private static final Logger log = Logger.getLogger(ServerValidateNonSoapSamlAssertionTest.class.getName());
+    private static final Logger log = Logger.getLogger(ServerValidateNonSoapSamlTokenAssertionTest.class.getName());
 
     public static PolicyEnforcementContext getContext() throws Exception {
 
@@ -60,7 +60,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
 
     @Test
     public void test_BearerToken_WithSignature() throws Exception {
-        final ValidateNonSoapSamlAssertion assertion = new ValidateNonSoapSamlAssertion();
+        final ValidateNonSoapSamlTokenAssertion assertion = new ValidateNonSoapSamlTokenAssertion();
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("samlAssertion");
         assertion.setVersion(2);
@@ -68,7 +68,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         assertion.setNameFormats(new String[]{SamlConstants.NAMEIDENTIFIER_UNSPECIFIED});
         assertion.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_BEARER});
 
-        ServerValidateNonSoapSamlAssertion serverAssertion = new ServerValidateNonSoapSamlAssertion(assertion);
+        ServerValidateNonSoapSamlTokenAssertion serverAssertion = new ServerValidateNonSoapSamlTokenAssertion(assertion);
         SamlTestUtil.configureServerAssertionInjects(serverAssertion);
 
         final PolicyEnforcementContext context = getContext();
@@ -79,7 +79,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
 
     @Test
     public void test_BearerToken_WithSignature_AssertionModified() throws Exception {
-        final ValidateNonSoapSamlAssertion assertion = new ValidateNonSoapSamlAssertion();
+        final ValidateNonSoapSamlTokenAssertion assertion = new ValidateNonSoapSamlTokenAssertion();
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("samlAssertion");
         assertion.setVersion(2);
@@ -87,7 +87,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         assertion.setNameFormats(new String[]{SamlConstants.NAMEIDENTIFIER_UNSPECIFIED});
         assertion.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_BEARER});
 
-        ServerValidateNonSoapSamlAssertion serverAssertion = new ServerValidateNonSoapSamlAssertion(assertion);
+        ServerValidateNonSoapSamlTokenAssertion serverAssertion = new ServerValidateNonSoapSamlTokenAssertion(assertion);
         final TestAudit testAudit = SamlTestUtil.configureServerAssertionInjects(serverAssertion);
 
         final PolicyEnforcementContext context = getContext();
@@ -105,7 +105,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
 
     @Test
     public void test_BearerToken_WithSignature_SignatureDigestModified() throws Exception {
-        final ValidateNonSoapSamlAssertion assertion = new ValidateNonSoapSamlAssertion();
+        final ValidateNonSoapSamlTokenAssertion assertion = new ValidateNonSoapSamlTokenAssertion();
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("samlAssertion");
         assertion.setVersion(2);
@@ -113,7 +113,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         assertion.setNameFormats(new String[]{SamlConstants.NAMEIDENTIFIER_UNSPECIFIED});
         assertion.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_BEARER});
 
-        ServerValidateNonSoapSamlAssertion serverAssertion = new ServerValidateNonSoapSamlAssertion(assertion);
+        ServerValidateNonSoapSamlTokenAssertion serverAssertion = new ServerValidateNonSoapSamlTokenAssertion(assertion);
         final TestAudit testAudit = SamlTestUtil.configureServerAssertionInjects(serverAssertion);
 
         final PolicyEnforcementContext context = getContext();
@@ -131,7 +131,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
 
     @Test
     public void test_BearerToken_NotSigned() throws Exception {
-        final ValidateNonSoapSamlAssertion assertion = new ValidateNonSoapSamlAssertion();
+        final ValidateNonSoapSamlTokenAssertion assertion = new ValidateNonSoapSamlTokenAssertion();
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("samlAssertion");
         assertion.setVersion(2);
@@ -140,7 +140,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         assertion.setNameFormats(new String[]{SamlConstants.NAMEIDENTIFIER_UNSPECIFIED});
         assertion.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_BEARER});
 
-        ServerValidateNonSoapSamlAssertion serverAssertion = new ServerValidateNonSoapSamlAssertion(assertion);
+        ServerValidateNonSoapSamlTokenAssertion serverAssertion = new ServerValidateNonSoapSamlTokenAssertion(assertion);
         SamlTestUtil.configureServerAssertionInjects(serverAssertion);
         final PolicyEnforcementContext context = getContext();
         context.setVariable("samlAssertion", new Message(XmlUtil.parse(SAML_V2_BEARER_NOT_SIGNED_ASSERTION)));
@@ -150,7 +150,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
 
     @Test
     public void test_BearerToken_Signaure_Required_Not_Provided() throws Exception {
-        final ValidateNonSoapSamlAssertion assertion = new ValidateNonSoapSamlAssertion();
+        final ValidateNonSoapSamlTokenAssertion assertion = new ValidateNonSoapSamlTokenAssertion();
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("samlAssertion");
         assertion.setVersion(2);
@@ -159,7 +159,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         assertion.setNameFormats(new String[]{SamlConstants.NAMEIDENTIFIER_UNSPECIFIED});
         assertion.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_BEARER});
 
-        ServerValidateNonSoapSamlAssertion serverAssertion = new ServerValidateNonSoapSamlAssertion(assertion);
+        ServerValidateNonSoapSamlTokenAssertion serverAssertion = new ServerValidateNonSoapSamlTokenAssertion(assertion);
         final TestAudit testAudit = SamlTestUtil.configureServerAssertionInjects(serverAssertion);
 
         final PolicyEnforcementContext context = getContext();
@@ -180,7 +180,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         final Document samlAssertion = SamlTestUtil.createSamlAssertion(true, true, SamlConstants.CONFIRMATION_SAML2_BEARER);
         System.out.println(XmlUtil.nodeToFormattedString(samlAssertion));
 
-        final ValidateNonSoapSamlAssertion assertion = new ValidateNonSoapSamlAssertion();
+        final ValidateNonSoapSamlTokenAssertion assertion = new ValidateNonSoapSamlTokenAssertion();
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("samlAssertion");
         assertion.setVersion(2);
@@ -188,7 +188,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         assertion.setNameFormats(new String[]{SamlConstants.NAMEIDENTIFIER_UNSPECIFIED});
         assertion.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES});
 
-        ServerValidateNonSoapSamlAssertion serverAssertion = new ServerValidateNonSoapSamlAssertion(assertion);
+        ServerValidateNonSoapSamlTokenAssertion serverAssertion = new ServerValidateNonSoapSamlTokenAssertion(assertion);
         final TestAudit testAudit = SamlTestUtil.configureServerAssertionInjects(serverAssertion);
 
         final PolicyEnforcementContext context = getContext();
@@ -209,7 +209,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         final Document samlAssertion = SamlTestUtil.createSamlAssertion(true, true, SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES);
         System.out.println(XmlUtil.nodeToFormattedString(samlAssertion));
 
-        final ValidateNonSoapSamlAssertion assertion = new ValidateNonSoapSamlAssertion();
+        final ValidateNonSoapSamlTokenAssertion assertion = new ValidateNonSoapSamlTokenAssertion();
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("samlAssertion");
         assertion.setVersion(2);
@@ -217,7 +217,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         assertion.setNameFormats(new String[]{SamlConstants.NAMEIDENTIFIER_UNSPECIFIED});
         assertion.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES});
 
-        ServerValidateNonSoapSamlAssertion serverAssertion = new ServerValidateNonSoapSamlAssertion(assertion);
+        ServerValidateNonSoapSamlTokenAssertion serverAssertion = new ServerValidateNonSoapSamlTokenAssertion(assertion);
         final TestAudit testAudit = SamlTestUtil.configureServerAssertionInjects(serverAssertion);
 
         final PolicyEnforcementContext context = getContext();
@@ -238,7 +238,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         final Document samlAssertion = SamlTestUtil.createSamlAssertion(true, false, SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES);
         System.out.println(XmlUtil.nodeToFormattedString(samlAssertion));
 
-        final ValidateNonSoapSamlAssertion assertion = new ValidateNonSoapSamlAssertion();
+        final ValidateNonSoapSamlTokenAssertion assertion = new ValidateNonSoapSamlTokenAssertion();
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("samlAssertion");
         assertion.setVersion(2);
@@ -247,7 +247,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         assertion.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES});
         assertion.setRequireDigitalSignature(false);
 
-        ServerValidateNonSoapSamlAssertion serverAssertion = new ServerValidateNonSoapSamlAssertion(assertion);
+        ServerValidateNonSoapSamlTokenAssertion serverAssertion = new ServerValidateNonSoapSamlTokenAssertion(assertion);
         final TestAudit testAudit = SamlTestUtil.configureServerAssertionInjects(serverAssertion);
 
         final PolicyEnforcementContext context = getContext();
@@ -268,7 +268,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         final Document samlAssertion = SamlTestUtil.createSamlAssertion(true, true, SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES);
         System.out.println(XmlUtil.nodeToFormattedString(samlAssertion));
 
-        final ValidateNonSoapSamlAssertion assertion = new ValidateNonSoapSamlAssertion();
+        final ValidateNonSoapSamlTokenAssertion assertion = new ValidateNonSoapSamlTokenAssertion();
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("samlAssertion");
         assertion.setVersion(2);
@@ -276,7 +276,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         assertion.setNameFormats(new String[]{SamlConstants.NAMEIDENTIFIER_UNSPECIFIED});
         assertion.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES});
 
-        ServerValidateNonSoapSamlAssertion serverAssertion = new ServerValidateNonSoapSamlAssertion(assertion);
+        ServerValidateNonSoapSamlTokenAssertion serverAssertion = new ServerValidateNonSoapSamlTokenAssertion(assertion);
         final TestAudit testAudit = SamlTestUtil.configureServerAssertionInjects(serverAssertion);
 
         final PolicyEnforcementContext context = getContext();
@@ -299,7 +299,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         final Document samlAssertion = createSamlAssertionWithSubjectCert(true, true, SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY);
         System.out.println(XmlUtil.nodeToFormattedString(samlAssertion));
 
-        final ValidateNonSoapSamlAssertion assertion = new ValidateNonSoapSamlAssertion();
+        final ValidateNonSoapSamlTokenAssertion assertion = new ValidateNonSoapSamlTokenAssertion();
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("samlAssertion");
         assertion.setVersion(2);
@@ -307,7 +307,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         assertion.setNameFormats(new String[]{SamlConstants.NAMEIDENTIFIER_UNSPECIFIED});
         assertion.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY});
 
-        ServerValidateNonSoapSamlAssertion serverAssertion = new ServerValidateNonSoapSamlAssertion(assertion);
+        ServerValidateNonSoapSamlTokenAssertion serverAssertion = new ServerValidateNonSoapSamlTokenAssertion(assertion);
         final TestAudit testAudit = SamlTestUtil.configureServerAssertionInjects(serverAssertion);
 
         final PolicyEnforcementContext context = getContext();
@@ -330,7 +330,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         final Document samlAssertion = createSamlAssertionWithSubjectCert(true, true, SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY);
         System.out.println(XmlUtil.nodeToFormattedString(samlAssertion));
 
-        final ValidateNonSoapSamlAssertion assertion = new ValidateNonSoapSamlAssertion();
+        final ValidateNonSoapSamlTokenAssertion assertion = new ValidateNonSoapSamlTokenAssertion();
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("samlAssertion");
         assertion.setVersion(2);
@@ -338,7 +338,7 @@ public class ServerValidateNonSoapSamlAssertionTest {
         assertion.setNameFormats(new String[]{SamlConstants.NAMEIDENTIFIER_UNSPECIFIED});
         assertion.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY});
 
-        ServerValidateNonSoapSamlAssertion serverAssertion = new ServerValidateNonSoapSamlAssertion(assertion);
+        ServerValidateNonSoapSamlTokenAssertion serverAssertion = new ServerValidateNonSoapSamlTokenAssertion(assertion);
         final TestAudit testAudit = SamlTestUtil.configureServerAssertionInjects(serverAssertion);
 
         final PolicyEnforcementContext context = getContext();

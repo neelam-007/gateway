@@ -335,7 +335,7 @@ public class GatewayFeatureSets {
             mass("assertion:LDAPQuery"),
             mass("assertion:IdentityAttributes"),
             mass("assertion:CertificateAttributes"),
-            mass("assertion:ValidateNonSoapSaml"));
+            mass("assertion:ValidateNonSoapSamlToken"));
 
         GatewayFeatureSet accessGateway =
         fsr("set:AccessControl:Gateway", "SecureSpan Gateway access control",

@@ -2814,7 +2814,7 @@
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="bearerToken"/&gt;
                     &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:ValidateNonSoapSaml&gt;
+                    &lt;L7p:ValidateNonSoapSamlToken&gt;
                     &lt;L7p:AuthenticationStatement samlAuthenticationInfo="included"&gt;
                     &lt;L7p:AuthenticationMethods stringArrayValue="included"&gt;
                     &lt;L7p:item stringValue="urn:ietf:rfc:1510"/&gt;
@@ -2858,7 +2858,7 @@
                     &lt;/L7p:SubjectConfirmations&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;L7p:Version boxedIntegerValue="2"/&gt;
-                    &lt;/L7p:ValidateNonSoapSaml&gt;
+                    &lt;/L7p:ValidateNonSoapSamlToken&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="========== Validate the trusted issuer by adding a FIP here
                     =========="/&gt;

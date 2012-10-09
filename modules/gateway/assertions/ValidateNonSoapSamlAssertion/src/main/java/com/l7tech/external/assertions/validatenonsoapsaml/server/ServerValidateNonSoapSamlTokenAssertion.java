@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.validatenonsoapsaml.server;
 
-import com.l7tech.external.assertions.validatenonsoapsaml.ValidateNonSoapSamlAssertion;
+import com.l7tech.external.assertions.validatenonsoapsaml.ValidateNonSoapSamlTokenAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -27,12 +27,12 @@ import java.util.List;
 /**
  * Server side implementation of the ValidateNonSoapSamlAssertion
  *
- * @see com.l7tech.external.assertions.validatenonsoapsaml.ValidateNonSoapSamlAssertion
+ * @see com.l7tech.external.assertions.validatenonsoapsaml.ValidateNonSoapSamlTokenAssertion
  */
-public class ServerValidateNonSoapSamlAssertion extends ServerRequireSaml<ValidateNonSoapSamlAssertion> {
+public class ServerValidateNonSoapSamlTokenAssertion extends ServerRequireSaml<ValidateNonSoapSamlTokenAssertion> {
     private final String[] variablesUsed;
 
-    public ServerValidateNonSoapSamlAssertion(final ValidateNonSoapSamlAssertion assertion) throws PolicyAssertionException {
+    public ServerValidateNonSoapSamlTokenAssertion(final ValidateNonSoapSamlTokenAssertion assertion) throws PolicyAssertionException {
         super(assertion);
 
         this.variablesUsed = assertion.getVariablesUsed();
