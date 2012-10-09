@@ -287,7 +287,7 @@ public class RestServiceInfoPanel extends WizardStepPanel {
         //check for duplicate Gateway URL, we can't have duplicate
         Set<String> duplicate = new HashSet<String>();
         for(int i = 0; i < serviceDescriptorsTableModel.getRowCount(); i++){
-            String value = (String)serviceDescriptorsTableModel.getValueAt(i, 2);
+            String value = normalizeUrl ((String)serviceDescriptorsTableModel.getValueAt(i, 2));
             String serviceName = (String) serviceDescriptorsTableModel.getValueAt(i, 1);
             if(serviceName.trim().isEmpty()){
                 DialogDisplayer.display(new JOptionPane("Service Name Missing"), getOwner().getContentPane(), "Service Name Missing",  null);
@@ -412,6 +412,10 @@ public class RestServiceInfoPanel extends WizardStepPanel {
                     }
                 }
             }
+            if(data.isEmpty()){
+                DialogDisplayer.display(new JOptionPane("No Resource Base URL found in WADL."), getOwner().getContentPane(), "Invalid WADL", null);
+                return;
+            }
             for(int i = serviceDescriptorsTableModel.getRowCount(); i > 0; i--){
                 serviceDescriptorsTableModel.removeRow(0);
             }
@@ -423,5 +427,16 @@ public class RestServiceInfoPanel extends WizardStepPanel {
         } finally {
             ResourceUtils.closeQuietly(is);
         }
+    }
+
+    private String normalizeUrl(final String url){
+        String gatewayUrl = url;
+        if(gatewayUrl != null){
+            gatewayUrl = gatewayUrl.replaceAll("\\\\+", "/").replaceAll("/{2,}", "/");
+            if(!gatewayUrl.startsWith("/")){
+                gatewayUrl = "/" + gatewayUrl;
+            }
+        }
+        return gatewayUrl;
     }
 }
