@@ -34,7 +34,7 @@ import static com.l7tech.policy.bundle.PolicyBundleDryRunResult.DryRunItem;
 
 public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OAuthInstallerAdmin {
 
-    public static final String NS_INSTALLER_VERSION = "http://ns.l7tech.com/2012/09/oauth-toolkit";
+    public static final String NS_INSTALLER_VERSION = "http://ns.l7tech.com/2012/11/oauth-toolkit-bundle";
 
     public OAuthInstallerAdminImpl(final String bundleBaseName, ApplicationEventPublisher spring) throws OAuthToolkitInstallationException {
         this.spring = spring;
