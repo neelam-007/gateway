@@ -6,7 +6,7 @@ import com.l7tech.policy.variable.Syntax;
 public class FeedbackSelector implements ExpandVariables.Selector<Feedback> {
 
     private static final String LATENCY = "latency";
-    private static final String REASON = "reason";
+    private static final String REASONCODE = "reasoncode";
     private static final String ROUTE = "route";
     private static final String STATUS = "status";
 
@@ -15,8 +15,8 @@ public class FeedbackSelector implements ExpandVariables.Selector<Feedback> {
         String attr = name.toLowerCase();
         if (attr.equals(LATENCY)) {
             return new Selection(context.getLatency());
-        } else if (attr.equals(REASON)) {
-            return new Selection(context.getReason());
+        } else if (attr.equals(REASONCODE)) {
+            return new Selection(context.getReasonCode());
         } else if (attr.equals(ROUTE)) {
             return new Selection(context.getRoute());
         } else if (attr.equals(STATUS)) {

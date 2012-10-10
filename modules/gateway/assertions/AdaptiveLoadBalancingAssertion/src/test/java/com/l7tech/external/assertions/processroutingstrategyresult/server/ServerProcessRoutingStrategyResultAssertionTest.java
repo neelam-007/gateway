@@ -98,7 +98,7 @@ public class ServerProcessRoutingStrategyResultAssertionTest {
         Assert.assertEquals(1, feedbacks.size());
         Assert.assertEquals(1000, feedbacks.get(0).getLatency());
         Assert.assertEquals(0, feedbacks.get(0).getStatus());
-        Assert.assertEquals(100, feedbacks.get(0).getReason());
+        Assert.assertEquals(100, feedbacks.get(0).getReasonCode());
         Assert.assertEquals(SERVER1.getName(), feedbacks.get(0).getRoute());
         FailoverStrategy strategy = (FailoverStrategy) peCtx.getVariable(STRATEGY);
         Assert.assertEquals(SERVER2, strategy.selectService());
@@ -117,7 +117,7 @@ public class ServerProcessRoutingStrategyResultAssertionTest {
         Assert.assertEquals(1, feedbacks.size());
         Assert.assertEquals(1000, feedbacks.get(0).getLatency());
         Assert.assertEquals(-1, feedbacks.get(0).getStatus());
-        Assert.assertEquals(100, feedbacks.get(0).getReason());
+        Assert.assertEquals(100, feedbacks.get(0).getReasonCode());
         Assert.assertEquals(SERVER1.getName(), feedbacks.get(0).getRoute());
         FailoverStrategy strategy = (FailoverStrategy) peCtx.getVariable(STRATEGY);
         Assert.assertEquals(SERVER2, strategy.selectService());
@@ -155,7 +155,7 @@ public class ServerProcessRoutingStrategyResultAssertionTest {
         Assert.assertEquals(1, feedbacks.size());
         Assert.assertEquals(0, feedbacks.get(0).getLatency());
         Assert.assertEquals(0, feedbacks.get(0).getStatus());
-        Assert.assertEquals(0, feedbacks.get(0).getReason());
+        Assert.assertEquals(0, feedbacks.get(0).getReasonCode());
         Assert.assertEquals(SERVER1.getName(), feedbacks.get(0).getRoute());
     }
 

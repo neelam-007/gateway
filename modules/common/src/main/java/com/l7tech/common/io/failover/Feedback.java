@@ -6,13 +6,13 @@ package com.l7tech.common.io.failover;
 public class Feedback {
 
     private long latency;
-    private int reason;
+    private int reasonCode;
     private String route;
     private int status;
 
-    public Feedback(long latency, int reason, String route, int status) {
+    public Feedback(long latency, int reasonCode, String route, int status) {
         this.latency = latency;
-        this.reason = reason;
+        this.reasonCode = reasonCode;
         this.route = route;
         this.status = status;
     }
@@ -25,12 +25,12 @@ public class Feedback {
         this.latency = latency;
     }
 
-    public int getReason() {
-        return reason;
+    public int getReasonCode() {
+        return reasonCode;
     }
 
-    public void setReason(int reason) {
-        this.reason = reason;
+    public void setReasonCode(int reasonCode) {
+        this.reasonCode = reasonCode;
     }
 
     public String getRoute() {
