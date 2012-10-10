@@ -105,6 +105,7 @@ public class CertUtils {
     public static final String CERT_PROP_EC_COFACTOR = "Cofactor";
     public static final String CERT_PROP_OCSP = "OCSP";
     public static final String CERT_PROP_CRL_DISTRIBUTION_POINTS = "CRL Distribution Points";
+    public static final String CERT_PROP_SAN = "Subject Alternative Name";
 
     private static final Map<String,String> DN_MAP;
     static {
@@ -1125,6 +1126,25 @@ public class CertUtils {
 
         } catch (IOException e) {
             logger.log( Level.WARNING, "Cannot get the CRL information from the certificate: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+        }
+
+        try {
+            Collection<List<?>> snas = (Collection<List<?>>) cert.getSubjectAlternativeNames();
+            if (snas != null) {
+                sb.setLength(0);
+                for (List sna : snas) {
+                    if (sna.size() >= 2) {
+                        //The the first value in the list is the type and the second value is the name
+                        sb.append(sna.get(1).toString());
+                        sb.append('\n');
+                    }
+                }
+                if (sb.length() > 0) {
+                    l.add(new Pair<String, String>(CERT_PROP_SAN, sb.substring(0, sb.length()-1)));
+                }
+            }
+        } catch (CertificateParsingException e) {
+            logger.log(Level.WARNING, "Cannot get the Subject Alternative Names from the certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
 
         return l;

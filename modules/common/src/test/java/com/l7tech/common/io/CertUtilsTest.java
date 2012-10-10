@@ -3,6 +3,7 @@ package com.l7tech.common.io;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.Pair;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -469,6 +470,21 @@ public class CertUtilsTest {
         assertFalse(CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com", "dc=layer7.*, DC=com, UID=a.*e", true));
     }
 
+    @Test
+    @BugNumber(11722)
+    public void testSAN() throws Exception {
+        X509Certificate certificate = CertUtils.decodeFromPEM(BUG_11722_SHOW_SAN);
+        List<Pair<String, String>> attrs = CertUtils.getCertProperties(certificate);
+        boolean hasSAN = false;
+        for (Pair<String, String> pair: attrs) {
+            if (pair.getKey().equals(CertUtils.CERT_PROP_SAN)) {
+                assertNotNull(pair.getValue());
+                hasSAN = true;
+            }
+        }
+        assertTrue(hasSAN);
+    }
+
     /**
      * Test certificate with CRL and OCSP URLS and a CRT URL
      */
@@ -572,4 +588,38 @@ public class CertUtilsTest {
             "zN76wxuXKtHYyZvd6bnpGUZJWHWUHJN7aOJlJv3MWF0zs3Aqula8safTInG/5QX9\n" +
             "yU/OOxityjqITM5ITy4BKUWPSNYS10F3303bzyQ9LS+ScOha0CIWST8InBV8iCL7\n" +
             "UATtteuIVGjcXy5b/C9a5m4IET4=";
+    
+    private static final String BUG_11722_SHOW_SAN =
+            "MIIG3TCCBcWgAwIBAgIQDqQCSM2Tudk9/jiTo8OoQDANBgkqhkiG9w0BAQUFADBmMQswCQYDVQQG\n" +
+            "EwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSUw\n" +
+            "IwYDVQQDExxEaWdpQ2VydCBIaWdoIEFzc3VyYW5jZSBDQS0zMB4XDTExMDUwOTAwMDAwMFoXDTEz\n" +
+            "MDUyOTEyMDAwMFowgYYxCzAJBgNVBAYTAlVTMQ4wDAYDVQQIEwVUZXhhczEUMBIGA1UEBxMLU2Fu\n" +
+            "IEFudG9uaW8xGzAZBgNVBAoTElJhY2tzcGFjZSBVUywgSW5jLjEVMBMGA1UECxMMRXhjaGFuZ2Ug\n" +
+            "T3BzMR0wGwYDVQQDExRtZXgwN2EubWFpbHRydXN0LmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEP\n" +
+            "ADCCAQoCggEBALNRR3z+LWP2v6OPLY519lFLqyr2WwyFtoGEtsc+C9/Bw5WBQx5uArTZF0sLKL2T\n" +
+            "5nUqVmCod/i1OoD+yIXcEW7yQUIcXKIjuYLR43vuknxxIXNnHmSQf+PlpSMfCafw9OsYCR56YtJx\n" +
+            "cjRmBLxQkTQU/6tBbdJY0267Fq8jdC2jTFIP+B+hTsFPbCArjIiBvqsZW/h0j/PfGgCZVIgbd8Sv\n" +
+            "w3spJxIP59r3dYIISFAmzXV9OaUc9IcCcAfJdJcegvwrhYlrTRsl7c5s6WjOVY961934Vc9MBbDu\n" +
+            "JpsIjin7JTOluYxYORQ92k40qnR2dHlu/5YCWmzoICN0/Qz6b7kCAwEAAaOCA2QwggNgMB8GA1Ud\n" +
+            "IwQYMBaAFFDqc4nbKfsQj57lASDU3nmZSIP3MB0GA1UdDgQWBBQDHcapT/ISvan/duXhy+2YehU1\n" +
+            "yjA1BgNVHREELjAsghRtZXgwN2EubWFpbHRydXN0LmNvbYIUbWV4MDdhLmVtYWlsc3J2ci5jb20w\n" +
+            "ggHEBgNVHSAEggG7MIIBtzCCAbMGCWCGSAGG/WwBATCCAaQwOgYIKwYBBQUHAgEWLmh0dHA6Ly93\n" +
+            "d3cuZGlnaWNlcnQuY29tL3NzbC1jcHMtcmVwb3NpdG9yeS5odG0wggFkBggrBgEFBQcCAjCCAVYe\n" +
+            "ggFSAEEAbgB5ACAAdQBzAGUAIABvAGYAIAB0AGgAaQBzACAAQwBlAHIAdABpAGYAaQBjAGEAdABl\n" +
+            "ACAAYwBvAG4AcwB0AGkAdAB1AHQAZQBzACAAYQBjAGMAZQBwAHQAYQBuAGMAZQAgAG8AZgAgAHQA\n" +
+            "aABlACAARABpAGcAaQBDAGUAcgB0ACAAQwBQAC8AQwBQAFMAIABhAG4AZAAgAHQAaABlACAAUgBl\n" +
+            "AGwAeQBpAG4AZwAgAFAAYQByAHQAeQAgAEEAZwByAGUAZQBtAGUAbgB0ACAAdwBoAGkAYwBoACAA\n" +
+            "bABpAG0AaQB0ACAAbABpAGEAYgBpAGwAaQB0AHkAIABhAG4AZAAgAGEAcgBlACAAaQBuAGMAbwBy\n" +
+            "AHAAbwByAGEAdABlAGQAIABoAGUAcgBlAGkAbgAgAGIAeQAgAHIAZQBmAGUAcgBlAG4AYwBlAC4w\n" +
+            "ewYIKwYBBQUHAQEEbzBtMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5jb20wRQYI\n" +
+            "KwYBBQUHMAKGOWh0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEhpZ2hBc3N1cmFu\n" +
+            "Y2VDQS0zLmNydDAMBgNVHRMBAf8EAjAAMGUGA1UdHwReMFwwLKAqoCiGJmh0dHA6Ly9jcmwzLmRp\n" +
+            "Z2ljZXJ0LmNvbS9jYTMtMjAxMWUuY3JsMCygKqAohiZodHRwOi8vY3JsNC5kaWdpY2VydC5jb20v\n" +
+            "Y2EzLTIwMTFlLmNybDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDgYDVR0PAQH/BAQD\n" +
+            "AgWgMA0GCSqGSIb3DQEBBQUAA4IBAQA6XvIB5O0bpGeG0fNawKeZqyo8kRwGrTsNxqB6NmqhkY0Q\n" +
+            "SQLAFV66RFKDqGC9KgGXGEOvn1gt6PzQKVB+3M62iTlo5c0cTaVThj+8HECIdJc1yqftWMCiRQfR\n" +
+            "ly/4ZHByr4VslADEQ9PDu1o45PB8qCZZAvP9PDE/tNBBd2ktTBBvGAn5lNTrNSIaqCr8Y1lmaTs5\n" +
+            "gjePYkAkbVGpu/QoiwmbCAEz0GcPpxBF2SQdJnBuARvEJ35rHdP0A1ryKWaT6sUbCJHNDZNpl6kN\n" +
+            "vsRR9QwrI4lCj8+qqcNNANvpec86xti4Tx128ptXkGSuta27HAVQqXrS4jK7zpFheEy6";
+
 }
