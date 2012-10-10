@@ -4,12 +4,12 @@ import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.util.Functions;
+import com.l7tech.util.IteratorEnumeration;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
 
 /**
  * Stub implementation of HttpRequestKnob, for testing.
@@ -19,6 +19,7 @@ import java.util.List;
 public class HttpRequestKnobStub extends HttpRequestKnobAdapter {
     private final GenericHttpRequestParams headerHolder = new GenericHttpRequestParams();
     private final String requestUri;
+    private Map<String,String[]> params;
 
     public HttpRequestKnobStub() {
         this( null );
@@ -91,5 +92,66 @@ public class HttpRequestKnobStub extends HttpRequestKnobAdapter {
 
     public boolean removeHeader(String name) {
         return headerHolder.removeExtraHeader(name);
+    }
+
+    @Override
+    public String getParameter(String name) {
+        prepareParams();
+        String[] got = params.get(name);
+        return got == null || got.length < 1 ? null : got[0];
+    }
+
+    @Override
+    public Map getParameterMap() {
+        prepareParams();
+        TreeMap<String, String[]> ret = new TreeMap<String,String[]>(String.CASE_INSENSITIVE_ORDER);
+        ret.putAll(params);
+        return ret;
+    }
+
+    @Override
+    public String[] getParameterValues(String s) {
+        prepareParams();
+        String[] ret = params.get(s);
+        return ret == null ? new String[0] : ret;
+    }
+
+    @Override
+    public Enumeration getParameterNames() {
+        prepareParams();
+        return new IteratorEnumeration<String>(params.keySet().iterator());
+    }
+
+    private void prepareParams() {
+        if (params == null) {
+            Map<String,String[]> map = new TreeMap<String,String[]>(String.CASE_INSENSITIVE_ORDER);
+            String[] pairs = getQueryString().split("\\&");
+            for (String pair : pairs) {
+                String[] keyval = pair.split("\\=");
+                if (keyval.length > 0) {
+                    String name = keyval[0];
+                    String value = keyval.length > 1 ? keyval[1] : null;
+                    String[] oldValues = map.get(name);
+                    if (oldValues == null)
+                        oldValues = new String[0];
+                    String[] newValues = new String[oldValues.length + 1];
+                    System.arraycopy(oldValues, 0, newValues, 0, oldValues.length);
+                    newValues[oldValues.length] = value;
+                    map.put(name, newValues);
+                }
+            }
+
+            // TODO include form body if present?
+            params = map;
+        }
+    }
+
+    @Override
+    public String getQueryString() {
+        try {
+            return new URL(requestUri).getQuery();
+        } catch (MalformedURLException e) {
+            return null;
+        }
     }
 }
