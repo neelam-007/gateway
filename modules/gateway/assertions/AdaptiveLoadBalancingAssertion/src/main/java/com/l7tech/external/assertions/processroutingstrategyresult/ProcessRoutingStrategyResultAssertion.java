@@ -7,7 +7,6 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.Syntax;
 
 import java.util.logging.Logger;
 
@@ -74,7 +73,7 @@ public class ProcessRoutingStrategyResultAssertion extends AbstractAdaptiveLoadB
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.LONG_NAME, "Process Routing Strategy Result Assertion");
-        meta.put(AssertionMetadata.DESCRIPTION, "Update the Routing Strategy with success/failure status and generate feedback data.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Updates the Routing Strategy with success/failure status and generates feedback data.");
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"policyLogic"});
 

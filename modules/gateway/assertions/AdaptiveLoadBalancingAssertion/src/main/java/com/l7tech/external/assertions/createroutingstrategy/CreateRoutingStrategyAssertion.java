@@ -106,8 +106,8 @@ public class CreateRoutingStrategyAssertion extends AbstractAdaptiveLoadBalancin
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.LONG_NAME, "Create Routing Strategy Assertion");
-        meta.put(AssertionMetadata.DESCRIPTION, "Create routing strategy with the defined route list and store the strategy to the Routing Strategy Perfix variable. " +
-                "The stored strategy will be used by Execute Routing Strategy and Process Routing Strategy Result Assertion");
+        meta.put(AssertionMetadata.DESCRIPTION, "Creates a routing strategy using the defined route list and " +
+                "stores the strategy for use by the Execute Routing Strategy and Process Routing Strategy Result assertions.");
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"policyLogic"});
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(

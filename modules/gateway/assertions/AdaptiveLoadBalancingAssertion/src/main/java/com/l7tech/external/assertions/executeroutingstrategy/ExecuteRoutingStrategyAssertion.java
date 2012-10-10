@@ -5,10 +5,8 @@ import com.l7tech.external.assertions.createroutingstrategy.CreateRoutingStrateg
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
@@ -96,9 +94,8 @@ public class ExecuteRoutingStrategyAssertion extends AbstractAdaptiveLoadBalanci
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.LONG_NAME, "Execute Routing Strategy Assertion");
-        meta.put(AssertionMetadata.DESCRIPTION, "Retrieve the Routing Strategy from defined Routing Strategy Prefix, " +
-                "acquire available route destination, and set the route destination to route variable name. A empty Feedback List will be created to " +
-                "store the feedback data.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Retrieves the routing strategy from the defined Routing Strategy Prefix, " +
+                "acquires the available route destination, and then sets the route destination to route variable name.");
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"policyLogic"});
 
