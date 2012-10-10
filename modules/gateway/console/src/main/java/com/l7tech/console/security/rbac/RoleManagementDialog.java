@@ -5,10 +5,7 @@ import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.util.Filter;
 import com.l7tech.console.util.FilterListModel;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import com.l7tech.gateway.common.security.rbac.RbacUtilities;
-import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.PauseListenerAdapter;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
@@ -27,10 +24,12 @@ import java.awt.*;
 import java.awt.event.*;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 public class RoleManagementDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(RoleManagementDialog.class.getName());
     private JPanel mainPanel;
     private JButton buttonHelp;
     private JButton buttonClose;
@@ -202,19 +201,24 @@ public class RoleManagementDialog extends JDialog {
     }
 
     private void setUpRoleAssignmentTable(Role role){
-        try{
-            roleAssignmentTableModel = new RoleAssignmentTableModel(role);
-        }catch(Exception ex){
-            throw new RuntimeException("Could not look up assignments for role", ex);
-        }
-        this.roleAssigneeTable.setModel(roleAssignmentTableModel);
-        //don't allow the user to be able to reorder columns in the table
-        this.roleAssigneeTable.getTableHeader().setReorderingAllowed(false);
+        if(Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedReadAny(EntityType.USER))){
+            try{
+                roleAssignmentTableModel = new RoleAssignmentTableModel(role);
+            }catch(Exception ex){
+                throw new RuntimeException("Could not look up assignments for role", ex);
+            }
+            this.roleAssigneeTable.setModel(roleAssignmentTableModel);
+            //don't allow the user to be able to reorder columns in the table
+            this.roleAssigneeTable.getTableHeader().setReorderingAllowed(false);
 
-        Utilities.setRowSorter(roleAssigneeTable, roleAssignmentTableModel, new int[]{0,1}, new boolean[]{true, true},
-                new Comparator[]{null, RoleAssignmentTableModel.USER_GROUP_COMPARATOR});
-        TableColumn tC = roleAssigneeTable.getColumn(RoleAssignmentTableModel.USER_GROUPS);
-        tC.setCellRenderer(new UserGroupTableCellRenderer(roleAssigneeTable));
+            Utilities.setRowSorter(roleAssigneeTable, roleAssignmentTableModel, new int[]{0,1}, new boolean[]{true, true},
+                    new Comparator[]{null, RoleAssignmentTableModel.USER_GROUP_COMPARATOR});
+            TableColumn tC = roleAssigneeTable.getColumn(RoleAssignmentTableModel.USER_GROUPS);
+            tC.setCellRenderer(new UserGroupTableCellRenderer(roleAssigneeTable));
+        }
+        else {
+            logger.info("You do not have permission to view role assignments.");
+        }
     }
     
     private void setupButtonListeners() {
