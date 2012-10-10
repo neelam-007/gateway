@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleMapping;
+import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.*;
 import com.l7tech.util.*;
 import com.l7tech.xml.DomElementCursor;
@@ -22,7 +23,6 @@ import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.policybundleinstaller.InstallerUtils.*;
@@ -47,6 +47,62 @@ public class PolicyBundleInstaller {
         this.bundleResolver = bundleResolver;
         this.savePolicyCallback = savePolicyCallback;
         this.gatewayManagementInvoker = gatewayManagementInvoker;
+    }
+
+    public void dryRun(final PolicyBundleInstallerContext context,
+                       final DryRunInstallPolicyBundleEvent dryRunEvent)
+            throws BundleResolver.BundleResolverException,
+            BundleResolver.UnknownBundleException,
+            BundleResolver.InvalidBundleException {
+
+        final BundleInfo bundleInfo = context.getBundleInfo();
+        final Document serviceEnumDoc = bundleResolver.getBundleItem(bundleInfo.getId(), SERVICE, true);
+        final List<Element> allUrlPatternElms = GatewayManagementDocumentUtilities.findAllUrlPatternsFromEnumeration(serviceEnumDoc);
+        for (Element allUrlPatternElm : allUrlPatternElms) {
+            final String urlPattern = getPrefixedUrl(DomUtils.getTextValue(allUrlPatternElm), context.getInstallationPrefix());
+            try {
+                final List<Long> matchingServices = findMatchingService(urlPattern);
+                if (!matchingServices.isEmpty()) {
+                    dryRunEvent.addUrlPatternWithConflict(urlPattern);
+                }
+            } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
+                throw new BundleResolver.InvalidBundleException("Could not check for conflict for url pattern '" + urlPattern + "'", e);
+            }
+        }
+
+        final Document policyEnumDoc = bundleResolver.getBundleItem(bundleInfo.getId(), POLICY, true);
+        final List<Element> policyNamesElms = GatewayManagementDocumentUtilities.findAllPolicyNamesFromEnumeration(policyEnumDoc);
+        for (Element policyNamesElm : policyNamesElms) {
+            final String policyName = getPrefixedPolicyName(context.getInstallationPrefix(), DomUtils.getTextValue(policyNamesElm));
+            try {
+                final List<Long> matchingPolicies = findMatchingPolicy(policyName);
+                if (!matchingPolicies.isEmpty()) {
+                    dryRunEvent.addPolicyNameWithConflict(policyName);
+                }
+            } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
+                throw new BundleResolver.InvalidBundleException("Could not check for conflict for policy name  '" + policyName + "'", e);
+            }
+        }
+
+        final Set<String> jdbcConnRefs = bundleInfo.getJdbcConnectionReferences();
+        final BundleMapping bundleMapping = context.getBundleMapping();
+        if (!jdbcConnRefs.isEmpty()) {
+            final Map<String, String> jdbcMappings =
+                    (bundleMapping != null)? bundleMapping.getJdbcMappings(): new HashMap<String, String>();
+
+            // validate each, consider any mapping that may be present.
+            for (String jdbcConnRef : jdbcConnRefs) {
+                final String jdbcConnToVerify = (jdbcMappings.containsKey(jdbcConnRef))? jdbcMappings.get(jdbcConnRef): jdbcConnRef;
+                try {
+                    final List<Long> foundConns = findMatchingJdbcConnection(jdbcConnToVerify);
+                    if (foundConns.isEmpty()) {
+                        dryRunEvent.addMissingJdbcConnection(jdbcConnToVerify);
+                    }
+                } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
+                    throw new BundleResolver.InvalidBundleException("Could not verify JDBC Connection '" + jdbcConnToVerify + "'", e);
+                }
+            }
+        }
     }
 
     /**
@@ -222,14 +278,11 @@ public class PolicyBundleInstaller {
             }
 
             if (xpathResult.matches()) {
-                final String urlPattern;
-                if (installationPrefix != null) {
-                    final String prefixToUse = (installationPrefix.startsWith("/") ? installationPrefix : "/" + installationPrefix);
-                    urlPattern = prefixToUse + xpathResult.getNodeSet().getNodeValue(0);
+                final String existingUrl = xpathResult.getNodeSet().getNodeValue(0);
+                final String urlPattern = getPrefixedUrl(existingUrl, installationPrefix);
+                if (!existingUrl.equals(urlPattern)) {
                     final Element urlPatternElmWritable = xpathResult.getNodeSet().getIterator().nextElementAsCursor().asDomElement();
                     DomUtils.setTextContent(urlPatternElmWritable, urlPattern);
-                } else {
-                    urlPattern = xpathResult.getNodeSet().getNodeValue(0);
                 }
 
                 final List<Long> matchingService = findMatchingService(urlPattern);
@@ -410,6 +463,15 @@ public class PolicyBundleInstaller {
     @NotNull private final GatewayManagementInvoker gatewayManagementInvoker;
     private static final Logger logger = Logger.getLogger(PolicyBundleInstaller.class.getName());
 
+    private String getPrefixedUrl(final String existingUrlPattern, final String installationPrefix) {
+        if (installationPrefix != null) {
+            final String prefixToUse = "/" + installationPrefix;
+            return prefixToUse + existingUrlPattern;
+        } else {
+            return existingUrlPattern;
+        }
+    }
+
     private Document parseQuietly(String inputXml) {
         try {
             return XmlUtil.parse(inputXml);
@@ -475,7 +537,7 @@ public class PolicyBundleInstaller {
             final Element policyDetailWritable = PolicyUtils.getPolicyDetailElement(enumPolicyElmWritable, "Policy", policyGuid);
             final Element nameElementWritable = PolicyUtils.getPolicyNameElement(policyDetailWritable, "Policy", policyGuid);
             final String policyName = DomUtils.getTextValue(nameElementWritable);
-            policyNameToUse = installationPrefix +" " + policyName;
+            policyNameToUse = getPrefixedPolicyName(installationPrefix, policyName);
             DomUtils.setTextContent(nameElementWritable, policyNameToUse);
             assert (policyName.equals(guidToName.get(policyGuid)));
         } else {
@@ -503,6 +565,14 @@ public class PolicyBundleInstaller {
         }
 
         oldGuidsToNewGuids.put(policyGuid, guidToUse);
+    }
+
+    private String getPrefixedPolicyName(@Nullable String installationPrefix, @NotNull String policyName) {
+        if (installationPrefix == null) {
+            return policyName;
+        } else {
+            return installationPrefix + " " + policyName;
+        }
     }
 
     private void updatePolicyDoc(BundleInfo bundleInfo,
@@ -556,6 +626,24 @@ public class PolicyBundleInstaller {
     private List<Long> findMatchingService(String urlMapping) throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse {
         final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
                 SERVICES_MGMT_NS, 10, "/l7:Service/l7:ServiceDetail/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern[text()='" + urlMapping + "']");
+
+        final Pair<AssertionStatus, Document> documentPair = callManagementAssertion(gatewayManagementInvoker, serviceFilter);
+        return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
+    }
+
+    @NotNull
+    private List<Long> findMatchingPolicy(String policyName) throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse {
+        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
+                POLICIES_MGMT_NS, 10, "/l7:Policy/l7:PolicyDetail/l7:Name[text()='" + policyName + "']");
+
+        final Pair<AssertionStatus, Document> documentPair = callManagementAssertion(gatewayManagementInvoker, serviceFilter);
+        return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
+    }
+
+    @NotNull
+    private List<Long> findMatchingJdbcConnection(String jdbcConnection) throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse {
+        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
+                JDBC_MGMT_NS, 10, "/l7:JDBCConnection/l7:Name[text()='" + jdbcConnection + "']");
 
         final Pair<AssertionStatus, Document> documentPair = callManagementAssertion(gatewayManagementInvoker, serviceFilter);
         return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);

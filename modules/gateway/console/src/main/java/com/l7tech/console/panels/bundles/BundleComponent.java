@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.oauthinstaller.console;
+package com.l7tech.console.panels.bundles;
 
 import com.l7tech.console.action.ManageJdbcConnectionsAction;
 import com.l7tech.console.util.Registry;
@@ -58,7 +58,9 @@ public class BundleComponent extends JPanel{
                 }
             });
             refreshJdbcConnections();
-            // rememeber all existing connections
+            availableJdbcConnsComboBox.setSelectedIndex(-1);
+
+            // remember all existing connections
             final int itemCount = availableJdbcConnsComboBox.getItemCount();
             for (int i = 0; i < itemCount; i++) {
                 final String existingConn = availableJdbcConnsComboBox.getItemAt(i).toString();

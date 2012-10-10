@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.oauthinstaller;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 
@@ -30,15 +31,20 @@ public class OAuthInstallerAssertion extends Assertion  {
         meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
             @Override
             public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
-                final OAuthInstallerAdminImpl instance = OAuthInstallerAdminImpl.INSTANCE_HOLDER.instance;
+                final String bundleBaseName = "/com/l7tech/external/assertions/oauthinstaller/bundles/";
+                final OAuthInstallerAdminImpl instance;
+                try {
+                    instance = new OAuthInstallerAdminImpl(bundleBaseName, appContext);
+                } catch (OAuthInstallerAdmin.OAuthToolkitInstallationException e) {
+                    logger.warning("Could not load OAuth Toolkit Installer: " + ExceptionUtils.getMessage(e));
+                    throw new RuntimeException(e);
+                }
 
                 final ExtensionInterfaceBinding<OAuthInstallerAdmin> binding =
                         new ExtensionInterfaceBinding<OAuthInstallerAdmin>(OAuthInstallerAdmin.class, null, instance);
                 return Collections.<ExtensionInterfaceBinding>singletonList(binding);
             }
         });
-
-        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAdminImpl");
 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 

@@ -46,6 +46,16 @@ public class GatewayManagementDocumentUtilities {
         return XmlUtil.findChildElementsByName(enumerationElement, BundleUtils.L7_NS_GW_MGMT, type);
     }
 
+    @NotNull
+    public static List<Element> findAllUrlPatternsFromEnumeration(final Document serviceEnumeration) {
+        return PolicyUtils.findElements(serviceEnumeration.getDocumentElement(), ".//l7:UrlPattern");
+    }
+
+    @NotNull
+    public static List<Element> findAllPolicyNamesFromEnumeration(final Document policyEnumeration) {
+        return PolicyUtils.findElements(policyEnumeration.getDocumentElement(), ".//l7:Name");
+    }
+
     public static class UnexpectedManagementResponse extends Exception{
         public UnexpectedManagementResponse(String message) {
             super(message);

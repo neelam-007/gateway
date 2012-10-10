@@ -34,10 +34,9 @@ import static com.l7tech.util.Functions.map;
  */
 public class OAuthToolkitBundleResolver implements BundleResolver {
 
-    public OAuthToolkitBundleResolver(final String bundleBaseName) throws InvalidBundleException, OAuthInstallerAdmin.OAuthToolkitInstallationException {
+    public OAuthToolkitBundleResolver(final List<Pair<BundleInfo, String>> bundleInfosFromJar) {
         final Map<String, String> guidMap = new HashMap<String, String>();
 
-        final List<Pair<BundleInfo, String>> bundleInfosFromJar = BundleUtils.getBundleInfos(getClass(), bundleBaseName);
         for (Pair<BundleInfo, String> pair : bundleInfosFromJar) {
             guidMap.put(pair.left.getId(), pair.right);
         }

@@ -5,6 +5,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.*;
 import com.l7tech.util.DomUtils;
@@ -511,6 +512,132 @@ public class PolicyBundleInstallerTest {
         assertEquals("/" + prefix + "/auth/oauth/v1/authorize", serviceIdToUri.get("123797506"));
         assertEquals("/" + prefix + "/oauth/v1/client", serviceIdToUri.get("123797509"));
         assertEquals("/" + prefix + "/auth/oauth/v1/authorize/website", serviceIdToUri.get("123797508"));
+    }
+
+    @Test
+    public void testDryInstallationWithConflicts() throws Exception {
+        final BundleResolver bundleResolver = getBundleResolver();
+        PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+            @Override
+            public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
+
+                // For policies and services, return that they already exist. For JDBC conns return that they do not exist.
+                try {
+                    final Document documentReadOnly = context.getRequest().getXmlKnob().getDocumentReadOnly();
+                    final String requestXml = XmlUtil.nodeToFormattedString(documentReadOnly);
+//                    System.out.println(requestXml);
+
+                    if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate")) {
+                        if (requestXml.contains(InstallerUtils.JDBC_MGMT_NS)) {
+                            // no results
+                            setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
+                        } else {
+                            // results
+                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, "123345678")));
+                        }
+                    }
+                } catch (Exception e) {
+                    fail("Unexpected exception: " + e.getMessage());
+                }
+
+                return AssertionStatus.NONE;
+            }
+        });
+
+        final BundleInfo bundleInfo = new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc");
+        bundleInfo.addJdbcReference("OAuth");
+
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
+                bundleInfo,
+                -5002,
+                new HashMap<String, Object>(),
+                null, null);
+
+        final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(this, bundleResolver, context);
+        installer.dryRun(context, dryRunEvent);
+
+        final List<String> urlPatternWithConflict = dryRunEvent.getUrlPatternWithConflict();
+        assertFalse(urlPatternWithConflict.isEmpty());
+        assertEquals(7, urlPatternWithConflict.size());
+
+        // validate all expected services from the bundle were found
+        assertTrue(urlPatternWithConflict.contains("/auth/oauth/v1/token"));
+        assertTrue(urlPatternWithConflict.contains("/auth/oauth/v1/*"));
+        assertTrue(urlPatternWithConflict.contains("/protected/resource"));
+        assertTrue(urlPatternWithConflict.contains("/auth/oauth/v1/request"));
+        assertTrue(urlPatternWithConflict.contains("/auth/oauth/v1/authorize"));
+        assertTrue(urlPatternWithConflict.contains("/oauth/v1/client"));
+        assertTrue(urlPatternWithConflict.contains("/auth/oauth/v1/authorize/website"));
+
+        final List<String> policyWithNameConflict = dryRunEvent.getPolicyWithNameConflict();
+        assertFalse(policyWithNameConflict.isEmpty());
+        assertEquals(7, policyWithNameConflict.size());
+
+        assertTrue(policyWithNameConflict.contains("OAuth 1.0 Context Variables"));
+        assertTrue(policyWithNameConflict.contains("Require OAuth 1.0 Token"));
+        assertTrue(policyWithNameConflict.contains("getClientSignature"));
+        assertTrue(policyWithNameConflict.contains("Authenticate OAuth 1.0 Parameter"));
+        assertTrue(policyWithNameConflict.contains("Token Lifetime Context Variables"));
+        assertTrue(policyWithNameConflict.contains("GenerateOAuthToken"));
+        assertTrue(policyWithNameConflict.contains("OAuth Client Token Store Context Variables"));
+
+        final List<String> jdbcConnsThatDontExist = dryRunEvent.getJdbcConnsThatDontExist();
+        assertFalse(jdbcConnsThatDontExist.isEmpty());
+        assertEquals(1, jdbcConnsThatDontExist.size());
+
+        assertTrue(jdbcConnsThatDontExist.contains("OAuth"));
+    }
+
+    @Test
+    public void testDryInstallationWithNoConflicts() throws Exception {
+        final BundleResolver bundleResolver = getBundleResolver();
+        PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+            @Override
+            public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
+
+                // For policies and services, return that they already exist. For JDBC conns return that they do not exist.
+                try {
+                    final Document documentReadOnly = context.getRequest().getXmlKnob().getDocumentReadOnly();
+                    final String requestXml = XmlUtil.nodeToFormattedString(documentReadOnly);
+//                    System.out.println(requestXml);
+
+                    if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate")) {
+                        if (requestXml.contains(InstallerUtils.JDBC_MGMT_NS)) {
+                            // results
+                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, "123345678")));
+                        } else {
+                            // no results
+                            setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
+                        }
+                    }
+                } catch (Exception e) {
+                    fail("Unexpected exception: " + e.getMessage());
+                }
+
+                return AssertionStatus.NONE;
+            }
+        });
+
+        final BundleInfo bundleInfo = new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc");
+        bundleInfo.addJdbcReference("OAuth");
+
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
+                bundleInfo,
+                -5002,
+                new HashMap<String, Object>(),
+                null, null);
+
+        final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(this, bundleResolver, context);
+        installer.dryRun(context, dryRunEvent);
+
+        final List<String> urlPatternWithConflict = dryRunEvent.getUrlPatternWithConflict();
+        assertTrue(urlPatternWithConflict.isEmpty());
+
+        final List<String> policyWithNameConflict = dryRunEvent.getPolicyWithNameConflict();
+        assertTrue(policyWithNameConflict.isEmpty());
+
+        final List<String> jdbcConnsThatDontExist = dryRunEvent.getJdbcConnsThatDontExist();
+        assertTrue(jdbcConnsThatDontExist.isEmpty());
     }
 
     @NotNull

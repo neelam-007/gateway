@@ -1,9 +1,16 @@
 package com.l7tech.external.assertions.oauthinstaller;
 
 import com.l7tech.policy.bundle.BundleInfo;
+import com.l7tech.policy.bundle.BundleMapping;
+import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
+import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
+import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.util.Pair;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.*;
 
@@ -24,9 +31,69 @@ public class OAuthInstallerAdminImplTest {
 //        testInstallFolders_NoneExist("ba525763-6e55-4748-9376-76055247c8b1");
     }
 
+    /**
+     * Validates that the correct number and type of spring events are published for a dry run.
+     */
+    @Test
+    public void testValidateSpringRequestsForDryRun() throws Exception {
+        final Map<String, Boolean> foundBundles = new HashMap<String, Boolean>();
+
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
+            @Override
+            public void publishEvent(ApplicationEvent applicationEvent) {
+
+                assertTrue(applicationEvent instanceof DryRunInstallPolicyBundleEvent);
+
+                DryRunInstallPolicyBundleEvent dryRunEvent = (DryRunInstallPolicyBundleEvent) applicationEvent;
+
+                foundBundles.put(dryRunEvent.getContext().getBundleInfo().getId(), true);
+                dryRunEvent.setProcessed(true);
+            }
+        });
+
+        final PolicyBundleDryRunResult dryRunResult = admin.doDryRunOtkInstall(
+                Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
+                        "ba525763-6e55-4748-9376-76055247c8b1"), new HashMap<String, BundleMapping>(), null);
+
+        assertNotNull(dryRunResult);
+
+        assertEquals("Two bundles were configured so two events should have been published", 2, foundBundles.size());
+
+        assertTrue(foundBundles.containsKey("1c2a2874-df8d-4e1d-b8b0-099b576407e1"));
+        assertTrue(foundBundles.containsKey("ba525763-6e55-4748-9376-76055247c8b1"));
+    }
+
+    /**
+     * Validates that the correct number and type of spring events are published for a dry run.
+     */
+    @Test
+    public void testValidateSpringRequestsForInstall() throws Exception {
+
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
+            @Override
+            public void publishEvent(ApplicationEvent applicationEvent) {
+
+                assertTrue("Incorrect type of event published.", applicationEvent instanceof InstallPolicyBundleEvent);
+
+                InstallPolicyBundleEvent installEvent = (InstallPolicyBundleEvent) applicationEvent;
+
+                installEvent.setProcessed(true);
+            }
+        });
+
+        final List<String> results = admin.doInstallOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
+                "ba525763-6e55-4748-9376-76055247c8b1"), -5002, new HashMap<String, BundleMapping>(), null);
+
+        assertNotNull(results);
+        assertEquals("Two bundles were configured so two events should have been published", 2, results.size());
+
+        assertTrue(results.contains("1c2a2874-df8d-4e1d-b8b0-099b576407e1"));
+        assertTrue(results.contains("ba525763-6e55-4748-9376-76055247c8b1"));
+    }
+
     @Test
     public void testListAllBundles() throws Exception {
-        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName);
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, ApplicationContexts.getTestApplicationContext());
 
         final List<BundleInfo> allBundles = admin.getAllOtkComponents();
         assertNotNull(allBundles);
@@ -60,7 +127,7 @@ public class OAuthInstallerAdminImplTest {
     public void testValidateTheSamePoliciesAreIdentical() throws Exception {
         fail("Must implement to check if all bundles with the same policy guid are logically equivalent");
 
-        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName);
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, ApplicationContexts.getTestApplicationContext());
 
         final List<BundleInfo> allBundles = admin.getAllOtkComponents();
 

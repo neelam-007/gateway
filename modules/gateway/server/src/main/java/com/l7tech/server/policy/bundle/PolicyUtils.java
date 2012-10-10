@@ -54,11 +54,12 @@ public class PolicyUtils {
         return findElements(layer7PolicyDoc, "//L7p:SetVariable");
     }
 
-    static List<Element> findElements(@NotNull final Element layer7PolicyDoc,
-                                             @NotNull final String relativeXPath) {
+    @NotNull
+    static List<Element> findElements(@NotNull final Element elementToSearch,
+                                      @NotNull final String relativeXPath) {
         final List<Element> toReturn = new ArrayList<Element>();
 
-        final DomElementCursor includeCursor = new DomElementCursor(layer7PolicyDoc, false);
+        final DomElementCursor includeCursor = new DomElementCursor(elementToSearch, false);
         final XpathResult result = XpathUtil.getXpathResultQuietly(includeCursor, getNamespaceMap(), relativeXPath);
 
         final XpathResultIterator iterator = result.getNodeSet().getIterator();
