@@ -344,16 +344,20 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
             this.previousProvider = initialConfig;
         } else {
             // Select the first one
-            initialOid = tempHeaders.iterator().next().getOid();
-            this.previousProvider = configs.get(initialOid);
+            Iterator<EntityHeader> iterator = tempHeaders.iterator();
+            if(iterator.hasNext()){
+                initialOid = iterator.next().getOid();
+                this.previousProvider = configs.get(initialOid);
+            }
         }
 
         identityProviderComboBox.setModel(new DefaultComboBoxModel(tempHeaders.toArray()));
         final EntityHeader header = headers.get(initialOid);
-        if (header == null) {
-            identityProviderComboBox.setSelectedIndex(0);
-        } else {
+        if (header != null) {
             identityProviderComboBox.setSelectedItem(header);
+        }
+        else {
+            identityProviderComboBox.setEnabled(false);
         }
 
         enableButtons();
