@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.validatenonsoapsaml;
 
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.AssertionNodeNameFactory;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.xmlsec.HasOptionalSamlSignature;
 import com.l7tech.policy.assertion.xmlsec.RequireSaml;
 
@@ -62,6 +64,7 @@ public class ValidateNonSoapSamlTokenAssertion extends RequireSaml implements Ha
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.external.assertions.validatenonsoapsaml.console.EditValidateNonSoapSamlTokenAssertionAction");
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, ValidateNonSoapSamlTokenAssertionValidator.class.getName());
 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
