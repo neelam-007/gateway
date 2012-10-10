@@ -42,6 +42,7 @@ public class ScopeAttributePanel extends ValidatedPanel<AttributePredicate> {
         super("attributePredicate");
         this.model = model;
         this.permission = model.getPermission();
+        this.permission.setEntityType(entityType);
         this.entityType = entityType;
         attrComparisonType.setModel(new DefaultComboBoxModel(CompType.values()));
         init();
@@ -91,9 +92,17 @@ public class ScopeAttributePanel extends ValidatedPanel<AttributePredicate> {
             PropertyDescriptor[] props = info.getPropertyDescriptors();
             for (PropertyDescriptor propertyDescriptor : props) {
                 Method getter = propertyDescriptor.getReadMethod();
-                if (getter != null)
-                    //there is a getter for this property, so use it in the list
-                    names.add(propertyDescriptor.getName());
+                if (getter != null) {
+                    Class rtype = getter.getReturnType();
+                    if (Number.class.isAssignableFrom(rtype) || rtype == Long.TYPE || rtype == Integer.TYPE || rtype == Byte.TYPE || rtype == Short.TYPE ||
+                            CharSequence.class.isAssignableFrom(rtype) ||
+                            rtype == Boolean.TYPE || Boolean.class.isAssignableFrom(rtype) ||
+                            Enum.class.isAssignableFrom(rtype))
+                    {
+                        //there is a getter for this property, so use it in the list
+                        names.add(propertyDescriptor.getName());
+                    }
+                }
             }
 
             // Allow attempts to use Name for ANY entity, since in practice most will be NamedEntity subclasses
