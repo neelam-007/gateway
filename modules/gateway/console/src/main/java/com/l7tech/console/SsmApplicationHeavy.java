@@ -3,6 +3,7 @@ package com.l7tech.console;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.HelpUtil;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import java.io.File;
@@ -112,8 +113,15 @@ public class SsmApplicationHeavy extends SsmApplication  {
     }
 
     private void installAdditionalSecurityProviders() {
-        log.info("Registering JsafeJCE");
-        Security.addProvider(getJsafeProvider());
+
+        String cj = SyspropUtil.getString("com.l7tech.console.security.cryptoj.install", "first").trim().toLowerCase();
+        if ("first".equals(cj)) {
+            log.info("Registering Crypto-J as most-preferred crypto provider");
+            Security.insertProviderAt(getJsafeProvider(), 1);
+        } else if ("last".equals(cj) || Boolean.valueOf(cj)) {
+            log.info("Registering Crypto-J as additional crypto provider");
+            Security.addProvider(getJsafeProvider());
+        }
     }
 
     private Provider getJsafeProvider() {
