@@ -314,8 +314,9 @@ class TarariElementCursor extends ElementCursor {
             return tarariCompiledXpath.getXpathResult(this, requireCursor);
         }
 
-        // Someone passed a non-Tarari CompiledXpath to a Tarari cursor.  It shouldn't be possible to even
-        // construct a non-Tarari CompiledXpath if you are able to construct Tarari cursors.
+        // Someone passed a non-Tarari CompiledXpath to a Tarari cursor.  This is not supposed to happen --
+        // version 1.0 xpaths should always use a TarariCompiledXpath if Tarari is available, and
+        // version 2.0 and up xpaths should always use a DomElementCursor.
         throw new XPathExpressionException("Non-Tarari CompiledXpath passed to TarariElementCursor");
     }
 

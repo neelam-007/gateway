@@ -124,8 +124,9 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
 
             if (usePlaceholderMessage) {
                 cursor = new DomElementCursor(XmlUtil.createEmptyDocument());
-            } else if( vmultipleElements != null || xpathContainsVariables ) {
-                // Use a cursor backed by DOM so we can have Element results and/or XPath variables
+            } else if( vmultipleElements != null || xpathContainsVariables ||
+                (!compiledXpath.getXpathVersion().equals(XpathVersion.XPATH_1_0) && !compiledXpath.getXpathVersion().equals(XpathVersion.UNSPECIFIED))) {
+                // Use a cursor backed by DOM so we can have Element results and/or XPath variables and/or XPath versions above 1.0
                 logAndAudit( AssertionMessages.XPATH_NOT_ACCELERATED );
                 cursor = new DomElementCursor(message.getXmlKnob().getDocumentReadOnly());
             } else {

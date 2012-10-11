@@ -11,6 +11,7 @@ import com.l7tech.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.xml.xpath.CompilableXpath;
 import com.l7tech.xml.xpath.CompiledXpath;
 import com.l7tech.xml.xpath.FastXpath;
+import com.l7tech.xml.xpath.XpathVersion;
 import com.tarari.xml.XmlConfigException;
 import com.tarari.xml.rax.fastxpath.XPathCompiler;
 import com.tarari.xml.rax.fastxpath.XPathCompilerException;
@@ -151,7 +152,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
 
     @Override
     public CompiledXpath compileXpath(CompilableXpath compilableXpath) throws InvalidXpathException {
-        if (!"1.0".equals(compilableXpath.getXpathVersion()))
+        if (!XpathVersion.XPATH_1_0.equals(compilableXpath.getXpathVersion()) && !XpathVersion.UNSPECIFIED.equals(compilableXpath.getXpathVersion()))
             return null;
         return new TarariCompiledXpath(compilableXpath, this);
     }
