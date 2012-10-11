@@ -98,6 +98,10 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             if ( perhapsGroup instanceof Group ) {
                 groupCache.invalidate(((Group)perhapsGroup).getProviderId());
             }
+            if ( perhapsGroup instanceof User){
+                groupCache.invalidate(((User)perhapsGroup).getProviderId());
+            }
+
         } else if (event instanceof ReadyForMessages) {
             // check for inactive users once a day
             timer.scheduleAtFixedRate(new TimerTask() {
