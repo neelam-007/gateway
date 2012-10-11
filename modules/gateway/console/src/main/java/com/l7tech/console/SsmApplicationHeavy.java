@@ -114,7 +114,7 @@ public class SsmApplicationHeavy extends SsmApplication  {
 
     private void installAdditionalSecurityProviders() {
 
-        String cj = SyspropUtil.getString("com.l7tech.console.security.cryptoj.install", "first").trim().toLowerCase();
+        String cj = SyspropUtil.getString("com.l7tech.console.security.cryptoj.install", "last").trim().toLowerCase();
         if ("first".equals(cj)) {
             log.info("Registering Crypto-J as most-preferred crypto provider");
             Security.insertProviderAt(getJsafeProvider(), 1);
