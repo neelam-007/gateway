@@ -12,6 +12,7 @@ import org.scribe.oauth.OAuthService;
 import java.net.PasswordAuthentication;
 
 import static org.junit.Assert.*;
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToollkitTestUtility.*;
 
 /**
  * Integration tests for the OAuth Tool Kit (oauth version 2.0) that uses Scribe.
@@ -131,10 +132,5 @@ public class OAuthToolkit2_0ScribeIntegrationTest {
         assertEquals(200, response.getCode());
         System.out.println("Obtained protected resource: ");
         System.out.println(response.getBody());
-    }
-
-    private String getAccessTokenFromJsonResponse(final GenericHttpResponse response) throws Exception {
-        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
-        return responseBody.substring(responseBody.indexOf("\"access_token\":\"") + 16, responseBody.indexOf("\","));
     }
 }

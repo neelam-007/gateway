@@ -9,6 +9,7 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 
 import static org.junit.Assert.*;
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToollkitTestUtility.*;
 
 /**
  * OAuth version 1.0a.
@@ -55,7 +56,7 @@ public class Layer710aApi extends DefaultApi10a {
             return verifier;
         } else {
             // access token is in a hidden field
-            final String accessToken = Layer7ApiUtil.getTokenFromHtmlForm(asString);
+            final String accessToken = getTokenFromHtmlForm(asString);
             System.out.println("Received access token: " + accessToken);
             return accessToken;
         }
@@ -79,18 +80,18 @@ public class Layer710aApi extends DefaultApi10a {
 
         final String url = "https://" + gatewayHost + ":8443/auth/oauth/v1/authorize?state=authorized&oauth_token=" + requestToken;
         final GenericHttpRequestParams authenticateParams = new GenericHttpRequestParams(new URL(url));
-        authenticateParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        authenticateParams.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest authenticateRequest = client.createRequest(HttpMethod.GET, authenticateParams);
         final GenericHttpResponse authenticateResponse = authenticateRequest.getResponse();
         final String authenticateResponseBody = authenticateResponse.getAsString(false, Integer.MAX_VALUE);
         assertEquals(200, authenticateResponse.getStatus());
-        final String sessionId = Layer7ApiUtil.getSessionIdFromHtmlForm(authenticateResponseBody);
+        final String sessionId = getSessionIdFromHtmlForm(authenticateResponseBody);
         System.out.println("Received sessionId: " + sessionId);
 
         final GenericHttpRequestParams grantParams = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
                 ":8443/auth/oauth/v1/authorize?sessionID=" + sessionId + "&action=Grant"));
         grantParams.setFollowRedirects(true);
-        grantParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        grantParams.setSslSocketFactory(getSSLSocketFactory());
         if (passwordAuthentication != null) {
             grantParams.setPasswordAuthentication(passwordAuthentication);
         }

@@ -21,6 +21,7 @@ import java.net.URL;
 import java.util.*;
 
 import static org.junit.Assert.*;
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToollkitTestUtility.*;
 
 /**
  * Integration tests for the OAuth Tool Kit that are not specific to OAuth 1.0 or 2.0.
@@ -417,7 +418,7 @@ public class OAuthToolkitIntegrationTest {
 
     private void store(final String type, final Map<String, String> parameters) throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/" + type + "store/store"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactoryWithKeyManager());
+        params.setSslSocketFactory(getSSLSocketFactoryWithKeyManager());
         params.setPasswordAuthentication(passwordAuthentication);
         params.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
@@ -431,7 +432,7 @@ public class OAuthToolkitIntegrationTest {
 
     private void update(final Map<String, String> parameters) throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/clientstore/update"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactoryWithKeyManager());
+        params.setSslSocketFactory(getSSLSocketFactoryWithKeyManager());
         params.setPasswordAuthentication(passwordAuthentication);
         params.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
@@ -491,7 +492,7 @@ public class OAuthToolkitIntegrationTest {
 
     private void delete(final String paramName, final String paramValue, final String type) throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/" + type + "store/delete"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactoryWithKeyManager());
+        params.setSslSocketFactory(getSSLSocketFactoryWithKeyManager());
         params.setPasswordAuthentication(passwordAuthentication);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
         request.addParameter(paramName, paramValue);
@@ -504,7 +505,7 @@ public class OAuthToolkitIntegrationTest {
 
     private String get(final String paramName, final String paramValue, final String endpoint) throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(endpoint));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactoryWithKeyManager());
+        params.setSslSocketFactory(getSSLSocketFactoryWithKeyManager());
         params.setPasswordAuthentication(passwordAuthentication);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
         request.addParameter(paramName, paramValue);

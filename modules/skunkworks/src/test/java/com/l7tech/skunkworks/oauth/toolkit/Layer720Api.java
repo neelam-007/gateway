@@ -2,6 +2,7 @@ package com.l7tech.skunkworks.oauth.toolkit;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.util.IOUtils;
 import org.scribe.builder.api.DefaultApi20;
 import org.scribe.extractors.AccessTokenExtractor;
 import org.scribe.extractors.JsonTokenExtractor;
@@ -14,6 +15,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 
 import static org.junit.Assert.*;
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToollkitTestUtility.*;
 
 /**
  * OAuth version 2.0.
@@ -65,23 +67,30 @@ public class Layer720Api extends DefaultApi20 {
                                        final String cookie) throws Exception {
         final GenericHttpResponse authResponse = authorize("code", consumerKey, callback, passwordAuthentication, cookie, true);
         assertEquals(200, authResponse.getStatus());
-        final String authCode = authResponse.getAsString(false, Integer.MAX_VALUE);
+        final String authCode = new String(IOUtils.slurpStream(authResponse.getInputStream()));
+        System.out.println("Received auth code: " + authCode);
         assertFalse(authCode.isEmpty());
         return authCode;
     }
 
     public GenericHttpResponse authorize(final String responseType, final String consumerKey, final String callback, final PasswordAuthentication passwordAuthentication, final String cookie, final boolean followRedirects) throws Exception {
         final CommonsHttpClient client = new CommonsHttpClient();
-        final GenericHttpRequestParams sessionIdParams = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
-                ":8443/auth/oauth/v2/authorize?client_id=" + consumerKey + "&redirect_uri=" + callback +
-                "&response_type=" + responseType + "&scope=scope_test&state=state_test"));
+        final StringBuilder urlBuilder = new StringBuilder();
+        urlBuilder.append("https://").append(gatewayHost);
+        urlBuilder.append(":8443/auth/oauth/v2/authorize?client_id=").append(consumerKey);
+        urlBuilder.append("&response_type=").append(responseType);
+        urlBuilder.append("&scope=scope_test&state=state_test");
+        if(callback != null){
+            urlBuilder.append("&redirect_uri=").append(callback);
+        }
+        final GenericHttpRequestParams sessionIdParams = new GenericHttpRequestParams(new URL(urlBuilder.toString()));
         sessionIdParams.setFollowRedirects(true);
-        sessionIdParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        sessionIdParams.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest sessionIdRequest = client.createRequest(HttpMethod.GET, sessionIdParams);
         final GenericHttpResponse sessionIdResponse = sessionIdRequest.getResponse();
         assertEquals(200, sessionIdResponse.getStatus());
         final String html = sessionIdResponse.getAsString(false, Integer.MAX_VALUE);
-        final String sessionId = Layer7ApiUtil.getSessionIdFromHtmlForm(html);
+        final String sessionId = getSessionIdFromHtmlForm(html);
         assertFalse(sessionId.isEmpty());
 
         final GenericHttpRequestParams authParams = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
@@ -93,7 +102,7 @@ public class Layer720Api extends DefaultApi20 {
             authParams.addExtraHeader(new GenericHttpHeader("Cookie", "l7otk2a=" + cookie));
         }
         authParams.setFollowRedirects(followRedirects);
-        authParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        authParams.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest authRequest = client.createRequest(HttpMethod.GET, authParams);
         return authRequest.getResponse();
     }
@@ -102,7 +111,7 @@ public class Layer720Api extends DefaultApi20 {
         final CommonsHttpClient client = new CommonsHttpClient();
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
                 ":8443/auth/oauth/v2/token"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setSslSocketFactory(getSSLSocketFactory());
         params.setPasswordAuthentication(clientCredentials);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
         request.addParameter("grant_type", "client_credentials");
@@ -115,7 +124,7 @@ public class Layer720Api extends DefaultApi20 {
         final CommonsHttpClient client = new CommonsHttpClient();
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
                 ":8443/auth/oauth/v2/token"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setSslSocketFactory(getSSLSocketFactory());
         params.setPasswordAuthentication(clientCredentials);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
         request.addParameter("grant_type", "password");
@@ -130,7 +139,7 @@ public class Layer720Api extends DefaultApi20 {
         final CommonsHttpClient client = new CommonsHttpClient();
         final GenericHttpRequestParams samlTokenParams = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
                 ":8443/oauth/v2/samlTokenServer"));
-        samlTokenParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        samlTokenParams.setSslSocketFactory(getSSLSocketFactory());
         samlTokenParams.setPasswordAuthentication(passwordAuthentication);
         samlTokenParams.setFollowRedirects(false);
         final GenericHttpRequest samlRequest = client.createRequest(HttpMethod.GET, samlTokenParams);
@@ -142,7 +151,7 @@ public class Layer720Api extends DefaultApi20 {
 
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
                 ":8443/auth/oauth/v2/token"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setSslSocketFactory(getSSLSocketFactory());
         params.setPasswordAuthentication(clientCredentials);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
         request.addParameter("grant_type", "http://oauth.net/grant_type/assertion/saml/2.0/bearer");

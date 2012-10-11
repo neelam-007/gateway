@@ -19,6 +19,7 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToollkitTestUtility.*;
 
 /**
  * Integration tests for the OAuth Tool Kit. Each test requires the SSG to be running with an installed OTK that includes
@@ -104,7 +105,7 @@ public class OAuthToolkit1_0IntegrationTest {
         System.out.println("Requesting request token from " + REQUEST_TOKEN_ENDPOINT + " using Authorization header");
 
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(REQUEST_TOKEN_ENDPOINT));
-        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        requestParams.setSslSocketFactory(getSSLSocketFactory());
         requestParams.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader("Authorization", AUTH_HEADER)});
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
 
@@ -137,7 +138,7 @@ public class OAuthToolkit1_0IntegrationTest {
         stringBuilder.deleteCharAt(stringBuilder.length() - 1);
         final String url = stringBuilder.toString();
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(url));
-        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        requestParams.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, requestParams);
 
         final GenericHttpResponse response = request.getResponse();
@@ -221,7 +222,7 @@ public class OAuthToolkit1_0IntegrationTest {
     @Test
     public void requestTokenEndpointNotGetOrPost() throws Exception {
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(REQUEST_TOKEN_ENDPOINT));
-        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        requestParams.setSslSocketFactory(getSSLSocketFactory());
         requestParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.PUT, requestParams);
         final GenericHttpResponse response = request.getResponse();
@@ -253,7 +254,7 @@ public class OAuthToolkit1_0IntegrationTest {
 
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(CLIENT_DOWNLOAD_RESOURCE +
                 "&oauth_consumer_key=" + OTK_CLIENT_CONSUMER_KEY + "&oauth_token=" + accessToken + "&tempuser=system"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
 
         final GenericHttpResponse response = request.getResponse();
@@ -280,7 +281,7 @@ public class OAuthToolkit1_0IntegrationTest {
     @Test
     public void accessTokenEndpointNotGetOrPost() throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(ACCESS_TOKEN_ENDPOINT));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setSslSocketFactory(getSSLSocketFactory());
         params.setPasswordAuthentication(passwordAuthentication);
         final GenericHttpRequest request = client.createRequest(HttpMethod.PUT, params);
         final GenericHttpResponse response = request.getResponse();
@@ -348,7 +349,7 @@ public class OAuthToolkit1_0IntegrationTest {
         stringBuilder.deleteCharAt(stringBuilder.length() - 1);
         final String url = stringBuilder.toString();
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(url));
-        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        requestParams.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, requestParams);
 
         final GenericHttpResponse response = request.getResponse();
@@ -441,7 +442,7 @@ public class OAuthToolkit1_0IntegrationTest {
     @BugNumber(13117)
     public void authorizeEndpointInvalidToken() throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT + "?oauth_token=10056aed-2b18-43bd-ac48-3e8b43560031"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
         final GenericHttpResponse response = request.getResponse();
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
@@ -509,7 +510,7 @@ public class OAuthToolkit1_0IntegrationTest {
     public void authorizeEndpoint() throws Exception {
         final String requestToken = getRequestTokenFromEndpoint().get("oauth_token");
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT + "?oauth_token=" + requestToken));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
         final GenericHttpResponse response = request.getResponse();
         assertEquals(200, response.getStatus());
@@ -523,7 +524,7 @@ public class OAuthToolkit1_0IntegrationTest {
     @BugNumber(13180)
     public void authorizeEndpointNoToken() throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
         final GenericHttpResponse response = request.getResponse();
         assertEquals(400, response.getStatus());
@@ -535,7 +536,7 @@ public class OAuthToolkit1_0IntegrationTest {
     @BugNumber(13112)
     public void authorizeEndpointDuplicateToken() throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT + "?oauth_token=one&oauth_token=two"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
         final GenericHttpResponse response = request.getResponse();
         assertEquals(400, response.getStatus());
@@ -568,7 +569,7 @@ public class OAuthToolkit1_0IntegrationTest {
     public void authorizeEndpointUnrecognizedOAuthQueryParameter() throws Exception {
         final String requestToken = getRequestTokenFromEndpoint().get("oauth_token");
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT + "?oauth_token=" + requestToken + "&oauth_unrecognized=invalid"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
         final GenericHttpResponse response = request.getResponse();
         assertEquals(400, response.getStatus());
@@ -580,7 +581,7 @@ public class OAuthToolkit1_0IntegrationTest {
     public void authorizeEndpointExtraNonOAuthParameter() throws Exception {
         final String requestToken = getRequestTokenFromEndpoint().get("oauth_token");
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT + "?oauth_token=" + requestToken + "&test=okay"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
         final GenericHttpResponse response = request.getResponse();
         assertEquals(200, response.getStatus());
@@ -594,7 +595,7 @@ public class OAuthToolkit1_0IntegrationTest {
     public void authorizeEndpointExtraOAuthParameter() throws Exception {
         final String requestToken = getRequestTokenFromEndpoint().get("oauth_token");
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(AUTHORIZE_ENDPOINT + "?oauth_token=" + requestToken + "&oauth_version=1.0"));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
         final GenericHttpResponse response = request.getResponse();
         assertEquals(200, response.getStatus());
@@ -608,7 +609,7 @@ public class OAuthToolkit1_0IntegrationTest {
     @BugNumber(12868)
     public void tokenEndpointUnrecognizedOAuthQueryParameter() throws Exception {
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(ACCESS_TOKEN_ENDPOINT + "?oauth_unrecognized=invalid"));
-        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        requestParams.setSslSocketFactory(getSSLSocketFactory());
         requestParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
         for (final Map.Entry<String, String> entry : createDefaultAccessTokenParameters().entrySet()) {
@@ -622,7 +623,7 @@ public class OAuthToolkit1_0IntegrationTest {
 
     private GenericHttpRequest createAccessTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(ACCESS_TOKEN_ENDPOINT));
-        params.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        params.setSslSocketFactory(getSSLSocketFactory());
         params.setPasswordAuthentication(passwordAuthentication);
         params.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader("Content-Type", "application/x-www-form-urlencoded")});
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
@@ -643,7 +644,7 @@ public class OAuthToolkit1_0IntegrationTest {
         System.out.println("Requesting request token from " + CLIENT_REQUEST_TOKEN);
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(CLIENT_REQUEST_TOKEN));
         requestParams.setFollowRedirects(false);
-        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        requestParams.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, requestParams);
         final GenericHttpResponse response = request.getResponse();
         // redirect
@@ -678,7 +679,7 @@ public class OAuthToolkit1_0IntegrationTest {
     private GenericHttpRequest createRequestTokenEndpointRequest(final Map<String, String> parameters) throws Exception {
         System.out.println("Requesting request token from " + REQUEST_TOKEN_ENDPOINT);
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(REQUEST_TOKEN_ENDPOINT));
-        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        requestParams.setSslSocketFactory(getSSLSocketFactory());
         requestParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
         for (final Map.Entry<String, String> entry : parameters.entrySet()) {
@@ -690,7 +691,7 @@ public class OAuthToolkit1_0IntegrationTest {
     private GenericHttpRequest createProtectedResourceEndpointRequest(final Map<String, String> parameters) throws Exception {
         System.out.println("Requesting protected resource from " + PROTECTED_RESOURCE_ENDPOINT);
         final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL(PROTECTED_RESOURCE_ENDPOINT));
-        requestParams.setSslSocketFactory(SSLUtil.getSSLSocketFactory());
+        requestParams.setSslSocketFactory(getSSLSocketFactory());
         requestParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, requestParams);
         for (final Map.Entry<String, String> entry : parameters.entrySet()) {

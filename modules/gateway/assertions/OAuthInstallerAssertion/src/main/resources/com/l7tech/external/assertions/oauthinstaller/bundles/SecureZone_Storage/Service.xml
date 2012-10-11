@@ -2955,7 +2955,7 @@
                     &lt;L7p:DisallowOtherFields booleanValue="true"/&gt;
                     &lt;L7p:FieldSpecs htmlFormFieldSpecArray="included"&gt;
                     &lt;L7p:item htmlFormFieldSpec="included"&gt;
-                    &lt;L7p:AllowEmpty boxedBooleanValue="false"/&gt;
+                    &lt;L7p:AllowEmpty boxedBooleanValue="true"/&gt;
                     &lt;L7p:DataType fieldDataType="any"/&gt;
                     &lt;L7p:MaxOccurs intValue="1"/&gt;
                     &lt;L7p:MinOccurs intValue="1"/&gt;

@@ -2037,7 +2037,7 @@
                     &lt;L7p:VariablePrefix stringValue="xpathCallback"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="tokenValues"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/values/value/callback/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/values/value/callback"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
