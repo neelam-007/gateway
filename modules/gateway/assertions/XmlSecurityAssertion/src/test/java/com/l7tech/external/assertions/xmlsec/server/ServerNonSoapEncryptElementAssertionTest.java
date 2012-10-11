@@ -3,30 +3,24 @@ package com.l7tech.external.assertions.xmlsec.server;
 import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.xmlsec.NonSoapEncryptElementAssertion;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.xml.XencUtil;
-import com.l7tech.security.xml.XmlElementEncryptionConfig;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
@@ -41,7 +35,6 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 /**
  *
@@ -53,7 +46,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
     static X509Certificate recipCert;
     static PrivateKey recipPrivateKey;
 
-    private static final String TEST_XML =
+    static final String TEST_XML =
             "<par:GetNoaParties xmlns:par=\"urn:noapar\">\n" +
             "  <par:username>brian</par:username> \n" +
             "  <par:password>somepassword</par:password> \n" +
@@ -103,15 +96,43 @@ public class ServerNonSoapEncryptElementAssertionTest {
 
     @Test
     @BugNumber(11191)
-    @Ignore("Disabled because content-only encryption is not currently implemented for the non-SOAP XML Encrypt Element assertion")
     public void testEncryptEmptyElement() throws Exception {
-        Message req = makeReq(TEST_XML.replace("<par:password>password</par:password>", "<par:password/>"));
+        Message req = makeReq(TEST_XML.replace("<par:password>somepassword</par:password>", "<par:password/>"));
         NonSoapEncryptElementAssertion ass = makeAss();
         ass.setEncryptContentsOnly(true);
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass);
         AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
         assertEquals(AssertionStatus.NONE, result);
         checkResult(req, 1);
+        String reqString = toString(req);
+        System.out.println("Encrypted message: " + reqString);
+        assertTrue("only contents of password element should be encrypted, not its open and close tags as well", reqString.contains("<par:password><xenc:EncryptedData"));
+        // the encryption round trip test can take care of testing that the <EncryptedData>, when decrypted, vanishes completely (results in 0 bytes of plaintext element content)
+    }
+
+    @Test
+    @BugNumber(12600)
+    public void testEncryptContentsOnly() throws Exception {
+        Message req = makeReq();
+        NonSoapEncryptElementAssertion ass = makeAss();
+        ass.setEncryptContentsOnly(true);
+        ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass);
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
+        assertEquals(AssertionStatus.NONE, result);
+        checkResult(req, 1);
+        final String reqString = toString(req);
+        System.out.println("Encrypted message: " + reqString);
+        assertTrue("only contents of password element should be encrypted, not its open and close tags as well", reqString.contains("<par:password><xenc:EncryptedData"));
+    }
+
+    private String toString(Message req) {
+        try {
+            return new String(IOUtils.slurpStream(req.getMimeKnob().getEntireMessageBodyAsInputStream()), Charsets.UTF8);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchPartException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test(expected = InvalidXpathException.class)
@@ -353,7 +374,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
         return makeReq(TEST_XML);
     }
 
-    private static Message makeReq(String testXml) {
+    static Message makeReq(String testXml) {
         return new Message(XmlUtil.stringAsDocument(testXml));
     }
 

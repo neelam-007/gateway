@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.xmlsec.console;
 
 import com.l7tech.console.panels.XmlElementEncryptionConfigPanel;
 import com.l7tech.external.assertions.xmlsec.NonSoapEncryptElementAssertion;
+import com.l7tech.security.xml.XmlElementEncryptionConfig;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +12,7 @@ import java.awt.*;
  */
 public class NonSoapEncryptElementAssertionPropertiesDialog extends NonSoapSecurityAssertionDialog<NonSoapEncryptElementAssertion> {
     private JPanel contentPane;
-    private final XmlElementEncryptionConfigPanel encryptionConfigPanel = new XmlElementEncryptionConfigPanel();
+    private final XmlElementEncryptionConfigPanel encryptionConfigPanel = new XmlElementEncryptionConfigPanel(new XmlElementEncryptionConfig(), false, true);
 
     public NonSoapEncryptElementAssertionPropertiesDialog(Frame parent, NonSoapEncryptElementAssertion assertion) {
         super(parent, assertion);

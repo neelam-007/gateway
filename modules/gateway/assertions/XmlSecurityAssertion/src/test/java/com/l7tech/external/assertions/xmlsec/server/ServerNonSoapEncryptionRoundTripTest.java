@@ -36,7 +36,10 @@ import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import static com.l7tech.external.assertions.xmlsec.server.ServerNonSoapEncryptElementAssertionTest.TEST_XML;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  *
@@ -89,13 +92,30 @@ public class ServerNonSoapEncryptionRoundTripTest {
         doRoundTripTest(false, false, XencUtil.AES_256_GCM);
     }
 
-    private void doRoundTripTest(boolean useCertVar, boolean encodeAsString, @Nullable String algUri) throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException, SAXException, NoSuchAlgorithmException, NoSuchVariableException {
-        String encryptedXml = makeEncryptedMessage(useCertVar, encodeAsString, algUri);
+    @Test
+    @BugNumber(11191)
+    public void testEmptyElementContentsOnly() throws Exception {
+        doRoundTripTest(false, false, true, true, null);
+    }
+
+    @Test
+    @BugNumber(12600)
+    public void testContentsOnly() throws Exception {
+        doRoundTripTest(false, false, false, true, null);
+    }
+
+    private void doRoundTripTest(boolean useCertVar, boolean encodeAsString, @Nullable String algUri) throws Exception {
+        doRoundTripTest(useCertVar, encodeAsString, false, false, algUri);
+    }
+
+    private void doRoundTripTest(boolean useCertVar, boolean encodeAsString, boolean useEmptyPasswordElement, boolean contentsOnly, @Nullable String algUri) throws Exception {
+        String encryptedXml = makeEncryptedMessage(useCertVar, encodeAsString, useEmptyPasswordElement, contentsOnly, algUri);
 
         logger.info("Encrypted XML:\n" + encryptedXml);
 
         Message request = new Message(XmlUtil.stringAsDocument(encryptedXml));
         NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
+        ass.setReportContentsOnly(contentsOnly);
         ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory).checkRequest(context);
@@ -103,20 +123,36 @@ public class ServerNonSoapEncryptionRoundTripTest {
         final Document doc = request.getXmlKnob().getDocumentReadOnly();
         final String docString = XmlUtil.nodeToString(doc);
         logger.info("Decrypted XML:\n" + docString);
+
         assertEquals(0, doc.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "EncryptedData").getLength());
-        assertEquals("password", ((Element[])context.getVariable("elementsDecrypted"))[0].getLocalName());
-        if (algUri != null)
-            assertEquals(algUri, ((String[]) context.getVariable("encryptionMethodUris"))[0]);
+        final Element[] elementsDecrypteds = (Element[]) context.getVariable("elementsDecrypted");
+        assertEquals(1, elementsDecrypteds.length);
+        final String[] encryptionMethodUris = (String[]) context.getVariable("encryptionMethodUris");
+        assertEquals(elementsDecrypteds.length, encryptionMethodUris.length);
+        assertEquals("password", elementsDecrypteds[0].getLocalName());
+        if (algUri != null) {
+            assertEquals(algUri, encryptionMethodUris[0]);
+        }
+        if (contentsOnly) {
+            final Boolean[] contentsOnlies = (Boolean[]) context.getVariable("contentsOnly");
+            assertEquals(elementsDecrypteds.length, contentsOnlies.length);
+            assertTrue(contentsOnlies[0]);
+        } else {
+            assertNoSuchVariable(context, "contentsOnly");
+        }
     }
 
-    private String makeEncryptedMessage(boolean useCertVar, boolean encodeCertAsString, @Nullable String algUri) throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException, SAXException, NoSuchAlgorithmException, NoSuchVariableException {
-        Message req = ServerNonSoapEncryptElementAssertionTest.makeReq();
+    private String makeEncryptedMessage(boolean useCertVar, boolean encodeCertAsString, boolean useEmptyPasswordElement, boolean contentsOnly, @Nullable String algUri) throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException, SAXException, NoSuchAlgorithmException, NoSuchVariableException {
+        final String reqXml = useEmptyPasswordElement ? TEST_XML.replace("<par:password>somepassword</par:password>", "<par:password/>") : TEST_XML;
+        Message req = ServerNonSoapEncryptElementAssertionTest.makeReq(reqXml);
         NonSoapEncryptElementAssertion ass = ServerNonSoapEncryptElementAssertionTest.makeAss();
         if (algUri != null) ass.setXencAlgorithm(algUri);
         ass.setRecipientCertificateBase64(recipb64);
         if (useCertVar) {
             ass.setRecipientCertContextVariableName(encodeCertAsString ? "recipCertString" : "recipCert[3]");
         }
+        if (contentsOnly)
+            ass.setEncryptContentsOnly(true);
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass);
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
         context.setVariable("recipCert", new X509Certificate[] { null, null, null, recipCert, null, null });
@@ -124,6 +160,15 @@ public class ServerNonSoapEncryptionRoundTripTest {
         AssertionStatus encryptResult = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, encryptResult);
         return XmlUtil.nodeToString(req.getXmlKnob().getDocumentReadOnly());
+    }
+
+    private static void assertNoSuchVariable(PolicyEnforcementContext context, String variable) {
+        try {
+            Object val = context.getVariable(variable);
+            fail("Variable " + variable + " was not expected to exist at this time: existed with value=" + val);
+        } catch (NoSuchVariableException e) {
+            // Ok
+        }
     }
 
 }

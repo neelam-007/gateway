@@ -17,8 +17,10 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
     public static final String VAR_ELEMENTS_DECRYPTED = "elementsDecrypted";
     public static final String VAR_ENCRYPTION_METHOD_URIS = "encryptionMethodUris";
     public static final String VAR_RECIPIENT_CERTIFICATES = "recipientCertificates";
+    public static final String VAR_CONTENT_ONLY = "contentsOnly";
 
     protected String variablePrefix = "";
+    private boolean reportContentsOnly = false;
 
     public NonSoapDecryptElementAssertion() {
         super(TargetMessageType.REQUEST, true);
@@ -35,13 +37,37 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
         this.variablePrefix = variablePrefix;
     }
 
+    /**
+     * @return true if elements where only the content (not the open and close tag) were encrypted should be included in the result table.
+     *         The contentsOnly multivalued variable is set only if this is true.
+     */
+    public boolean isReportContentsOnly() {
+        return reportContentsOnly;
+    }
+
+    /**
+     * @param reportContentsOnly true if elements where only the contents were encrypted (not the open and close tag) should be included
+     *                           in the output table.  If this is true, the "contentsOnly" column will be included in the output table
+     *                           (by setting the "prefix.contentsOnly" multivalued variable where each value is true if the corresponding element
+     *                            only had its contents encrypted).
+     */
+    public void setReportContentsOnly(boolean reportContentsOnly) {
+        this.reportContentsOnly = reportContentsOnly;
+    }
+
     @Override
     protected VariablesSet doGetVariablesSet() {
-        return super.doGetVariablesSet().withVariables(
-                new VariableMetadata(prefix(VAR_ELEMENTS_DECRYPTED), false, true, prefix(VAR_ELEMENTS_DECRYPTED), false, DataType.ELEMENT),
-                new VariableMetadata(prefix(VAR_ENCRYPTION_METHOD_URIS), false, true, prefix(VAR_ENCRYPTION_METHOD_URIS), false, DataType.STRING),
-                new VariableMetadata(prefix(VAR_RECIPIENT_CERTIFICATES), false, true, prefix(VAR_RECIPIENT_CERTIFICATES), false, DataType.CERTIFICATE)
+        VariablesSet variablesSet = super.doGetVariablesSet().withVariables(
+            new VariableMetadata(prefix(VAR_ELEMENTS_DECRYPTED), false, true, prefix(VAR_ELEMENTS_DECRYPTED), false, DataType.ELEMENT),
+            new VariableMetadata(prefix(VAR_ENCRYPTION_METHOD_URIS), false, true, prefix(VAR_ENCRYPTION_METHOD_URIS), false, DataType.STRING),
+            new VariableMetadata(prefix(VAR_RECIPIENT_CERTIFICATES), false, true, prefix(VAR_RECIPIENT_CERTIFICATES), false, DataType.CERTIFICATE)
         );
+
+        if (isReportContentsOnly()) {
+            variablesSet = variablesSet.withVariables(new VariableMetadata(prefix(VAR_CONTENT_ONLY), false, true, prefix(VAR_CONTENT_ONLY), false, DataType.BOOLEAN));
+        }
+
+        return variablesSet;
     }
 
     /**

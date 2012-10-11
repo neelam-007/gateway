@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -112,8 +113,8 @@ public class ServerNonSoapDecryptElementAssertionTest {
 
     @Test
     @BugNumber(11191)
-    public void testDecryptEmptyElement() throws Exception {
-        Pair<Element, XencUtil.XmlEncKey> pair = XencUtilTest.makeEncryptedEmptyElement();
+    public void testDecryptEmptyElementWithoutReport() throws Exception {
+        Pair<Element, XencUtil.XmlEncKey> pair = XencUtilTest.makeEncryptedContentElement(null);
         Element element = pair.left;
         XencUtil.XmlEncKey key = pair.right;
 
@@ -131,6 +132,114 @@ public class ServerNonSoapDecryptElementAssertionTest {
 
         assertEquals(AssertionStatus.NONE, sass.checkRequest(context));
         assertEquals("<foo><blah/></foo>", XmlUtil.nodeToString(request.getXmlKnob().getDocumentReadOnly(), false));
+
+        assertNoVariable(context, "contentsOnly");
+    }
+
+    @Test
+    @BugNumber(12600)
+    public void testDecryptEmptyElementWithAttrsWithReport() throws Exception {
+        Pair<Element, XencUtil.XmlEncKey> pair = XencUtilTest.makeEncryptedContentElement("<foo><blah a1=\"val1\" a2=\"val2\"/></foo>");
+        Element element = pair.left;
+        XencUtil.XmlEncKey key = pair.right;
+
+        Element encryptedKey = XmlElementEncryptor.createEncryptedKey(element.getOwnerDocument(), NonSoapXmlSecurityTestUtils.getTestKey().getCertificate(), key);
+        final Element encDataElement = XmlUtil.findExactlyOneChildElement(element);
+        XmlElementEncryptor.insertKeyInfoAndDeUglifyNamespaces(encDataElement, encryptedKey, key.getAlgorithm());
+
+        String xml = XmlUtil.nodeToString(element.getOwnerDocument());
+        NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
+        ass.setReportContentsOnly(true);
+        ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
+
+        ServerNonSoapDecryptElementAssertion sass = new ServerNonSoapDecryptElementAssertion(ass, beanFactory);
+        Message request = new Message(XmlUtil.stringAsDocument(xml));
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+
+        assertEquals(AssertionStatus.NONE, sass.checkRequest(context));
+        assertEquals("<foo><blah a1=\"val1\" a2=\"val2\"/></foo>", XmlUtil.nodeToString(request.getXmlKnob().getDocumentReadOnly(), false));
+
+        final Element[] elementsDecrypted = (Element[]) context.getVariable("elementsDecrypted");
+        assertEquals(1, elementsDecrypted.length);
+        final Element expectedElement = XmlUtil.findFirstChildElement(request.getXmlKnob().getDocumentReadOnly().getDocumentElement());
+        assertEquals(expectedElement, elementsDecrypted[0]);
+
+        final Boolean[] contentsOnly = (Boolean[]) context.getVariable("contentsOnly");
+        assertEquals(elementsDecrypted.length, contentsOnly.length);
+        assertEquals(Boolean.TRUE, contentsOnly[0]);
+    }
+
+    @Test
+    @BugNumber(12600)
+    public void testDecryptElementContentWithAttrsWithReport() throws Exception {
+        Pair<Element, XencUtil.XmlEncKey> pair = XencUtilTest.makeEncryptedContentElement("<foo><blah a1=\"val1\" a2=\"val2\">Test with <some/> content <really><yeah/></really></blah></foo>");
+        Element element = pair.left;
+        XencUtil.XmlEncKey key = pair.right;
+
+        Element encryptedKey = XmlElementEncryptor.createEncryptedKey(element.getOwnerDocument(), NonSoapXmlSecurityTestUtils.getTestKey().getCertificate(), key);
+        final Element encDataElement = XmlUtil.findExactlyOneChildElement(element);
+        XmlElementEncryptor.insertKeyInfoAndDeUglifyNamespaces(encDataElement, encryptedKey, key.getAlgorithm());
+
+        String xml = XmlUtil.nodeToString(element.getOwnerDocument());
+        NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
+        ass.setReportContentsOnly(true);
+        ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
+
+        ServerNonSoapDecryptElementAssertion sass = new ServerNonSoapDecryptElementAssertion(ass, beanFactory);
+        Message request = new Message(XmlUtil.stringAsDocument(xml));
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+
+        assertEquals(AssertionStatus.NONE, sass.checkRequest(context));
+        assertEquals("<foo><blah a1=\"val1\" a2=\"val2\">Test with <some/> content <really><yeah/></really></blah></foo>", XmlUtil.nodeToString(request.getXmlKnob().getDocumentReadOnly(), false));
+
+        final Element[] elementsDecrypted = (Element[]) context.getVariable("elementsDecrypted");
+        assertEquals(3, elementsDecrypted.length);
+        final Element expectedElement = XmlUtil.findFirstChildElement(request.getXmlKnob().getDocumentReadOnly().getDocumentElement());
+        int index = indexOf(elementsDecrypted, expectedElement);
+        assertTrue(index >= 0);
+
+        final Boolean[] contentsOnly = (Boolean[]) context.getVariable("contentsOnly");
+        assertEquals(elementsDecrypted.length, contentsOnly.length);
+        assertEquals(Boolean.TRUE, contentsOnly[index]);
+    }
+
+    @Test
+    @BugNumber(12600)
+    public void testDecryptElementContentWithAttrs() throws Exception {
+        Pair<Element, XencUtil.XmlEncKey> pair = XencUtilTest.makeEncryptedContentElement("<foo><blah a1=\"val1\" a2=\"val2\">Test with <some/> content <really><yeah/></really></blah></foo>");
+        Element element = pair.left;
+        XencUtil.XmlEncKey key = pair.right;
+
+        Element encryptedKey = XmlElementEncryptor.createEncryptedKey(element.getOwnerDocument(), NonSoapXmlSecurityTestUtils.getTestKey().getCertificate(), key);
+        final Element encDataElement = XmlUtil.findExactlyOneChildElement(element);
+        XmlElementEncryptor.insertKeyInfoAndDeUglifyNamespaces(encDataElement, encryptedKey, key.getAlgorithm());
+
+        String xml = XmlUtil.nodeToString(element.getOwnerDocument());
+        NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
+        ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
+
+        ServerNonSoapDecryptElementAssertion sass = new ServerNonSoapDecryptElementAssertion(ass, beanFactory);
+        Message request = new Message(XmlUtil.stringAsDocument(xml));
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+
+        assertEquals(AssertionStatus.NONE, sass.checkRequest(context));
+        assertEquals("<foo><blah a1=\"val1\" a2=\"val2\">Test with <some/> content <really><yeah/></really></blah></foo>", XmlUtil.nodeToString(request.getXmlKnob().getDocumentReadOnly(), false));
+
+        final Element[] elementsDecrypted = (Element[]) context.getVariable("elementsDecrypted");
+        assertEquals(2, elementsDecrypted.length); // for <some/> and <really>...</really> immediate child elements
+        final Element expectedElement = XmlUtil.findFirstChildElement(request.getXmlKnob().getDocumentReadOnly().getDocumentElement());
+        int index = indexOf(elementsDecrypted, expectedElement);
+        assertTrue("with reportContentOnly=false, content-only elements shall not be included in the reported decryption results", index == -1);
+        assertNoVariable(context, "contentsOnly");
+    }
+
+    private int indexOf(Object[] items, Object item) {
+        for (int i = 0; i < items.length; i++) {
+            Object o = items[i];
+            if (item == o)
+                return i;
+        }
+        return -1;
     }
 
     private void assertNoVariable(PolicyEnforcementContext context, String variableName) {

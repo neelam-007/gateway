@@ -56,7 +56,7 @@ public class XmlElementEncryptorConfigUtils {
             recipientCert = getCertFromBase64(rawConfig.getRecipientCertificateBase64());
         }
 
-        final XmlElementEncryptionResolvedConfig resolvedConfig = new XmlElementEncryptionResolvedConfig(recipientCert, rawConfig.getXencAlgorithm());
+        final XmlElementEncryptionResolvedConfig resolvedConfig = new XmlElementEncryptionResolvedConfig(recipientCert, rawConfig.getXencAlgorithm(), rawConfig.isEncryptContentsOnly());
 
         if (rawConfig.isIncludeEncryptedDataTypeAttribute()) {
             final String typeAttribute = rawConfig.getEncryptedDataTypeAttribute();

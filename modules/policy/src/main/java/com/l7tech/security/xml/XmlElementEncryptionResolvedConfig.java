@@ -10,9 +10,10 @@ import java.security.cert.X509Certificate;
  */
 public class XmlElementEncryptionResolvedConfig {
 
-    public XmlElementEncryptionResolvedConfig(@NotNull X509Certificate recipientCert, @NotNull String xencAlgorithm) {
+    public XmlElementEncryptionResolvedConfig(@NotNull X509Certificate recipientCert, @NotNull String xencAlgorithm, boolean encryptContentsOnly) {
         this.recipientCert = recipientCert;
         this.xencAlgorithm = xencAlgorithm;
+        this.encryptContentsOnly = encryptContentsOnly;
     }
 
     public X509Certificate getRecipientCert() {
@@ -39,11 +40,19 @@ public class XmlElementEncryptionResolvedConfig {
         this.encryptedKeyRecipientAttribute = encryptedKeyRecipientAttribute;
     }
 
+    /**
+     * @return true if only the element content will be encrypted and replaced by EncryptedData, leaving its open and close tags (and any attributes) in plaintext.
+     *         false if the entire element will be encrypted and replaced with EncryptedData, including open and close tags.
+     */
+    public boolean isEncryptContentsOnly() {
+        return encryptContentsOnly;
+    }
+
     // PRIVATE
     private final X509Certificate recipientCert;
     private final String xencAlgorithm;
+    private final boolean encryptContentsOnly;
 
     private String encryptedDataTypeAttribute;
     private String encryptedKeyRecipientAttribute;
-
 }

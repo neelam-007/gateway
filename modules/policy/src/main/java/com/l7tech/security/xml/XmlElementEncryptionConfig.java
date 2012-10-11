@@ -57,8 +57,10 @@ public final class XmlElementEncryptionConfig implements Serializable, UsesVaria
         return encryptContentsOnly;
     }
 
-    // Warning: not currently implemented
-    // Update XmlElementEncryptionResolvedConfig when implemented.
+    /**
+     * @param encryptContentsOnly if true, only the element content will be encrypted and replaced by EncryptedData, leaving its open and close tags (and any attributes) in plaintext.
+     *                            if false, the entire element will be encrypted and replaced with EncryptedData, including open and close tags.
+     */
     public void setEncryptContentsOnly(boolean encryptContentsOnly) {
         this.encryptContentsOnly = encryptContentsOnly;
     }

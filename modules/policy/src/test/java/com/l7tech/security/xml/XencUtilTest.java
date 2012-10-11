@@ -14,6 +14,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.Nullable;
 import org.junit.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -165,16 +166,31 @@ public class XencUtilTest {
     @Test
     @BugNumber(11191)
     public void testEncryptEmptyElement() throws Exception {
-        Element element = makeEncryptedEmptyElement().left;
+        Element element = makeEncryptedContentElement(null).left;
 
         assertTrue("must no longer be empty", element.getChildNodes().getLength() > 0);
         assertTrue("must have been encrypted", XmlUtil.nodeToString(element).contains("EncryptedData"));
     }
 
-    public static Pair<Element, XencUtil.XmlEncKey> makeEncryptedEmptyElement() throws MissingRequiredElementException, TooManyChildElementsException, XencUtil.XencException, GeneralSecurityException {
-        Document doc = XmlUtil.stringAsDocument("<foo><blah/></foo>");
+    /**
+     * Encrypt only the contents of the first child element of the document element of the specified XML.
+     * <p/>
+     * Example input:  "<foo><blah/></foo>"
+     * Exmaple return value:  pair of (ref to blah element, new XmlEncKey) where blah element is now "<blah><EncryptedData.../></blah>"
+     *
+     * @param xml XML to examine, or null to use "<foo><blah/></foo>".  If provided, must contain well formed XML with at least one child element of the document element.
+     * @return a Pair consisting of the e
+     * @throws MissingRequiredElementException
+     * @throws TooManyChildElementsException
+     * @throws XencUtil.XencException
+     * @throws GeneralSecurityException
+     */
+    public static Pair<Element, XencUtil.XmlEncKey> makeEncryptedContentElement(@Nullable String xml) throws MissingRequiredElementException, TooManyChildElementsException, XencUtil.XencException, GeneralSecurityException {
+        if (xml == null)
+            xml = "<foo><blah/></foo>";
+        Document doc = XmlUtil.stringAsDocument(xml);
         Element root = doc.getDocumentElement();
-        Element element = DomUtils.findExactlyOneChildElement(root);
+        Element element = DomUtils.findFirstChildElement(root);
 
         byte[] keybytes = new byte[32];
         random.nextBytes(keybytes);

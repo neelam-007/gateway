@@ -44,6 +44,7 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
     private JRadioButton useContextVariableRadioButton;
     private TargetVariablePanel contextVariableField;
     private JCheckBox typeAttributeCheckBox;
+    private JCheckBox encryptOnlyElementContentsCheckBox;
     private SquigglyTextField typeSquigglyField;
     private JCheckBox recipientAttributeCheckBox;
     private SquigglyTextField recipientSquigglyField;
@@ -51,20 +52,14 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
 
     private final XmlElementEncryptionConfig model;
     private final boolean truncateCertName;
+    private final boolean allowEncryptContentsOnly;
 
-    public XmlElementEncryptionConfigPanel(final XmlElementEncryptionConfig model, final boolean truncateCertName) {
+    public XmlElementEncryptionConfigPanel(final XmlElementEncryptionConfig model, final boolean truncateCertName, final boolean allowEncryptContentsOnly) {
         this.model = model;
         this.truncateCertName = truncateCertName;
+        this.allowEncryptContentsOnly = allowEncryptContentsOnly;
         init();
         setData(model);
-    }
-
-    public XmlElementEncryptionConfigPanel(final boolean truncateCertName) {
-        this(new XmlElementEncryptionConfig(), truncateCertName);
-    }
-
-    public XmlElementEncryptionConfigPanel() {
-        this(new XmlElementEncryptionConfig(), false);
     }
 
     @Override
@@ -171,6 +166,8 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
             }
         }, 500);
 
+        encryptOnlyElementContentsCheckBox.setVisible(allowEncryptContentsOnly);
+
         add(contentPane, BorderLayout.CENTER);
     }
 
@@ -215,6 +212,9 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
             model.setEncryptedKeyRecipientAttribute(null);
         }
 
+        final boolean contentsOnly = encryptOnlyElementContentsCheckBox.isSelected();
+        model.setEncryptContentsOnly(contentsOnly);
+
         validateModel();
     }
 
@@ -231,6 +231,7 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
 
         typeAttributeCheckBox.setSelected(model.isIncludeEncryptedDataTypeAttribute());
         typeSquigglyField.setText(model.getEncryptedDataTypeAttribute());
+        encryptOnlyElementContentsCheckBox.setSelected(model.isEncryptContentsOnly());
 
         final String recipientAttribute = model.getEncryptedKeyRecipientAttribute();
         if (recipientAttribute != null) {

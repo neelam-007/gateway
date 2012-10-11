@@ -52,7 +52,7 @@ public class XmlElementEncryptorTest {
         XmlElementEncryptionConfig rawConfig = new XmlElementEncryptionConfig();
         rawConfig.setRecipientCertificateBase64(recipb64);
         final XmlElementEncryptionResolvedConfig config =
-                new XmlElementEncryptionResolvedConfig(CertUtils.decodeFromPEM(recipb64, false), XencUtil.AES_128_CBC);
+                new XmlElementEncryptionResolvedConfig(CertUtils.decodeFromPEM(recipb64, false), XencUtil.AES_128_CBC, false);
 
         final String customUri = "customuri";
         config.setEncryptedDataTypeAttribute(customUri);

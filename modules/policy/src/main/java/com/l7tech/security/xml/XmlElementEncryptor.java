@@ -9,7 +9,6 @@ import com.ibm.xml.enc.type.CipherValue;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.*;
@@ -24,7 +23,6 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.SecureRandom;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -40,10 +38,7 @@ public class XmlElementEncryptor {
      * Create an encryptor that will encrypt elements according to the specified configuration.
      *
      * @param config the configuration to use.  Required.
-     * @throws IOException if there is a problem decoding the recipient certificate.
-     * @throws CertificateException if there is a problem decoding the recipient certificate.
      * @throws NoSuchAlgorithmException if the specified encryption algorithm URI is missing or unrecognized.
-     * @throws NoSuchVariableException if the config specifies a recipient cert context variable, but no matching key is present in the variable map, or no variable map was provided.
      */
     public XmlElementEncryptor(@NotNull XmlElementEncryptionResolvedConfig config) throws NoSuchAlgorithmException {
         this.config = config;
@@ -123,7 +118,6 @@ public class XmlElementEncryptor {
      * @throws KeyInfoResolvingException if there is a problem with the format of the specified EncryptedKey
      */
     public Element encryptAndReplaceElement(@NotNull Element element, @NotNull Pair<Element, SecretKey> encryptedKey) throws StructureException, GeneralSecurityException, IOException, KeyInfoResolvingException {
-        // TODO implement support for content-only encryption
         Document soapMsg = element.getOwnerDocument();
         final Element encryptedKeyElement = encryptedKey.left;
         final SecretKey secretKey = encryptedKey.right;
@@ -136,7 +130,8 @@ public class XmlElementEncryptor {
         EncryptedData encData = new EncryptedData();
         encData.setCipherData(cipherData);
         encData.setEncryptionMethod(encMethod);
-        encData.setType(EncryptedData.ELEMENT);
+        final String contentEncryptionType = config.isEncryptContentsOnly() ? EncryptedData.CONTENT : EncryptedData.ELEMENT;
+        encData.setType(contentEncryptionType);
         final Element encDataElement = encData.createElement(soapMsg, true);
 
         // Create encryption context and encrypt the header subtree
@@ -147,7 +142,7 @@ public class XmlElementEncryptor {
         if (symmetricProvider != null)
             af.setProvider(symmetricProvider.getName());
         ec.setAlgorithmFactory(af);
-        ec.setEncryptedType(encDataElement, EncryptedData.ELEMENT, null, null);
+        ec.setEncryptedType(encDataElement, contentEncryptionType, null, null);
 
         ec.setData(element);
         ec.setKey(secretKey);
