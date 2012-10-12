@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xml;
 
+import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.Audit;
@@ -13,6 +14,7 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -49,7 +51,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-import static com.l7tech.util.CollectionUtils.MapBuilder;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -161,20 +162,26 @@ public class XslTransformationTest {
         Assert.assertEquals(after, EXPECTED);
     }
 
-
     @Test
     @BugNumber(13231)
     public void testMessageUrlResourceInfo() throws Exception {
         XslTransformation ass = new XslTransformation();
         ass.setResourceInfo(new MessageUrlResourceInfo(new String[] { ".*" }));
 
-        byte[] xslBytes = getResAsString(XSL_BODYSUBST).getBytes(Charsets.UTF8);
+        final byte[] xslBytes = getResAsString(XSL_BODYSUBST).getBytes(Charsets.UTF8);
 
-        BeanFactory beanFactory = new SimpleSingletonBeanFactory(MapBuilder.<String,Object>builder()
-            .put("httpClientFactory", new TestingHttpClientFactory(new MockGenericHttpClient(200, null, ContentTypeHeader.XML_DEFAULT, null, xslBytes)))
-            .map());
-
-        ServerXslTransformation sass = new ServerXslTransformation(ass, beanFactory);
+        ServerXslTransformation sass = new ServerXslTransformation(ass, null) {
+            @Override
+            protected UrlResolver<CompiledStylesheet> getCache(AbstractUrlObjectCache.UserObjectFactory<CompiledStylesheet> cacheObjectFactory, BeanFactory spring) {
+                GenericHttpClientFactory clientFactory = new TestingHttpClientFactory(new MockGenericHttpClient(200, null, ContentTypeHeader.XML_DEFAULT, (long)xslBytes.length, xslBytes));
+                return httpObjectCache = new HttpObjectCache<CompiledStylesheet>(
+                    "XSL-T",
+                    10000,
+                    300000,
+                    -1,
+                    clientFactory, cacheObjectFactory, HttpObjectCache.WAIT_INITIAL, ServerConfigParams.PARAM_XSL_MAX_DOWNLOAD_SIZE);
+            }
+        };
 
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.getRequest().initialize(XmlUtil.stringAsDocument(getResAsString(SOAPMSG_WITH_WSSE_AND_PI)));
