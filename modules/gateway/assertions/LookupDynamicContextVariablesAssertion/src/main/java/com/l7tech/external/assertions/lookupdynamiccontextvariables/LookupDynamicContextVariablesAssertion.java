@@ -143,7 +143,7 @@ public class LookupDynamicContextVariablesAssertion extends Assertion implements
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, BASE_NAME);
         meta.put(AssertionMetadata.LONG_NAME, "Looks up the value of a context variable and stores the value in another context variable. The name of the lookup variable can be specified using static text combined with other context variables.");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Lookup Context Variable Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, BASE_NAME + " Properties");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
