@@ -309,6 +309,7 @@ public class RoleManagementDialog extends JDialog {
                         try {
                             rbacAdmin.deleteRole(selectedRole);
                             populateList();
+                            resetFilter();
                         } catch (Exception e1) {
                             throw new RuntimeException("Couldn't delete Role", e1);
                         }

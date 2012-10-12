@@ -43,6 +43,11 @@ public class ObjectIdentityPredicate extends ScopePredicate implements ScopeEval
         return copy;
     }
 
+    @Override
+    public boolean requiresEntityToExist(EntityType etype, long entityOid) {
+        return permission != null && permission.getEntityType() != null && permission.getEntityType().equals(etype) && Long.toString(entityOid).equals(targetEntityId);
+    }
+
     @Column(name="entity_id", nullable=false, length=255)
     public String getTargetEntityId() {
         return targetEntityId;

@@ -4,6 +4,7 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import org.hibernate.annotations.Proxy;
@@ -42,6 +43,11 @@ public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
         FolderPredicate copy = new FolderPredicate(null, this.folder, this.transitive);
         copy.setOid(this.getOid());
         return copy;
+    }
+
+    @Override
+    public boolean requiresEntityToExist(EntityType etype, long entityOid) {
+        return EntityType.FOLDER.equals(etype) && entityOid == folder.getOid();
     }
 
     @Override

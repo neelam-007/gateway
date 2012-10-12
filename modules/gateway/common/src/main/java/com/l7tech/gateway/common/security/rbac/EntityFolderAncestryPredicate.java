@@ -37,6 +37,11 @@ public class EntityFolderAncestryPredicate extends ScopePredicate {
         return copy;
     }
 
+    @Override
+    public boolean requiresEntityToExist(EntityType etype, long entityOid) {
+        return entityType.equals(etype) && Long.toString(entityOid).equals(entityId);
+    }
+
     @Column(name="entity_id", length=255)
     public String getEntityId() {
         return entityId;

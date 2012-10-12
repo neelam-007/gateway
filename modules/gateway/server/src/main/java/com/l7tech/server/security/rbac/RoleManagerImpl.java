@@ -1,8 +1,6 @@
 package com.l7tech.server.security.rbac;
 
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.rbac.RoleAssignment;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
@@ -327,8 +325,49 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                 logger.info("Deleting obsolete Role #" + role.getOid() + " (" + role.getName() + ")");
                 delete(role);
             }
+
+            deleteEntitySpecificPermissions(new HashSet<Role>(roles), etype, entityOid);
         } catch (FindException e) {
             throw new DeleteException("Couldn't find Roles for this Entity", e);
+        }
+
+    }
+
+    // Scan all roles for permissions with scopes that will never again match if the specified entity is deleted, and remove
+    // the affected permissions from their owning roles (leaving the roles behind, possibly with no permissions;
+    // note that auto-created roles will have been already deleted by this point so only custom roles may be left in this state.)
+    private void deleteEntitySpecificPermissions(Set<Role> alreadyDeleted, EntityType etype, final long entityOid) throws DeleteException {
+        final Collection<Role> allRoles;
+        try {
+            allRoles = findAll();
+        } catch (FindException e) {
+            throw new DeleteException("Unable to find roles with permissions affected by deletion of entity " + etype + " with oid " + entityOid + ": " + ExceptionUtils.getMessage(e), e);
+        }
+        for (Role role: allRoles) {
+            Set<Permission> permissionsToDelete = new HashSet<Permission>();
+            if (!alreadyDeleted.contains(role) && role.getPermissions() != null) {
+                for (Permission perm : role.getPermissions()) {
+                    if (perm.getScope() != null) {
+                        for (ScopePredicate scope : perm.getScope()) {
+                            if (scope.requiresEntityToExist(etype, entityOid)) {
+                                // Delete the entire permission, since it can no longer ever match anything, since one of its
+                                // scopes is about to become permanently unsatisfiable.
+                                permissionsToDelete.add(perm);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!permissionsToDelete.isEmpty()) {
+                role.getPermissions().removeAll(permissionsToDelete);
+                logger.info("Removing obsolete permissions from Role #" + role.getOid() + " (" + role.getName() + ")");
+                try {
+                    update(role);
+                } catch (UpdateException e) {
+                    logger.log(Level.SEVERE, "Unable to remove obsolete permissions from Role #" + role.getOid() + " (" + role.getName() + "): " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                }
+            }
         }
     }
 
