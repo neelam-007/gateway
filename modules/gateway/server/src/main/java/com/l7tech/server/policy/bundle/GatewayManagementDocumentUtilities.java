@@ -68,6 +68,16 @@ public class GatewayManagementDocumentUtilities {
         public UnexpectedManagementResponse(String message, Throwable cause) {
             super(message, cause);
         }
+
+        public UnexpectedManagementResponse(boolean causedByMgmtAssertionInternalError) {
+            this.causedByMgmtAssertionInternalError = causedByMgmtAssertionInternalError;
+        }
+
+        public boolean isCausedByMgmtAssertionInternalError() {
+            return causedByMgmtAssertionInternalError;
+        }
+
+        private boolean causedByMgmtAssertionInternalError;
     }
 
     /**
@@ -126,6 +136,16 @@ public class GatewayManagementDocumentUtilities {
         return (createdId.isEmpty()) ? null : createdId.get(0);
     }
 
+    /**
+     * Simply true / false for whether the response Document represents an internal error.
+     * @param response Document to check for internal error
+     * @return true if Internal Error found, false otherwise
+     */
+    public static boolean isInternalErrorResponse(@NotNull final Document response) throws UnexpectedManagementResponse {
+        final List<String> errorDetails = getErrorDetails(response);
+        return errorDetails.contains("env:Receiver") && errorDetails.contains("wsman:InternalError");
+    }
+
     public static List<String> getErrorDetails(final Document response) throws UnexpectedManagementResponse {
         final ElementCursor cursor = new DomElementCursor(response.getDocumentElement());
 
@@ -134,15 +154,17 @@ public class GatewayManagementDocumentUtilities {
             final XpathResult xpathResult = cursor.getXpathResult(new XpathExpression("/env:Envelope/env:Body/env:Fault/env:Code", getNamespaceMap()).compile());
             if (xpathResult.getType() == XpathResult.TYPE_NODESET) {
                 final XpathResultIterator iterator = xpathResult.getNodeSet().getIterator();
-                final ElementCursor resultCursor = iterator.nextElementAsCursor();
-                final XpathResult valueResult = resultCursor.getXpathResult(new XpathExpression("//env:Value", getNamespaceMap()).compile());
-                final XpathResultIterator valueIter = valueResult.getNodeSet().getIterator();
-                final XpathResultNode xpathResultNode = new XpathResultNode();
+                if (iterator.hasNext()) {
+                    final ElementCursor resultCursor = iterator.nextElementAsCursor();
+                    final XpathResult valueResult = resultCursor.getXpathResult(new XpathExpression("//env:Value", getNamespaceMap()).compile());
+                    final XpathResultIterator valueIter = valueResult.getNodeSet().getIterator();
+                    final XpathResultNode xpathResultNode = new XpathResultNode();
 
-                while (valueIter.hasNext()) {
-                    valueIter.next(xpathResultNode);
-                    final String textValue = xpathResultNode.getNodeValue();
-                    errorDetails.add(textValue);
+                    while (valueIter.hasNext()) {
+                        valueIter.next(xpathResultNode);
+                        final String textValue = xpathResultNode.getNodeValue();
+                        errorDetails.add(textValue);
+                    }
                 }
             }
 

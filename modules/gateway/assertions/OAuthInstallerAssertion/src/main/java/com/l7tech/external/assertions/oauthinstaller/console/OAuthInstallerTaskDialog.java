@@ -302,35 +302,22 @@ public class OAuthInstallerTaskDialog extends JDialog {
                 }
 
                 if (areConflicts) {
-                    try {
-                        final ConflictDisplayerDialog conflictDialog = new ConflictDisplayerDialog(this, bundlesSelected, dryRunResult);
-                        conflictDialog.pack();
-                        Utilities.centerOnParentWindow(conflictDialog);
-                        DialogDisplayer.display(conflictDialog, new Runnable() {
-                            @Override
-                            public void run() {
-                                if (conflictDialog.wasOKed()) {
-                                    try {
-                                        doInstall(bundlesToInstall, bundleMappings, admin, prefixToUse);
-                                    } catch (Exception e) {
-                                        throw new RuntimeException(e);
-                                    }
+                    final ConflictDisplayerDialog conflictDialog = new ConflictDisplayerDialog(this, bundlesSelected, dryRunResult);
+                    conflictDialog.pack();
+                    Utilities.centerOnParentWindow(conflictDialog);
+                    DialogDisplayer.display(conflictDialog, new Runnable() {
+                        @Override
+                        public void run() {
+                            if (conflictDialog.wasOKed()) {
+                                try {
+                                    doInstall(bundlesToInstall, bundleMappings, admin, prefixToUse);
+                                } catch (Exception e) {
+                                    // this may execute after the code below completes as it's a callback
+                                    handleException(e);
                                 }
                             }
-                        });
-                    } catch (Exception e) {
-                        if (e instanceof InterruptedException) {
-                            throw new InterruptedException(e.getMessage());
-                        } else if (e instanceof InvocationTargetException) {
-                            throw new InvocationTargetException(e.getCause());
-                        } else if (e instanceof RuntimeException) {
-                            throw new RuntimeException(e.getCause());
-                        } else if (e instanceof OAuthInstallerAdmin.OAuthToolkitInstallationException) {
-                            throw new OAuthInstallerAdmin.OAuthToolkitInstallationException(e.getCause());
-                        } else {
-                            throw e;
                         }
-                    }
+                    });
                 } else {
                     doInstall(bundlesToInstall, bundleMappings, admin, prefixToUse);
                 }
@@ -340,27 +327,31 @@ public class OAuthInstallerTaskDialog extends JDialog {
                         "Pre installation check problem",
                         JOptionPane.WARNING_MESSAGE, null);
             }
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
+            handleException(e);
+        }
+    }
+
+    private void handleException(Exception e) {
+        if (e instanceof InterruptedException) {
             // do nothing, user cancelled
             logger.info("User cancelled installation of the " + OAUTH_FOLDER + " Toolkit.");
-
-        } catch (InvocationTargetException e) {
+        } else if (e instanceof InvocationTargetException) {
             DialogDisplayer.showMessageDialog(this, "Could not invoke installation on Gateway",
                     "Installation Problem",
                     JOptionPane.WARNING_MESSAGE, null);
             logger.warning(e.getMessage());
-
-        } catch (RuntimeException e) {
+        } else if (e instanceof RuntimeException) {
             DialogDisplayer.showMessageDialog(this, "Unexpected error occurred during installation: \n" + ExceptionUtils.getMessage(e),
                     "Installation Problem",
                     JOptionPane.WARNING_MESSAGE, null);
             logger.warning(e.getMessage());
-        } catch (OAuthInstallerAdmin.OAuthToolkitInstallationException e) {
+        } else if (e instanceof OAuthInstallerAdmin.OAuthToolkitInstallationException) {
             DialogDisplayer.showMessageDialog(this, "Error during installation: " + ExceptionUtils.getMessage(e),
                     "Installation Problem",
                     JOptionPane.WARNING_MESSAGE, null);
             logger.warning(e.getMessage());
-        } catch (Exception e) {
+        } else {
             DialogDisplayer.showMessageDialog(this, "Unexpected error occurred during installation: \n" + ExceptionUtils.getMessage(e),
                     "Installation Problem",
                     JOptionPane.WARNING_MESSAGE, null);
@@ -418,6 +409,9 @@ public class OAuthInstallerTaskDialog extends JDialog {
     }
 
     private void onCancel() {
+        final ServicesAndPoliciesTree tree =
+                (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+        tree.refresh();
         dispose();
     }
 

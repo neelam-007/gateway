@@ -110,38 +110,45 @@ public class InstallerUtils {
             "</env:Envelope>";
 
 
+    /**
+     * Call the gateway management assertion.
+     *
+     * @param gatewayManagementInvoker invoker which can invoke an actual gateway management server assertion
+     * @param requestXml request XML to sent to server assertion
+     * @return Pair of assertion status and response document
+     * @throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse if the response from the management assertion
+     * is an Internal Error.
+     */
     @NotNull
     static Pair<AssertionStatus, Document> callManagementAssertion(final GatewayManagementInvoker gatewayManagementInvoker,
-                                                                   final String requestXml) {
+                                                                   final String requestXml)
+            throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse {
+
         final PolicyEnforcementContext context = getContext(requestXml);
 
         final AssertionStatus assertionStatus;
         try {
             assertionStatus = gatewayManagementInvoker.checkRequest(context);
         } catch (IOException e) {
-            throw new RuntimeException("Unexpected internal error invoking gateway management serivce: " + e.getMessage(), e);
+            throw new RuntimeException("Unexpected internal error invoking gateway management service: " + e.getMessage(), e);
         } catch (PolicyAssertionException e) {
-            throw new RuntimeException("Unexpected internal error invoking gateway management serivce: " + e.getMessage(), e);
+            throw new RuntimeException("Unexpected internal error invoking gateway management service: " + e.getMessage(), e);
         }
         final Message response = context.getResponse();
         final Document document;
         try {
             document = response.getXmlKnob().getDocumentReadOnly();
+            // validate that an Internal Error was not received. If so this is most likely due to Wiseman being interrupted
+            // via user cancellation.
+            if (GatewayManagementDocumentUtilities.isInternalErrorResponse(document)) {
+                throw new GatewayManagementDocumentUtilities.UnexpectedManagementResponse(true);
+            }
         } catch (SAXException e) {
             throw new RuntimeException("Unexpected internal error parsing gateway management response: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Unexpected internal error parsing gateway management response: " + e.getMessage(), e);
         }
         return new Pair<AssertionStatus, Document>(assertionStatus, document);
-    }
-
-    @Nullable
-    static Long getExistingFolderId(final GatewayManagementInvoker gatewayManagementInvoker, long parentId, String folderName) throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse {
-        final String folderFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
-                FOLDER_MGMT_NS, 10, "/l7:Folder[@folderId='" + parentId + "']/l7:Name[text()='" + folderName + "']");
-
-        final Pair<AssertionStatus, Document> documentPair = InstallerUtils.callManagementAssertion(gatewayManagementInvoker, folderFilter);
-        return GatewayManagementDocumentUtilities.getCreatedId(documentPair.right);
     }
 
     static String getUuid() {

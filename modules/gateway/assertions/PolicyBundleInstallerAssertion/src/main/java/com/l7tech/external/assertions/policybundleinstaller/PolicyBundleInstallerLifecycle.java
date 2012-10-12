@@ -15,6 +15,7 @@ import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.bundle.BundleResolver;
+import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
 import com.l7tech.server.util.ApplicationEventProxy;
@@ -71,7 +72,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
                 DryRunInstallPolicyBundleEvent dryRunEvent = (DryRunInstallPolicyBundleEvent) applicationEvent;
 
                 final BundleResolver bundleResolver = dryRunEvent.getBundleResolver();
-                final PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, null, getGatewayMgmtInvoker());
+                final PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, null, getGatewayMgmtInvoker(), dryRunEvent);
                 final PolicyBundleInstallerContext context = dryRunEvent.getContext();
 
                 try {
@@ -82,12 +83,12 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
                     dryRunEvent.setProcessingException(e);
                 } catch (BundleResolver.InvalidBundleException e) {
                     dryRunEvent.setProcessingException(e);
+                } catch (InterruptedException e) {
+                    dryRunEvent.setProcessingException(e);
                 } finally {
                     dryRunEvent.setProcessed(true);
                 }
-
             }
-
         }
     }
 
@@ -144,11 +145,10 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
     private void processInstallEvent(final InstallPolicyBundleEvent installEvent) {
         final BundleResolver bundleResolver = installEvent.getBundleResolver();
         final PreBundleSavePolicyCallback savePolicyCallback = installEvent.getPreBundleSavePolicyCallback();
-        final PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, savePolicyCallback, getGatewayMgmtInvoker());
+        final PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, savePolicyCallback, getGatewayMgmtInvoker(), installEvent);
 
-        final PolicyBundleInstallerContext context = installEvent.getContext();
         try {
-            installer.install(context);
+            installer.install(installEvent);
         } catch (PolicyBundleInstaller.InstallationException e) {
             installEvent.setProcessingException(e);
         } catch (BundleResolver.UnknownBundleException e) {
@@ -159,10 +159,15 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
             installEvent.setProcessingException(e);
         } catch (BundleResolver.InvalidBundleException e) {
             installEvent.setProcessingException(e);
-        } catch (Exception e) {
+        } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
+            installEvent.setProcessingException(e);
+        } catch (IOException e) {
+            installEvent.setProcessingException(e);
+        } catch (RuntimeException e) {
             // catch all for any runtime exceptions
             installEvent.setProcessingException(e);
         }
+
         installEvent.setProcessed(true);
     }
 

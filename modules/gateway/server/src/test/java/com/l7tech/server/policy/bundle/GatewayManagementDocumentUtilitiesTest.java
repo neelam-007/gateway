@@ -35,6 +35,19 @@ public class GatewayManagementDocumentUtilitiesTest {
         assertTrue(errorDetails.contains("wsman:AlreadyExists"));
     }
 
+    @Test
+    public void testResponse_InternalError() throws Exception {
+        final Document doc = XmlUtil.parse(INTERNAL_ERROR_RESPONSE);
+        GatewayManagementDocumentUtilities.getErrorDetails(doc);
+        assertTrue(GatewayManagementDocumentUtilities.isInternalErrorResponse(doc));
+    }
+
+    @Test
+    public void testResponse_InternalError_IsSomethingElse() throws Exception {
+        final Document doc = XmlUtil.parse(CREATED_RESPONSE); // not an internal error
+        assertFalse(GatewayManagementDocumentUtilities.isInternalErrorResponse(doc));
+    }
+
     public void testGetNamespaceMap() throws Exception {
 
     }
@@ -193,4 +206,35 @@ public class GatewayManagementDocumentUtilitiesTest {
             "    </env:Body>\n" +
             "</env:Envelope>\n";
 
+    private final String INTERNAL_ERROR_RESPONSE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
+            "    xmlns:mdo=\"http://schemas.wiseman.dev.java.net/metadata/messagetypes\"\n" +
+            "    xmlns:mex=\"http://schemas.xmlsoap.org/ws/2004/09/mex\"\n" +
+            "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
+            "    xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\"\n" +
+            "    xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\"\n" +
+            "    xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"\n" +
+            "    xmlns:wsmeta=\"http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd\"\n" +
+            "    xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+            "    <env:Header>\n" +
+            "        <wsa:Action env:mustUnderstand=\"true\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">http://schemas.dmtf.org/wbem/wsman/1/wsman/fault</wsa:Action>\n" +
+            "        <wsa:MessageID env:mustUnderstand=\"true\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">uuid:5b00cd48-5320-448e-80c6-88d608b6cde5</wsa:MessageID>\n" +
+            "        <wsa:RelatesTo xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">uuid:d231e98c-3732-4aa5-8477-1168b01e5915</wsa:RelatesTo>\n" +
+            "        <wsa:To env:mustUnderstand=\"true\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>\n" +
+            "    </env:Header>\n" +
+            "    <env:Body>\n" +
+            "        <env:Fault xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+            "            <env:Code>\n" +
+            "                <env:Value>env:Receiver</env:Value>\n" +
+            "                <env:Subcode>\n" +
+            "                    <env:Value>wsman:InternalError</env:Value>\n" +
+            "                </env:Subcode>\n" +
+            "            </env:Code>\n" +
+            "            <env:Reason>\n" +
+            "                <env:Text xml:lang=\"en-US\">The service cannot comply with the request due to internal processing errors.</env:Text>\n" +
+            "            </env:Reason>\n" +
+            "            <env:Detail/>\n" +
+            "        </env:Fault>\n" +
+            "    </env:Body>\n" +
+            "</env:Envelope>";
 }

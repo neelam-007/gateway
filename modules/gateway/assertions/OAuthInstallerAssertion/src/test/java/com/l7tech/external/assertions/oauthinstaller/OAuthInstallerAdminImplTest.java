@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.oauthinstaller;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
@@ -51,9 +52,16 @@ public class OAuthInstallerAdminImplTest {
             }
         });
 
-        final PolicyBundleDryRunResult dryRunResult = admin.doDryRunOtkInstall(
-                Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
-                        "ba525763-6e55-4748-9376-76055247c8b1"), new HashMap<String, BundleMapping>(), null);
+        final AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = admin.dryRunOtkInstall(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
+                "ba525763-6e55-4748-9376-76055247c8b1"), new HashMap<String, BundleMapping>(), null);
+
+        while (!admin.getJobStatus(jobId).startsWith("inactive")) {
+            Thread.sleep(10L);
+        }
+
+        final AsyncAdminMethods.JobResult<PolicyBundleDryRunResult> dryRunResultJobResult = admin.getJobResult(jobId);
+
+        final PolicyBundleDryRunResult dryRunResult = dryRunResultJobResult.result;
 
         assertNotNull(dryRunResult);
 
@@ -81,8 +89,15 @@ public class OAuthInstallerAdminImplTest {
             }
         });
 
-        final List<String> results = admin.doInstallOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
+        final AsyncAdminMethods.JobId<ArrayList> jobId = admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
                 "ba525763-6e55-4748-9376-76055247c8b1"), -5002, new HashMap<String, BundleMapping>(), null);
+
+        while (!admin.getJobStatus(jobId).startsWith("inactive")) {
+            Thread.sleep(10L);
+        }
+
+        final AsyncAdminMethods.JobResult<ArrayList> installResult = admin.getJobResult(jobId);
+        final List<String> results = installResult.result;
 
         assertNotNull(results);
         assertEquals("Two bundles were configured so two events should have been published", 2, results.size());

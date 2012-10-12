@@ -9,11 +9,11 @@ import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.PolicyBundleEvent;
+import com.l7tech.server.event.wsman.WSManagementRequestEvent;
 import com.l7tech.server.policy.bundle.*;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -21,10 +21,10 @@ import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -38,6 +38,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
 
     public OAuthInstallerAdminImpl(final String bundleBaseName, ApplicationEventPublisher spring) throws OAuthToolkitInstallationException {
         this.spring = spring;
+        this.executorService = Executors.newCachedThreadPool();
 
         final String oauthBundleInfo = bundleBaseName + "OAuthToolkitBundleInfo.xml";
         final URL oauthBundleInfoUrl = getClass().getResource(oauthBundleInfo);
@@ -97,24 +98,28 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     @NotNull
     @Override
     public JobId<PolicyBundleDryRunResult> dryRunOtkInstall(@NotNull final Collection<String> otkComponentId,
-                                           @NotNull final Map<String, BundleMapping> bundleMappings,
-                                           @Nullable final String installationPrefix) {
+                                                            @NotNull final Map<String, BundleMapping> bundleMappings,
+                                                            @Nullable final String installationPrefix) {
 
-        final FutureTask<PolicyBundleDryRunResult> future = new FutureTask<PolicyBundleDryRunResult>(find(false).wrapCallable(new Callable<PolicyBundleDryRunResult>() {
+        final String taskIdentifier = UUID.randomUUID().toString();
+        final JobContext jobContext = new JobContext(taskIdentifier);
+        taskToJobContext.put(taskIdentifier, jobContext);
+
+        final Future<PolicyBundleDryRunResult> future = executorService.submit(find(false).wrapCallable(new Callable<PolicyBundleDryRunResult>() {
             @Override
             public PolicyBundleDryRunResult call() throws Exception {
-                return doDryRunOtkInstall(otkComponentId, bundleMappings, installationPrefix);
+                try {
+                    return doDryRunOtkInstall(taskIdentifier, otkComponentId, bundleMappings, installationPrefix);
+                } finally {
+                    taskToJobContext.remove(taskIdentifier);
+                }
             }
         }));
 
-        Background.scheduleOneShot(new TimerTask() {
-            @Override
-            public void run() {
-                future.run();
-            }
-        }, 0L);
+        final JobId<PolicyBundleDryRunResult> jobId = registerJob(future, PolicyBundleDryRunResult.class);
+        jobContext.jobId = jobId;
 
-        return registerJob(future, PolicyBundleDryRunResult.class);
+        return jobId;
     }
 
     /**
@@ -135,21 +140,25 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                                 @NotNull final Map<String, BundleMapping> bundleMappings,
                                                 @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
 
-        final FutureTask<ArrayList> future = new FutureTask<ArrayList>(find(false).wrapCallable(new Callable<ArrayList>() {
+        final String taskIdentifier = UUID.randomUUID().toString();
+        final JobContext jobContext = new JobContext(taskIdentifier);
+        taskToJobContext.put(taskIdentifier, jobContext);
+
+        final Future<ArrayList> future = executorService.submit(find(false).wrapCallable(new Callable<ArrayList>() {
             @Override
             public ArrayList call() throws Exception {
-                return new ArrayList<String>(doInstallOAuthToolkit(otkComponentId, folderOid, bundleMappings, installationPrefix));
+                try {
+                    return new ArrayList<String>(doInstallOAuthToolkit(taskIdentifier, otkComponentId, folderOid, bundleMappings, installationPrefix));
+                } finally {
+                    taskToJobContext.remove(taskIdentifier);
+                }
             }
         }));
 
-        Background.scheduleOneShot(new TimerTask() {
-            @Override
-            public void run() {
-                future.run();
-            }
-        }, 0L);
+        final JobId<ArrayList> jobId = registerJob(future, ArrayList.class);
+        jobContext.jobId = jobId;
 
-        return registerJob(future, ArrayList.class);
+        return jobId;
     }
 
     @NotNull
@@ -158,7 +167,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         return new OAuthToolkitBundleResolver(bundleInfosFromJar).getResultList();
     }
 
-    public static class PolicyBundleDryRunResultImpl implements PolicyBundleDryRunResult{
+    public static class PolicyBundleDryRunResultImpl implements PolicyBundleDryRunResult {
 
         public PolicyBundleDryRunResultImpl(final Map<String, Map<DryRunItem, List<String>>> bundleToConflicts) {
             for (Map.Entry<String, Map<DryRunItem, List<String>>> entry : bundleToConflicts.entrySet()) {
@@ -205,26 +214,62 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         final Map<String, Map<DryRunItem, List<String>>> conflictsForItemMap = new HashMap<String, Map<DryRunItem, List<String>>>();
     }
 
+    @Override
+    public <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning) {
+
+        // find the JobContext and cancel if found - this ensures that the event's cancelled status is always set
+        // if the thread is interrupted due to this cancel event.
+        for (final Map.Entry<String, JobContext> entry : taskToJobContext.entrySet()) {
+            final JobContext jobContext = entry.getValue();
+            final JobId currentJobId = jobContext.jobId;
+            if (currentJobId != null && jobId.equals(currentJobId)) {
+                jobContext.cancelled = true;
+                final WSManagementRequestEvent currentEvent = jobContext.currentEvent;
+                if (currentEvent != null) {
+                    // cancel event so Policy Bundle Installer module can cancel if it's currently processing
+                    currentEvent.setCancelled(true);
+                }
+            }
+        }
+
+        // this may cause an Interrupted Exception to be thrown if execution happens to be in this module.
+        super.cancelJob(jobId, interruptIfRunning);
+    }
+
     // - PROTECTED
 
-    protected PolicyBundleDryRunResult doDryRunOtkInstall(@NotNull final Collection<String> otkComponentId,
+    protected PolicyBundleDryRunResult doDryRunOtkInstall(@NotNull final String taskIdentifier,
+                                                          @NotNull final Collection<String> otkComponentId,
                                                           @NotNull final Map<String, BundleMapping> bundleMappings,
                                                           @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
         final OAuthToolkitBundleResolver bundleResolver = new OAuthToolkitBundleResolver(bundleInfosFromJar);
 
         final HashMap<String, Map<DryRunItem, List<String>>> bundleToConflicts = new HashMap<String, Map<DryRunItem, List<String>>>();
+        outer:
         for (String bundleId : otkComponentId) {
             final List<BundleInfo> resultList = bundleResolver.getResultList();
             for (BundleInfo bundleInfo : resultList) {
                 if (bundleInfo.getId().equals(bundleId)) {
+                    final JobContext jobContext = taskToJobContext.get(taskIdentifier);
+                    if (jobContext.cancelled) {
+                        logger.info("Pre installation check was cancelled.");
+                        break outer;
+                    }
+
                     //todo fix folder id
                     final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                             bundleInfo, -5002, new HashMap<String, Object>(), bundleMappings.get(bundleId), installationPrefix);
 
                     final DryRunInstallPolicyBundleEvent dryRunEvent =
                             new DryRunInstallPolicyBundleEvent(bundleMappings, bundleResolver, context);
+                    jobContext.currentEvent = dryRunEvent;
+
                     spring.publishEvent(dryRunEvent);
-                    validateEventProcessed(dryRunEvent);
+                    if (validateEventProcessed(dryRunEvent)) {
+                        // this is logged at fine as it's not as important as only a dry run.
+                        logger.fine("Pre installation check was cancelled.");
+                        break outer;
+                    }
                     final List<String> urlPatternWithConflict = dryRunEvent.getUrlPatternWithConflict();
                     final List<String> jdbcConnsThatDontExist = dryRunEvent.getJdbcConnsThatDontExist();
                     final List<String> policyWithNameConflict = dryRunEvent.getPolicyWithNameConflict();
@@ -242,15 +287,19 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     }
 
     /**
+     * Perform the work of installing the OTK.
      *
-     * @param otkComponentId
-     * @param folderOid
-     * @param bundleMappings
-     * @param installationPrefix
+     * @param taskIdentifier used to look up the context to see if task has been cancelled.
+     * @param otkComponentId component to install
+     * @param folderOid folder to install component into
+     * @param bundleMappings any mappings.
+     * @param installationPrefix installation prefix
      * @return Ids of installed bundles
      * @throws OAuthToolkitInstallationException
+     *
      */
-    protected List<String> doInstallOAuthToolkit(@NotNull final Collection<String> otkComponentId,
+    protected List<String> doInstallOAuthToolkit(@NotNull final String taskIdentifier,
+                                                 @NotNull final Collection<String> otkComponentId,
                                                  final long folderOid,
                                                  @NotNull Map<String, BundleMapping> bundleMappings,
                                                  @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
@@ -269,9 +318,11 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                 }
 
                 //iterate through all the bundle names to install
+                outer:
                 for (String bundleId : otkComponentId) {
-                    if (Thread.currentThread().isInterrupted()) {
-                        logger.info("Installation cancelled");
+                    final JobContext jobContext = taskToJobContext.get(taskIdentifier);
+                    if (jobContext.cancelled) {
+                        logger.info("Installation of the OAuth toolkit was cancelled.");
                         break;
                     }
 
@@ -281,13 +332,17 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
 
                             final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                                     bundleInfo, folderOid, contextMap, bundleMappings.get(bundleId), installationPrefix);
-                            final InstallPolicyBundleEvent bundleEvent =
+                            final InstallPolicyBundleEvent installEvent =
                                     new InstallPolicyBundleEvent(this, bundleResolver,
                                             context,
                                             getSavePolicyCallback(installationPrefix));
+                            jobContext.currentEvent = installEvent;
 
-                            spring.publishEvent(bundleEvent);
-                            validateEventProcessed(bundleEvent);
+                            spring.publishEvent(installEvent);
+                            if (validateEventProcessed(installEvent)) {
+                                logger.info("Installation of the OAuth toolkit was cancelled.");
+                                break outer;
+                            }
                         }
                     }
                     installedBundles.add(bundleId);
@@ -304,33 +359,17 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
 
     }
 
-    private void validateEventProcessed(PolicyBundleEvent bundleEvent) throws OAuthToolkitInstallationException {
-        if (!bundleEvent.isProcessed()) {
-            throw new OAuthToolkitInstallationException("Policy Bundle Installer module is not installed.");
-        }
-
-        final Exception processingException = bundleEvent.getProcessingException();
-        if (processingException != null) {
-            if (!(processingException instanceof BundleResolver.UnknownBundleException)) {
-                logger.warning("Unexpected error during installation: " + ExceptionUtils.getMessage(processingException));
-                throw new OAuthToolkitInstallationException(processingException);
-            } else {
-                throw new OAuthToolkitInstallationException(processingException);
-            }
-        }
-    }
-
     /**
      * If the valueWithPossibleHost starts with a context variable that begins with 'host_', then update the value
      * of the string to have the installationPrefix inserted after the varaible reference.
      *
-     * @param installationPrefix prefix to insert
+     * @param installationPrefix    prefix to insert
      * @param valueWithPossibleHost value which may need to be udpated in a prefixed installation.
      * @return Updated value. Null if no new value is needed.
      */
     @Nullable
     protected static String getUpdatedHostValue(@NotNull final String installationPrefix,
-                                       @NotNull final String valueWithPossibleHost) {
+                                                @NotNull final String valueWithPossibleHost) {
 
         final List<String> vars = Arrays.asList(Syntax.getReferencedNames(valueWithPossibleHost));
         if (vars.size() == 1 && Syntax.getVariableExpression(vars.get(0)).equals(valueWithPossibleHost)) {
@@ -349,7 +388,9 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
             }
             final String preceedingText = valueWithPossibleHost.substring(previousMatchEndIndex, matcher.start());
             //note if there is actually an empty space, we will preserve it, so no .trim() before .isEmpty()
-            if (!preceedingText.isEmpty()) result.add(valueWithPossibleHost.substring(previousMatchEndIndex, matcher.start()));
+            if (!preceedingText.isEmpty()) {
+                result.add(valueWithPossibleHost.substring(previousMatchEndIndex, matcher.start()));
+            }
 
             final String group = matcher.group(1);
             if (group.startsWith("host_")) {
@@ -380,8 +421,90 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     private final AtomicBoolean isInstallInProgress = new AtomicBoolean(false);
     private static final Logger logger = Logger.getLogger(OAuthInstallerAdminImpl.class.getName());
     private final String oAuthInstallerVersion;
-    private final List<Pair<BundleInfo,String>> bundleInfosFromJar;
+    private final List<Pair<BundleInfo, String>> bundleInfosFromJar;
     private final ApplicationEventPublisher spring;
+    private final ExecutorService executorService;
+    private final Map<String, JobContext> taskToJobContext = new ConcurrentHashMap<String, JobContext>();
+
+    /**
+     * Associates a JobId, WSManagementRequestEvent and Cancelled status with a task identifier.
+     */
+    private static final class JobContext {
+
+        private JobContext(String taskIdentifier) {
+            this.taskIdentifier = taskIdentifier;
+        }
+
+        /**
+         * Identity is based solely on the task identifier.
+         * @param o
+         * @return
+         */
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            JobContext that = (JobContext) o;
+
+            if (!taskIdentifier.equals(that.taskIdentifier)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return taskIdentifier.hashCode();
+        }
+
+        // - PRIVATE
+
+        private final String taskIdentifier;
+        private boolean cancelled;
+
+        /**
+         * It is not safe to specify the JobId in construction as the future may have started executing before the
+         * JobContext has been created.
+         * This is because a future is required in order to register a job and get a JobId.
+         * To protect against this client code needs to be prepared for jobId to be null.
+         */
+        @Nullable
+        private JobId jobId;
+        @Nullable
+        private WSManagementRequestEvent currentEvent;
+    }
+
+    /**
+     * Check the status of the bundle event. Throws when a client should know about an unexpected situation.
+     *
+     * @param bundleEvent event to validate
+     * @return true if the thread processing the event was interrupted.
+     * @throws OAuthToolkitInstallationException
+     *
+     */
+    private boolean validateEventProcessed(PolicyBundleEvent bundleEvent) throws OAuthToolkitInstallationException {
+        if (!bundleEvent.isProcessed()) {
+            throw new OAuthToolkitInstallationException("Policy Bundle Installer module is not installed.");
+        }
+
+        final Exception processingException = bundleEvent.getProcessingException();
+        if (processingException != null) {
+            if (!(processingException instanceof BundleResolver.UnknownBundleException)) {
+                if (processingException instanceof InterruptedException) {
+                    return true;
+                }
+
+                logger.warning("Exception type: " + processingException.getClass().getName());
+                logger.warning("Unexpected error during installation: " + ExceptionUtils.getMessage(processingException));
+                throw new OAuthToolkitInstallationException(processingException);
+            } else {
+                throw new OAuthToolkitInstallationException(processingException);
+            }
+        }
+
+        return bundleEvent.isCancelled();
+
+    }
 
     @NotNull
     private PreBundleSavePolicyCallback getSavePolicyCallback(final String installationPrefix) {

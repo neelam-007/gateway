@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public abstract class WSManagementRequestEvent extends ApplicationEvent {
 
     public WSManagementRequestEvent(Object source) {
@@ -56,6 +58,14 @@ public abstract class WSManagementRequestEvent extends ApplicationEvent {
         this.bundleVersionNs = bundleVersionNs;
     }
 
+    public boolean isCancelled() {
+        return cancelled.get();
+    }
+
+    public void setCancelled(boolean cancelled) {
+        this.cancelled.set(cancelled);
+    }
+
     // - PRIVATE
 
     private final static String GATEWAY_MGMT_APRIL_10 = "http://ns.l7tech.com/2010/04/gateway-management";
@@ -63,5 +73,6 @@ public abstract class WSManagementRequestEvent extends ApplicationEvent {
     private Exception processingException;
     private boolean processed = false;
     private String bundleVersionNs = GATEWAY_MGMT_APRIL_10;
+    private AtomicBoolean cancelled = new AtomicBoolean();
 
 }

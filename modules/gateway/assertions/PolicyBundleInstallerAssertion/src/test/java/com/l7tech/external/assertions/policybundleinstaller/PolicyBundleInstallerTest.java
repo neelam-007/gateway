@@ -5,7 +5,9 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
+import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.*;
 import com.l7tech.util.DomUtils;
@@ -60,8 +62,15 @@ public class PolicyBundleInstallerTest {
             }
         });
 
-        final Document folderDoc = bundleResolver.getBundleItem("4e321ca1-83a0-4df5-8216-c2d2bb36067d", FOLDER, false);
-        final Map<Long, Long> oldToNewMap = bundleInstaller.installFolders(-5002, folderDoc, new HashMap<Long, Long>());
+        final List<BundleInfo> resultList = bundleResolver.getResultList();
+        final BundleInfo bundleInfo = resultList.get(0);
+        //OAuth_1_0
+        final Document oAuth_1_0 = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, bundleResolver, context, null);
+
+        final Document folderDoc = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
+        final Map<Long, Long> oldToNewMap = bundleInstaller.installFolders(installEvent, -5002, folderDoc, new HashMap<Long, Long>());
         assertNotNull(oldToNewMap);
         assertFalse(oldToNewMap.isEmpty());
 
@@ -119,9 +128,13 @@ public class PolicyBundleInstallerTest {
             }
         });
 
+        final List<BundleInfo> resultList = bundleResolver.getResultList();
+        final BundleInfo bundleInfo = resultList.get(0);
         //OAuth_1_0
-        final Document oAuth_1_0 = bundleResolver.getBundleItem("4e321ca1-83a0-4df5-8216-c2d2bb36067d", FOLDER, false);
-        final Map<Long, Long> oldToNewMap = bundleInstaller.installFolders(-5002, oAuth_1_0, new HashMap<Long, Long>());
+        final Document oAuth_1_0 = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, bundleResolver, context, null);
+        final Map<Long, Long> oldToNewMap = bundleInstaller.installFolders(installEvent, -5002, oAuth_1_0, new HashMap<Long, Long>());
         assertNotNull(oldToNewMap);
         assertFalse(oldToNewMap.isEmpty());
 
@@ -269,7 +282,10 @@ public class PolicyBundleInstallerTest {
             policyNameToGuid.put(name, guid);
         }
 
-        bundleInstaller.installPolicies(bundleInfo, getFolderIds(), oldGuidsToNewGuids, policyFromBundleDoc, null, installationPrefix);
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, bundleResolver, context, null);
+
+        bundleInstaller.installPolicies(installEvent, bundleInfo, getFolderIds(), oldGuidsToNewGuids, policyFromBundleDoc, null, installationPrefix);
 
         // verify that each known policy name was installed
         for (Map.Entry<String, String> bundlePolicy : policyNameToGuid.entrySet()) {
@@ -297,10 +313,16 @@ public class PolicyBundleInstallerTest {
             }
         });
 
+        final List<BundleInfo> resultList = bundleResolver.getResultList();
+        final BundleInfo bundleInfo = resultList.get(0);
+        //OAuth_1_0
+        final Document oAuth_1_0 = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, bundleResolver, context, null);
+
         // OAuth_1_0
-        final String bundleId = "4e321ca1-83a0-4df5-8216-c2d2bb36067d";
-        final Document serviceFromBundleDoc = bundleResolver.getBundleItem(bundleId, SERVICE, false);
-        bundleInstaller.installServices(new BundleInfo(bundleId, "OAuth 1.0", "1.0", "Desc"), getFolderIds(), new HashMap<Long, Long>(), getPolicyGuids(), serviceFromBundleDoc, null, null);
+        final Document serviceFromBundleDoc = bundleResolver.getBundleItem(bundleInfo.getId(), SERVICE, false);
+        bundleInstaller.installServices(installEvent, bundleInfo, getFolderIds(), new HashMap<Long, Long>(), getPolicyGuids(), serviceFromBundleDoc, null, null);
 
     }
 
@@ -384,12 +406,13 @@ public class PolicyBundleInstallerTest {
             }
         });
 
-        bundleInstaller.install(
-                new PolicyBundleInstallerContext(
-                        new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc"),
-                        -5002,
-                        new HashMap<String, Object>(),
-                        null, null));
+
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
+                new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc"),
+                -5002,
+                new HashMap<String, Object>(),
+                null, null);
+        bundleInstaller.install(new InstallPolicyBundleEvent(this, bundleResolver, context, null));
 
 //        assertEquals(1, jdbcConnsFound.size());
 //        assertEquals("Invalid JDBC connection name found", "OAuth", jdbcConnsFound.iterator().next());
@@ -494,12 +517,17 @@ public class PolicyBundleInstallerTest {
             }
         });
 
-        // OAuth_1_0
-        final String bundleId = "4e321ca1-83a0-4df5-8216-c2d2bb36067d";
-        final Document serviceFromBundleDoc = bundleResolver.getBundleItem(bundleId, SERVICE, false);
+        final List<BundleInfo> resultList = bundleResolver.getResultList();
+        final BundleInfo bundleInfo = resultList.get(0);
+        //OAuth_1_0
+        final Document oAuth_1_0 = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, bundleResolver, context, null);
+
+        final Document serviceFromBundleDoc = bundleResolver.getBundleItem(bundleInfo.getId(), SERVICE, false);
 
         final String prefix = "version1a";
-        bundleInstaller.installServices(new BundleInfo(bundleId, "OAuth 1.0", "1.0", "Desc"), getFolderIds(), new HashMap<Long, Long>(), getPolicyGuids(), serviceFromBundleDoc, null, prefix);
+        bundleInstaller.installServices(installEvent, bundleInfo, getFolderIds(), new HashMap<Long, Long>(), getPolicyGuids(), serviceFromBundleDoc, null, prefix);
 
         // validate all services were found and all URIs were prefixed correctly
         assertEquals("Incorrect number of services created", 7, serviceIdToUri.size());
@@ -644,7 +672,8 @@ public class PolicyBundleInstallerTest {
     private BundleResolver getBundleResolver(){
 
         final Map<String, Map<String, Document>> bundleToItemAndDocMap = new HashMap<String, Map<String, Document>>();
-        bundleToItemAndDocMap.put("4e321ca1-83a0-4df5-8216-c2d2bb36067d", getItemsToDocs(true));
+        final String cannedId = "4e321ca1-83a0-4df5-8216-c2d2bb36067d";
+        bundleToItemAndDocMap.put(cannedId, getItemsToDocs(true));
 
         return new BundleResolver() {
             @Override
@@ -656,7 +685,7 @@ public class PolicyBundleInstallerTest {
             @NotNull
             @Override
             public List<BundleInfo> getResultList() {
-                return Collections.emptyList();
+                return Arrays.asList(new BundleInfo(cannedId, "1.0", "Name", "Desc"));
             }
         };
     }
