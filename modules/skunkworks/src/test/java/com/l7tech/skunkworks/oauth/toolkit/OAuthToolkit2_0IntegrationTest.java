@@ -11,7 +11,7 @@ import org.junit.Test;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 
-import static com.l7tech.skunkworks.oauth.toolkit.OAuthToollkitTestUtility.getSSLSocketFactory;
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSSLSocketFactory;
 import static org.junit.Assert.*;
 
 /**
@@ -28,6 +28,7 @@ public class OAuthToolkit2_0IntegrationTest {
     private static final String CONSUMER_SECRET = "de88c414-fb69-4107-aac0-d1fdf0986017";
     // this callback must be the registered callback on the client
     private static final String CALLBACK = "https://" + BASE_URL + ":8443/oauth_callback";
+    private static final PasswordAuthentication PASSWORD_AUTHENTICATION = new PasswordAuthentication("admin", "password".toCharArray());
     private GenericHttpClient client;
 
     @Before
@@ -37,7 +38,7 @@ public class OAuthToolkit2_0IntegrationTest {
 
     @BugNumber(12946)
     @Test
-    public void authCodeGrantDenied() throws Exception {
+    public void authCodeGrantDeniedClient() throws Exception {
         final GenericHttpRequestParams requestParams =
                 new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/v2/client/authcode?state=state_test&error=access_denied"));
         requestParams.setSslSocketFactory(getSSLSocketFactory());
@@ -52,7 +53,7 @@ public class OAuthToolkit2_0IntegrationTest {
 
     @BugNumber(12946)
     @Test
-    public void implicitGrantDenied() throws Exception {
+    public void implicitGrantDeniedClient() throws Exception {
         final GenericHttpRequestParams requestParams =
                 new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/v2/client/implicit?state=state_test&error=access_denied"));
         requestParams.setSslSocketFactory(getSSLSocketFactory());
@@ -68,7 +69,7 @@ public class OAuthToolkit2_0IntegrationTest {
     @Test
     @BugNumber(13155)
     public void authorizeWithInvalidCookie() throws Exception {
-        final GenericHttpResponse response = new Layer720Api(BASE_URL).authorize("code", CONSUMER_KEY, CALLBACK, null, "invalid", true);
+        final GenericHttpResponse response = new Layer720Api(BASE_URL).authorize("code", CONSUMER_KEY, CALLBACK, null, "invalid", true, "Grant");
 
         assertEquals(401, response.getStatus());
         final String body = new String(IOUtils.slurpStream(response.getInputStream()));
@@ -85,7 +86,7 @@ public class OAuthToolkit2_0IntegrationTest {
     @Test
     @BugNumber(13254)
     public void getAccessTokenNoRedirectUri() throws Exception {
-        final String authCode = new Layer720Api(BASE_URL).authorizeAndRetrieve(CONSUMER_KEY, null, new PasswordAuthentication("admin", "password".toCharArray()), null);
+        final String authCode = new Layer720Api(BASE_URL).authorizeAndRetrieve(CONSUMER_KEY, null, PASSWORD_AUTHENTICATION, null);
 
         final GenericHttpRequestParams tokenParams = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/auth/oauth/v2/token"));
         tokenParams.setSslSocketFactory(getSSLSocketFactory());
@@ -97,7 +98,7 @@ public class OAuthToolkit2_0IntegrationTest {
 
         final GenericHttpResponse response = request.getResponse();
         assertEquals(200, response.getStatus());
-        final String accessToken = OAuthToollkitTestUtility.getAccessTokenFromJsonResponse(response);
+        final String accessToken = OAuthToolkitTestUtility.getAccessTokenFromJsonResponse(response);
         assertFalse(accessToken.isEmpty());
     }
 
@@ -107,7 +108,7 @@ public class OAuthToolkit2_0IntegrationTest {
     @Test
     @BugNumber(13254)
     public void getAccessTokenMismatchRedirectUri() throws Exception {
-        final String authCode = new Layer720Api(BASE_URL).authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null);
+        final String authCode = new Layer720Api(BASE_URL).authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, PASSWORD_AUTHENTICATION, null);
 
         final GenericHttpRequestParams tokenParams = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/auth/oauth/v2/token"));
         tokenParams.setSslSocketFactory(getSSLSocketFactory());
@@ -130,13 +131,8 @@ public class OAuthToolkit2_0IntegrationTest {
     @Test
     @BugNumber(13254)
     public void authorizeRedirectUriMismatchRegisteredCallback() throws Exception {
-        final StringBuilder urlBuilder = new StringBuilder();
-        urlBuilder.append("https://").append(BASE_URL);
-        urlBuilder.append(":8443/auth/oauth/v2/authorize?client_id=").append(CONSUMER_KEY);
-        urlBuilder.append("&response_type=code");
-        urlBuilder.append("&scope=scope_test&state=state_test");
-        urlBuilder.append("&redirect_uri=").append(CALLBACK + "/mismatch");
-        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(urlBuilder.toString()));
+        final String url = buildAuthorizeUrl(CONSUMER_KEY, "code", CALLBACK + "/mismatch", "state_test");
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
         params.setFollowRedirects(true);
         params.setSslSocketFactory(getSSLSocketFactory());
         final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
@@ -145,5 +141,151 @@ public class OAuthToolkit2_0IntegrationTest {
         assertEquals(400, response.getStatus());
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertTrue(responseBody.contains("Mismatching redirect uri"));
+    }
+
+    @Test
+    @BugNumber(13256)
+    public void authorizeNoClientId() throws Exception {
+        final String url = buildAuthorizeUrl(null, "code", CALLBACK, "state_test");
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
+        params.setFollowRedirects(false);
+        params.setSslSocketFactory(getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+
+        assertEquals(302, response.getStatus());
+        final String locationHeader = response.getHeaders().getFirstValue("Location");
+        assertEquals(CALLBACK + "?error=invalid_request&state=state_test", locationHeader);
+    }
+
+    @Test
+    @BugNumber(13256)
+    public void authorizeNoClientIdOrState() throws Exception {
+        final String url = buildAuthorizeUrl(null, "code", CALLBACK, null);
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
+        params.setFollowRedirects(false);
+        params.setSslSocketFactory(getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+
+        assertEquals(302, response.getStatus());
+        final String locationHeader = response.getHeaders().getFirstValue("Location");
+        assertEquals(CALLBACK + "?error=invalid_request", locationHeader);
+    }
+
+    /**
+     * Cannot redirect back to client therefore return 400.
+     */
+    @Test
+    @BugNumber(13256)
+    public void authorizeNoClientIdOrRedirectUri() throws Exception {
+        final String url = buildAuthorizeUrl(null, "code", null, "state_test");
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
+        params.setFollowRedirects(false);
+        params.setSslSocketFactory(getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+
+        assertEquals(400, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertTrue(responseBody.contains("Invalid request. Please try again."));
+    }
+
+    @Test
+    @BugNumber(13256)
+    public void authorizeNoResponseType() throws Exception {
+        final String url = buildAuthorizeUrl(CONSUMER_KEY, null, CALLBACK, "state_test");
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
+        params.setFollowRedirects(false);
+        params.setSslSocketFactory(getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+
+        assertEquals(302, response.getStatus());
+        final String locationHeader = response.getHeaders().getFirstValue("Location");
+        assertEquals(CALLBACK + "?error=invalid_request&state=state_test", locationHeader);
+    }
+
+    @Test
+    @BugNumber(13256)
+    public void authorizeInvalidResponseType() throws Exception {
+        final String url = buildAuthorizeUrl(CONSUMER_KEY, "invalid", CALLBACK, "state_test");
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
+        params.setFollowRedirects(false);
+        params.setSslSocketFactory(getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+
+        assertEquals(302, response.getStatus());
+        final String locationHeader = response.getHeaders().getFirstValue("Location");
+        assertEquals(CALLBACK + "?error=invalid_request&state=state_test", locationHeader);
+    }
+
+    @Test
+    @BugNumber(13256)
+    public void authorizeNoResponseTypeUseRegisteredCallback() throws Exception {
+        final String url = buildAuthorizeUrl(CONSUMER_KEY, null, null, "state_test");
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
+        params.setFollowRedirects(false);
+        params.setSslSocketFactory(getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+
+        assertEquals(302, response.getStatus());
+        final String locationHeader = response.getHeaders().getFirstValue("Location");
+        assertEquals(CALLBACK + "?error=invalid_request&state=state_test", locationHeader);
+    }
+
+    @Test
+    @BugNumber(13256)
+    public void authorizeInvalidRedirectUri() throws Exception {
+        final String url = buildAuthorizeUrl(CONSUMER_KEY, "code", "invalidurl", "state_test");
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
+        params.setFollowRedirects(true);
+        params.setSslSocketFactory(getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+
+        assertEquals(400, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertTrue(responseBody.contains("Mismatching redirect uri"));
+    }
+
+    @Test
+    public void authorizeDeniedAuthCode() throws Exception {
+        final GenericHttpResponse response = new Layer720Api(BASE_URL).authorize("code", CONSUMER_KEY, CALLBACK,
+                PASSWORD_AUTHENTICATION, null, false, "Deny");
+        assertEquals(302, response.getStatus());
+        final String locationHeader = response.getHeaders().getFirstValue("Location");
+        assertEquals(CALLBACK + "?error=access_denied&state=state_test", locationHeader);
+    }
+
+    @Test
+    public void authorizeDeniedImplicit() throws Exception {
+        final GenericHttpResponse response = new Layer720Api(BASE_URL).authorize("token", CONSUMER_KEY, CALLBACK,
+                PASSWORD_AUTHENTICATION, null, false, "Deny");
+        assertEquals(302, response.getStatus());
+        final String locationHeader = response.getHeaders().getFirstValue("Location");
+        assertEquals(CALLBACK + "?error=access_denied&state=state_test", locationHeader);
+    }
+
+    private String buildAuthorizeUrl(final String clientId, final String responseType, final String callback, final String state) {
+        final StringBuilder urlBuilder = new StringBuilder();
+        urlBuilder.append("https://").append(BASE_URL);
+        urlBuilder.append(":8443/auth/oauth/v2/authorize?");
+        if (clientId != null) {
+            urlBuilder.append("client_id=").append(clientId);
+        }
+        if (responseType != null) {
+            urlBuilder.append("&response_type=").append(responseType);
+        }
+        urlBuilder.append("&scope=scope_test");
+        if (state != null) {
+            urlBuilder.append("&state=state_test");
+        }
+        if (callback != null) {
+            urlBuilder.append("&redirect_uri=").append(callback);
+        }
+        return urlBuilder.toString();
     }
 }

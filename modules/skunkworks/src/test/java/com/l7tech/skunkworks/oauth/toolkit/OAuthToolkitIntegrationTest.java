@@ -21,7 +21,7 @@ import java.net.URL;
 import java.util.*;
 
 import static org.junit.Assert.*;
-import static com.l7tech.skunkworks.oauth.toolkit.OAuthToollkitTestUtility.*;
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.*;
 
 /**
  * Integration tests for the OAuth Tool Kit that are not specific to OAuth 1.0 or 2.0.

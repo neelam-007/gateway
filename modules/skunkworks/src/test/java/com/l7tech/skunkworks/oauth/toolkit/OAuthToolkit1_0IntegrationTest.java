@@ -19,7 +19,7 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
-import static com.l7tech.skunkworks.oauth.toolkit.OAuthToollkitTestUtility.*;
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.*;
 
 /**
  * Integration tests for the OAuth Tool Kit. Each test requires the SSG to be running with an installed OTK that includes

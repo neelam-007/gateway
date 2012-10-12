@@ -9,7 +9,7 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 
 import static org.junit.Assert.*;
-import static com.l7tech.skunkworks.oauth.toolkit.OAuthToollkitTestUtility.*;
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.*;
 
 /**
  * OAuth version 1.0a.

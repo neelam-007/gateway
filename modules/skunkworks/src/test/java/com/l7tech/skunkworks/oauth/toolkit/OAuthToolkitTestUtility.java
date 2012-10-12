@@ -18,7 +18,7 @@ import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
-public final class OAuthToollkitTestUtility {
+public final class OAuthToolkitTestUtility {
     public static String getAccessTokenFromJsonResponse(@NotNull final GenericHttpResponse response) throws Exception {
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         return responseBody.substring(responseBody.indexOf("\"access_token\":\"") + 16, responseBody.indexOf("\","));

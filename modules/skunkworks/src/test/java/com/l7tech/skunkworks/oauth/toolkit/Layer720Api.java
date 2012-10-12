@@ -15,7 +15,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 
 import static org.junit.Assert.*;
-import static com.l7tech.skunkworks.oauth.toolkit.OAuthToollkitTestUtility.*;
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.*;
 
 /**
  * OAuth version 2.0.
@@ -65,7 +65,7 @@ public class Layer720Api extends DefaultApi20 {
 
     public String authorizeAndRetrieve(final String consumerKey, final String callback, final PasswordAuthentication passwordAuthentication,
                                        final String cookie) throws Exception {
-        final GenericHttpResponse authResponse = authorize("code", consumerKey, callback, passwordAuthentication, cookie, true);
+        final GenericHttpResponse authResponse = authorize("code", consumerKey, callback, passwordAuthentication, cookie, true, "Grant");
         assertEquals(200, authResponse.getStatus());
         final String authCode = new String(IOUtils.slurpStream(authResponse.getInputStream()));
         System.out.println("Received auth code: " + authCode);
@@ -73,7 +73,9 @@ public class Layer720Api extends DefaultApi20 {
         return authCode;
     }
 
-    public GenericHttpResponse authorize(final String responseType, final String consumerKey, final String callback, final PasswordAuthentication passwordAuthentication, final String cookie, final boolean followRedirects) throws Exception {
+    public GenericHttpResponse authorize(final String responseType, final String consumerKey, final String callback,
+                                         final PasswordAuthentication passwordAuthentication, final String cookie,
+                                         final boolean followRedirects, final String action) throws Exception {
         final CommonsHttpClient client = new CommonsHttpClient();
         final StringBuilder urlBuilder = new StringBuilder();
         urlBuilder.append("https://").append(gatewayHost);
@@ -94,7 +96,7 @@ public class Layer720Api extends DefaultApi20 {
         assertFalse(sessionId.isEmpty());
 
         final GenericHttpRequestParams authParams = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
-                ":8443/auth/oauth/v2/authorize?action=Grant&sessionID=" + sessionId));
+                ":8443/auth/oauth/v2/authorize?action=" + action + "&sessionID=" + sessionId));
         if (passwordAuthentication != null) {
             authParams.setPasswordAuthentication(passwordAuthentication);
         }

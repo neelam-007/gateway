@@ -1,7 +1,6 @@
 package com.l7tech.skunkworks.oauth.toolkit;
 
 import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.util.IOUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -12,7 +11,7 @@ import org.scribe.oauth.OAuthService;
 import java.net.PasswordAuthentication;
 
 import static org.junit.Assert.*;
-import static com.l7tech.skunkworks.oauth.toolkit.OAuthToollkitTestUtility.*;
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.*;
 
 /**
  * Integration tests for the OAuth Tool Kit (oauth version 2.0) that uses Scribe.
@@ -82,7 +81,7 @@ public class OAuthToolkit2_0ScribeIntegrationTest {
     public void implicit() throws Exception {
         // Obtain an Access Token from location header fragment
         System.out.println("Fetching Access Token ...");
-        final GenericHttpResponse accessTokenResponse = api.authorize("token", CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null, false);
+        final GenericHttpResponse accessTokenResponse = api.authorize("token", CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null, false, "Grant");
         final String locationHeader = accessTokenResponse.getHeaders().getFirstValue("Location");
         final String accessToken = locationHeader.substring(locationHeader.indexOf("#access_token=") + 14, locationHeader.indexOf("&"));
         System.out.println("Received Access Token: " + accessToken);
