@@ -1,15 +1,19 @@
 package com.l7tech.server.policy.assertion.xml;
 
+import com.l7tech.common.http.GenericHttpHeader;
+import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.audit.Auditor;
@@ -22,6 +26,7 @@ import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.server.url.UrlResolver;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.server.util.TestingHttpClientFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.PoolByteArrayOutputStream;
@@ -46,6 +51,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import static com.l7tech.util.CollectionUtils.MapBuilder;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -157,6 +163,30 @@ public class XslTransformationTest {
         Assert.assertEquals(after, EXPECTED);
     }
 
+
+    @Test
+    @BugNumber(13231)
+    public void testMessageUrlResourceInfo() throws Exception {
+        XslTransformation ass = new XslTransformation();
+        ass.setResourceInfo(new MessageUrlResourceInfo(new String[] { ".*" }));
+
+        byte[] xslBytes = getResAsString(XSL_BODYSUBST).getBytes(Charsets.UTF8);
+
+        BeanFactory beanFactory = new SimpleSingletonBeanFactory(MapBuilder.<String,Object>builder()
+            .put("httpClientFactory", new TestingHttpClientFactory(new MockGenericHttpClient(200, new GenericHttpHeaders(new GenericHttpHeader[0]), ContentTypeHeader.XML_DEFAULT, (long)xslBytes.length, xslBytes)))
+            .map());
+
+        ServerXslTransformation sass = new ServerXslTransformation(ass, beanFactory);
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        context.getRequest().initialize(XmlUtil.stringAsDocument(getResAsString(SOAPMSG_WITH_WSSE_AND_PI)));
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        String xmlAfter = XmlUtil.nodeToString(context.getRequest().getXmlKnob().getDocumentReadOnly());
+        assertEqualsIgnoringWhitespace(EXPECTED_AFTER_BODY_SUBSTITUTION, xmlAfter.replaceAll("<\\?.*?\\?>", ""));
+    }
+
     @Test
     @Ignore("Developer benchmark")
     public void testBenchmark() throws Exception {
@@ -229,29 +259,12 @@ public class XslTransformationTest {
         String xslStr = getResAsString(XSL_BODYSUBST);
         String xmlStr = getResAsString(SOAPMSG_WITH_WSSE);
         String res = XmlUtil.nodeToString(transform(xslStr, xmlStr));
-        String expected = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
-                "\n" +
-                "    <soap:Header xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/04/secext\">\n" +
-                "        <wsse:Security>\n" +
-                "            <wsse:UsernameToken Id=\"MyID\">\n" +
-                "                    <wsse:Username>Zoe</wsse:Username>\n" +
-                "                    <Password Type=\"wsse:PasswordText\">ILoveLlamas</Password>\n" +
-                "            </wsse:UsernameToken>\n" +
-                "        </wsse:Security>\n" +
-                "    </soap:Header>\n" +
-                "\n" +
-                "    <Body xmlns=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
-                "            <accountid xmlns=\"http://warehouse.acme.com/accountns\">5643249816516813216</accountid>\n" +
-                "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"/>\n" +
-                "    </Body>\n" +
-                "    \n" +
-                "</soap:Envelope>";
-        if (!expected.equals(res)) {
-            logger.severe("result of transformation not as expected\nresult:\n" + res + "\nexpected:\n" + expected);
+        if (!EXPECTED_AFTER_BODY_SUBSTITUTION.equals(res)) {
+            logger.severe("result of transformation not as expected\nresult:\n" + res + "\nexpected:\n" + EXPECTED_AFTER_BODY_SUBSTITUTION);
         } else {
             logger.fine("transformation ok");
         }
-        Assert.assertTrue(expected.equals(res));
+        Assert.assertTrue(EXPECTED_AFTER_BODY_SUBSTITUTION.equals(res));
     }
 
     @Test
@@ -386,6 +399,7 @@ public class XslTransformationTest {
     private static final String XSL_SSGCOMMENT = "ssgwashere.xsl";
     private static final String XSL_BODYSUBST = "bodySubstitution.xsl";
     private static final String SOAPMSG_WITH_WSSE = "simpleRequestWithWsseHeader.xml";
+    private static final String SOAPMSG_WITH_WSSE_AND_PI = "simpleRequestWithWsseHeaderAndXmlStylesheetPi.xml";
 
     private static final String DUMMY_SOAP_XML =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
@@ -429,6 +443,26 @@ public class XslTransformationTest {
             "\n" +
             "</xsl:stylesheet>\n";
 
+    // What the SOAPMSG_WITH_WSSE is expected to look like after the body substitution xslt is performed
+    public static final String EXPECTED_AFTER_BODY_SUBSTITUTION =
+        "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+            "\n" +
+            "    <soap:Header xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/04/secext\">\n" +
+            "        <wsse:Security>\n" +
+            "            <wsse:UsernameToken Id=\"MyID\">\n" +
+            "                    <wsse:Username>Zoe</wsse:Username>\n" +
+            "                    <Password Type=\"wsse:PasswordText\">ILoveLlamas</Password>\n" +
+            "            </wsse:UsernameToken>\n" +
+            "        </wsse:Security>\n" +
+            "    </soap:Header>\n" +
+            "\n" +
+            "    <Body xmlns=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+            "            <accountid xmlns=\"http://warehouse.acme.com/accountns\">5643249816516813216</accountid>\n" +
+            "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"/>\n" +
+            "    </Body>\n" +
+            "    \n" +
+            "</soap:Envelope>";
+
     private static class TestStaticOnlyServerXslTransformation extends ServerXslTransformation {
         public TestStaticOnlyServerXslTransformation(XslTransformation ass) throws ServerPolicyException {
             //noinspection NullableProblems
@@ -439,5 +473,9 @@ public class XslTransformationTest {
         protected UrlResolver<CompiledStylesheet> getCache(HttpObjectCache.UserObjectFactory<CompiledStylesheet> cacheObjectFactory, BeanFactory spring) {
             return null;
         }
+    }
+
+    private static void assertEqualsIgnoringWhitespace(String expected, String actual) {
+        assertEquals(expected.replaceAll(" |\r|\n|\t", ""), actual.replaceAll(" |\r|\n|\t", ""));
     }
 }

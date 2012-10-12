@@ -11,6 +11,14 @@ public class TestingHttpClientFactory implements GenericHttpClientFactory {
 
     //- PUBLIC
 
+
+    public TestingHttpClientFactory() {
+    }
+
+    public TestingHttpClientFactory(MockGenericHttpClient mockGenericHttpClient) {
+        this.mockGenericHttpClient = mockGenericHttpClient;
+    }
+
     public GenericHttpClient createHttpClient() {
         return mockGenericHttpClient;
     }

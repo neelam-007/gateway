@@ -39,6 +39,7 @@ import com.l7tech.xml.xslt.StylesheetCompiler;
 import com.l7tech.xml.xslt.TransformInput;
 import com.l7tech.xml.xslt.TransformOutput;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.BeanFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -468,7 +469,7 @@ public class ServerXslTransformation
                 }
                 String val = pis.getNodeValue(0);
                 String url = extractHref(val);
-                return decorateWithXsltVersion(url);
+                return url == null ? null : decorateWithXsltVersion(url);
             }
         }
         // No processing instructions
@@ -483,6 +484,7 @@ public class ServerXslTransformation
      * @return the value of the href attribute, or null if this wasn't a valid text/xsl reference
      * @throws SAXException if the attribute list was not well formed
      */
+    @Nullable
     private String extractHref(String attrlist) throws SAXException {
         try {
             String fakeXml = "<dummy " + attrlist + " />";

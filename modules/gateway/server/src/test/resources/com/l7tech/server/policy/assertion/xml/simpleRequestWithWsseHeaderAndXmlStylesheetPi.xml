@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="http:bodySubstitution.xsl" type="text/xsl"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <soap:Header xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/04/secext">
+        <wsse:Security>
+            <wsse:UsernameToken Id="MyID">
+                <wsse:Username>Zoe</wsse:Username>
+                <Password Type="wsse:PasswordText">ILoveLlamas</Password>
+            </wsse:UsernameToken>
+        </wsse:Security>
+    </soap:Header>
+
+    <soap:Body>
+        <listProducts xmlns="http://warehouse.acme.com/ws"/>
+    </soap:Body>
+
+</soap:Envelope>
