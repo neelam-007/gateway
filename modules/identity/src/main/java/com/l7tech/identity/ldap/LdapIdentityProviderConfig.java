@@ -514,5 +514,5 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
     private static final String GROUP_CACHE_MAX_AGE_UNIT = "groupCacheMaxAgeUnit";
     private static final String GROUP_MAX_NESTING = "groupMaxNesting";
     private static final String GROUP_MEMBERSHIP_CASE_INSENSITIVE = "groupMembershipCaseInsensitive";
-    private static final String NTLM_AUTHENTICATION_PROVIDER_PROPERTIES = "ntlmProviderProperties";
+    public static final String NTLM_AUTHENTICATION_PROVIDER_PROPERTIES = "ntlmProviderProperties";
 }

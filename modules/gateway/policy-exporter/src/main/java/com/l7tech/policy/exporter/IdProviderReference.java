@@ -207,35 +207,42 @@ public class IdProviderReference extends ExternalReference {
                     Map localPropsMap = deserializeIDPProps(localProps);
                     Map otherPropsMap = deserializeIDPProps(getIdProviderConfProps());
                     if (getIdProviderTypeVal() == IdentityProviderType.LDAP.toVal() && !otherPropsMap.isEmpty()) {
-                        // use LdapIdentityProviderConfig.URL and LdapIdentityProviderConfig.SEARCH_BASE
-                        String val1 = (String)localPropsMap.get(LdapIdentityProviderConfig.SEARCH_BASE);
-                        String val2 = (String)otherPropsMap.get(LdapIdentityProviderConfig.SEARCH_BASE);
-                        val1 = val1.trim();
-                        val2 = val2.trim();
-                        if (val1.equalsIgnoreCase(val2)) {
-                            logger.fine("same Search base established");
-                            Object tmp = localPropsMap.get(LdapIdentityProviderConfig.URL);
-                            String[] urls1;
-                            if (tmp instanceof String) urls1 = new String[]{(String)tmp};
-                            else urls1 = (String[])tmp;
+                        //check NTLM properties
+                         Map<String, String> localNtlmMap = (Map<String, String>)localPropsMap.get(LdapIdentityProviderConfig.NTLM_AUTHENTICATION_PROVIDER_PROPERTIES);
+                        Map<String, String> otherNtlmMap = (Map<String, String>)otherPropsMap.get(LdapIdentityProviderConfig.NTLM_AUTHENTICATION_PROVIDER_PROPERTIES);
+                        if(verifyNtlmProperties(localNtlmMap, otherNtlmMap)) {
+                            // use LdapIdentityProviderConfig.URL and LdapIdentityProviderConfig.SEARCH_BASE
+                            String val1 = (String)localPropsMap.get(LdapIdentityProviderConfig.SEARCH_BASE);
+                            String val2 = (String)otherPropsMap.get(LdapIdentityProviderConfig.SEARCH_BASE);
+                            val1 = val1.trim();
+                            val2 = val2.trim();
+                            if (val1.equalsIgnoreCase(val2)) {
+                                logger.fine("same Search base established");
+                                Object tmp = localPropsMap.get(LdapIdentityProviderConfig.URL);
+                                String[] urls1;
+                                if (tmp instanceof String) urls1 = new String[]{(String)tmp};
+                                else urls1 = (String[])tmp;
 
-                            tmp = otherPropsMap.get(LdapIdentityProviderConfig.URL);
-                            String[] urls2;
-                            if (tmp instanceof String) urls2 = new String[]{(String)tmp};
-                            else urls2 = (String[])tmp;
+                                tmp = otherPropsMap.get(LdapIdentityProviderConfig.URL);
+                                String[] urls2;
+                                if (tmp instanceof String) urls2 = new String[]{(String)tmp};
+                                else urls2 = (String[])tmp;
 
-                            // check that at least one url is common
-                            for (String s1 : urls1) {
-                                for (String s2 : urls2) {
-                                   if (s1.equalsIgnoreCase(s2) && permitMapping( providerId, configOnThisSystem.getOid() )) {
-                                       setLocalizeReplace( configOnThisSystem.getOid() );
-                                       logger.fine("LDAP URL common to both id providers (" + s1 + ")");
-                                       return true;
-                                   }
+                                // check that at least one url is common
+                                for (String s1 : urls1) {
+                                    for (String s2 : urls2) {
+                                       if (s1.equalsIgnoreCase(s2) && permitMapping( providerId, configOnThisSystem.getOid() )) {
+                                           setLocalizeReplace( configOnThisSystem.getOid() );
+                                           logger.fine("LDAP URL common to both id providers (" + s1 + ")");
+                                           return true;
+                                       }
+                                    }
                                 }
+                            } else {
+                                logger.fine("The search base are not the same " + val1 + " vs " + val2);
                             }
                         } else {
-                            logger.fine("The search base are not the same " + val1 + " vs " + val2);
+                            logger.fine("NTLM properties are not the same!");
                         }
                     }
                 }
@@ -244,6 +251,44 @@ public class IdProviderReference extends ExternalReference {
         // 3. Otherwise => this reference if 'not verified' and will require manual resolution.
         logger.fine("this reference cannot be established locally (" + getProviderName() + ").");
         return false;
+    }
+
+    boolean verifyNtlmProperties(final Map<String, String> local, final Map<String, String> other) {
+        if(other == null || !Boolean.parseBoolean(other.get("enabled"))){
+            return true;//if NTLM properties disabled in the imported policy the rest doesn't matter
+        }
+        //check required NTLM properties
+        boolean match = false;
+
+        if(local == null || !Boolean.parseBoolean(local.get("enabled"))) {
+            return false;
+        }
+        if(other.containsKey("server.dns.name") && local.containsKey("server.dns.name")) {
+           match = other.get("server.dns.name").equals(local.get("server.dns.name"));
+        }
+        else{
+            return false;
+        }
+        if(other.containsKey("service.account") && local.containsKey("service.account")){
+            match &= other.get("service.account").equalsIgnoreCase(local.get("service.account"));
+        }
+        else {
+            return false;
+        }
+        if(other.containsKey("domain.netbios.name") && local.containsKey("domain.netbios.name")){
+           match &= other.get("domain.netbios.name").equalsIgnoreCase(local.get("domain.netbios.name"));
+        }
+        else {
+            return false;
+        }
+        if(other.containsKey("host.netbios.name") && local.containsKey("host.netbios.name")){
+            match &= other.get("host.netbios.name").equalsIgnoreCase(local.get("host.netbios.name"));
+        }
+        else {
+            return false;
+        }
+
+        return match;
     }
 
     private Map deserializeIDPProps(String serializedProps) {
