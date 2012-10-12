@@ -33,7 +33,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
                                 , Long contentLength
                                 , byte[] body) {
         this.responseStatus = status;
-        this.responseHeaders = responseHeaders;
+        this.responseHeaders = responseHeaders != null ? responseHeaders : new GenericHttpHeaders(new GenericHttpHeader[0]);
         this.contentTypeHeader = contentTypeHeader;
         this.contentLength = contentLength;
         this.responseBody = body;

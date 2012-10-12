@@ -1,7 +1,5 @@
 package com.l7tech.server.policy.assertion.xml;
 
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.Audit;
@@ -173,7 +171,7 @@ public class XslTransformationTest {
         byte[] xslBytes = getResAsString(XSL_BODYSUBST).getBytes(Charsets.UTF8);
 
         BeanFactory beanFactory = new SimpleSingletonBeanFactory(MapBuilder.<String,Object>builder()
-            .put("httpClientFactory", new TestingHttpClientFactory(new MockGenericHttpClient(200, new GenericHttpHeaders(new GenericHttpHeader[0]), ContentTypeHeader.XML_DEFAULT, (long)xslBytes.length, xslBytes)))
+            .put("httpClientFactory", new TestingHttpClientFactory(new MockGenericHttpClient(200, null, ContentTypeHeader.XML_DEFAULT, null, xslBytes)))
             .map());
 
         ServerXslTransformation sass = new ServerXslTransformation(ass, beanFactory);
