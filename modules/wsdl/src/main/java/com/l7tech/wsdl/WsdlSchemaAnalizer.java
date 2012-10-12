@@ -4,10 +4,7 @@ import com.l7tech.util.DomUtils;
 import org.w3c.dom.*;
 
 import javax.xml.namespace.QName;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Parses schemas present in a wsdl and split them into two versions; one for input messages and
@@ -19,9 +16,10 @@ import java.util.List;
  * Date: Sep 17, 2004<br/>
  */
 public class WsdlSchemaAnalizer {
-    public WsdlSchemaAnalizer(Document wsdl) {
+    public WsdlSchemaAnalizer(Document wsdl, Map<String,Document> docs) {
         this.wsdl = wsdl;
-        this.schemaElements = extractSchemaElementFromWsdl(wsdl);
+        this.docs = docs;
+        this.schemaElements = extractSchemaElementFromWsdl(wsdl, docs);
     }
 
     /**
@@ -123,7 +121,7 @@ public class WsdlSchemaAnalizer {
         }
     }
 
-    public static NodeList extractSchemaElementFromWsdl(Document wsdl)  {
+    public static List<Element> extractSchemaElementFromWsdl(Document wsdl, Map<String,Document> docs)  {
         if (wsdl == null) return null;
         NodeList potentiallists = wsdl.getDocumentElement().getElementsByTagName(WSDL_TYPES_ELNAME);
         Element typesel = null;
@@ -150,7 +148,26 @@ public class WsdlSchemaAnalizer {
         if (typesel == null) {
             return null;
         }
+        potentiallists = typesel.getElementsByTagNameNS(W3C_XML_SCHEMA, IMPORT_ELNAME);
+        
+        List<Element> schemas = new ArrayList<Element>();
+
+        //Import schema
+        if (potentiallists.getLength() > 0) {
+            for (int i = 0; i < potentiallists.getLength(); i++) {
+                Element e = (Element)potentiallists.item(0);
+                Element schema = getSchemaElement(e.getAttribute(SCHEMA_LOCATION), docs);
+                if (schema != null) {
+                    schemas.add(schema);
+                }
+            }
+        }
+
         NodeList output = typesel.getElementsByTagNameNS(W3C_XML_SCHEMA, TOP_SCHEMA_ELNAME);
+        for (int i = 0; i < output.getLength(); i++) {
+            schemas.add((Element) output.item(i));
+        }
+
         // transpose the namespaces from schema parents
         Node node = typesel;
         while (node != null) {
@@ -160,8 +177,8 @@ public class WsdlSchemaAnalizer {
                 for (int i = 0; i < attrsmap.getLength(); i++) {
                     Attr attrnode = (Attr)attrsmap.item(i);
                     if (attrnode.getName().startsWith("xmlns:")) {
-                        for (int ii = 0; ii < output.getLength(); ii++) {
-                            Element schemael = (Element)output.item(ii);
+                        for (int ii = 0; ii < schemas.size(); ii++) {
+                            Element schemael = schemas.get(ii);
                             if ( !schemael.hasAttributeNS( DomUtils.XMLNS_NS, attrnode.getLocalName() ) ) {
                                 schemael.setAttributeNS(DomUtils.XMLNS_NS, attrnode.getName(), attrnode.getValue());
                             }
@@ -171,14 +188,23 @@ public class WsdlSchemaAnalizer {
             }
             node = node.getParentNode();
         }
-        return output;
+        return schemas;
+    }
+    
+    private static Element getSchemaElement(String schemaLocation, Map<String,Document> docs) {
+        for ( final Map.Entry<String, Document> doc : docs.entrySet() ) {
+            if (schemaLocation!= null && doc.getKey().endsWith(schemaLocation)) {
+                return doc.getValue().getDocumentElement();
+            }
+        }
+        return null;
     }
 
     private Element[] removeQnamesFromSchemas(Collection qnames) {
-        Element[] output = new Element[schemaElements.getLength()];
-        for (int i = 0; i < schemaElements.getLength(); i++) {
+        Element[] output = new Element[schemaElements.size()];
+        for (int i = 0; i < schemaElements.size(); i++) {
             // clone the schema
-            output[i] = (Element)(schemaElements.item(i).cloneNode(true));
+            output[i] = (Element)(schemaElements.get(i).cloneNode(true));
             // only keep the elements that are in the qnames passed
             String tns = output[i].getAttribute("targetNamespace");
             NodeList schemaChildren = output[i].getChildNodes();
@@ -197,9 +223,9 @@ public class WsdlSchemaAnalizer {
 
     public Element[] getFullSchemas() {
         if (schemaElements == null) return null;
-        Element[] output = new Element[schemaElements.getLength()];
-        for (int i = 0; i < schemaElements.getLength(); i++) {
-            output[i] = (Element)schemaElements.item(i);
+        Element[] output = new Element[schemaElements.size()];
+        for (int i = 0; i < schemaElements.size(); i++) {
+            output[i] = (Element)schemaElements.get(i);
         }
         return output;
     }
@@ -215,11 +241,16 @@ public class WsdlSchemaAnalizer {
     public static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
     public static final String WSDL_TYPES_ELNAME = "types";
     public static final String TOP_SCHEMA_ELNAME = "schema";
+    public static final String IMPORT_ELNAME = "import";
+    public static final String SCHEMA_LOCATION = "schemaLocation";
     public static final String WSDL_NS = "http://schemas.xmlsoap.org/wsdl/";
     public Element[] inputSchemas;
     public Element[] ouputSchemas;
 
     private Document wsdl;
     private NodeList messages = null;
-    private NodeList schemaElements = null;
+    private List<Element> schemaElements = null;
+    private Map<String,Document> docs = null;
+
+
 }

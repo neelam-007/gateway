@@ -1,0 +1,101 @@
+<s:schema elementFormDefault="qualified" targetNamespace="http://warehouse.acme.com/ws" xmlns:tns="http://warehouse.acme.com/ws" xmlns:s="http://www.w3.org/2001/XMLSchema">
+            <s:element name="listProducts">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="1" name="delay" type="s:int"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="listProductsResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="listProductsResult" type="tns:ArrayOfProductListHeader"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:complexType name="ArrayOfProductListHeader">
+                <s:sequence>
+                    <s:element maxOccurs="unbounded" minOccurs="0" name="ProductListHeader" nillable="true" type="tns:ProductListHeader"/>
+                </s:sequence>
+            </s:complexType>
+            <s:complexType name="ProductListHeader">
+                <s:sequence>
+                    <s:element maxOccurs="1" minOccurs="0" name="productName" type="s:string"/>
+                    <s:element maxOccurs="1" minOccurs="1" name="productId" type="s:long"/>
+                </s:sequence>
+            </s:complexType>
+            <s:element name="getProductDetails">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="1" name="productid" type="s:long"/>
+                        <s:element maxOccurs="1" minOccurs="1" name="delay" type="s:int"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="getProductDetailsResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="getProductDetailsResult" type="tns:ProductDetails"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:complexType name="ProductDetails">
+                <s:complexContent mixed="false">
+                    <s:extension base="tns:ProductListHeader">
+                        <s:sequence>
+                            <s:element maxOccurs="1" minOccurs="0" name="description" type="s:string"/>
+                            <s:element maxOccurs="1" minOccurs="1" name="price" type="s:float"/>
+                            <s:element maxOccurs="1" minOccurs="1" name="inStock" type="s:boolean"/>
+                        </s:sequence>
+                    </s:extension>
+                </s:complexContent>
+            </s:complexType>
+            <s:element name="placeOrder">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="1" name="productid" type="s:long"/>
+                        <s:element maxOccurs="1" minOccurs="1" name="amount" type="s:long"/>
+                        <s:element maxOccurs="1" minOccurs="1" name="price" type="s:float"/>
+                        <s:element maxOccurs="1" minOccurs="1" name="accountid" type="s:long"/>
+                        <s:element maxOccurs="1" minOccurs="1" name="delay" type="s:int"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="placeOrderResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="1" name="placeOrderResult" type="s:long"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="currentOrders">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="1" name="accountid" type="s:long"/>
+                        <s:element maxOccurs="1" minOccurs="1" name="delay" type="s:int"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="currentOrdersResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0" name="currentOrdersResult" type="tns:ArrayOfOrder"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:complexType name="ArrayOfOrder">
+                <s:sequence>
+                    <s:element maxOccurs="unbounded" minOccurs="0" name="Order" nillable="true" type="tns:Order"/>
+                </s:sequence>
+            </s:complexType>
+            <s:complexType name="Order">
+                <s:sequence>
+                    <s:element maxOccurs="1" minOccurs="1" name="date" type="s:dateTime"/>
+                    <s:element maxOccurs="1" minOccurs="1" name="accountId" type="s:long"/>
+                    <s:element maxOccurs="1" minOccurs="1" name="productId" type="s:long"/>
+                    <s:element maxOccurs="1" minOccurs="1" name="amount" type="s:long"/>
+                    <s:element maxOccurs="1" minOccurs="1" name="price" type="s:float"/>
+                    <s:element maxOccurs="1" minOccurs="1" name="confirmationId" type="s:long"/>
+                </s:sequence>
+            </s:complexType>
+        </s:schema>

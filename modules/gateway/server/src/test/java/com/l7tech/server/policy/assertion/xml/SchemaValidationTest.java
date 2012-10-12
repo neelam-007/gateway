@@ -92,7 +92,7 @@ public class SchemaValidationTest {
     public void testCaseWith2BodyChildren() throws Exception {
         // create assertion based on the wsdl
         SchemaValidation assertion = new SchemaValidation();
-        WsdlSchemaAnalizer wsn = new WsdlSchemaAnalizer(TestDocuments.getTestDocument(DOCLIT_WSDL_WITH2BODYCHILDREN));
+        WsdlSchemaAnalizer wsn = new WsdlSchemaAnalizer(TestDocuments.getTestDocument(DOCLIT_WSDL_WITH2BODYCHILDREN), null);
         Element[] schemas = wsn.getFullSchemas();
         Assert.assertTrue(schemas.length == 1); // no multiple schema support
         assertion.setResourceInfo(new StaticResourceInfo( XmlUtil.elementToXml(schemas[0])));
@@ -117,7 +117,7 @@ public class SchemaValidationTest {
     public void testWarehouseValidations() throws Exception {
         // create assertion based on the wsdl
         SchemaValidation assertion = new SchemaValidation();
-        WsdlSchemaAnalizer wsn = new WsdlSchemaAnalizer(TestDocuments.getTestDocument(WAREHOUSE_WSDL_PATH));
+        WsdlSchemaAnalizer wsn = new WsdlSchemaAnalizer(TestDocuments.getTestDocument(WAREHOUSE_WSDL_PATH), null);
         Element[] schemas = wsn.getFullSchemas();
         assertion.setResourceInfo(new StaticResourceInfo(XmlUtil.elementToXml(schemas[0])));
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, testApplicationContext);

@@ -529,8 +529,12 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         final List<Pair<String,Element>> inputSchemas = new ArrayList<Pair<String,Element>>();
         final List<Pair<String,Element>> outputSchemas = new ArrayList<Pair<String,Element>>();
         try {
+            final Map<String,Document> domToAnalyze = new HashMap<String,Document>();
             for ( final Map.Entry<String,String> docEntry : documentsToAnalyze.entrySet() ) {
-                final WsdlSchemaAnalizer analyzer = new WsdlSchemaAnalizer(XmlUtil.stringToDocument(docEntry.getValue()));
+                domToAnalyze.put(docEntry.getKey(), XmlUtil.stringToDocument(docEntry.getValue()));
+            }
+            for ( final Map.Entry<String,Document> docEntry : domToAnalyze.entrySet() ) {
+                final WsdlSchemaAnalizer analyzer = new WsdlSchemaAnalizer(docEntry.getValue(), domToAnalyze);
                 analyzer.splitInputOutputs();
                 fullSchemas.addAll( toPairs( docEntry.getKey(), analyzer.getFullSchemas() ) );
                 inputSchemas.addAll( toPairs( docEntry.getKey(), analyzer.getInputSchemas() ) );
