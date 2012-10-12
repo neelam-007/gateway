@@ -271,6 +271,26 @@ public class CertUtilsTest {
         System.out.println((double)i/t *1000 + " iterations per second");
     }
 
+    /**
+     * dnToAttributeMap may throw an IllegalArgumentException when an invalid value is passed in.
+     * This test validates the current behavior in case it is changed. The
+     * bug fix for 13002 will expect this exception during SAML token processing.
+     *
+     * @throws Exception
+     */
+    @BugNumber(13002)
+    @Test
+    public void testInvalidDnThrowsIllegalArgument() throws Exception {
+        try {
+            CertUtils.dnToAttributeMap("admin");
+            fail("Method should have thrown for invalid dn");
+        } catch (IllegalArgumentException e) {
+            final String message = e.getMessage();
+            System.out.println(message);
+            assertTrue("Invalid message text found", message.startsWith("Invalid DN"));
+        }
+    }
+
     @Test
     public void testFingerprint() throws Exception {
         String certificatePem = "-----BEGIN CERTIFICATE-----\n" +

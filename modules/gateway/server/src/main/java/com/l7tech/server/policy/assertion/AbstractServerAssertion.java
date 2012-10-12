@@ -122,6 +122,11 @@ public abstract class AbstractServerAssertion<AT extends Assertion> implements S
         getAudit().logAndAudit( msg, params, e );
     }
 
+    protected final void logAndAudit( @NotNull  final AuditDetailMessage msg,
+                                      @Nullable final Throwable e ) {
+        getAudit().logAndAudit(msg, new String[]{}, e);
+    }
+
     /**
      * Log and/or audit a message using this assertions Audit instance.
      */

@@ -17,10 +17,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
-import com.l7tech.util.Config;
-import com.l7tech.util.Pair;
-import com.l7tech.util.TimeUnit;
-import com.l7tech.util.Triple;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -211,7 +208,18 @@ public abstract class ServerRequireSaml<AT extends RequireSaml> extends Abstract
             }
         }
 
-        authContext.addCredentials( LoginCredentials.makeLoginCredentials( samlAssertion, RequireWssSaml.class ) ) ;
+        try {
+            authContext.addCredentials( LoginCredentials.makeLoginCredentials( samlAssertion, RequireWssSaml.class ) ) ;
+        } catch (IllegalArgumentException e) {
+            final String errorMsg = ExceptionUtils.getMessage(e);
+            if (errorMsg.startsWith("Invalid DN")) {
+                logAndAudit(AssertionMessages.SAML_NAME_IDENTIFIER_INVALID_DN, ExceptionUtils.getDebugException(e));
+                return AssertionStatus.FALSIFIED;
+            } else {
+                // rethrow, something else unexpected happened.
+                throw e;
+            }
+        }
 
         // Record attribute values
         if (!collectAttrValues.isEmpty()) {

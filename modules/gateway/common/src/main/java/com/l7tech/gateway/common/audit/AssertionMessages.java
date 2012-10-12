@@ -562,6 +562,7 @@ public class AssertionMessages extends Messages {
     public static final M SAML_AUTHN_STMT_NO_TOKENS_PROCESSED = m(6106, Level.INFO, "No tokens were processed from {0} message: Returning AUTH_REQUIRED");
     public static final M SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED = m(6107, Level.WARNING, true, false, "{0} message contained more than one SAML token");
     public static final M SAML_TOKEN_EXPIRATION_WARNING = m(6108, Level.WARNING, true, false, "SAML token is expired when constrained to maximum allowed lifetime");
+    public static final M SAML_NAME_IDENTIFIER_INVALID_DN = m(6109, Level.INFO, true, false, "SAML token name identifier contained an invalid DN value for X509SubjectName format");
 
     // ServerWsTrustCredentialExchange
     public static final M WSTRUST_NO_SUITABLE_CREDENTIALS = m(6200, Level.INFO, "The current request did not contain credentials of any supported type");

@@ -2,6 +2,8 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.identity.mapping.NameFormat;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -19,6 +21,7 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.saml.SamlAssertionV1;
+import com.l7tech.xml.saml.SamlAssertionV2;
 import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Before;
 import org.junit.Test;
@@ -313,6 +316,45 @@ public class ServerRequireWssSamlTest {
         assertEquals(AssertionStatus.NONE, result);
     }
 
+    /**
+     * Prior to this bug if the name identifier format was X509SubjectName
+     * @throws Exception
+     */
+    @BugNumber(13002)
+    @Test
+    public void testInvalidDNCausesAuditAndFalisified() throws Exception {
+        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        requireWssSaml.setVersion(2);
+        requireWssSaml.setCheckAssertionValidity(false);
+        requireWssSaml.setNameFormats(new String[] {NameFormat.X500_DN.getSaml11Uri()});
+
+        requireWssSaml.setRequireHolderOfKeyWithMessageSignature(false);
+        requireWssSaml.setRequireSenderVouchesWithMessageSignature(false);
+        requireWssSaml.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_BEARER});
+
+        final SamlAuthenticationStatement authStmt = new SamlAuthenticationStatement();
+        authStmt.setAuthenticationMethods(new String[]{SamlConstants.PASSWORD_AUTHENTICATION});
+        requireWssSaml.setAuthenticationStatement(authStmt);
+
+        ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml);
+        final TestAudit testAudit = SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
+
+        final SamlAssertionV2 samlAssertionV2 = new SamlAssertionV2(XmlUtil.stringAsDocument(SAML_v2_X509_INVALID_DN).getDocumentElement(), null);
+        Message request = getDecoratedMessage(samlAssertionV2);
+        System.out.println("Req: " + XmlUtil.nodeToFormattedString(request.getXmlKnob().getDocumentReadOnly()));
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
+
+        AssertionStatus result = serverRequireWssSaml.checkRequest(context);
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertEquals(AssertionStatus.FALSIFIED, result);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SAML_NAME_IDENTIFIER_INVALID_DN));
+
+    }
+
     @Test
     @BugNumber(12970)
     public void testNoSamlTokenPresentInDefaultRequest() throws Exception {
@@ -361,7 +403,7 @@ public class ServerRequireWssSamlTest {
         ServerRequireSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml);
         SamlTestUtil.configureServerAssertionInjects(serverRequireWssSaml);
 
-        // Use a completely undecordated request
+        // Use a completely undecorated request
         Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV));
         Element securityHeader = SoapUtil.getSecurityElement(request.getXmlKnob().getDocumentWritable());
         securityHeader.getParentNode().removeChild(securityHeader);
@@ -438,4 +480,21 @@ public class ServerRequireWssSamlTest {
             "        </saml:Attribute>\n" +
             "    </saml:AttributeStatement>\n" +
             "</saml:Assertion>";
+
+    private static final String SAML_v2_X509_INVALID_DN = "\n" +
+            "    <saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-0bf4dc9eb124d15c453731bb302f9122\" IssueInstant=\"2012-10-12T18:19:22.485Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">\n" +
+            "    <saml2:Issuer>irishman2.l7tech.local</saml2:Issuer>\n" +
+            "    <saml2:Subject>\n" +
+            "    <saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName\" NameQualifier=\"\">admin</saml2:NameID>\n" +
+            "    <saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\"/>\n" +
+            "    </saml2:Subject>\n" +
+            "    <saml2:Conditions NotBefore=\"2012-10-12T18:17:22.486Z\" NotOnOrAfter=\"2012-10-12T18:24:22.486Z\"/>\n" +
+            "    <saml2:AuthnStatement AuthnInstant=\"2012-10-12T18:19:22.485Z\">\n" +
+            "    <saml2:SubjectLocality Address=\"127.0.0.1\"/>\n" +
+            "    <saml2:AuthnContext>\n" +
+            "    <saml2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</saml2:AuthnContextClassRef>\n" +
+            "    </saml2:AuthnContext>\n" +
+            "    </saml2:AuthnStatement>\n" +
+            "    </saml2:Assertion>\n" +
+            "\n";
 }
