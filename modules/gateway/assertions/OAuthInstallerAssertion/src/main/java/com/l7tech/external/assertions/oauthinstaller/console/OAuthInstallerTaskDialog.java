@@ -335,7 +335,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
     private void handleException(Exception e) {
         if (e instanceof InterruptedException) {
             // do nothing, user cancelled
-            logger.info("User cancelled installation of the " + OAUTH_FOLDER + " Toolkit.");
+            logger.info("User cancelled installation of the OAuth Toolkit.");
         } else if (e instanceof InvocationTargetException) {
             DialogDisplayer.showMessageDialog(this, "Could not invoke installation on Gateway",
                     "Installation Problem",
