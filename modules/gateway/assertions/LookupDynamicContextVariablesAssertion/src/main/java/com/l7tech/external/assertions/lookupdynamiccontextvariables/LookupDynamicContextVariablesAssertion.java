@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.lookupdynamiccontextvariables;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
 /**
@@ -9,7 +10,7 @@ import com.l7tech.policy.variable.VariableMetadata;
  *
  * @author KDiep
  */
-public class LookupDynamicContextVariablesAssertion extends Assertion implements SetsVariables {
+public class LookupDynamicContextVariablesAssertion extends Assertion implements SetsVariables, UsesVariables {
 
     /**
      * The output variable suffix.
@@ -132,6 +133,11 @@ public class LookupDynamicContextVariablesAssertion extends Assertion implements
                 new VariableMetadata(getTargetOutputVariablePrefix() + MULTIVALUED_SUFIX, false, false, null, true, DataType.BOOLEAN),
                 new VariableMetadata(getTargetOutputVariablePrefix() + FOUND_SUFIX, false, false, null, true, DataType.BOOLEAN)
         };
+    }
+
+    @Override
+    public String[] getVariablesUsed() {
+        return Syntax.getReferencedNames(getSourceVariable());
     }
 
     @Override
