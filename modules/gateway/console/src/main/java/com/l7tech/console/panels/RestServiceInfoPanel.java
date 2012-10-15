@@ -265,8 +265,8 @@ public class RestServiceInfoPanel extends WizardStepPanel {
             DialogDisplayer.display(new JOptionPane("Gateway URI can not be empty."), getOwner().getContentPane(), "Invalid Gateway URI", null);
             return false;
         }
-        if(gatewayUrl.length() > 255){
-            DialogDisplayer.display(new JOptionPane("Gateway URI exceed maximum allowable number of characters (255)"), getOwner().getContentPane(), "Invalid Gateway URI",  null);
+        if(gatewayUrl.length() > 125){
+            DialogDisplayer.display(new JOptionPane("Gateway URI exceed maximum allowable number of characters (125)"), getOwner().getContentPane(), "Invalid Gateway URI",  null);
             return false;
         }
         if(!gatewayUrl.startsWith("/")) gatewayUrl = "/" + gatewayUrl;
@@ -301,8 +301,8 @@ public class RestServiceInfoPanel extends WizardStepPanel {
                 DialogDisplayer.display(new JOptionPane("Gateway URI can not be empty."), getOwner().getContentPane(), "Invalid Gateway URI", null);
                 return false;
             }
-            if(value.length() > 255){
-                DialogDisplayer.display(new JOptionPane("Gateway URI exceed maximum allowable number of characters (255)"), getOwner().getContentPane(), "Invalid Gateway URI",  null);
+            if(value.length() > 125){
+                DialogDisplayer.display(new JOptionPane("Gateway URI exceed maximum allowable number of characters (125)"), getOwner().getContentPane(), "Invalid Gateway URI",  null);
                 return false;
             }
             if(duplicate.contains(value)){
