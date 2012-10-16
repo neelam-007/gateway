@@ -340,6 +340,8 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
      */
     class TreeKeyListener extends KeyAdapter {
 
+        long lastKeyPressed = 0;
+
         /**
          * Invoked when a key has been pressed.
          */
@@ -375,6 +377,11 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                         deleteMultipleEntities(abstractTreeNodes, true);
                     }
                 } else if (KeyEvent.VK_ENTER == e.getKeyCode() && !hasMultipleSelection) {
+                    long currentTime = System.currentTimeMillis();
+                    if(currentTime - lastKeyPressed < 500L){
+                        return;
+                    }
+                    lastKeyPressed = currentTime;
                     AbstractTreeNode node = abstractTreeNodes.get(0);
                     if (node instanceof EntityWithPolicyNode)
                         new EditPolicyAction((EntityWithPolicyNode) node).actionPerformed(null);

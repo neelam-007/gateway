@@ -1,12 +1,12 @@
 package com.l7tech.console.logging;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Handles multiple related error events.
@@ -139,7 +139,7 @@ public class CascadingErrorHandler implements ErrorHandler, LogonListener {
     /**
      * The length of the error window (millis)
      */
-    private static final long ERROR_PERIOD = 5000L;
+    private static final long ERROR_PERIOD = 500L;
 
     /**
      * The amount of time to suppress errors after a disconnection (millis)
