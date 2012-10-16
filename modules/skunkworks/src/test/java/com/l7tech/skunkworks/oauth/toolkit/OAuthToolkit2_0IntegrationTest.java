@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.util.Map;
 
 import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSSLSocketFactory;
 import static org.junit.Assert.*;
@@ -21,7 +22,7 @@ import static org.junit.Assert.*;
  * Modify static Strings as needed and remove the Ignore annotation to execute the tests.
  */
 @Ignore
-public class OAuthToolkit2_0IntegrationTest {
+public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     //LOCALHOST
     private static final String BASE_URL = "localhost";
     private static final String CONSUMER_KEY = "182637fd-8b6b-4dca-9192-3d1e23d556b5";
@@ -267,6 +268,38 @@ public class OAuthToolkit2_0IntegrationTest {
         assertEquals(302, response.getStatus());
         final String locationHeader = response.getHeaders().getFirstValue("Location");
         assertEquals(CALLBACK + "?error=access_denied&state=state_test", locationHeader);
+    }
+
+    @Test
+    @BugNumber(13269)
+    public void whitespaceInRegisteredCallbacks() throws Exception {
+        // first register a client key with two callbacks that have whitespace between them
+        final Map<String, String> clientParams = buildClientParams();
+        final String clientIdentity = clientParams.get(CLIENT_IDENT);
+        store("client", clientParams);
+        final String callbacksWithWhitespace = "https://localhost:8443/oauth/v2/client/authcode, https://localhost:8443/oauth/v2/client/implicit";
+        final Map<String, String> keyParams = buildKeyParams(callbacksWithWhitespace, OOB, ALL);
+        keyParams.put(EXPIRATION, "0");
+        final String clientKey = keyParams.get(CLIENT_KEY);
+        keyParams.put(CLIENT_IDENT, clientIdentity);
+        store("client", keyParams);
+        final ClientKey key = getKey(clientKey);
+        assertEquals(callbacksWithWhitespace, key.getCallback());
+
+        // try to authorize without specifying a redirect_uri
+        final String url = buildAuthorizeUrl(key.getClientKey(), "code", null, "state_test");
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
+        params.setFollowRedirects(false);
+        params.setSslSocketFactory(getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+
+        // delete the client and key
+        delete(CLIENT_IDENT, clientIdentity, "client");
+
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertTrue(responseBody.contains("Mismatching redirect uri"));
     }
 
     private String buildAuthorizeUrl(final String clientId, final String responseType, final String callback, final String state) {

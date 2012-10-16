@@ -666,7 +666,7 @@
                     &lt;L7p:AutoTarget booleanValue="false"/&gt;
                     &lt;L7p:OtherTargetMessageVariable stringValue="redirect_uri"/&gt;
                     &lt;L7p:ProceedIfPatternMatches booleanValue="false"/&gt;
-                    &lt;L7p:Regex stringValue="[,;]http"/&gt;
+                    &lt;L7p:Regex stringValue="[,;][ \t\r\n]*http"/&gt;
                     &lt;L7p:RegexName stringValue="Check that redirect_uri is just one absolute URI"/&gt;
                     &lt;L7p:Replacement stringValue=""/&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
