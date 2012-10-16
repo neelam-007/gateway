@@ -201,6 +201,16 @@ public class ServerForEachLoopAssertionTest {
         assertEquals(1, context.getVariable("i.iterations"));
     }
 
+    @Test
+    @BugNumber(13255)
+    public void testGetVariablesUsed() throws Exception {
+        ass.setLoopVariableName("blah");
+
+        String[] varsUsed = ass.getVariablesUsed();
+        assertEquals(1, varsUsed.length);
+        assertEquals("blah", varsUsed[0]);
+    }
+
     private void assertNoSuchVariable(String var) {
         try {
             context.getVariable(var);

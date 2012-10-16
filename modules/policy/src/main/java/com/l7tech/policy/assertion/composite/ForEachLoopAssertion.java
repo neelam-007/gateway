@@ -4,7 +4,6 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.List;
@@ -64,11 +63,9 @@ public class ForEachLoopAssertion extends CompositeAssertion implements UsesVari
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        if (variablePrefix != null) {
-            return Syntax.getReferencedNames(loopVariableName, variablePrefix + BREAK);
-        } else {
-            return Syntax.getReferencedNames(loopVariableName);
-        }
+        // Variables used should not include prefix.break because it is set by a child of this assertion,
+        // which nonstandard apparently-backwards execution flow will not currently be understood by existing policy validators
+        return loopVariableName == null ? new String[0] : new String[] { loopVariableName };
     }
 
     public VariableMetadata[] getVariablesSet() {
