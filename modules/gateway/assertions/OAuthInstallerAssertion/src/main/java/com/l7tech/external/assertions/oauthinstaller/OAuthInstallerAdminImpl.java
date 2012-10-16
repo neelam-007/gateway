@@ -257,8 +257,9 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                     }
 
                     //todo fix folder id
+                    final String prefixToUse = (installationPrefix != null && !installationPrefix.isEmpty()) ? installationPrefix : null;
                     final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                            bundleInfo, -5002, new HashMap<String, Object>(), bundleMappings.get(bundleId), installationPrefix);
+                            bundleInfo, -5002, new HashMap<String, Object>(), bundleMappings.get(bundleId), prefixToUse);
 
                     final DryRunInstallPolicyBundleEvent dryRunEvent =
                             new DryRunInstallPolicyBundleEvent(bundleMappings, bundleResolver, context);
@@ -304,8 +305,6 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                                  @NotNull Map<String, BundleMapping> bundleMappings,
                                                  @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
 
-        //todo check version of bundle to ensure it's supported.
-
         // When installing more than one bundle, allow for optimization of not trying to recreate items already created.
         final Map<String, Object> contextMap = new HashMap<String, Object>();
 
@@ -313,9 +312,9 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         final OAuthToolkitBundleResolver bundleResolver = new OAuthToolkitBundleResolver(bundleInfosFromJar);
         if (isInstallInProgress.compareAndSet(false, true)) {
             try {
-                if (installationPrefix != null) {
-                    bundleResolver.setInstallationPrefix(installationPrefix);
-                }
+                final String prefixToUse = (installationPrefix != null && !installationPrefix.trim().isEmpty()) ?
+                        installationPrefix : null;
+                bundleResolver.setInstallationPrefix(prefixToUse);
 
                 //iterate through all the bundle names to install
                 outer:
@@ -331,11 +330,11 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                         if (bundleInfo.getId().equals(bundleId)) {
 
                             final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                                    bundleInfo, folderOid, contextMap, bundleMappings.get(bundleId), installationPrefix);
+                                    bundleInfo, folderOid, contextMap, bundleMappings.get(bundleId), prefixToUse);
                             final InstallPolicyBundleEvent installEvent =
                                     new InstallPolicyBundleEvent(this, bundleResolver,
                                             context,
-                                            getSavePolicyCallback(installationPrefix));
+                                            getSavePolicyCallback(prefixToUse));
                             jobContext.currentEvent = installEvent;
 
                             spring.publishEvent(installEvent);

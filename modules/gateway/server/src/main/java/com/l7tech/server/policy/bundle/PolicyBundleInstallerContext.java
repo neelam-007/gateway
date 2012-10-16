@@ -12,6 +12,7 @@ public class PolicyBundleInstallerContext {
     /**
      * @param bundleInfo    bundle to install
      * @param folderOid     oid of the parent folder
+     * @param installationPrefix If not null, the value will be used to prefix the installation.
      * @param bundleMapping Nullable Map of mappings for the bundle to install
      */
     public PolicyBundleInstallerContext(@NotNull BundleInfo bundleInfo,

@@ -50,6 +50,10 @@ public class OAuthToolkitBundleResolver implements BundleResolver {
         guidToResourceDirectory.putAll(guidMap);
     }
 
+    /**
+     * Set the installation prefix.
+     * @param installationPrefix installation prefix
+     */
     public void setInstallationPrefix(@Nullable String installationPrefix) {
         this.installationPrefix = installationPrefix;
     }

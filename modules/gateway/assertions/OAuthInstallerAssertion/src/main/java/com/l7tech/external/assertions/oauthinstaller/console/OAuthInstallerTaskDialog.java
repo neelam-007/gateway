@@ -263,26 +263,33 @@ public class OAuthInstallerTaskDialog extends JDialog {
             return;
         }
 
-        // validate installation prefix
-        final String prefix = installationPrefixTextField.getText().trim();
-        if (!prefix.isEmpty()) {
-            final String prefixedUrlErrorMsg = getPrefixedUrlErrorMsg(prefix);
+        final String prefix;
+        if (prefixResolutionURIsAndCheckBox.isSelected()) {
+            final String tempPrefix = installationPrefixTextField.getText().trim();
+            if (tempPrefix.isEmpty()) {
+                DialogDisplayer.showMessageDialog(this, "No installation prefix was entered", "Enter Installation Prefix", JOptionPane.WARNING_MESSAGE, null);
+                return;
+            }
+            // validate installation prefix
+            final String prefixedUrlErrorMsg = getPrefixedUrlErrorMsg(tempPrefix);
             if (prefixedUrlErrorMsg != null) {
                 DialogDisplayer.showMessageDialog(this, prefixedUrlErrorMsg, "Invalid installation prefix", JOptionPane.WARNING_MESSAGE, null);
                 return;
             }
+
+            prefix = tempPrefix;
+        } else {
+            prefix = null;
         }
 
         final OAuthInstallerAdmin admin = Registry.getDefault().getExtensionInterface(OAuthInstallerAdmin.class, null);
 
         try {
-            final String prefixToUse = (prefixResolutionURIsAndCheckBox.isSelected()) ? installationPrefixTextField.getText() : null;
-
             final Either<String, PolicyBundleDryRunResult> dryRunEither = doAsyncAdmin(admin,
                     OAuthInstallerTaskDialog.this,
                     "OAuth Toolkit Pre Installation Check",
                     "The gateway is being checked for conflicts for the selected components",
-                    admin.dryRunOtkInstall(bundlesToInstall, bundleMappings, prefixToUse));
+                    admin.dryRunOtkInstall(bundlesToInstall, bundleMappings, prefix));
 
             if (dryRunEither.isRight()) {
                 boolean areConflicts = false;
@@ -310,7 +317,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
                         public void run() {
                             if (conflictDialog.wasOKed()) {
                                 try {
-                                    doInstall(bundlesToInstall, bundleMappings, admin, prefixToUse);
+                                    doInstall(bundlesToInstall, bundleMappings, admin, prefix);
                                 } catch (Exception e) {
                                     // this may execute after the code below completes as it's a callback
                                     handleException(e);
@@ -319,7 +326,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
                         }
                     });
                 } else {
-                    doInstall(bundlesToInstall, bundleMappings, admin, prefixToUse);
+                    doInstall(bundlesToInstall, bundleMappings, admin, prefix);
                 }
             } else {
                 // error occurred
