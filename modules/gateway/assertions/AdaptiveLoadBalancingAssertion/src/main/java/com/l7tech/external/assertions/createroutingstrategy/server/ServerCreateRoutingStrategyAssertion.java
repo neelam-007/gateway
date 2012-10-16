@@ -6,6 +6,7 @@ import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.Service;
 import com.l7tech.external.assertions.createroutingstrategy.CreateRoutingStrategyAssertion;
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
@@ -72,6 +73,7 @@ public class ServerCreateRoutingStrategyAssertion extends AbstractServerAssertio
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
+        AssertionStatus assertionStatus = AssertionStatus.NONE;
         Service[] routes = null;
 
         //If no dynamic service, use the cached services and strategy which created during compile time.
@@ -83,10 +85,16 @@ public class ServerCreateRoutingStrategyAssertion extends AbstractServerAssertio
             routes = cachedRoutes;
         }
 
-        context.setVariable(assertion.getRouteList(), routes);
-        context.setVariable(assertion.getStrategy(), getStrategy(routes));
+        if(routes.length > 0) {
+            context.setVariable(assertion.getRouteList(), routes);
+            context.setVariable(assertion.getStrategy(), getStrategy(routes));
+        }
+        else {
+            logAndAudit(AssertionMessages.ADAPTIVE_LOAD_BALANCING_CRS_NO_ROUTES);
+            assertionStatus = AssertionStatus.FALSIFIED;
+        }
 
-        return AssertionStatus.NONE;
+        return assertionStatus;
     }
 
 

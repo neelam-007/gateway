@@ -1181,6 +1181,7 @@ public class AssertionMessages extends Messages {
     public static final M ADAPTIVE_LOAD_BALANCING_NO_ROUTE = m(9722, Level.WARNING, "Strategy {0} returned no route");
     public static final M ADAPTIVE_LOAD_BALANCING_VAR_NOT_FOUND = m(9723, Level.WARNING, "{0} variable not found in policy enforcement context");
     public static final M ADAPTIVE_LOAD_BALANCING_WRONG_VAR_TYPE = m(9724, Level.WARNING, "{0} variable is not the right type!");
+    public static final M ADAPTIVE_LOAD_BALANCING_CRS_NO_ROUTES = m(9725, Level.WARNING, "Create Routing Strategy Assertion has no routes!");
 
     public static final M CACHE_LOOKUP_NOT_VAR_OR_LONG = m(9800, Level.WARNING, "Message cache error: ''{0}'' is not single variable reference or a long between ''{1}'' and ''{2}'' inclusive");
     public static final M CACHE_LOOKUP_VAR_CONTENTS_ILLEGAL = m(9801, Level.WARNING, "Message cache error: Variable ''{0}'' with contents ''{1}'' is not a long between ''{2}'' and ''{3}'' inclusive");

@@ -7,6 +7,7 @@ import com.l7tech.common.io.failover.Service;
 import com.l7tech.external.assertions.createroutingstrategy.CreateRoutingStrategyAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -15,13 +16,16 @@ import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.MockInjector;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.context.support.GenericApplicationContext;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import static junit.framework.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
@@ -118,14 +122,29 @@ public class ServerCreateRoutingStrategyAssertionTest {
     @Test
     public void testServerListChange() throws Exception {
         ServerAssertion sass = serverPolicyFactory.compilePolicy(assertion, false);
-        AssertionStatus result = sass.checkRequest(peCtx);
+        Assert.assertEquals(AssertionStatus.NONE, sass.checkRequest(peCtx));
         FailoverStrategy s = (FailoverStrategy) peCtx.getVariable(STRATEGY);
         peCtx.setVariable("servers", new String[]{DSERVER_MV1, DSERVER_MV2, DSERVER_MV3});
-        result = sass.checkRequest(peCtx);
+        assertEquals(AssertionStatus.NONE, sass.checkRequest(peCtx));
         FailoverStrategy s2 = (FailoverStrategy) peCtx.getVariable(STRATEGY);
         assertTrue(s != s2);
         assertNotNull(s);
         assertNotNull(s2);
+    }
+
+    @Test
+    public void shouldReturnFalsifiedWhenNoRoutesPresent() throws Exception {
+        CreateRoutingStrategyAssertion ass = new CreateRoutingStrategyAssertion();
+        ass.setRoutes(new ArrayList<Service>());
+        PolicyEnforcementContext peCtx = makeContext();
+        peCtx.setVariable("emptyRoutes","");
+        peCtx.setVariable("empty","");
+        List<Service> routes = new ArrayList<Service>();
+        routes.add(new Service("${emptyRoutes}", null));
+        routes.add(new Service("${empty}",null));
+        ass.setRoutes(routes);
+        ServerAssertion sass = serverPolicyFactory.compilePolicy(ass, false);
+        Assert.assertEquals(AssertionStatus.FALSIFIED,sass.checkRequest(peCtx));
     }
 
 }
