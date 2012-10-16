@@ -10,6 +10,7 @@ import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.*;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
@@ -518,9 +519,8 @@ public class PolicyBundleInstallerTest {
         });
 
         final List<BundleInfo> resultList = bundleResolver.getResultList();
-        final BundleInfo bundleInfo = resultList.get(0);
         //OAuth_1_0
-        final Document oAuth_1_0 = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
+        final BundleInfo bundleInfo = resultList.get(0);
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), null);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, bundleResolver, context, null);
 

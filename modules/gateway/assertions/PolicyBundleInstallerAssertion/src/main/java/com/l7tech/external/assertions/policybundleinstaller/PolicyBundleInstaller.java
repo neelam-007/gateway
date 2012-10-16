@@ -492,7 +492,7 @@ public class PolicyBundleInstaller {
     private static final Logger logger = Logger.getLogger(PolicyBundleInstaller.class.getName());
 
     private String getPrefixedUrl(final String existingUrlPattern, final String installationPrefix) {
-        if (installationPrefix != null) {
+        if (isPrefixValid(installationPrefix)) {
             final String prefixToUse = "/" + installationPrefix;
             return prefixToUse + existingUrlPattern;
         } else {
@@ -580,7 +580,7 @@ public class PolicyBundleInstaller {
 
         final String policyNameToUse;
         // Add prefix if needed
-        if (installationPrefix != null && !installationPrefix.trim().isEmpty()) {
+        if (isPrefixValid(installationPrefix)) {
             final Element policyDetailWritable = PolicyUtils.getPolicyDetailElement(enumPolicyElmWritable, "Policy", policyGuid);
             final Element nameElementWritable = PolicyUtils.getPolicyNameElement(policyDetailWritable, "Policy", policyGuid);
             final String policyName = DomUtils.getTextValue(nameElementWritable);
@@ -619,11 +619,18 @@ public class PolicyBundleInstaller {
         oldGuidsToNewGuids.put(policyGuid, guidToUse);
     }
 
+    private boolean isPrefixValid(String installationPrefix) {
+        //todo could do validation here for valid policy name prefixes and for valid URL prefixes. Until then it's up to caller to get it right.
+
+        // leaving in trim check here to protect against any changes in policy bundle installer context
+        return installationPrefix != null && !installationPrefix.trim().isEmpty();
+    }
+
     private String getPrefixedPolicyName(@Nullable String installationPrefix, @NotNull String policyName) {
-        if (installationPrefix == null) {
-            return policyName;
-        } else {
+        if(isPrefixValid(installationPrefix)) {
             return installationPrefix + " " + policyName;
+        } else {
+            return policyName;
         }
     }
 

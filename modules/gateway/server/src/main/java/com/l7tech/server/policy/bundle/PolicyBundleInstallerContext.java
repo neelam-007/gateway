@@ -24,7 +24,10 @@ public class PolicyBundleInstallerContext {
         this.folderOid = folderOid;
         this.contextMap = contextMap;
         this.bundleMapping = bundleMapping;
-        this.installationPrefix = installationPrefix;
+
+        this.installationPrefix = (installationPrefix == null || installationPrefix.trim().isEmpty())?
+                null:
+                installationPrefix.trim();
     }
 
     @NotNull
@@ -49,7 +52,7 @@ public class PolicyBundleInstallerContext {
     /**
      * If not null, this returned value should be used to prefix each installed policy and each routing URI of
      * each published service.
-     * @return installation prefix.
+     * @return installation prefix. If not null then the value is never an empty string.
      */
     @Nullable
     public String getInstallationPrefix() {
