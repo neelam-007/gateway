@@ -868,10 +868,6 @@
                     &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
                     &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;MzYwMA==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth2_access_token_lifetime_sec&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue=&quot;MA==&quot;/&gt;
                     &lt;L7p:VariableToSet stringValue=&quot;oauth_v1_consumer_key_lifetime_m&quot;/&gt;
                     &lt;/L7p:SetVariable&gt;
