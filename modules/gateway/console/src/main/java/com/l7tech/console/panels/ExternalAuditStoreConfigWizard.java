@@ -70,12 +70,12 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         if(!config.custom && !safetyCheckNames(config.connection,config.auditRecordTableName,config.auditDetailTableName))
             return;
 
-        // check if already exsist
+        // check if already exist
         PolicyHeader sinkHeader = getSinkPolicyHeader();
         PolicyHeader lookupHeader = getLookupPolicyHeader();
 
         if(sinkHeader !=null || lookupHeader !=null){
-            int result = JOptionPane.showConfirmDialog(this,"Existing audit sink and lookup policies would be overwritten",getTitle(), JOptionPane.OK_CANCEL_OPTION,JOptionPane.INFORMATION_MESSAGE,null);
+            int result = JOptionPane.showConfirmDialog(this,"This will overwrite the existing audit sink and lookup policies.",getTitle(), JOptionPane.OK_CANCEL_OPTION,JOptionPane.INFORMATION_MESSAGE,null);
             if(result != JOptionPane.YES_OPTION)
                 return;
         }
