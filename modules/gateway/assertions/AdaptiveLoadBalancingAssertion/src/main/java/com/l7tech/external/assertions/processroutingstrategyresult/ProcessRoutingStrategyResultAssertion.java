@@ -141,7 +141,7 @@ public class ProcessRoutingStrategyResultAssertion extends AbstractAdaptiveLoadB
             final String feedback = ((ProcessRoutingStrategyResultAssertion) assertion).getFeedback();
 
             ExecuteRoutingStrategyAssertion preceedingAssertion = (ExecuteRoutingStrategyAssertion)a;
-            if(!feedback.equals(preceedingAssertion.getFeedback())){
+            if(!feedback.equalsIgnoreCase(preceedingAssertion.getFeedback())){
               result.addWarning(new PolicyValidatorResult.Warning(assertion, feedback + " variable not found", null));
            }
         }

@@ -21,7 +21,7 @@ public abstract class AbstractAdaptiveLoadBalancing extends Assertion {
 
     /**
      * The strategy variable name which stored the strategy
-     * @return
+     * @return strategy variable name
      */
     public String getStrategy() {
         return strategy;
@@ -65,7 +65,7 @@ public abstract class AbstractAdaptiveLoadBalancing extends Assertion {
                         else {
                             boolean foundStrategy = false;
                             for(Map.Entry<Integer,AbstractAdaptiveLoadBalancing> entry: precedingAssertionMap.entrySet()) {
-                                if(assertion.getStrategy().equals(entry.getValue().getStrategy()) && i > entry.getKey()) {
+                                if(assertion.getStrategy().equalsIgnoreCase(entry.getValue().getStrategy()) && i > entry.getKey()) {
                                     foundStrategy = true;
                                     checkVariables(result, entry.getValue());
                                     break;
