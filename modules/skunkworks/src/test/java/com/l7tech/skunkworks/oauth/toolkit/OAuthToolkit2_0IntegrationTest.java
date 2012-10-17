@@ -49,7 +49,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
 
         assertEquals(200, response.getStatus());
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
-        assertTrue(responseBody.contains("The access was denied"));
+        assertTrue(responseBody.contains("Access was denied"));
     }
 
     @BugNumber(12946)
