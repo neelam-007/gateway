@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
@@ -69,25 +70,31 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
             context.setVariable(currentValueVar, next);
             context.setVariable(iterationsVar, iterations);
             AssertionStatus status = iterateChildren(context, assertionResultListener);
+            //always check status first
             if (!AssertionStatus.NONE.equals(status)) {
                 failed = true;
                 break;
             }
+            else if (isExitLoop(context)) {
+                break;
+            }
 
             iterations++;
-            try {
-                String exitValue = (String) context.getVariable(breakVar);
-                if (exitValue.equalsIgnoreCase(Boolean.TRUE.toString())) {
-                    break;
-                }
-            } catch (NoSuchVariableException e) {
-                //TODO: add error handling
-            }
         }
 
         context.setVariable(iterationsVar, iterations);
         context.setVariable(hitLimitVar, hitLimit);
         return failed ? AssertionStatus.FAILED : AssertionStatus.NONE;
+    }
+
+    private boolean isExitLoop(PolicyEnforcementContext context) {
+        boolean exit = false;
+        try {
+            exit =  Boolean.parseBoolean((String) context.getVariable(breakVar));
+        } catch (NoSuchVariableException e) {
+            getAudit().logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, breakVar);
+        }
+        return exit;
     }
 
     private Object findValues(PolicyEnforcementContext context) {

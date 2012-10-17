@@ -198,7 +198,20 @@ public class ServerForEachLoopAssertionTest {
         checkRequest(AssertionStatus.NONE, sass(), context);
         assertEquals(",0-foo", context.getVariable("accum"));
         assertEquals("foo", context.getVariable("i.current"));
-        assertEquals(1, context.getVariable("i.iterations"));
+        assertEquals(0, context.getVariable("i.iterations"));
+    }
+
+    @Test
+    public void testBreakVarSetToNull() throws Exception {
+        ass.setLoopVariableName("stringsArray");
+        ass.setVariablePrefix("i");
+        context = context();
+        context.setVariable("i.break", null);
+        checkRequest(AssertionStatus.NONE, sass(), context);
+        assertEquals(",0-foo,1-bar,2-baz", context.getVariable("accum"));
+        assertEquals("baz", context.getVariable("i.current"));
+        assertEquals(3, context.getVariable("i.iterations"));
+        assertEquals(false, context.getVariable("i.exceededlimit"));
     }
 
     @Test
