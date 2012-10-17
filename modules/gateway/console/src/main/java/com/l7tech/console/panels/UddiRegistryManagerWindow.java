@@ -227,7 +227,7 @@ public class UddiRegistryManagerWindow extends JDialog {
             }
         }
 
-        final UddiRegistryPropertiesDialog dlg = new UddiRegistryPropertiesDialog(this, uddiRegistry, flags.canUpdateAll());
+        final UddiRegistryPropertiesDialog dlg = new UddiRegistryPropertiesDialog(this, uddiRegistry, flags.canUpdateAll() || flags.canCreateAll());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         if(selectNameField)
