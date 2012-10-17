@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -198,6 +199,18 @@ public class ServerLookupDynamicContextVariablesAssertionTest {
         } catch (Exception e) {
             Assert.fail("testExpression() failed: " + e.getMessage());
         }
+    }
+
+    @Test
+    public void testDateLookup(){
+        assertion.setSourceVariable("foo");
+        assertion.setTargetOutputVariablePrefix("output");
+        assertion.setTargetDataType(DataType.DATE_TIME);
+        pec.setVariable("foo", new Date());
+        AssertionStatus actual = serverAssertion.checkRequest(pec);
+        Assert.assertEquals(AssertionStatus.NONE, actual);
+
+
     }
 }
 

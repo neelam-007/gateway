@@ -86,7 +86,7 @@ public class ServerLookupDynamicContextVariablesAssertion extends AbstractServer
                     logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_TYPE_MISMATCH, targetType.getName(), sourceName);
                     return AssertionStatus.FAILED;
                 }
-                if(targetType == DataType.DATE_TIME && (!(obj instanceof Date) || !(obj instanceof Calendar) || !(obj instanceof Long))){
+                if(targetType == DataType.DATE_TIME && !(obj instanceof Date || obj instanceof Calendar || obj instanceof Long)){
                     logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_TYPE_MISMATCH, targetType.getName(), sourceName);
                     return AssertionStatus.FAILED;
                 }
