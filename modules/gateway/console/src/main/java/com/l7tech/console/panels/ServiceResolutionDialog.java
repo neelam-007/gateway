@@ -86,7 +86,7 @@ public class ServiceResolutionDialog extends JDialog {
         } );
 
 
-        final boolean editable = permissions.canUpdateAll() && permissions.canCreateAll();
+        final boolean editable = permissions.canUpdateAll() || permissions.canCreateAll();
         okButton.setEnabled( editable );
         pathRequiredCheckBox.setEnabled( editable );
         pathCaseSensitiveCheckBox.setEnabled( editable );
