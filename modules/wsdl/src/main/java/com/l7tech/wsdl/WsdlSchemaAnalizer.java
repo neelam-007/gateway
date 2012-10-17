@@ -8,7 +8,7 @@ import java.util.*;
 
 /**
  * Parses schemas present in a wsdl and split them into two versions; one for input messages and
- * one for output messages.
+ * one for output messages. The schema definition can be defined as nested or schema import from another file.
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -16,6 +16,11 @@ import java.util.*;
  * Date: Sep 17, 2004<br/>
  */
 public class WsdlSchemaAnalizer {
+    /**
+     * @param wsdl The WSDL Document
+     * @param docs Schema imported from the WSDL Document, the key should be the uri of the
+     *             of the schema and the value should contain the content of the schema.
+     */
     public WsdlSchemaAnalizer(Document wsdl, Map<String,Document> docs) {
         this.wsdl = wsdl;
         this.docs = docs;
@@ -148,14 +153,16 @@ public class WsdlSchemaAnalizer {
         if (typesel == null) {
             return null;
         }
+        //Extract the import schema elements
         potentiallists = typesel.getElementsByTagNameNS(W3C_XML_SCHEMA, IMPORT_ELNAME);
         
         List<Element> schemas = new ArrayList<Element>();
 
-        //Import schema
+        //Extract the schema definition from the schemaLocation
+        //The schemaLocation will be used for lookup the schema from the provided schema map
         if (potentiallists.getLength() > 0) {
             for (int i = 0; i < potentiallists.getLength(); i++) {
-                Element e = (Element)potentiallists.item(0);
+                Element e = (Element)potentiallists.item(i);
                 Element schema = getSchemaElement(e.getAttribute(SCHEMA_LOCATION), docs);
                 if (schema != null) {
                     schemas.add(schema);
@@ -163,6 +170,7 @@ public class WsdlSchemaAnalizer {
             }
         }
 
+        //Extract the 'nested' schema
         NodeList output = typesel.getElementsByTagNameNS(W3C_XML_SCHEMA, TOP_SCHEMA_ELNAME);
         for (int i = 0; i < output.getLength(); i++) {
             schemas.add((Element) output.item(i));
@@ -190,7 +198,14 @@ public class WsdlSchemaAnalizer {
         }
         return schemas;
     }
-    
+
+    /**
+     * Extract the schema element from defined schemaLocation.
+     *
+     * @param schemaLocation The schema Location
+     * @param docs Schemas imported from the WSDL Document
+     * @return The schema element or null if schema definition not found.
+     */
     private static Element getSchemaElement(String schemaLocation, Map<String,Document> docs) {
         for ( final Map.Entry<String, Document> doc : docs.entrySet() ) {
             if (schemaLocation!= null && doc.getKey().endsWith(schemaLocation)) {

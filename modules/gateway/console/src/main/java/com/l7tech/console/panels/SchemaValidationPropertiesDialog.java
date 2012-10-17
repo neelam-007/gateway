@@ -510,6 +510,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         final Map<String,String> documentsToAnalyze = new HashMap<String,String>();
         documentsToAnalyze.put(service.getWsdlUrl(), wsdlXml);
         try {
+            //Lookup the import schema from service document
             for(ServiceDocument document : Registry.getDefault().getServiceManager().findServiceDocumentsByServiceID(service.getId())) {
                 if ("WSDL-IMPORT".equals(document.getType())) {
                     documentsToAnalyze.put(document.getUri(), document.getContents());
@@ -530,6 +531,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         final List<Pair<String,Element>> outputSchemas = new ArrayList<Pair<String,Element>>();
         try {
             final Map<String,Document> domToAnalyze = new HashMap<String,Document>();
+            //Convert the XML to document object
             for ( final Map.Entry<String,String> docEntry : documentsToAnalyze.entrySet() ) {
                 domToAnalyze.put(docEntry.getKey(), XmlUtil.stringToDocument(docEntry.getValue()));
             }
