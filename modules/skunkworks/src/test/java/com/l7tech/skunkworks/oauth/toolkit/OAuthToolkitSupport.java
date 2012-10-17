@@ -5,6 +5,7 @@ import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -15,13 +16,11 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSSLSocketFactoryWithKeyManager;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public abstract class OAuthToolkitSupport {
     protected static final String BASE_URL = "localhost";
@@ -34,6 +33,7 @@ public abstract class OAuthToolkitSupport {
     protected static final String CLIENT_IDENT = "client_ident";
     protected static final String CLIENT_KEY = "client_key";
     protected static final String EXPIRATION = "expiration";
+    protected static final String TOKEN = "token";
     protected static final String OAUTH_TOOLKIT_INTEGRATION_TEST = "OAuthToolkitIntegrationTest";
     protected GenericHttpClient client;
     protected PasswordAuthentication passwordAuthentication = new PasswordAuthentication(USER, PASSWORD.toCharArray());
@@ -117,6 +117,36 @@ public abstract class OAuthToolkitSupport {
         return params;
     }
 
+    protected Map<String, String> buildTokenParams() {
+        final Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        final Map<String, String> storeParams = new HashMap<String, String>();
+        storeParams.put("client_key", OAUTH_TOOLKIT_INTEGRATION_TEST);
+        storeParams.put("client_name", OAUTH_TOOLKIT_INTEGRATION_TEST);
+        storeParams.put("expiration", String.valueOf(calendar.getTimeInMillis()));
+        storeParams.put("resource_owner", USER);
+        storeParams.put("scope", "test_scope");
+        storeParams.put("secret", UUID.randomUUID().toString());
+        storeParams.put("status", ENABLED);
+        storeParams.put("token", UUID.randomUUID().toString());
+        return storeParams;
+    }
+
+    protected Map<String, String> buildTempTokenParams() {
+        final Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        final Map<String, String> storeParams = new HashMap<String, String>();
+        storeParams.put("callback", "oob");
+        storeParams.put("client_key", OAUTH_TOOLKIT_INTEGRATION_TEST);
+        storeParams.put("client_name", OAUTH_TOOLKIT_INTEGRATION_TEST);
+        storeParams.put("expiration", String.valueOf(calendar.getTimeInMillis()));
+        storeParams.put("resource_owner", USER);
+        storeParams.put("scope", "test_scope");
+        storeParams.put("secret", UUID.randomUUID().toString());
+        storeParams.put("token", UUID.randomUUID().toString());
+        return storeParams;
+    }
+
     protected ClientKey getKey(final String clientKey) throws Exception {
         final String responseBody = get(CLIENT_KEY, clientKey, "https://" + BASE_URL + ":8443/oauth/clientstore/getKey");
         final Document document = XmlUtil.parse(responseBody);
@@ -133,6 +163,21 @@ public abstract class OAuthToolkitSupport {
         key.setCreated(getValue(document, "/values/value/created"));
         key.setCreatedBy(getValue(document, "/values/value/created_by"));
         return key;
+    }
+
+    protected void assertClientKeyDoesNotExist(final String clientKey) throws Exception {
+        final String responseBody = get(CLIENT_KEY, clientKey, "https://" + BASE_URL + ":8443/oauth/clientstore/getKey");
+        assertEquals("<values></values>", StringUtils.deleteWhitespace(responseBody));
+    }
+
+    protected void assertTokenDoesNotExist(final String token) throws Exception {
+        final String responseBody = get(TOKEN, token, "https://" + BASE_URL + ":8443/oauth/tokenstore/get");
+        assertEquals("<?xmlversion=\"1.0\"encoding=\"UTF-8\"?><values/>", StringUtils.deleteWhitespace(responseBody));
+    }
+
+    protected void assertTempTokenDoesNotExist(final String token) throws Exception {
+        final String responseBody = get(TOKEN, token, "https://" + BASE_URL + ":8443/oauth/tokenstore/getTemp");
+        assertEquals("<?xmlversion=\"1.0\"encoding=\"UTF-8\"?><values/>", StringUtils.deleteWhitespace(responseBody));
     }
 
     protected String getValue(final Document document, final String xpathExpression) throws Exception {
@@ -152,6 +197,19 @@ public abstract class OAuthToolkitSupport {
 
         assertEquals(200, response.getStatus());
         assertEquals("1 " + type + "(s) deleted", new String(IOUtils.slurpStream(response.getInputStream())));
+    }
+
+    protected void revoke(final String paramName, final String paramValue) throws Exception {
+        final GenericHttpRequestParams revokeParams = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/clientstore/revoke"));
+        revokeParams.setSslSocketFactory(getSSLSocketFactoryWithKeyManager());
+        revokeParams.setPasswordAuthentication(passwordAuthentication);
+        revokeParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
+        final GenericHttpRequest revokeRequest = client.createRequest(HttpMethod.POST, revokeParams);
+        revokeRequest.addParameter(paramName, paramValue);
+        final GenericHttpResponse revokeResponse = revokeRequest.getResponse();
+        assertEquals(200, revokeResponse.getStatus());
+        final String revokeResponseBody = new String(IOUtils.slurpStream(revokeResponse.getInputStream()));
+        assertEquals("1 client_key(s) revoked", revokeResponseBody);
     }
 
     protected class ClientKey {

@@ -1,27 +1,22 @@
 package com.l7tech.skunkworks.oauth.toolkit;
 
-import com.l7tech.common.http.*;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.http.GenericHttpRequest;
+import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.GenericHttpResponse;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathFactory;
-import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.util.*;
+import java.util.Map;
 
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSSLSocketFactoryWithKeyManager;
 import static org.junit.Assert.*;
-import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.*;
 
 /**
  * Integration tests for the OAuth Tool Kit that are not specific to OAuth 1.0 or 2.0.
@@ -325,18 +320,8 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
 
     @Test
     public void storeToken() throws Exception {
-        final Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_YEAR, 1);
-        final String token = UUID.randomUUID().toString();
-        final Map<String, String> storeParams = new HashMap<String, String>();
-        storeParams.put("callback", "oob");
-        storeParams.put("client_key", OAUTH_TOOLKIT_INTEGRATION_TEST);
-        storeParams.put("client_name", OAUTH_TOOLKIT_INTEGRATION_TEST);
-        storeParams.put("expiration", String.valueOf(calendar.getTimeInMillis()));
-        storeParams.put("resource_owner", USER);
-        storeParams.put("scope", "test_scope");
-        storeParams.put("secret", UUID.randomUUID().toString());
-        storeParams.put("token", token);
+        final Map<String, String> storeParams = buildTempTokenParams();
+        final String token = storeParams.get("token");
 
         store("token", storeParams);
 
@@ -349,18 +334,9 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
     @Test
     @BugNumber(13149)
     public void storeTokenWithEscapeChars() throws Exception {
-        final Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_YEAR, 1);
-        final String token = UUID.randomUUID().toString();
-        final Map<String, String> storeParams = new HashMap<String, String>();
+        final Map<String, String> storeParams = buildTempTokenParams();
         storeParams.put("callback", "http://localhost:8080/callback?p1=a&p2=b");
-        storeParams.put("client_key", OAUTH_TOOLKIT_INTEGRATION_TEST);
-        storeParams.put("client_name", OAUTH_TOOLKIT_INTEGRATION_TEST);
-        storeParams.put("expiration", String.valueOf(calendar.getTimeInMillis()));
-        storeParams.put("resource_owner", USER);
-        storeParams.put("scope", "test_scope");
-        storeParams.put("secret", UUID.randomUUID().toString());
-        storeParams.put("token", token);
+        final String token = storeParams.get("token");
 
         store("token", storeParams);
 
@@ -368,6 +344,63 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         assertFalse(tokenXml.isEmpty());
 
         delete("temp_token", token, "token");
+    }
+
+    @Test
+    @BugNumber(13284)
+    public void revokeClientKey() throws Exception {
+        final Map<String, String> clientAndKeyParams = buildClientAndKeyParams(OOB, OOB, ALL);
+        final String clientIdentity = clientAndKeyParams.get(CLIENT_IDENT);
+        final String clientKey = clientAndKeyParams.get(CLIENT_KEY);
+        store("client", clientAndKeyParams);
+
+        final Map<String, String> tempTokenParams = buildTempTokenParams();
+        tempTokenParams.put("client_key", clientKey);
+        final String tempToken = tempTokenParams.get("token");
+        store("token", tempTokenParams);
+
+        final Map<String, String> accessTokenParams = buildTokenParams();
+        accessTokenParams.put("client_key", clientKey);
+        final String accessToken = accessTokenParams.get("token");
+        store("token", accessTokenParams);
+
+        revoke("client_key", clientKey);
+
+        assertClientKeyDoesNotExist(clientKey);
+        assertTempTokenDoesNotExist(tempToken);
+        assertTokenDoesNotExist(accessToken);
+
+        // restore initial state
+        delete(CLIENT_IDENT, clientIdentity, "client");
+    }
+
+    @Test
+    @BugNumber(13284)
+    public void revokeClientKeysByClientIdentity() throws Exception {
+        final Map<String, String> clientAndKeyParams = buildClientAndKeyParams(OOB, OOB, ALL);
+        final String clientIdentity = clientAndKeyParams.get(CLIENT_IDENT);
+        final String clientKey = clientAndKeyParams.get(CLIENT_KEY);
+        store("client", clientAndKeyParams);
+
+        final Map<String, String> tempTokenParams = buildTempTokenParams();
+        tempTokenParams.put("client_key", clientKey);
+        final String tempToken = tempTokenParams.get("token");
+        store("token", tempTokenParams);
+
+        final Map<String, String> accessTokenParams = buildTokenParams();
+        accessTokenParams.put("client_key", clientKey);
+        final String accessToken = accessTokenParams.get("token");
+        store("token", accessTokenParams);
+
+        revoke("client_ident", clientIdentity);
+
+        assertClientKeyDoesNotExist(clientKey);
+        assertTempTokenDoesNotExist(tempToken);
+        assertTokenDoesNotExist(accessToken);
+
+        // restore initial state
+        delete(CLIENT_IDENT, clientIdentity, "client");
+
     }
 
     private void assertDefaultValues(final String clientIdentity, final OAuthClient client) {
