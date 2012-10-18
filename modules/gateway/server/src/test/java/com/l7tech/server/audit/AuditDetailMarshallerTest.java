@@ -20,18 +20,18 @@ public class AuditDetailMarshallerTest {
 
     private static final AuditDetailPropertiesDomMarshaller detailsMarshaller = new AuditDetailPropertiesDomMarshaller();
 
-    final String[] params = new String[]{null,"param1",null,"param2",null};
+    final String[] params = new String[]{"<>?:@#$%^&*{}][","param1","","param2",""};
     private static final String detailProperties =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<detail xmlns=\"http://l7tech.com/audit/detail\">\n" +
             "    <params>\n" +
-            "        <param/>\n" +
+            "        <param>&lt;&gt;?:@#$%^&amp;*{}][</param>\n" +
             "        <param>param1</param>\n" +
             "        <param/>\n" +
             "        <param>param2</param>\n" +
             "        <param/>\n" +
             "    </params>\n" +
-            "</detail>\n";
+            "</detail>";
 
     @Test
     public void testDetailMarshal() throws Exception {

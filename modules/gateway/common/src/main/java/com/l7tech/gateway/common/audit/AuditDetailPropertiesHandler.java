@@ -17,7 +17,7 @@ public class AuditDetailPropertiesHandler extends DefaultHandler
 
     private ArrayList<String> currentPath = new ArrayList<String>();
 
-    private String currentElementValue = null;
+    private String currentElementValue = "";
 
     public String[] getParameters() {
         return parameters.toArray(new String[parameters.size()]);
@@ -39,7 +39,7 @@ public class AuditDetailPropertiesHandler extends DefaultHandler
                 }
             }
             currentPath.remove(currentPath.size()-1);
-            currentElementValue = null;
+            currentElementValue = "";
         }
     }
 
@@ -47,7 +47,7 @@ public class AuditDetailPropertiesHandler extends DefaultHandler
     public void characters(char[] ch, int start, int length) throws SAXException {
         if(currentPath.size()>=2 && currentPath.get(currentPath.size()-2).equals("params")){
             if(currentPath.get(currentPath.size()-1).equals("param")){
-                currentElementValue = new String(ch,start,length);
+                currentElementValue = currentElementValue + new String(ch,start,length);
             }
         }
     }

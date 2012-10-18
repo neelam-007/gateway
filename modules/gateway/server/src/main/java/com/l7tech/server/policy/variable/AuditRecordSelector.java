@@ -443,17 +443,17 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
             }
         });
 
-        messageFields.put("resContentLength", new FieldGetter<MessageSummaryAuditRecord>() {
+        messageFields.put("savedResponseContentLength", new FieldGetter<MessageSummaryAuditRecord>() {
             @Override
             public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
-                return new Selection(rec.getResponseContentLength());
+                return new Selection(rec.getResponseXml() == null? -1 : rec.getResponseContentLength());
             }
         });
 
-        messageFields.put("reqContentLength", new FieldGetter<MessageSummaryAuditRecord>() {
+        messageFields.put("savedRequestContentLength", new FieldGetter<MessageSummaryAuditRecord>() {
             @Override
             public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
-                return new Selection(rec.getRequestContentLength());
+                return new Selection(rec.getRequestXml() == null? -1 : rec.getRequestContentLength());
             }
         });
 
@@ -484,8 +484,8 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
         allAvaliableFields.add("requestSavedFlag");
         allAvaliableFields.add("responseSavedFlag");
         allAvaliableFields.add("routingLatency");
-        allAvaliableFields.add("resContentLength");
-        allAvaliableFields.add("reqContentLength");
+        allAvaliableFields.add("savedRequestContentLength");
+        allAvaliableFields.add("savedResponseContentLength");
         allAvaliableFields.add("serviceOid");
         allAvaliableFields.add("status");
         allAvaliableFields.add("authenticated");

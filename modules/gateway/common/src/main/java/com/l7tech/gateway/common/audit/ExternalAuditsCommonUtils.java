@@ -66,7 +66,7 @@ public class ExternalAuditsCommonUtils {
                 " values " +
                 "(${record.guid},${audit.nodeId},${audit.time},${audit.type},${audit.level},${audit.name},${audit.message},${audit.ipAddress},${audit.user.name},${audit.user.id},${audit.user.idProv},${audit.signature},${audit.properties}," +
                 "${audit.entity.class},${audit.entity.oid}," +
-                "${audit.status},${audit.requestId},${audit.serviceOid},${audit.operationName},${audit.authenticated},${audit.authType},${audit.requestContentLength},${audit.responseContentLength},${audit.reqZip},${audit.resZip},${audit.responseStatus},${audit.routingLatency}," +
+                "${audit.status},${audit.requestId},${audit.serviceOid},${audit.operationName},${audit.authenticated},${audit.authType},${audit.savedRequestContentLength},${audit.savedResponseContentLength},${audit.reqZip},${audit.resZip},${audit.responseStatus},${audit.routingLatency}," +
                 "${audit.componentId},${audit.action})";
     }
 
