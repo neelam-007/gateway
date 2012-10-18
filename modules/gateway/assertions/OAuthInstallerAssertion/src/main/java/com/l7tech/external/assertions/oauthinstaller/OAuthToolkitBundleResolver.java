@@ -81,7 +81,19 @@ public class OAuthToolkitBundleResolver implements BundleResolver {
 
         final String resourceBase = guidToResourceDirectory.get(bundleId);
 //        logger.info("Getting bundle: " + resourceBase);
-        final URL itemUrl = this.getClass().getResource(resourceBase + itemName.getFileName());
+        ///com/l7tech/external/assertions/oauthinstaller/bundles/OAuth_1_0/
+
+        final String fullResourceName;
+        if (resourceBase.contains("\\") && !resourceBase.endsWith("\\")) {
+            fullResourceName = resourceBase + "\\" + itemName.getFileName();
+        } else if(resourceBase.contains("/") && !resourceBase.endsWith("/")){
+            fullResourceName = resourceBase + "/" + itemName.getFileName();
+        } else {
+            // expected case e.g. /com/l7tech/external/assertions/oauthinstaller/bundles/OAuth_1_0/
+            fullResourceName = resourceBase + itemName.getFileName();
+        }
+
+        final URL itemUrl = this.getClass().getResource(fullResourceName);
         Document itemDocument = null;
         if (itemUrl != null) {
             try {

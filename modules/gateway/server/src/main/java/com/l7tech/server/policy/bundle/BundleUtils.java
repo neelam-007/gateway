@@ -69,7 +69,8 @@ public class BundleUtils {
                                     throw new BundleResolver.InvalidBundleException(e);
                                 }
                                 final BundleInfo bundleInfo1 = getBundleInfo(parse);
-                                bundleInfos.add(new Pair<BundleInfo, String>(bundleInfo1, bundleFolder.getPath()));
+                                // regardless of how the resource was found, only record a correct resource path to the resource
+                                bundleInfos.add(new Pair<BundleInfo, String>(bundleInfo1, bundleResourceBaseName + "/" + bundleFolder.getName()));
                             }
                         }
                     }

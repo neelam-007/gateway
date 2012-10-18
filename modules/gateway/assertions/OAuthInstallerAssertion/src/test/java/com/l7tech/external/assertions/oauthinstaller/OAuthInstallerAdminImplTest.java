@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.oauthinstaller;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
@@ -7,11 +8,18 @@ import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
+import com.l7tech.server.policy.bundle.BundleResolver;
+import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
+import com.l7tech.server.policy.bundle.PolicyUtils;
+import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.Pair;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.util.*;
 
@@ -106,6 +114,7 @@ public class OAuthInstallerAdminImplTest {
         assertTrue(results.contains("ba525763-6e55-4748-9376-76055247c8b1"));
     }
 
+    @Ignore
     @Test
     public void testListAllBundles() throws Exception {
         final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, ApplicationContexts.getTestApplicationContext());
@@ -135,7 +144,6 @@ public class OAuthInstallerAdminImplTest {
      * The same policy is contained in more than one bundle. This test validates that all policies are logically
      * equivalent. If not then two policies / service could refer to the same policy with the same guid but receive
      * a different policy.
-     *
      */
     @Test
     @Ignore
@@ -192,6 +200,96 @@ public class OAuthInstallerAdminImplTest {
         assertEquals("https://${host_target}/version1", actual);
     }
 
+    /**
+     * Test that each saved policy contains the comment for the version of the component and installer being used
+     * to install the OTK.
+     *
+     * Note: If this test fails it may be because a new policy or service was added to the OAuth_1_0 bundle and the
+     * count of policies or services found below needs to be updated.
+     *
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(13309)
+    public void testCommentAddedToEachPolicyAndService() throws Exception {
+
+        final int [] numPolicyCommentsFound = new int[1];
+        final int [] numServiceCommentsFound = new int[1];
+
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
+            @Override
+            public void publishEvent(ApplicationEvent applicationEvent) {
+
+                if (applicationEvent instanceof InstallPolicyBundleEvent) {
+                    InstallPolicyBundleEvent installEvent = (InstallPolicyBundleEvent) applicationEvent;
+                    final PreBundleSavePolicyCallback savePolicyCallback = installEvent.getPreBundleSavePolicyCallback();
+                    final BundleInfo bundleInfo = installEvent.getContext().getBundleInfo();
+
+                    try {
+                        {
+                            final Document policyEnum = installEvent.getBundleResolver().getBundleItem(bundleInfo.getId(), BundleResolver.BundleItem.POLICY, false);
+                            final List<Element> gatewayMgmtPolicyElments = GatewayManagementDocumentUtilities.getEntityElements(policyEnum.getDocumentElement(), "Policy");
+                            for (Element policyElement : gatewayMgmtPolicyElments) {
+
+                                final Element policyResourceElmWritable = PolicyUtils.getPolicyResourceElement(policyElement, "Policy", "not used");
+                                final Document policyResource = PolicyUtils.getPolicyDocumentFromResource(policyResourceElmWritable, "Policy", "not used");
+
+
+                                savePolicyCallback.prePublishCallback(bundleInfo, "not important", policyResource);
+                                verifyCommentAdded(policyResource);
+                                numPolicyCommentsFound[0]++;
+                            }
+                        }
+
+                        {
+                            final Document serviceEnum = installEvent.getBundleResolver().getBundleItem(bundleInfo.getId(), BundleResolver.BundleItem.SERVICE, false);
+                            final List<Element> gatewayMgmtPolicyElments = GatewayManagementDocumentUtilities.getEntityElements(serviceEnum.getDocumentElement(), "Service");
+                            for (Element policyElement : gatewayMgmtPolicyElments) {
+
+                                final Element policyResourceElmWritable = PolicyUtils.getPolicyResourceElement(policyElement, "Service", "not used");
+                                final Document policyResource = PolicyUtils.getPolicyDocumentFromResource(policyResourceElmWritable, "Service", "not used");
+
+
+                                savePolicyCallback.prePublishCallback(bundleInfo, "not important", policyResource);
+                                verifyCommentAdded(policyResource);
+                                numServiceCommentsFound[0]++;
+                            }
+                        }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        fail("Unexpected exception: " + e.getMessage());
+                    }
+
+                    installEvent.setProcessed(true);
+                }
+
+            }
+        });
+
+        final AsyncAdminMethods.JobId<ArrayList> jobId =
+                admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1"), -5002, new HashMap<String, BundleMapping>(), null);
+
+        while (!admin.getJobStatus(jobId).startsWith("inactive")) {
+            Thread.sleep(10L);
+        }
+
+        assertEquals("Incorrect number of policy comments found", 7, numPolicyCommentsFound[0]);
+        assertEquals("Incorrect number of service comments found", 7, numServiceCommentsFound[0]);
+
+    }
+
+    private void verifyCommentAdded(Document policyResource) {
+        // verify version was added
+        final Element allElm = XmlUtil.findFirstChildElement(policyResource.getDocumentElement());
+        final Element comment = XmlUtil.findFirstChildElement(allElm);
+        assertTrue(comment.getLocalName().equals("CommentAssertion"));
+        final Element commentValueElm = XmlUtil.findFirstChildElement(comment);
+        final String commentValue = commentValueElm.getAttribute("stringValue");
+        assertEquals("Invalid comment value found", "Component version1.0 installed by OAuth installer version otk1.0", commentValue);
+    }
+
+
     // - PRIVATE
     private final static List<Pair<BundleInfo, String>> ALL_BUNDLE_NAMES =
             Collections.unmodifiableList(
@@ -201,6 +299,6 @@ public class OAuthInstallerAdminImplTest {
                             new Pair<BundleInfo, String>(new BundleInfo("f69c7d15-4999-4761-ab26-d29d58c0dd57", "1.0", "SecureZone_OVP", "Desc"), "SecureZone_OVP"),
                             new Pair<BundleInfo, String>(new BundleInfo("b082274b-f00e-4fbf-bbb7-395a95ca2a35", "1.0", "SecureZone_Storage", "Desc"), "SecureZone_Storage"),
                             new Pair<BundleInfo, String>(new BundleInfo("a07924c0-0265-42ea-90f1-2428e31ae5ae", "1.0", "StorageManager", "Desc"), "StorageManager")
-                            ));
+                    ));
 
 }

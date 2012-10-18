@@ -1,10 +1,12 @@
 package com.l7tech.external.assertions.oauthinstaller;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
@@ -17,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
@@ -510,6 +513,20 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         return new PreBundleSavePolicyCallback() {
             @Override
             public void prePublishCallback(BundleInfo bundleInfo, String resourceType, Document writeablePolicyDoc) throws PolicyUpdateException {
+
+                // add in the version comment for every policy saved, whether it's a policy fragment or a service policy.
+                final String version = bundleInfo.getVersion();
+                final CommentAssertion ca = new CommentAssertion("Component version" + version + " installed by OAuth installer version " + oAuthInstallerVersion);
+
+                final Element governingAllAssertion = XmlUtil.findFirstChildElement(writeablePolicyDoc.getDocumentElement());
+                final Element firstChild = XmlUtil.findFirstChildElement(governingAllAssertion);
+
+                final Document assertionDoc = WspWriter.getPolicyDocument(ca);
+                final Element commentDocElement = assertionDoc.getDocumentElement();
+                final Element versionCommentAssertion = XmlUtil.findFirstChildElement(commentDocElement);
+                final Node node = firstChild.getParentNode().getOwnerDocument().importNode(versionCommentAssertion, true);
+                governingAllAssertion.insertBefore(node, firstChild);
+
                 if (installationPrefix != null) {
                     // if we have prefixed the installation, then we need to be able to update routing assertions to route to the
                     // prefixed URIs
