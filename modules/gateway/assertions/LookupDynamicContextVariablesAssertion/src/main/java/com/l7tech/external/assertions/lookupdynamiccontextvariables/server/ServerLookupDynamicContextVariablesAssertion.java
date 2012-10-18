@@ -97,10 +97,14 @@ public class ServerLookupDynamicContextVariablesAssertion extends AbstractServer
 
                 context.setVariable(targetVariablePrefix + LookupDynamicContextVariablesAssertion.MULTIVALUED_SUFIX, multivalued);
             }
+            if(assertion.isFailOnNotFound() && o == null){
+                logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_NOT_FOUND, process);
+                return AssertionStatus.FAILED;
+            }
             // if the expression is ${foobar} and foobar does not exist and it is set to NOT fail the value of 'o' would be ${}
             // it shouldn't be set...
-            context.setVariable(targetVariablePrefix + LookupDynamicContextVariablesAssertion.OUTPUT_SUFIX, o);
-            context.setVariable(targetVariablePrefix + LookupDynamicContextVariablesAssertion.FOUND_SUFIX, o != null);
+            context.setVariable(targetVariablePrefix + LookupDynamicContextVariablesAssertion.OUTPUT_SUFIX, actual.isEmpty() ? null : o);
+            context.setVariable(targetVariablePrefix + LookupDynamicContextVariablesAssertion.FOUND_SUFIX, !actual.isEmpty() && o != null);
         }
         catch(VariableNameSyntaxException e){
             logAndAudit(AssertionMessages.LOOKUP_DYNAMIC_VARIABLE_INVALID_SYNTAX , e.getMessage());
