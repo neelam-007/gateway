@@ -10,10 +10,10 @@ public class ExternalAuditsCommonUtils {
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
                 "        <L7p:CommentAssertion>\n" +
-                "            <L7p:Comment stringValue=\"Start default audit sink policy\"/>\n" +
+                "            <L7p:Comment stringValue=\"Start Auto-Generated Sink Policy\"/>\n" +
                 "        </L7p:CommentAssertion>\n" +
                 "        <L7p:CommentAssertion>\n" +
-                "            <L7p:Comment stringValue=\"*** DO NOT MODIFY THIS POLICY ***\"/>\n" +
+                "            <L7p:Comment stringValue=\"*** DO NOT MODIFY THE AUTO-GENERATED PORTION OF THIS POLICY ***\"/>\n" +
                 "        </L7p:CommentAssertion>\n" +
                 "        <L7p:UUIDGenerator>\n" +
                 "            <L7p:TargetVariable stringValue=\"record.guid\"/>\n" +
@@ -46,7 +46,10 @@ public class ExternalAuditsCommonUtils {
                 "            </L7p:JdbcQuery>\n" +
                 "        </L7p:ForEachLoop>\n" +
                 "        <L7p:CommentAssertion>\n" +
-                "            <L7p:Comment stringValue=\"End default audit sink policy\"/>\n" +
+                "            <L7p:Comment stringValue=\"*** END OF AUTO-GENERATED SINK POLICY ***\"/>\n" +
+                "        </L7p:CommentAssertion>\n" +
+                "        <L7p:CommentAssertion>\n" +
+                "            <L7p:Comment stringValue=\"Insert additional assertions from this point forward\"/>\n" +
                 "        </L7p:CommentAssertion>\n" +
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n" +
@@ -188,7 +191,7 @@ public class ExternalAuditsCommonUtils {
                 "                <L7p:Comment stringValue=\"Start Auto-Generated Lookup Policy\"/>\n" +
                 "            </L7p:CommentAssertion>\n" +
                 "            <L7p:CommentAssertion>\n" +
-                "                <L7p:Comment stringValue=\"*** DO NOT MODIFY THIS POLICY ***\"/>\n" +
+                "                <L7p:Comment stringValue=\"*** DO NOT MODIFY THE AUTO-GENERATED PORTION OF THIS POLICY ***\"/>\n" +
                 "            </L7p:CommentAssertion>\n" +
                 "            <L7p:SetVariable>\n" +
                 "                <L7p:Base64Expression stringValue=\"MTAw\"/>\n" +
@@ -413,10 +416,10 @@ public class ExternalAuditsCommonUtils {
                 "                </wsp:All>\n" +
                 "            </wsp:OneOrMore>\n" +
                 "            <L7p:CommentAssertion>\n" +
-                "                <L7p:Comment stringValue=\"End Auto-Generated Lookup Policy\"/>\n" +
+                "                <L7p:Comment stringValue=\"*** END OF AUTO-GENERATED LOOKUP POLICY ***\"/>\n" +
                 "            </L7p:CommentAssertion>\n" +
                 "            <L7p:CommentAssertion>\n" +
-                "                <L7p:Comment stringValue=\"Add Additional Assertions Here\"/>\n" +
+                "                <L7p:Comment stringValue=\"Insert additional assertions from this point forward\"/>\n" +
                 "            </L7p:CommentAssertion>\n" +
                 "        </wsp:All>\n" +
                 "    </wsp:Policy>\n" +
