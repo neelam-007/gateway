@@ -107,9 +107,9 @@ public class ExternalAuditStoreConfigDatabase extends WizardStepPanel {
     @Override
     public String getDescription() {
         return
-            "<html>The database configurations<br><br>" +
-                    "Default audit record table: audit_main<br>" +
-                    "Default audit detail table: audit_detail</html>";
+            "<html>Define the names of the tables that will be used in the database for the external audit store. The following table names are required:<br><br>" +
+                    "Audit Record Table: Default name is \"audit_main\"<br>" +
+                    "Audit Detail Table: Default name is \"audit_detail\"</html>";
     }
 
     @Override
