@@ -160,7 +160,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="Copy of OAuth"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_initiate
                     where expiration &lt; ${now.millis}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -174,7 +174,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="Copy of OAuth"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[DELETE FROM oauth_token
                     WHERE
                     rtoken IS NOT NULL AND
@@ -191,7 +191,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="Copy of OAuth"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
                     where expiration &lt; ${now.millis} and rtoken is null]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
