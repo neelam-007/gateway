@@ -26,10 +26,7 @@ import org.apache.commons.httpclient.util.URIUtil;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.*;
@@ -398,7 +395,13 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                         if (response == null)
                             throw new IllegalStateException("This response has already been closed");
                         try {
-                            return response.getResponseBodyAsStream();
+                            InputStream rawStream = response.getResponseBodyAsStream();
+
+                            if (useSsljTruncationAttackWorkaround()) {
+                                rawStream = new TruncationAttackSwallowingInputStream(rawStream);
+                            }
+
+                            return rawStream;
                         } catch (IOException e) {
                             throw new GenericHttpException(e);
                         }
@@ -472,6 +475,10 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 return targetBuilder.toString();
             }
         };
+    }
+
+    private boolean useSsljTruncationAttackWorkaround() {
+        return ConfigFactory.getBooleanProperty("io.https.response.truncationProtection.disable", false);
     }
 
     private org.apache.commons.httpclient.HttpMethod getClientMethod(final HttpMethod method, GenericHttpRequestParams params, URL targetUrl) {
@@ -1076,6 +1083,48 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                                     final int localPort,
                                     final HttpConnectionParams params ) throws IOException {
             return wrapSocket( delegate.createSocket( host, port, localAddress, localPort, params ), "http", traceLogger );
+        }
+    }
+
+    private class TruncationAttackSwallowingInputStream extends FilterInputStream {
+        public TruncationAttackSwallowingInputStream(InputStream rawStream) {
+            super(rawStream);
+        }
+
+        @Override
+        public int read() throws IOException {
+            try {
+                return super.read();
+            } catch (IOException e) {
+                return maybeSwallowIOException(e);
+            }
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            try {
+                return super.read(b, off, len);
+            } catch (IOException e) {
+                return maybeSwallowIOException(e);
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            try {
+                super.close();
+            } catch (IOException e) {
+                maybeSwallowIOException(e);
+            }
+        }
+
+        private int maybeSwallowIOException(IOException e) throws IOException {
+            String msg = e.getMessage();
+            if (msg == null || !msg.contains("possible truncation attack?"))
+                throw e;
+
+            logger.log(Level.INFO, "Ignoring possible response truncation attack");
+            return -1;
         }
     }
 }
