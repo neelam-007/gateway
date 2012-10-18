@@ -14,6 +14,7 @@ import org.w3c.dom.Document;
 
 import java.net.URL;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSSLSocketFactoryWithKeyManager;
 import static org.junit.Assert.*;
@@ -400,7 +401,28 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
 
         // restore initial state
         delete(CLIENT_IDENT, clientIdentity, "client");
+    }
 
+    @Test
+    public void disableTokensByClientKey() throws Exception {
+        final Map<String, String> clientAndKeyParams = buildClientAndKeyParams(OOB, OOB, ALL);
+        final String clientIdentity = clientAndKeyParams.get(CLIENT_IDENT);
+        final String clientKey = clientAndKeyParams.get(CLIENT_KEY);
+        store("client", clientAndKeyParams);
+
+        final Map<String, String> accessTokenParams = buildTokenParams();
+        accessTokenParams.put("client_key", clientKey);
+        final String accessToken = accessTokenParams.get("token");
+        store("token", accessTokenParams);
+
+        disable(CLIENT_KEY, clientKey);
+
+        final String responseBody = get(TOKEN, accessToken, "https://" + BASE_URL + ":8443/oauth/tokenstore/get");
+        assertTrue(responseBody.contains("<status>DISABLED</status>"));
+
+        // restore initial state
+        delete(TOKEN, accessToken, "token");
+        delete(CLIENT_IDENT, clientIdentity, "client");
     }
 
     private void assertDefaultValues(final String clientIdentity, final OAuthClient client) {

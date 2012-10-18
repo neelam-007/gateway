@@ -119,7 +119,7 @@ public abstract class OAuthToolkitSupport {
 
     protected Map<String, String> buildTokenParams() {
         final Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        calendar.add(Calendar.HOUR, 1);
         final Map<String, String> storeParams = new HashMap<String, String>();
         storeParams.put("client_key", OAUTH_TOOLKIT_INTEGRATION_TEST);
         storeParams.put("client_name", OAUTH_TOOLKIT_INTEGRATION_TEST);
@@ -134,7 +134,7 @@ public abstract class OAuthToolkitSupport {
 
     protected Map<String, String> buildTempTokenParams() {
         final Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        calendar.add(Calendar.HOUR, 1);
         final Map<String, String> storeParams = new HashMap<String, String>();
         storeParams.put("callback", "oob");
         storeParams.put("client_key", OAUTH_TOOLKIT_INTEGRATION_TEST);
@@ -210,6 +210,17 @@ public abstract class OAuthToolkitSupport {
         assertEquals(200, revokeResponse.getStatus());
         final String revokeResponseBody = new String(IOUtils.slurpStream(revokeResponse.getInputStream()));
         assertEquals("1 client_key(s) revoked", revokeResponseBody);
+    }
+
+    protected void disable(final String paramName, final String paramValue) throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/tokenstore/disable"));
+        params.setSslSocketFactory(getSSLSocketFactoryWithKeyManager());
+        params.setPasswordAuthentication(passwordAuthentication);
+        final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
+        request.addParameter(paramName, paramValue);
+        final GenericHttpResponse response = request.getResponse();
+        assertEquals(200, response.getStatus());
+        assertEquals("1 token(s) disabled", new String(IOUtils.slurpStream(response.getInputStream())));
     }
 
     protected class ClientKey {
