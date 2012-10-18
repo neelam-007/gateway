@@ -1,6 +1,5 @@
 package com.l7tech.util;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
@@ -313,5 +312,43 @@ public class TextUtilsTest {
         assertEquals(Integer.valueOf(1), convertedInts.get(0));
         assertEquals(Integer.valueOf(2), convertedInts.get(1));
         assertEquals(Integer.valueOf(3), convertedInts.get(2));
+    }
+
+    @Test
+    public void testScanAndRecordMatch_MatchFound() {
+        String toScan =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
+                "               xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance#\">\n" +
+                "    <soap:Body>\n" +
+                "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"></listProducts>\n" +
+                "    </soap:Body>\n" +
+                "</soap:Envelope>";
+
+        StringBuilder evidence = new StringBuilder();
+
+        int index = TextUtils.scanAndRecordMatch(toScan, Pattern.compile("--|['#]"), evidence);
+
+        assertEquals(221, index);
+        assertEquals("...LSchema-instance#\">\n    <soap:Body>\n     ...", evidence.toString());
+    }
+
+    @Test
+    public void testScanAndRecordMatch_MatchNotFound() {
+        String toScan =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
+                        "               xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                        "    <soap:Body>\n" +
+                        "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"></listProducts>\n" +
+                        "    </soap:Body>\n" +
+                        "</soap:Envelope>";
+
+        StringBuilder evidence = new StringBuilder();
+
+        int index = TextUtils.scanAndRecordMatch(toScan, Pattern.compile("--|['#]"), evidence);
+
+        assertEquals(-1, index);
+        assertTrue(evidence.toString().isEmpty());
     }
 }

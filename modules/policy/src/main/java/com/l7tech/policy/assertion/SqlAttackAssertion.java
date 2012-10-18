@@ -127,14 +127,13 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
      * Get the human-readable label, as for a checkbox, for the specified protection name.
      *
      * @param protection  the protection name whose label to look up.
-     * @return a human-readable label.  Never null or empty.
-     * @throws PolicyAssertionException if no protection with this name is known to this assertion.
+     * @return a human-readable label. May be null.
      */
-    public static String getProtectionLabel(String protection) throws PolicyAssertionException {
+    public static String getProtectionLabel(String protection) {
         SqlAttackProtectionType protectionType = ATTACK_PROTECTION_TYPES.get(protection);
 
         if (protectionType == null) {
-            throw new PolicyAssertionException(null, "No label for protection \"" + protection + "\"");
+            return null;
         }
 
         return protectionType.getDisplayName();
@@ -144,14 +143,13 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
      * Get the human-readable long description for the specified protection name.
      *
      * @param protection the protection name whose description to look up.
-     * @return a human-readable description.  Never null or empty.
-     * @throws PolicyAssertionException if no protection with this name is known to this assertion.
+     * @return a human-readable description.  May be null.
      */
     public static String getProtectionDescription(String protection) throws PolicyAssertionException {
         SqlAttackProtectionType protectionType = ATTACK_PROTECTION_TYPES.get(protection);
 
         if (protectionType == null) {
-            throw new PolicyAssertionException(null, "No description for protection \"" + protection + "\"");
+            return null;
         }
 
         return protectionType.getDescription();

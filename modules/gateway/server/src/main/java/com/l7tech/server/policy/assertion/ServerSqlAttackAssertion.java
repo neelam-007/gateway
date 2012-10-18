@@ -137,12 +137,18 @@ public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAss
      * @return the first protection type violated if found (<code>evidence</code> is then populated);
      *         <code>null</code> if none found
      */
-    private static String scan(final String s, final Set<String> protections, final StringBuilder evidence) {
+    private String scan(final String s, final Set<String> protections, final StringBuilder evidence) {
         String protectionViolated = null;
         int minIndex = -1;
 
         for (String protection : protections) {
             Pattern protectionPattern = SqlAttackAssertion.getProtectionPattern(protection);
+
+            if(null == protectionPattern) {
+                logAndAudit(AssertionMessages.SQLATTACK_UNRECOGNIZED_PROTECTION, protection);
+                throw new AssertionStatusException(AssertionStatus.FAILED, "Unrecognized protection pattern.");
+            }
+
             final StringBuilder tmpEvidence = new StringBuilder();
             final int index = TextUtils.scanAndRecordMatch(s, protectionPattern, tmpEvidence);
             if (index != -1 && (minIndex == -1 || index < minIndex)) {

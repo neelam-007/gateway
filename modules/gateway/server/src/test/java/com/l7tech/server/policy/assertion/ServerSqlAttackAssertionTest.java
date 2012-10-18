@@ -9,7 +9,11 @@ import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.wsp.WspConstants;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
@@ -30,9 +34,8 @@ import org.xml.sax.SAXException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test coverage of SQL Attack Protection Assertion
@@ -47,6 +50,7 @@ public class ServerSqlAttackAssertionTest {
     private static final String META_TEXT = "SqlMetaText";
     private static final String MS_SQL = "MsSql";
     private static final String ORA_SQL = "OraSql";
+    private static final String UNRECOGNIZED_PATTERN = "ThisPatternShouldNotExist";
 
     // message resources
     private static final String VALID_SOAP_REQUEST = "ValidListProductsRequestSOAPMessage.xml";
@@ -68,6 +72,24 @@ public class ServerSqlAttackAssertionTest {
     private static final String STANDARD_SQL_ATTACK_RESPONSE_MESSAGE =
             "SqlAttack_StandardSql_CdataHashMark_EchoResponseSOAPMessage.xml";
 
+    // policy xml
+    private static final String POLICY_XML =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:SqlAttackProtection>\n" +
+            "            <L7p:IncludeRequestBody booleanValue=\"true\"/>\n" +
+            "            <L7p:IncludeRequestUrl booleanValue=\"true\"/>\n" +
+            "            <L7p:Protections stringSetValue=\"included\">\n" +
+            "                <L7p:item stringValue=\"MsSql\"/>\n" +
+            "                <L7p:item stringValue=\"SqlMetaText\"/>\n" +
+            "                <L7p:item stringValue=\"OraSql\"/>\n" +
+            "                <L7p:item stringValue=\"SqlMeta\"/>\n" +
+            "            </L7p:Protections>\n" +
+            "        </L7p:SqlAttackProtection>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>\n";
+
     private StashManager stashManager;
     private TestAudit testAudit;
     private SecurityManager originalSecurityManager;
@@ -86,6 +108,23 @@ public class ServerSqlAttackAssertionTest {
     @After
     public void tearDown() throws Exception {
         System.setSecurityManager(originalSecurityManager);
+    }
+
+    // Serialization tests
+
+    /**
+     * Read policy as xml to create assertion, create xml from the assertion, compare the original and new policy xml
+     * @throws IOException
+     */
+    @Test
+    public void testSerialization() throws IOException {
+        AssertionRegistry assertionRegistry = new AssertionRegistry();
+        assertionRegistry.registerAssertion(SqlAttackAssertion.class);
+        WspConstants.setTypeMappingFinder(assertionRegistry);
+        Assertion ass = WspReader.getDefault().parseStrictly(POLICY_XML, WspReader.INCLUDE_DISABLED);
+
+        String policyXmlString = WspWriter.getPolicyXml(ass);
+        assertEquals(policyXmlString, POLICY_XML);
     }
 
     // Message body tests
@@ -804,6 +843,24 @@ public class ServerSqlAttackAssertionTest {
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         assertEquals(AssertionStatus.NONE, status);
+    }
+
+    /**
+     * Context variable contains XML with invasive SQL - should not be caught by protections other than META.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_UnrecognizedProtectionType_AssertionStatusFailed() throws Exception {
+        try {
+            runTestWithResource(TargetMessageType.RESPONSE,
+                    STANDARD_SQL_ATTACK_RESPONSE_MESSAGE, UNRECOGNIZED_PATTERN);
+            fail();
+        } catch (AssertionStatusException e) {
+            assertEquals(AssertionStatus.FAILED, e.getAssertionStatus());
+            assertEquals("Unrecognized protection pattern.", e.getMessage());
+        }
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_UNRECOGNIZED_PROTECTION));
     }
 
     // Routing check tests

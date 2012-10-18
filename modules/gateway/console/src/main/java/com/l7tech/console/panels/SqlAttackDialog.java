@@ -1,10 +1,12 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.VariablePrefixUtil;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.policy.assertion.SqlAttackAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputAdapter;
@@ -12,6 +14,8 @@ import java.awt.event.*;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author megery
@@ -37,6 +41,11 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
 
     private boolean confirmed = false;
     private List<JCheckBox> attacks;
+
+    private static final Logger logger = Logger.getLogger(SqlAttackDialog.class.getName());
+
+    private static final String NO_LABEL_TEXT = "No label";
+    private static final String NO_DESCRIPTION_TEXT = "No description";
 
     public SqlAttackDialog( final Window owner, final SqlAttackAssertion assertion) {
         super(owner, assertion);
@@ -277,6 +286,16 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
             theLabel = SqlAttackAssertion.getProtectionLabel(theProtection);
             theDescription = SqlAttackAssertion.getProtectionDescription(theProtection);
 
+            if(null == theLabel) {
+                logger.log(Level.WARNING, "Could not find label for protection: " + theProtection);
+                theLabel = NO_LABEL_TEXT;
+            }
+
+            if(null == theDescription) {
+                logger.log(Level.WARNING, "Could not find description for protection: " + theProtection);
+                theDescription = NO_DESCRIPTION_TEXT;
+            }
+
             JCheckBox theCheckBox = new JCheckBox(theLabel);
 
             theCheckBox.addMouseMotionListener(new MouseInputAdapter() {
@@ -299,7 +318,10 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
             attacks.add(theCheckBox);
             attackNameList.add(theCheckBox);
         } catch (PolicyAssertionException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING,
+                    "Error adding protection: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+            DialogDisplayer.showMessageDialog(SqlAttackDialog.this,
+                    "Could not populate protection list.", "Error", JOptionPane.ERROR_MESSAGE, null);
         }
 
     }

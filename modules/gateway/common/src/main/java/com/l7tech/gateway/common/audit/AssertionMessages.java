@@ -724,12 +724,12 @@ public class AssertionMessages extends Messages {
     public static final M SQLATTACK_CANNOT_PARSE = m(7213, Level.WARNING, "Cannot parse {0} as {1}.");
     public static final M SQLATTACK_DETECTED_PARAM = m(7214, Level.WARNING, "{3} detected in {0} parameter \"{1}\": {2}");
     public static final M SQLATTACK_DETECTED = m(7215, Level.WARNING, "{2} detected in {0}: {1}");
+    public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");
 
     /**
      * @deprecated
      */
     @Deprecated
-    public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");
     public static final M _UNUSED_SQLATTACK_REQUEST_REJECTED = m(7201, Level.WARNING, true, false, "Request was flagged by SQL attack protection assertion");
 
     // RequestSizeLimit
