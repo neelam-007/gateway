@@ -114,7 +114,6 @@ public class OAuthInstallerAdminImplTest {
         assertTrue(results.contains("ba525763-6e55-4748-9376-76055247c8b1"));
     }
 
-    @Ignore
     @Test
     public void testListAllBundles() throws Exception {
         final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, ApplicationContexts.getTestApplicationContext());
@@ -122,22 +121,27 @@ public class OAuthInstallerAdminImplTest {
         final List<BundleInfo> allBundles = admin.getAllOtkComponents();
         assertNotNull(allBundles);
 
+        for (BundleInfo aBundle : allBundles) {
+            System.out.println("Bundle: " + aBundle);
+        }
+
         BundleInfo expected;
 
         expected = new BundleInfo("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "1.0", "OAuth 1.0", "Core Services and Test Client");
-        assertTrue(expected.toString(), allBundles.contains(expected));
+        assertTrue(allBundles.contains(expected));
 
         expected = new BundleInfo("ba525763-6e55-4748-9376-76055247c8b1", "1.0", "OAuth 2.0", "Auth Server and Test Clients");
-        assertTrue(expected.toString(), allBundles.contains(expected));
+        assertTrue(allBundles.contains(expected));
 
         expected = new BundleInfo("f69c7d15-4999-4761-ab26-d29d58c0dd57", "1.0", "Secure Zone OVP", "OVP - OAuth Validation Point");
-        assertTrue(expected.toString(), allBundles.contains(expected));
+        assertTrue(allBundles.contains(expected));
 
         expected = new BundleInfo("b082274b-f00e-4fbf-bbb7-395a95ca2a35", "1.0", "SecureZone Storage", "Token and Client Store");
-        assertTrue(expected.toString(), allBundles.contains(expected));
+        expected.addJdbcReference("OAuth");
+        assertTrue(allBundles.contains(expected));
 
         expected = new BundleInfo("a07924c0-0265-42ea-90f1-2428e31ae5ae", "1.0", "OAuth Manager", "Manager utility for Client and Token store for OAuth 1.0 and 2.0");
-        assertTrue(expected.toString(), allBundles.contains(expected));
+        assertTrue(allBundles.contains(expected));
     }
 
     /**
