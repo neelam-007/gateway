@@ -290,7 +290,7 @@ public class OAuthInstallerAdminImplTest {
         assertTrue(comment.getLocalName().equals("CommentAssertion"));
         final Element commentValueElm = XmlUtil.findFirstChildElement(comment);
         final String commentValue = commentValueElm.getAttribute("stringValue");
-        assertEquals("Invalid comment value found", "Component version1.0 installed by OAuth installer version otk1.0", commentValue);
+        assertEquals("Invalid comment value found", "Component version 1.0 installed by OAuth installer version otk1.0", commentValue);
     }
 
 

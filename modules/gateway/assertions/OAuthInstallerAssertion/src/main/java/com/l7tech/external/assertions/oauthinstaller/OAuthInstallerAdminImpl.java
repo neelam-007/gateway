@@ -516,7 +516,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
 
                 // add in the version comment for every policy saved, whether it's a policy fragment or a service policy.
                 final String version = bundleInfo.getVersion();
-                final CommentAssertion ca = new CommentAssertion("Component version" + version + " installed by OAuth installer version " + oAuthInstallerVersion);
+                final CommentAssertion ca = new CommentAssertion("Component version " + version + " installed by OAuth installer version " + oAuthInstallerVersion);
 
                 final Element governingAllAssertion = XmlUtil.findFirstChildElement(writeablePolicyDoc.getDocumentElement());
                 final Element firstChild = XmlUtil.findFirstChildElement(governingAllAssertion);
