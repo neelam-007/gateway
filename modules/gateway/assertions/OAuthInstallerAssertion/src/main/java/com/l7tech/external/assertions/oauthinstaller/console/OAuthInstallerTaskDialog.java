@@ -211,6 +211,15 @@ public class OAuthInstallerTaskDialog extends JDialog {
 
     @Nullable
     private String getPrefixedUrlErrorMsg(String prefix){
+
+        // validate for XML chars
+        String [] invalidChars = new String[]{"\"", "&", "'", "<", ">"};
+        for (String invalidChar : invalidChars) {
+            if (prefix.contains(invalidChar)) {
+                return "Invalid character '" + invalidChar + "' is not allowed in the installation prefix.";
+            }
+        }
+
         String testUri = "http://ssg.com:8080/" + prefix + "/query";
         if (!ValidationUtils.isValidUrl(testUri)) {
             return "It must be possible to construct a valid routing URI using the prefix.";
