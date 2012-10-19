@@ -163,9 +163,12 @@ public class WsdlSchemaAnalizer {
         if (potentiallists.getLength() > 0) {
             for (int i = 0; i < potentiallists.getLength(); i++) {
                 Element e = (Element)potentiallists.item(i);
-                Element schema = getSchemaElement(e.getAttribute(SCHEMA_LOCATION), docs);
-                if (schema != null) {
-                    schemas.add(schema);
+                String schemaLocation = e.getAttribute(SCHEMA_LOCATION);
+                if (schemaLocation!= null && !schemaLocation.trim().isEmpty()) {
+                    Element schema = getSchemaElement(schemaLocation.trim(), docs);
+                    if (schema != null) {
+                        schemas.add(schema);
+                    }
                 }
             }
         }
@@ -208,7 +211,7 @@ public class WsdlSchemaAnalizer {
      */
     private static Element getSchemaElement(String schemaLocation, Map<String,Document> docs) {
         for ( final Map.Entry<String, Document> doc : docs.entrySet() ) {
-            if (schemaLocation!= null && doc.getKey().endsWith(schemaLocation)) {
+            if (doc.getKey().endsWith(schemaLocation)) {
                 return doc.getValue().getDocumentElement();
             }
         }
