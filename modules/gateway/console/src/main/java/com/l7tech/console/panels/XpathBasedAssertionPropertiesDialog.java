@@ -437,13 +437,16 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             @Override
             public void actionPerformed(ActionEvent e) {
                 final SampleMessageComboEntry entry = (SampleMessageComboEntry)sampleMessagesCombo.getSelectedItem();
+                final SampleMessage tempMsg = new SampleMessage(entry.message.getOidAsLong(), entry.message.getName(), entry.message.getOperationName(), entry.message.getXml());
+                tempMsg.copyFrom(entry.message);
                 if (entry == USE_AUTOGEN) return;
-                showSampleMessageDialog(entry.message, new Functions.UnaryVoid<SampleMessageDialog>() {
+                showSampleMessageDialog(tempMsg, new Functions.UnaryVoid<SampleMessageDialog>() {
                     @Override
                     public void call(SampleMessageDialog smd) {
                         if (smd.isOk()) {
                             try {
-                                Registry.getDefault().getServiceManager().saveSampleMessage(entry.message);
+                                Registry.getDefault().getServiceManager().saveSampleMessage(tempMsg);
+                                entry.message.copyFrom(tempMsg);
                             } catch (SaveException ex) {
                                 throw new RuntimeException("Couldn't save SampleMessage", ex);
                             }
