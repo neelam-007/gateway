@@ -4,12 +4,14 @@ import com.l7tech.console.panels.IdProviderPasswordPolicyDialog;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderPasswordPolicy;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -26,7 +28,7 @@ import java.util.logging.Level;
  */
 public class IdentityProviderManagePasswordPolicyAction extends SecureAction {
     public IdentityProviderManagePasswordPolicyAction() {
-        super(new AttemptedUpdate(
+        super(new AttemptedReadSpecific(
                 EntityType.PASSWORD_POLICY, new IdentityProviderPasswordPolicy(
                         IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID)), LIC_AUTH_ASSERTIONS);
     }

@@ -5,6 +5,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderLimits;
 import com.l7tech.identity.IdentityProviderPasswordPolicy;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -61,19 +62,22 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
     private boolean confirmed = false;
     private boolean isReadOnly = false;
 
+
     public IdProviderPasswordPolicyDialog(final Window owner,
                                           final IdentityProviderPasswordPolicy passwordPolicy,
                                           final String minimumsName,
                                           final Map<String, IdentityProviderPasswordPolicy> minimumsPolicies,
                                           boolean isReadOnly) {
         super(owner, DIALOG_TITLE, IdProviderPasswordPolicyDialog.DEFAULT_MODALITY_TYPE);
-        this.isReadOnly = isReadOnly;
+        final PermissionFlags flags = PermissionFlags.get(EntityType.PASSWORD_POLICY);
+        this.isReadOnly = isReadOnly || (!flags.canUpdateSome());
         this.minimumsName = minimumsName;
         this.minimumsPolicies = minimumsPolicies;
         initialize(passwordPolicy);
     }
 
     private void initialize(IdentityProviderPasswordPolicy passwordPolicy) {
+
         this.passwordPolicy = passwordPolicy;
         setContentPane(contentPane);
         getRootPane().setDefaultButton(okButton);
