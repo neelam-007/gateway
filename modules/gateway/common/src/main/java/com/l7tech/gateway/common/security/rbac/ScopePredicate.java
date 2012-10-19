@@ -3,7 +3,6 @@
  */
 package com.l7tech.gateway.common.security.rbac;
 
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import javax.persistence.*;
@@ -53,13 +52,4 @@ public abstract class ScopePredicate extends PersistentEntityImp {
      * @return a new copy of this scope predicate.  Never null.
      */
     public abstract ScopePredicate createAnonymousClone();
-
-    /**
-     * Check if this scope predicate will never match anything ever again if the specified entity is deleted.
-     *
-     * @param etype type of entity.  Required.
-     * @param entityOid  OID of entity.  Required.
-     * @return true if this scope will never again match anything if the identified entity is deleted.
-     */
-    public abstract boolean requiresEntityToExist(EntityType etype, long entityOid);
 }

@@ -51,11 +51,6 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
     }
 
     @Override
-    public boolean requiresEntityToExist(EntityType etype, long entityOid) {
-        return false;
-    }
-
-    @Override
     protected void setPermission(Permission permission) {
         super.setPermission(permission);
         setupGetter();
