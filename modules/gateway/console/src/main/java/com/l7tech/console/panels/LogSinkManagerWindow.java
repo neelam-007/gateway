@@ -12,8 +12,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.grepFirst;
-import static com.l7tech.util.Option.optional;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -24,6 +22,9 @@ import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.Functions.grepFirst;
+import static com.l7tech.util.Option.optional;
 
 /**
  * This is the main window for managing log sinks.
@@ -226,7 +227,7 @@ public class LogSinkManagerWindow extends JDialog {
     }
 
     private void editAndSave(final SinkConfiguration sinkConfiguration, final boolean selectNameField) {
-        final SinkConfigurationPropertiesDialog dlg = new SinkConfigurationPropertiesDialog(this, sinkConfiguration, !flags.canUpdateSome());
+        final SinkConfigurationPropertiesDialog dlg = new SinkConfigurationPropertiesDialog(this, sinkConfiguration, !(flags.canCreateSome() || flags.canUpdateSome()));
         dlg.pack();
         Utilities.centerOnScreen( dlg );
         if(selectNameField)
