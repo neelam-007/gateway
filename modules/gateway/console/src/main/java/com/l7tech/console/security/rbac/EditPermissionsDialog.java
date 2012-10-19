@@ -53,6 +53,17 @@ public class EditPermissionsDialog extends JDialog {
         }
 
         typeSelection.setModel(new DefaultComboBoxModel(types.toArray(new EntityType[types.size()])));
+
+        typeSelection.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(final ItemEvent e) {
+                if(e.getStateChange() == ItemEvent.SELECTED && !permission.getEntityType().equals(e.getItem())){
+                    //default to ANY when the combobox changes
+                    permission.setEntityType(EntityType.ANY);
+                    scopeField.setText(getScopeString(permission));
+                }
+            }
+        });
         EntityType etype = permission.getEntityType();
         if (etype != null) typeSelection.setSelectedItem(etype);
 
