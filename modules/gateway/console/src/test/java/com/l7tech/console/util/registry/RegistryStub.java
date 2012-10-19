@@ -210,7 +210,7 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public EntityHeaderSet<EntityHeader> findEntities(Class<? extends Entity> entityClass) throws FindException {
+            public EntityHeaderSet<EntityHeader> findEntities(EntityType entityType) throws FindException {
                 return new EntityHeaderSet<EntityHeader>(new EntityHeader(role.getId(), com.l7tech.objectmodel.EntityType.RBAC_ROLE, role.getName(), role.getDescription()));
             }
         };

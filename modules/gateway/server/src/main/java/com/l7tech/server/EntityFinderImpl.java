@@ -1,5 +1,6 @@
 package com.l7tech.server;
 
+import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -54,6 +55,8 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         try {
             if (EntityType.SSG_KEY_ENTRY == type)
                 return findAllKeyHeaders();
+            else if (EntityType.SSG_KEYSTORE == type)
+                return findAllKeyStoreHeaders();
             //noinspection unchecked
             else return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<EntityHeaderSet<EntityHeader>>() {
                 @Override
@@ -104,7 +107,19 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             }
             return result;
         } catch (KeyStoreException e) {
-            throw new FindException("Error looking up private key headers.", e);
+            throw new FindException("Error looking up private key headers: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    private EntityHeaderSet<EntityHeader> findAllKeyStoreHeaders() throws FindException {
+        try {
+            EntityHeaderSet<EntityHeader> result = new EntityHeaderSet<EntityHeader>();
+            for (SsgKeyFinder ssgKeyFinder : keyStoreManager.findAll()) {
+                result.add(new KeystoreFileEntityHeader(ssgKeyFinder.getOid(), ssgKeyFinder.getName(), ssgKeyFinder.getType().toString(), !ssgKeyFinder.isMutable()));
+            }
+            return result;
+        } catch (KeyStoreException e) {
+            throw new FindException("Error looking up key store headers: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

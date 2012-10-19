@@ -3,15 +3,15 @@
  */
 package com.l7tech.gateway.common.security.rbac;
 
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
-import com.l7tech.objectmodel.*;
-import com.l7tech.identity.User;
 import com.l7tech.gateway.common.admin.Administrative;
-
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.*;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
 
 /**
  * @author alex
@@ -68,5 +68,5 @@ public interface RbacAdmin {
 
     @Transactional(readOnly=true)
     @Secured(types=EntityType.ANY, stereotype=FIND_HEADERS)
-    EntityHeaderSet<EntityHeader> findEntities(Class<? extends Entity> entityClass) throws FindException;
+    EntityHeaderSet<EntityHeader> findEntities(EntityType entityType) throws FindException;
 }

@@ -10,9 +10,9 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.util.Functions;
-import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.util.Functions;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
 
@@ -94,7 +94,7 @@ public class FindEntityDialog extends JDialog {
 
         EntityHeaderSet<EntityHeader> headers;
         try {
-            headers = Registry.getDefault().getRbacAdmin().findEntities(entityType.getEntityClass());
+            headers = Registry.getDefault().getRbacAdmin().findEntities(entityType);
         } catch (Exception e) {
             throw new RuntimeException("Couldn't find " + entityType.getName(), e);
         }

@@ -116,7 +116,7 @@ public class RbacAdminImpl implements RbacAdmin {
         roleManager.delete(role);
     }
 
-    public EntityHeaderSet<EntityHeader> findEntities(Class<? extends Entity> entityClass) throws FindException {
-        return entityFinder.findAll(entityClass);
+    public EntityHeaderSet<EntityHeader> findEntities(EntityType entityType) throws FindException {
+        return entityFinder.findAll(entityType.getEntityClass());
     }
 }
