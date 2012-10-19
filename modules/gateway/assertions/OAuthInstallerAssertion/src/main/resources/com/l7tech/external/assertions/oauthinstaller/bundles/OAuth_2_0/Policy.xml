@@ -1689,6 +1689,10 @@
                     &lt;L7p:VariableToSet stringValue="oauth2_token_path"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="ZHJhZnQtaWV0Zi1vYXV0aC12Mi0zMQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_version"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0="/&gt;
                     &lt;L7p:VariableToSet stringValue="host_server"/&gt;
                     &lt;/L7p:SetVariable&gt;
@@ -2080,6 +2084,391 @@
                     &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
                     &lt;L7p:VariableToSet stringValue=&quot;host_oauth_clientstore_server&quot;/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Policy>
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="a50b34ec-0e05-47a0-b978-b86458025d25"
+               id="71335937" version="1">
+        <l7:PolicyDetail folderId="123600896" guid="a50b34ec-0e05-47a0-b978-b86458025d25" id="71335937" version="1">
+            <l7:Name>Store to Cache and Session</l7:Name>
+            <l7:PolicyType>Include</l7:PolicyType>
+            <l7:Properties>
+                <l7:Property key="revision">
+                    <l7:LongValue>14</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:PolicyDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Stores info to cache and oauth_session"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Mandatory Input: toStore(message), cacheKey"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Optional Input: cacheId, cacheAge, cacheMaxEntries, cacheMaxSize,
+                    sessionAge"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${cacheId}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Negate booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="ZGVmYXVsdENhY2hl"/&gt;
+                    &lt;L7p:VariableToSet stringValue="cacheId"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${cacheAge}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Negate booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="MzYwMDAw"/&gt;
+                    &lt;L7p:VariableToSet stringValue="cacheAge"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${cacheMaxEntries}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Negate booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="MTA="/&gt;
+                    &lt;L7p:VariableToSet stringValue="cacheMaxEntries"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${cacheMaxSize}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Negate booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="MTAwMDAw"/&gt;
+                    &lt;L7p:VariableToSet stringValue="cacheMaxSize"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${sessionAge}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Negate booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtjYWNoZUFnZX0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="sessionAge"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue="${sessionAge}"/&gt;
+                    &lt;L7p:VariableToSet stringValue="session_expiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:JdbcQuery&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
+                    &lt;L7p:QueryName stringValue="Insert session"/&gt;
+                    &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_session
+                    (session_key,session_group,expiration,value) values (
+                    ${cacheKey},
+                    ${cacheId},
+                    ${session_expiration.millis},
+                    ${toStore.mainpart});]]&gt;&lt;/L7p:SqlQuery&gt;
+                    &lt;L7p:VariablePrefix stringValue="sessionStore"/&gt;
+                    &lt;/L7p:JdbcQuery&gt;
+                    &lt;L7p:JdbcQuery&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
+                    &lt;L7p:QueryName stringValue="Update session"/&gt;
+                    &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_session set
+                    expiration=${session_expiration.millis},
+                    value=${toStore.mainpart}
+                    where session_key=${cacheKey} and session_group=${cacheId};]]&gt;&lt;/L7p:SqlQuery&gt;
+                    &lt;L7p:VariablePrefix stringValue="sessionStore"/&gt;
+                    &lt;/L7p:JdbcQuery&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Store session"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${cacheKey}"/&gt;
+                    &lt;L7p:CacheId stringValue="${cacheId}"/&gt;
+                    &lt;L7p:MaxEntries stringValue="${cacheMaxEntries}"/&gt;
+                    &lt;L7p:MaxEntryAgeMillis stringValue="${cacheAge}"/&gt;
+                    &lt;L7p:MaxEntrySizeBytes stringValue="${cacheMaxSize}"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="toStore"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Policy>
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="3987ff3c-8611-4709-bdee-e6cb227a2d5e"
+               id="71335938" version="1">
+        <l7:PolicyDetail folderId="123600896" guid="3987ff3c-8611-4709-bdee-e6cb227a2d5e" id="71335938" version="1">
+            <l7:Name>Lookup from Cache or Session</l7:Name>
+            <l7:PolicyType>Include</l7:PolicyType>
+            <l7:Properties>
+                <l7:Property key="revision">
+                    <l7:LongValue>26</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:PolicyDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Retrieves tokens from cache or oauth_session"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Mandatory Input: cacheKey"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Optional Input: cacheId, cacheAge"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Output: found, foundFrom"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:VariableToSet stringValue="found"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:VariableToSet stringValue="foundFrom"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${cacheId}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Negate booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="ZGVmYXVsdENhY2hl"/&gt;
+                    &lt;L7p:VariableToSet stringValue="cacheId"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${cacheAge}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Negate booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="MzYwMDAw"/&gt;
+                    &lt;L7p:VariableToSet stringValue="cacheAge"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="foundMessage"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CacheLookup&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${cacheKey}"/&gt;
+                    &lt;L7p:CacheId stringValue="${cacheId}"/&gt;
+                    &lt;L7p:ContentTypeOverride stringValue=""/&gt;
+                    &lt;L7p:MaxEntryAgeMillis stringValue="${cacheAge}"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="foundMessage"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheLookup&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtmb3VuZE1lc3NhZ2UubWFpbnBhcnR9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="found"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2FjaGU="/&gt;
+                    &lt;L7p:VariableToSet stringValue="foundFrom"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Check cache"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:JdbcQuery&gt;
+                    &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
+                    &lt;L7p:NamingMap mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="expiration"/&gt;
+                    &lt;L7p:value stringValue="session_expiration"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="value"/&gt;
+                    &lt;L7p:value stringValue="session_value"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:NamingMap&gt;
+                    &lt;L7p:QueryName stringValue="Retrieve from session"/&gt;
+                    &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select expiration,value from
+                    oauth_session where
+                    session_key=${cacheKey} and session_group=${cacheId};]]&gt;&lt;/L7p:SqlQuery&gt;
+                    &lt;L7p:VariablePrefix stringValue="sessionQuery"/&gt;
+                    &lt;/L7p:JdbcQuery&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue=""/&gt;
+                    &lt;L7p:VariableToSet stringValue="now"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${now.millis}"/&gt;
+                    &lt;L7p:Expression2 stringValue="${sessionQuery.session_expiration}"/&gt;
+                    &lt;L7p:Operator operator="LT"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Operator operator="LT"/&gt;
+                    &lt;L7p:RightValue stringValue="${sessionQuery.session_expiration}"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtzZXNzaW9uUXVlcnkuc2Vzc2lvbl92YWx1ZX0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="found"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="c2Vzc2lvbg=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="foundFrom"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:JdbcQuery&gt;
+                    &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
+                    &lt;L7p:QueryName stringValue="Delete expired session"/&gt;
+                    &lt;L7p:SqlQuery stringValue="delete from oauth_session where session_key=${cacheKey} and
+                    session_group=${cacheId};"/&gt;
+                    &lt;/L7p:JdbcQuery&gt;
+                    &lt;L7p:FalseAssertion/&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Check expiration"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Check session"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:TrueAssertion/&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:ExportVariables&gt;
+                    &lt;L7p:ExportedVars stringArrayValue="included"&gt;
+                    &lt;L7p:item stringValue="found"/&gt;
+                    &lt;L7p:item stringValue="foundFrom"/&gt;
+                    &lt;/L7p:ExportedVars&gt;
+                    &lt;/L7p:ExportVariables&gt;
                     &lt;/wsp:All&gt;
                     &lt;/wsp:Policy&gt;
                 </l7:Resource>
