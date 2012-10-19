@@ -267,7 +267,8 @@ public class RstSoapMessageProcessor {
                 // Check if the TokenType value is empty or not.
                 if (tokenTypeValue != null && !tokenTypeValue.trim().isEmpty()) {
                     if (!SoapConstants.WSC_RST_SCT_TOKEN_TYPE_LIST.contains(tokenTypeValue) &&
-                        !ArrayUtils.contains(SoapConstants.VALUETYPE_SAML_ARRAY, tokenTypeValue)) {
+                        !ArrayUtils.contains(SoapConstants.VALUETYPE_SAML_ARRAY, tokenTypeValue) &&
+                        !SoapConstants.SAML_NAMESPACE_LIST.contains(tokenTypeValue)) {
                         
                         parameters.put(ERROR,  "The TokenType element in the RequestSecurityToken element is an unknown value in the SOAP Body.");
                         return parameters;

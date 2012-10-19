@@ -236,7 +236,55 @@
                                         <L7p:Type variableDataType="string"/>
                                     </L7p:item>
                                     <L7p:item binary="included">
+                                        <L7p:RightValue stringValue="urn:oasis:names:tc:SAML:2.0:assertion"/>
+                                    </L7p:item>
+                                </L7p:Predicates>
+                            </L7p:ComparisonAssertion>
+                            <L7p:SamlIssuer>
+                                <L7p:AuthenticationStatement samlAuthenticationInfo="included">
+                                    <L7p:AuthenticationMethods stringArrayValue="included"/>
+
+                                    <L7p:IncludeAuthenticationContextDeclaration booleanValue="false"/>
+                                </L7p:AuthenticationStatement>
+                                <L7p:NameQualifier stringValue=""/>
+                                <L7p:Version boxedIntegerValue="2"/>
+                            </L7p:SamlIssuer>
+                        </wsp:All>
+                        <wsp:All wsp:Usage="Required">
+                            <L7p:ComparisonAssertion>
+                                <L7p:CaseSensitive booleanValue="false"/>
+                                <L7p:Expression1 stringValue="${tokenType.result}"/>
+                                <L7p:Operator operatorNull="null"/>
+                                <L7p:Predicates predicates="included">
+                                    <L7p:item dataType="included">
+                                        <L7p:Type variableDataType="string"/>
+                                    </L7p:item>
+                                    <L7p:item binary="included">
                                         <L7p:RightValue stringValue="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1"/>
+                                    </L7p:item>
+                                </L7p:Predicates>
+                            </L7p:ComparisonAssertion>
+                            <L7p:SamlIssuer>
+                                <L7p:AuthenticationStatement samlAuthenticationInfo="included">
+                                    <L7p:AuthenticationMethods stringArrayValue="included"/>
+
+                                    <L7p:IncludeAuthenticationContextDeclaration booleanValue="false"/>
+                                </L7p:AuthenticationStatement>
+                                <L7p:NameQualifier stringValue=""/>
+                                <L7p:Version boxedIntegerValue="1"/>
+                            </L7p:SamlIssuer>
+                        </wsp:All>
+                        <wsp:All wsp:Usage="Required">
+                            <L7p:ComparisonAssertion>
+                                <L7p:CaseSensitive booleanValue="false"/>
+                                <L7p:Expression1 stringValue="${tokenType.result}"/>
+                                <L7p:Operator operatorNull="null"/>
+                                <L7p:Predicates predicates="included">
+                                    <L7p:item dataType="included">
+                                        <L7p:Type variableDataType="string"/>
+                                    </L7p:item>
+                                    <L7p:item binary="included">
+                                        <L7p:RightValue stringValue="urn:oasis:names:tc:SAML:1.0:assertion"/>
                                     </L7p:item>
                                 </L7p:Predicates>
                             </L7p:ComparisonAssertion>
