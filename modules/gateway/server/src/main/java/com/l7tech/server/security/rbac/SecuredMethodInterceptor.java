@@ -3,8 +3,10 @@
  */
 package com.l7tech.server.security.rbac;
 
-import com.l7tech.gateway.common.security.rbac.*;
-import static com.l7tech.gateway.common.security.rbac.OperationType.*;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
+import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
@@ -20,6 +22,8 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 
 /**
  * Runtime RBAC enforcement kernel
@@ -245,6 +249,25 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
             case ENTITY_OPERATION:
                 checkEntityFromId(check, args, OperationType.OTHER);
                 break;
+            case SAVE:
+                entity = getEntityArg(check, args);
+                if (entity != null) {
+                    String id = entity.getId();
+                    if (!DEFAULT_ID.equals(id))
+                        throw new PermissionDeniedException(OTHER, entity, "re-create existing");
+                    checkEntityBefore(check, args, CREATE);
+                    break;
+                } else {
+                    // Must have permission to create any new entity of all required types
+                    check.setBefore(CheckBefore.NONE);
+                    check.setAfter(CheckAfter.NONE);
+                    for (EntityType type : check.types) {
+                        if (!rbacServices.isPermittedForAnyEntityOfType(user, CREATE, type)) {
+                            throw new PermissionDeniedException(CREATE, type);
+                        }
+                    }
+                    return methodInvocation.proceed();
+                }
             default:
                 throw new UnsupportedOperationException("Security declaration for method " + mname + " specifies unsupported stereotype " + check.stereotype.name());
         }

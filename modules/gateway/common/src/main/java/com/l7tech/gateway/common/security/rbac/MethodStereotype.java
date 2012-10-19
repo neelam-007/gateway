@@ -42,7 +42,8 @@ public enum MethodStereotype {
 
     /**
      * A {@link Secured#relevantArg} argument must be an {@link com.l7tech.objectmodel.Entity}, and the caller must hold 
-     * {@link OperationType#CREATE} permission on it.
+     * {@link OperationType#CREATE} permission on it.  If there is no relevantArg, the caller must hold permission to
+     * create ANY entity of the specified types.
      */
     SAVE,
 
@@ -56,6 +57,7 @@ public enum MethodStereotype {
      * If a {@link Secured#relevantArg} argument is an {@link com.l7tech.objectmodel.Entity}, the caller must hold
      * {@link OperationType#CREATE} permission on it, if {@link com.l7tech.objectmodel.Entity#getId} is null or
      * {@link com.l7tech.objectmodel.PersistentEntity#DEFAULT_OID}, or {@link OperationType#UPDATE} permission if not.
+     * If there is no relevantArg, the caller must hold permission to both create and update ANY entity of the specified types.
      */
     SAVE_OR_UPDATE,
 

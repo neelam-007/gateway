@@ -422,6 +422,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         EmailListenerAdmin emailListenerAdmin = Registry.getDefault().getEmailListenerAdmin();
         if(emailListenerAdmin == null) {
             DialogDisplayer.showMessageDialog(this, "Failed to connect to the Gateway!", "Connection Failure", JOptionPane.ERROR_MESSAGE, null);
+            return;
         }
 
         EmailServerType emailServerType = (EmailServerType)serverType.getSelectedItem();

@@ -1,23 +1,21 @@
 package com.l7tech.gateway.common.transport.email;
 
-import org.springframework.transaction.annotation.Transactional;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import static com.l7tech.objectmodel.EntityType.EMAIL_LISTENER;
+import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITY;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_HEADERS;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.SAVE_OR_UPDATE;
-import com.l7tech.gateway.common.admin.Administrative;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
-import java.io.Serializable;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
+import static com.l7tech.objectmodel.EntityType.EMAIL_LISTENER;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
  * Remote admin interface for managing {@link EmailListener} instances on the Gateway.
@@ -99,7 +97,7 @@ public interface EmailListenerAdmin {
     @Secured(stereotype=DELETE_BY_ID)
     void deleteEmailListener(long oid) throws DeleteException, FindException;
 
-    @Secured(stereotype=SAVE_OR_UPDATE)
+    @Secured(stereotype=SAVE)
     boolean testEmailAccount(EmailServerType serverType,
                              String hostname,
                              int port,
@@ -108,6 +106,6 @@ public interface EmailListenerAdmin {
                              boolean useSSL,
                              String folderName);
 
-    @Secured(stereotype=SAVE_OR_UPDATE)
+    @Secured(stereotype=SAVE)
     IMAPFolder getIMAPFolderList(String hostname, int port, String username, String password, boolean useSSL);
 }
