@@ -763,6 +763,7 @@ public class GatewayFeatureSets {
             fs(mtomValidateAssertions),
             fs(customFw),
             fs(esmAssertions),
+            fs(samlpAssertions),
             fs(samlpSsoAssertions),
             fs(samlpInboundAssertions),
             fs(generateSecurityHashAssertion),
