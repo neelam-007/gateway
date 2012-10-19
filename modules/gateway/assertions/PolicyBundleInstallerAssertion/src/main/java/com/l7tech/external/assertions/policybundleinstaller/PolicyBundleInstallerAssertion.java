@@ -32,11 +32,8 @@ public class PolicyBundleInstallerAssertion extends Assertion implements UsesVar
         // do not show in palette
         //meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
 
-        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerLifecycle");
-
-        // request default feature set name for our class name, since we are a known optional module
-        // that is, we want our required feature set to be "assertion:PolicyBundleInstaller" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerLifecycle");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

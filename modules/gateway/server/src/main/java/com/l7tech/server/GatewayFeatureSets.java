@@ -667,9 +667,17 @@ public class GatewayFeatureSets {
                  "The necessary assertions to enable Kerberos authentication and constrained delegation functionality",
                  mass("assertion:KerberosAuthentication"));
 
+        /**
+         * This assertion requires the policy bundle installer assertion so it cannot be added to a license without
+         * the policy bundle installer module also being added.
+         */
         GatewayFeatureSet oAuthInstaller = fsr("set:OAuthInstallerAssertion:Assertions",
                 "The necessary assertions to install the OAuth Toolkit",
                 mass("assertion:OAuthInstaller"));
+
+        GatewayFeatureSet policyBundleInstaller = fsr("set:PolicyBundleInstallerAssertion:Assertions",
+                "The necessary assertions to install policy bundles",
+                mass("assertion:PolicyBundleInstaller"));
 
         // US (NCES)
         GatewayFeatureSet usAssertions =
@@ -771,7 +779,9 @@ public class GatewayFeatureSets {
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(ntlmAuthenticationAssertion),
-            fs(kerberosAuthenticationAssertion));
+            fs(kerberosAuthenticationAssertion),
+            fs(oAuthInstaller),
+            fs(policyBundleInstaller));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
             "Same features as XML Firewall for now.",
@@ -819,7 +829,8 @@ public class GatewayFeatureSets {
             fs(generateOAuthSignatureBaseString),
             fs(ntlmAuthenticationAssertion),
             fs(kerberosAuthenticationAssertion),
-            fs(oAuthInstaller));
+            fs(oAuthInstaller),
+            fs(policyBundleInstaller));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
             "Same features as Gateway for now.",
@@ -868,7 +879,9 @@ public class GatewayFeatureSets {
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(ntlmAuthenticationAssertion),
-            fs(kerberosAuthenticationAssertion));
+            fs(kerberosAuthenticationAssertion),
+            fs(oAuthInstaller),
+            fs(policyBundleInstaller));
 
         GatewayFeatureSet profileApi =
         fsp("set:Profile:Api", "Layer 7 API Proxy",

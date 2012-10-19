@@ -1,13 +1,14 @@
 package com.l7tech.external.assertions.policybundleinstaller;
 
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
-import com.l7tech.server.event.system.Initializing;
 import com.l7tech.server.event.wsman.PolicyBundleEvent;
 import com.l7tech.server.event.wsman.WSManagementRequestEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -24,6 +25,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,15 +35,17 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
         this.applicationEventProxy = spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
         this.applicationEventProxy.addApplicationListener(this);
         this.spring = spring;
+        isLicensed.set(isLicensed());
     }
 
     @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-
-        if (applicationEvent instanceof Initializing) {
+        if (applicationEvent instanceof LicenseEvent) {
             configureBeans();
             return;
-        } else if (!(applicationEvent instanceof WSManagementRequestEvent)) {
+        }
+
+        if (!(applicationEvent instanceof WSManagementRequestEvent)) {
             return;
         }
 
@@ -50,17 +54,29 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
             return;
         }
 
-        if(!"http://ns.l7tech.com/2010/04/gateway-management".equals(mgmtRequest.getBundleVersionNs())){
+        if (!"http://ns.l7tech.com/2010/04/gateway-management".equals(mgmtRequest.getBundleVersionNs())) {
             // not applicable
             return;
         }
 
         if (applicationEvent instanceof PolicyBundleEvent) {
 
+            if (!isLicensed.get()) {
+                return;
+            }
+
+            if (serverMgmtAssertion == null) {
+                // if we are licensed and no assertion, then we need to configure.
+                // this works around issue with Gateway app context creation, there is currently no way of knowing
+                // when it's safe to initialize. Issue is with bean 'wspReader'.
+                configureBeans();
+                return;
+            }
+
             // process event
             final PolicyBundleEvent bundleEvent = (PolicyBundleEvent) applicationEvent;
 
-            if(!"http://ns.l7tech.com/2012/09/policy-bundle".equals(bundleEvent.getPolicyBundleVersionNs())){
+            if (!"http://ns.l7tech.com/2012/09/policy-bundle".equals(bundleEvent.getPolicyBundleVersionNs())) {
                 // not applicable
                 return;
             }
@@ -100,9 +116,16 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
 
         if (instance != null) {
-            logger.log(Level.WARNING, "PolicyBundleInstaller module is already initialized");
+            logger.log(Level.WARNING, "Policy Bundle Installer module is already initialized");
         } else {
             instance = new PolicyBundleInstallerLifecycle(context);
+        }
+    }
+
+    public static synchronized void onModuleUnloaded() {
+        if (instance != null) {
+            logger.log(Level.INFO, "Policy Bundle Installer module is shutting down");
+            instance = null;
         }
     }
 
@@ -112,6 +135,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
     private final ApplicationEventProxy applicationEventProxy;
     private final ApplicationContext spring;
     private ServerAssertion serverMgmtAssertion;
+    private final AtomicBoolean isLicensed = new AtomicBoolean(false);
 
     private final String GATEWAY_MGMT_POLICY_XML = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +
@@ -119,26 +143,44 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
             "    </wsp:All>\n" +
             "</wsp:Policy>\n";
 
+    private boolean isLicensed() {
+        LicenseManager licMan = spring.getBean("licenseManager", LicenseManager.class);
+        return licMan.isFeatureEnabled(new PolicyBundleInstallerAssertion().getFeatureSetName());
+    }
 
-    private void configureBeans() {
-        //todo reduce level
-        logger.info("Initializing OAuth Installer.");
 
-        final WspReader wspReader = spring.getBean("wspReader", WspReader.class);
-        final ServerPolicyFactory serverPolicyFactory = spring.getBean("policyFactory", ServerPolicyFactory.class);
+    /**
+     * This cannot be called from the constructor as the beans required are not available until after all modules are
+     * loaded. Calling this during construction will cause a spring invocation error when trying to get wspReader.
+     */
+    private synchronized void configureBeans() {
+        if (!isLicensed()) {
+            isLicensed.set(false);
+            logger.warning("Policy Bundle Installer assertion module is not licensed and will not be available.");
+            serverMgmtAssertion = null;
+        } else {
+            isLicensed.set(true);
+            if (serverMgmtAssertion == null) {
+                //todo reduce level
+                logger.info("Initializing OAuth Installer.");
 
-        try {
-            final Assertion assertion = wspReader.parseStrictly(GATEWAY_MGMT_POLICY_XML, WspReader.Visibility.omitDisabled);
-            serverMgmtAssertion = serverPolicyFactory.compilePolicy(assertion, false);
-        } catch (ServerPolicyException e) {
-            // todo log and audit with stack trace
-            throw new RuntimeException(e);
-        } catch (LicenseException e) {
-            // todo log and audit with stack trace
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            // todo log and audit with stack trace
-            throw new RuntimeException(e);
+                final WspReader wspReader = spring.getBean("wspReader", WspReader.class);
+                final ServerPolicyFactory serverPolicyFactory = spring.getBean("policyFactory", ServerPolicyFactory.class);
+
+                try {
+                    final Assertion assertion = wspReader.parseStrictly(GATEWAY_MGMT_POLICY_XML, WspReader.Visibility.omitDisabled);
+                    serverMgmtAssertion = serverPolicyFactory.compilePolicy(assertion, false);
+                } catch (ServerPolicyException e) {
+                    // todo log and audit with stack trace
+                    throw new RuntimeException(e);
+                } catch (LicenseException e) {
+                    // todo log and audit with stack trace
+                    throw new RuntimeException(e);
+                } catch (IOException e) {
+                    // todo log and audit with stack trace
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 
