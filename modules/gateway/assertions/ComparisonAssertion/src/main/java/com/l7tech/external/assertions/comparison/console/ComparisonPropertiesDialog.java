@@ -11,6 +11,7 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
@@ -192,7 +193,7 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
             @Override
             public void actionPerformed(ActionEvent e) {
                 if(0 == predicatesTable.getRowCount()) {
-                    showErrorDialog();
+                    showErrorDialog("At least one Rule required.", "Error");
                 } else {
                     updateModel();
                     ok = true;
@@ -239,7 +240,12 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
     void enableButtons() {
         String expr = expressionField.getText();
 
-        variableTreatmentCheckBox.setEnabled(Syntax.isOnlyASingleVariableReferenced(expr));
+        try {
+            variableTreatmentCheckBox.setEnabled(Syntax.isOnlyASingleVariableReferenced(expr));
+        } catch (VariableNameSyntaxException e) {
+            // swallow syntax errors from invalid expressions that arise due to incomplete/incorrect input -
+            // the policy validator will indicate to the user if the expression is invalid
+        }
 
         boolean canOk = expr != null && expr.length() > 0;
 
@@ -250,10 +256,10 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         removePredicateButton.setEnabled(sel >= 0);
     }
 
-    void showErrorDialog() {
+    void showErrorDialog(String message, String title) {
         DialogDisplayer.showMessageDialog(this,
-                "At least one Rule required.",
-                "Error",
+                message,
+                title,
                 JOptionPane.ERROR_MESSAGE, null);
     }
 
