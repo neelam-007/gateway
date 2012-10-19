@@ -6,6 +6,8 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -129,7 +131,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private ContentTypeComboBoxModel contentTypeModel;
     private SimpleTableModel<NameValuePair> environmentPropertiesTableModel;
 
-    private PermissionFlags flags;
+    private final PermissionFlags endpointFlags;
+    private final PermissionFlags connectionFlags;
 
     public ServiceAdmin getServiceAdmin() {
         return Registry.getDefault().getServiceManager();
@@ -189,14 +192,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
     }
 
-    private JmsQueuePropertiesDialog(Frame parent) {
-        super(parent, true);
-        flags = PermissionFlags.get(EntityType.JMS_ENDPOINT);
-    }
-
-    private JmsQueuePropertiesDialog(Dialog parent) {
-        super(parent, true);
-        flags = PermissionFlags.get(EntityType.JMS_ENDPOINT);
+    private JmsQueuePropertiesDialog(Window parent) {
+        super(parent, ModalityType.APPLICATION_MODAL);
+        endpointFlags = PermissionFlags.get(EntityType.JMS_ENDPOINT);
+        connectionFlags = PermissionFlags.get(EntityType.JMS_CONNECTION);
     }
 
     /**
@@ -224,7 +223,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        that.securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new AttemptedCreate(EntityType.JMS_ENDPOINT));
+        final AttemptedOperation attemptedOperation = (endpoint == null || endpoint.getOid() == JmsEndpoint.DEFAULT_OID)
+            ? new AttemptedCreate(EntityType.JMS_ENDPOINT)
+            : new AttemptedUpdate(EntityType.JMS_ENDPOINT, endpoint);
+        that.securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, attemptedOperation);
 
         that.connection = connection;
         that.endpoint = endpoint;
@@ -1193,7 +1195,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
      * Adjust components based on the state of the form.
      */
     private void enableOrDisableComponents() {
-        boolean canEdit = (flags.canCreateSome() || flags.canUpdateSome());
+        boolean canEdit = canEdit();
 
         if (inboundRadioButton.isSelected()) {
             useJmsMsgPropAsSoapActionRadioButton.setEnabled(canEdit);
@@ -1227,6 +1229,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
         saveButton.setEnabled(valid && canEdit);
         testButton.setEnabled(valid && !viewIsTemplate());
         enableContentTypeControls();
+    }
+
+    private boolean canEdit() {
+        return (connectionFlags.canCreateSome() || connectionFlags.canUpdateSome() ||
+                           endpointFlags.canCreateSome() || endpointFlags.canUpdateSome());
     }
 
     private void enableOrDisableAcknowledgementControls() {
@@ -1411,7 +1418,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 component.setEnabled(f.call());
             }
             final boolean valid = validateForm();
-            saveButton.setEnabled(valid && (flags.canCreateSome() || flags.canUpdateSome()));
+            saveButton.setEnabled(valid && canEdit());
             testButton.setEnabled(valid);
             enableOrDisableComponents();
         }
