@@ -1,12 +1,11 @@
 package com.l7tech.console.action;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gateway.common.security.rbac.AttemptedAnyOperation;
-import com.l7tech.gateway.common.security.rbac.AttemptedReadAny;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.console.panels.PrivateKeyManagerWindow;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.AttemptedAnyOperation;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityType;
 
 import java.util.logging.Logger;
 
@@ -25,8 +24,7 @@ public class ManagePrivateKeysAction extends SecureAction {
 
     @Override
     public boolean isAuthorized() {        
-        return canAttemptOperation(new AttemptedAnyOperation(EntityType.SSG_KEY_ENTRY)) &&
-                canAttemptOperation(new AttemptedReadAny(EntityType.CLUSTER_PROPERTY));
+        return canAttemptOperation(new AttemptedAnyOperation(EntityType.SSG_KEY_ENTRY));
     }
 
     /**

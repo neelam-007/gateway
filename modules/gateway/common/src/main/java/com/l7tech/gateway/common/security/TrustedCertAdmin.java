@@ -214,7 +214,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws java.security.KeyStoreException if a keystore is corrupt
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    @Secured(stereotype=FIND_ENTITIES)
+    @Secured(stereotype=FIND_HEADERS, types=SSG_KEYSTORE)
     public List<KeystoreFileEntityHeader> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException;
 
     /**
