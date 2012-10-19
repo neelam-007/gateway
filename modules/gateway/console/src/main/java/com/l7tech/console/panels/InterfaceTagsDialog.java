@@ -4,11 +4,14 @@ import com.l7tech.console.util.ClusterPropertyCrud;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.ValidatedPanel;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.ExceptionUtils;
@@ -28,23 +31,11 @@ import java.util.logging.Logger;
 public class InterfaceTagsDialog extends OkCancelDialog<Set<InterfaceTag>> {
     private static final Logger logger = Logger.getLogger(InterfaceTagsDialog.class.getName());
 
-    public InterfaceTagsDialog(Frame owner, String title, boolean modal, Set<InterfaceTag> model) {
-        super(owner, title, modal, makePanel(model));
-    }
-
-    public InterfaceTagsDialog(Frame owner, String title, boolean modal, Set<InterfaceTag> model, boolean readOnly) {
+    public InterfaceTagsDialog(Window owner, String title, boolean modal, Set<InterfaceTag> model, boolean readOnly) {
         super(owner, title, modal, makePanel(model), readOnly);
     }
 
-    public InterfaceTagsDialog(Dialog owner, String title, boolean modal, Set<InterfaceTag> model) {
-        super(owner, title, modal, makePanel(model));
-    }
-
-    public InterfaceTagsDialog(Dialog owner, String title, boolean modal, Set<InterfaceTag> model, boolean readOnly) {
-        super(owner, title, modal, makePanel(model), readOnly);
-    }
-
-    private static ValidatedPanel makePanel(Set<InterfaceTag> model) {
+    private static ValidatedPanel<Set<InterfaceTag>> makePanel(Set<InterfaceTag> model) {
         return new InterfaceTagsPanel(model);
     }
 
@@ -57,21 +48,8 @@ public class InterfaceTagsDialog extends OkCancelDialog<Set<InterfaceTag>> {
      *                  interface tags have already been updated on the server.  The callback is passed
      *                  a single argument: the new value of the interfaceTags cluster property.
      */
-    public static void show(Frame parent, Functions.UnaryVoid<String> callback) {
-        doShow(new InterfaceTagsDialog(parent, "Manage Interfaces", true, loadCurrentInterfaceTagsFromServer(), false), callback);
-    }
-
-    /**
-     * Display the Manage Interface Tags dialog, and invoke the specified callback
-     * asynchronously if dialog is OK'ed with changes.
-     *
-     * @param parent parent component or null.
-     * @param callback  callback to invoke if the dialog is confirmed, or null.  When the callback is invoked, the
-     *                  interface tags have already been updated on the server.  The callback is passed
-     *                  a single argument: the new value of the interfaceTags cluster property.
-     */
-    public static void show(Dialog parent, Functions.UnaryVoid<String> callback) {
-        doShow(new InterfaceTagsDialog(parent, "Manage Interfaces", true, loadCurrentInterfaceTagsFromServer(), false), callback);
+    public static void show(Window parent, Functions.UnaryVoid<String> callback) {
+        doShow(new InterfaceTagsDialog(parent, "Manage Interfaces", true, loadCurrentInterfaceTagsFromServer(), !canEditInterfaceTags()), callback);
     }
 
     private static void reportError(String title, String message, Throwable t) {
@@ -118,5 +96,21 @@ public class InterfaceTagsDialog extends OkCancelDialog<Set<InterfaceTag>> {
             reportError("Unable to Load Interface Tags", "Unable to load interface", e);
             return Collections.emptySet();
         }
+    }
+
+    /**
+     * @return true if the current admin user has enough permission that they should be able at least open the Manage Interfaces dialog
+     */
+    public static boolean canViewInterfaceTags() {
+        return Registry.getDefault().getSecurityProvider().hasPermission(
+            new AttemptedReadSpecific(EntityType.CLUSTER_PROPERTY, new ClusterProperty(InterfaceTag.PROPERTY_NAME, "")));
+    }
+
+    /**
+     * @return true if the current admin user has enough permission that they should be able to create/edit/delete interfaces.
+     */
+    public static boolean canEditInterfaceTags() {
+        return Registry.getDefault().getSecurityProvider().hasPermission(
+            new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty(InterfaceTag.PROPERTY_NAME, "")));
     }
 }

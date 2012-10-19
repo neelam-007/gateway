@@ -129,6 +129,8 @@ public class SsgConnectorManagerWindow extends JDialog {
 
         reservedPorts = Registry.getDefault().getTransportAdmin().getReservedPorts();
 
+        interfacesButton.setEnabled(InterfaceTagsDialog.canViewInterfaceTags());
+
         loadConnectors();
         pack();
         enableOrDisableButtons();
