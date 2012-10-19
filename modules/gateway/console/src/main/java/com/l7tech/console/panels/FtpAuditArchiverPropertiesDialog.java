@@ -6,13 +6,17 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.transport.ftp.*;
+import com.l7tech.gateway.common.Authorizer;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.gui.NumberField;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.objectmodel.UpdateException;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -20,9 +24,9 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Callable;
-import java.io.*;
 
 /**
  * Dialog for editing the FtpArchiveReceiver configuration.
@@ -33,6 +37,7 @@ import java.io.*;
 public class FtpAuditArchiverPropertiesDialog extends JDialog {
 
     public static final String TITLE = "FTP(S) Audit Archiver Properties";
+    public static final String AUDIT_ARCHIVER_CONFIG_CLUSTER_PROPERTY_NAME = "audit.archiver.ftp.config";
 
     public static final int DEFAULT_PORT_FTP = 21;
     public static final int DEFAULT_PORT_FTPS_IMPLICIT = 990;
@@ -57,6 +62,7 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
 
     private FtpClientConfig ftpConfig;
     private ClusterProperty ftpConfigClusterProp;
+    private boolean readOnly;
 
     private boolean confirmed = false;
 
@@ -156,6 +162,7 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
      * object.
      */
     private void initialize() {
+        readOnly = !canEditAuditArchiverConfig();
         setContentPane(_mainPanel);
         initializeFields();
 
@@ -314,11 +321,11 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
         final boolean canTest = _hostNameTextField.getText().length() != 0
                 && _userNameTextField.getText().length() != 0;
         _testButton.setEnabled(canTest);
-        _okButton.setEnabled(canTest);
+        _okButton.setEnabled(canTest && !readOnly);
 
         final boolean canOK = _hostNameTextField.getText().length() != 0
                 && !(_userNameTextField.getText().length() == 0);
-        _okButton.setEnabled(canOK);
+        _okButton.setEnabled(canOK && !readOnly);
     }
 
     public boolean isConfirmed() {
@@ -412,5 +419,12 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
         d.setVisible(true);
         d.dispose();
         f.dispose();
+    }
+
+    public static boolean canEditAuditArchiverConfig() {
+        final Authorizer authorizer = Registry.getDefault().getSecurityProvider();
+        return authorizer.hasPermission(new AttemptedCreateSpecific(EntityType.CLUSTER_PROPERTY, new ClusterProperty(AUDIT_ARCHIVER_CONFIG_CLUSTER_PROPERTY_NAME, ""))) ||
+               authorizer.hasPermission(new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty(AUDIT_ARCHIVER_CONFIG_CLUSTER_PROPERTY_NAME, "")));
+
     }
 }

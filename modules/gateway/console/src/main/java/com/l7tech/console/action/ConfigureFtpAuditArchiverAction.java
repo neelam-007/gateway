@@ -1,14 +1,14 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.util.TopComponents;
-
-import java.util.logging.Logger;
-
 import com.l7tech.console.panels.FtpAuditArchiverPropertiesDialog;
-import com.l7tech.gateway.common.security.rbac.AttemptedAnyOperation;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityType;
+
+import java.util.logging.Logger;
 
 
 /**
@@ -20,7 +20,7 @@ public class ConfigureFtpAuditArchiverAction extends SecureAction {
     static final Logger log = Logger.getLogger(ManageEmailListenersAction.class.getName());
 
     public ConfigureFtpAuditArchiverAction() {
-        super(new AttemptedAnyOperation(EntityType.ANY), "service:Admin");
+        super(new AttemptedReadSpecific(EntityType.CLUSTER_PROPERTY, new ClusterProperty(FtpAuditArchiverPropertiesDialog.AUDIT_ARCHIVER_CONFIG_CLUSTER_PROPERTY_NAME, "")), "service:Admin");
     }
 
     @Override

@@ -1,26 +1,24 @@
 package com.l7tech.gateway.common.audit;
 
-import static com.l7tech.objectmodel.EntityType.AUDIT_RECORD;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
-
 import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.util.OpaqueId;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.gateway.common.admin.Administrative;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.util.OpaqueId;
 import org.springframework.transaction.annotation.Propagation;
-
-import static com.l7tech.objectmodel.EntityType.LOG_SINK;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.*;
 import java.util.logging.Level;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
+import static com.l7tech.objectmodel.EntityType.*;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 
 /**
  * The API for administering the SecureSpan Gateway's audit system.
@@ -118,7 +116,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * Retrieves the Audit Archiver FTP destination configured for the cluster.
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype=FIND_ENTITY)
+    @Secured(stereotype=FIND_ENTITY, types=CLUSTER_PROPERTY)
     ClusterProperty getFtpAuditArchiveConfig();
 
     /**
@@ -126,7 +124,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      *
      * @return  true if successfull, false if the save operation failed
      */
-    @Secured(stereotype=SAVE_OR_UPDATE)
+    @Secured(stereotype=SAVE_OR_UPDATE, types=CLUSTER_PROPERTY)
     void setFtpAuditArchiveConfig(ClusterProperty prop) throws UpdateException;
 
     /**

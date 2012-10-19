@@ -26,7 +26,6 @@ import com.l7tech.server.security.sharedkey.SharedKeyRecord;
 import com.l7tech.server.sla.CounterRecord;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.apache.commons.collections.map.LRUMap;
 import org.hibernate.EntityMode;
 import org.hibernate.SessionFactory;
@@ -288,13 +287,14 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
             cp = null;
         }
 
-        if (cp != null)
+        if (cp != null) {
+            prop.setOid(cp.getOid());
             clusterPropertyManager.update(prop);
-        else {
+        } else {
             try {
                 clusterPropertyManager.save(prop);
-            } catch (SaveException se) {
-                clusterPropertyManager.update(prop);
+            } catch (SaveException e) {
+                throw new UpdateException(e);
             }
         }
     }
