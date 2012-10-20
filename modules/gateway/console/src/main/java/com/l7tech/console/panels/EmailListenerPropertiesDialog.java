@@ -2,6 +2,9 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.Authorizer;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -11,6 +14,7 @@ import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ValidationUtils;
 
@@ -61,7 +65,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
     private JComboBox serviceNameCombo;
     private ByteLimitPanel byteLimit;
 
-    private EmailListener emailListener;
+    private final EmailListener emailListener;
     private InputValidator inputValidator;
     private boolean confirmed = false;
 
@@ -172,6 +176,11 @@ public class EmailListenerPropertiesDialog extends JDialog {
         modelToView();
 
         Utilities.equalizeButtonSizes(new AbstractButton[] { okButton, cancelButton });
+
+        final Authorizer authorizer = Registry.getDefault().getSecurityProvider();
+        okButton.setEnabled(emailListener == null || emailListener.getOid() == EmailListener.DEFAULT_OID ?
+            authorizer.hasPermission(new AttemptedCreate(EntityType.EMAIL_LISTENER)) :
+            authorizer.hasPermission(new AttemptedUpdate(EntityType.EMAIL_LISTENER, emailListener)));
 
         pack();
         enableOrDisableComponents();
