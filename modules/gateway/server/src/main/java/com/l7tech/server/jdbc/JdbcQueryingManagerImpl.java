@@ -64,6 +64,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
         return performJdbcQuery(dataSource, query, maxRecords, preparedStmtParams);
     }
 
+    @Override
     public Object performJdbcQuery(DataSource dataSource, String query, int maxRecords, List<Object> preparedStmtParams)
     {
         if (query == null || query.isEmpty()) {

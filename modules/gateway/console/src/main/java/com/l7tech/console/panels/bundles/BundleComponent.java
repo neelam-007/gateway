@@ -94,12 +94,7 @@ public class BundleComponent extends JPanel{
         return returnMap;
     }
 
-    // - PRIVATE
-
-    private static final Logger logger = Logger.getLogger(BundleComponent.class.getName());
-    private final Map<String, String> mappedJdbcConnections = new HashMap<String, String>();
-
-    private void refreshJdbcConnections() {
+    public void refreshJdbcConnections() {
         Registry registry = Registry.getDefault();
         if (registry.isAdminContextPresent()) {
             final JdbcAdmin jdbcAdmin = registry.getJdbcConnectionAdmin();
@@ -126,6 +121,8 @@ public class BundleComponent extends JPanel{
 
                 if (keepExistingSelection) {
                     availableJdbcConnsComboBox.setSelectedItem(existingSelection);
+                } else {
+                    availableJdbcConnsComboBox.setSelectedIndex(-1);
                 }
 
             } catch (FindException e) {
@@ -136,5 +133,10 @@ public class BundleComponent extends JPanel{
             availableJdbcConnsComboBox.removeAllItems();
         }
     }
+
+    // - PRIVATE
+
+    private static final Logger logger = Logger.getLogger(BundleComponent.class.getName());
+    private final Map<String, String> mappedJdbcConnections = new HashMap<String, String>();
 
 }

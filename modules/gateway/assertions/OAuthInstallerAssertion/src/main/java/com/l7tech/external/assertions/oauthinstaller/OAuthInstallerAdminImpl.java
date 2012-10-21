@@ -1,6 +1,9 @@
 package com.l7tech.external.assertions.oauthinstaller;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
@@ -12,16 +15,26 @@ import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.PolicyBundleEvent;
 import com.l7tech.server.event.wsman.WSManagementRequestEvent;
+import com.l7tech.server.jdbc.JdbcConnectionManager;
+import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
+import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.policy.bundle.*;
 import com.l7tech.util.*;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -29,6 +42,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
@@ -39,8 +53,8 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
 
     public static final String NS_INSTALLER_VERSION = "http://ns.l7tech.com/2012/11/oauth-toolkit-bundle";
 
-    public OAuthInstallerAdminImpl(final String bundleBaseName, ApplicationEventPublisher spring) throws OAuthToolkitInstallationException {
-        this.spring = spring;
+    public OAuthInstallerAdminImpl(final String bundleBaseName, ApplicationEventPublisher appEventPublisher) throws OAuthToolkitInstallationException {
+        this.appEventPublisher = appEventPublisher;
         this.executorService = Executors.newCachedThreadPool();
 
         final String oauthBundleInfo = bundleBaseName + "OAuthToolkitBundleInfo.xml";
@@ -170,6 +184,177 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         return new OAuthToolkitBundleResolver(bundleInfosFromJar).getResultList();
     }
 
+    @NotNull
+    @Override
+    public String getOAuthDatabaseSchema() {
+
+        final URL schemaResourceUrl = getClass().getResource("OAuth_Toolkit_Schema.sql");
+        final byte[] bytes;
+        try {
+            bytes = IOUtils.slurpUrl(schemaResourceUrl);
+        } catch (IOException e) {
+            throw new RuntimeException("Unexpected error obtaining OTK database schema");
+        }
+        return new String(bytes, Charsets.UTF8);
+    }
+
+    @Override
+    public JobId<String> createOtkDatabase(final String mysqlHost,
+                                           final String mysqlPort,
+                                           final String adminUsername,
+                                           final String adminPassword,
+                                           final String otkDbName,
+                                           final String otkDbUsername,
+                                           final String otkUserPassword,
+                                           final String newJdbcConnName) {
+
+        final Future<String> future = executorService.submit(find(false).wrapCallable(new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                final String otkSchema = getOAuthDatabaseSchema();
+
+                final JdbcConnection jdbcConn = new JdbcConnection();
+                jdbcConn.setName("Temp conn " + UUID.randomUUID().toString());
+                // no db applicable
+                final String jdbcUrl = "jdbc:mysql://"+mysqlHost+":"+mysqlPort;
+
+                jdbcConn.setJdbcUrl(jdbcUrl);
+                jdbcConn.setUserName(adminUsername);
+                jdbcConn.setPassword(adminPassword);
+                final String driverClass = "com.mysql.jdbc.Driver";
+                jdbcConn.setDriverClass(driverClass);
+                jdbcConn.setMinPoolSize(1);
+                jdbcConn.setMaxPoolSize(1);
+
+                String msg = checkCreateDbInterrupted();
+                if (msg != null) {
+                    return msg;
+                }
+
+                try {
+                    final Pair<ComboPooledDataSource, String> pair = jdbcConnectionPoolManager.updateConnectionPool(jdbcConn, false);
+
+                    final ComboPooledDataSource dataSource = pair.left;
+                    TransactionTemplate transactionTemplate = new TransactionTemplate(new DataSourceTransactionManager(dataSource));
+
+                    //todo rollback is not working for database and tables.
+                    final String anyError = transactionTemplate.execute(new TransactionCallback<String>() {
+                        @Override
+                        public String doInTransaction(TransactionStatus transactionStatus) {
+                            String query = "CREATE DATABASE IF NOT EXISTS " + otkDbName + " CHARACTER SET utf8";
+                            Object result = jdbcQueryingManager.performJdbcQuery(dataSource, query, 100, Collections.emptyList());
+                            if (result instanceof String) {
+                                transactionStatus.setRollbackOnly();
+                                return (String) result;
+                            }
+
+                            String msg = checkCreateDbInterrupted();
+                            if (msg != null) {
+                                transactionStatus.setRollbackOnly();
+                                return msg;
+                            }
+
+                            //use database
+                            jdbcQueryingManager.performJdbcQuery(dataSource, "use " + otkDbName, 100, Collections.emptyList());
+
+                            // create tables
+                            int index = 0;
+                            int oldIndex;
+                            while (otkSchema.indexOf(";", index) > 0) {
+                                oldIndex = index + 1;
+                                index = otkSchema.indexOf(";", index);
+
+                                query = otkSchema.substring(oldIndex - 1, index);
+                                index++;
+                                result = jdbcQueryingManager.performJdbcQuery(dataSource, query, 2, Collections.emptyList());
+                                if (result instanceof String) {
+                                    transactionStatus.setRollbackOnly();
+                                    return (String) result;
+                                }
+
+                                msg = checkCreateDbInterrupted();
+                                if (msg != null) {
+                                    transactionStatus.setRollbackOnly();
+                                    return msg;
+                                }
+                            }
+
+                            msg = checkCreateDbInterrupted();
+                            if (msg != null) {
+                                transactionStatus.setRollbackOnly();
+                                return msg;
+                            }
+
+                            // grant access to db
+                            query = "GRANT ALL ON " + otkDbName + ".* TO '" + otkDbUsername + "'@'%' IDENTIFIED BY '" + otkUserPassword + "'";
+                            result = jdbcQueryingManager.performJdbcQuery(dataSource, query, 100, Collections.emptyList());
+                            if (result instanceof String) {
+                                transactionStatus.setRollbackOnly();
+                                return (String) result;
+                            }
+
+                            query = "GRANT ALL ON " + otkDbName + ".* TO '" + otkDbUsername + "'@'localhost' IDENTIFIED BY '" + otkUserPassword + "'";
+                            result = jdbcQueryingManager.performJdbcQuery(dataSource, query, 100, Collections.emptyList());
+                            if (result instanceof String) {
+                                transactionStatus.setRollbackOnly();
+                                return (String) result;
+                            }
+
+                            query = "GRANT ALL ON " + otkDbName + ".* TO '" + otkDbUsername + "'@'localhost.localdomain' IDENTIFIED BY '" + otkUserPassword + "'";
+                            result = jdbcQueryingManager.performJdbcQuery(dataSource, query, 100, Collections.emptyList());
+                            if (result instanceof String) {
+                                transactionStatus.setRollbackOnly();
+                                return (String) result;
+                            }
+
+                            msg = checkCreateDbInterrupted();
+                            if (msg != null) {
+                                return msg;
+                            }
+
+                            final JdbcConnection otkJdbcConnection = new JdbcConnection();
+                            otkJdbcConnection.setName(newJdbcConnName);
+                            otkJdbcConnection.setDriverClass(driverClass);
+
+                            otkJdbcConnection.setJdbcUrl(jdbcUrl + "/" + otkDbName);
+                            otkJdbcConnection.setUserName(otkDbUsername);
+                            otkJdbcConnection.setPassword(otkUserPassword);
+                            otkJdbcConnection.setDriverClass(driverClass);
+                            otkJdbcConnection.setMinPoolSize(3);
+                            otkJdbcConnection.setMaxPoolSize(15);
+
+                            try {
+                                jdbcConnectionManager.save(otkJdbcConnection);
+                            } catch (SaveException e) {
+                                logger.log(Level.WARNING,
+                                        "Could not create JDBC Connection with name '" + otkDbName + "'. SaveException: "
+                                                + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                transactionStatus.setRollbackOnly();
+                                return "Could not create JDBC Connection due to SaveException: " + ExceptionUtils.getMessage(e);
+                            }
+                            // no error
+                            return "";
+                        }
+                    });
+
+
+                    if (!anyError.trim().isEmpty()) {
+                        return anyError;
+                    }
+                } catch (Exception e) {
+                    return ExceptionUtils.getMessage(e);
+                } finally {
+                    // do not remember this connection
+                    jdbcConnectionPoolManager.deleteConnectionPool(jdbcConn);
+                }
+
+                return "";
+            }
+        }));
+
+        return registerJob(future, String.class);
+    }
+
     public static class PolicyBundleDryRunResultImpl implements PolicyBundleDryRunResult {
 
         public PolicyBundleDryRunResultImpl(final Map<String, Map<DryRunItem, List<String>>> bundleToConflicts) {
@@ -268,7 +453,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                             new DryRunInstallPolicyBundleEvent(bundleMappings, bundleResolver, context);
                     jobContext.currentEvent = dryRunEvent;
 
-                    spring.publishEvent(dryRunEvent);
+                    appEventPublisher.publishEvent(dryRunEvent);
                     if (validateEventProcessed(dryRunEvent)) {
                         // this is logged at fine as it's not as important as only a dry run.
                         logger.fine("Pre installation check was cancelled.");
@@ -340,7 +525,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                             getSavePolicyCallback(prefixToUse));
                             jobContext.currentEvent = installEvent;
 
-                            spring.publishEvent(installEvent);
+                            appEventPublisher.publishEvent(installEvent);
                             if (validateEventProcessed(installEvent)) {
                                 logger.info("Installation of the OAuth toolkit was cancelled.");
                                 break outer;
@@ -424,9 +609,19 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     private static final Logger logger = Logger.getLogger(OAuthInstallerAdminImpl.class.getName());
     private final String oAuthInstallerVersion;
     private final List<Pair<BundleInfo, String>> bundleInfosFromJar;
-    private final ApplicationEventPublisher spring;
+    private final ApplicationEventPublisher appEventPublisher;
     private final ExecutorService executorService;
     private final Map<String, JobContext> taskToJobContext = new ConcurrentHashMap<String, JobContext>();
+
+    @SuppressWarnings("SpringJavaAutowiringInspection")
+    @Inject
+    private JdbcQueryingManager jdbcQueryingManager;
+    @SuppressWarnings("SpringJavaAutowiringInspection")
+    @Inject
+    private JdbcConnectionPoolManager jdbcConnectionPoolManager;
+    @SuppressWarnings("SpringJavaAutowiringInspection")
+    @Inject
+    private JdbcConnectionManager jdbcConnectionManager;
 
     /**
      * Associates a JobId, WSManagementRequestEvent and Cancelled status with a task identifier.
@@ -506,6 +701,14 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
 
         return bundleEvent.isCancelled();
 
+    }
+
+    private String checkCreateDbInterrupted(){
+        if (Thread.interrupted()) {
+            return "Create OTK Database cancelled";
+        }
+
+        return null;
     }
 
     @NotNull

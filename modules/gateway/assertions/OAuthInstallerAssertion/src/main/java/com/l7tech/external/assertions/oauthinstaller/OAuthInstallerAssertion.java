@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.oauthinstaller;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.server.util.Injector;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
@@ -35,6 +36,8 @@ public class OAuthInstallerAssertion extends Assertion  {
                 final OAuthInstallerAdminImpl instance;
                 try {
                     instance = new OAuthInstallerAdminImpl(bundleBaseName, appContext);
+                    final Injector injector = appContext.getBean("injector", Injector.class);
+                    injector.inject(instance);
                 } catch (OAuthInstallerAdmin.OAuthToolkitInstallationException e) {
                     logger.warning("Could not load OAuth Toolkit Installer: " + ExceptionUtils.getMessage(e));
                     throw new RuntimeException(e);

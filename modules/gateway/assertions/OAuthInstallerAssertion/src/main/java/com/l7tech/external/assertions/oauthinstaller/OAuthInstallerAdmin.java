@@ -10,6 +10,7 @@ import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -37,6 +38,39 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
      */
     @NotNull
     List<BundleInfo> getAllOtkComponents() throws OAuthToolkitInstallationException;
+
+    /**
+     * Get the MySQL database schema for the OTK database
+     * @return
+     */
+    @NotNull
+    String getOAuthDatabaseSchema();
+
+    /**
+     * Create the OTK database on a MySQL database server.
+     *
+     * @param mysqlHost mysql server host
+     * @param mysqlPort mysql server port
+     * @param adminUsername mysql server user with create permissions
+     * @param adminPassword mysql server user password
+     * @param otkDbName new otk database name
+     * @param otkDbUsername new otk database user. Ok if user already exists.
+     * @param otkUserPassword new otk database password
+     * @param newJdbcConnName name of the 'JDBC Connection' entity to create.
+     * @return
+     */
+    @Secured(types = EntityType.JDBC_CONNECTION, stereotype = MethodStereotype.SAVE)
+    @Transactional
+    JobId<String> createOtkDatabase(String mysqlHost,
+                                    String mysqlPort,
+                                    String adminUsername,
+                                    String adminPassword,
+                                    String otkDbName,
+                                    String otkDbUsername,
+                                    String otkUserPassword,
+                                    String newJdbcConnName);
+
+
 
     /**
      * Dry run the OTK installation.

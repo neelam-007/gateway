@@ -46,6 +46,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
     private JCheckBox oAuthOvp;
     private JPanel componentsToInstallPanel;
     private JLabel exampleRoutingUrlLabel;
+    private JButton manageSecureZoneDatabaseButton;
     private long selectedFolderOid;
     private final Map<String, Pair<BundleComponent, BundleInfo>> availableBundles = new HashMap<String, Pair<BundleComponent, BundleInfo>>();
     private static final Logger logger = Logger.getLogger(OAuthInstallerTaskDialog.class.getName());
@@ -196,6 +197,26 @@ public class OAuthInstallerTaskDialog extends JDialog {
         setInstallToFolderText(null);
 
         setExamplePrefixLabelText();
+
+        manageSecureZoneDatabaseButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+
+                final OAuthInstallerSecureZoneDatabaseDialog dlg = new OAuthInstallerSecureZoneDatabaseDialog(OAuthInstallerTaskDialog.this);
+                dlg.pack();
+                Utilities.centerOnScreen(dlg);
+                DialogDisplayer.display(dlg, new Runnable() {
+                    @Override
+                    public void run() {
+                        // refresh connections in case one was created
+                        for (Map.Entry<String, Pair<BundleComponent, BundleInfo>> entry : availableBundles.entrySet()) {
+                            entry.getValue().left.refreshJdbcConnections();
+                        }
+                    }
+                });
+            }
+        });
         enableDisableComponents();
     }
 

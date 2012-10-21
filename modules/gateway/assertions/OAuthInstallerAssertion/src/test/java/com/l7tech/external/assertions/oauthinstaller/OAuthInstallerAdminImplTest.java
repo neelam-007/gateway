@@ -137,7 +137,7 @@ public class OAuthInstallerAdminImplTest {
         expected = new BundleInfo("f69c7d15-4999-4761-ab26-d29d58c0dd57", "1.0", "Secure Zone OVP", "OVP - OAuth Validation Point");
         assertTrue(allBundles.contains(expected));
 
-        expected = new BundleInfo("b082274b-f00e-4fbf-bbb7-395a95ca2a35", "1.0", "SecureZone Storage", "Token and Client Store");
+        expected = new BundleInfo("b082274b-f00e-4fbf-bbb7-395a95ca2a35", "1.0", "Secure Zone Storage", "Token and Client Store");
         expected.addJdbcReference("OAuth");
         assertTrue(allBundles.contains(expected));
 
