@@ -84,14 +84,21 @@ CREATE TABLE IF NOT EXISTS oauth_session (
 
 --
 -- Insert values for the oauth 1.0 test client
+-- todo look at these primary key values
 --
-insert into oauth_client (client_ident, name, description, organization, registered_by)
-values ('123456789', 'OAuth1Client', 'OAuth 1.0 test client hosted on the ssg', 'Layer7 Technologies Inc.', 'Tactical Team');
-insert into oauth_client (client_ident, name, description, organization, registered_by, type)
-values ('123456799', 'OAuth2Client', 'OAuth 2.0 test client hosted on the ssg', 'Layer7 Technologies Inc.', 'Tactical Team', 'confidential');
+INSERT INTO oauth_client (client_ident, name, description, organization, registered_by)
+VALUES ('123456789', 'OAuth1Client', 'OAuth 1.0 test client hosted on the ssg', 'Layer7 Technologies Inc.', 'OTK Installer')
+ON DUPLICATE KEY UPDATE client_ident = VALUES(client_ident), name = VALUES(name), description = VALUES(description);
 
-insert into oauth_client_key (client_key, secret, status, created_by, client_ident, client_name)
-values ('acf89db2-994e-427b-ac2c-88e6101f9433', '74d5e0db-cd8b-4d8e-a989-95a0746c3343', 'ENABLED', 'Tactical Team', '123456789', 'OAuth1Client');
+INSERT INTO oauth_client (client_ident, name, description, organization, registered_by, type)
+VALUES ('123456799', 'OAuth2Client', 'OAuth 2.0 test client hosted on the ssg', 'Layer7 Technologies Inc.', 'OTK Installer', 'confidential')
+ON DUPLICATE KEY UPDATE client_ident = VALUES(client_ident), name = VALUES(name), description = VALUES(description);
 
-insert into oauth_client_key (client_key, secret, status, created_by, client_ident, client_name, callback)
-values ('54f0c455-4d80-421f-82ca-9194df24859d', 'a0f2742f-31c7-436f-9802-b7015b8fd8e6', 'ENABLED', 'Tactical Team', '123456799', 'OAuth2Client', 'YOUR_SSG/oauth/v2/client/authcode,YOUR_SSG/oauth/v2/client/implicit');
+INSERT INTO oauth_client_key (client_key, secret, status, created_by, client_ident, client_name)
+VALUES ('acf89db2-994e-427b-ac2c-88e6101f9433', '74d5e0db-cd8b-4d8e-a989-95a0746c3343', 'ENABLED', 'OTK Installer', '123456789', 'OAuth1Client')
+ON DUPLICATE KEY UPDATE client_key = VALUES(client_key);
+
+-- todo we can possibly fill in the values of YOUR_SSG        also this needs doc as a manual step
+INSERT INTO oauth_client_key (client_key, secret, status, created_by, client_ident, client_name, callback)
+VALUES ('54f0c455-4d80-421f-82ca-9194df24859d', 'a0f2742f-31c7-436f-9802-b7015b8fd8e6', 'ENABLED', 'OTK Installer', '123456799', 'OAuth2Client', 'YOUR_SSG/oauth/v2/client/authcode,YOUR_SSG/oauth/v2/client/implicit')
+ON DUPLICATE KEY UPDATE client_key = VALUES(client_key);
