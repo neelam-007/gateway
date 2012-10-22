@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.AddHeaderAssertion;
+import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,11 +28,28 @@ public class AddHeaderAssertionDialog extends AssertionPropertiesOkCancelSupport
     @Override
     public AddHeaderAssertion getData(AddHeaderAssertion assertion) throws ValidationException {
         final String name = headerNameTextField.getText();
-        if (name == null || name.trim().length() < 1)
+
+        if (null == name || name.trim().length() < 1)
             throw new ValidationException("Header name may not be empty");
+
+        try {
+            Syntax.getReferencedNames(headerNameTextField.getText());
+        } catch (IllegalArgumentException iae) {
+            throw new ValidationException("Error with header name variable, '"+ iae.getMessage() +"'.");
+        }
+
         assertion.setHeaderName(name);
 
         final String value = headerValueTextField.getText();
+
+        if(null != value) {
+            try {
+                Syntax.getReferencedNames(headerValueTextField.getText());
+            } catch (IllegalArgumentException iae) {
+                throw new ValidationException("Error with header value variable, '"+ iae.getMessage() +"'.");
+            }
+        }
+
         assertion.setHeaderValue(value);
 
         assertion.setRemoveExisting(replaceExistingValuesCheckBox.isSelected());
