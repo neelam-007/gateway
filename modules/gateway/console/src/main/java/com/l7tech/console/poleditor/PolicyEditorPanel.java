@@ -413,7 +413,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         };
 
         searchForm.addCloseLabelListener(listener);
-        searchForm.hidePanel();
+        boolean showSearch = Boolean.valueOf(preferences.getString( SearchForm.SHOW, "true" ));
+        if (!showSearch) {
+            searchForm.hidePanel();
+        }
         return searchForm.getSearchPanel();
     }
 

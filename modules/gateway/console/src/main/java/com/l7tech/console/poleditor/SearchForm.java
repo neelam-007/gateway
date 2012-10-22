@@ -10,16 +10,25 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.console.util.CloseIcon;
+import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
 
 public class SearchForm {
+    private static final String PREF_PREFIX = "policy.editor.search";
+    public static final String SHOW = PREF_PREFIX + ".show";
+    private static final String CHECK_SHOW_DISABLED = PREF_PREFIX + ".checkShowDisabled";
+    private static final String CHECK_CASE_SENSITIVE = PREF_PREFIX + ".checkCaseSensitive";
+    private static final String CHECK_INCULDE_PROPERTIES = PREF_PREFIX + ".checkIncludeProperties";
     private JButton previousButton;
     private JButton nextButton;
     private JPanel searchPanel;
@@ -27,6 +36,8 @@ public class SearchForm {
     private EditableSearchComboBox<AssertionTreeNode> searchComboBox;
     private JCheckBox caseSensitiveCheckBox;
     private JCheckBox includePropertiesCheckBox;
+    private JCheckBox showDisabledCheckBox;
+    private final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
 
     /**
      * Create a new SearchForm.
@@ -62,7 +73,20 @@ public class SearchForm {
         final Functions.Unary<Icon, AssertionTreeNode> iconAccessorFunction = new Functions.Unary<Icon, AssertionTreeNode>() {
             @Override
             public Icon call(AssertionTreeNode assertionTreeNode) {
-                return new ImageIcon(assertionTreeNode.getIcon());
+                if (assertionTreeNode.asAssertion().isEnabled()) {
+                    return new ImageIcon(assertionTreeNode.getIcon());
+                } else {
+                    Image crossImage = ImageCache.getInstance().getIcon("com/l7tech/console/resources/RedCrossSign16.gif");
+                    if (crossImage != null) {
+                        final Image ret = new BufferedImage(18, 18, BufferedImage.TYPE_INT_ARGB);
+                        final Graphics g = ret.getGraphics();
+                        g.drawImage(assertionTreeNode.getIcon() , 0, 0, null );
+                        g.drawImage(crossImage, 0, 0, null );
+                        return new ImageIcon(ret);
+                    } else {
+                        return new ImageIcon(assertionTreeNode.getIcon());
+                    }
+                }
             }
         };
 
@@ -108,13 +132,43 @@ public class SearchForm {
             public void actionPerformed(ActionEvent e) {
                 //if case sensitive is toggled, then update the search results
                 searchComboBox.refresh();
+                if (e.getSource() == caseSensitiveCheckBox) {
+                    if (caseSensitiveCheckBox.isSelected()) {
+                        preferences.putProperty(CHECK_CASE_SENSITIVE, Boolean.toString(true));
+                    } else {
+                        preferences.putProperty(CHECK_CASE_SENSITIVE, Boolean.toString(false));
+                    }
+                } else if (e.getSource() == includePropertiesCheckBox) {
+                    if (includePropertiesCheckBox.isSelected()) {
+                        preferences.putProperty(CHECK_INCULDE_PROPERTIES, Boolean.toString(true));
+                    } else {
+                        preferences.putProperty(CHECK_INCULDE_PROPERTIES, Boolean.toString(false));
+                    }
+                } else if (e.getSource() == showDisabledCheckBox) {
+                    if (showDisabledCheckBox.isSelected()) {
+                        preferences.putProperty(CHECK_SHOW_DISABLED, Boolean.toString(true));
+                    } else {
+                        preferences.putProperty(CHECK_SHOW_DISABLED, Boolean.toString(false));
+                    }
+                }
             }
         };
         caseSensitiveCheckBox.addActionListener(checkBoxListener);
         caseSensitiveCheckBox.setMnemonic(KeyEvent.VK_C);
+        if (Boolean.valueOf(preferences.getString( SearchForm.CHECK_CASE_SENSITIVE, "false" ))) {
+            caseSensitiveCheckBox.setSelected(true);
+        }
 
         includePropertiesCheckBox.setMnemonic(KeyEvent.VK_P);
         includePropertiesCheckBox.addActionListener(checkBoxListener);
+        if (Boolean.valueOf(preferences.getString( SearchForm.CHECK_INCULDE_PROPERTIES, "true" ))) {
+            includePropertiesCheckBox.setSelected(true);
+        }
+
+        showDisabledCheckBox.addActionListener(checkBoxListener);
+        if (Boolean.valueOf(preferences.getString( SearchForm.CHECK_SHOW_DISABLED, "true" ))) {
+            showDisabledCheckBox.setSelected(true);
+        }
     }
 
     /**
@@ -214,6 +268,14 @@ public class SearchForm {
 
                 final boolean isCaseSensitive = caseSensitiveCheckBox.isSelected();
                 final boolean includeProperties = includePropertiesCheckBox.isSelected();
+                final boolean showDisabled = showDisabledCheckBox.isSelected();
+
+                //Do not include in the result list if showDisable is not checked
+                if (!showDisabled) {
+                    if (!node.asAssertion().isEnabled()) {
+                        return false;
+                    }
+                }
 
                 final String searchString;
                 if (includeProperties) {
@@ -254,11 +316,13 @@ public class SearchForm {
     public void hidePanel(){
         searchComboBox.clearSearch();
         searchPanel.setVisible(false);
+        preferences.putProperty(SHOW, Boolean.toString(false));
         //put focus into the policy tree
         TopComponents.getInstance().getPolicyTree().requestFocusInWindow();
     }
 
     public void showPanel(final PolicyTree policyTree){
+        preferences.putProperty( SHOW, Boolean.toString(true));
         if(searchPanel.isVisible()) {
             //If the panel is snown, then simply place focus back in the search field. Don't want existing text to be lost
             //case sensitive may have been changed, so we need to cause the set of filtered items to be updated
