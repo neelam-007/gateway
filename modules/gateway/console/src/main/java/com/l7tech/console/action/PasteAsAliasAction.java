@@ -9,14 +9,12 @@ import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
-import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.util.Functions.NullaryThrows;
@@ -175,6 +173,12 @@ public class PasteAsAliasAction extends SecureAction {
         } catch (FindException e1) {
             throw new RuntimeException("Unable to check for existing alias", e1);
         }
+    }
+
+    @Override
+    public boolean isAuthorized() {
+        return canAttemptOperation(new AttemptedCreate(EntityType.SERVICE_ALIAS)) ||
+                canAttemptOperation(new AttemptedCreate(EntityType.POLICY_ALIAS));
     }
 }
 
