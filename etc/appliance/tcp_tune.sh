@@ -42,13 +42,13 @@ start() {
 	echo "Setting higher tcp memory limits"
     echo 16777216 > /proc/sys/net/core/wmem_max
 	echo 16777216 > /proc/sys/net/core/rmem_max
-	# This is in PAGES, not bytes
-	echo "8388608 8388608 16777216" > /proc/sys/net/ipv4/tcp_mem
+	# The following are in 4k-byte PAGES, not bytes
+	echo "196608 262144 393216" > /proc/sys/net/ipv4/tcp_mem
     echo "Setting socket sizes for best cpu usage"
     echo "131072" > /proc/sys/net/core/wmem_default
-    echo "131072" > /proc/sys/net/core/rmem_default
-    echo "8192 131072 16777216" > /proc/sys/net/ipv4/tcp_rmem
-    echo "8192 131072 16777216" > /proc/sys/net/ipv4/tcp_wmem
+    echo "174760" > /proc/sys/net/core/rmem_default
+    echo "4096 174760 16777216" > /proc/sys/net/ipv4/tcp_rmem
+    echo "4096 16384 16777216" > /proc/sys/net/ipv4/tcp_wmem
 
 	echo "Turning on TIME_WAIT recyle and reuse"
 	echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle
