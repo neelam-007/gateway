@@ -128,6 +128,7 @@ public class OAuthInstallerAdminImplTest {
         BundleInfo expected;
 
         expected = new BundleInfo("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "1.0", "OAuth 1.0", "Core Services and Test Client");
+        expected.addJdbcReference("OAuth");
         assertTrue(allBundles.contains(expected));
 
         expected = new BundleInfo("ba525763-6e55-4748-9376-76055247c8b1", "1.0", "OAuth 2.0", "Auth Server and Test Clients");
@@ -279,7 +280,7 @@ public class OAuthInstallerAdminImplTest {
             Thread.sleep(10L);
         }
 
-        assertEquals("Incorrect number of policy comments found", 7, numPolicyCommentsFound[0]);
+        assertEquals("Incorrect number of policy comments found", 9, numPolicyCommentsFound[0]);
         assertEquals("Incorrect number of service comments found", 7, numServiceCommentsFound[0]);
 
     }

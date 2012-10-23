@@ -2117,8 +2117,7 @@
                     &lt;L7p:Comment stringValue="Mandatory Input: toStore(message), cacheKey"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Optional Input: cacheId, cacheAge, cacheMaxEntries, cacheMaxSize,
-                    sessionAge"/&gt;
+                    &lt;L7p:Comment stringValue="Optional Input: cacheId, cacheAge, cacheMaxEntries, cacheMaxSize, sessionAge"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
@@ -2386,7 +2385,6 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:JdbcQuery&gt;
-                    &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:NamingMap mapValue="included"&gt;
                     &lt;L7p:entry&gt;
@@ -2408,12 +2406,12 @@
                     &lt;L7p:Base64Expression stringValue=""/&gt;
                     &lt;L7p:DataType variableDataType="dateTime"/&gt;
                     &lt;L7p:DateOffsetExpression stringValue=""/&gt;
-                    &lt;L7p:VariableToSet stringValue="now"/&gt;
+                    &lt;L7p:VariableToSet stringValue="cacheNow"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${now.millis}"/&gt;
+                    &lt;L7p:Expression1 stringValue="${cacheNow.millis}"/&gt;
                     &lt;L7p:Expression2 stringValue="${sessionQuery.session_expiration}"/&gt;
                     &lt;L7p:Operator operator="LT"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;

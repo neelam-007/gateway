@@ -5563,14 +5563,6 @@
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="toStore"/&gt;
                     &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:CacheStorage&gt;
-                    &lt;L7p:CacheEntryKey stringValue="${request.tcp.remoteIP}!${oauth2_client_id}!samlfromsts"/&gt;
-                    &lt;L7p:Enabled booleanValue="false"/&gt;
-                    &lt;L7p:MaxEntryAgeMillis longValue="360000000"/&gt;
-                    &lt;L7p:MaxEntrySizeBytes longValue="100000"/&gt;
-                    &lt;L7p:OtherTargetMessageVariable stringValue="samlmsg"/&gt;
-                    &lt;L7p:Target target="OTHER"/&gt;
-                    &lt;/L7p:CacheStorage&gt;
                     &lt;L7p:Include&gt;
                     &lt;L7p:PolicyGuid stringValue="a50b34ec-0e05-47a0-b978-b86458025d25"/&gt;
                     &lt;/L7p:Include&gt;
@@ -5741,12 +5733,6 @@
                     &lt;/L7p:ResponseHeaderRules&gt;
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:CacheStorage&gt;
-                    &lt;L7p:CacheEntryKey stringValue="${request.tcp.remoteIP}!${oauth2_client_id}!saml"/&gt;
-                    &lt;L7p:Enabled booleanValue="false"/&gt;
-                    &lt;L7p:MaxEntryAgeMillis longValue="360000000"/&gt;
-                    &lt;L7p:MaxEntrySizeBytes longValue="100000"/&gt;
-                    &lt;/L7p:CacheStorage&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
                     stringValue="JHtyZXF1ZXN0LnRjcC5yZW1vdGVJUH0hJHtvYXV0aDJfY2xpZW50X2lkfSFzYW1s"/&gt;
