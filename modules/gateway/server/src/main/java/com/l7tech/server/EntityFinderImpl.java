@@ -1,30 +1,34 @@
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
+import com.l7tech.gateway.common.security.keystore.SsgKeyHeader;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.policy.PolicyManager;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.gateway.common.security.keystore.SsgKeyHeader;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
+import org.hibernate.MappingException;
 import org.hibernate.Session;
 import org.hibernate.criterion.ProjectionList;
 import org.hibernate.criterion.Projections;
+import org.hibernate.metadata.ClassMetadata;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
+import java.security.KeyStoreException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
-import java.security.KeyStoreException;
 
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinder {
@@ -50,7 +54,6 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     @Override
     @Transactional(readOnly=true)
     public EntityHeaderSet<EntityHeader> findAll(final Class<? extends Entity> entityClass) throws FindException {
-        final boolean names = NamedEntity.class.isAssignableFrom(entityClass);
         final EntityType type = EntityType.findTypeByEntity(entityClass);
         try {
             if (EntityType.SSG_KEY_ENTRY == type)
@@ -61,9 +64,11 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             else return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<EntityHeaderSet<EntityHeader>>() {
                 @Override
                 public EntityHeaderSet<EntityHeader> doInHibernateReadOnly(Session session) throws HibernateException {
-                    Criteria criteria = session.createCriteria(entityClass);
-                    ProjectionList pl = Projections.projectionList();
+                    final ClassMetadata metadata = getSessionFactory().getClassMetadata(entityClass);
+                    final Criteria criteria = session.createCriteria(entityClass);
+                    final ProjectionList pl = Projections.projectionList();
                     pl.add(Projections.property("oid"));
+                    final boolean names = hasName(entityClass, metadata);
                     if (names) pl.add(Projections.property("name"));
                     criteria.setProjection(pl);
                     criteria.setMaxResults(MAX_RESULTS);
@@ -80,6 +85,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                             oid = (Long) i.next();
                             name = null;
                         }
+                        if(name == null || name.isEmpty()) name = oid.toString();
                         headers.add(new EntityHeader(oid.toString(), type, name, null));
                     }
 
@@ -208,5 +214,20 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             name = ne.getName();
         }
         return new EntityHeader(e.getId(), etype, name, null);
+    }
+
+    private boolean hasName(final Class entityClass, final ClassMetadata metadata) {
+        if(Group.class.isAssignableFrom(entityClass) || User.class.isAssignableFrom(entityClass)) return true;
+        if(metadata != null){
+            try {
+                for(String prop : metadata.getPropertyNames()){
+                    if("name".equals(prop)) return true;
+                }
+            } catch (MappingException e) {
+                //name column/property does not exist
+                logger.warning("property 'name' does not exist in " + entityClass.getClass().getName());
+            }
+        }
+        return false;
     }
 }
