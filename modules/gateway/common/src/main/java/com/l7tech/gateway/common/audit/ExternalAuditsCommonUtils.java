@@ -28,8 +28,8 @@ public class ExternalAuditsCommonUtils {
                 "                <L7p:item stringValue=\"audit.componentId\"/>\n" +
                 "                <L7p:item stringValue=\"audit.status\"/>\n" +
                 "                <L7p:item stringValue=\"audit.authenticated\"/>\n" +
-                "                <L7p:item stringValue=\"audit.requestContentLength\"/>\n" +
-                "                <L7p:item stringValue=\"audit.responseContentLength\"/>\n" +
+                "                <L7p:item stringValue=\"audit.savedResponseContentLength\"/>\n" +
+                "                <L7p:item stringValue=\"audit.savedRequestContentLength\"/>\n" +
                 "                <L7p:item stringValue=\"audit.responseStatus\"/>\n" +
                 "                <L7p:item stringValue=\"audit.routingLatency\"/>\n" +
                 "            </L7p:ResolveAsObjectList>\n" +

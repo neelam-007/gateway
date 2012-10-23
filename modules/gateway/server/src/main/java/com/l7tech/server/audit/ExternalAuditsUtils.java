@@ -13,7 +13,6 @@ import com.l7tech.server.jdbc.JdbcQueryUtils;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.CompressedStringType;
-import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -25,8 +24,6 @@ import java.math.BigDecimal;
 import java.security.*;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
-import java.sql.Blob;
-import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -36,7 +33,7 @@ import java.util.logging.Logger;
  */
 public class ExternalAuditsUtils {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
-    private static String[]  resolveAsObjectList  = {"audit.resZip","audit.reqZip","audit.status","audit.authenticated","audit.requestContentLength","audit.responseContentLength","audit.responseStatus","audit.routingLatency","audit.componentId"};
+    private static String[]  resolveAsObjectList  = {"audit.resZip","audit.reqZip","audit.status","audit.authenticated","audit.savedResponseContentLength","audit.savedRequestContentLength","audit.responseStatus","audit.routingLatency","audit.componentId"};
 
     static public String testSystemAuditRecord(String connectionName, String auditRecordTable, JdbcQueryingManager jdbcQueryingManager, DefaultKey defaultKey) throws Exception {
         AuditSinkPolicyEnforcementContext context;
