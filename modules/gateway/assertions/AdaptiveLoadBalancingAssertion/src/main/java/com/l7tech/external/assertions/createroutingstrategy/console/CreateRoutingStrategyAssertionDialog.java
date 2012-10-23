@@ -40,8 +40,10 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
     private static final String ROUTE = "main.label.route";
     private static final String PROPERTIES = "main.label.properties";
     private static final String DIALOG_TITLE_NEW_SERVICE_PROPERTIES = "New Route";
-    private static final String DIALOG_TITLE_EDIT_SERVICE_PROPERTIES = "Edit ";
+    private static final String DIALOG_TITLE_EDIT_SERVICE_PROPERTIES = "Edit";
+    private static final String DIALOG_TITLE_CLONE_SERVICE_PROPERTIES = "Clone Route";
     private static final String DIALOG_TITLE_EDIT_STRATEGY_PROPERTIES = "Edit Strategy Properties";
+    private static final int MAX_DISPLAYABLE_MESSAGE_LENGTH = 80;
 
     private ClusterStatusAdmin clusterStatusAdmin;
     private JPanel contentPane;
@@ -192,7 +194,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
         addService.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                editProperty(null, null);
+                editRoute(null, null, DIALOG_TITLE_NEW_SERVICE_PROPERTIES);
             }
         });
         editService.addActionListener(new ActionListener() {
@@ -200,7 +202,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
             public void actionPerformed(ActionEvent e) {
                 final int viewRow = propertyTable.getSelectedRow();
                 if (viewRow > -1) {
-                    editProperty(propertiesTableModel.getRowObject(propertyTable.convertRowIndexToModel(viewRow)), null);
+                    editRoute(propertiesTableModel.getRowObject(propertyTable.convertRowIndexToModel(viewRow)), null, DIALOG_TITLE_EDIT_SERVICE_PROPERTIES);
                 }
             }
         });
@@ -212,6 +214,11 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
                 if (viewRows.length > 0) {
                     StringBuilder sb = new StringBuilder();
                     for (int i = 0; i < viewRows.length; i++) {
+                        //limit the length to max displayable so it won't go over
+                        if(sb.length() >= MAX_DISPLAYABLE_MESSAGE_LENGTH) {
+                            sb.append(" ...");
+                            break;
+                        }
                         sb.append(propertiesTableModel.getRowObject(viewRows[i]).getName());
                         if (i != viewRows.length - 1) {
                             sb.append(",");
@@ -259,17 +266,15 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
             public void actionPerformed(ActionEvent e) {
                 final int viewRow = propertyTable.getSelectedRow();
                 if (viewRow > -1) {
-                    editProperty(null, propertiesTableModel.getRowObject(propertyTable.convertRowIndexToModel(viewRow)));
+                    editRoute(null, propertiesTableModel.getRowObject(propertyTable.convertRowIndexToModel(viewRow)), DIALOG_TITLE_CLONE_SERVICE_PROPERTIES);
                 }
                 enableDisableComponents();
             }
         });
     }
 
-    private void editProperty(final Service service, final Service copyFrom) {
-        final CreateRoutingStrategyRoutingPropertiesDialog dlg = service == null ?
-                new CreateRoutingStrategyRoutingPropertiesDialog((Frame) getParent(), DIALOG_TITLE_NEW_SERVICE_PROPERTIES, assertion, copyFrom) :
-                new CreateRoutingStrategyRoutingPropertiesDialog((Frame) getParent(), DIALOG_TITLE_EDIT_SERVICE_PROPERTIES, assertion, service);
+    private void editRoute(final Service service, final Service copyFrom, final String title) {
+        final CreateRoutingStrategyRoutingPropertiesDialog dlg =  new CreateRoutingStrategyRoutingPropertiesDialog((Frame) getParent(), title, assertion, copyFrom);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
