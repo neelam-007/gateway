@@ -505,6 +505,25 @@ public class CertUtilsTest {
         assertTrue(hasSAN);
     }
 
+    @Test
+    @BugNumber(13337)
+    public void testSANWithPropertiesName() throws Exception {
+        X509Certificate certificate = CertUtils.decodeFromPEM(BUG_13337);
+        List<Pair<String, String>> attrs = CertUtils.getCertProperties(certificate);
+        String expected = "URL=http://petrov.ca/\n" +
+                "IP Address=192.168.0.2\n" +
+                "IP Address=192.168.0.1\n" +
+                "DNS Name=petrov.ca\n" +
+                "RFC822 Name=stoyan.petrov@gmail.com\n" +
+                "Directory Name=1.2.840.113549.1.9.1=stoyan@petrov.ca,cn=fish,ou=petrovs,o=fish corp.,c=bg\n" +
+                "DNS Name=yahoo.com";
+        for (Pair<String, String> pair: attrs) {
+            if (pair.getKey().equals(CertUtils.CERT_PROP_SAN)) {
+                assertEquals(expected, pair.getValue());
+            }
+        }
+    }
+
     /**
      * Test certificate with CRL and OCSP URLS and a CRT URL
      */
@@ -641,5 +660,28 @@ public class CertUtilsTest {
             "ly/4ZHByr4VslADEQ9PDu1o45PB8qCZZAvP9PDE/tNBBd2ktTBBvGAn5lNTrNSIaqCr8Y1lmaTs5\n" +
             "gjePYkAkbVGpu/QoiwmbCAEz0GcPpxBF2SQdJnBuARvEJ35rHdP0A1ryKWaT6sUbCJHNDZNpl6kN\n" +
             "vsRR9QwrI4lCj8+qqcNNANvpec86xti4Tx128ptXkGSuta27HAVQqXrS4jK7zpFheEy6";
+
+    private static final String BUG_13337 =
+            "MIIElTCCA32gAwIBAgIBAjANBgkqhkiG9w0BAQUFADCBpjELMAkGA1UEBhMCQ0ExGTAXBgNVBAgM\n" +
+            "EEJyaXRpc2ggQ29sdW1iaWExEjAQBgNVBAcMCVZhbmNvdXZlcjEdMBsGA1UECgwUTGF5ZXIgNyBU\n" +
+            "ZWNobm9sb2dpZXMxEDAOBgNVBAsMB1Rlc3RpbmcxFjAUBgNVBAMMDVN0b3lhbiBQZXRyb3YxHzAd\n" +
+            "BgkqhkiG9w0BCQEWEHN0b3lhbkBwZXRyb3YuY2EwHhcNMTIxMDIwMDAxMzA4WhcNMTMxMDIwMDAx\n" +
+            "MzA4WjCBkjELMAkGA1UEBhMCQ0ExGTAXBgNVBAgMEEJyaXRpc2ggQ29sdW1iaWExHTAbBgNVBAoM\n" +
+            "FExheWVyIDcgVGVjaG5vbG9naWVzMRAwDgYDVQQLDAdUZXN0aW5nMRYwFAYDVQQDDA1TdG95YW4g\n" +
+            "UGV0cm92MR8wHQYJKoZIhvcNAQkBFhBzdG95YW5AcGV0cm92LmNhMIIBIjANBgkqhkiG9w0BAQEF\n" +
+            "AAOCAQ8AMIIBCgKCAQEAxujDgUEBGI14uCLsNESyU/0j2vBQ2bgohvwYYwxqsGCBvwJJ+IhO/k9I\n" +
+            "b+RcVRhPoHWmBlZuNUDMuMOgRaO8Y28ETeGik/hLKXxe3VpizpMTEqXtqheYhPWN6JNL0ttgCbjZ\n" +
+            "NGdiOLMdGaXeGsJgiMiRwGrxFJmXzFWFBLpTXBu2FJ326qGczBgEr05tGOUuOK9lVdtnbGH8lmYH\n" +
+            "uOgK7hyLLCUNNULctI7d8ip2azVlSyoI31ifXtxkLX1E10dJMvdTWwEcx9+Q1pLgOSK1lcED5RU0\n" +
+            "zffCG5WgRrGNwjxqEkKFNsttMAA0zJygi4LcNMojri19qHWewi3y7UAQZwIDAQABo4HfMIHcMAkG\n" +
+            "A1UdEwQCMAAwCwYDVR0PBAQDAgXgMIHBBgNVHREEgbkwgbaBF3N0b3lhbi5wZXRyb3ZAZ21haWwu\n" +
+            "Y29tgglwZXRyb3YuY2GCCXlhaG9vLmNvbYYRaHR0cDovL3BldHJvdi5jYS+HBMCoAAGHBMCoAAKk\n" +
+            "ZjBkMQswCQYDVQQGEwJCRzETMBEGA1UEChMKRmlzaCBDb3JwLjEQMA4GA1UECxMHUGV0cm92czEN\n" +
+            "MAsGA1UEAxMERmlzaDEfMB0GCSqGSIb3DQEJARYQc3RveWFuQHBldHJvdi5jYTANBgkqhkiG9w0B\n" +
+            "AQUFAAOCAQEAFBZWh30WCaC4HPgfGpofL7aeJFh+pSul5QQBH1kko77SXDHoKEWVq//xi6BdRL88\n" +
+            "DeWnzTt1iPQcB5db9HlwRM/z0orbCZ58wxzAAma/4yUgXNyrXz/DtMWhKujELsfqL6AUpMK7Q2Q3\n" +
+            "hofuAxHk/wYnhwN1isPyrhU+2dnrd5bnkiMGWyqUAakkYwyx7xL6I87xAPZA0zjqIL9gt57q0luu\n" +
+            "HjUcXjprvF3YHosODKXDo/kUGeCXoZKQ4yL/ascXK5OCHO8F6i3zYxl+IHmR4H8yZKMuFv+KbUL4\n" +
+            "xjPxGSqYeiVKi6yvaxOvpwqvhJx0FZSnFcbkzLJuCnP+XKpklQ==";
 
 }

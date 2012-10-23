@@ -1133,9 +1133,9 @@ public class CertUtils {
             if (snas != null) {
                 sb.setLength(0);
                 for (List sna : snas) {
-                    if (sna.size() >= 2) {
+                    if (sna.size() == 2) {
                         //The the first value in the list is the type and the second value is the name
-                        sb.append(sna.get(1).toString());
+                        sb.append(getSubjectAlternativeName(sna));
                         sb.append('\n');
                     }
                 }
@@ -1149,6 +1149,43 @@ public class CertUtils {
 
         return l;
     }
+
+    /**
+     * Retrieve the subject alternative name with property name
+     *
+     * @param san The Subject Alternative Name, The first element in the list should be the type and the second should contain the value
+     * @return The SAN with property name.
+     */
+    private static String getSubjectAlternativeName(List san) {
+        Integer type = (Integer) san.get(0);
+        String value = (String) san.get(1);
+
+        switch (type) {
+            case 0:
+                return "Other Name=" + value;
+            case 1:
+                return "RFC822 Name=" + value;
+            case 2:
+                return "DNS Name=" + value;
+            case 3:
+                return "X400 Address=" + value;
+            case 4:
+                return "Directory Name=" + formatDN(value);
+            case 5:
+                return "EDI Party Name=" + value;
+            case 6:
+                return "URL=" + value;
+            case 7:
+                return "IP Address=" + value;
+            case 8:
+                return "Registered ID=" + value;
+            default:
+                return value;
+
+        }
+    }
+
+
 
     /**
      * Get the collection of SubjectAlternativeNames of a particular type from a Certificate.
