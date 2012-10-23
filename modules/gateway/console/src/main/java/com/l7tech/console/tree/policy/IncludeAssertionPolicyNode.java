@@ -160,7 +160,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
     public Action[] getActions() {
         final List<Action> actions = new ArrayList<Action>();
         final Policy policy = getPolicy();
-        if (policy != null) {
+        if (policy != null && Policy.DEFAULT_OID != policy.getOid()) {
             final RootNode rootNode = TopComponents.getInstance().getRootNode();
             final AbstractTreeNode retrievedNode = rootNode.getNodeForEntity(policy.getOid());
             if (retrievedNode instanceof EntityWithPolicyNode) {
