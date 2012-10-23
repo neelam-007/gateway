@@ -8,11 +8,14 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
 import java.net.URL;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -423,6 +426,248 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         // restore initial state
         delete(TOKEN, accessToken, "token");
         delete(CLIENT_IDENT, clientIdentity, "client");
+    }
+
+    @Test
+    @BugNumber(13304)
+    public void storeAndGetSession() throws Exception {
+        final Map<String, String> storeParams = buildStoreSessionParams(true);
+        final String cacheKey = storeParams.get("cacheKey");
+        final GenericHttpResponse storeResponse = requestSession("store", storeParams);
+        assertEquals(200, storeResponse.getStatus());
+        final String storeResponseBody = new String(IOUtils.slurpStream(storeResponse.getInputStream()));
+        assertEquals("Key " + cacheKey + " added to session.", storeResponseBody);
+
+        final Map<String, String> getParams = buildGetSessionParams(cacheKey, true);
+
+        final GenericHttpResponse getResponse = requestSession("get", getParams);
+        assertEquals(200, getResponse.getStatus());
+        final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
+        assertEquals("<found><value>OAuthToolkitIntegrationTest</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+    }
+
+    /**
+     * Do not provide optional parameters so that defaults are used.
+     */
+    @Test
+    @BugNumber(13304)
+    public void storeAndGetSessionWithDefaultValues() throws Exception {
+        final Map<String, String> storeParams = buildStoreSessionParams(false);
+        final String cacheKey = storeParams.get("cacheKey");
+        final GenericHttpResponse storeResponse = requestSession("store", storeParams);
+        assertEquals(200, storeResponse.getStatus());
+        final String storeResponseBody = new String(IOUtils.slurpStream(storeResponse.getInputStream()));
+        assertEquals("Key " + cacheKey + " added to session.", storeResponseBody);
+
+        final Map<String, String> getParams = buildGetSessionParams(cacheKey, false);
+
+        final GenericHttpResponse getResponse = requestSession("get", getParams);
+        assertEquals(200, getResponse.getStatus());
+        final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
+        assertEquals("<found><value>OAuthToolkitIntegrationTest</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+    }
+
+    @Test
+    @BugNumber(13304)
+    public void sessionInvalidOperation() throws Exception {
+        final GenericHttpResponse response = requestSession("invalid", Collections.<String, String>emptyMap());
+        assertEquals(400, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals("Unsupported operation", responseBody);
+    }
+
+    @Test
+    @BugNumber(13304)
+    public void storeSessionMissingKey() throws Exception {
+        final Map<String, String> params = buildStoreSessionParams(true);
+        params.remove("cacheKey");
+        final GenericHttpResponse response = requestSession("store", params);
+        assertEquals(400, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals("Invalid request", responseBody);
+    }
+
+    @Test
+    @BugNumber(13304)
+    public void storeSessionMissingValue() throws Exception {
+        final Map<String, String> params = buildStoreSessionParams(true);
+        params.remove("value");
+        final GenericHttpResponse response = requestSession("store", params);
+        assertEquals(400, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals("Invalid request", responseBody);
+    }
+
+    @Test
+    @BugNumber(13304)
+    public void getSessionMissingKey() throws Exception {
+        final Map<String, String> params = buildGetSessionParams(null, true);
+        final GenericHttpResponse response = requestSession("get", params);
+        assertEquals(400, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals("Invalid request", responseBody);
+    }
+
+    /**
+     * If not found, should still return 200 status to be consistent with other SecureZone-Storage endpoints.
+     */
+    @Test
+    @BugNumber(13304)
+    public void getSessionNotFound() throws Exception {
+        final Map<String, String> params = buildGetSessionParams("notFound", true);
+        final GenericHttpResponse response = requestSession("get", params);
+        assertEquals(200, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals("<found/>", responseBody);
+    }
+
+    /**
+     * Storing same cacheKey + cacheId twice will update the entry.
+     */
+    @Test
+    @BugNumber(13304)
+    public void updateAndGetSession() throws Exception {
+        // store once
+        final Map<String, String> storeParams1 = buildStoreSessionParams(false);
+        final String cacheKey = storeParams1.get("cacheKey");
+        final GenericHttpResponse storeResponse1 = requestSession("store", storeParams1);
+        assertEquals(200, storeResponse1.getStatus());
+        final String storeResponseBody1 = new String(IOUtils.slurpStream(storeResponse1.getInputStream()));
+        assertEquals("Key " + cacheKey + " added to session.", storeResponseBody1);
+
+        // store again (update)
+        final Map<String, String> storeParams2 = buildStoreSessionParams(false);
+        storeParams2.put("cacheKey", cacheKey);
+        storeParams2.put("value", "updated");
+        final GenericHttpResponse storeResponse2 = requestSession("store", storeParams2);
+        assertEquals(200, storeResponse2.getStatus());
+        final String storeResponseBody2 = new String(IOUtils.slurpStream(storeResponse2.getInputStream()));
+        assertEquals("Key " + cacheKey + " added to session.", storeResponseBody2);
+
+        final Map<String, String> getParams = buildGetSessionParams(cacheKey, false);
+
+        // should be updated value
+        final GenericHttpResponse getResponse = requestSession("get", getParams);
+        assertEquals(200, getResponse.getStatus());
+        final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
+        assertEquals("<found><value>updated</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+    }
+
+    /**
+     * If cache entry is expired, the session should come from the database.
+     */
+    @Test
+    @BugNumber(13304)
+    public void storeAndGetSessionFromDatabase() throws Exception {
+        final Map<String, String> storeParams = buildStoreSessionParams(true);
+        // cache expires after 1 second
+        storeParams.put("cacheAge", "1");
+        // db entry expires after 60 seconds
+        storeParams.put("dbAge", "60");
+        final String cacheKey = storeParams.get("cacheKey");
+        final GenericHttpResponse storeResponse = requestSession("store", storeParams);
+        assertEquals(200, storeResponse.getStatus());
+        final String storeResponseBody = new String(IOUtils.slurpStream(storeResponse.getInputStream()));
+        assertEquals("Key " + cacheKey + " added to session.", storeResponseBody);
+
+        // wait for 3 seconds
+        Thread.sleep(3 * 1000);
+
+        final Map<String, String> getParams = buildGetSessionParams(cacheKey, true);
+        final GenericHttpResponse getResponse = requestSession("get", getParams);
+        assertEquals(200, getResponse.getStatus());
+        final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
+        assertEquals("<found><value>OAuthToolkitIntegrationTest</value><location>database</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+    }
+
+    @Test
+    @BugNumber(13304)
+    public void storeAndGetSessionExpired() throws Exception {
+        final Map<String, String> storeParams = buildStoreSessionParams(true);
+        // expires in 1 second
+        storeParams.put("cacheAge", "1");
+        storeParams.put("dbAge", "1");
+        final String cacheKey = storeParams.get("cacheKey");
+        final GenericHttpResponse storeResponse = requestSession("store", storeParams);
+        assertEquals(200, storeResponse.getStatus());
+        final String storeResponseBody = new String(IOUtils.slurpStream(storeResponse.getInputStream()));
+        assertEquals("Key " + cacheKey + " added to session.", storeResponseBody);
+
+        // sleep for 3 seconds
+        Thread.sleep(3 * 1000);
+
+        final Map<String, String> getParams = buildGetSessionParams(cacheKey, true);
+        final GenericHttpResponse getResponse = requestSession("get", getParams);
+        assertEquals(200, getResponse.getStatus());
+        final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
+        assertEquals("<found/>", StringUtils.deleteWhitespace(getResponseBody));
+    }
+
+    @Test
+    @BugNumber(13304)
+    public void deleteExpiredSessions() throws Exception {
+        final GenericHttpResponse response = requestSession("deleteExpired", Collections.<String, String>emptyMap());
+        assertEquals(200, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertTrue(responseBody.contains("expired sessions deleted."));
+    }
+
+    @Test
+    @BugNumber(13304)
+    public void storeAndGetSessionSpecialCharacters() throws Exception {
+        final Map<String, String> storeParams = buildStoreSessionParams(true);
+        final String specialCharacters = "<storeMe>https://localhost:8443/some/url?param1=one&param2=2</storeMe>";
+        storeParams.put("value", specialCharacters);
+        final String cacheKey = storeParams.get("cacheKey");
+        final GenericHttpResponse storeResponse = requestSession("store", storeParams);
+        assertEquals(200, storeResponse.getStatus());
+        final String storeResponseBody = new String(IOUtils.slurpStream(storeResponse.getInputStream()));
+        assertEquals("Key " + cacheKey + " added to session.", storeResponseBody);
+
+        final Map<String, String> getParams = buildGetSessionParams(cacheKey, true);
+
+        final GenericHttpResponse getResponse = requestSession("get", getParams);
+        assertEquals(200, getResponse.getStatus());
+        final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
+        assertEquals("<found><value>" + specialCharacters + "</value><location>cache</location></found>",
+                StringUtils.deleteWhitespace(getResponseBody));
+    }
+
+    private Map<String, String> buildStoreSessionParams(final boolean includeOptionalParams) {
+        final Map<String, String> storeParams = new HashMap<String, String>();
+        storeParams.put("cacheKey", UUID.randomUUID().toString());
+        storeParams.put("value", "OAuthToolkitIntegrationTest");
+        if (includeOptionalParams) {
+            storeParams.put("cacheId", "OAuthToolkitIntegrationTest");
+            storeParams.put("cacheAge", "60");
+            storeParams.put("cacheMaxEntries", "10");
+            storeParams.put("cacheMaxSize", "100000");
+            storeParams.put("dbAge", "60");
+        }
+        return storeParams;
+    }
+
+    private Map<String, String> buildGetSessionParams(final String cacheKey, final boolean includeOptionalParams) {
+        final Map<String, String> getParams = new HashMap<String, String>();
+        if (cacheKey != null) {
+            getParams.put("cacheKey", cacheKey);
+        }
+        if (includeOptionalParams) {
+            getParams.put("cacheId", "OAuthToolkitIntegrationTest");
+            getParams.put("dbAge", "60");
+        }
+        return getParams;
+    }
+
+    private GenericHttpResponse requestSession(final String operation, final Map<String, String> parameters) throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/session/" + operation));
+        params.setSslSocketFactory(getSSLSocketFactoryWithKeyManager());
+        params.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
+        final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
+        for (final Map.Entry<String, String> entry : parameters.entrySet()) {
+            request.addParameter(entry.getKey(), entry.getValue());
+        }
+        return request.getResponse();
     }
 
     private void assertDefaultValues(final String clientIdentity, final OAuthClient client) {
