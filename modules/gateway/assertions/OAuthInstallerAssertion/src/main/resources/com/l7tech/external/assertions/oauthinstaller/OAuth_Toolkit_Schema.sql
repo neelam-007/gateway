@@ -50,7 +50,8 @@ CREATE TABLE IF NOT EXISTS oauth_token (
   rexpiration bigint DEFAULT 0 COMMENT 'DEFAULT 0 because otherwise timestamp will be set to now() on an update',
   status varchar(128) not null COMMENT 'for validation purposes, ENABLED or DISABLED',
   client_key varchar(128) not null COMMENT 'the client_key this token was issued for',
-  client_name varchar(128) not null COMMENT 'The name of the client that owns this key. Not normalized for performance.'
+  client_name varchar(128) not null COMMENT 'The name of the client that owns this key. Not normalized for performance.',
+  properties mediumtext not null
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

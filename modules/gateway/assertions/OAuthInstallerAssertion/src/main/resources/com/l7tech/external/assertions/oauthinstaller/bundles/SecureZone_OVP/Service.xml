@@ -1552,6 +1552,29 @@
                     &lt;/L7p:Namespaces&gt;
                     &lt;/L7p:XpathExpression&gt;
                     &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue=" do not select text() as this fails if the value of properties is an
+                    empty string"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:VariablePrefix stringValue="xpathProperties"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="tokenValues"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/values/value/properties"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHt4cGF0aFNlY3JldC5yZXN1bHR9"/&gt;
                     &lt;L7p:VariableToSet stringValue="token_secret"/&gt;
@@ -1577,8 +1600,12 @@
                     &lt;L7p:VariableToSet stringValue="token_status"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt4cGF0aFByb3BlcnRpZXMucmVzdWx0fQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="token_properties"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="PGFjPg0KPHRva2VuX3NlY3JldD4ke3Rva2VuX3NlY3JldH08L3Rva2VuX3NlY3JldD4NCjx0b2tlbl9leHBpcmF0aW9uPiR7dG9rZW5fZXhwaXJhdGlvbn08L3Rva2VuX2V4cGlyYXRpb24+DQo8c2NvcGU+JHt0b2tlbl9zY29wZX08L3Njb3BlPg0KPHJlc291cmNlX293bmVyX2lkPiR7dG9rZW5fcmVzb3VyY2Vfb3duZXJfaWR9PC9yZXNvdXJjZV9vd25lcl9pZD4NCjxjbGllbnRfaWQ+JHt0b2tlbl9jbGllbnRfaWR9PC9jbGllbnRfaWQ+DQo8c3RhdHVzPiR7dG9rZW5fc3RhdHVzfTwvc3RhdHVzPg0KPC9hYz4="/&gt;
+                    stringValue="PGFjPg0KPHRva2VuX3NlY3JldD4ke3Rva2VuX3NlY3JldH08L3Rva2VuX3NlY3JldD4NCjx0b2tlbl9leHBpcmF0aW9uPiR7dG9rZW5fZXhwaXJhdGlvbn08L3Rva2VuX2V4cGlyYXRpb24+DQo8c2NvcGU+JHt0b2tlbl9zY29wZX08L3Njb3BlPg0KPHJlc291cmNlX293bmVyX2lkPiR7dG9rZW5fcmVzb3VyY2Vfb3duZXJfaWR9PC9yZXNvdXJjZV9vd25lcl9pZD4NCjxjbGllbnRfaWQ+JHt0b2tlbl9jbGllbnRfaWR9PC9jbGllbnRfaWQ+DQo8c3RhdHVzPiR7dG9rZW5fc3RhdHVzfTwvc3RhdHVzPg0KPHByb3BlcnRpZXM+JHt0b2tlbl9wcm9wZXJ0aWVzfTwvcHJvcGVydGllcz4NCjwvYWM+"/&gt;
                     &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="acTokenInfo"/&gt;
@@ -1960,7 +1987,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:Base64ResponseBody
-                    stringValue="PHZhbGlkYXRpb24+CjxyZXN1bHQ+dmFsaWQ8L3Jlc3VsdD4KPGNsaWVudF9rZXk+PCFbQ0RBVEFbJHt0b2tlbl9jbGllbnRfaWR9XV0+PC9jbGllbnRfa2V5Pgo8cmVzb3VyY2Vfb3duZXI+PCFbQ0RBVEFbJHt0b2tlbl9yZXNvdXJjZV9vd25lcl9pZH1dXT48L3Jlc291cmNlX293bmVyPgo8c2NvcGU+PCFbQ0RBVEFbJHt0b2tlbl9zY29wZX1dXT48L3Njb3BlPgo8ZXhwaXJhdGlvbj48IVtDREFUQVske3Rva2VuX2V4cGlyYXRpb259XV0+PC9leHBpcmF0aW9uPgo8L3ZhbGlkYXRpb24+"/&gt;
+                    stringValue="PHZhbGlkYXRpb24+CjxyZXN1bHQ+dmFsaWQ8L3Jlc3VsdD4KPGNsaWVudF9rZXk+PCFbQ0RBVEFbJHt0b2tlbl9jbGllbnRfaWR9XV0+PC9jbGllbnRfa2V5Pgo8cmVzb3VyY2Vfb3duZXI+PCFbQ0RBVEFbJHt0b2tlbl9yZXNvdXJjZV9vd25lcl9pZH1dXT48L3Jlc291cmNlX293bmVyPgo8c2NvcGU+PCFbQ0RBVEFbJHt0b2tlbl9zY29wZX1dXT48L3Njb3BlPgo8ZXhwaXJhdGlvbj48IVtDREFUQVske3Rva2VuX2V4cGlyYXRpb259XV0+PC9leHBpcmF0aW9uPgo8cHJvcGVydGllcz48IVtDREFUQVske3Rva2VuX3Byb3BlcnRpZXN9XV0+PC9wcm9wZXJ0aWVzPgo8L3ZhbGlkYXRpb24+"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
                     &lt;/wsp:All&gt;
                     &lt;/wsp:Policy&gt;
@@ -2629,6 +2656,10 @@
                     &lt;L7p:DateOffsetExpression stringValue=""/&gt;
                     &lt;L7p:VariableToSet stringValue="now"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:VariableToSet stringValue="token_properties"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -3220,6 +3251,33 @@
                     &lt;/L7p:Namespaces&gt;
                     &lt;/L7p:XpathExpression&gt;
                     &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue=" do not select text() as this fails if the value of properties is an
+                    empty string"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:VariablePrefix stringValue="tokenProperties"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="tokenValues"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/values/value/properties"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt0b2tlblByb3BlcnRpZXMucmVzdWx0fQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="token_properties"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
                     &lt;L7p:Expression1 stringValue="${tokenStatus.result}"/&gt;
@@ -3410,7 +3468,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:Base64ResponseBody
-                    stringValue="PHZhbGlkYXRpb24+CjxyZXN1bHQ+dmFsaWQ8L3Jlc3VsdD4KPGNsaWVudF9uYW1lPjwhW0NEQVRBWyR7Y2xpZW50TmFtZS5yZXN1bHR9XV0+PC9jbGllbnRfbmFtZT4KPC92YWxpZGF0aW9uPg=="/&gt;
+                    stringValue="PHZhbGlkYXRpb24+CjxyZXN1bHQ+dmFsaWQ8L3Jlc3VsdD4KPGNsaWVudF9uYW1lPjwhW0NEQVRBWyR7Y2xpZW50TmFtZS5yZXN1bHR9XV0+PC9jbGllbnRfbmFtZT4KPHByb3BlcnRpZXM+JHt0b2tlbl9wcm9wZXJ0aWVzfTwvcHJvcGVydGllcz4KPC92YWxpZGF0aW9uPg=="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/xml; charset=utf-8"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
