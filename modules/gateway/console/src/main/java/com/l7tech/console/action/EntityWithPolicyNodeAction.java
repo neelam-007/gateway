@@ -5,18 +5,18 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
-import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.tree.policy.PolicyTree;
+import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.OrganizationHeader;
-import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyAlias;
 
 /**
  * Abstract class providing common logic for any policy, service or alias
@@ -53,7 +53,7 @@ public abstract class EntityWithPolicyNodeAction<HT extends EntityWithPolicyNode
         EntityType aliasType = null;
         if ( sn.getEntityHeader() instanceof OrganizationHeader ) {
             OrganizationHeader header = (OrganizationHeader) sn.getEntityHeader();
-            if ( header.isAlias() && header.getAliasOid()!=null){
+            if (header.isAlias() && header.getAliasOid() != null && sn.getParent() != null) {
                 switch ( header.getType() ) {
                     case POLICY:
                         PolicyAlias policyAlias = new PolicyAlias( (Policy)entity, ((FolderNode)sn.getParent()).getFolder() );
