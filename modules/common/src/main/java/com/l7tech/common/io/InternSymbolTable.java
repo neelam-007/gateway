@@ -4,7 +4,7 @@ import org.apache.xerces.util.SymbolTable;
 
 /**
  * This is a version of SymbolTable that avoids eventually filling all memory with old symbols, but that (hopefully!)
- * doesn't NPE in rare instances during times of memory pressure, like SoftRefereneSymbolTable does as of Xerces 2.11.0.
+ * doesn't NPE in rare instances during times of memory pressure, like SoftReferenceSymbolTable does as of Xerces 2.11.0.
  * <p/>
  * This version simply relies on String.intern() at all times, and makes no effort to avoid creating redundant
  * String objects to perform lookups by character array.
