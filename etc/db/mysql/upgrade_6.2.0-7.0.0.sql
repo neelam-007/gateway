@@ -24,6 +24,7 @@ ALTER TABLE audit_message DROP FOREIGN KEY message_context_mapping;
 ALTER TABLE audit_message DROP COLUMN mapping_values_oid ;
 
 -- RBAC enhancements
+INSERT INTO rbac_permission VALUES (-440,0,-400,'CREATE',NULL,'POLICY');
 ALTER TABLE rbac_predicate_attribute ADD COLUMN mode varchar(255);
 ALTER TABLE rbac_role ADD COLUMN user_created tinyint(1) NOT NULL default 0;
 
