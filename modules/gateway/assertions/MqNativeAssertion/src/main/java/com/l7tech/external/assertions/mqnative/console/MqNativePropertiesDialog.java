@@ -5,6 +5,7 @@ import com.l7tech.console.panels.*;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.CipherSuiteGuiUtil;
+import com.l7tech.console.util.FormPreparer;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
@@ -12,7 +13,7 @@ import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin.MqNativeTestException;
 import com.l7tech.external.assertions.mqnative.MqNativeMessageFormatType;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
@@ -43,7 +44,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.console.panels.CancelableOperationDialog.doWithDelayedCancelDialog;
-import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.*;
+import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.AUTOMATIC;
+import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.ON_COMPLETION;
 import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.values;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
@@ -138,9 +140,36 @@ public class MqNativePropertiesDialog extends JDialog {
     private boolean isOk;
     private boolean outboundOnly = false;
     private boolean isClone = false;
-    private FormAuthorizationPreparer securityFormAuthorizationPreparer;
+    private FormPreparer.ComponentPreparer securityFormAuthorizationPreparer;
     private Logger logger = Logger.getLogger(MqNativePropertiesDialog.class.getName());
     private ContentTypeComboBoxModel contentTypeModel;
+
+
+    private static final AttemptedOperation CREATE_OPERATION = new AttemptedEntityOperation(EntityType.SSG_ACTIVE_CONNECTOR,
+            new SsgActiveConnector() {
+                public String getType() {
+                    return ACTIVE_CONNECTOR_TYPE_MQ_NATIVE;
+                }
+            }
+    ) {
+        @Override
+        public OperationType getOperation() {
+            return OperationType.CREATE;
+        }
+    };
+
+    private static final AttemptedOperation UPDATE_OPERATION = new AttemptedEntityOperation(EntityType.SSG_ACTIVE_CONNECTOR,
+            new SsgActiveConnector() {
+                public String getType() {
+                    return ACTIVE_CONNECTOR_TYPE_MQ_NATIVE;
+                }
+            }
+    ) {
+        @Override
+        public OperationType getOperation() {
+            return OperationType.UPDATE;
+        }
+    };
 
     //these permissions will have to be added for adding and editing MQ native connections.
 //    private PermissionFlags flags;
@@ -223,7 +252,12 @@ public class MqNativePropertiesDialog extends JDialog {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        that.securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new AttemptedCreate(EntityType.JMS_ENDPOINT));
+
+        FormPreparer.ComponentPreparer create = new FormAuthorizationPreparer.GrantToRolePreparer(CREATE_OPERATION, provider);
+        FormPreparer.ComponentPreparer update = new FormAuthorizationPreparer.GrantToRolePreparer(UPDATE_OPERATION, provider);
+
+        that.securityFormAuthorizationPreparer = new FormPreparer.CompositePreparer(new FormPreparer.ComponentPreparer[]{create, update});
+
         that.mqNativeActiveConnector = mqConnection;
         that.setOutboundOnly(outboundOnly);
         that.isClone = isClone;
@@ -918,20 +952,20 @@ public class MqNativePropertiesDialog extends JDialog {
 
     private void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
-        securityFormAuthorizationPreparer.prepare(new Component[]{
-            outboundRadioButton,
-            inboundRadioButton,
-            queueNameTextBox,
-            credentialsAreRequiredToCheckBox,
-            authUserNameTextBox,
-            useJmsMsgPropAsSoapActionRadioButton,
-            jmsMsgPropWithSoapActionTextField,
-            acknowledgementModeComboBox,
-            useQueueForFailedCheckBox,
-            failureQueueNameTextField,
-            mqConnectionName,
-            isTemplateQueue,
-        });
+
+        securityFormAuthorizationPreparer.prepare(outboundRadioButton);
+        securityFormAuthorizationPreparer.prepare(inboundRadioButton);
+        securityFormAuthorizationPreparer.prepare(queueNameTextBox);
+        securityFormAuthorizationPreparer.prepare(credentialsAreRequiredToCheckBox);
+        securityFormAuthorizationPreparer.prepare(authUserNameTextBox);
+        securityFormAuthorizationPreparer.prepare(useJmsMsgPropAsSoapActionRadioButton);
+        securityFormAuthorizationPreparer.prepare(jmsMsgPropWithSoapActionTextField);
+        securityFormAuthorizationPreparer.prepare(acknowledgementModeComboBox);
+        securityFormAuthorizationPreparer.prepare(useQueueForFailedCheckBox);
+        securityFormAuthorizationPreparer.prepare(failureQueueNameTextField);
+        securityFormAuthorizationPreparer.prepare(mqConnectionName);
+        securityFormAuthorizationPreparer.prepare(isTemplateQueue);
+
         securityFormAuthorizationPreparer.prepare(inboundOptionsPanel);
         securityFormAuthorizationPreparer.prepare(outboundOptionsPanel);
     }
