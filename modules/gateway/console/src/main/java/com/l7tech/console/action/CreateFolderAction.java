@@ -75,7 +75,7 @@ public class CreateFolderAction extends SecureAction {
         dialog.setVisible(true);
 
         if(dialog.isConfirmed()) {
-            Folder folder = new Folder(dialog.getName(), parentFolder);
+            final Folder folder = new Folder(dialog.getName(), parentFolder);
             try {
                 folder.setOid(folderAdmin.saveFolder(folder));
 
@@ -99,8 +99,12 @@ public class CreateFolderAction extends SecureAction {
                 DialogDisplayer.showMessageDialog(dialog,
                         "Folder '"+dialog.getName()+"' already exists.",
                         "Folder Already Exists",
-                        JOptionPane.WARNING_MESSAGE, null);
-                createFolder( folder.getName() );
+                        JOptionPane.WARNING_MESSAGE, new Runnable() {
+                    @Override
+                    public void run() {
+                        createFolder( folder.getName() );
+                    }
+                });
             } catch(UpdateException e) {
                 log.log(Level.WARNING, "Failed to create policy folder", e);
             } catch(SaveException e) {

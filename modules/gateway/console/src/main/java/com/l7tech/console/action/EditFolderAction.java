@@ -72,7 +72,7 @@ public class EditFolderAction extends SecureAction {
 
     private void editFolder( final Option<String> folderName ) {
         Frame f = TopComponents.getInstance().getTopParent();
-        PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, folderName.orSome(folder.getName()));
+        final PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, folderName.orSome(folder.getName()));
         dialog.setVisible(true);
 
         if(dialog.isConfirmed()) {
@@ -97,8 +97,12 @@ public class EditFolderAction extends SecureAction {
                 DialogDisplayer.showMessageDialog(dialog,
                         "Folder '"+dialog.getName()+"' already exists.",
                         "Folder Already Exists",
-                        JOptionPane.WARNING_MESSAGE, null);
-                editFolder( some( dialog.getName() ) );
+                        JOptionPane.WARNING_MESSAGE, new Runnable() {
+                    @Override
+                    public void run() {
+                        editFolder( some( dialog.getName() ) );
+                    }
+                });
             } catch(UpdateException e) {
                 folder.setName(prevFolderName);
                 DialogDisplayer.showMessageDialog(dialog,
