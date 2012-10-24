@@ -222,23 +222,23 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
         }
 
         if (policy.getIntegerProperty(UPPER_MIN) > upperCount) {
-            error( errors, "Password must contain at least {0} upper case characters", policy.getIntegerProperty(UPPER_MIN) );
+            error( errors, "Password must contain at least {0} upper case character(s)", policy.getIntegerProperty(UPPER_MIN) );
         }
 
         if (policy.getIntegerProperty(LOWER_MIN) > lowerCount) {
-            error( errors, "Password must contain at least {0} lower case characters", policy.getIntegerProperty(LOWER_MIN) );
+            error( errors, "Password must contain at least {0} lower case character(s)", policy.getIntegerProperty(LOWER_MIN) );
         }
 
         if (policy.getIntegerProperty(NUMBER_MIN) > digitCount) {
-            error( errors, "Password must contain at least {0} numbers", policy.getIntegerProperty(NUMBER_MIN) );
+            error( errors, "Password must contain at least {0} number(s)", policy.getIntegerProperty(NUMBER_MIN) );
         }
 
         if (policy.getIntegerProperty(SYMBOL_MIN) > specialCharacterCount) {
-            error( errors, "Password must contain at least {0} special characters", policy.getIntegerProperty(SYMBOL_MIN) );
+            error( errors, "Password must contain at least {0} special character(s)", policy.getIntegerProperty(SYMBOL_MIN) );
         }
 
         if (policy.getIntegerProperty(NON_NUMERIC_MIN) > (upperCount + lowerCount + specialCharacterCount + otherCount)) {
-            error( errors, "Password must contain at least {0} non-numeric characters", policy.getIntegerProperty(NON_NUMERIC_MIN) );
+            error( errors, "Password must contain at least {0} non-numeric character(s)", policy.getIntegerProperty(NON_NUMERIC_MIN) );
         }
 
         if (policy.getBooleanProperty(NO_REPEAT_CHARS) && hasRepeatChar) {
