@@ -61,16 +61,18 @@ public class IdentityNode extends AbstractLeafPaletteNode {
         java.util.List assertions = new ArrayList();
         IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
         try {
-            for (int i = 0; i < result.entityHeaders.length; i++) {
-                EntityHeader header = result.entityHeaders[i];
-                if (header.getType() == EntityType.USER) {
-                    User u = admin.findUserByID(result.providerConfigOid, header.getStrId());
-                    if ( u == null ) throw new RuntimeException("Couldn't find user " + header.getStrId() );
-                    assertions.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getId(), u.getName()));
-                } else if (header.getType() == EntityType.GROUP) {
-                    Group g = admin.findGroupByID(result.providerConfigOid, header.getStrId());
-                    if ( g == null ) throw new RuntimeException("Couldn't find group " + header.getStrId() );
-                    assertions.add(new MemberOfGroup(g.getProviderId(), g.getName(), g.getId()));
+            if(result != null){
+                for (int i = 0; i < result.entityHeaders.length; i++) {
+                    EntityHeader header = result.entityHeaders[i];
+                    if (header.getType() == EntityType.USER) {
+                        User u = admin.findUserByID(result.providerConfigOid, header.getStrId());
+                        if ( u == null ) throw new RuntimeException("Couldn't find user " + header.getStrId() );
+                        assertions.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getId(), u.getName()));
+                    } else if (header.getType() == EntityType.GROUP) {
+                        Group g = admin.findGroupByID(result.providerConfigOid, header.getStrId());
+                        if ( g == null ) throw new RuntimeException("Couldn't find group " + header.getStrId() );
+                        assertions.add(new MemberOfGroup(g.getProviderId(), g.getName(), g.getId()));
+                    }
                 }
             }
             return (Assertion[])assertions.toArray(new Assertion[]{});
