@@ -443,7 +443,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value>OAuthToolkitIntegrationTest</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+        assertEquals("<found><value><![CDATA[OAuthToolkitIntegrationTest]]></value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
     }
 
     /**
@@ -464,7 +464,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value>OAuthToolkitIntegrationTest</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+        assertEquals("<found><value><![CDATA[OAuthToolkitIntegrationTest]]></value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
     }
 
     @Test
@@ -550,7 +550,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value>updated</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+        assertEquals("<found><value><![CDATA[updated]]></value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
     }
 
     /**
@@ -577,7 +577,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value>OAuthToolkitIntegrationTest</value><location>database</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+        assertEquals("<found><value><![CDATA[OAuthToolkitIntegrationTest]]></value><location>database</location></found>", StringUtils.deleteWhitespace(getResponseBody));
     }
 
     @Test
@@ -629,7 +629,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value>" + specialCharacters + "</value><location>cache</location></found>",
+        assertEquals("<found><value><![CDATA[" + specialCharacters + "]]></value><location>cache</location></found>",
                 StringUtils.deleteWhitespace(getResponseBody));
     }
 
