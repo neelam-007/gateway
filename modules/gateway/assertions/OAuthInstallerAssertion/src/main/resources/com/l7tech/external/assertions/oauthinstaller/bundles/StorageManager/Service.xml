@@ -368,13 +368,18 @@
                     &lt;L7p:VariablePrefix stringValue="xpathCount"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="getResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="count(/values/value)"/&gt;
+                    &lt;L7p:Expression stringValue="count(/ns:values/ns:value)"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-tokenstore"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Namespaces&gt;
+                    &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
                     &lt;/L7p:XpathExpression&gt;
                     &lt;/L7p:ResponseXpathAssertion&gt;
                     &lt;L7p:XslTransformation&gt;
@@ -382,24 +387,25 @@
                     &lt;L7p:OtherTargetMessageVariable stringValue="getResult"/&gt;
                     &lt;L7p:ResourceInfo staticResourceInfo="included"&gt;
                     &lt;L7p:Document stringValueReference="inline"&gt;&lt;![CDATA[&lt;xsl:stylesheet version="1.0"
+                    xmlns:ns="http://ns.l7tech.com/2012/11/otk-tokenstore"
                     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
 
                     &lt;xsl:output method="html"/&gt;
 
                     &lt;xsl:param name="this.app.url"/&gt;
 
-                    &lt;xsl:template match="/values"&gt;
+                    &lt;xsl:template match="/ns:values"&gt;
                     &lt;table border="1" style="padding:2px;"&gt;
                     &lt;tr&gt;
                     &lt;th&gt;index&lt;/th&gt;
-                    &lt;xsl:for-each select="value[1][node()]/descendant::node()[not(name()='')]"&gt;
+                    &lt;xsl:for-each select="ns:value[1][node()]/descendant::node()[not(name()='')]"&gt;
                     &lt;th&gt;
                     &lt;xsl:value-of select="name()"/&gt;
                     &lt;/th&gt;
                     &lt;/xsl:for-each&gt;
                     &lt;th colspan="2"&gt;action&lt;/th&gt;
                     &lt;/tr&gt;
-                    &lt;xsl:for-each select="value[node()]"&gt;
+                    &lt;xsl:for-each select="ns:value[node()]"&gt;
                     &lt;xsl:variable name="tempToken" select="descendant::node()[local-name()='token']"/&gt;
                     &lt;xsl:variable name="tempClient" select="descendant::node()[local-name()='client_key']"/&gt;
                     &lt;xsl:variable name="tempOwner" select="descendant::node()[local-name()='resource_owner']"/&gt;
@@ -447,6 +453,7 @@
                     &lt;/L7p:ResourceInfo&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;L7p:TransformName stringValue=""/&gt;
+                    &lt;L7p:XsltVersion stringValue="1.0"/&gt;
                     &lt;/L7p:XslTransformation&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtnZXRSZXN1bHQubWFpbnBhcnR9"/&gt;
@@ -473,12 +480,13 @@
                     &lt;L7p:OtherTargetMessageVariable stringValue="findDates"/&gt;
                     &lt;L7p:ResourceInfo staticResourceInfo="included"&gt;
                     &lt;L7p:Document stringValueReference="inline"&gt;&lt;![CDATA[&lt;xsl:stylesheet version="1.0"
+                    xmlns:ns="http://ns.l7tech.com/2012/11/otk-tokenstore"
                     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
 
                     &lt;xsl:output method="text" omit-xml-declaration="yes"/&gt;
 
                     &lt;xsl:template match="/"&gt;
-                    &lt;xsl:for-each select="(//rexpiration|//expiration|//created)[text()!='0']"&gt;
+                    &lt;xsl:for-each select="(//ns:rexpiration|//ns:expiration|//ns:created)[text()!='0']"&gt;
                     &lt;xsl:value-of select="text()"/&gt;&lt;xsl:text&gt;;&lt;/xsl:text&gt;
                     &lt;/xsl:for-each&gt;
                     &lt;/xsl:template&gt;
@@ -487,6 +495,7 @@
                     &lt;/L7p:ResourceInfo&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;L7p:TransformName stringValue=""/&gt;
+                    &lt;L7p:XsltVersion stringValue="1.0"/&gt;
                     &lt;/L7p:XslTransformation&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtmaW5kRGF0ZXMubWFpbnBhcnR9"/&gt;

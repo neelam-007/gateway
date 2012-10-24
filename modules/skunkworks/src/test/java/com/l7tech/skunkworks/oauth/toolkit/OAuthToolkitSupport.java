@@ -20,8 +20,10 @@ import java.util.*;
 
 import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSSLSocketFactoryWithKeyManager;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
+/**
+ * Note: If any tests fails then the temporary client registered will need to be manually deleted.
+ */
 public abstract class OAuthToolkitSupport {
     protected static final String BASE_URL = "localhost";
     protected static final String USER = "admin";
@@ -172,12 +174,12 @@ public abstract class OAuthToolkitSupport {
 
     protected void assertTokenDoesNotExist(final String token) throws Exception {
         final String responseBody = get(TOKEN, token, "https://" + BASE_URL + ":8443/oauth/tokenstore/get");
-        assertEquals("<?xmlversion=\"1.0\"encoding=\"UTF-8\"?><values/>", StringUtils.deleteWhitespace(responseBody));
+        assertEquals("<?xmlversion=\"1.0\"encoding=\"UTF-8\"?><valuesxmlns=\"http://ns.l7tech.com/2012/11/otk-tokenstore\"/>", StringUtils.deleteWhitespace(responseBody));
     }
 
     protected void assertTempTokenDoesNotExist(final String token) throws Exception {
         final String responseBody = get(TOKEN, token, "https://" + BASE_URL + ":8443/oauth/tokenstore/getTemp");
-        assertEquals("<?xmlversion=\"1.0\"encoding=\"UTF-8\"?><values/>", StringUtils.deleteWhitespace(responseBody));
+        assertEquals("<?xmlversion=\"1.0\"encoding=\"UTF-8\"?><valuesxmlns=\"http://ns.l7tech.com/2012/11/otk-tokenstore\"/>", StringUtils.deleteWhitespace(responseBody));
     }
 
     protected String getValue(final Document document, final String xpathExpression) throws Exception {

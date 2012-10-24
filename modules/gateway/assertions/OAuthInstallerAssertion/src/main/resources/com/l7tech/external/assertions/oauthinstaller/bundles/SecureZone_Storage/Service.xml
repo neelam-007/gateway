@@ -2908,13 +2908,13 @@
                     &lt;xsl:output encoding="UTF-8" indent="yes" method="xml"/&gt;
 
                     &lt;xsl:template match="/values"&gt;
-                    &lt;xsl:element name="{name()}"&gt;
+                    &lt;xsl:element name="{name()}" xmlns="http://ns.l7tech.com/2012/11/otk-tokenstore"&gt;
                     &lt;xsl:for-each select="descendant::node()[node()][1]/child::node()[node()]"&gt;
                     &lt;xsl:variable name="index"&gt;
                     &lt;xsl:value-of select="position()"/&gt;
                     &lt;/xsl:variable&gt;
-                    &lt;value index="{$index}"&gt;
-                    &lt;xsl:element name="{name()}"&gt;
+                    &lt;value index="{$index}" xmlns="http://ns.l7tech.com/2012/11/otk-tokenstore"&gt;
+                    &lt;xsl:element name="{name()}" xmlns="http://ns.l7tech.com/2012/11/otk-tokenstore"&gt;
                     &lt;xsl:value-of select="text()"/&gt;
                     &lt;/xsl:element&gt;
                     &lt;xsl:for-each select="parent::node()/following-sibling::node()[node()]"&gt;
@@ -2931,6 +2931,7 @@
                     &lt;/L7p:ResourceInfo&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;L7p:TransformName stringValue=""/&gt;
+                    &lt;L7p:XsltVersion stringValue="1.0"/&gt;
                     &lt;/L7p:XslTransformation&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
