@@ -9,7 +9,7 @@ public class ContentTypeAssertion extends MessageTargetableAssertion {
     private boolean changeContentType;
     private String newContentTypeValue;
     private boolean messagePart;
-    private String messagePartNum = "0";
+    private String messagePartNum = "1";
 
     public boolean isChangeContentType() {
         return changeContentType;
