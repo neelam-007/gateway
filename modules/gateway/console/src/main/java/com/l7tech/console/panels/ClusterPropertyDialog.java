@@ -18,6 +18,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -125,7 +126,7 @@ public class ClusterPropertyDialog extends JDialog {
                     ClusterProperty clusterProperty = properties.get(row);
                     String cpvalue = clusterProperty.getValue();
                     if (cpvalue != null && cpvalue.length() > 20) {
-                        ((JComponent)comp).setToolTipText(Utilities.toTooltip(cpvalue, true));
+                        ((JComponent)comp).setToolTipText(Utilities.toTooltip(TextUtils.escapeHtmlSpecialCharacters(cpvalue), true));
                     }
                     else {
                         ((JComponent)comp).setToolTipText(null);
