@@ -110,6 +110,12 @@ public class SsgActiveConnector extends NamedEntityImp {
         this.setProperties( new HashMap<String, String>( ssgActiveConnector.getProperties() ) );
     }
 
+    public static SsgActiveConnector newWithType(String type) {
+        SsgActiveConnector ret = new SsgActiveConnector();
+        ret.setType(type);
+        return ret;
+    }
+
     @Column(name="enabled")
     public boolean isEnabled() {
         return enabled;

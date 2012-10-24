@@ -145,31 +145,8 @@ public class MqNativePropertiesDialog extends JDialog {
     private ContentTypeComboBoxModel contentTypeModel;
 
 
-    private static final AttemptedOperation CREATE_OPERATION = new AttemptedEntityOperation(EntityType.SSG_ACTIVE_CONNECTOR,
-            new SsgActiveConnector() {
-                public String getType() {
-                    return ACTIVE_CONNECTOR_TYPE_MQ_NATIVE;
-                }
-            }
-    ) {
-        @Override
-        public OperationType getOperation() {
-            return OperationType.CREATE;
-        }
-    };
-
-    private static final AttemptedOperation UPDATE_OPERATION = new AttemptedEntityOperation(EntityType.SSG_ACTIVE_CONNECTOR,
-            new SsgActiveConnector() {
-                public String getType() {
-                    return ACTIVE_CONNECTOR_TYPE_MQ_NATIVE;
-                }
-            }
-    ) {
-        @Override
-        public OperationType getOperation() {
-            return OperationType.UPDATE;
-        }
-    };
+    private static final AttemptedOperation CREATE_OPERATION = new AttemptedCreateSpecific(EntityType.SSG_ACTIVE_CONNECTOR, SsgActiveConnector.newWithType(ACTIVE_CONNECTOR_TYPE_MQ_NATIVE));
+    private static final AttemptedOperation UPDATE_OPERATION = new AttemptedUpdate(EntityType.SSG_ACTIVE_CONNECTOR, SsgActiveConnector.newWithType(ACTIVE_CONNECTOR_TYPE_MQ_NATIVE));
 
     //these permissions will have to be added for adding and editing MQ native connections.
 //    private PermissionFlags flags;
