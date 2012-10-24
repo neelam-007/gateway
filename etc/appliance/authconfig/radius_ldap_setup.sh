@@ -941,18 +941,14 @@ nss_map_attribute homeDirectory unixHomeDirectory\n|" $NSS_LDAP_CONF_FILE
                 fi
 
                 # bindpw field
-                if [ "X$LDAP_BIND_PASSWD" != "X" ]; then
-                        sed -i "s|\(^#bindpw.*$\)|\1\n# Added by $0 on $DATE_TIME:\nbindpw $LDAP_BIND_PASSWD\n|" $NSS_LDAP_CONF_FILE
-                        if [ $? -ne 0 ] || [ "X$(grep "^bindpw" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$LDAP_BIND_PASSWD" ]; then
-                                toLog "    ERROR - Configuring 'bindpw' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-                                STATUS=1
-                        else
-                                toLog "    Success - 'bindpw' field set to $LDAP_BIND_PASSWD in $NSS_LDAP_CONF_FILE file."
-                        fi
-                else
-                        toLog "    ERROR - The value of 'bindpw' directive for $NSS_LDAP_CONF_FILE is not valid! Exiting..."
-                        STATUS=1
-                fi
+                # password field can be empty so we will no check for the content of the variable
+				sed -i "s|\(^#bindpw.*$\)|\1\n# Added by $0 on $DATE_TIME:\nbindpw $LDAP_BIND_PASSWD\n|" $NSS_LDAP_CONF_FILE
+				if [ $? -ne 0 ] || [ "X$(grep "^bindpw" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$LDAP_BIND_PASSWD" ]; then
+						toLog "    ERROR - Configuring 'bindpw' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+						STATUS=1
+				else
+						toLog "    Success - 'bindpw' field set to $LDAP_BIND_PASSWD in $NSS_LDAP_CONF_FILE file."
+				fi                
         else
                 # Disable LDAP auth on the system
                 sed -i "s|^USELDAPAUTH.*$|USELDAPAUTH=no|" $SYS_AUTHCONF_FILE
