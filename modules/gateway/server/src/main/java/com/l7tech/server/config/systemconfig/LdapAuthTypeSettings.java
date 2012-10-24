@@ -209,8 +209,8 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
             } else {
                 descs.add("\tUsing Client Authentication");
                 if (isLdapTlsClientAuth()) {
-                    descs.add("Client Certificate File : " + getLdapTlsClientCertFile());
-                    descs.add("Client Key : " + getLdapTlsClientKeyFile());
+                    descs.add("\t\tClient Certificate File : " + getLdapTlsClientCertFile());
+                    descs.add("\t\tClient Key : " + getLdapTlsClientKeyFile());
                 }
             }
         }
