@@ -106,8 +106,8 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                                 ExceptionUtils.getDebugException(ae));
                         throw new FindException("naming exception", ae);
                     } catch (NamingException e) {
-                        logger.log(Level.WARNING, "LDAP error, while building group", e);
-                        throw new FindException("naming exception", e);
+                        logger.log(Level.WARNING, "LDAP error, while building group");
+                        throw new FindException("naming exception", ExceptionUtils.getDebugException(e));
                     }
 
                     ldapGroup = groupHolder[0];

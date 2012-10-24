@@ -11,7 +11,9 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -66,10 +68,10 @@ public class GroupPropertiesAction extends NodeAction {
                     config = getIdentityProviderConfig((EntityHeaderNode)node);
                 }
                 final EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
-                final GroupPanel panel = GroupPanel.newInstance(config, header);
                 Frame f = TopComponents.getInstance().getTopParent();
-                EditorDialog dialog = new EditorDialog(f, panel, true);
                 try {
+                    final GroupPanel panel = GroupPanel.newInstance(config, header);
+                    EditorDialog dialog = new EditorDialog(f, panel, true);
                     panel.edit(header, config);
                     dialog.pack();
                     Utilities.centerOnScreen(dialog);
@@ -90,6 +92,9 @@ public class GroupPropertiesAction extends NodeAction {
                 } catch (NoSuchElementException e) {
                     // Bugzilla #801 - removing the group from the tree should not be performed 
                     // removeGroupTreeNode(header);
+                } catch (FindException e)  {
+                    DialogDisplayer.showMessageDialog(f,"LDAP Response Error",
+                       "The maximum number of LDAP paged responses exceeded.\nSet property com.l7tech.server.ldap.maxRangeIterations higher if required.",null);
                 }
             }
         });

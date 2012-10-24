@@ -406,9 +406,10 @@ public class NewGroupDialog extends JDialog {
                             @Override
                             public void run() {
                                 IdentityHeader header = new IdentityHeader(ipc.getOid(), group.getId(), EntityType.GROUP, group.getName(), null, null, null);
-                                GroupPanel panel = GroupPanel.newInstance(ipc, header);
-                                if (panel == null) return;
+                                GroupPanel panel = null;
                                 try {
+                                    panel = GroupPanel.newInstance(ipc, header);
+                                    if (panel == null) return;
                                     panel.edit(header, ipc);
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);

@@ -90,9 +90,8 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
         }
     }
 
-    public static GroupPanel newInstance(IdentityProviderConfig config, EntityHeader header) {
+    public static GroupPanel newInstance(IdentityProviderConfig config, EntityHeader header) throws FindException {
         Group g;
-        try {
             g = getIdentityAdmin().findGroupByID(config.getOid(), header.getStrId());
 
             if (g instanceof VirtualGroup) {
@@ -104,9 +103,6 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             } else {
                 throw new RuntimeException("Can't create a GroupPanel implementation for " + g.getClass().getName());
             }
-        } catch (FindException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     static PhysicalGroupPanel newPhysicalGroupPanel(IdentityProviderConfig config) {
