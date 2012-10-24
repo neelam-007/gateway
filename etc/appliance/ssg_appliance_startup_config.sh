@@ -18,12 +18,11 @@ cd
 /sbin/chkconfig cpuspeed on
 /sbin/chkconfig iptables on
 /sbin/chkconfig ip6tables on
-/sbin/chkconfig syslog on
-# lm_sensors currently hates IBM gear
-# /sbin/chkconfig lm_sensors on
+/sbin/chkconfig rsyslog on
 /sbin/chkconfig apmd on
 /sbin/chkconfig mysqld on
 /sbin/chkconfig mysql on
+
 # Distro and msyql.com version
 /sbin/chkconfig ssg on
 /sbin/chkconfig ssg-dbstatus on
