@@ -58,7 +58,6 @@ public class BundleComponent extends JPanel{
                 }
             });
             refreshJdbcConnections();
-            availableJdbcConnsComboBox.setSelectedIndex(-1);
 
             // remember all existing connections
             final int itemCount = availableJdbcConnsComboBox.getItemCount();
