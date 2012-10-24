@@ -4377,8 +4377,7 @@
                     &lt;L7p:Comment stringValue="Mandatory params for store: cacheKey,value"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Optional params for store:
-                    cacheId,cacheAge,cacheMaxEntries,cacheMaxSize,dbAge"/&gt;
+                    &lt;L7p:Comment stringValue="Optional params for store: cacheId,cacheAge,cacheMaxEntries,cacheMaxSize,dbAge"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="Mandatory params for get: cacheKey"/&gt;
