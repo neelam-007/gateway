@@ -158,6 +158,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JTextField dynamicICF;
     private JTextField dynamicJndiUrl;
     private JTextField dynamicJndiUserName;
+    private JLabel dynamicJndiPasswordWarning;
     private JPasswordField dynamicJndiPassword;
     private JCheckBox showDynamicJndiPassword;
     private JTextField dynamicQCF;
@@ -165,6 +166,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JTextField dynamicDestUserName;
     private JPasswordField dynamicDestPassword;
     private JCheckBox showDynamicDestPassword;
+    private JLabel dynamicDestPasswordWarning;
     private JTextField dynamicReplyToName;
     private JTextField jmsResponseTimeout;
     private JComboBox requestTargetComboBox;
@@ -258,7 +260,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         Utilities.enableGrayOnDisabled(dynamicDestUserName);
         Utilities.enableGrayOnDisabled(dynamicDestPassword);
         Utilities.enableGrayOnDisabled(showDynamicDestPassword);
-        Utilities.enableGrayOnDisabled(dynamicReplyToName); 
+        Utilities.enableGrayOnDisabled(dynamicReplyToName);
 
         ButtonGroup secButtonGroup = new ButtonGroup();
         secButtonGroup.add(authNoneRadio);
@@ -605,9 +607,12 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 String destinationPassword = ep.getPassword();
                 dynamicDestPassword.setText(destinationPassword);
                 dynamicDestPassword.setCaretPosition( 0 );
-                if (destinationPassword == null || !"".equals(destinationUserName)) {
+                if (destinationPassword == null || !"".equals(destinationPassword)) {
                     dynamicDestPassword.setEnabled(false);
                     showDynamicDestPassword.setEnabled(false);
+                    dynamicDestPasswordWarning.setVisible(false);
+                } else {
+                    PasswordGuiUtils.configureOptionalSecurePasswordField(dynamicDestPassword, showDynamicDestPassword, dynamicDestPasswordWarning);
                 }
 
                 String replyToQueueName = ep.getReplyToQueueName();
@@ -638,6 +643,9 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 if (jndiPassword == null || !"".equals(jndiPassword)){
                     dynamicJndiPassword.setEnabled(false);
                     showDynamicJndiPassword.setEnabled(false);
+                    dynamicJndiPasswordWarning.setVisible(false);
+                } else {
+                    PasswordGuiUtils.configureOptionalSecurePasswordField(dynamicJndiPassword, showDynamicJndiPassword, dynamicJndiPasswordWarning);
                 }
 
                 String icfClassName = conn.getInitialContextFactoryClassname();
