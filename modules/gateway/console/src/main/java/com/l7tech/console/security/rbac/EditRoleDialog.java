@@ -395,12 +395,15 @@ public class EditRoleDialog extends JDialog {
                 permissionsTableModel.fireTableDataChanged();
             }
         } else if (srcButton == removePermission) {
-            Utilities.doWithConfirmation(EditRoleDialog.this, "manageRoles.removePermissionTitle", "removePermissionMessage", new Runnable() {
-                @Override
-                public void run() {
-                    permissionsTableModel.removeRow(perm);
-                }
-            });
+            Utilities.doWithConfirmation(EditRoleDialog.this,
+                resources.getString("manageRoles.removePermissionTitle"),
+                resources.getString("manageRoles.removePermissionMessage"),
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        permissionsTableModel.removeRow(perm);
+                    }
+                });
         }
     }
 
