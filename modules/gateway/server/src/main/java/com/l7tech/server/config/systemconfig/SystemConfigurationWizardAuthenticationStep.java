@@ -248,7 +248,7 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
     }
 
     private LdapAuthTypeSettings.CrlAction maybeDoTlsCrlCheckPrompts(LdapAuthTypeSettings.CrlAction ldapTlsCrlCheck) throws IOException, WizardNavigationException {
-         if (getConfirmationFromUser("Specify how CRL checking is performed??" , "n")) {
+         if (getConfirmationFromUser("Specify how CRL checking is performed?" , "n")) {
 
              int index = 1;
              Map<String,LdapAuthTypeSettings.CrlAction> actionMap = new TreeMap<String,LdapAuthTypeSettings.CrlAction>();
