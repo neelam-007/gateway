@@ -128,9 +128,15 @@
                     &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
                     &lt;/L7p:XpathExpression&gt;
                     &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="sessionValue.result"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="decoded"/&gt;
+                    &lt;L7p:TransformType transformType="URL_DECODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="JHtzZXNzaW9uVmFsdWUucmVzdWx0fQ0KDQpUaGUgYWNjZXNzIHRva2VuIHdhcyByZXRyaWV2ZWQgZnJvbSAke3Nlc3Npb25Mb2NhdGlvbi5yZXN1bHR9Lg=="/&gt;
+                    stringValue="JHtkZWNvZGVkfQ0KDQpUaGUgYWNjZXNzIHRva2VuIHdhcyByZXRyaWV2ZWQgZnJvbSAke3Nlc3Npb25Mb2NhdGlvbi5yZXN1bHR9Lg=="/&gt;
                     &lt;L7p:VariableToSet stringValue="current_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:All&gt;
@@ -619,9 +625,15 @@
                     &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
                     &lt;/L7p:XpathExpression&gt;
                     &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="sessionValue.result"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="decoded"/&gt;
+                    &lt;L7p:TransformType transformType="URL_DECODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="JHtzZXNzaW9uVmFsdWUucmVzdWx0fQ0KDQpUaGUgYWNjZXNzIHRva2VuIHdhcyByZXRyaWV2ZWQgZnJvbSAke3Nlc3Npb25Mb2NhdGlvbi5yZXN1bHR9Lg=="/&gt;
+                    stringValue="JHtkZWNvZGVkfQ0KDQpUaGUgYWNjZXNzIHRva2VuIHdhcyByZXRyaWV2ZWQgZnJvbSAke3Nlc3Npb25Mb2NhdGlvbi5yZXN1bHR9Lg=="/&gt;
                     &lt;L7p:VariableToSet stringValue="current_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:All&gt;
@@ -1097,10 +1109,6 @@
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the authorization code grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the
-                    authorization code grant type"/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="YXV0aGNvZGU="/>
                     &lt;L7p:VariableToSet stringValue="client_page"/>
@@ -1195,9 +1203,15 @@
                     &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
                     &lt;/L7p:XpathExpression&gt;
                     &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="sessionValue.result"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="decoded"/&gt;
+                    &lt;L7p:TransformType transformType="URL_DECODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="JHtzZXNzaW9uVmFsdWUucmVzdWx0fQ0KDQpUaGUgYWNjZXNzIHRva2VuIHdhcyByZXRyaWV2ZWQgZnJvbSAke3Nlc3Npb25Mb2NhdGlvbi5yZXN1bHR9Lg=="/&gt;
+                    stringValue="JHtkZWNvZGVkfQ0KDQpUaGUgYWNjZXNzIHRva2VuIHdhcyByZXRyaWV2ZWQgZnJvbSAke3Nlc3Npb25Mb2NhdGlvbi5yZXN1bHR9Lg=="/&gt;
                     &lt;L7p:VariableToSet stringValue="current_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:All&gt;
@@ -5785,8 +5799,14 @@
                     &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
                     &lt;/L7p:XpathExpression&gt;
                     &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="samlValue.result"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="samlDecoded"/&gt;
+                    &lt;L7p:TransformType transformType="URL_DECODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtzYW1sVmFsdWUucmVzdWx0fQ=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtzYW1sRGVjb2RlZH0="/&gt;
                     &lt;L7p:VariableToSet stringValue="current_saml"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:All&gt;
@@ -5864,9 +5884,15 @@
                     &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
                     &lt;/L7p:XpathExpression&gt;
                     &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="sessionValue.result"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="decoded"/&gt;
+                    &lt;L7p:TransformType transformType="URL_DECODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="JHtzZXNzaW9uVmFsdWUucmVzdWx0fQ0KDQpUaGUgYWNjZXNzIHRva2VuIHdhcyByZXRyaWV2ZWQgZnJvbSAke3Nlc3Npb25Mb2NhdGlvbi5yZXN1bHR9Lg=="/&gt;
+                    stringValue="JHtkZWNvZGVkfQ0KDQpUaGUgYWNjZXNzIHRva2VuIHdhcyByZXRyaWV2ZWQgZnJvbSAke3Nlc3Npb25Mb2NhdGlvbi5yZXN1bHR9Lg=="/&gt;
                     &lt;L7p:VariableToSet stringValue="current_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:All&gt;
@@ -6388,9 +6414,15 @@
                     &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
                     &lt;/L7p:XpathExpression&gt;
                     &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="sessionValue.result"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="decoded"/&gt;
+                    &lt;L7p:TransformType transformType="URL_DECODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="JHtzZXNzaW9uVmFsdWUucmVzdWx0fQ0KDQpUaGUgYWNjZXNzIHRva2VuIHdhcyByZXRyaWV2ZWQgZnJvbSAke3Nlc3Npb25Mb2NhdGlvbi5yZXN1bHR9Lg=="/&gt;
+                    stringValue="JHtkZWNvZGVkfQ0KDQpUaGUgYWNjZXNzIHRva2VuIHdhcyByZXRyaWV2ZWQgZnJvbSAke3Nlc3Npb25Mb2NhdGlvbi5yZXN1bHR9Lg=="/&gt;
                     &lt;L7p:VariableToSet stringValue="current_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:All&gt;

@@ -346,6 +346,9 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
 
         final String tokenXml = get("token", token, "https://" + BASE_URL + ":8443/oauth/tokenstore/getTemp");
         assertFalse(tokenXml.isEmpty());
+        // if the xml were invalid, it would not be parsable
+        final Document parsed = XmlUtil.parse(tokenXml);
+        assertNotNull(parsed);
 
         delete("temp_token", token, "token");
     }
@@ -443,7 +446,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value><![CDATA[OAuthToolkitIntegrationTest]]></value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+        assertEquals("<found><value>OAuthToolkitIntegrationTest</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
     }
 
     /**
@@ -464,7 +467,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value><![CDATA[OAuthToolkitIntegrationTest]]></value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+        assertEquals("<found><value>OAuthToolkitIntegrationTest</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
     }
 
     @Test
@@ -550,7 +553,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value><![CDATA[updated]]></value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+        assertEquals("<found><value>updated</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
     }
 
     /**
@@ -577,7 +580,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value><![CDATA[OAuthToolkitIntegrationTest]]></value><location>database</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+        assertEquals("<found><value>OAuthToolkitIntegrationTest</value><location>database</location></found>", StringUtils.deleteWhitespace(getResponseBody));
     }
 
     @Test
@@ -614,9 +617,10 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
 
     @Test
     @BugNumber(13304)
-    public void storeAndGetSessionSpecialCharacters() throws Exception {
+    public void storeAndGetSessionSpecialCharactersFromCache() throws Exception {
         final Map<String, String> storeParams = buildStoreSessionParams(true);
         final String specialCharacters = "<storeMe>https://localhost:8443/some/url?param1=one&param2=2</storeMe>";
+        final String encoded = "%3CstoreMe%3Ehttps%3A%2F%2Flocalhost%3A8443%2Fsome%2Furl%3Fparam1%3Done%26param2%3D2%3C%2FstoreMe%3E";
         storeParams.put("value", specialCharacters);
         final String cacheKey = storeParams.get("cacheKey");
         final GenericHttpResponse storeResponse = requestSession("store", storeParams);
@@ -629,7 +633,34 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value><![CDATA[" + specialCharacters + "]]></value><location>cache</location></found>",
+        assertEquals("<found><value>" + encoded + "</value><location>cache</location></found>",
+                StringUtils.deleteWhitespace(getResponseBody));
+    }
+
+    @Test
+    @BugNumber(13304)
+    public void storeAndGetSessionSpecialCharactersFromDatabase() throws Exception {
+        final Map<String, String> storeParams = buildStoreSessionParams(true);
+        final String specialCharacters = "<storeMe>https://localhost:8443/some/url?param1=one&param2=2</storeMe>";
+        final String encoded = "%3CstoreMe%3Ehttps%3A%2F%2Flocalhost%3A8443%2Fsome%2Furl%3Fparam1%3Done%26param2%3D2%3C%2FstoreMe%3E";
+        storeParams.put("value", specialCharacters);
+        // cache expires in 1 second
+        storeParams.put("cacheAge", "1");
+        storeParams.put("dbAge", "60");
+        final String cacheKey = storeParams.get("cacheKey");
+        final GenericHttpResponse storeResponse = requestSession("store", storeParams);
+        assertEquals(200, storeResponse.getStatus());
+        final String storeResponseBody = new String(IOUtils.slurpStream(storeResponse.getInputStream()));
+        assertEquals("Key " + cacheKey + " added to session.", storeResponseBody);
+
+        // sleep for 3 seconds
+        Thread.sleep(3 * 1000);
+
+        final Map<String, String> getParams = buildGetSessionParams(cacheKey, true);
+        final GenericHttpResponse getResponse = requestSession("get", getParams);
+        assertEquals(200, getResponse.getStatus());
+        final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
+        assertEquals("<found><value>" + encoded + "</value><location>database</location></found>",
                 StringUtils.deleteWhitespace(getResponseBody));
     }
 
@@ -654,7 +685,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         }
         if (includeOptionalParams) {
             getParams.put("cacheId", "OAuthToolkitIntegrationTest");
-            getParams.put("dbAge", "60");
+            getParams.put("cacheAge", "60");
         }
         return getParams;
     }

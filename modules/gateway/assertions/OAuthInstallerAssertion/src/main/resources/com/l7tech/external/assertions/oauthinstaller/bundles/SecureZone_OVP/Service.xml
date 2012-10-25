@@ -2731,7 +2731,7 @@
                     &lt;L7p:VariableToSet stringValue="cacheKey"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="Y2FjaGVLZXk9JHtjYWNoZUtleX0mY2FjaGVJZD0ke2NhY2hlSWR9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2FjaGVLZXk9JHtjYWNoZUtleX0mY2FjaGVJZD0ke2NhY2hlSWR9JmNhY2hlQWdlPSR7Y2FjaGVBZ2V9"/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="lookupSession"/&gt;
@@ -2768,8 +2768,14 @@
                     &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
                     &lt;/L7p:XpathExpression&gt;
                     &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="sessionValue.result"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="decoded"/&gt;
+                    &lt;L7p:TransformType transformType="URL_DECODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtzZXNzaW9uVmFsdWUucmVzdWx0fQ=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtkZWNvZGVkfQ=="/&gt;
                     &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="consumerKeyValues"/&gt;
@@ -2833,7 +2839,7 @@
                     &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHtjYWNoZUtleX0mY2FjaGVJZD0ke2NhY2hlSWR9JnZhbHVlPSR7c2Vzc2lvblZhbHVlfQ=="/&gt;
+                    stringValue="Y2FjaGVLZXk9JHtjYWNoZUtleX0mY2FjaGVJZD0ke2NhY2hlSWR9JmNhY2hlQWdlPSR7Y2FjaGVBZ2V9JmNhY2hlTWF4RW50cmllcz0ke2NhY2hlTWF4RW50cmllc30mY2FjaGVNYXhTaXplPSR7Y2FjaGVNYXhTaXplfSZ2YWx1ZT0ke3Nlc3Npb25WYWx1ZX0="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeSession"/&gt;
@@ -3228,7 +3234,7 @@
                     &lt;L7p:VariableToSet stringValue="cacheKey"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="Y2FjaGVLZXk9JHtjYWNoZUtleX0mY2FjaGVJZD0ke2NhY2hlSWR9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2FjaGVLZXk9JHtjYWNoZUtleX0mY2FjaGVJZD0ke2NhY2hlSWR9JmNhY2hlQWdlPSR7Y2FjaGVBZ2V9"/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="lookupSession"/&gt;
@@ -3265,8 +3271,14 @@
                     &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
                     &lt;/L7p:XpathExpression&gt;
                     &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="sessionValue.result"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="decoded"/&gt;
+                    &lt;L7p:TransformType transformType="URL_DECODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtzZXNzaW9uVmFsdWUucmVzdWx0fQ=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtkZWNvZGVkfQ=="/&gt;
                     &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="tokenValues"/&gt;
@@ -3330,7 +3342,7 @@
                     &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHtjYWNoZUtleX0mY2FjaGVJZD0ke2NhY2hlSWR9JnZhbHVlPSR7c2Vzc2lvblZhbHVlfQ=="/&gt;
+                    stringValue="Y2FjaGVLZXk9JHtjYWNoZUtleX0mY2FjaGVJZD0ke2NhY2hlSWR9JmNhY2hlQWdlPSR7Y2FjaGVBZ2V9JmNhY2hlTWF4RW50cmllcz0ke2NhY2hlTWF4RW50cmllc30mY2FjaGVNYXhTaXplPSR7Y2FjaGVNYXhTaXplfSZ2YWx1ZT0ke3Nlc3Npb25WYWx1ZX0="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeSession"/&gt;
