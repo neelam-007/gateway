@@ -100,6 +100,7 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
                 public void call( final Long oid ) throws Exception {
                     newService.setOid(oid);
                     Registry.getDefault().getSecurityProvider().refreshPermissionCache();
+                    Thread.sleep(1000);
                     PublishInternalServiceWizard.this.notify(new ServiceHeader(newService));
                 }
             }, new Functions.UnaryVoid<Exception>(){
@@ -135,6 +136,7 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
                         long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
                         Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                         service.setOid(oid);
+                        Thread.sleep(1000);
                         PublishInternalServiceWizard.this.notify(new ServiceHeader(service));
                     } catch ( Exception e ) {
                         handlePublishServiceError(parent, service, e);
