@@ -9,6 +9,7 @@ import com.l7tech.console.util.ValidatorUtils;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -31,12 +32,16 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
  * <p>Step two of the {@link PublishRestServiceWizard}.  The content of the page is dynamically choosen depending on the previous screen's selection.</p>
  */
 public class RestServiceInfoPanel extends WizardStepPanel {
+    private static final Logger logger = Logger.getLogger(RestServiceInfoPanel.class.getName());
+
     private static final Pattern FILE_PATTERN = Pattern.compile("(?i).*(:?wadl|xml)");
     private static final String[] COLUMN_HEADERS = new String[]{"Resource Base URL", "Service Name", "Gateway URI"};
     private JPanel mainPanel;
@@ -423,7 +428,9 @@ public class RestServiceInfoPanel extends WizardStepPanel {
                 serviceDescriptorsTableModel.addRow(d);
             }
         } catch (Exception e) {
-            DialogDisplayer.display(new JOptionPane("Unable to import WADL at specified location: " + location), getOwner().getContentPane(), "Error Importing WADL", null);
+            final String msg = "Unable to import WADL at specified location: " + location + "\n" + ExceptionUtils.getMessage(e);
+            logger.log(Level.INFO, msg, ExceptionUtils.getDebugException(e));
+            DialogDisplayer.display(new JOptionPane(msg), getOwner().getContentPane(), "Error Importing WADL", null);
         } finally {
             ResourceUtils.closeQuietly(is);
         }
