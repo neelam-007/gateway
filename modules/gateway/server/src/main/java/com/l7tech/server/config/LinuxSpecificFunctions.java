@@ -1,11 +1,15 @@
 package com.l7tech.server.config;
 
+import com.l7tech.common.io.ProcResult;
+import com.l7tech.common.io.ProcUtils;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
 import java.net.NetworkInterface;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class LinuxSpecificFunctions extends UnixSpecificFunctions {
@@ -31,6 +35,19 @@ public class LinuxSpecificFunctions extends UnixSpecificFunctions {
         String ifName = networkInterface.getName();
         File ifCfgFile = new File(getNetworkConfigurationDirectory(), "ifcfg-"+ifName);
         return parseConfigFile(networkInterface, ifCfgFile, includeIPV6);
+    }
+
+    public String getHostname() {
+        Logger logger = Logger.getLogger(LinuxSpecificFunctions.class.getName());
+        String command = "/bin/hostname";
+        try {
+            ProcResult result = ProcUtils.exec(command);
+            return new String(result.getOutput());
+        }
+        catch (IOException e) {
+            logger.log(Level.WARNING, "Error running " + command + " : " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return "<unknown>";
+        }
     }
 
     // - PRIVATE

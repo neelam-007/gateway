@@ -1,13 +1,19 @@
 package com.l7tech.server.config;
 
+import com.l7tech.common.io.ProcResult;
+import com.l7tech.common.io.ProcUtils;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
+import com.l7tech.util.ExceptionUtils;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Collections;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -36,6 +42,19 @@ public abstract class UnixSpecificFunctions extends OSSpecificFunctions {
         }
 
         return interfaceConfigs;
+    }
+
+    public String getHostname() {
+        Logger logger = Logger.getLogger(UnixSpecificFunctions.class.getName());
+        String command = "/usr/bin/hostname";
+        try {
+            ProcResult result = ProcUtils.exec(command);
+            return new String(result.getOutput());
+        }
+        catch (IOException e) {
+            logger.log(Level.WARNING, "Error running " + command + " : " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return "<unknown>";
+        }
     }
 
     // - PRIVATE

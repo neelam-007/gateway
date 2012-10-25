@@ -43,12 +43,13 @@ public class SystemConfigurationWizard extends ConfigurationWizard {
 
     private void printNetworkConfig(NetworkingConfigurationBean.InterfaceConfig interfaceConfig) {
         try {
+            ConsoleWizardUtils.printText("Hostname: " + osFunctions.getHostname() + EOL);
             ConsoleWizardUtils.printText(MessageFormat.format("Interface \"{0}\"", interfaceConfig.getInterfaceName()) + EOL);
             ConsoleWizardUtils.printText("Details:" + EOL);
             ConsoleWizardUtils.printText("\tBoot Protocol: " + interfaceConfig.getIpv4BootProto().toUpperCase() +  EOL);
             ConsoleWizardUtils.printText("\tCurrently Online: " + (interfaceConfig.getNetworkInterface().isUp()?"yes":"no") +  EOL);
-            byte[] hardwareAdress = interfaceConfig.getHardwareAddress();
-            if (hardwareAdress != null) {
+            byte[] hardwareAddress = interfaceConfig.getHardwareAddress();
+            if (hardwareAddress != null) {
                 String mac = HexUtils.hexDump(interfaceConfig.getHardwareAddress()).toUpperCase();
                 ConsoleWizardUtils.printText("\tHardware Address (MAC): " + Utilities.getFormattedMac(mac) + EOL);
             }
@@ -58,6 +59,18 @@ public class SystemConfigurationWizard extends ConfigurationWizard {
                 InetAddress address = interfaceAddress.getAddress();
                 short maskLength = interfaceAddress.getNetworkPrefixLength();
                 ConsoleWizardUtils.printText("\t\t" + address.getHostAddress() + "/" + maskLength + EOL);
+            }
+            ConsoleWizardUtils.printText("\tFQDNs:" + EOL);
+            for (InterfaceAddress interfaceAddress : interfaceAddresses) {
+                InetAddress address = interfaceAddress.getAddress();
+                String hostname = address.getCanonicalHostName();
+                // if we couldn't resolve the hostname
+                // this can be due to the SecurityManager not allowing it or because no record exists (among other reasons)
+                if(!hostname.equals(address.getHostAddress())) {
+                    ConsoleWizardUtils.printText("\t\t" + hostname + EOL);
+                    } else {
+                    ConsoleWizardUtils.printText("\t\t" + "Could not find name for " + address.getHostAddress() + EOL);
+                }
             }
         } catch (SocketException e) {
             ConsoleWizardUtils.printText("Error while determining the interface information for this machine:" + e.getMessage() + EOL);

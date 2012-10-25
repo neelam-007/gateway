@@ -48,6 +48,7 @@ public abstract class OSSpecificFunctions {
     }
 
     public abstract List<NetworkingConfigurationBean.InterfaceConfig> getNetworkConfigs(boolean getLoopBack) throws SocketException;
+    public abstract String getHostname();
 
     // - PROTECTED
 
