@@ -151,7 +151,7 @@ public class SslContextInitializer {
                         final SsgKeyEntry entry = ssgKeyFinder.getCertificateChain( alias );
                         if ( entry.isPrivateKeyAvailable() &&
                              !CertUtils.isCertCaCapable( entry.getCertificate() ) &&
-                             keyType.equals( entry.getPrivateKey().getAlgorithm() ) &&
+                             (keyType == null || keyType.equals( entry.getPrivateKey().getAlgorithm() )) &&
                              issuerMatches( issuers, entry.getCertificate().getIssuerX500Principal() ) ) {
                             aliases.add( alias );
                         }
