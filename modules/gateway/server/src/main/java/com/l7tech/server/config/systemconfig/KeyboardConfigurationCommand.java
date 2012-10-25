@@ -25,7 +25,7 @@ public class KeyboardConfigurationCommand extends BaseConfigurationCommand<Keybo
             return true;
         }
 
-        return loadKeys() && writeConfigFile(KEYBOARD_CONFIG_FILE, configBean.getKeyboardConfig());
+        return loadKeys() && grubby() && writeConfigFile(KEYBOARD_CONFIG_FILE, configBean.getKeyboardConfig());
     }
 
 
@@ -41,6 +41,7 @@ public class KeyboardConfigurationCommand extends BaseConfigurationCommand<Keybo
 
     private static final String KEYBOARD_CONFIG_FILE = "keyboard";
     private static final String LOADKEYS = "/usr/bin/sudo /bin/loadkeys";
+    private static final String GRUBBY = "/usr/bin/sudo /sbin/grubby";
 
     /** runs the system "loadkeys" command */
     private boolean loadKeys() {
@@ -53,6 +54,36 @@ public class KeyboardConfigurationCommand extends BaseConfigurationCommand<Keybo
             logger.log(Level.WARNING, "Error running " + command + " : " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return false;
         }
+    }
+
+    /** runs the system "grubby" command to update /etc/grub.conf with the new keymap */
+    private boolean grubby() {
+        /*
+        We should be able to do:
+        String[] commands = {
+            GRUBBY + " --update-kernel=ALL --remove-args=\"KEYBOARDTYPE KEYTABLE\"",
+            GRUBBY + " --update-kernel=ALL --args=\"KEYBOARDTYPE=pc KEYTABLE=" + configBean.getKeymap() + "\""
+        };
+        but because of how ProcUtils tokenizes arguments to commands (that is, it doesn't properly handle quoted strings)
+        we have to do this instead:
+        */
+        String[] commands = {
+            GRUBBY + " --update-kernel=ALL --remove-args=KEYBOARDTYPE",
+            GRUBBY + " --update-kernel=ALL --remove-args=KEYTABLE",
+            GRUBBY + " --update-kernel=ALL --args=KEYBOARDTYPE=pc",
+            GRUBBY + " --update-kernel=ALL --args=KEYTABLE=" + configBean.getKeymap()
+        };
+        for (String command : commands){
+            try {
+                ProcResult result = ProcUtils.exec(command);
+                logger.log(Level.INFO, "Output of: `" + command + "` : \n" + new String(result.getOutput()));
+            }
+            catch (IOException e) {
+                logger.log(Level.WARNING, "Error running " + command + " : " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                return false;
+            }
+        }
+        return true;
     }
 }
 
