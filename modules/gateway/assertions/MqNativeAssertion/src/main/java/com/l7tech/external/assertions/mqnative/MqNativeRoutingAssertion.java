@@ -52,9 +52,6 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     };
     private static final String META_INITIALIZED = MqNativeRoutingAssertion.class.getName() + ".metadataInitialized";
 
-//    @Inject
-//    SsgActiveConnectorManager ssgActiveConnectorManager;
-
     @Nullable
     private Long ssgActiveConnectorId;
     private String ssgActiveConnectorName;
