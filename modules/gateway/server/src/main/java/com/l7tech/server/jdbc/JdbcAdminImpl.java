@@ -138,7 +138,6 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
                 } catch (Throwable e) {
                     return "unexpected error, " + e.getClass().getSimpleName() + " thrown";
                 } finally {
-                    ResourceUtils.closeQuietly(conn);
                     cpds.close();
                 }
                 return "";
