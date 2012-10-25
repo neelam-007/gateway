@@ -1,23 +1,33 @@
 package com.l7tech.external.assertions.mqnative;
 
+import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.mqnative.server.MqNativeAdminServerSupport;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.server.transport.SsgActiveConnectorManager;
 import com.l7tech.server.util.EntityUseUtils.EntityTypeOverride;
 import com.l7tech.server.util.EntityUseUtils.EntityUse;
 import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.inject.Inject;
 import java.util.Map;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -41,6 +51,9 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
         }
     };
     private static final String META_INITIALIZED = MqNativeRoutingAssertion.class.getName() + ".metadataInitialized";
+
+//    @Inject
+//    SsgActiveConnectorManager ssgActiveConnectorManager;
 
     @Nullable
     private Long ssgActiveConnectorId;
@@ -355,6 +368,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
         meta.put( GLOBAL_ACTION_CLASSNAMES, new String[] { "com.l7tech.external.assertions.mqnative.console.MqNativeCustomAction" } );
         meta.put( PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.mqnative.console.MqNativeRoutingAssertionDialog" );
         meta.put( MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.mqnative.server.MqNativeModuleLoadListener" );
+        meta.put( POLICY_VALIDATOR_CLASSNAME, Validator.class.getName());
 
         // fix bug #12529: logged message(s) not showing in SOAP fault
         try {
@@ -375,6 +389,59 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
+    }
+
+    public static class Validator implements AssertionValidator {
+
+        private enum ActiveConnectorStatus {
+            ENABLED,
+            NOTFOUND,
+            DISABLED
+        };
+
+        MqNativeRoutingAssertion assertion;
+        ActiveConnectorStatus activeConnectorStatus;
+        boolean isQueueNameValid;
+
+        public Validator(MqNativeRoutingAssertion assertion) {
+
+            this.assertion = assertion;
+            SsgActiveConnector activeConnector;
+            TransportAdmin ta = Registry.getDefault().getTransportAdmin();
+            try {
+                activeConnector = ta.findSsgActiveConnectorByPrimaryKey(assertion.getSsgActiveConnectorId());
+                if ( activeConnector == null ) {
+                    activeConnectorStatus = ActiveConnectorStatus.NOTFOUND;
+                } else  if ( activeConnector.isEnabled() ) {
+                    activeConnectorStatus = ActiveConnectorStatus.ENABLED;
+                } else {
+                    activeConnectorStatus = ActiveConnectorStatus.DISABLED;
+                }
+                String mqQueueName = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME);
+                isQueueNameValid = ! (mqQueueName == null || mqQueueName.equals(""));
+            } catch (FindException e) {
+                activeConnectorStatus = ActiveConnectorStatus.NOTFOUND;
+            }
+    }
+
+        @Override
+        public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
+
+            switch (activeConnectorStatus) {
+                case ENABLED:
+                    break;
+                case NOTFOUND:
+                    result.addWarning(new PolicyValidatorResult.Warning(assertion,"Destination Queue set to unknown MQ Native Queue",null));
+                    break;
+                case DISABLED:
+                    result.addWarning(new PolicyValidatorResult.Warning(assertion,"Destination Queue is disabled",null));
+                    break;
+            }
+
+            if ( ! isQueueNameValid ) {
+                result.addWarning(new PolicyValidatorResult.Warning(assertion,"Queue Name is not set",null));
+            }
+        }
     }
 
     @Override
