@@ -348,7 +348,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         ssmApplication.getApplicationContext().publishEvent(event);
         EventListener[] listeners = listenerList.getListeners(LogonListener.class);
         for (EventListener listener : listeners) {
-            ((LogonListener) listener).onLogoff(event);
+            try {
+                ((LogonListener) listener).onLogoff(event);
+            } catch (Exception e) {
+                log.log(Level.WARNING, "Error delivering logoff event: " + ExceptionUtils.getMessage(e), e);
+            }
         }
         disconnected = true;
         descriptionText.setText("");
@@ -2064,9 +2068,13 @@ public class MainWindow extends JFrame implements SheetHolder {
         Set<Assertion> assertions = TopComponents.getInstance().getAssertionRegistry().getAssertions();
         for (Assertion assertion : assertions) {
             if (Registry.getDefault().getLicenseManager().isAssertionEnabled(assertion)) {
-                Action[] actions = assertion.meta().get(AssertionMetadata.GLOBAL_ACTIONS);
-                if (actions != null) {
-                    menuActions.addAll(Arrays.asList(actions));
+                try {
+                    Action[] actions = assertion.meta().get(AssertionMetadata.GLOBAL_ACTIONS);
+                    if (actions != null) {
+                        menuActions.addAll(Arrays.asList(actions));
+                    }
+                } catch (Exception e) {
+                    log.log(Level.WARNING, "Exception while initializing global actions for assertion " + assertion.toString() + ": " + ExceptionUtils.getMessage(e), e);
                 }
             }
         }
@@ -3845,12 +3853,26 @@ public class MainWindow extends JFrame implements SheetHolder {
                         @Override
                         public void run() {
                             getStatusMsgLeft().setText(message);
-                            initalizeWorkspace();
-                            toggleConnectedMenus(true);
-                            homeAction.actionPerformed(null);
-                            MainWindow.this.
-                                    setInactivitiyTimeout(timeout);
-                            MainWindow.this.fireConnected();
+                            boolean success = false;
+                            try {
+                                initalizeWorkspace();
+                                toggleConnectedMenus(true);
+                                homeAction.actionPerformed(null);
+                                MainWindow.this.
+                                        setInactivitiyTimeout(timeout);
+                                MainWindow.this.fireConnected();
+                                success = true;
+                            } finally {
+                                if (!success) {
+                                    SwingUtilities.invokeLater(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            MainWindow.this.fireDisconnected();
+                                            enableOrDisableConnectionComponents(true);
+                                        }
+                                    });
+                                }
+                            }
                         }
                     });
 
