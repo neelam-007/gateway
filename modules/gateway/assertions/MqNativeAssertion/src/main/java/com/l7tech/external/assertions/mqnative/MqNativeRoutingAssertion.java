@@ -26,8 +26,6 @@ import com.l7tech.server.util.EntityUseUtils.EntityUse;
 import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import javax.inject.Inject;
 import java.util.Map;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
