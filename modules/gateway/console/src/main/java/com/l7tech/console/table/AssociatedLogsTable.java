@@ -148,7 +148,6 @@ public class AssociatedLogsTable extends JTable {
                 if (isLarge(origMessageText, true)) {
                     JLabel textLabel = new JLabel(escapedMessageText, SwingConstants.LEFT);
                     textLabel.setPreferredSize(new Dimension(columnModel.getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX).getWidth() - 45, 25));
-
                     messageRenderComponent.setBackground(comp.getBackground());
                     messageRenderComponent.setBorder(comp.getBorder());
 
@@ -157,6 +156,14 @@ public class AssociatedLogsTable extends JTable {
                     messagePane.setLayout(new BorderLayout());
                     messagePane.add(textLabel, BorderLayout.WEST);
                     messagePane.add(messageRenderComponent, BorderLayout.EAST);
+                    comp = messagePane;
+                } else {
+                    JLabel textLabel = new JLabel(escapedMessageText, SwingConstants.LEFT);
+
+                    JPanel messagePane = new JPanel();
+                    messagePane.setBackground(comp.getBackground());
+                    messagePane.setLayout(new BorderLayout());
+                    messagePane.add(textLabel, BorderLayout.WEST);
                     comp = messagePane;
                 }
 
