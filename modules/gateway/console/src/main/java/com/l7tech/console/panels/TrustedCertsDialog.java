@@ -68,7 +68,7 @@ public class TrustedCertsDialog extends JDialog {
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final CertSearchPanel sp = new CertSearchPanel(TrustedCertsDialog.this, false, true);
+                final CertSearchPanel sp = new CertSearchPanel(TrustedCertsDialog.this, false, false);
                 sp.addCertListener(new CertListener() {
                     @Override
                     public void certSelected(CertEvent ce) {

@@ -57,7 +57,9 @@ public class CertSearchPanel extends JDialog {
 
     private final static String STARTS_WITH = "Starts with";
     private final static String EQUALS = "Equals";
-    private final static int SEARCH_SELECTION_STARTS_WITH = 0;
+    private final static String CONTAINS = "Contains";
+    private final static int SEARCH_SELECTION_EQUALS_WITH = 1;
+    private final static int SEARCH_SELECTION_CONTAINS_WITH = 2;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertSearchPanel.class.getName());
@@ -109,8 +111,8 @@ public class CertSearchPanel extends JDialog {
 
         descriptionLabel.setText(resources.getString(getPrefix(keyRequired) + "cert.search.dialog.description") + ":");
 
-        subjectSearchComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { STARTS_WITH, EQUALS }));
-        issuerSearchComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { STARTS_WITH, EQUALS }));
+        subjectSearchComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { STARTS_WITH, EQUALS, CONTAINS }));
+        issuerSearchComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { STARTS_WITH, EQUALS, CONTAINS }));
 
         if (trustedCertTable == null) {
             trustedCertTable = new TrustedCertsTable();
@@ -314,7 +316,7 @@ public class CertSearchPanel extends JDialog {
     }
 
     private Collection<RevocationCheckPolicy> getRevocationCheckPolicies() throws FindException {
-         Collection<RevocationCheckPolicy> policies = revocationCheckPolicies;
+        Collection<RevocationCheckPolicy> policies = revocationCheckPolicies;
 
         if ( revocationCheckPolicies == null ) {
             policies = loadRevocationCheckPolicies();
@@ -353,14 +355,20 @@ public class CertSearchPanel extends JDialog {
         return certList;
     }
 
-    private boolean textMatches(JTextComponent tc, boolean fullMatch, Collection<String> values) {
+    private boolean textMatches(JTextComponent tc, int matchStyle, Collection<String> values) {
         String text = tc.getText().trim();
         if (text.length() < 1)
             return true;
 
         for (String value : values) {
-            if (TextUtils.matches(text, value, false, fullMatch))
-                return true;
+            if (matchStyle == SEARCH_SELECTION_CONTAINS_WITH) {
+                if (value.contains(text)) return true;
+                else continue;
+            } else {
+                boolean fullMatch = matchStyle == SEARCH_SELECTION_EQUALS_WITH;
+                if (TextUtils.matches(text, value, false, fullMatch))
+                    return true;
+            }
         }
 
         return false;
@@ -378,11 +386,8 @@ public class CertSearchPanel extends JDialog {
         Collection<String> subjectNames = CertUtils.extractCommonNamesFromCertificate(cert);
         Collection<String> issuerNames = CertUtils.extractIssuerNamesFromCertificate(cert);
 
-        boolean subjectFullMatch = subjectSearchComboBox.getSelectedIndex() != SEARCH_SELECTION_STARTS_WITH;
-        boolean issuerFullMatch = issuerSearchComboBox.getSelectedIndex() != SEARCH_SELECTION_STARTS_WITH;
-
-        return textMatches(subjectNameTextField, subjectFullMatch, subjectNames) &&
-               textMatches(issuerNameTextField, issuerFullMatch, issuerNames);
+        return textMatches(subjectNameTextField, subjectSearchComboBox.getSelectedIndex(), subjectNames) &&
+               textMatches(issuerNameTextField, issuerSearchComboBox.getSelectedIndex(), issuerNames);
     }
 
     /**
