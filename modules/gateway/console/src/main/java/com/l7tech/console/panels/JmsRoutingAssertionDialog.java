@@ -231,10 +231,14 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         contentPane.setLayout(new BorderLayout());
         contentPane.add(mainPanel, BorderLayout.CENTER);
 
+        dynamicDestPasswordWarning.setVisible(false);
+        dynamicJndiPasswordWarning.setVisible(false);
         queueComboBox.setModel(new DefaultComboBoxModel(getQueueItems()));
         queueComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
+                dynamicDestPasswordWarning.setVisible(false);
+                dynamicJndiPasswordWarning.setVisible(false);
                 populateDynamicPropertyFields();
                 applyDynamicAssertionPropertyOverrides();
             }
@@ -610,8 +614,8 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 if (destinationPassword == null || !"".equals(destinationPassword)) {
                     dynamicDestPassword.setEnabled(false);
                     showDynamicDestPassword.setEnabled(false);
-                    dynamicDestPasswordWarning.setVisible(false);
                 } else {
+                    dynamicDestPasswordWarning.setVisible(true);
                     PasswordGuiUtils.configureOptionalSecurePasswordField(dynamicDestPassword, showDynamicDestPassword, dynamicDestPasswordWarning);
                 }
 
@@ -643,8 +647,8 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 if (jndiPassword == null || !"".equals(jndiPassword)){
                     dynamicJndiPassword.setEnabled(false);
                     showDynamicJndiPassword.setEnabled(false);
-                    dynamicJndiPasswordWarning.setVisible(false);
                 } else {
+                    dynamicJndiPasswordWarning.setVisible(true);
                     PasswordGuiUtils.configureOptionalSecurePasswordField(dynamicJndiPassword, showDynamicJndiPassword, dynamicJndiPasswordWarning);
                 }
 
