@@ -1,28 +1,39 @@
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.common.http.GenericHttpHeader;
+import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.DefaultSyntaxErrorHandler;
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.audit.TestAudit;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
+import com.l7tech.message.HttpRequestKnobStub;
 import com.l7tech.message.JmsKnobStub;
 import com.l7tech.message.Message;
+import com.l7tech.security.token.OpaqueSecurityToken;
+import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.management.config.monitoring.Header;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.springframework.test.context.TestExecutionListeners;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -30,6 +41,9 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 public class MessageSelectorTest {
+
+    private static final Logger logger = Logger.getLogger(MessageSelectorTest.class.getName());
+    private static final Audit audit = new LoggingAudit(logger);
     private MessageSelector selector;
     private Message message;
     private JmsKnobStub jmsKnob;
@@ -172,5 +186,51 @@ public class MessageSelectorTest {
 
         final Object[] selectedValue = (Object[]) selection.getSelectedValue();
         assertEquals(0, selectedValue.length);
+    }
+
+    @Test
+    public void testMultiValue() {
+        PolicyEnforcementContext c = PolicyEnforcementContextFactory.createPolicyEnforcementContext(message, message);
+        AuthenticationContext ac = c.getAuthenticationContext(message);
+        User user1 = new UserBean(123, "Tester1");
+        User user2 = new UserBean(123, "Tester2");
+        AuthenticationResult ar1 = new AuthenticationResult( user1, new OpaqueSecurityToken());
+        AuthenticationResult ar2 = new AuthenticationResult( user2, new OpaqueSecurityToken());
+        ac.addAuthenticationResult(ar1);
+        ac.addAuthenticationResult(ar2);
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "authenticatedusers", handler, false);
+        assertEquals(user2.getName(), ((String[])selection.getSelectedValue())[1]);
+        assertEquals(ac.getAllAuthenticationResults().size(), ((String[])selection.getSelectedValue()).length);
+
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("request", message);
+        }};
+
+        assertEquals("Tester1, Tester2", ExpandVariables.process("${request.authenticatedusers}", vars, audit));
+        assertEquals("", ExpandVariables.process("${request.authenticatedusers.0}", vars, audit));
+        assertEquals("", ExpandVariables.process("${request.authenticatedusers.0.login}", vars, audit));
+        //Should return the last authentication result
+        assertEquals(user2.getName(), ExpandVariables.process("${request.authenticateduser}", vars, audit));
+        assertEquals(user1.getName(), ExpandVariables.process("${request.authenticateduser.0}", vars, audit));
+        assertEquals("", ExpandVariables.process("${request.authenticateduser.0.login}", vars, audit));
+        assertEquals(user2.getName(), ExpandVariables.process("${request.authenticateduser.1}", vars, audit));
+        assertEquals(user2.getName(), ExpandVariables.process("${request.authenticateduser.login}", vars, audit));
+
+        List<HttpHeader> headers = new ArrayList<HttpHeader>();
+        HttpHeader h1 = new GenericHttpHeader(new Header("h1", "h1value"));
+        HttpHeader h12 = new GenericHttpHeader(new Header("h1", "h12value"));
+        HttpHeader h2 = new GenericHttpHeader(new Header("h2", "h2value"));
+        headers.add(h1);
+        headers.add(h12);
+        headers.add(h2);
+
+        HttpRequestKnobStub rk = new HttpRequestKnobStub(headers);
+
+        message.attachHttpRequestKnob(rk);
+
+        assertEquals("h1, h1, h2", ExpandVariables.process("${request.http.headernames}", vars, audit));
+        assertEquals("h1:h1value, h12value, h1:h1value, h12value, h2:h2value", ExpandVariables.process("${request.http.allheaderValues}", vars, audit));
+        assertEquals("h1value, h12value", ExpandVariables.process("${request.http.headerValues.h1}", vars, audit));
+
     }
 }

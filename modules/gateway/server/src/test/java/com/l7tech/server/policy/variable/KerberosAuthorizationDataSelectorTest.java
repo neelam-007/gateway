@@ -1,5 +1,7 @@
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.policy.variable.Syntax;
 
 import com.l7tech.util.HexUtils;
@@ -18,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -34,6 +37,9 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class KerberosAuthorizationDataSelectorTest {
+
+    private static final Logger logger = Logger.getLogger(KerberosAuthorizationDataSelectorTest.class.getName());
+    private static final Audit audit = new LoggingAudit(logger);
 
     private static final String USER_ONE = "userOne";
     private static final String USER_ONE_DISPLAY_NAME = "User One";
@@ -184,5 +190,13 @@ public class KerberosAuthorizationDataSelectorTest {
     @Test
     public void testGetContextObjectClass() throws Exception {
         assertTrue(fixture.getContextObjectClass() == KerberosEncData.class);
+    }
+
+    @Test
+    public void testSelectorWithExpandVariables() throws Exception {
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("kerberos.data", mockData);
+        }};
+        assertEquals(Integer.toString(SERVER_SIGNATURE_TYPE), ExpandVariables.process("${kerberos.data.authorizations.0.pac.server.signature.type}", vars, audit));
     }
 }
