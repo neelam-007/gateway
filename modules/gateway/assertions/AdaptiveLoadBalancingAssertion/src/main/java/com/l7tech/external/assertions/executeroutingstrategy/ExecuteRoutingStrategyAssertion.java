@@ -25,9 +25,6 @@ public class ExecuteRoutingStrategyAssertion extends AbstractAdaptiveLoadBalanci
     public static final String CURRENT_FEEDBACK = ".current";
 
     public static final String FEEDBACK_ROUTE = ".route";
-    public static final String FEEDBACK_LATENCY = ".latency";
-    public static final String FEEDBACK_STATUS = ".status";
-    public static final String FEEDBACK_REASONCODE = ".reasonCode";
 
     private String route = DEFAULT_ROUTE;
     private String feedback = DEFAULT_FEEDBACK;
@@ -66,11 +63,6 @@ public class ExecuteRoutingStrategyAssertion extends AbstractAdaptiveLoadBalanci
         return new VariableMetadata[]{
                 new VariableMetadata(route, false, false, null, false, DataType.STRING),
                 new VariableMetadata(feedback, false, true, null, false, DataType.UNKNOWN),
-                new VariableMetadata(feedback + CURRENT_FEEDBACK  , true, false, null, false, DataType.STRING),
-                new VariableMetadata(feedback + CURRENT_FEEDBACK + FEEDBACK_ROUTE  , false, false, null, false, DataType.STRING),
-                new VariableMetadata(feedback + CURRENT_FEEDBACK + FEEDBACK_LATENCY  , false, false, null, false, DataType.STRING),
-                new VariableMetadata(feedback + CURRENT_FEEDBACK + FEEDBACK_STATUS  , false, false, null, false, DataType.STRING),
-                new VariableMetadata(feedback + CURRENT_FEEDBACK + FEEDBACK_REASONCODE  , false, false, null, false, DataType.STRING),
         };
     }
 

@@ -7,10 +7,12 @@ import com.l7tech.external.assertions.processroutingstrategyresult.ProcessRoutin
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,6 +27,20 @@ import java.util.Map;
 public class ServerProcessRoutingStrategyResultAssertion extends AbstractServerAssertion<ProcessRoutingStrategyResultAssertion> {
 
     private static final int FAILED = -1;
+    private static final int UNDEFINED_REASON_CODE = -5;
+    private static final Functions.Unary<Integer, String> parseInt = new Functions.Unary<Integer, String>(){
+        @Override
+        public Integer call(String s) {
+            return Integer.valueOf(s);
+        }
+    };
+    private static final Functions.Unary<Long, String> parseLong = new Functions.Unary<Long, String>() {
+        @Override
+        public Long call(String s) {
+            return Long.valueOf(s);
+        }
+    };
+
     private final String[] variablesUsed;
 
     public ServerProcessRoutingStrategyResultAssertion(final ProcessRoutingStrategyResultAssertion assertion) throws PolicyAssertionException {
@@ -54,32 +70,24 @@ public class ServerProcessRoutingStrategyResultAssertion extends AbstractServerA
         }
         List<Feedback> feedbacks = (List<Feedback>) varMap.get(assertion.getFeedback());
 
-
-        Long latency = 0L;
-        if(varMap.containsKey(assertion.getFeedbackLatency())){
-            try {
-                latency = Long.valueOf((String)varMap.get(assertion.getFeedbackLatency()));
-            } catch (NumberFormatException e) {
-                logAndAudit(AssertionMessages.ADAPTIVE_LOAD_BALANCING_WRONG_VAR_TYPE, new String[]{assertion.getFeedbackLatency()}, ExceptionUtils.getDebugException(e));
-                return AssertionStatus.FALSIFIED;
+        Long latency = objectToNumber(Long.class,  varMap.get(assertion.getFeedbackLatency()), 0L, parseLong, new Functions.UnaryVoid<Throwable>() {
+            @Override
+            public void call(Throwable t) {
+                logAndAudit(AssertionMessages.ADAPTIVE_LOAD_BALANCING_WRONG_VAR_TYPE, new String[]{assertion.getFeedbackLatency()}, ExceptionUtils.getDebugException(t));
             }
-        }
-
-        Integer status = 0;
-        if(varMap.containsKey(assertion.getFeedbackStatus()) && varMap.get(assertion.getFeedbackStatus()) instanceof Integer){
-            status =  (Integer) varMap.get(assertion.getFeedbackStatus());
-        }
-
-
-        Integer reasonCode = 0;
-        if(varMap.containsKey(assertion.getReasonCode())) {
-            try {
-                reasonCode = Integer.valueOf((String)varMap.get(assertion.getReasonCode()));
-            } catch (NumberFormatException e) {
-                logAndAudit(AssertionMessages.ADAPTIVE_LOAD_BALANCING_WRONG_VAR_TYPE, new String[]{assertion.getReasonCode()}, ExceptionUtils.getDebugException(e));
-                return AssertionStatus.FALSIFIED;
+        });
+        Integer status = objectToNumber(Integer.class, varMap.get(assertion.getFeedbackStatus()), FAILED, parseInt, new Functions.UnaryVoid<Throwable>() {
+            @Override
+            public void call(Throwable t) {
+                logAndAudit(AssertionMessages.ADAPTIVE_LOAD_BALANCING_WRONG_VAR_TYPE, new String[]{assertion.getFeedbackStatus()}, ExceptionUtils.getDebugException(t));
             }
-        }
+        });
+        Integer reasonCode = objectToNumber(Integer.class, varMap.get(assertion.getReasonCode()), UNDEFINED_REASON_CODE, parseInt, new Functions.UnaryVoid<Throwable>() {
+            @Override
+            public void call(Throwable t) {
+                logAndAudit(AssertionMessages.ADAPTIVE_LOAD_BALANCING_WRONG_VAR_TYPE, new String[]{assertion.getReasonCode()}, ExceptionUtils.getDebugException(t));
+            }
+        });
 
         Feedback fb = new Feedback(latency, reasonCode, route.getName(), status);
         feedbacks.add(fb);
@@ -93,6 +101,25 @@ public class ServerProcessRoutingStrategyResultAssertion extends AbstractServerA
         fs.reportContent(context, fb);
 
         return AssertionStatus.NONE;
+    }
+
+    @Nullable
+    private static <T extends Number> T objectToNumber(@NotNull final Class<T> type, @Nullable final Object val, @Nullable final T defaultVal, @NotNull final Functions.Unary<T, String> parseFunc, @Nullable Functions.UnaryVoid<Throwable> loggingFunc) {
+        if(val != null) {
+            if(val.getClass().isAssignableFrom(type)) {
+               return (T)val;
+            }
+            else if(val instanceof String) {
+                try{
+                    return parseFunc.call((String)val);
+                } catch (Throwable e) {
+                    //logging can be suppressed
+                    if(loggingFunc != null)
+                        loggingFunc.call(e);
+                }
+            }
+        }
+        return defaultVal;
     }
 
 

@@ -70,7 +70,7 @@ public class ServerProcessRoutingStrategyResultAssertionTest {
         peCtx.setVariable(STRATEGY, strategy);
         peCtx.setVariable(ROUTE, service);
         peCtx.setVariable(FEEDBACK, new ArrayList<Feedback>());
-        peCtx.setVariable(LATENCY, "1000");
+        peCtx.setVariable(LATENCY, 1000L);
         peCtx.setVariable(STATUS, 0);
         peCtx.setVariable(FEEDBACK_ROUTE, service);
         peCtx.setVariable(REASON_CODE, "100");
@@ -134,10 +134,7 @@ public class ServerProcessRoutingStrategyResultAssertionTest {
     }
 
     @Test
-    public void testNoLatencyAndStatusAndReasonCode() throws Exception {
-        //peCtx.setVariable(LATENCY, null);
-        //peCtx.setVariable(STATUS, null);
-        //peCtx.setVariable(REASON_CODE, null);
+    public void testLatencyAndStatusAndReasonCodeNotDefined() throws Exception {
         PolicyEnforcementContext peCtx = makeContext();
         FailoverStrategy strategy = new RoundRobinFailoverStrategy<Service>(new Service[]{SERVER1, SERVER2});
         Service service = (Service) strategy.selectService();
@@ -154,8 +151,31 @@ public class ServerProcessRoutingStrategyResultAssertionTest {
         List<Feedback> feedbacks = (List<Feedback>) peCtx.getVariable(FEEDBACK);
         Assert.assertEquals(1, feedbacks.size());
         Assert.assertEquals(0, feedbacks.get(0).getLatency());
-        Assert.assertEquals(0, feedbacks.get(0).getStatus());
-        Assert.assertEquals(0, feedbacks.get(0).getReasonCode());
+        Assert.assertEquals(-1, feedbacks.get(0).getStatus());
+        Assert.assertEquals(-5, feedbacks.get(0).getReasonCode());
+        Assert.assertEquals(SERVER1.getName(), feedbacks.get(0).getRoute());
+    }
+
+    @Test
+    public void testNoLatencyAndStatusAndReasonCode() throws Exception {
+        PolicyEnforcementContext peCtx = makeContext();
+        FailoverStrategy strategy = new RoundRobinFailoverStrategy<Service>(new Service[]{SERVER1, SERVER2});
+        Service service = (Service) strategy.selectService();
+        peCtx.setVariable(STRATEGY, strategy);
+        peCtx.setVariable(ROUTE, service);
+        peCtx.setVariable(FEEDBACK, new ArrayList<Feedback>());
+        peCtx.setVariable(FEEDBACK_ROUTE, service);
+
+        ServerAssertion sass = serverPolicyFactory.compilePolicy(assertion, false);
+        AssertionStatus result = sass.checkRequest(peCtx);
+        assertEquals(AssertionStatus.NONE, result);
+        assertNotNull(peCtx.getVariable(ROUTE));
+        assertNotNull(peCtx.getVariable(FEEDBACK));
+        List<Feedback> feedbacks = (List<Feedback>) peCtx.getVariable(FEEDBACK);
+        Assert.assertEquals(1, feedbacks.size());
+        Assert.assertEquals(0, feedbacks.get(0).getLatency());
+        Assert.assertEquals(-1, feedbacks.get(0).getStatus());
+        Assert.assertEquals(-5, feedbacks.get(0).getReasonCode());
         Assert.assertEquals(SERVER1.getName(), feedbacks.get(0).getRoute());
     }
 

@@ -49,4 +49,13 @@ public class Feedback {
         this.status = status;
     }
 
+    @Override
+    public String toString() {
+        return "Feedback{" +
+                "latency=" + latency +
+                ", reasonCode=" + reasonCode +
+                ", route='" + route + '\'' +
+                ", status=" + status +
+                '}';
+    }
 }
