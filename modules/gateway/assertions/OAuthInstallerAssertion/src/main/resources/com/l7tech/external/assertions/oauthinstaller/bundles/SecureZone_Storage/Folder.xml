@@ -8,6 +8,10 @@
                version="0">
         <l7:Name>OAuthClientStore</l7:Name>
     </l7:Folder>
+    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="123600911" id="82837523"
+               version="0">
+        <l7:Name>OAuthSessionStore</l7:Name>
+    </l7:Folder>
     <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="123600896" id="123600911"
                version="1">
         <l7:Name>SecureZone - Storage</l7:Name>

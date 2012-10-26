@@ -4336,7 +4336,7 @@
         </l7:Resources>
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="76054556" version="4">
-        <l7:ServiceDetail folderId="123600911" id="76054556" version="4">
+        <l7:ServiceDetail folderId="82837523" id="76054556" version="4">
             <l7:Name>oauth/session</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -4451,6 +4451,17 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="perform cleanup"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:PolicyGuid stringValue="211ed09a-b162-49fa-8559-7d6b157f4e16"/&gt;
+                    &lt;/L7p:Include&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:AllowGet booleanValue="true"/&gt;
@@ -5055,22 +5066,9 @@
                     &lt;L7p:FalseAssertion/&gt;
                     &lt;/wsp:All&gt;
                     &lt;/wsp:OneOrMore&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=""/&gt;
-                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=""/&gt;
-                    &lt;L7p:VariableToSet stringValue="now"/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:JdbcQuery&gt;
-                    &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
-                    &lt;L7p:QueryName stringValue="Delete expired sessions"/&gt;
-                    &lt;L7p:SqlQuery stringValue="delete from oauth_session where expiration &amp;lt;= ${now.millis};"/&gt;
-                    &lt;L7p:VariablePrefix stringValue="deleteExpired"/&gt;
-                    &lt;/L7p:JdbcQuery&gt;
-                    &lt;L7p:AuditDetailAssertion&gt;
-                    &lt;L7p:Detail stringValue="${deleteExpired.queryresult.count} expired sessions deleted."/&gt;
-                    &lt;/L7p:AuditDetailAssertion&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="211ed09a-b162-49fa-8559-7d6b157f4e16"/&gt;
+                    &lt;/L7p:Include&gt;
                     &lt;L7p:HardcodedResponse&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
                     &lt;L7p:Properties mapValue="included"&gt;

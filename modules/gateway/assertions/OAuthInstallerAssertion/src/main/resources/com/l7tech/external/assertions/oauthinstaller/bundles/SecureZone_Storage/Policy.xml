@@ -207,4 +207,54 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="211ed09a-b162-49fa-8559-7d6b157f4e16"
+               id="82968620" version="2">
+        <l7:PolicyDetail folderId="82837523" guid="211ed09a-b162-49fa-8559-7d6b157f4e16" id="82968620" version="2">
+            <l7:Name>Delete Expired Sessions</l7:Name>
+            <l7:PolicyType>Include</l7:PolicyType>
+            <l7:Properties>
+                <l7:Property key="revision">
+                    <l7:LongValue>3</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:PolicyDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Deletes all expired sessions from oauth_session"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue=""/&gt;
+                    &lt;L7p:VariableToSet stringValue="now"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:JdbcQuery&gt;
+                    &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
+                    &lt;L7p:QueryName stringValue="Delete expired sessions"/&gt;
+                    &lt;L7p:SqlQuery stringValue="delete from oauth_session where expiration &amp;lt;= ${now.millis};"/&gt;
+                    &lt;L7p:VariablePrefix stringValue="deleteExpired"/&gt;
+                    &lt;/L7p:JdbcQuery&gt;
+                    &lt;L7p:AuditDetailAssertion&gt;
+                    &lt;L7p:Detail stringValue="${deleteExpired.queryresult.count} expired sessions deleted."/&gt;
+                    &lt;/L7p:AuditDetailAssertion&gt;
+                    &lt;L7p:ExportVariables&gt;
+                    &lt;L7p:ExportedVars stringArrayValue="included"&gt;
+                    &lt;L7p:item stringValue="deleteExpired.queryresult.count"/&gt;
+                    &lt;/L7p:ExportedVars&gt;
+                    &lt;/L7p:ExportVariables&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Policy>
 </enumeration>
