@@ -121,7 +121,7 @@
                     &lt;L7p:VariableToSet stringValue="content-type"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="PHZhbHVlcz4NCjwvdmFsdWVzPg=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="PHZhbHVlcyB4bWxucz0iaHR0cDovL25zLmw3dGVjaC5jb20vMjAxMi8xMS9vdGstY2xpZW50c3RvcmUiPg0KPC92YWx1ZXM+"/&gt;
                     &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="values"/&gt;
@@ -465,13 +465,13 @@
 
                     &lt;xsl:template match="/values"&gt;
                     &lt;xsl:element name="keys"&gt;
-                    &lt;xsl:element name="{name()}"&gt;
+                    &lt;xsl:element name="{name()}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
                     &lt;xsl:for-each select="descendant::node()[node()][1]/child::node()[node()]"&gt;
                     &lt;xsl:variable name="index"&gt;
                     &lt;xsl:value-of select="position()"/&gt;
                     &lt;/xsl:variable&gt;
-                    &lt;value index="{$index}"&gt;
-                    &lt;xsl:element name="{name()}"&gt;
+                    &lt;value index="{$index}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
+                    &lt;xsl:element name="{name()}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
                     &lt;xsl:value-of select="text()"/&gt;
                     &lt;/xsl:element&gt;
                     &lt;xsl:for-each select="parent::node()/following-sibling::node()[node()]"&gt;
@@ -489,6 +489,7 @@
                     &lt;/L7p:ResourceInfo&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;L7p:TransformName stringValue=""/&gt;
+                    &lt;L7p:XsltVersion stringValue="1.0"/&gt;
                     &lt;/L7p:XslTransformation&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHt2YWx1ZXMubWFpbnBhcnR9"/&gt;
@@ -522,13 +523,13 @@
                     &lt;xsl:output encoding="UTF-8" indent="yes" method="xml"/&gt;
 
                     &lt;xsl:template match="/values"&gt;
-                    &lt;xsl:element name="{name()}"&gt;
+                    &lt;xsl:element name="{name()}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
                     &lt;xsl:for-each select="descendant::node()[node()][1]/child::node()[node()]"&gt;
                     &lt;xsl:variable name="index"&gt;
                     &lt;xsl:value-of select="position()"/&gt;
                     &lt;/xsl:variable&gt;
-                    &lt;value index="{$index}"&gt;
-                    &lt;xsl:element name="{name()}"&gt;
+                    &lt;value index="{$index}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
+                    &lt;xsl:element name="{name()}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
                     &lt;xsl:value-of select="text()"/&gt;
                     &lt;/xsl:element&gt;
                     &lt;xsl:for-each select="parent::node()/following-sibling::node()[node()]"&gt;
@@ -545,6 +546,7 @@
                     &lt;/L7p:ResourceInfo&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;L7p:TransformName stringValue=""/&gt;
+                    &lt;L7p:XsltVersion stringValue="1.0"/&gt;
                     &lt;/L7p:XslTransformation&gt;
                     &lt;/wsp:All&gt;
                     &lt;/wsp:OneOrMore&gt;
@@ -990,20 +992,20 @@
                     &lt;xsl:output encoding="UTF-8" indent="yes" method="xml"/&gt;
 
                     &lt;xsl:template match="/values"&gt;
-                    &lt;xsl:element name="{name()}"&gt;
+                    &lt;xsl:element name="{name()}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
                     &lt;xsl:apply-templates/&gt;
                     &lt;/xsl:element&gt;
                     &lt;/xsl:template&gt;
 
                     &lt;xsl:template match="clients/values"&gt;
-                    &lt;xsl:element name="clients"&gt;
-                    &lt;xsl:element name="{name()}"&gt;
+                    &lt;xsl:element name="clients" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
+                    &lt;xsl:element name="{name()}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
                     &lt;xsl:for-each select="descendant::node()[node()][1]/child::node()[node()]"&gt;
                     &lt;xsl:variable name="index"&gt;
                     &lt;xsl:value-of select="position()"/&gt;
                     &lt;/xsl:variable&gt;
-                    &lt;value index="{$index}"&gt;
-                    &lt;xsl:element name="{name()}"&gt;
+                    &lt;value index="{$index}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
+                    &lt;xsl:element name="{name()}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
                     &lt;xsl:value-of select="text()"/&gt;
                     &lt;/xsl:element&gt;
                     &lt;xsl:for-each select="parent::node()/following-sibling::node()[node()]"&gt;
@@ -1018,7 +1020,7 @@
                     &lt;/xsl:template&gt;
 
                     &lt;xsl:template match="keys"&gt;
-                    &lt;xsl:element name="{name()}"&gt;
+                    &lt;xsl:element name="{name()}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
                     &lt;xsl:copy-of select="*"/&gt;
                     &lt;/xsl:element&gt;
                     &lt;/xsl:template&gt;
@@ -1027,6 +1029,7 @@
                     &lt;/L7p:ResourceInfo&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;L7p:TransformName stringValue=""/&gt;
+                    &lt;L7p:XsltVersion stringValue="1.0"/&gt;
                     &lt;/L7p:XslTransformation&gt;
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -1056,13 +1059,13 @@
                     &lt;xsl:output encoding="UTF-8" indent="yes" method="xml"/&gt;
 
                     &lt;xsl:template match="/values"&gt;
-                    &lt;xsl:element name="{name()}"&gt;
+                    &lt;xsl:element name="{name()}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
                     &lt;xsl:for-each select="descendant::node()[node()][1]/child::node()[node()]"&gt;
                     &lt;xsl:variable name="index"&gt;
                     &lt;xsl:value-of select="position()"/&gt;
                     &lt;/xsl:variable&gt;
-                    &lt;value index="{$index}"&gt;
-                    &lt;xsl:element name="{name()}"&gt;
+                    &lt;value index="{$index}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
+                    &lt;xsl:element name="{name()}" xmlns="http://ns.l7tech.com/2012/11/otk-clientstore"&gt;
                     &lt;xsl:value-of select="text()"/&gt;
                     &lt;/xsl:element&gt;
                     &lt;xsl:for-each select="parent::node()/following-sibling::node()[node()]"&gt;
@@ -1079,6 +1082,7 @@
                     &lt;/L7p:ResourceInfo&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;L7p:TransformName stringValue=""/&gt;
+                    &lt;L7p:XsltVersion stringValue="1.0"/&gt;
                     &lt;/L7p:XslTransformation&gt;
                     &lt;/wsp:All&gt;
                     &lt;/wsp:OneOrMore&gt;

@@ -744,13 +744,13 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final String responseBody = get(CLIENT_IDENT, clientIdentity, "https://" + BASE_URL + ":8443/oauth/clientstore/get");
         final Document document = XmlUtil.parse(responseBody);
         final OAuthClient client = new OAuthClient();
-        client.setClientIdentity(getValue(document, "/values/value/client_ident"));
-        client.setName(getValue(document, "/values/value/name"));
-        client.setType(getValue(document, "/values/value/type"));
-        client.setDescription(getValue(document, "/values/value/description"));
-        client.setOrganization(getValue(document, "/values/value/organization"));
-        client.setRegisteredBy(getValue(document, "/values/value/registered_by"));
-        client.setCreated(getValue(document, "/values/value/created"));
+        client.setClientIdentity(getValue(document, "/ns:values/ns:value/ns:client_ident"));
+        client.setName(getValue(document, "/ns:values/ns:value/ns:name"));
+        client.setType(getValue(document, "/ns:values/ns:value/ns:type"));
+        client.setDescription(getValue(document, "/ns:values/ns:value/ns:description"));
+        client.setOrganization(getValue(document, "/ns:values/ns:value/ns:organization"));
+        client.setRegisteredBy(getValue(document, "/ns:values/ns:value/ns:registered_by"));
+        client.setCreated(getValue(document, "/ns:values/ns:value/ns:created"));
         return client;
     }
 

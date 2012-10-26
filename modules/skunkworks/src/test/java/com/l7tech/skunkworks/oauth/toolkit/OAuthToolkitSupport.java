@@ -5,6 +5,7 @@ import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.NamespaceContextImpl;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.w3c.dom.Document;
@@ -45,6 +46,9 @@ public abstract class OAuthToolkitSupport {
     public void setupSupport() {
         client = new CommonsHttpClient();
         xPath = XPathFactory.newInstance().newXPath();
+        final HashMap<String, String> map = new HashMap<String, String>();
+        map.put("ns", "http://ns.l7tech.com/2012/11/otk-clientstore");
+        xPath.setNamespaceContext(new NamespaceContextImpl(map));
     }
 
     protected void store(final String type, final Map<String, String> parameters) throws Exception {
@@ -153,23 +157,23 @@ public abstract class OAuthToolkitSupport {
         final String responseBody = get(CLIENT_KEY, clientKey, "https://" + BASE_URL + ":8443/oauth/clientstore/getKey");
         final Document document = XmlUtil.parse(responseBody);
         final ClientKey key = new ClientKey();
-        key.setClientIdentity(getValue(document, "/values/value/client_ident"));
-        key.setClientName(getValue(document, "/values/value/client_name"));
-        key.setClientKey(getValue(document, "/values/value/client_key"));
-        key.setSecret(getValue(document, "/values/value/secret"));
-        key.setScope(getValue(document, "/values/value/scope"));
-        key.setCallback(getValue(document, "/values/value/callback"));
-        key.setEnvironment(getValue(document, "/values/value/environment"));
-        key.setExpiration(getValue(document, "/values/value/expiration"));
-        key.setStatus(getValue(document, "/values/value/status"));
-        key.setCreated(getValue(document, "/values/value/created"));
-        key.setCreatedBy(getValue(document, "/values/value/created_by"));
+        key.setClientIdentity(getValue(document, "/ns:values/ns:value/ns:client_ident"));
+        key.setClientName(getValue(document, "/ns:values/ns:value/ns:client_name"));
+        key.setClientKey(getValue(document, "/ns:values/ns:value/ns:client_key"));
+        key.setSecret(getValue(document, "/ns:values/ns:value/ns:secret"));
+        key.setScope(getValue(document, "/ns:values/ns:value/ns:scope"));
+        key.setCallback(getValue(document, "/ns:values/ns:value/ns:callback"));
+        key.setEnvironment(getValue(document, "/ns:values/ns:value/ns:environment"));
+        key.setExpiration(getValue(document, "/ns:values/ns:value/ns:expiration"));
+        key.setStatus(getValue(document, "/ns:values/ns:value/ns:status"));
+        key.setCreated(getValue(document, "/ns:values/ns:value/ns:created"));
+        key.setCreatedBy(getValue(document, "/ns:values/ns:value/ns:created_by"));
         return key;
     }
 
     protected void assertClientKeyDoesNotExist(final String clientKey) throws Exception {
         final String responseBody = get(CLIENT_KEY, clientKey, "https://" + BASE_URL + ":8443/oauth/clientstore/getKey");
-        assertEquals("<values></values>", StringUtils.deleteWhitespace(responseBody));
+        assertEquals("<valuesxmlns=\"http://ns.l7tech.com/2012/11/otk-clientstore\"></values>", StringUtils.deleteWhitespace(responseBody));
     }
 
     protected void assertTokenDoesNotExist(final String token) throws Exception {
@@ -179,6 +183,7 @@ public abstract class OAuthToolkitSupport {
 
     protected void assertTempTokenDoesNotExist(final String token) throws Exception {
         final String responseBody = get(TOKEN, token, "https://" + BASE_URL + ":8443/oauth/tokenstore/getTemp");
+        System.out.println(responseBody);
         assertEquals("<?xmlversion=\"1.0\"encoding=\"UTF-8\"?><valuesxmlns=\"http://ns.l7tech.com/2012/11/otk-tokenstore\"/>", StringUtils.deleteWhitespace(responseBody));
     }
 
