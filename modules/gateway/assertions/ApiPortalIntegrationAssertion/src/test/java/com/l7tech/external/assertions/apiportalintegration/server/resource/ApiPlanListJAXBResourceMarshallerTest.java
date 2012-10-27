@@ -4,20 +4,22 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import static org.junit.Assert.*;
 
 public class ApiPlanListJAXBResourceMarshallerTest {
-    // this is not the EXACT format that jaxb uses by default - jaxb actually adds a colon to the time zone
-    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+
     private DefaultJAXBResourceMarshaller marshaller;
     private ApiPlanListResource planList;
     private List<ApiPlanResource> plans;
+    private final GregorianCalendar calendar = new GregorianCalendar();
 
     @Before
     public void setup() throws Exception {
@@ -90,7 +92,7 @@ public class ApiPlanListJAXBResourceMarshallerTest {
         assertEquals(StringUtils.deleteWhitespace(buildExpectedXml(planList)), StringUtils.deleteWhitespace(xml));
     }
 
-    private String buildExpectedXml(final ApiPlanListResource planList) {
+    private String buildExpectedXml(final ApiPlanListResource planList) throws DatatypeConfigurationException {
         final StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("<l7:ApiPlans xmlns:l7=\"http://ns.l7tech.com/2012/04/api-management\">");
         for (final ApiPlanResource plan : planList.getApiPlans()) {
@@ -103,9 +105,10 @@ public class ApiPlanListJAXBResourceMarshallerTest {
             stringBuilder.append("</l7:PlanName>");
             if (plan.getLastUpdate() != null) {
                 stringBuilder.append("<l7:LastUpdate>");
-                final String formatted = DATE_FORMAT.format(plan.getLastUpdate());
+                calendar.setTime(plan.getLastUpdate());
+                final XMLGregorianCalendar gregorianCalendar = DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar);
+                final String formatted = gregorianCalendar.toString();
                 stringBuilder.append(formatted);
-                stringBuilder.insert(stringBuilder.toString().length() - 2, ":");
                 stringBuilder.append("</l7:LastUpdate>");
             }
             stringBuilder.append("<l7:PlanPolicy>");
