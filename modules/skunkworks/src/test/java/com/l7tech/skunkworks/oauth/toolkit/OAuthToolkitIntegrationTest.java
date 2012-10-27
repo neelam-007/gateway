@@ -521,7 +521,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse response = requestSession("get", params);
         assertEquals(200, response.getStatus());
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
-        assertEquals("<foundxmlns=\"http://ns.l7tech.com/2012/11/otk-session\" />", responseBody);
+        assertEquals("<found xmlns=\"http://ns.l7tech.com/2012/11/otk-session\" />", responseBody);
     }
 
     /**

@@ -67,7 +67,6 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
         });
 
         validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("cache.id.field"), cacheIdField, null);
-
         validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("cache.key.field"), cacheKeyField, new InputValidator.ComponentValidationRule(cacheKeyField) {
             @Override
             public String getValidationError() {
@@ -77,7 +76,6 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
                 return null;
             }
         });
-
         validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entry.age.field"), maxAgeField, new InputValidator.ComponentValidationRule(maxAgeField) {
             @Override
             public String getValidationError() {
@@ -85,11 +83,10 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
                         maxAgeField.getText(), CacheLookupAssertion.MIN_SECONDS_FOR_MAX_ENTRY_AGE, CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE)) {
                     return null;
                 } else {
-                    return "The Maximum age field must be a number between 0 and " + CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE + ".";
+                    return resourceBundle.getString("max.entry.age.field");
                 }
             }
         });
-
         validator.constrainTextField(contentTypeOverride, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
@@ -104,7 +101,6 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
                 }
             }
         });
-
         maxAgeField.setText("86400");
 
         Utilities.setEscKeyStrokeDisposes(this);
