@@ -169,8 +169,11 @@ public class PrivateKeyManagerWindow extends JDialog {
         pack();
         enableOrDisableButtons();
 
-        if (!flags.canReadAll()) {
+        if (!flags.canReadSome()) {
             keyTable.setData(Collections.<KeyTableRow>emptyList());
+        }
+
+        if (!(flags.canUpdateSome() || flags.canCreateSome())) {
             mutableKeystore = null;
         }
 
@@ -713,7 +716,8 @@ public class PrivateKeyManagerWindow extends JDialog {
             hasAtLeastOneMultiRoleKey = false;
             java.util.List<KeyTableRow> keyList = new ArrayList<KeyTableRow>();
             for (KeystoreFileEntityHeader keystore : getTrustedCertAdmin().findAllKeystores(true)) {
-                if (mutableKeystore == null && !keystore.isReadonly()) mutableKeystore = keystore;
+                if (mutableKeystore == null && !keystore.isReadonly())
+                    mutableKeystore = keystore;
                 for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.getOid(), true)) {
                     final KeyTableRow row = new KeyTableRow(keystore, entry, defaultAliasTracker.getSpecialKeyTypes(entry));
                     if (row.isMultiRoleKey())

@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
@@ -27,6 +28,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.l7tech.gateway.common.security.PrivateKeySecured.PreCheck.*;
+import static com.l7tech.gateway.common.security.PrivateKeySecured.ReturnCheck.*;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
 import static com.l7tech.objectmodel.EntityType.*;
 
@@ -228,7 +231,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws FindException if there is a problem getting info from the database
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={NO_PRE_CHECK}, returnCheck=FILTER_RETURN)
     public List<SsgKeyEntry> findAllKeys(long keystoreId, boolean includeRestrictedAccessKeys) throws IOException, CertificateException, FindException;
 
     /**
@@ -241,7 +245,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws KeyStoreException if there is a problem reading a keystore
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    @Secured(stereotype=FIND_ENTITY, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={NO_PRE_CHECK}, returnCheck=CHECK_RETURN)
     public SsgKeyEntry findKeyEntry(String keyAlias, long preferredKeystoreOid) throws FindException, KeyStoreException;
 
     /**
@@ -254,7 +259,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws java.security.cert.CertificateException if there is a problem decoding a certificate
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    @Secured(stereotype=DELETE_MULTI, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.DELETE)
     void deleteKey(long keystoreId, String keyAlias) throws IOException, CertificateException, DeleteException;
 
     /**
@@ -276,7 +282,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws IllegalArgumentException if the keybits or dn are improperly specified
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, returnCheck=NO_RETURN_CHECK)
     JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
 
     /**
@@ -298,7 +305,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws IllegalArgumentException if the curveName is unrecognized or if the dn is improperly specified
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, returnCheck=NO_RETURN_CHECK)
     JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
 
     /**
@@ -313,7 +321,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws FindException if there is a problem getting info from the database
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.READ)
     byte[] generateCSR(long keystoreId, String alias, X500Principal dn, String sigAlg) throws FindException;
 
     /**
@@ -333,7 +342,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws java.security.GeneralSecurityException if there is a problem signing the specified certificate.
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.READ)
     String[] signCSR(long keystoreId, String alias, byte[] csrBytes, X500Principal subjectDn, int expiryDays, String sigAlg, String hashAlg) throws FindException, GeneralSecurityException;
 
     /**
@@ -353,7 +363,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws CertificateException if there is a problem with the PEM chain
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    @Secured(stereotype= SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.UPDATE)
     void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException;
 
     /**
@@ -389,7 +400,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     // TODO need an annotation to note that this methods arguments must never be persisted in any debug or audit traces
     @Transactional(propagation=Propagation.REQUIRED)
-    @Secured(stereotype= SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, returnCheck=NO_RETURN_CHECK)
     SsgKeyEntry importKeyFromKeyStoreFile(long keystoreId,
                                           String alias,
                                           byte[] keyStoreBytes,
@@ -415,7 +427,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws java.security.UnrecoverableKeyException  if the private key for this keystore cannot be exported
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    @Secured(stereotype=DELETE_MULTI, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION, CHECK_ARG_EXPORT_KEY}, argOp=OperationType.READ)
     byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws ObjectNotFoundException, FindException, KeyStoreException, UnrecoverableKeyException;
 
 
@@ -427,7 +440,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws KeyStoreException if there is a problem reading a keystore.
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    @Secured(stereotype=FIND_ENTITY, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={NO_PRE_CHECK}, returnCheck=FILTER_RETURN)
     SsgKeyEntry findDefaultKey(SpecialKeyType keyType) throws KeyStoreException;
 
     /**
@@ -437,7 +451,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @return true if the specified default key type can be changed by editing its cluster property.
      */
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-    @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={CHECK_UPDATE_ALL_KEYSTORES_NONFATAL}, allowNonFatalPreChecks=true)
     boolean isDefaultKeyMutable(SpecialKeyType keyType);
 
     /**
@@ -445,11 +460,12 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      *
      * @param keyType the key type to change.  Required.
      * @param keystoreId the ID of the key store of the private key to be use for the specified role. Required.  Must be a real keystore ID and not a wildcard (-1).
-     * @param alias      the alias of the key entry to export.  Required.  A key with this alias must exist in the specified keystore.
+     * @param alias      the alias of the key entry to designate.  Required.  A key with this alias must exist in the specified keystore.
      * @throws com.l7tech.objectmodel.UpdateException if the default key could not be changed.
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    @Secured(stereotype=DELETE_MULTI, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION, CHECK_UPDATE_ALL_KEYSTORES_NONFATAL}, argOp=OperationType.READ, keystoreOidArg=1, keyAliasArg=2, allowNonFatalPreChecks=false)
     void setDefaultKey(SpecialKeyType keyType, long keystoreId, String alias) throws UpdateException;
 
     /**
@@ -547,6 +563,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws FindException: thrown if there is a problem getting info from the database
      * @throws KeyStoreException: thrown if there is a problem reading the underlying key store.
      */
-    @Secured(stereotype= SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
+    @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.READ)
     boolean isShortSigningKey(long keystoreId, String alias) throws FindException, KeyStoreException;
 }

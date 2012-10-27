@@ -10,11 +10,16 @@ import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.CollectionUpdateFilterer;
+import com.l7tech.util.ExceptionUtils;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -30,11 +35,13 @@ import static com.l7tech.gateway.common.security.rbac.OperationType.*;
  * 
  * @author alex
  */
-public class SecuredMethodInterceptor implements MethodInterceptor {
+public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(SecuredMethodInterceptor.class.getName());
     private final RbacServices rbacServices;
     private final EntityFinder entityFinder;
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
+
+    private ApplicationContext applicationContext;
 
     public SecuredMethodInterceptor(RbacServices rbacServices, EntityFinder entityFinder) {
         this.rbacServices = rbacServices;
@@ -48,6 +55,10 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
                 return SecuredMethodInterceptor.this.filter( entityCollection, user, type, operationName, "internalFilter" );
             }
         };
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
     }
 
     private <CT extends Iterable<T>, T> CT filter(CT iter, User user, OperationType type, String operationName, String methodName) throws FindException {
@@ -121,6 +132,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
 
         final List<Secured> annotations = new ArrayList<Secured>();
         final CheckInfo check;
+        String customInterceptorClassName = null;
         {
             Secured methodSecured = method.getAnnotation(Secured.class);
             if (methodSecured != null) annotations.add(methodSecured);
@@ -145,6 +157,12 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
                 if(checkOtherOperationName == null && !secured.otherOperation().trim().equals("")){  //first in wins
                     checkOtherOperationName = secured.otherOperation();    
                 }
+
+                if (secured.customInterceptor() != null && !secured.customInterceptor().trim().equals("")) {
+                    if (customInterceptorClassName != null)
+                        throw new IllegalStateException("More than one declared @Secured customInterceptorClassName applies to this method");
+                    customInterceptorClassName = secured.customInterceptor();
+                }
             }
 
             if (checkOperation == null && checkStereotype == null) throw new IllegalStateException("Security declaration for " + mname + " does not specify either an operation or a stereotype");
@@ -155,6 +173,10 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
 
         final User user = JaasUtils.getCurrentUser();
         if (user == null) throw new IllegalStateException("Secured method " + mname + " invoked with Subject containing no User principal");
+
+        if (customInterceptorClassName != null) {
+            return invokeWithCustomInterceptor(methodInvocation, user, customInterceptorClassName, target.getClass().getClassLoader());
+        }
 
         switch (check.stereotype) {
             case SAVE_OR_UPDATE:
@@ -378,6 +400,33 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
                         new Object[]{check.operation.name(), ename, mname});
                 return rv;
         }
+    }
+
+    private Object invokeWithCustomInterceptor(@NotNull MethodInvocation methodInvocation, @NotNull User user, @NotNull String customInterceptorClassName, @NotNull ClassLoader classLoader) throws Throwable {
+        final CustomRbacInterceptor ci = findCustomInterceptor(customInterceptorClassName, classLoader);
+        injector().inject(ci);
+        ci.setUser(user);
+        return ci.invoke(methodInvocation);
+    }
+
+    private CustomRbacInterceptor findCustomInterceptor(String customInterceptorClassName, ClassLoader classLoader) {
+        // TODO pool custom interceptor instances to avoid paying for autowiring on every invocation
+        try {
+            final Class<?> interceptorClass = classLoader.loadClass(customInterceptorClassName);
+            if (!CustomRbacInterceptor.class.isAssignableFrom(interceptorClass))
+                throw new ClassCastException("Custom RBAC interceptor is not an instance of CustomRbacInterceptor");
+            return (CustomRbacInterceptor) interceptorClass.newInstance();
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("Custom RBAC interceptor class not found: " + ExceptionUtils.getMessage(e), e);
+        } catch (InstantiationException e) {
+            throw new IllegalStateException("Custom RBAC interceptor class not instantiable: " + ExceptionUtils.getMessage(e), e);
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException("Custom RBAC interceptor class not accessible: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    private Injector injector() {
+        return applicationContext.getBean("injector", Injector.class);
     }
 
     private Object unwrapHeader( final Object rv, final Object preFilter, final CheckInfo check ) {
