@@ -40,8 +40,8 @@
                     &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the implicit grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="aW1wbGljaXQ="/>
-                    &lt;L7p:VariableToSet stringValue="client_page"/>
+                    &lt;L7p:Base64Expression stringValue="aW1wbGljaXQ="/&gt;
+                    &lt;L7p:VariableToSet stringValue="client_page"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
                     &lt;L7p:PolicyGuid stringValue="950d7c13-dcd8-472f-a7ae-2f4d50b8bfdd"/&gt;
@@ -104,8 +104,12 @@
                     &lt;L7p:VariablePrefix stringValue="sessionValue"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/value/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:value/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
@@ -118,8 +122,12 @@
                     &lt;L7p:VariablePrefix stringValue="sessionLocation"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/location/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:location/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
@@ -549,8 +557,8 @@
                     &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the resource owner password credentials grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="cm9wYw=="/>
-                    &lt;L7p:VariableToSet stringValue="client_page"/>
+                    &lt;L7p:Base64Expression stringValue="cm9wYw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="client_page"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
                     &lt;L7p:PolicyGuid stringValue="950d7c13-dcd8-472f-a7ae-2f4d50b8bfdd"/&gt;
@@ -600,8 +608,12 @@
                     &lt;L7p:VariablePrefix stringValue="sessionValue"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/value/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:value/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
@@ -614,8 +626,12 @@
                     &lt;L7p:VariablePrefix stringValue="sessionLocation"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/location/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:location/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
@@ -1109,8 +1125,8 @@
                     &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the authorization code grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="YXV0aGNvZGU="/>
-                    &lt;L7p:VariableToSet stringValue="client_page"/>
+                    &lt;L7p:Base64Expression stringValue="YXV0aGNvZGU="/&gt;
+                    &lt;L7p:VariableToSet stringValue="client_page"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
                     &lt;L7p:PolicyGuid stringValue="950d7c13-dcd8-472f-a7ae-2f4d50b8bfdd"/&gt;
@@ -1178,8 +1194,12 @@
                     &lt;L7p:VariablePrefix stringValue="sessionValue"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/value/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:value/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
@@ -1192,8 +1212,12 @@
                     &lt;L7p:VariablePrefix stringValue="sessionLocation"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/location/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:location/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
@@ -4176,8 +4200,12 @@
                     &lt;L7p:VariablePrefix stringValue="sessionValue"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/value/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:value/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
@@ -4356,8 +4384,12 @@
                     &lt;L7p:VariablePrefix stringValue="sessionValue"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/value/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:value/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
@@ -5018,8 +5050,12 @@
                     &lt;L7p:VariablePrefix stringValue="sessionValue"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/value/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:value/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
@@ -6086,8 +6122,12 @@
                     &lt;L7p:VariablePrefix stringValue="samlValue"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSamlResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/value/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:value/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
@@ -6157,8 +6197,12 @@
                     &lt;L7p:VariablePrefix stringValue="sessionValue"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/value/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:value/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
@@ -6171,8 +6215,12 @@
                     &lt;L7p:VariablePrefix stringValue="sessionLocation"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/location/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:location/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
@@ -6636,8 +6684,8 @@
                     &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the client credentials grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="Y2xpZW50Y3JlZHM="/>
-                    &lt;L7p:VariableToSet stringValue="client_page"/>
+                    &lt;L7p:Base64Expression stringValue="Y2xpZW50Y3JlZHM="/&gt;
+                    &lt;L7p:VariableToSet stringValue="client_page"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
                     &lt;L7p:PolicyGuid stringValue="950d7c13-dcd8-472f-a7ae-2f4d50b8bfdd"/&gt;
@@ -6687,8 +6735,12 @@
                     &lt;L7p:VariablePrefix stringValue="sessionValue"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/value/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:value/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
@@ -6701,8 +6753,12 @@
                     &lt;L7p:VariablePrefix stringValue="sessionLocation"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/found/location/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:location/text()"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="s"/&gt;
                     &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;

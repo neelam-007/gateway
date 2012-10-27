@@ -446,7 +446,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value>OAuthToolkitIntegrationTest</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+        assertEquals("<foundxmlns=\"http://ns.l7tech.com/2012/11/otk-session\"><value>OAuthToolkitIntegrationTest</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
     }
 
     /**
@@ -467,7 +467,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value>OAuthToolkitIntegrationTest</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+        assertEquals("<foundxmlns=\"http://ns.l7tech.com/2012/11/otk-session\"><value>OAuthToolkitIntegrationTest</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
     }
 
     @Test
@@ -521,7 +521,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse response = requestSession("get", params);
         assertEquals(200, response.getStatus());
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
-        assertEquals("<found/>", responseBody);
+        assertEquals("<foundxmlns=\"http://ns.l7tech.com/2012/11/otk-session\" />", responseBody);
     }
 
     /**
@@ -553,7 +553,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value>updated</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+        assertEquals("<foundxmlns=\"http://ns.l7tech.com/2012/11/otk-session\"><value>updated</value><location>cache</location></found>", StringUtils.deleteWhitespace(getResponseBody));
     }
 
     /**
@@ -580,7 +580,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value>OAuthToolkitIntegrationTest</value><location>database</location></found>", StringUtils.deleteWhitespace(getResponseBody));
+        assertEquals("<foundxmlns=\"http://ns.l7tech.com/2012/11/otk-session\"><value>OAuthToolkitIntegrationTest</value><location>database</location></found>", StringUtils.deleteWhitespace(getResponseBody));
     }
 
     @Test
@@ -603,7 +603,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found/>", StringUtils.deleteWhitespace(getResponseBody));
+        assertEquals("<foundxmlns=\"http://ns.l7tech.com/2012/11/otk-session\"/>", StringUtils.deleteWhitespace(getResponseBody));
     }
 
     @Test
@@ -633,7 +633,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value>" + encoded + "</value><location>cache</location></found>",
+        assertEquals("<foundxmlns=\"http://ns.l7tech.com/2012/11/otk-session\"><value>" + encoded + "</value><location>cache</location></found>",
                 StringUtils.deleteWhitespace(getResponseBody));
     }
 
@@ -660,7 +660,7 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
         final GenericHttpResponse getResponse = requestSession("get", getParams);
         assertEquals(200, getResponse.getStatus());
         final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
-        assertEquals("<found><value>" + encoded + "</value><location>database</location></found>",
+        assertEquals("<foundxmlns=\"http://ns.l7tech.com/2012/11/otk-session\"><value>" + encoded + "</value><location>database</location></found>",
                 StringUtils.deleteWhitespace(getResponseBody));
     }
 

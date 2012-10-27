@@ -4902,7 +4902,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:Base64ResponseBody
-                    stringValue="PGZvdW5kPgo8dmFsdWU+JHtlbmNvZGVkfTwvdmFsdWU+Cjxsb2NhdGlvbj5jYWNoZTwvbG9jYXRpb24+CjwvZm91bmQ+"/&gt;
+                    stringValue="PGZvdW5kIHhtbG5zPSJodHRwOi8vbnMubDd0ZWNoLmNvbS8yMDEyLzExL290ay1zZXNzaW9uIj4KPHZhbHVlPiR7ZW5jb2RlZH08L3ZhbHVlPgo8bG9jYXRpb24+Y2FjaGU8L2xvY2F0aW9uPgo8L2ZvdW5kPg=="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
                     &lt;L7p:assertionComment&gt;
@@ -4982,7 +4982,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:Base64ResponseBody
-                    stringValue="PGZvdW5kPgo8dmFsdWU+JHtlbmNvZGVkfTwvdmFsdWU+Cjxsb2NhdGlvbj5kYXRhYmFzZTwvbG9jYXRpb24+CjwvZm91bmQ+"/&gt;
+                    stringValue="PGZvdW5kIHhtbG5zPSJodHRwOi8vbnMubDd0ZWNoLmNvbS8yMDEyLzExL290ay1zZXNzaW9uIj4KPHZhbHVlPiR7ZW5jb2RlZH08L3ZhbHVlPgo8bG9jYXRpb24+ZGF0YWJhc2U8L2xvY2F0aW9uPgo8L2ZvdW5kPg=="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
                     &lt;/wsp:All&gt;
@@ -5027,7 +5027,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody stringValue="PGZvdW5kLz4="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="PGZvdW5kIHhtbG5zPSJodHRwOi8vbnMubDd0ZWNoLmNvbS8yMDEyLzExL290ay1zZXNzaW9uIiAvPg=="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
                     &lt;/wsp:OneOrMore&gt;
