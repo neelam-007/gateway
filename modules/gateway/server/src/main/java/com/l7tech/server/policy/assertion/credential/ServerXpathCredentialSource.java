@@ -130,7 +130,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                     assertion.isRemoveLoginElement(),
                     false); // Login can't be empty
         } catch (Exception e) {
-            logAndAudit(AssertionMessages.XPATHCREDENTIAL_LOGIN_XPATH_FAILED, null, e);
+            logAndAudit(AssertionMessages.XPATHCREDENTIAL_LOGIN_XPATH_FAILED, null, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
 
