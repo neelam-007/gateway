@@ -148,6 +148,9 @@
                     &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Deletes all expired tokens from oauth_token and oauth_initiate"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:JdbcQuery&gt;
