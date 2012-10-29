@@ -1277,8 +1277,7 @@
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="========== Route to Authorization Server to validate the access token
-                    =========="/&gt;
+                    &lt;L7p:Comment stringValue="========== Route to Authorization Server to validate the access token =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
