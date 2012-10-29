@@ -51,4 +51,9 @@ public class Service {
         result = 31 * result + (properties != null ? properties.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }
