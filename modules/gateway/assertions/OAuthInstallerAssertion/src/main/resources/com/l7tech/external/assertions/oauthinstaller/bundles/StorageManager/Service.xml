@@ -186,7 +186,7 @@
                     &lt;xsl:param name="this.app.url"/&gt;
 
                     &lt;xsl:template match="/ns:values"&gt;
-                    &lt;table border="1" style="padding:2px;"&gt;
+                    &lt;table border="1" style="padding:2px; empty-cells: show;"&gt;
                     &lt;tr&gt;
                     &lt;th&gt;index&lt;/th&gt;
                     &lt;xsl:for-each select="ns:value[1][node()]/descendant::node()[not(name()='')]"&gt;
@@ -404,7 +404,7 @@
                     &lt;xsl:param name="this.app.url"/&gt;
 
                     &lt;xsl:template match="/ns:values"&gt;
-                    &lt;table border="1" style="padding:2px;"&gt;
+                    &lt;table border="1" style="padding:2px; empty-cells: show;"&gt;
                     &lt;tr&gt;
                     &lt;th&gt;index&lt;/th&gt;
                     &lt;xsl:for-each select="ns:value[1][node()]/descendant::node()[not(name()='')]"&gt;
@@ -1315,7 +1315,7 @@
                     &lt;xsl:param name="this.app.url"/&gt;
 
                     &lt;xsl:template match="/ns:values"&gt;
-                    &lt;table border="1" style="padding:2px;"&gt;
+                    &lt;table border="1" style="padding:2px; empty-cells: show;"&gt;
                     &lt;tr&gt;
                     &lt;th&gt;index&lt;/th&gt;
                     &lt;xsl:for-each select="ns:value[1][node()]/descendant::node()[not(name()='')]"&gt;
