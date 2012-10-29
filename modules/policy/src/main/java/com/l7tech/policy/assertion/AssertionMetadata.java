@@ -2,9 +2,10 @@ package com.l7tech.policy.assertion;
 
 /**
  * Provides information about an assertions client and server implementation, GUI, policy serialization,
- * validation types, licensing requirements, audit message IDs, and other information.
+ * validation types, licensing requirements, and other information.
  * <p/>
- * Implementations must be threadsafe.
+ * Implementations must be threadsafe, but implementations of various interfaces returned by various properties
+ * queries need only be threadsafe if required by the contract for the property/interface in question.
  *
  * @see DefaultAssertionMetadata DefaultAssertionMetadata, the default implementation
  */
