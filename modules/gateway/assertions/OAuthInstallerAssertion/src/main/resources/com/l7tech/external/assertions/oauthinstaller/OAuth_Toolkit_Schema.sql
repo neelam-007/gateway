@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS oauth_client_key (
   client_key varchar(128) primary key COMMENT 'oauth_consumer_key or client_id',
   secret varchar(128) not null COMMENT 'oauth_consumer_key_secret or client_secret',
   scope varchar(512) not null DEFAULT 'oob' COMMENT 'for oauth2, to be defined by the customer and handled accordingly within the policy',
-  callback varchar(256) not null DEFAULT 'oob' COMMENT 'in oauth2 = redirect_uri, contains one URI',
+  callback varchar(2048) not null DEFAULT 'oob' COMMENT 'in oauth2 = redirect_uri, contains one URI',
   environment varchar(128) not null DEFAULT 'ALL' COMMENT 'COULD BE SOMETHING LIKE Test, Prod, Integration',
   expiration bigint not null DEFAULT 0 COMMENT 'Date until this key is valid',
   status varchar(128) not null COMMENT 'for validation purposes, ENABLED or DISABLED',
