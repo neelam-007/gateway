@@ -107,7 +107,7 @@ class ScopeDialog extends JDialog {
             TableUtil.column("Value", 200, 300, 9999, scopeValueGetter)
         );
 
-        final boolean allowSpecificScope = !EntityType.ANY.equals(entityType) && !EntityType.ID_PROVIDER_CONFIG.equals(entityType);
+        final boolean allowSpecificScope = entityType.isAllowSpecificScope();
         scopeSpecificRadioButton.setEnabled(allowSpecificScope);
         scopeSpecificRadioButton.setVisible(allowSpecificScope);
         specificPanel.setVisible(allowSpecificScope);
@@ -142,8 +142,7 @@ class ScopeDialog extends JDialog {
 
         specificFindButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (EntityType.ANY.equals(entityType) || EntityType.ID_PROVIDER_CONFIG.equals(entityType))
-                    return;
+                if(!entityType.isAllowSpecificScope()) return;
 
                 final FindEntityDialog fed = new FindEntityDialog(ScopeDialog.this, entityType, null);
                 fed.pack();

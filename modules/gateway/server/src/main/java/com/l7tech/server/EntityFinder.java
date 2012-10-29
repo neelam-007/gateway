@@ -27,4 +27,10 @@ public interface EntityFinder {
 
     @Transactional(readOnly=true)
     EntityHeader findHeader(EntityType etype, Serializable pk) throws FindException;
+
+    public class UnsupportedEntityTypeException extends RuntimeException {
+        public UnsupportedEntityTypeException(final String s) {
+            super(s);
+        }
+    }
 }

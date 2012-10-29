@@ -8,89 +8,90 @@ import java.util.Comparator;
  */
 @XmlJavaTypeAdapter(EntityTypeAdapter.class)
 public enum EntityType implements Comparable<EntityType> {
-    ANY("<any>", "Objects", true),
+    ANY("<any>", "Objects", true, false),
 
-    ID_PROVIDER_CONFIG("Identity Provider", true),
-    USER("User", true), // TODO Don't change the string "User", it's in customer databases.
-    GROUP("Group", true), // TODO Don't change the string "Group", it's in customer databases.
-    SERVICE("Published Service", true),
-    SERVICE_ALIAS("Published Service Alias", true),
-    SERVICE_DOCUMENT("Service Document", true),
-    JMS_CONNECTION("JMS Connection", true),
-    JMS_ENDPOINT("JMS Endpoint", true),
-    TRUSTED_CERT("Trusted Certificate", true),
-    REVOCATION_CHECK_POLICY("Revocation Check Policy", true),
-    SSG_KEY_ENTRY("Private Key", "Private Keys", true),
-    SSG_KEYSTORE("Private Key Store", "Private Key Stores", true),
-    ALERT_TRIGGER("Alert Event", false),
-    ALERT_ACTION("Alert Notification", false),
-    SAMPLE_MESSAGE("Sample Message", true),
+    ID_PROVIDER_CONFIG("Identity Provider", true, false),
+    USER("User", true, true), // TODO Don't change the string "User", it's in customer databases.
+    GROUP("Group", true, true), // TODO Don't change the string "Group", it's in customer databases.
+    SERVICE("Published Service", true, true),
+    SERVICE_ALIAS("Published Service Alias", true, true),
+    SERVICE_DOCUMENT("Service Document", true, true),
+    JMS_CONNECTION("JMS Connection", true, true),
+    JMS_ENDPOINT("JMS Endpoint", true, true),
+    TRUSTED_CERT("Trusted Certificate", true, true),
+    REVOCATION_CHECK_POLICY("Revocation Check Policy", true, true),
+    SSG_KEY_ENTRY("Private Key", "Private Keys", true, true),
+    SSG_KEYSTORE("Private Key Store", "Private Key Stores", true, true),
+    ALERT_TRIGGER("Alert Event", false, false),
+    ALERT_ACTION("Alert Notification", false, false),
+    SAMPLE_MESSAGE("Sample Message", true, true),
 
-    POLICY("Policy", true),
-    POLICY_ALIAS("Policy Alias", true),
-    POLICY_VERSION("Policy Version", true),
-    FOLDER("Folder", true),
+    POLICY("Policy", true, true),
+    POLICY_ALIAS("Policy Alias", true, true),
+    POLICY_VERSION("Policy Version", true, true),
+    FOLDER("Folder", true, true),
 
-    MAP_ATTRIBUTE("Attribute Configuration", false),
-    MAP_IDENTITY("Identity Provider Attribute Mapping", false),
-    MAP_TOKEN("Security Token Attribute Mapping", false),
+    MAP_ATTRIBUTE("Attribute Configuration", false, true),
+    MAP_IDENTITY("Identity Provider Attribute Mapping", false, true),
+    MAP_TOKEN("Security Token Attribute Mapping", false, true),
 
-    CLUSTER_PROPERTY("Cluster Property", true),
-    CLUSTER_INFO("Cluster Node Information", "Cluster Node Info Records", true),
-    SERVICE_USAGE("Service Usage Record", true),
-    METRICS_BIN("Service Metrics Bin", true),
+    CLUSTER_PROPERTY("Cluster Property", true, true),
+    CLUSTER_INFO("Cluster Node Information", "Cluster Node Info Records", true, false),
+    SERVICE_USAGE("Service Usage Record", true, false),
+    METRICS_BIN("Service Metrics Bin", true, false),
 
-    RBAC_ROLE("Access Control Role", true),
+    RBAC_ROLE("Access Control Role", true, true),
 
-    AUDIT_MESSAGE("Audit Record (Message)", "Message Audit Records", true),
-    AUDIT_ADMIN("Audit Record (Admin)", "Admin Audit Records", true),
-    AUDIT_SYSTEM("Audit Record (System)", "System Audit Records", true),
-    AUDIT_RECORD("Audit Record <any type>", "Audit Records", true),
+    AUDIT_MESSAGE("Audit Record (Message)", "Message Audit Records", true, false),
+    AUDIT_ADMIN("Audit Record (Admin)", "Admin Audit Records", true, false),
+    AUDIT_SYSTEM("Audit Record (System)", "System Audit Records", true, false),
+    AUDIT_RECORD("Audit Record <any type>", "Audit Records", true, false),
 
-    SSG_CONNECTOR("Listen Port", true),
+    SSG_CONNECTOR("Listen Port", true, true),
 
-    UDDI_REGISTRY("UDDI Registry", true),
+    UDDI_REGISTRY("UDDI Registry", true, true),
 
-    UDDI_PROXIED_SERVICE_INFO("UDDI Proxied Service Info", true),
+    UDDI_PROXIED_SERVICE_INFO("UDDI Proxied Service Info", true, true),
 
-    UDDI_SERVICE_CONTROL("UDDI Service Control", true),
+    UDDI_SERVICE_CONTROL("UDDI Service Control", true, true),
 
-    JDBC_CONNECTION("JDBC Connection", true),
+    JDBC_CONNECTION("JDBC Connection", true, true),
 
-    EMAIL_LISTENER("Email Listener", true),
+    EMAIL_LISTENER("Email Listener", true, true),
 
-    SSG_ACTIVE_CONNECTOR("Polling Listener", true),
+    SSG_ACTIVE_CONNECTOR("Polling Listener", true, true),
 
-    LOG_SINK("Log Sink", true),
+    LOG_SINK("Log Sink", true, true),
 
-    SERVICE_TEMPLATE("Service Template", true),
+    SERVICE_TEMPLATE("Service Template", true, true),
 
-    TRUSTED_ESM("Trusted ESM", true),
-    TRUSTED_ESM_USER("Trusted ESM User", true),
+    TRUSTED_ESM("Trusted ESM", true, true),
+    TRUSTED_ESM_USER("Trusted ESM User", true, true),
 
-    ESM_ENTERPRISE_FOLDER("Folder", false),
-    ESM_SSG_CLUSTER("Cluster", false),
-    ESM_SSG_NODE("Node", false),
-    ESM_STANDARD_REPORT("Report", false),
-    ESM_MIGRATION_RECORD("Migration Record", false),
-    ESM_NOTIFICATION_RULE("Notification Rule", false),
-    ESM_LOG("Log Record", false), // used for ESM log RBAC
-    VALUE_REFERENCE("Value Reference", true), // todo: better way to deal with mappable properties
+    ESM_ENTERPRISE_FOLDER("Folder", false, true),
+    ESM_SSG_CLUSTER("Cluster", false, true),
+    ESM_SSG_NODE("Node", false, true),
+    ESM_STANDARD_REPORT("Report", false, true),
+    ESM_MIGRATION_RECORD("Migration Record", false, true),
+    ESM_NOTIFICATION_RULE("Notification Rule", false, true),
+    ESM_LOG("Log Record", false, true), // used for ESM log RBAC
+    VALUE_REFERENCE("Value Reference", false, false), // todo: better way to deal with mappable properties
 
-    SECURE_PASSWORD("Secure Password", true),
+    SECURE_PASSWORD("Secure Password", true, true),
 
-    HTTP_CONFIGURATION("HTTP Options", true),
-    RESOURCE_ENTRY("Global Resource", true),
-    RESOLUTION_CONFIGURATION("Service Resolution Configuration", true),
-    PASSWORD_POLICY("Password Policy", true),
+    HTTP_CONFIGURATION("HTTP Options", true, true),
+    RESOURCE_ENTRY("Global Resource", true, true),
+    RESOLUTION_CONFIGURATION("Service Resolution Configuration", true, true),
+    PASSWORD_POLICY("Password Policy", true, true),
 
-    GENERIC("Generic Entity", "Generic Entities", true),
+    GENERIC("Generic Entity", "Generic Entities", true, true),
 
     ;
 
     private final String name;
     private final boolean displayedInGui;
     private final String pluralName;
+    private final boolean allowSpecificScope;
 
     public String getName() {
         return name;
@@ -100,7 +101,11 @@ public enum EntityType implements Comparable<EntityType> {
         return pluralName;
     }
 
-    private EntityType(String name, boolean displayInGui) {
+    public boolean isAllowSpecificScope() {
+        return allowSpecificScope;
+    }
+
+    private EntityType(String name, boolean displayInGui, boolean allowSpecificScope) {
         this.name = name;
         if (name.endsWith("y"))
             this.pluralName = name.substring(0, name.length()-1) + "ies";
@@ -110,12 +115,14 @@ public enum EntityType implements Comparable<EntityType> {
             this.pluralName = name + "s";
         }
         this.displayedInGui = displayInGui;
+        this.allowSpecificScope = allowSpecificScope;
     }
 
-    private EntityType(String name, String pluralName, boolean displayedInGui) {
+    private EntityType(String name, String pluralName, boolean displayedInGui, boolean allowSpecificScope) {
         this.name = name;
         this.pluralName = pluralName;
         this.displayedInGui = displayedInGui;
+        this.allowSpecificScope = allowSpecificScope;
     }
 
     public boolean isDisplayedInGui() {

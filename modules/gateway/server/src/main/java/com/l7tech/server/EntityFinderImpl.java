@@ -54,6 +54,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     @Override
     @Transactional(readOnly=true)
     public EntityHeaderSet<EntityHeader> findAll(final Class<? extends Entity> entityClass) throws FindException {
+        if(entityClass == null) throw new IllegalArgumentException("entity class can not be null");
         final EntityType type = EntityType.findTypeByEntity(entityClass);
         try {
             if (EntityType.SSG_KEY_ENTRY == type)
@@ -61,6 +62,8 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             else if (EntityType.SSG_KEYSTORE == type)
                 return findAllKeyStoreHeaders();
             //noinspection unchecked
+            else if(!(PersistentEntity.class.isAssignableFrom(entityClass) || EntityType.USER.equals(type) || EntityType.GROUP.equals(type)))
+                throw new UnsupportedEntityTypeException("The entity type of '" + type.getName() + "' is not supported.");
             else return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<EntityHeaderSet<EntityHeader>>() {
                 @Override
                 public EntityHeaderSet<EntityHeader> doInHibernateReadOnly(Session session) throws HibernateException {
@@ -230,4 +233,5 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         }
         return false;
     }
+
 }
