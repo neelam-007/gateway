@@ -70,7 +70,8 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
                 // this works around issue with Gateway app context creation, there is currently no way of knowing
                 // when it's safe to initialize. Issue is with bean 'wspReader'.
                 configureBeans();
-                return;
+                //noinspection ConstantConditions
+                assert (serverMgmtAssertion != null);
             }
 
             // process event
