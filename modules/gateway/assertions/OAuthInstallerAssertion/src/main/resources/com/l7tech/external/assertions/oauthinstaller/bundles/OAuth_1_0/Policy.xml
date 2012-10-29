@@ -626,6 +626,7 @@
                     &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
                     &lt;L7p:ResponseStatus intValue="400"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
+                    &lt;L7p:FalseAssertion/&gt;
                     &lt;/wsp:All&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
