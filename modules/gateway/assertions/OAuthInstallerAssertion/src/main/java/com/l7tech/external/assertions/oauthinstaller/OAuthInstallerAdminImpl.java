@@ -1,8 +1,9 @@
 package com.l7tech.external.assertions.oauthinstaller;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.bundle.BundleInfo;
@@ -11,6 +12,7 @@ import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
+import com.l7tech.server.event.admin.DetailedAdminEvent;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.PolicyBundleEvent;
@@ -34,11 +36,11 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -127,6 +129,13 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
             public PolicyBundleDryRunResult call() throws Exception {
                 try {
                     return doDryRunOtkInstall(taskIdentifier, otkComponentId, bundleMappings, installationPrefix);
+                } catch (OAuthToolkitInstallationException e) {
+                    final OtkInstallationAuditEvent problemEvent = new OtkInstallationAuditEvent(this, "Problem during pre installation check of the OAuth Toolkit", Level.WARNING);
+                    problemEvent.setAuditDetails(Arrays.asList(
+                            new AuditDetail(AssertionMessages.OTK_INSTALLER_ERROR,
+                                    new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e))));
+                    appEventPublisher.publishEvent(problemEvent);
+                    throw e;
                 } finally {
                     taskToJobContext.remove(taskIdentifier);
                 }
@@ -166,6 +175,13 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
             public ArrayList call() throws Exception {
                 try {
                     return new ArrayList<String>(doInstallOAuthToolkit(taskIdentifier, otkComponentId, folderOid, bundleMappings, installationPrefix));
+                } catch(OAuthToolkitInstallationException e) {
+                    final OtkInstallationAuditEvent problemEvent = new OtkInstallationAuditEvent(this, "Problem during installation of the OAuth Toolkit", Level.WARNING);
+                    problemEvent.setAuditDetails(Arrays.asList(
+                            new AuditDetail(AssertionMessages.OTK_INSTALLER_ERROR,
+                                    new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e))));
+                    appEventPublisher.publishEvent(problemEvent);
+                    throw e;
                 } finally {
                     taskToJobContext.remove(taskIdentifier);
                 }
@@ -427,20 +443,23 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     // - PROTECTED
 
     protected PolicyBundleDryRunResult doDryRunOtkInstall(@NotNull final String taskIdentifier,
-                                                          @NotNull final Collection<String> otkComponentId,
+                                                          @NotNull final Collection<String> otkComponentIds,
                                                           @NotNull final Map<String, BundleMapping> bundleMappings,
                                                           @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
+        final OtkInstallationAuditEvent startedEvent = new OtkInstallationAuditEvent(this, MessageFormat.format(preInstallationMessage, "started"), Level.INFO);
+        appEventPublisher.publishEvent(startedEvent);
+
         final OAuthToolkitBundleResolver bundleResolver = new OAuthToolkitBundleResolver(bundleInfosFromJar);
 
         final HashMap<String, Map<DryRunItem, List<String>>> bundleToConflicts = new HashMap<String, Map<DryRunItem, List<String>>>();
+        final Set<String> processedComponents = new HashSet<String>();
         outer:
-        for (String bundleId : otkComponentId) {
+        for (String bundleId : otkComponentIds) {
             final List<BundleInfo> resultList = bundleResolver.getResultList();
             for (BundleInfo bundleInfo : resultList) {
                 if (bundleInfo.getId().equals(bundleId)) {
                     final JobContext jobContext = taskToJobContext.get(taskIdentifier);
                     if (jobContext.cancelled) {
-                        logger.info("Pre installation check was cancelled.");
                         break outer;
                     }
 
@@ -456,20 +475,69 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                     appEventPublisher.publishEvent(dryRunEvent);
                     if (validateEventProcessed(dryRunEvent)) {
                         // this is logged at fine as it's not as important as only a dry run.
-                        logger.fine("Pre installation check was cancelled.");
                         break outer;
                     }
+
+                    final List<AuditDetail> details = new ArrayList<AuditDetail>();
                     final List<String> urlPatternWithConflict = dryRunEvent.getUrlPatternWithConflict();
-                    final List<String> jdbcConnsThatDontExist = dryRunEvent.getJdbcConnsThatDontExist();
+                    if (!urlPatternWithConflict.isEmpty()) {
+                        details.add(
+                                new AuditDetail(
+                                        AssertionMessages.OTK_DRY_RUN_CONFLICT,
+                                        bundleInfo.getName(),
+                                        "Services",
+                                        urlPatternWithConflict.toString()));
+                    }
+
                     final List<String> policyWithNameConflict = dryRunEvent.getPolicyWithNameConflict();
+                    if (!policyWithNameConflict.isEmpty()) {
+                        details.add(
+                                new AuditDetail(
+                                        AssertionMessages.OTK_DRY_RUN_CONFLICT,
+                                        bundleInfo.getName(),
+                                        "Policies",
+                                        policyWithNameConflict.toString()));
+                    }
+
+                    final List<String> jdbcConnsThatDontExist = dryRunEvent.getJdbcConnsThatDontExist();
+                    if (!jdbcConnsThatDontExist.isEmpty()) {
+                        details.add(
+                                new AuditDetail(
+                                        AssertionMessages.OTK_DRY_RUN_CONFLICT,
+                                        bundleInfo.getName(),
+                                        "Missing JDBC Connections",
+                                        jdbcConnsThatDontExist.toString()));
+                    }
+
                     final Map<DryRunItem, List<String>> itemToConflicts = new HashMap<DryRunItem, List<String>>();
                     itemToConflicts.put(DryRunItem.SERVICES, urlPatternWithConflict);
                     itemToConflicts.put(DryRunItem.POLICIES, policyWithNameConflict);
                     itemToConflicts.put(DryRunItem.JDBC_CONNECTIONS, jdbcConnsThatDontExist);
 
                     bundleToConflicts.put(bundleId, itemToConflicts);
+
+                    // any conflicts found?
+                    if (!details.isEmpty()) {
+                        final OtkInstallationAuditEvent problemEvent =
+                                new OtkInstallationAuditEvent(this,
+                                        MessageFormat.format("OAuth Toolkit pre installation check conflicts for component {0} found.", bundleInfo.getName()),
+                                        Level.INFO);
+                        problemEvent.setAuditDetails(details);
+                        appEventPublisher.publishEvent(problemEvent);
+                    }
+                    processedComponents.add(bundleId);
                 }
             }
+        }
+
+        if (processedComponents.containsAll(otkComponentIds)) {
+            final OtkInstallationAuditEvent stoppedEvent =
+                    new OtkInstallationAuditEvent(this, MessageFormat.format(preInstallationMessage, "completed"), Level.INFO);
+            appEventPublisher.publishEvent(stoppedEvent);
+        } else {
+            final OtkInstallationAuditEvent cancelledEvent =
+                    new OtkInstallationAuditEvent(this, MessageFormat.format(preInstallationMessage, "cancelled"), Level.INFO);
+            appEventPublisher.publishEvent(cancelledEvent);
         }
 
         return new PolicyBundleDryRunResultImpl(bundleToConflicts);
@@ -479,7 +547,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
      * Perform the work of installing the OTK.
      *
      * @param taskIdentifier used to look up the context to see if task has been cancelled.
-     * @param otkComponentId component to install
+     * @param otkComponentIds component to install
      * @param folderOid folder to install component into
      * @param bundleMappings any mappings.
      * @param installationPrefix installation prefix
@@ -488,7 +556,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
      *
      */
     protected List<String> doInstallOAuthToolkit(@NotNull final String taskIdentifier,
-                                                 @NotNull final Collection<String> otkComponentId,
+                                                 @NotNull final Collection<String> otkComponentIds,
                                                  final long folderOid,
                                                  @NotNull Map<String, BundleMapping> bundleMappings,
                                                  @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
@@ -499,17 +567,23 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         final List<String> installedBundles = new ArrayList<String>();
         final OAuthToolkitBundleResolver bundleResolver = new OAuthToolkitBundleResolver(bundleInfosFromJar);
         if (isInstallInProgress.compareAndSet(false, true)) {
+
+            final String prefixToUse = (installationPrefix != null && !installationPrefix.trim().isEmpty()) ?
+                    installationPrefix : null;
+
+            final String prefixMsg = (prefixToUse == null) ? "" : "with installation prefix '" + prefixToUse + "'";
+            final OtkInstallationAuditEvent startedEvent = new OtkInstallationAuditEvent(this, MessageFormat.format(installationMessage, "started", prefixMsg), Level.INFO);
+            appEventPublisher.publishEvent(startedEvent);
+
             try {
-                final String prefixToUse = (installationPrefix != null && !installationPrefix.trim().isEmpty()) ?
-                        installationPrefix : null;
                 bundleResolver.setInstallationPrefix(prefixToUse);
 
+                final Set<String> processedComponents = new HashSet<String>();
                 //iterate through all the bundle names to install
                 outer:
-                for (String bundleId : otkComponentId) {
+                for (String bundleId : otkComponentIds) {
                     final JobContext jobContext = taskToJobContext.get(taskIdentifier);
                     if (jobContext.cancelled) {
-                        logger.info("Installation of the OAuth toolkit was cancelled.");
                         break;
                     }
 
@@ -527,12 +601,21 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
 
                             appEventPublisher.publishEvent(installEvent);
                             if (validateEventProcessed(installEvent)) {
-                                logger.info("Installation of the OAuth toolkit was cancelled.");
                                 break outer;
                             }
+                            processedComponents.add(bundleId);
                         }
                     }
                     installedBundles.add(bundleId);
+                }
+                if (processedComponents.containsAll(otkComponentIds)) {
+                    final OtkInstallationAuditEvent completedEvent =
+                            new OtkInstallationAuditEvent(this, MessageFormat.format(installationMessage, "completed", prefixMsg), Level.INFO);
+                    appEventPublisher.publishEvent(completedEvent);
+                } else {
+                    final OtkInstallationAuditEvent cancelledEvent =
+                            new OtkInstallationAuditEvent(this, MessageFormat.format(installationMessage, "cancelled", prefixMsg), Level.INFO);
+                    appEventPublisher.publishEvent(cancelledEvent);
                 }
 
             } finally {
@@ -548,10 +631,10 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
 
     /**
      * If the valueWithPossibleHost starts with a context variable that begins with 'host_', then update the value
-     * of the string to have the installationPrefix inserted after the varaible reference.
+     * of the string to have the installationPrefix inserted after the variable reference.
      *
      * @param installationPrefix    prefix to insert
-     * @param valueWithPossibleHost value which may need to be udpated in a prefixed installation.
+     * @param valueWithPossibleHost value which may need to be updated in a prefixed installation.
      * @return Updated value. Null if no new value is needed.
      */
     @Nullable
@@ -603,6 +686,14 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         }
     }
 
+    // - PACKAGE
+
+    static class OtkInstallationAuditEvent extends DetailedAdminEvent {
+        public OtkInstallationAuditEvent(final Object source, final String note, final Level level) {
+            super(source, note, level);
+        }
+    }
+
     // - PRIVATE
 
     private final AtomicBoolean isInstallInProgress = new AtomicBoolean(false);
@@ -612,6 +703,8 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     private final ApplicationEventPublisher appEventPublisher;
     private final ExecutorService executorService;
     private final Map<String, JobContext> taskToJobContext = new ConcurrentHashMap<String, JobContext>();
+    private final String installationMessage = "Installation of the OAuth Toolkit {0} {1}";
+    private final String preInstallationMessage = "Pre installation check of the OAuth Toolkit {0}";
 
     @SuppressWarnings("SpringJavaAutowiringInspection")
     @Inject
@@ -698,8 +791,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                 throw new OAuthToolkitInstallationException(processingException);
             }
         }
-
-        return bundleEvent.isCancelled();
+        return Thread.interrupted() || bundleEvent.isCancelled();
 
     }
 

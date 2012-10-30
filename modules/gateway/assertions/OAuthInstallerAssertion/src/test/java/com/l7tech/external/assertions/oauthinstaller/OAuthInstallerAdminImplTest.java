@@ -46,17 +46,23 @@ public class OAuthInstallerAdminImplTest {
     @Test
     public void testValidateSpringRequestsForDryRun() throws Exception {
         final Map<String, Boolean> foundBundles = new HashMap<String, Boolean>();
+        final Set<String> foundAuditEvents = new HashSet<String>();
 
         final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
             @Override
             public void publishEvent(ApplicationEvent applicationEvent) {
+                // note this code will run on a separate thread to the actual test so failures here will not
+                // be reported in junit
 
-                assertTrue(applicationEvent instanceof DryRunInstallPolicyBundleEvent);
+                if (applicationEvent instanceof DryRunInstallPolicyBundleEvent) {
+                    DryRunInstallPolicyBundleEvent dryRunEvent = (DryRunInstallPolicyBundleEvent) applicationEvent;
 
-                DryRunInstallPolicyBundleEvent dryRunEvent = (DryRunInstallPolicyBundleEvent) applicationEvent;
-
-                foundBundles.put(dryRunEvent.getContext().getBundleInfo().getId(), true);
-                dryRunEvent.setProcessed(true);
+                    foundBundles.put(dryRunEvent.getContext().getBundleInfo().getId(), true);
+                    dryRunEvent.setProcessed(true);
+                } else if (applicationEvent instanceof OAuthInstallerAdminImpl.OtkInstallationAuditEvent) {
+                    final OAuthInstallerAdminImpl.OtkInstallationAuditEvent auditEvent = (OAuthInstallerAdminImpl.OtkInstallationAuditEvent) applicationEvent;
+                    foundAuditEvents.add(auditEvent.getNote() + auditEvent.getAuditDetails().toString());
+                }
             }
         });
 
@@ -77,6 +83,15 @@ public class OAuthInstallerAdminImplTest {
 
         assertTrue(foundBundles.containsKey("1c2a2874-df8d-4e1d-b8b0-099b576407e1"));
         assertTrue(foundBundles.containsKey("ba525763-6e55-4748-9376-76055247c8b1"));
+
+        // validate audits
+        assertFalse("OTK Installation audits should have been generated.", foundAuditEvents.isEmpty());
+        for (String foundAuditEvent : foundAuditEvents) {
+            System.out.println(foundAuditEvent);
+        }
+        assertTrue(foundAuditEvents.contains("Pre installation check of the OAuth Toolkit started[]"));
+        assertTrue(foundAuditEvents.contains("Pre installation check of the OAuth Toolkit completed[]"));
+
     }
 
     /**
@@ -85,15 +100,20 @@ public class OAuthInstallerAdminImplTest {
     @Test
     public void testValidateSpringRequestsForInstall() throws Exception {
 
+        final Set<String> foundAuditEvents = new HashSet<String>();
         final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
             @Override
             public void publishEvent(ApplicationEvent applicationEvent) {
+                // note this code will run on a separate thread to the actual test so failures here will not
+                // be reported in junit
 
-                assertTrue("Incorrect type of event published.", applicationEvent instanceof InstallPolicyBundleEvent);
-
-                InstallPolicyBundleEvent installEvent = (InstallPolicyBundleEvent) applicationEvent;
-
-                installEvent.setProcessed(true);
+                if (applicationEvent instanceof InstallPolicyBundleEvent) {
+                    InstallPolicyBundleEvent installEvent = (InstallPolicyBundleEvent) applicationEvent;
+                    installEvent.setProcessed(true);
+                } else if (applicationEvent instanceof OAuthInstallerAdminImpl.OtkInstallationAuditEvent) {
+                    final OAuthInstallerAdminImpl.OtkInstallationAuditEvent auditEvent = (OAuthInstallerAdminImpl.OtkInstallationAuditEvent) applicationEvent;
+                    foundAuditEvents.add(auditEvent.getNote() + auditEvent.getAuditDetails().toString());
+                }
             }
         });
 
@@ -112,6 +132,15 @@ public class OAuthInstallerAdminImplTest {
 
         assertTrue(results.contains("1c2a2874-df8d-4e1d-b8b0-099b576407e1"));
         assertTrue(results.contains("ba525763-6e55-4748-9376-76055247c8b1"));
+
+        // validate audits
+        assertFalse("OTK Installation audits should have been generated.", foundAuditEvents.isEmpty());
+        for (String foundAuditEvent : foundAuditEvents) {
+            System.out.println(foundAuditEvent);
+        }
+        assertTrue(foundAuditEvents.contains("Installation of the OAuth Toolkit completed []"));
+        assertTrue(foundAuditEvents.contains("Installation of the OAuth Toolkit started []"));
+
     }
 
     @Test

@@ -71,7 +71,6 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
                                     String newJdbcConnName);
 
 
-
     /**
      * Dry run the OTK installation.
      * Checks to see if:
@@ -81,18 +80,18 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
      * <li>any referenced jdbc connection does not exist</li>
      * </ul>
      *
-     * @param otkComponentId collection of all bundle ids to dry run
-     * @param bundleMappings Mapping of bundleId to mappings for that bundle. Required.
+     * @param otkComponentId     collection of all bundle ids to dry run
+     * @param bundleMappings     Mapping of bundleId to mappings for that bundle. Required.
      * @param installationPrefix installation prefix. If not null and not empty this value will be prepended to the names
      *                           of all installed policies and the routing URIs of all installed services before checking
      *                           for conflicts of those values.
      * @return Map of component id to a map which is keyed on service, policy, jdbc and assertion, whose values are
-     * the list of items which have conflicts.
+     *         the list of items which have conflicts.
      */
     @NotNull
     JobId<PolicyBundleDryRunResult> dryRunOtkInstall(@NotNull Collection<String> otkComponentId,
-                                                            @NotNull Map<String, BundleMapping> bundleMappings,
-                                                            @Nullable String installationPrefix);
+                                                     @NotNull Map<String, BundleMapping> bundleMappings,
+                                                     @Nullable String installationPrefix);
     /**
      * Install the bundle identified by the supplied name
      *

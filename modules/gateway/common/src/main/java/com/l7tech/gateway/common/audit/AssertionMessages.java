@@ -1190,5 +1190,8 @@ public class AssertionMessages extends Messages {
     public static final M CACHE_STORAGE_ERROR = m(9900, Level.WARNING, "Message cache error: {0}");
     public static final M CACHE_STORAGE_STORED = m(9901, Level.FINE, "Stored to cache: ''{0}''");
 
+    public static final M OTK_INSTALLER_ERROR = m(9920, Level.WARNING, "OTK Installation Problem: {0}");
+    public static final M OTK_DRY_RUN_CONFLICT = m(9921, Level.INFO, "Component {0} conflicts for {1}: {2}");
+
     // Highest ID reserved for AssertionMessages = 99999
 }
