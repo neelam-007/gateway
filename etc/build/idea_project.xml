@@ -61,7 +61,7 @@
         <option name="ADDITIONAL_OPTIONS_STRING" value=""/>
         <option name="MAXIMUM_HEAP_SIZE" value="512"/>
     </component>
-    <component name="ProjectRootManager" version="2" languageLevel="JDK_1_6" assert-keyword="true" jdk-15="true" project-jdk-name=""
+    <component name="ProjectRootManager" version="2" languageLevel="JDK_1_7" assert-keyword="true" jdk-15="true" project-jdk-name=""
                project-jdk-type="JavaSDK">
         <output url="file://$PROJECT_DIR$/{$idea.javac.out}"/>
     </component>

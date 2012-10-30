@@ -7,7 +7,7 @@
     <xsl:param name="data"/> <!-- file containing modules -->
     <xsl:param name="datalibs"/> <!-- file containing ivy module dependencies -->
     <xsl:param name="projectmeta"/> <!-- Javadoc URLs etc for libraries -->    
-    <xsl:param name="idea.jdk">1.6</xsl:param>
+    <xsl:param name="idea.jdk">1.7</xsl:param>
     <xsl:param name="idea.scala">false</xsl:param>
     <xsl:param name="idea.scala.version">2.9.1</xsl:param>
     <xsl:param name="idea.javac.out">idea-classes</xsl:param>
