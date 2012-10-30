@@ -302,6 +302,34 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
         assertTrue(responseBody.contains("Mismatching redirect uri"));
     }
 
+    @Test
+    @BugNumber(13265)
+    public void authorizeMultipleSessionId() throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + BASE_URL +
+                ":8443/auth/oauth/v2/authorize?action=Grant&sessionID=123&sessionID=456"));
+        params.setPasswordAuthentication(passwordAuthentication);
+        params.setSslSocketFactory(getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+        assertEquals(400, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertTrue(responseBody.contains("Invalid request."));
+    }
+
+    @Test
+    @BugNumber(13265)
+    public void authorizeMultipleAction() throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + BASE_URL +
+                ":8443/auth/oauth/v2/authorize?action=Grant&action=Deny&sessionID=123"));
+        params.setPasswordAuthentication(passwordAuthentication);
+        params.setSslSocketFactory(getSSLSocketFactory());
+        final GenericHttpRequest request = client.createRequest(HttpMethod.GET, params);
+        final GenericHttpResponse response = request.getResponse();
+        assertEquals(400, response.getStatus());
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertTrue(responseBody.contains("Invalid request."));
+    }
+
     private String buildAuthorizeUrl(final String clientId, final String responseType, final String callback, final String state) {
         final StringBuilder urlBuilder = new StringBuilder();
         urlBuilder.append("https://").append(BASE_URL);
