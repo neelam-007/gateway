@@ -165,10 +165,10 @@
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select ock.client_key, ock.secret,
-ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
-ock.created_by, ock.client_name
-from oauth_client_key ock
-where ock.client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
+                    ock.created_by, ock.client_name
+                    from oauth_client_key ock
+                    where ock.client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -211,12 +211,12 @@ where ock.client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQue
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select ock.client_key, ock.secret,
-ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
-ock.created_by, ock.client_name
-from oauth_client_key ock, oauth_client oc
-where ock.client_ident = oc.client_ident
-and oc.name = ${request.http.parameter.name}
-and oc.organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
+                    ock.created_by, ock.client_name
+                    from oauth_client_key ock, oauth_client oc
+                    where ock.client_ident = oc.client_ident
+                    and oc.name = ${request.http.parameter.name}
+                    and oc.organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -252,11 +252,11 @@ and oc.organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select ock.client_key, ock.secret,
-ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
-ock.created_by, ock.client_name
-from oauth_client_key ock, oauth_client oc
-where ock.client_ident = oc.client_ident
-and oc.name = ${request.http.parameter.name}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
+                    ock.created_by, ock.client_name
+                    from oauth_client_key ock, oauth_client oc
+                    where ock.client_ident = oc.client_ident
+                    and oc.name = ${request.http.parameter.name}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -292,11 +292,11 @@ and oc.name = ${request.http.parameter.name}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select ock.client_key, ock.secret,
-ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
-ock.created_by, ock.client_name
-from oauth_client_key ock, oauth_client oc
-where ock.client_ident = oc.client_ident
-and oc.organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
+                    ock.created_by, ock.client_name
+                    from oauth_client_key ock, oauth_client oc
+                    where ock.client_ident = oc.client_ident
+                    and oc.organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -332,10 +332,10 @@ and oc.organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select ock.client_key, ock.secret,
-ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
-ock.created_by, ock.client_name
-from oauth_client_key ock
-where ock.client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
+                    ock.created_by, ock.client_name
+                    from oauth_client_key ock
+                    where ock.client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -364,9 +364,9 @@ where ock.client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:Sq
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select ock.client_key, ock.secret,
-ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
-ock.created_by, ock.client_name
-from oauth_client_key ock]]&gt;&lt;/L7p:SqlQuery&gt;
+                    ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
+                    ock.created_by, ock.client_name
+                    from oauth_client_key ock]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -611,9 +611,9 @@ from oauth_client_key ock]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="100"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select client_ident, name, type,
-description, organization, registered_by, created
-from oauth_client
-where name = ${request.http.parameter.name}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    description, organization, registered_by, created
+                    from oauth_client
+                    where name = ${request.http.parameter.name}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -656,10 +656,10 @@ where name = ${request.http.parameter.name}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select client_ident, name, type,
-description, organization, registered_by, created
-from oauth_client
-where name = ${request.http.parameter.name}
-and organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    description, organization, registered_by, created
+                    from oauth_client
+                    where name = ${request.http.parameter.name}
+                    and organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -696,9 +696,9 @@ and organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="100"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select client_ident, name, type,
-description, organization, registered_by, created
-from oauth_client
-where organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    description, organization, registered_by, created
+                    from oauth_client
+                    where organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -735,9 +735,9 @@ where organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="100"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select client_ident, name, type,
-description, organization, registered_by, created
-from oauth_client
-where registered_by = ${request.http.parameter.registered_by}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    description, organization, registered_by, created
+                    from oauth_client
+                    where registered_by = ${request.http.parameter.registered_by}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -781,10 +781,10 @@ where registered_by = ${request.http.parameter.registered_by}]]&gt;&lt;/L7p:SqlQ
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="100"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select client_ident, name, type,
-description, organization, registered_by, created
-from oauth_client
-where registered_by = ${request.http.parameter.registered_by}
-and organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    description, organization, registered_by, created
+                    from oauth_client
+                    where registered_by = ${request.http.parameter.registered_by}
+                    and organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -821,10 +821,10 @@ and organization = ${request.http.parameter.org}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="100"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select oc.client_ident, oc.name,
-oc.type, oc.description, oc.organization, oc.registered_by, oc.created
-from oauth_client oc, oauth_client_key ock
-where ock.client_key = ${request.http.parameter.client_key}
-and ock.client_ident = oc.client_ident]]&gt;&lt;/L7p:SqlQuery&gt;
+                    oc.type, oc.description, oc.organization, oc.registered_by, oc.created
+                    from oauth_client oc, oauth_client_key ock
+                    where ock.client_key = ${request.http.parameter.client_key}
+                    and ock.client_ident = oc.client_ident]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -861,9 +861,9 @@ and ock.client_ident = oc.client_ident]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="100"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select client_ident, name, type,
-description, organization, registered_by, created
-from oauth_client
-where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    description, organization, registered_by, created
+                    from oauth_client
+                    where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -893,8 +893,8 @@ where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQue
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select client_ident, name, type,
-description, organization, registered_by, created
-from oauth_client]]&gt;&lt;/L7p:SqlQuery&gt;
+                    description, organization, registered_by, created
+                    from oauth_client]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -1243,10 +1243,10 @@ from oauth_client]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_client
-(client_ident, name, description, organization, registered_by, type, created)
-values (${request.http.parameter.client_ident}, ${request.http.parameter.name}, ${description},
-${request.http.parameter.org}, ${request.http.parameter.registered_by},
-${request.http.parameter.type}, ${now.millis});]]&gt;&lt;/L7p:SqlQuery&gt;
+                    (client_ident, name, description, organization, registered_by, type, created)
+                    values (${request.http.parameter.client_ident}, ${request.http.parameter.name}, ${description},
+                    ${request.http.parameter.org}, ${request.http.parameter.registered_by},
+                    ${request.http.parameter.type}, ${now.millis});]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:HardcodedResponse&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -1347,21 +1347,21 @@ ${request.http.parameter.type}, ${now.millis});]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_client_key
-(client_key, secret, scope, callback, environment, expiration, status, client_ident, created,
-created_by, client_name)
-values (
-${request.http.parameter.client_key},
-${request.http.parameter.secret},
-${scope},
-${callback},
-${environment},
-${request.http.parameter.expiration},
-${request.http.parameter.status},
-${request.http.parameter.client_ident},
-${now.millis},
-${request.http.parameter.registered_by},
-(select name from oauth_client where client_ident = ${request.http.parameter.client_ident})
-)]]&gt;&lt;/L7p:SqlQuery&gt;
+                    (client_key, secret, scope, callback, environment, expiration, status, client_ident, created,
+                    created_by, client_name)
+                    values (
+                    ${request.http.parameter.client_key},
+                    ${request.http.parameter.secret},
+                    ${scope},
+                    ${callback},
+                    ${environment},
+                    ${request.http.parameter.expiration},
+                    ${request.http.parameter.status},
+                    ${request.http.parameter.client_ident},
+                    ${now.millis},
+                    ${request.http.parameter.registered_by},
+                    (select name from oauth_client where client_ident = ${request.http.parameter.client_ident})
+                    )]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:HardcodedResponse&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -1494,10 +1494,10 @@ ${request.http.parameter.registered_by},
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_client
-(client_ident, name, description, organization, registered_by, type, created)
-values (${request.http.parameter.client_ident}, ${request.http.parameter.name},
-${request.http.parameter.description}, ${request.http.parameter.org},
-${request.http.parameter.registered_by}, ${request.http.parameter.type}, ${now.millis});]]&gt;&lt;/L7p:SqlQuery&gt;
+                    (client_ident, name, description, organization, registered_by, type, created)
+                    values (${request.http.parameter.client_ident}, ${request.http.parameter.name},
+                    ${request.http.parameter.description}, ${request.http.parameter.org},
+                    ${request.http.parameter.registered_by}, ${request.http.parameter.type}, ${now.millis});]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:Include&gt;
                     &lt;L7p:PolicyGuid stringValue="8ac0e0fc-b08a-4f00-b78d-0cead654d943"/&gt;
@@ -1513,20 +1513,20 @@ ${request.http.parameter.registered_by}, ${request.http.parameter.type}, ${now.m
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_client_key
-(client_key, secret, scope, callback, environment, expiration, status, client_ident, created,
-created_by, client_name)
-values (
-${request.http.parameter.client_key},
-${request.http.parameter.secret},
-${scope},
-${callback},
-${environment},
-${request.http.parameter.expiration},
-${request.http.parameter.status},
-${request.http.parameter.client_ident},
-${now.millis},
-${request.http.parameter.registered_by},
-${request.http.parameter.name})]]&gt;&lt;/L7p:SqlQuery&gt;
+                    (client_key, secret, scope, callback, environment, expiration, status, client_ident, created,
+                    created_by, client_name)
+                    values (
+                    ${request.http.parameter.client_key},
+                    ${request.http.parameter.secret},
+                    ${scope},
+                    ${callback},
+                    ${environment},
+                    ${request.http.parameter.expiration},
+                    ${request.http.parameter.status},
+                    ${request.http.parameter.client_ident},
+                    ${now.millis},
+                    ${request.http.parameter.registered_by},
+                    ${request.http.parameter.name})]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:HardcodedResponse&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -1607,7 +1607,7 @@ ${request.http.parameter.name})]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_client
-where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:HardcodedResponse&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -1719,7 +1719,7 @@ where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQue
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_client_key
-where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -1757,7 +1757,7 @@ where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQue
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_client_key
-where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/revoke"/&gt;
@@ -1897,11 +1897,11 @@ where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&g
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_client
-set name=${request.http.parameter.name},
-description=${request.http.parameter.description},
-type=${request.http.parameter.type},
-organization=${request.http.parameter.org}
-where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    set name=${request.http.parameter.name},
+                    description=${request.http.parameter.description},
+                    type=${request.http.parameter.type},
+                    organization=${request.http.parameter.org}
+                    where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:HardcodedResponse&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -1983,12 +1983,12 @@ where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQue
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_client_key
-set status=${request.http.parameter.status},
-scope=${scope},
-callback=${callback},
-environment=${environment},
-secret=${request.http.parameter.secret}
-where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    set status=${request.http.parameter.status},
+                    scope=${scope},
+                    callback=${callback},
+                    environment=${environment},
+                    secret=${request.http.parameter.secret}
+                    where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:HardcodedResponse&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -2231,9 +2231,9 @@ where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&g
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
-from oauth_token
-where token = ${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    from oauth_token
+                    where token = ${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -2270,9 +2270,9 @@ where token = ${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
-from oauth_token
-where rtoken = ${request.http.parameter.rtoken}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    from oauth_token
+                    where rtoken = ${request.http.parameter.rtoken}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -2309,9 +2309,9 @@ where rtoken = ${request.http.parameter.rtoken}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
-from oauth_token
-where resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    from oauth_token
+                    where resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -2348,9 +2348,9 @@ where resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:Sq
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
-from oauth_token
-where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    from oauth_token
+                    where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -2394,10 +2394,10 @@ where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&g
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
-from oauth_token
-where client_key = ${request.http.parameter.client_key}
-and resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    from oauth_token
+                    where client_key = ${request.http.parameter.client_key}
+                    and resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -2434,9 +2434,9 @@ and resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQ
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
-from oauth_token
-where status = ${request.http.parameter.status}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    from oauth_token
+                    where status = ${request.http.parameter.status}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -2466,8 +2466,8 @@ where status = ${request.http.parameter.status}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
-from oauth_token]]&gt;&lt;/L7p:SqlQuery&gt;
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    from oauth_token]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -2608,10 +2608,10 @@ from oauth_token]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-scope, resource_owner, client_name, client_key, created, verifier, callback
-from oauth_initiate
-where token = ${request.http.parameter.token}
-and verifier = ${request.http.parameter.verifier}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    scope, resource_owner, client_name, client_key, created, verifier, callback
+                    from oauth_initiate
+                    where token = ${request.http.parameter.token}
+                    and verifier = ${request.http.parameter.verifier}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -2647,9 +2647,9 @@ and verifier = ${request.http.parameter.verifier}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-scope, resource_owner, client_name, client_key, created, verifier, callback
-from oauth_initiate
-where token = ${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    scope, resource_owner, client_name, client_key, created, verifier, callback
+                    from oauth_initiate
+                    where token = ${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -2686,9 +2686,9 @@ where token = ${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-scope, resource_owner, client_name, client_key, created, verifier, callback
-from oauth_initiate
-where resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    scope, resource_owner, client_name, client_key, created, verifier, callback
+                    from oauth_initiate
+                    where resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -2725,9 +2725,9 @@ where resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:Sq
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-scope, resource_owner, client_name, client_key, created, verifier, callback
-from oauth_initiate
-where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    scope, resource_owner, client_name, client_key, created, verifier, callback
+                    from oauth_initiate
+                    where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -2771,10 +2771,10 @@ where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&g
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-scope, resource_owner, client_name, client_key, created, verifier, callback
-from oauth_initiate
-where client_key = ${request.http.parameter.client_key}
-and resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    scope, resource_owner, client_name, client_key, created, verifier, callback
+                    from oauth_initiate
+                    where client_key = ${request.http.parameter.client_key}
+                    and resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -2804,8 +2804,8 @@ and resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQ
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-scope, resource_owner, client_name, client_key, created, verifier, callback
-from oauth_initiate]]&gt;&lt;/L7p:SqlQuery&gt;
+                    scope, resource_owner, client_name, client_key, created, verifier, callback
+                    from oauth_initiate]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -3101,11 +3101,11 @@ from oauth_initiate]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_initiate (token,
-secret, expiration, callback, client_key, client_name, created, scope, resource_owner)
-values( ${request.http.parameter.token}, ${secret}, ${request.http.parameter.expiration},
-${request.http.parameter.callback}, ${request.http.parameter.client_key},
-${request.http.parameter.client_name}, ${now.millis}, ${request.http.parameter.scope},
-${resource_owner})]]&gt;&lt;/L7p:SqlQuery&gt;
+                    secret, expiration, callback, client_key, client_name, created, scope, resource_owner)
+                    values( ${request.http.parameter.token}, ${secret}, ${request.http.parameter.expiration},
+                    ${request.http.parameter.callback}, ${request.http.parameter.client_key},
+                    ${request.http.parameter.client_name}, ${now.millis}, ${request.http.parameter.scope},
+                    ${resource_owner})]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -3184,20 +3184,20 @@ ${resource_owner})]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_token (token,
-secret, expiration, client_key, status, created, resource_owner, client_name, properties)
-values (
-${request.http.parameter.token},
-${request.http.parameter.secret},
-${request.http.parameter.expiration},
-${request.http.parameter.client_key},
-${request.http.parameter.status},
-${now.millis},
-(select resource_owner from oauth_initiate where token=${request.http.parameter.temp_token} and
-client_key=${request.http.parameter.client_key}),
-(select client_name from oauth_initiate where token=${request.http.parameter.temp_token} and
-client_key=${request.http.parameter.client_key}),
-${token_properties}
-)]]&gt;&lt;/L7p:SqlQuery&gt;
+                    secret, expiration, client_key, status, created, resource_owner, client_name, properties)
+                    values (
+                    ${request.http.parameter.token},
+                    ${request.http.parameter.secret},
+                    ${request.http.parameter.expiration},
+                    ${request.http.parameter.client_key},
+                    ${request.http.parameter.status},
+                    ${now.millis},
+                    (select resource_owner from oauth_initiate where token=${request.http.parameter.temp_token} and
+                    client_key=${request.http.parameter.client_key}),
+                    (select client_name from oauth_initiate where token=${request.http.parameter.temp_token} and
+                    client_key=${request.http.parameter.client_key}),
+                    ${token_properties}
+                    )]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -3293,19 +3293,19 @@ ${token_properties}
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_token (token,
-secret, expiration, client_key, resource_owner, status, created, client_name, scope, properties)
-values (
-${request.http.parameter.token},
-${secret},
-${request.http.parameter.expiration},
-${request.http.parameter.client_key},
-${request.http.parameter.resource_owner},
-${request.http.parameter.status},
-${now.millis},
-${request.http.parameter.client_name},
-${request.http.parameter.scope},
-${token_properties}
-)]]&gt;&lt;/L7p:SqlQuery&gt;
+                    secret, expiration, client_key, resource_owner, status, created, client_name, scope, properties)
+                    values (
+                    ${request.http.parameter.token},
+                    ${secret},
+                    ${request.http.parameter.expiration},
+                    ${request.http.parameter.client_key},
+                    ${request.http.parameter.resource_owner},
+                    ${request.http.parameter.status},
+                    ${now.millis},
+                    ${request.http.parameter.client_name},
+                    ${request.http.parameter.scope},
+                    ${token_properties}
+                    )]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -3415,22 +3415,22 @@ ${token_properties}
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_token (token,
-secret, expiration, client_key, resource_owner, status, rtoken, rexpiration, created, client_name,
-scope, properties)
-values (
-${request.http.parameter.token},
-${secret},
-${request.http.parameter.expiration},
-${request.http.parameter.client_key},
-${request.http.parameter.resource_owner},
-${request.http.parameter.status},
-${request.http.parameter.rtoken},
-${request.http.parameter.rexpiration},
-${now.millis},
-${request.http.parameter.client_name},
-${request.http.parameter.scope},
-${token_properties}
-)]]&gt;&lt;/L7p:SqlQuery&gt;
+                    secret, expiration, client_key, resource_owner, status, rtoken, rexpiration, created, client_name,
+                    scope, properties)
+                    values (
+                    ${request.http.parameter.token},
+                    ${secret},
+                    ${request.http.parameter.expiration},
+                    ${request.http.parameter.client_key},
+                    ${request.http.parameter.resource_owner},
+                    ${request.http.parameter.status},
+                    ${request.http.parameter.rtoken},
+                    ${request.http.parameter.rexpiration},
+                    ${now.millis},
+                    ${request.http.parameter.client_name},
+                    ${request.http.parameter.scope},
+                    ${token_properties}
+                    )]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -3578,8 +3578,8 @@ ${token_properties}
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_initiate
-set resource_owner = ${request.http.parameter.resource_owner}
-where token = ${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    set resource_owner = ${request.http.parameter.resource_owner}
+                    where token = ${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -3616,8 +3616,8 @@ where token = ${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_token
-set status=${request.http.parameter.status}
-where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    set status=${request.http.parameter.status}
+                    where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -3654,8 +3654,8 @@ where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_token
-set properties=${token_properties}
-where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    set properties=${token_properties}
+                    where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -3706,10 +3706,10 @@ where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_initiate
-set expiration=${request.http.parameter.expiration},
-verifier=${request.http.parameter.verifier}
-where token=${request.http.parameter.token}
-and verifier is null]]&gt;&lt;/L7p:SqlQuery&gt;
+                    set expiration=${request.http.parameter.expiration},
+                    verifier=${request.http.parameter.verifier}
+                    where token=${request.http.parameter.token}
+                    and verifier is null]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -3818,8 +3818,8 @@ and verifier is null]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
-where client_key=${request.http.parameter.client_key}
-and resource_owner=${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where client_key=${request.http.parameter.client_key}
+                    and resource_owner=${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -3857,7 +3857,7 @@ and resource_owner=${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQue
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
-where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -3871,7 +3871,7 @@ where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_initiate
-where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -3909,7 +3909,7 @@ where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValue="delete from oauth_initiate where client_key in (select client_key from
-oauth_client_key where client_ident = ${request.http.parameter.client_ident});"/&gt;
+                    oauth_client_key where client_ident = ${request.http.parameter.client_ident});"/&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -3923,7 +3923,7 @@ oauth_client_key where client_ident = ${request.http.parameter.client_ident});"/
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValue="delete from oauth_token where client_key in (select client_key from
-oauth_client_key where client_ident = ${request.http.parameter.client_ident});"/&gt;
+                    oauth_client_key where client_ident = ${request.http.parameter.client_ident});"/&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -3952,7 +3952,7 @@ oauth_client_key where client_ident = ${request.http.parameter.client_ident});"/
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
-where resource_owner=${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where resource_owner=${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -3981,7 +3981,7 @@ where resource_owner=${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQ
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
-where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -4073,7 +4073,7 @@ where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValue="update oauth_token set status='DISABLED' where
-client_key=${request.http.parameter.client_key}"/&gt;
+                    client_key=${request.http.parameter.client_key}"/&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -4164,7 +4164,7 @@ client_key=${request.http.parameter.client_key}"/&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_initiate
-where token=${request.http.parameter.temp_token}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where token=${request.http.parameter.temp_token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -4193,7 +4193,7 @@ where token=${request.http.parameter.temp_token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
-where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -4222,7 +4222,7 @@ where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
-where rtoken=${request.http.parameter.rtoken}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where rtoken=${request.http.parameter.rtoken}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -4259,7 +4259,7 @@ where rtoken=${request.http.parameter.rtoken}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_initiate
-where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -4272,7 +4272,7 @@ where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
-where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -4708,12 +4708,12 @@ where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:QueryName stringValue="Insert or update session"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_session
-(session_key,session_group,expiration,value) values (
-${cacheKey},
-${cacheId},
-${session_expiration.millis},
-${value})
-on duplicate key update expiration=values(expiration), value=values(value);]]&gt;&lt;/L7p:SqlQuery&gt;
+                    (session_key,session_group,expiration,value) values (
+                    ${cacheKey},
+                    ${cacheId},
+                    ${session_expiration.millis},
+                    ${value})
+                    on duplicate key update expiration=values(expiration), value=values(value);]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:VariablePrefix stringValue="sessionStore"/&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:SetVariable&gt;
@@ -4930,8 +4930,8 @@ on duplicate key update expiration=values(expiration), value=values(value);]]&gt
                     &lt;/L7p:NamingMap&gt;
                     &lt;L7p:QueryName stringValue="Retrieve from session"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select expiration,value from
-oauth_session where
-session_key=${cacheKey} and session_group=${cacheId};]]&gt;&lt;/L7p:SqlQuery&gt;
+                    oauth_session where
+                    session_key=${cacheKey} and session_group=${cacheId};]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:VariablePrefix stringValue="sessionQuery"/&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:ComparisonAssertion&gt;
@@ -4992,7 +4992,7 @@ session_key=${cacheKey} and session_group=${cacheId};]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:QueryName stringValue="Delete expired session"/&gt;
                     &lt;L7p:SqlQuery stringValue="delete from oauth_session where session_key=${cacheKey} and
-session_group=${cacheId};"/&gt;
+                    session_group=${cacheId};"/&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:FalseAssertion/&gt;
                     &lt;/wsp:All&gt;
