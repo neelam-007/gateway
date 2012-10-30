@@ -30,7 +30,7 @@ public class LookupDynamicContextVariablesAssertion extends Assertion implements
     /**
      * The default variable prefix.
      */
-    public static final String DEFAULT_VARIABLE_PREFIX = "found";
+    public static final String DEFAULT_VARIABLE_PREFIX = "lookup";
 
     /**
      * All the available suffixes.
