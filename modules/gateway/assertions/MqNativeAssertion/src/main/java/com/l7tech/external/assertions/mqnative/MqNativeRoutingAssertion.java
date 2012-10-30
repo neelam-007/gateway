@@ -397,6 +397,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
         MqNativeRoutingAssertion assertion;
         ActiveConnectorStatus activeConnectorStatus;
         boolean isQueueNameValid;
+        boolean isReplyToQueueNameValid;
 
         public Validator(MqNativeRoutingAssertion assertion) {
 
@@ -412,8 +413,30 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
                 } else {
                     activeConnectorStatus = ActiveConnectorStatus.DISABLED;
                 }
+
                 String mqQueueName = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME);
-                isQueueNameValid = ! (mqQueueName == null || mqQueueName.equals(""));
+                String replyToQueueName = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME);
+                MqNativeDynamicProperties dynamicProperties = assertion.getDynamicMqRoutingProperties();
+
+                if ( dynamicProperties != null ) {
+                    String dynamicQueueName = dynamicProperties.getQueueName();
+                    String dynamicReplyToQueueName = dynamicProperties.getReplyToQueue();
+
+                    if ( dynamicQueueName != null && !dynamicQueueName.isEmpty()) {
+                        mqQueueName = dynamicQueueName;
+                    }
+
+                    if ( dynamicReplyToQueueName != null
+                              && !dynamicReplyToQueueName.isEmpty()
+                              && activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE).equals(MqNativeReplyType.REPLY_SPECIFIED_QUEUE.toString())) {
+                        replyToQueueName = dynamicReplyToQueueName;
+                    }
+                }
+
+                isQueueNameValid = mqQueueName != null && !mqQueueName.isEmpty();
+                isReplyToQueueNameValid = ( !activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE).equals(MqNativeReplyType.REPLY_SPECIFIED_QUEUE.toString()) )
+                                            || ( replyToQueueName != null && !replyToQueueName.isEmpty() );
+
             } catch (FindException e) {
                 activeConnectorStatus = ActiveConnectorStatus.NOTFOUND;
             }
@@ -434,7 +457,11 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
             }
 
             if ( ! isQueueNameValid ) {
-                result.addWarning(new PolicyValidatorResult.Warning(assertion,"Queue Name is not set",null));
+                result.addWarning(new PolicyValidatorResult.Warning(assertion,"Queue Name is not set in either MQ Native Queue Template or Routing Assertion",null));
+            }
+
+            if ( ! isReplyToQueueNameValid ) {
+                result.addWarning(new PolicyValidatorResult.Warning(assertion,"Reply to Queue Name is not set in either MQ Queue Native Template or Routing Assertion.",null));
             }
         }
     }
