@@ -196,7 +196,6 @@ public class OAuthToolkit1_0IntegrationTest {
         assertRequestEndpointMissingParameter("oauth_timestamp");
         assertRequestEndpointMissingParameter("oauth_nonce");
         assertRequestEndpointMissingParameter("oauth_signature");
-        assertRequestEndpointMissingParameter("oauth_callback");
     }
 
     @Test
@@ -378,7 +377,7 @@ public class OAuthToolkit1_0IntegrationTest {
         final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
-        assertEquals("Missing oauth_callback", responseBody);
+        assertEquals("Invalid oauth parameters", responseBody);
     }
 
     @BugNumber(13092)
@@ -390,7 +389,7 @@ public class OAuthToolkit1_0IntegrationTest {
         final GenericHttpResponse response = createRequestTokenEndpointRequest(parameters).getResponse();
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
-        assertEquals("Missing oauth_callback", responseBody);
+        assertEquals("Invalid oauth parameters", responseBody);
     }
 
     @Test
@@ -492,7 +491,18 @@ public class OAuthToolkit1_0IntegrationTest {
         final GenericHttpResponse response = createAccessTokenEndpointRequest(parameters).getResponse();
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         assertEquals(400, response.getStatus());
-        assertEquals("Missing oauth_token", responseBody);
+        assertEquals("Invalid oauth parameters", responseBody);
+    }
+
+    @Test
+    @BugNumber(13339)
+    public void tokenEndpointVerifierWithEmptyToken() throws Exception {
+        final Map<String, String> parameters = createDefaultAccessTokenParameters();
+        parameters.put("oauth_token", "");
+        final GenericHttpResponse response = createAccessTokenEndpointRequest(parameters).getResponse();
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        assertEquals(400, response.getStatus());
+        assertEquals("Invalid oauth parameters", responseBody);
     }
 
     @Test

@@ -90,8 +90,13 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
                 context.setVariable(assertion.getVariablePrefix() + "." + ERROR, "Invalid " + e.getParameter() + ": " + e.getInvalidValue());
                 assertionStatus = AssertionStatus.FALSIFIED;
             } catch (final ParameterException e) {
-                logAndAudit(AssertionMessages.OAUTH_INVALID_QUERY_PARAMETER, new String[]{e.getParameter()}, ExceptionUtils.getDebugException(e));
-                context.setVariable(assertion.getVariablePrefix() + "." + ERROR, "Query parameter " + e.getParameter() + " is not allowed");
+                if (e.getParameter() != null) {
+                    logAndAudit(AssertionMessages.OAUTH_INVALID_QUERY_PARAMETER, new String[]{e.getParameter()}, ExceptionUtils.getDebugException(e));
+                    context.setVariable(assertion.getVariablePrefix() + "." + ERROR, "Query parameter " + e.getParameter() + " is not allowed");
+                } else {
+                    logAndAudit(AssertionMessages.OAUTH_INVALID_PARAMETERS, new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
+                    context.setVariable(assertion.getVariablePrefix() + "." + ERROR, "Invalid oauth parameters");
+                }
                 assertionStatus = AssertionStatus.FALSIFIED;
             } catch (final URISyntaxException e) {
                 logAndAudit(AssertionMessages.OAUTH_INVALID_REQUEST_URL, new String[]{requestUrl}, ExceptionUtils.getDebugException(e));
@@ -391,7 +396,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         return result;
     }
 
-    private void validateParameters(final TreeMap<String, List<String>> sortedParameters) throws DuplicateParameterException, MissingRequiredParameterException, InvalidParameterException {
+    private void validateParameters(final TreeMap<String, List<String>> sortedParameters) throws ParameterException {
         for (final String requiredParameter : REQUIRED_PARAMETERS) {
             if (!sortedParameters.containsKey(requiredParameter) || sortedParameters.get(requiredParameter).isEmpty() ||
                     StringUtils.isBlank(sortedParameters.get(requiredParameter).iterator().next())) {
@@ -406,11 +411,11 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         }
         // token is required if there is a verifier
         if (sortedParameters.containsKey(OAUTH_VERIFIER) && !sortedParameters.containsKey(OAUTH_TOKEN)) {
-            throw new MissingRequiredParameterException(OAUTH_TOKEN, "Missing required oauth parameter");
+            throw new ParameterException("Cannot have oauth_verifier without oauth_token");
         }
         // callback is required if there is no token or token is empty
         if ((!sortedParameters.containsKey(OAUTH_TOKEN) || sortedParameters.get(OAUTH_TOKEN).get(0).isEmpty()) && !sortedParameters.containsKey(OAUTH_CALLBACK)) {
-            throw new MissingRequiredParameterException(OAUTH_CALLBACK, "Missing required oauth parameter");
+            throw new ParameterException("Must specify oauth_callback if no oauth_token is provided");
         }
         // version is not required
         final String foundVersion = sortedParameters.get(OAUTH_VERSION) != null ? sortedParameters.get(OAUTH_VERSION).iterator().next() : null;

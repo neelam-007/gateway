@@ -711,8 +711,8 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
-        assertEquals("Missing oauth_callback", (String) policyContext.getVariable("oauth.error"));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_PARAMETERS));
+        assertEquals("Invalid oauth parameters", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
@@ -736,8 +736,8 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
-        assertEquals("Missing oauth_callback", (String) policyContext.getVariable("oauth.error"));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_PARAMETERS));
+        assertEquals("Invalid oauth parameters", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
@@ -1075,8 +1075,8 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
-        assertEquals("Missing oauth_callback", (String) policyContext.getVariable("oauth.error"));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_PARAMETERS));
+        assertEquals("Invalid oauth parameters", (String) policyContext.getVariable("oauth.error"));
     }
 
     @Test
@@ -1486,8 +1486,22 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_MISSING_PARAMETER));
-        assertEquals("Missing oauth_token", (String) policyContext.getVariable("oauth.error"));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_PARAMETERS));
+        assertEquals("Invalid oauth parameters", (String) policyContext.getVariable("oauth.error"));
+    }
+
+    @Test
+    @BugNumber(13339)
+    public void verifierAndEmptyToken() throws Exception {
+        setParamsForAuthRequestToken(assertion);
+        assertion.setOauthToken("");
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_PARAMETERS));
+        assertEquals("Invalid oauth parameters", (String) policyContext.getVariable("oauth.error"));
     }
 
     private void assertContextVariablesDoNotExist(final String... names) throws NoSuchVariableException {

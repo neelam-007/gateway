@@ -1165,6 +1165,7 @@ public class AssertionMessages extends Messages {
     public static final M OAUTH_MISSING_PARAMETER = m(9674, Level.WARNING, "Required oauth parameter is missing or empty: {0}");
     public static final M OAUTH_INVALID_PARAMETER =  m(9675, Level.WARNING, "Value for {0} is invalid: {1}");
     public static final M OAUTH_INVALID_QUERY_PARAMETER =  m(9676, Level.WARNING, "Query parameter {0} is not allowed");
+    public static final M OAUTH_INVALID_PARAMETERS =  m(9677, Level.WARNING, "Invalid oauth parameters: {0}");
 
     //Kerberos Authentication assertion
     public static final M KA_OPTION_NOT_SUPPORTED = m(9701, Level.WARNING, "{0} option does not support {1}");
