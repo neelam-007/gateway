@@ -115,6 +115,15 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
      */
     @Override
     public AsyncAdminMethods.JobId<String> testJdbcConnection(final JdbcConnection connection) {
+
+        // add connection retry limit
+        Map<String, Object> props = connection.getAdditionalProperties();
+        if(props.get("c3p0.acquireRetryAttempts")==null)
+        {
+            props.put("c3p0.acquireRetryAttempts","1");
+        }
+        connection.setAdditionalProperties(props);
+
         final FutureTask<String> connectTask = new FutureTask<String>(find(false).wrapCallable(new Callable<String>() {
             @Override
             public String call() throws Exception {
