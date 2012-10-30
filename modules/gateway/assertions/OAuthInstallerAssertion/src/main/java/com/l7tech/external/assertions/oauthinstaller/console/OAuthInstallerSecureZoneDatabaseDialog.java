@@ -6,6 +6,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -32,6 +33,8 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
     private JPasswordField otkUserPasswordField1;
     private JPasswordField otkUserPasswordField2;
     private JTextField jdbcConnNewTextField;
+    private JPanel createDatabasePanel;
+    private JTabbedPane tabbedPane;
     private static final Logger logger = Logger.getLogger(OAuthInstallerSecureZoneDatabaseDialog.class.getName());
     private List<String> connectionNames;
     private static final ResourceBundle resourceBundle = ResourceBundle.getBundle( OAuthInstallerSecureZoneDatabaseDialog.class.getName() );
@@ -39,7 +42,7 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
     public OAuthInstallerSecureZoneDatabaseDialog(Dialog owner) {
         super(owner, "Manage OTK Database", true);
         setContentPane(contentPane);
-        getRootPane().setDefaultButton(buttonOK);
+        getRootPane().setDefaultButton(buttonCancel);
 
         buttonOK.addActionListener(new ActionListener() {
             @Override
@@ -95,6 +98,13 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
         otkDbUserNameTextField.setText("otk_user");
         jdbcConnNewTextField.setText("OAuth");
 
+        final boolean enableDbCreate = SyspropUtil.getBoolean(
+                "com.l7tech.external.assertions.oauthinstaller.console.OAuthInstallerSecureZoneDatabaseDialog.enableCreateDb",
+                false);
+
+        if (!enableDbCreate) {
+            tabbedPane.remove(createDatabasePanel);
+        }
     }
 
     private void onOK() {
