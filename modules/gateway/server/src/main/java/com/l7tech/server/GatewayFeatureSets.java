@@ -731,6 +731,7 @@ public class GatewayFeatureSets {
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(splitJoinAssertions),
+            fs(jsonTransformationAssertion),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -789,7 +790,8 @@ public class GatewayFeatureSets {
             fs(kerberosAuthenticationAssertion),
             fs(oAuthInstaller),
             fs(policyBundleInstaller),
-            fs(splitJoinAssertions));
+            fs(splitJoinAssertions),
+            fs(jsonTransformationAssertion));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
             "Same features as XML Firewall for now.",
@@ -891,7 +893,8 @@ public class GatewayFeatureSets {
             fs(kerberosAuthenticationAssertion),
             fs(oAuthInstaller),
             fs(policyBundleInstaller),
-            fs(splitJoinAssertions));
+            fs(splitJoinAssertions),
+            fs(jsonTransformationAssertion));
 
         GatewayFeatureSet profileApi =
         fsp("set:Profile:Api", "Layer 7 API Proxy",
