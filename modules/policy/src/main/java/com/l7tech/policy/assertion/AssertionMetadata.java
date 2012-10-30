@@ -539,8 +539,8 @@ public interface AssertionMetadata {
      * {@link com.l7tech.policy.assertion.Assertion#getFeatureSetName()}
      * and treated as though this property had returned null.
      * <p/>
-     * The default value is "(fromClass)" for any recognized assertion present in AllAssertions on the current
-     * system, and "set:modularAssertions" for any unrecognized assertions.
+     * The default value is "(fromClass)" for any core (non-modular) assertion listed in com.l7tech.policy.AllAssertions#SERIALIZABLE_EVERYTHING
+     * on the current system, and "set:modularAssertions" for any other assertion.
      */
     String FEATURE_SET_NAME = "featureSetName";
 
