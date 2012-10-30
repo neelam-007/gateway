@@ -127,6 +127,9 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/splitjoin/console/split16.gif");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, Validator.class.getName());
+
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

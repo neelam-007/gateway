@@ -106,6 +106,8 @@ public class JoinAssertion extends Assertion implements UsesVariables, SetsVaria
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/splitjoin/console/join16.gif");
 
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

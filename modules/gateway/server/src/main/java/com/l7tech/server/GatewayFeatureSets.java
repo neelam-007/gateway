@@ -679,6 +679,11 @@ public class GatewayFeatureSets {
                 "The necessary assertions to install policy bundles",
                 mass("assertion:PolicyBundleInstaller"));
 
+        GatewayFeatureSet splitJoinAssertions =
+        fsr("set:SplitJoin:Assertions", "The necessary assertions to enable split and join variable functionality",
+            mass("assertion:Split"),
+            mass("assertion:Join"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -725,6 +730,7 @@ public class GatewayFeatureSets {
             fs(evaluateJsonPathExpression),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
+            fs(splitJoinAssertions),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -746,6 +752,7 @@ public class GatewayFeatureSets {
             fs(evaluateJsonPathExpression),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
+            fs(splitJoinAssertions),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -781,7 +788,8 @@ public class GatewayFeatureSets {
             fs(ntlmAuthenticationAssertion),
             fs(kerberosAuthenticationAssertion),
             fs(oAuthInstaller),
-            fs(policyBundleInstaller));
+            fs(policyBundleInstaller),
+            fs(splitJoinAssertions));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
             "Same features as XML Firewall for now.",
@@ -830,7 +838,8 @@ public class GatewayFeatureSets {
             fs(ntlmAuthenticationAssertion),
             fs(kerberosAuthenticationAssertion),
             fs(oAuthInstaller),
-            fs(policyBundleInstaller));
+            fs(policyBundleInstaller),
+            fs(splitJoinAssertions));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
             "Same features as Gateway for now.",
@@ -881,7 +890,8 @@ public class GatewayFeatureSets {
             fs(ntlmAuthenticationAssertion),
             fs(kerberosAuthenticationAssertion),
             fs(oAuthInstaller),
-            fs(policyBundleInstaller));
+            fs(policyBundleInstaller),
+            fs(splitJoinAssertions));
 
         GatewayFeatureSet profileApi =
         fsp("set:Profile:Api", "Layer 7 API Proxy",
