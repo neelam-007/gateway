@@ -348,7 +348,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     try {
                         jmsOutboundRequest.setObjectProperty(name, outboundRequestProps.get(name));
                     } catch ( MessageFormatException e ) {
-                        logger.log(Level.WARNING,"Cannot set JMS Property '" + name + "' to value '" + outboundRequestProps.get(name) + "' on IBM MQ JMS Provider. " + ExceptionUtils.getMessage(e),ExceptionUtils.getDebugException(e));
+                        logAndAudit(AssertionMessages.JMS_ROUTING_NON_SETTABLE_JMS_PROPERTY, new String[] {name, outboundRequestProps.get(name).toString(), ExceptionUtils.getMessage(e)}, (Throwable)ExceptionUtils.getDebugException(e));
                     }
                 }
 

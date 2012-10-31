@@ -544,6 +544,7 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_MISSING_MESSAGE_ID = m(6027, Level.WARNING, "Sent message had no message ID. Unable to correlate.");
     public static final M JMS_ROUTING_CONFIGURATION_ERROR = m(6028, Level.WARNING, "Invalid JMS configuration ''{0}''.");
     public static final M JMS_ROUTING_RESPONSE_TOO_LARGE = m(6029, Level.WARNING, "Response message too large.");
+    public static final M JMS_ROUTING_NON_SETTABLE_JMS_PROPERTY =  m(6030,Level.WARNING, "Cannot set JMS Property ''{0}'' to value ''{1}'' on IBM MQ JMS Provider. {2}");
 
     // ServerFtpRoutingAssertion
     public static final M FTP_ROUTING_FAILED_UPLOAD = m(6050, Level.WARNING, "Failed to upload request to {0}: {1}");
