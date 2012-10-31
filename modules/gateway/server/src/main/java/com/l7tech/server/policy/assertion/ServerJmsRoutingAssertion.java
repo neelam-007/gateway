@@ -348,7 +348,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     try {
                         jmsOutboundRequest.setObjectProperty(name, outboundRequestProps.get(name));
                     } catch ( MessageFormatException e ) {
-                        logAndAudit(AssertionMessages.JMS_ROUTING_NON_SETTABLE_JMS_PROPERTY, new String[] {name, outboundRequestProps.get(name).toString(), ExceptionUtils.getMessage(e)}, (Throwable)ExceptionUtils.getDebugException(e));
+                        if ( e.getErrorCode().startsWith("MQ") ) {
+                            logAndAudit(AssertionMessages.JMS_ROUTING_NON_SETTABLE_JMS_PROPERTY, new String[] {name, outboundRequestProps.get(name).toString(), ExceptionUtils.getMessage(e)}, (Throwable)ExceptionUtils.getDebugException(e));
+                        } else {
+                            logAndAudit(AssertionMessages.JMS_ROUTING_MESSAGE_FORMAT_ERROR,(Throwable)ExceptionUtils.getDebugException(e));
+                        }
                     }
                 }
 
