@@ -40,7 +40,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
     private static final String ROUTE = "main.label.route";
     private static final String PROPERTIES = "main.label.properties";
     private static final String DIALOG_TITLE_NEW_SERVICE_PROPERTIES = "New Route";
-    private static final String DIALOG_TITLE_EDIT_SERVICE_PROPERTIES = "Edit";
+    private static final String DIALOG_TITLE_EDIT_SERVICE_PROPERTIES = "Edit Route";
     private static final String DIALOG_TITLE_CLONE_SERVICE_PROPERTIES = "Clone Route";
     private static final String DIALOG_TITLE_EDIT_STRATEGY_PROPERTIES = "Edit Strategy Properties";
     private static final int MAX_DISPLAYABLE_MESSAGE_LENGTH = 80;
