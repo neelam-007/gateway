@@ -50,8 +50,7 @@ CREATE TABLE IF NOT EXISTS oauth_token (
   rexpiration bigint DEFAULT 0 COMMENT 'DEFAULT 0 because otherwise timestamp will be set to now() on an update',
   status varchar(128) not null COMMENT 'for validation purposes, ENABLED or DISABLED',
   client_key varchar(128) not null COMMENT 'the client_key this token was issued for',
-  client_name varchar(128) not null COMMENT 'The name of the client that owns this key. Not normalized for performance.',
-  properties mediumtext not null
+  client_name varchar(128) not null COMMENT 'The name of the client that owns this key. Not normalized for performance.'
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -99,7 +98,6 @@ INSERT INTO oauth_client_key (client_key, secret, status, created_by, client_ide
 VALUES ('acf89db2-994e-427b-ac2c-88e6101f9433', '74d5e0db-cd8b-4d8e-a989-95a0746c3343', 'ENABLED', 'OTK Installer', '123456789', 'OAuth1Client')
 ON DUPLICATE KEY UPDATE client_key = VALUES(client_key);
 
--- todo we can possibly fill in the values of YOUR_SSG        also this needs doc as a manual step
 INSERT INTO oauth_client_key (client_key, secret, status, created_by, client_ident, client_name, callback)
 VALUES ('54f0c455-4d80-421f-82ca-9194df24859d', 'a0f2742f-31c7-436f-9802-b7015b8fd8e6', 'ENABLED', 'OTK Installer', '123456799', 'OAuth2Client', 'YOUR_SSG/oauth/v2/client/authcode,YOUR_SSG/oauth/v2/client/implicit')
 ON DUPLICATE KEY UPDATE client_key = VALUES(client_key);

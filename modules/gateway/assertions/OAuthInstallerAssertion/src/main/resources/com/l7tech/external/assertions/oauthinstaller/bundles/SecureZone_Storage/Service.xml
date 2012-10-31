@@ -2115,10 +2115,6 @@
                     &lt;L7p:Base64Expression stringValue="dHJ1ZQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="deleteExpiredTokens"/&gt;
                     &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnByb3BlcnRpZXN9"/&gt;
-                    &lt;L7p:VariableToSet stringValue="token_properties"/&gt;
-                    &lt;/L7p:SetVariable&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:Regex&gt;
@@ -2231,7 +2227,7 @@
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
                     from oauth_token
                     where token = ${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -2270,7 +2266,7 @@
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
                     from oauth_token
                     where rtoken = ${request.http.parameter.rtoken}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -2309,7 +2305,7 @@
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
                     from oauth_token
                     where resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -2348,7 +2344,7 @@
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
                     from oauth_token
                     where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -2394,7 +2390,7 @@
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
                     from oauth_token
                     where client_key = ${request.http.parameter.client_key}
                     and resource_owner = ${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
@@ -2434,7 +2430,7 @@
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
                     from oauth_token
                     where status = ${request.http.parameter.status}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -2466,7 +2462,7 @@
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created, properties
+                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
                     from oauth_token]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
@@ -2538,7 +2534,7 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="PHZhbHVlcz4NCiAgICA8dG9rZW5zPjx0b2tlbj48IVtDREFUQVske2pkYmNRdWVyeS50b2tlbnxdXT48L3Rva2VuPjx0b2tlbj48IVtDREFUQVt9XV0+PC90b2tlbj48L3Rva2Vucz4NCiAgICA8c2VjcmV0cz48c2VjcmV0PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LnNlY3JldHxdXT48L3NlY3JldD48c2VjcmV0PjwhW0NEQVRBW31dXT48L3NlY3JldD48L3NlY3JldHM+DQogICAgPGV4cGlyYXRpb25zPjxleHBpcmF0aW9uPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmV4cGlyYXRpb258XV0+PC9leHBpcmF0aW9uPjxleHBpcmF0aW9uPjwhW0NEQVRBW31dXT48L2V4cGlyYXRpb24+PC9leHBpcmF0aW9ucz4NCiAgICA8cnRva2Vucz48cnRva2VuPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LnJ0b2tlbnxdXT48L3J0b2tlbj48cnRva2VuPjwhW0NEQVRBW31dXT48L3J0b2tlbj48L3J0b2tlbnM+DQogICAgPHJleHBpcmF0aW9ucz48cmV4cGlyYXRpb24+PCFbQ0RBVEFbJHtqZGJjUXVlcnkucmV4cGlyYXRpb258XV0+PC9yZXhwaXJhdGlvbj48cmV4cGlyYXRpb24+PCFbQ0RBVEFbfV1dPjwvcmV4cGlyYXRpb24+PC9yZXhwaXJhdGlvbnM+DQogICAgPHNjb3Blcz48c2NvcGU+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuc2NvcGV8XV0+PC9zY29wZT48c2NvcGU+PCFbQ0RBVEFbfV1dPjwvc2NvcGU+PC9zY29wZXM+DQogICAgPHJlc291cmNlX293bmVycz48cmVzb3VyY2Vfb3duZXI+PCFbQ0RBVEFbJHtqZGJjUXVlcnkucmVzb3VyY2Vfb3duZXJ8XV0+PC9yZXNvdXJjZV9vd25lcj48cmVzb3VyY2Vfb3duZXI+PCFbQ0RBVEFbfV1dPjwvcmVzb3VyY2Vfb3duZXI+PC9yZXNvdXJjZV9vd25lcnM+DQogICAgPGNsaWVudHM+PGNsaWVudF9rZXk+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY2xpZW50X2tleXxdXT48L2NsaWVudF9rZXk+PGNsaWVudF9rZXk+PCFbQ0RBVEFbfV1dPjwvY2xpZW50X2tleT48L2NsaWVudHM+DQogICAgPGNsaWVudE5hbWVzPjxjbGllbnRfbmFtZT48IVtDREFUQVske2pkYmNRdWVyeS5jbGllbnRfbmFtZXxdXT48L2NsaWVudF9uYW1lPjxjbGllbnRfbmFtZT48IVtDREFUQVt9XV0+PC9jbGllbnRfbmFtZT48L2NsaWVudE5hbWVzPg0KICAgIDxzdGF0dXVzPjxzdGF0dXM+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuc3RhdHVzfF1dPjwvc3RhdHVzPjxzdGF0dXM+PCFbQ0RBVEFbfV1dPjwvc3RhdHVzPjwvc3RhdHV1cz4NCiAgICA8Y3JlYXRlZHM+PGNyZWF0ZWQ+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY3JlYXRlZHxdXT48L2NyZWF0ZWQ+PGNyZWF0ZWQ+PCFbQ0RBVEFbfV1dPjwvY3JlYXRlZD48L2NyZWF0ZWRzPg0KICAgIDxwcm9wcz48cHJvcGVydGllcz48IVtDREFUQVske2pkYmNRdWVyeS5wcm9wZXJ0aWVzfF1dPjwvcHJvcGVydGllcz48cHJvcGVydGllcz48IVtDREFUQVt9XV0+PC9wcm9wZXJ0aWVzPjwvcHJvcHM+DQo8L3ZhbHVlcz4="/&gt;
+                    stringValue="PHZhbHVlcz4NCiAgICA8dG9rZW5zPjx0b2tlbj48IVtDREFUQVske2pkYmNRdWVyeS50b2tlbnxdXT48L3Rva2VuPjx0b2tlbj48IVtDREFUQVt9XV0+PC90b2tlbj48L3Rva2Vucz4NCiAgICA8c2VjcmV0cz48c2VjcmV0PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LnNlY3JldHxdXT48L3NlY3JldD48c2VjcmV0PjwhW0NEQVRBW31dXT48L3NlY3JldD48L3NlY3JldHM+DQogICAgPGV4cGlyYXRpb25zPjxleHBpcmF0aW9uPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmV4cGlyYXRpb258XV0+PC9leHBpcmF0aW9uPjxleHBpcmF0aW9uPjwhW0NEQVRBW31dXT48L2V4cGlyYXRpb24+PC9leHBpcmF0aW9ucz4NCiAgICA8cnRva2Vucz48cnRva2VuPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LnJ0b2tlbnxdXT48L3J0b2tlbj48cnRva2VuPjwhW0NEQVRBW31dXT48L3J0b2tlbj48L3J0b2tlbnM+DQogICAgPHJleHBpcmF0aW9ucz48cmV4cGlyYXRpb24+PCFbQ0RBVEFbJHtqZGJjUXVlcnkucmV4cGlyYXRpb258XV0+PC9yZXhwaXJhdGlvbj48cmV4cGlyYXRpb24+PCFbQ0RBVEFbfV1dPjwvcmV4cGlyYXRpb24+PC9yZXhwaXJhdGlvbnM+DQogICAgPHNjb3Blcz48c2NvcGU+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuc2NvcGV8XV0+PC9zY29wZT48c2NvcGU+PCFbQ0RBVEFbfV1dPjwvc2NvcGU+PC9zY29wZXM+DQogICAgPHJlc291cmNlX293bmVycz48cmVzb3VyY2Vfb3duZXI+PCFbQ0RBVEFbJHtqZGJjUXVlcnkucmVzb3VyY2Vfb3duZXJ8XV0+PC9yZXNvdXJjZV9vd25lcj48cmVzb3VyY2Vfb3duZXI+PCFbQ0RBVEFbfV1dPjwvcmVzb3VyY2Vfb3duZXI+PC9yZXNvdXJjZV9vd25lcnM+DQogICAgPGNsaWVudHM+PGNsaWVudF9rZXk+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY2xpZW50X2tleXxdXT48L2NsaWVudF9rZXk+PGNsaWVudF9rZXk+PCFbQ0RBVEFbfV1dPjwvY2xpZW50X2tleT48L2NsaWVudHM+DQogICAgPGNsaWVudE5hbWVzPjxjbGllbnRfbmFtZT48IVtDREFUQVske2pkYmNRdWVyeS5jbGllbnRfbmFtZXxdXT48L2NsaWVudF9uYW1lPjxjbGllbnRfbmFtZT48IVtDREFUQVt9XV0+PC9jbGllbnRfbmFtZT48L2NsaWVudE5hbWVzPg0KICAgIDxzdGF0dXVzPjxzdGF0dXM+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuc3RhdHVzfF1dPjwvc3RhdHVzPjxzdGF0dXM+PCFbQ0RBVEFbfV1dPjwvc3RhdHVzPjwvc3RhdHV1cz4NCiAgICA8Y3JlYXRlZHM+PGNyZWF0ZWQ+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY3JlYXRlZHxdXT48L2NyZWF0ZWQ+PGNyZWF0ZWQ+PCFbQ0RBVEFbfV1dPjwvY3JlYXRlZD48L2NyZWF0ZWRzPg0KPC92YWx1ZXM+"/&gt;
                     &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="values"/&gt;
@@ -3184,7 +3180,7 @@
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_token (token,
-                    secret, expiration, client_key, status, created, resource_owner, client_name, properties)
+                    secret, expiration, client_key, status, created, resource_owner, client_name)
                     values (
                     ${request.http.parameter.token},
                     ${request.http.parameter.secret},
@@ -3195,9 +3191,7 @@
                     (select resource_owner from oauth_initiate where token=${request.http.parameter.temp_token} and
                     client_key=${request.http.parameter.client_key}),
                     (select client_name from oauth_initiate where token=${request.http.parameter.temp_token} and
-                    client_key=${request.http.parameter.client_key}),
-                    ${token_properties}
-                    )]]&gt;&lt;/L7p:SqlQuery&gt;
+                    client_key=${request.http.parameter.client_key}))]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -3293,7 +3287,7 @@
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_token (token,
-                    secret, expiration, client_key, resource_owner, status, created, client_name, scope, properties)
+                    secret, expiration, client_key, resource_owner, status, created, client_name, scope)
                     values (
                     ${request.http.parameter.token},
                     ${secret},
@@ -3303,9 +3297,7 @@
                     ${request.http.parameter.status},
                     ${now.millis},
                     ${request.http.parameter.client_name},
-                    ${request.http.parameter.scope},
-                    ${token_properties}
-                    )]]&gt;&lt;/L7p:SqlQuery&gt;
+                    ${request.http.parameter.scope})]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -3416,7 +3408,7 @@
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_token (token,
                     secret, expiration, client_key, resource_owner, status, rtoken, rexpiration, created, client_name,
-                    scope, properties)
+                    scope)
                     values (
                     ${request.http.parameter.token},
                     ${secret},
@@ -3428,9 +3420,7 @@
                     ${request.http.parameter.rexpiration},
                     ${now.millis},
                     ${request.http.parameter.client_name},
-                    ${request.http.parameter.scope},
-                    ${token_properties}
-                    )]]&gt;&lt;/L7p:SqlQuery&gt;
+                    ${request.http.parameter.scope})]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -3624,44 +3614,6 @@
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
                     &lt;L7p:value stringValue="Update 'status' of access_token"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:HtmlFormDataAssertion&gt;
-                    &lt;L7p:AllowGet booleanValue="true"/&gt;
-                    &lt;L7p:AllowPost booleanValue="true"/&gt;
-                    &lt;L7p:DisallowOtherFields booleanValue="true"/&gt;
-                    &lt;L7p:FieldSpecs htmlFormFieldSpecArray="included"&gt;
-                    &lt;L7p:item htmlFormFieldSpec="included"&gt;
-                    &lt;L7p:AllowEmpty boxedBooleanValue="false"/&gt;
-                    &lt;L7p:DataType fieldDataType="any"/&gt;
-                    &lt;L7p:MaxOccurs intValue="1"/&gt;
-                    &lt;L7p:MinOccurs intValue="1"/&gt;
-                    &lt;L7p:Name stringValue="token"/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;L7p:item htmlFormFieldSpec="included"&gt;
-                    &lt;L7p:AllowEmpty boxedBooleanValue="true"/&gt;
-                    &lt;L7p:DataType fieldDataType="any"/&gt;
-                    &lt;L7p:MaxOccurs intValue="1"/&gt;
-                    &lt;L7p:MinOccurs intValue="1"/&gt;
-                    &lt;L7p:Name stringValue="properties"/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:FieldSpecs&gt;
-                    &lt;/L7p:HtmlFormDataAssertion&gt;
-                    &lt;L7p:JdbcQuery&gt;
-                    &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
-                    &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_token
-                    set properties=${token_properties}
-                    where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
-                    &lt;/L7p:JdbcQuery&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Update 'properties'' of access_token"/&gt;
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:assertionComment&gt;
