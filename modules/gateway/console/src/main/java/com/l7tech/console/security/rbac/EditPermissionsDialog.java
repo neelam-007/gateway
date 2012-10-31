@@ -10,6 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -59,6 +60,7 @@ public class EditPermissionsDialog extends JDialog {
             public void itemStateChanged(final ItemEvent e) {
                 if(e.getStateChange() == ItemEvent.SELECTED && !permission.getEntityType().equals(e.getItem())){
                     //default to ANY when the combobox changes
+                    permission.setScope(new HashSet<ScopePredicate>());
                     permission.setEntityType(EntityType.ANY);
                     scopeField.setText(getScopeString(permission));
                 }
