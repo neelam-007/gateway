@@ -363,8 +363,13 @@
                     &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
                     &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:LineBreak lineBreak="LF"/&gt;
+                    &lt;L7p:VariableToSet stringValue="empty_line"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="JHt0aW1lc3RhbXBfc2VjfQ0KJHtub25jZX0NCiR7aHR0cF9tZXRob2R9DQoke3JlcXVlc3RfdXJpfQ0KJHtob3N0fQ0KJHtwb3J0fQ0KJHtleHR9"/&gt;
+                    stringValue="JHt0aW1lc3RhbXBfc2VjfQ0KJHtub25jZX0NCiR7aHR0cF9tZXRob2R9DQoke3JlcXVlc3RfdXJpfQ0KJHtob3N0fQ0KJHtwb3J0fQ0KJHtleHR9DQoke2VtcHR5X2xpbmV9"/&gt;
                     &lt;L7p:VariableToSet stringValue="normalized_request"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:GenerateSecurityHash&gt;
@@ -373,12 +378,6 @@
                     &lt;L7p:LineBreak lineBreak="CR-LF"/&gt;
                     &lt;L7p:TargetOutputVariable stringValue="mac"/&gt;
                     &lt;/L7p:GenerateSecurityHash&gt;
-                    &lt;L7p:EncodeDecode&gt;
-                    &lt;L7p:SourceVariableName stringValue="mac"/&gt;
-                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
-                    &lt;L7p:TargetVariableName stringValue="mac"/&gt;
-                    &lt;L7p:TransformType transformType="BASE64_ENCODE"/&gt;
-                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:ExportVariables&gt;
                     &lt;L7p:ExportedVars stringArrayValue="included"&gt;
                     &lt;L7p:item stringValue="mac"/&gt;

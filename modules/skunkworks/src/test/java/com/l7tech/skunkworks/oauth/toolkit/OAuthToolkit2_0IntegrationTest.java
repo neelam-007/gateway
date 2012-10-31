@@ -374,7 +374,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
         stringBuilder.append(URLEncoder.encode(PROTECTED_API, "UTF-8")).append(NEW_LINE);
         stringBuilder.append(BASE_URL).append(NEW_LINE);
         stringBuilder.append("8443").append(NEW_LINE);
-        // stringBuilder.append(NEW_LINE); no new line because of bug 13305
+        stringBuilder.append(NEW_LINE);
         final String normalizedString = stringBuilder.toString();
 
         // generate mac
@@ -382,13 +382,11 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
         messageAuthenticationCode.init(new SecretKeySpec(key.getBytes(Charsets.UTF8), HMAC_SHA_1));
         final byte[] digest = messageAuthenticationCode.doFinal(normalizedString.getBytes(Charsets.UTF8));
         final String mac = HexUtils.encodeBase64(digest, true);
-        // double encoding needed because of bug 13305
-        final String doubleEncodedMac = HexUtils.encodeBase64(mac.getBytes(), true);
 
         // call protected api
         final GenericHttpRequestParams resourceParams = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/v2/protectedapi"));
         resourceParams.setSslSocketFactory(getSSLSocketFactory());
-        resourceParams.addExtraHeader(new GenericHttpHeader("Authorization", "MAC id=\"" + accessToken + "\", ts=\"" + timestamp + "\",  nonce=\"" + nonce + "\", mac=\"" + doubleEncodedMac + "\""));
+        resourceParams.addExtraHeader(new GenericHttpHeader("Authorization", "MAC id=\"" + accessToken + "\", ts=\"" + timestamp + "\",  nonce=\"" + nonce + "\", mac=\"" + mac + "\""));
         final GenericHttpRequest resourceRequest = client.createRequest(HttpMethod.GET, resourceParams);
         final GenericHttpResponse resourceResponse = resourceRequest.getResponse();
         assertEquals(200, resourceResponse.getStatus());
