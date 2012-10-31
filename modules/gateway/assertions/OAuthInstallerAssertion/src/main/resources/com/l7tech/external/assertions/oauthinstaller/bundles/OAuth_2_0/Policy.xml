@@ -73,10 +73,10 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="478fbcbd-624a-451d-af37-df07e62ba5d4"
-               id="123731986" version="0">
-        <l7:PolicyDetail folderId="123600909" guid="478fbcbd-624a-451d-af37-df07e62ba5d4" id="123731986" version="0">
-            <l7:Name>v2GenerateRequestMacForClient</l7:Name>
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="1987200f-1887-4566-b0e7-1bff9558a361"
+               id="123731995" version="0">
+        <l7:PolicyDetail folderId="123600896" guid="1987200f-1887-4566-b0e7-1bff9558a361" id="123731995" version="0">
+            <l7:Name>v2GenerateRequestMac</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
@@ -646,7 +646,7 @@
                     &lt;L7p:VariableToSet stringValue="mac_algorithm"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
-                    &lt;L7p:PolicyGuid stringValue="478fbcbd-624a-451d-af37-df07e62ba5d4"/&gt;
+                    &lt;L7p:PolicyGuid stringValue="1987200f-1887-4566-b0e7-1bff9558a361"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
