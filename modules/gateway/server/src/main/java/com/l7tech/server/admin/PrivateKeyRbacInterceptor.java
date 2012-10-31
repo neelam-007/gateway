@@ -30,13 +30,13 @@ import static com.l7tech.gateway.common.security.rbac.OperationType.*;
  */
 @SuppressWarnings("UnusedDeclaration") // Used via class name reference as @Secured customInterceptor
 public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
-    private User user;
+    User user;
 
     @Inject
-    private RbacServices rbacServices;
+    RbacServices rbacServices;
 
     @Inject
-    private SsgKeyStoreManager ssgKeyStoreManager;
+    SsgKeyStoreManager ssgKeyStoreManager;
 
     // Cache of keystores already looked up for the current invocation so we don't have to do something incredibly slow
     // like loop up the (same) keystore repeatedly for every returned key entry
@@ -227,6 +227,10 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
             return ret;
 
         ret = ssgKeyStoreManager.findByPrimaryKey(keystoreOid);
+        if (ret == null) {
+            // though this can't happen in production, for ease of unit testing we will treat null as "not found" so it plays well with unstubbed mocks
+            throw new ObjectNotFoundException("No keystore found for oid " + keystoreOid);
+        }
         keystoreCache.put(keystoreOid, ret);
         return ret;
     }
@@ -342,15 +346,15 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
     }
 
     private void checkPermittedForKeystore(long keystoreOid, OperationType operation) throws FindException, KeyStoreException {
-        if (keystoreOid == -1) {
+        if (keystoreOid != -1) {
+            // Must be able to access THIS keystore
+            SsgKeyFinder keystore = findKeystore(keystoreOid);
+            if (!rbacServices.isPermittedForEntity(user, keystore, operation, null))
+                throw new PermissionDeniedException(operation, EntityType.SSG_KEYSTORE);
+        } else {
             // Must be able to access ALL keystores
             if (!rbacServices.isPermittedForAnyEntityOfType(user, operation, EntityType.SSG_KEYSTORE))
                 throw new PermissionDeniedException(operation, EntityType.SSG_KEYSTORE);
         }
-
-        // Must be able to access THIS keystore
-        SsgKeyFinder keystore = findKeystore(keystoreOid);
-        if (!rbacServices.isPermittedForEntity(user, keystore, operation, null))
-            throw new PermissionDeniedException(operation, EntityType.SSG_KEYSTORE);
     }
 }
