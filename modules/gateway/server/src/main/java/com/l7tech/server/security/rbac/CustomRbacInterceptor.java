@@ -9,9 +9,11 @@ import org.jetbrains.annotations.NotNull;
  * Interface implemented by a custom interceptor class.
  * <p/>
  * Implementers of this interface instantiated by the SecuredMethodInterceptor will be created by Spring and will
- * have Spring beans injected.  Spring will locate a constructor for autowiring if necessary.
+ * have Spring beans injected.  A public nullary constructor must be available.
  * <p/>
  * Having at least an @Inject RbacServices field is recommended in order to be able to do some kind of RBAC checking.
+ * <p/>
+ * Due to the design of this interface, implementors may only be used from one thread at a time.
  */
 public interface CustomRbacInterceptor extends MethodInterceptor {
     /**
@@ -22,8 +24,8 @@ public interface CustomRbacInterceptor extends MethodInterceptor {
     void setUser(@NotNull User user);
 
     /**
-     * Invoke a custom RBAC interceptor to process the specified method invocation, informed by the specified
-     * parameters gathered from any
+     * Invoke a custom RBAC interceptor to process the specified method invocation, informed by any contextual information
+     * present in this CustomRbacInterceptor instance.
      *
      * @param invocation invocation to invoke (if before-invocation checks pass).  Required.
      * @return the (possibly-filtered) return value from invoking the method, if after-invocation checks pass.
