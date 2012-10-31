@@ -612,8 +612,8 @@ public class AssertionMessages extends Messages {
 
     // XPath Credential Source
     public static final M XPATHCREDENTIAL_REQUEST_NOT_XML = m(6600, Level.WARNING, "Request not XML");
-    public static final M XPATHCREDENTIAL_LOGIN_XPATH_FAILED = m(6601, Level.WARNING, "Login XPath evaluation failed");
-    public static final M XPATHCREDENTIAL_LOGIN_XPATH_NOT_FOUND = m(6602, Level.WARNING, "Login XPath evaluation failed to find any result");
+    public static final M XPATHCREDENTIAL_LOGIN_XPATH_FAILED = m(6601, Level.INFO, "Login XPath evaluation failed");
+    public static final M XPATHCREDENTIAL_LOGIN_XPATH_NOT_FOUND = m(6602, Level.INFO, "Login XPath evaluation failed to find any result");
     public static final M XPATHCREDENTIAL_LOGIN_FOUND_MULTI = m(6603, Level.WARNING, "Login XPath evaluation found multiple results");
     public static final M XPATHCREDENTIAL_LOGIN_XPATH_WRONG_RESULT = m(6604, Level.WARNING, "Login XPath evaluation found content of an unsupported type");
     public static final M XPATHCREDENTIAL_LOGIN_PARENT_NOT_ELEMENT = m(6605, Level.WARNING, "Cannot remove login element; parent is not an Element");
