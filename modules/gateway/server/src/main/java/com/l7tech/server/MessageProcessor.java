@@ -290,7 +290,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
         // no-processing mode check
         if (SuspendStatus.INSTANCE.isSuspended()) {
-            throw new MessageProcessingSuspendedException(SuspendStatus.INSTANCE.getReason());
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Message processing suspended: "+SuspendStatus.INSTANCE.getReason()},null);
+            throw new MessageProcessingSuspendedException("Message processing suspended");
         }
     }
 
