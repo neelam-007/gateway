@@ -1,8 +1,9 @@
 package com.l7tech.common.io.failover;
 
+import java.util.HashMap;
 import java.util.Map;
 
-public class Service {
+public class Service implements Cloneable {
     
     private String name;
     private Map properties;
@@ -30,6 +31,12 @@ public class Service {
 
     public void setProperties(Map properties) {
         this.properties = properties;
+    }
+
+    @Override
+    public Object clone() {
+        Map clonedProps = properties != null? new HashMap(properties) : null;
+        return new Service(name, clonedProps);
     }
 
     @Override

@@ -266,7 +266,10 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
             public void actionPerformed(ActionEvent e) {
                 final int viewRow = propertyTable.getSelectedRow();
                 if (viewRow > -1) {
-                    editRoute(null, propertiesTableModel.getRowObject(propertyTable.convertRowIndexToModel(viewRow)), DIALOG_TITLE_CLONE_SERVICE_PROPERTIES);
+                    //clone service object
+                    final Service   copyFrom = (Service)propertiesTableModel.getRowObject(propertyTable.convertRowIndexToModel(viewRow)).clone();
+                    editRoute(null, copyFrom
+                            , DIALOG_TITLE_CLONE_SERVICE_PROPERTIES);
                 }
                 enableDisableComponents();
             }
@@ -274,7 +277,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
     }
 
     private void editRoute(final Service service, final Service copyFrom, final String title) {
-        final CreateRoutingStrategyRoutingPropertiesDialog dlg =  new CreateRoutingStrategyRoutingPropertiesDialog((Frame) getParent(), title, assertion, copyFrom);
+        final CreateRoutingStrategyRoutingPropertiesDialog dlg =  new CreateRoutingStrategyRoutingPropertiesDialog((Frame) getParent(), title, assertion, service==null?copyFrom:service);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
