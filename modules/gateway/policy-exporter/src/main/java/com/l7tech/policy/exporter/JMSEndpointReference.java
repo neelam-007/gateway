@@ -255,7 +255,8 @@ public class JMSEndpointReference extends ExternalReference {
                     continue;
                 } else if ( !isMatch(jmsTuple.getValue().getJndiUrl(), jndiUrl) ||
                             !isMatch(jmsTuple.getValue().getInitialContextFactoryClassname(), initialContextFactoryClassname) ||
-                            !isMatch(jmsTuple.getValue().getQueueFactoryUrl(), queueFactoryUrl)) {
+                            !isMatch(jmsTuple.getValue().getQueueFactoryUrl(), queueFactoryUrl) ||
+                            jmsTuple.getKey().isQueue() != isQueue()) {
                     continue;
                 }
                 // we have a partial match
@@ -299,6 +300,8 @@ public class JMSEndpointReference extends ExternalReference {
                             logger.fine("The local JMS endpoint was resolved from oid " + getOid() + " to " + jmsTuple.getKey().getOid());
                             localEndpointId = jmsTuple.getKey().getOid();
                             localizeType = LocalizeAction.REPLACE;
+                            warning("JMS Destination Found", "Near perfect match found.  Resolving JMS destination: '" +
+                                    destinationName + "' to existing destination: '" + jmsTuple.left.getDestinationName() + "'");
                             return true;
                         }
                     }
