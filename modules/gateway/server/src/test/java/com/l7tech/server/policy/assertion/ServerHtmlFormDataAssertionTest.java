@@ -38,6 +38,8 @@ public class ServerHtmlFormDataAssertionTest {
     private static final String FORM = "application/x-www-form-urlencoded";
     private static final String FILENAME = "filename";
     private static final HtmlFormDataAssertion.FieldSpec STRING_ANYWHERE_FIELD_SPEC = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.TRUE);
+    private static final HtmlFormDataAssertion.FieldSpec STRING_ANYWHERE_FIELD_SPEC_NO_URI = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.BODY, Boolean.TRUE);
+    private static final HtmlFormDataAssertion.FieldSpec STRING_ANYWHERE_FIELD_SPEC_MIN_AND_MAX_GT_1 = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 2, 3, HtmlFormDataLocation.ANYWHERE, Boolean.TRUE);
     private static final HtmlFormDataAssertion.FieldSpec STRING_BODY_FIELD_SPEC = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.BODY, Boolean.TRUE);
     private static final HtmlFormDataAssertion.FieldSpec STRING_URL_FIELD_SPEC = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.URL, Boolean.TRUE);
     private ServerHtmlFormDataAssertion serverAssertion;
@@ -338,4 +340,130 @@ public class ServerHtmlFormDataAssertionTest {
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
     }
+
+    @Test
+    public void validateAudit_6852() throws Exception {
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{STRING_ANYWHERE_FIELD_SPEC});
+        assertion.setAllowGet(false);
+        mockRequest.setMethod(GET);
+        mockRequest.setQueryString(KEYVALUEPAIR);
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+
+        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.HTMLFORMDATA_METHOD_NOT_ALLOWED));
+        assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.HTMLFORMDATA_METHOD_NOT_ALLOWED.getMessage(), "GET")));
+    }
+
+    @Test
+    public void validateAudit_6853() throws Exception {
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{STRING_ANYWHERE_FIELD_SPEC});
+        assertion.setAllowGet(true);
+        assertion.setDisallowOtherFields(true);
+        mockRequest.setMethod(GET);
+        mockRequest.setQueryString(KEYVALUEPAIR+"&two=2");
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+
+        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_NOT_ALLOWED));
+        assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_NOT_ALLOWED.getMessage(), "two")));
+    }
+
+    @Test
+    public void validateAudit_6856() throws Exception {
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{STRING_ANYWHERE_FIELD_SPEC_MIN_AND_MAX_GT_1});
+        assertion.setAllowGet(true);
+        mockRequest.setMethod(GET);
+        mockRequest.setQueryString(KEYVALUEPAIR);
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+
+        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.HTMLFORMDATA_FAIL_MINOCCURS));
+        assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.HTMLFORMDATA_FAIL_MINOCCURS.getMessage(), FIELDNAME, "1", "2")));
+    }
+
+    @Test
+    public void validateAudit_6857() throws Exception {
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{STRING_ANYWHERE_FIELD_SPEC_MIN_AND_MAX_GT_1});
+        assertion.setAllowGet(true);
+        mockRequest.setMethod(GET);
+        mockRequest.setQueryString(KEYVALUEPAIR + "&" + KEYVALUEPAIR + "&" + KEYVALUEPAIR + "&" + KEYVALUEPAIR);
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+
+        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.HTMLFORMDATA_FAIL_MAXOCCURS));
+        assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.HTMLFORMDATA_FAIL_MAXOCCURS.getMessage(), FIELDNAME, "4", "3")));
+    }
+
+    @Test
+    public void validateAudit_6858() throws Exception {
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{STRING_ANYWHERE_FIELD_SPEC_NO_URI});
+        assertion.setAllowGet(true);
+        mockRequest.setMethod(GET);
+        mockRequest.setQueryString(KEYVALUEPAIR);
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+
+        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED));
+        assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED.getMessage(), FIELDNAME, HtmlFormDataLocation.URL.getDisplayName())));
+    }
+
+    @Test
+    public void validateAudit_6850() throws Exception {
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{STRING_ANYWHERE_FIELD_SPEC});
+        assertion.setAllowGet(true);
+        mockRequest.setMethod(GET);
+        mockRequest.setQueryString(KEYVALUEPAIR);
+
+        assertEquals(AssertionStatus.NOT_APPLICABLE, serverAssertion.checkRequest(context));
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.HTMLFORMDATA_NOT_HTTP));
+    }
+
+    @Test
+    public void validateAudit_6851() throws Exception {
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{STRING_ANYWHERE_FIELD_SPEC});
+        assertion.setAllowGet(true);
+        mockRequest.setMethod(POST);
+        mockRequest.setQueryString(KEYVALUEPAIR);
+
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+
+        assertEquals(AssertionStatus.NOT_APPLICABLE, serverAssertion.checkRequest(context));
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.HTTP_POST_NOT_FORM_DATA));
+        // content type originates at the mime knob, as it's not set it will have it's default value of application/octet-stream
+        assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.HTTP_POST_NOT_FORM_DATA.getMessage(), "application/octet-stream")));
+    }
+
+    @Test
+    public void validateAudit_6854() throws Exception {
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{STRING_ANYWHERE_FIELD_SPEC});
+        assertion.setAllowGet(true);
+        mockRequest.setMethod(GET);
+        mockRequest.setQueryString(KEYVALUEPAIR+"&notspecified=allowedthrough");
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_ALLOWED));
+        assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_ALLOWED.getMessage(), "notspecified")));
+
+    }
+
 }
