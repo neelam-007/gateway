@@ -403,9 +403,16 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
     }
 
     private Object invokeWithCustomInterceptor(@NotNull MethodInvocation methodInvocation, @NotNull User user, @NotNull String customInterceptorClassName, @NotNull ClassLoader classLoader) throws Throwable {
-        final CustomRbacInterceptor ci = findCustomInterceptor(customInterceptorClassName, classLoader);
-        injector().inject(ci);
-        ci.setUser(user);
+        final CustomRbacInterceptor ci;
+        try {
+            ci = findCustomInterceptor(customInterceptorClassName, classLoader);
+            injector().inject(ci);
+            ci.setUser(user);
+        } catch (Exception e) {
+            final String msg = "Unable to create custom RBAC interceptor " + customInterceptorClassName + ": " + ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+            throw new IllegalStateException(msg); // avoid chaining back to the client in this case -- the caught exception likely includes internal information and/or object references
+        }
         return ci.invoke(methodInvocation);
     }
 

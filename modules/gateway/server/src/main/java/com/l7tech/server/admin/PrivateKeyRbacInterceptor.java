@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.security.KeyStoreException;
 import java.util.*;
 
@@ -32,10 +33,13 @@ import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
     User user;
 
+    @SuppressWarnings("SpringJavaAutowiringInspection") // Idea warns about bean not implmenting RbacService because is actually a cache wrapper bean
     @Inject
+    @Named("rbacServices")
     RbacServices rbacServices;
 
     @Inject
+    @Named("ssgKeyStoreManager")
     SsgKeyStoreManager ssgKeyStoreManager;
 
     // Cache of keystores already looked up for the current invocation so we don't have to do something incredibly slow

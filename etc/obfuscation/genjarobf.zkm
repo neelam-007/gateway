@@ -44,6 +44,7 @@ exclude     public *.^* and
             *.* + implements java.io.Serializable and
             *.* implements java.io.Serializable * and
             *.* implements java.io.Serializable *(*) and
+            *.* @javax.inject.Inject * and
             *.* @javax.annotation.Resource * and
             @com.l7tech.util.NonObfuscatable *.* and
             *.* @com.l7tech.util.NonObfuscatable * and
