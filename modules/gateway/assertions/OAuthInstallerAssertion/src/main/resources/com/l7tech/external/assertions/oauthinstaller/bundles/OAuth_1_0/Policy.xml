@@ -401,6 +401,14 @@
                     &lt;L7p:AuditDetailAssertion&gt;
                     &lt;L7p:Detail stringValue="Policy Fragment: Authenticate OAuth 1.0 Parameter"/&gt;
                     &lt;/L7p:AuditDetailAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_verifier"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${request.http.method}"/&gt;

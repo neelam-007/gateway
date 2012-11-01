@@ -3888,6 +3888,14 @@
                     &lt;L7p:ExtraHeaders nameValuePairArray="included"/&gt;
                     &lt;L7p:HttpStatus stringValue="400"/&gt;
                     &lt;/L7p:CustomizeErrorResponse&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:VariableToSet stringValue="errorRedirectURI.result"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:VariableToSet stringValue="authorizeRedirectURI.result"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:ProtectedServiceUrl
