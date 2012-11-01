@@ -204,7 +204,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     @Override
     public String getOAuthDatabaseSchema() {
 
-        final URL schemaResourceUrl = getClass().getResource("OAuth_Toolkit_Schema.sql");
+        final URL schemaResourceUrl = getClass().getResource("db/OAuth_Toolkit_Schema.sql");
         final byte[] bytes;
         try {
             bytes = IOUtils.slurpUrl(schemaResourceUrl);

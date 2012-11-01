@@ -312,6 +312,22 @@ public class OAuthInstallerAdminImplTest {
 
     }
 
+    @Test
+    @BugNumber(13282)
+    public void testGetDatabaseSchema() throws Exception {
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
+            @Override
+            public void publishEvent(ApplicationEvent applicationEvent) {
+
+            }
+        });
+
+        final String dbSchema = admin.getOAuthDatabaseSchema();
+        System.out.println(dbSchema);
+        assertNotNull(dbSchema);
+        assertFalse(dbSchema.trim().isEmpty());
+    }
+
     private void verifyCommentAdded(Document policyResource) {
         // verify version was added
         final Element allElm = XmlUtil.findFirstChildElement(policyResource.getDocumentElement());

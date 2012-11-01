@@ -1,11 +1,11 @@
 -- Layer7 Technologies Inc.
--- OTK version 1.0
+-- OTK version otk1.0
 --
 
 --
 -- This table holds valid client application values as defined when the application was registered
 --
-CREATE TABLE IF NOT EXISTS oauth_client (
+CREATE TABLE oauth_client (
   client_ident varchar(128) primary key,
   name varchar(128) not null COMMENT 'The associated name of the application using this client_id',
   type varchar(128) not null DEFAULT 'oob' COMMENT 'used with oauth 2.0',
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS oauth_client (
 --
 -- This table holds valid client keys
 --
-CREATE TABLE IF NOT EXISTS oauth_client_key (
+CREATE TABLE oauth_client_key (
   client_key varchar(128) primary key COMMENT 'oauth_consumer_key or client_id',
   secret varchar(128) not null COMMENT 'oauth_consumer_key_secret or client_secret',
   scope varchar(512) not null DEFAULT 'oob' COMMENT 'for oauth2, to be defined by the customer and handled accordingly within the policy',
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS oauth_client_key (
 -- oauth 1.0 = access_token
 -- oauth 2.0 = access_token, refresh_token
 --
-CREATE TABLE IF NOT EXISTS oauth_token (
+CREATE TABLE oauth_token (
   token varchar(128) primary key,
   secret varchar(128) null COMMENT 'null for oauth 2.0, it does not provide a secret',
   expiration bigint not null,
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS oauth_token (
 -- oauth 1.0 = request_token
 -- oauth 2.0 = authorization_code
 --
-CREATE TABLE IF NOT EXISTS oauth_initiate (
+CREATE TABLE oauth_initiate (
   token varchar(128) primary key COMMENT 'for oauth 1.0, 2.0',
   secret varchar(128) null COMMENT 'null for oauth 2.0, it does not provide a secret',
   expiration bigint not null DEFAULT 0 COMMENT 'for oauth 1.0, 2.0, DEFAULT 0 because otherwise timestamp will be set to now() on an update',
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS oauth_initiate (
 --
 -- This table holds session info
 --
-CREATE TABLE IF NOT EXISTS oauth_session (
+CREATE TABLE oauth_session (
   session_key varchar(128) not null,
   session_group varchar(128) not null,
   expiration bigint not null,
@@ -82,22 +82,23 @@ CREATE TABLE IF NOT EXISTS oauth_session (
   primary key (session_key, session_group)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+CREATE TABLE otk_version (
+   current_version char(10) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+INSERT INTO otk_version (current_version) VALUES ('otk1.0');
+
 --
--- Insert values for the oauth 1.0 test client
--- todo look at these primary key values
+-- Create test clients
 --
 INSERT INTO oauth_client (client_ident, name, description, organization, registered_by)
-VALUES ('123456789', 'OAuth1Client', 'OAuth 1.0 test client hosted on the ssg', 'Layer7 Technologies Inc.', 'OTK Installer')
-ON DUPLICATE KEY UPDATE client_ident = VALUES(client_ident), name = VALUES(name), description = VALUES(description);
+VALUES ('TestClient1.0', 'OAuth1Client', 'OAuth 1.0 test client hosted on the ssg', 'Layer7 Technologies Inc.', 'OTK Installer');
 
 INSERT INTO oauth_client (client_ident, name, description, organization, registered_by, type)
-VALUES ('123456799', 'OAuth2Client', 'OAuth 2.0 test client hosted on the ssg', 'Layer7 Technologies Inc.', 'OTK Installer', 'confidential')
-ON DUPLICATE KEY UPDATE client_ident = VALUES(client_ident), name = VALUES(name), description = VALUES(description);
+VALUES ('TestClient2.0', 'OAuth2Client', 'OAuth 2.0 test client hosted on the ssg', 'Layer7 Technologies Inc.', 'OTK Installer', 'confidential');
 
 INSERT INTO oauth_client_key (client_key, secret, status, created_by, client_ident, client_name)
-VALUES ('acf89db2-994e-427b-ac2c-88e6101f9433', '74d5e0db-cd8b-4d8e-a989-95a0746c3343', 'ENABLED', 'OTK Installer', '123456789', 'OAuth1Client')
-ON DUPLICATE KEY UPDATE client_key = VALUES(client_key);
+VALUES ('acf89db2-994e-427b-ac2c-88e6101f9433', '74d5e0db-cd8b-4d8e-a989-95a0746c3343', 'ENABLED', 'OTK Installer', 'TestClient1.0', 'OAuth1Client');
 
 INSERT INTO oauth_client_key (client_key, secret, status, created_by, client_ident, client_name, callback)
-VALUES ('54f0c455-4d80-421f-82ca-9194df24859d', 'a0f2742f-31c7-436f-9802-b7015b8fd8e6', 'ENABLED', 'OTK Installer', '123456799', 'OAuth2Client', 'YOUR_SSG/oauth/v2/client/authcode,YOUR_SSG/oauth/v2/client/implicit')
-ON DUPLICATE KEY UPDATE client_key = VALUES(client_key);
+VALUES ('54f0c455-4d80-421f-82ca-9194df24859d', 'a0f2742f-31c7-436f-9802-b7015b8fd8e6', 'ENABLED', 'OTK Installer', 'TestClient2.0', 'OAuth2Client', 'YOUR_SSG/oauth/v2/client/authcode,YOUR_SSG/oauth/v2/client/implicit');
