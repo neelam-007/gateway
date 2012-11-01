@@ -257,7 +257,11 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
             name.append(assertion.getDataType().getName());
             name.append(" to");
             final String expression = assertion.expression();
-            if (expression.length() == 0) {
+            if(expression == null){
+                //when copy & pasting from the policy tree to the policy panel.  we'll use the default name
+                return baseName;
+            }
+            else if (expression.isEmpty()) {
                 name.append(" empty");
             } else if (expression.length() <= MAX_DISPLAY_LENGTH) {
                 name.append(": ");
@@ -267,6 +271,7 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
                 name.append(expression, 0, MAX_DISPLAY_LENGTH - 1);
                 name.append("...");
             }
+
             return name.toString();
         }
     };
