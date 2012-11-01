@@ -342,6 +342,9 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
         assertTrue(responseBody.contains("Invalid request."));
     }
 
+    /**
+     * This test requires wsman and the current token type to be BEARER.
+     */
     @Test
     @BugNumber(13305)
     public void macToken() throws Exception {
@@ -396,6 +399,45 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
         setOAuth2TokenType("MAC", "BEARER");
     }
 
+    /**
+     * This test requires wsman and the current token type to be BEARER.
+     * <p/>
+     * OTK configured to have MAC token type, but receives a BEARER auth header.
+     */
+    @Test
+    @BugNumber(13411)
+    public void macTokenWithBearerAuthHeader() throws Exception {
+        setOAuth2TokenType("BEARER", "MAC");
+
+        // get mac token
+        final Layer720Api api = new Layer720Api(BASE_URL);
+        final String authCode = api.authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, passwordAuthentication, null);
+
+        final Map<String, String> params = new HashMap<String, String>();
+        params.put("grant_type", "authorization_code");
+        params.put("code", authCode);
+        params.put("client_id", CONSUMER_KEY);
+        params.put("client_secret", CONSUMER_SECRET);
+        params.put("redirect_uri", CALLBACK);
+        final GenericHttpResponse response = getAccessToken(params);
+
+        final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
+        final Map<String, String> pairs = new ObjectMapper().readValue(responseBody, HashMap.class);
+        final String accessToken = pairs.get("access_token");
+
+        // call protected api using bearer auth
+        final GenericHttpRequestParams resourceParams = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/oauth/v2/protectedapi"));
+        resourceParams.setSslSocketFactory(getSSLSocketFactory());
+        resourceParams.addExtraHeader(new GenericHttpHeader("Authorization", "Bearer " + accessToken));
+        final GenericHttpRequest resourceRequest = client.createRequest(HttpMethod.GET, resourceParams);
+        final GenericHttpResponse resourceResponse = resourceRequest.getResponse();
+        assertEquals(401, resourceResponse.getStatus());
+        final String resourceResponseBody = new String(IOUtils.slurpStream(resourceResponse.getInputStream()));
+        assertTrue(resourceResponseBody.contains("invalid_request"));
+
+        setOAuth2TokenType("MAC", "BEARER");
+    }
+
     private GenericHttpResponse getAccessToken(final Map<String, String> params) throws Exception {
         final GenericHttpRequestParams tokenParams = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/auth/oauth/v2/token"));
         tokenParams.setSslSocketFactory(getSSLSocketFactory());
@@ -433,29 +475,33 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
 
         final String encodedCurrentTokenType = new String(Base64.encodeBase64(currentTokenType.getBytes()));
         final String encodedNewTokenType = new String(Base64.encodeBase64(newTokenType.getBytes()));
-        assertTrue(getResponseBody.contains(encodedCurrentTokenType));
-        final String getResponseSoapBody = getResponseBody.substring(getResponseBody.indexOf("<env:Body>") + 10, getResponseBody.indexOf("</env:Body>"));
-        // replace old token type with new token type
-        final String updatedSoapBody = getResponseSoapBody.replace("Base64Expression stringValue=\"" + encodedCurrentTokenType + "\"", "Base64Expression stringValue=\"" + encodedNewTokenType + "\"/>");
+        if (!getResponseBody.contains("Base64Expression stringValue=\"" + encodedNewTokenType + "\"")) {
+            assertTrue(getResponseBody.contains(encodedCurrentTokenType));
+            final String getResponseSoapBody = getResponseBody.substring(getResponseBody.indexOf("<env:Body>") + 10, getResponseBody.indexOf("</env:Body>"));
+            // replace old token type with new token type
+            final String updatedSoapBody = getResponseSoapBody.replace("Base64Expression stringValue=\"" + encodedCurrentTokenType + "\"", "Base64Expression stringValue=\"" + encodedNewTokenType + "\"");
 
-        final String putBody = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
-                "\t<s:Header>\n" +
-                "\t\t<wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action>\n" +
-                "\t\t<wsa:To s:mustUnderstand=\"true\">http://" + BASE_URL + ":8080/wsman</wsa:To>\n" +
-                "\t\t<wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI>\n" +
-                "\t\t<wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID>\n" +
-                "\t\t<wsa:ReplyTo>\n" +
-                "\t\t\t<wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>\n" +
-                "\t\t</wsa:ReplyTo>\n" +
-                "\t\t<wsman:SelectorSet>\n" +
-                "\t\t\t<wsman:Selector Name=\"name\">OAuth 2.0 Context Variables</wsman:Selector>\n" +
-                "\t\t</wsman:SelectorSet>\n" +
-                "\t</s:Header>\n" +
-                "\t<s:Body>" + updatedSoapBody +
-                "</s:Body>\n" +
-                "</s:Envelope>";
+            final String putBody = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+                    "\t<s:Header>\n" +
+                    "\t\t<wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action>\n" +
+                    "\t\t<wsa:To s:mustUnderstand=\"true\">http://" + BASE_URL + ":8080/wsman</wsa:To>\n" +
+                    "\t\t<wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI>\n" +
+                    "\t\t<wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID>\n" +
+                    "\t\t<wsa:ReplyTo>\n" +
+                    "\t\t\t<wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>\n" +
+                    "\t\t</wsa:ReplyTo>\n" +
+                    "\t\t<wsman:SelectorSet>\n" +
+                    "\t\t\t<wsman:Selector Name=\"name\">OAuth 2.0 Context Variables</wsman:Selector>\n" +
+                    "\t\t</wsman:SelectorSet>\n" +
+                    "\t</s:Header>\n" +
+                    "\t<s:Body>" + updatedSoapBody +
+                    "</s:Body>\n" +
+                    "</s:Envelope>";
 
-        callWsman(putBody);
+            callWsman(putBody);
+        } else {
+            // token type is already the newTokenType
+        }
     }
 
     private GenericHttpResponse callWsman(final String requestBody) throws Exception {
