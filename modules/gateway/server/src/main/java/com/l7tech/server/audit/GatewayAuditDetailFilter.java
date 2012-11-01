@@ -2,13 +2,16 @@ package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.MessagesUtil;
+import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.Config;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 /**
@@ -49,6 +52,25 @@ public class GatewayAuditDetailFilter implements PropertyChangeListener, AuditDe
             auditable = pair.left && pair.right != null && pair.right.getLevel().intValue() >= minLevel;
         }
 
+        // Ignore audit archiver message if it has already been audited recently
+        if (SystemMessages.AUDIT_ARCHIVER_MESSAGE_PROCESSING_SUSPENDED.equals(message)) {
+            long last = lastArchiverWarning.get();
+            long now = System.currentTimeMillis();
+            if (now - last <= ARCHIVER_WARNING_THRESHOLD) {
+                // Suppress this audit
+                auditable = false;
+            } else {
+                // Time to send one, see if it is up to us
+                long last2 = lastArchiverWarning.getAndSet(now);
+                if (last2 != last) {
+                    // Someone else got to it first
+                    auditable = false;
+                } else {
+                    // Up to us to do the auditing, fall through and let it happen
+                }
+            }
+        }
+
         return auditable;
     }
 
@@ -59,6 +81,9 @@ public class GatewayAuditDetailFilter implements PropertyChangeListener, AuditDe
     private static final int MAX_VALUE = 3499;
 
     private static final String PROP_THRESHOLD = ServerConfigParams.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD;
+
+    private static final long ARCHIVER_WARNING_THRESHOLD = SyspropUtil.getLong("com.l7tech.server.audit.archiver.suspendedSevereAuditInterval", 600000L);
+    private static final AtomicLong lastArchiverWarning = new AtomicLong(0);
 
     private final AtomicInteger detailThreshold = new AtomicInteger();
 

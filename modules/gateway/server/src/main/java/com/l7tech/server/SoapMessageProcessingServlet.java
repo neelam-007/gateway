@@ -332,6 +332,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             } else if (e instanceof MethodNotAllowedException) {
                 logger.warning(ExceptionUtils.getMessage(e));
             } else if (e instanceof MessageProcessingSuspendedException) {
+                logger.warning("Message processing suspended by the Audit Archiver");
                 auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_MESSAGE_PROCESSING_SUSPENDED, ExceptionUtils.getMessage(e));
             } else if (e instanceof IOException &&
                        e.getClass().getName().equals("org.apache.catalina.connector.ClientAbortException")){
