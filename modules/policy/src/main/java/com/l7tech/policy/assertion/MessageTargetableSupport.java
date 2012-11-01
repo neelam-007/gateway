@@ -216,6 +216,7 @@ public class MessageTargetableSupport implements MessageTargetable, Serializable
             if ( this.target == TargetMessageType.OTHER ) {
                 this.otherTargetMessageVariable = messageTargetable.getOtherTargetMessageVariable();
             }
+            this.targetModifiedByGateway = messageTargetable.isTargetModifiedByGateway();
         }
     }
 

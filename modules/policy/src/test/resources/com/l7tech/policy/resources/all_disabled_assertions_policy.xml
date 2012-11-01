@@ -88,9 +88,6 @@
         </L7p:BridgeRoutingAssertion>
         <L7p:JmsRoutingAssertion>
             <L7p:Enabled booleanValue="false"/>
-            <L7p:ResponseTarget MessageTarget="included">
-                <L7p:Target target="RESPONSE"/>
-            </L7p:ResponseTarget>
         </L7p:JmsRoutingAssertion>
         <L7p:TrueAssertion>
             <L7p:Enabled booleanValue="false"/>

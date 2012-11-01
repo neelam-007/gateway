@@ -31,7 +31,7 @@ public class MtomAssertionsTest {
         assertEquals("requireEncoded", true, mtomDecode.isRequireEncoded() );
         assertEquals("processSecuredOnly", true, mtomDecode.isProcessSecuredOnly() );
         assertEquals("sourceMessage", new MessageTargetableSupport( TargetMessageType.RESPONSE ), new MessageTargetableSupport(mtomDecode) );
-        assertEquals("targetMessage", new MessageTargetableSupport( "var" ), new MessageTargetableSupport(mtomDecode.getOutputTarget()));
+        assertEquals("targetMessage", new MessageTargetableSupport( "var" , true), new MessageTargetableSupport(mtomDecode.getOutputTarget()));
         assertNotNull("variablesSet not null", mtomDecode.getVariablesSet());
         assertEquals("variablesSet length", 1, mtomDecode.getVariablesSet().length);
         assertEquals("variablesSet name 0", "var", mtomDecode.getVariablesSet()[0].getName());
@@ -52,7 +52,7 @@ public class MtomAssertionsTest {
         assertEquals("processSecuredOnly", 1024, mtomEncode.getOptimizationThreshold() );
         assertNull( "xpathExpressions", mtomEncode.getXpathExpressions() );
         assertEquals("sourceMessage", new MessageTargetableSupport( TargetMessageType.RESPONSE ), new MessageTargetableSupport(mtomEncode) );
-        assertEquals("targetMessage", new MessageTargetableSupport( "var" ), new MessageTargetableSupport(mtomEncode.getOutputTarget()));
+        assertEquals("targetMessage", new MessageTargetableSupport( "var" , true), new MessageTargetableSupport(mtomEncode.getOutputTarget()));
         assertNotNull("variablesSet not null", mtomEncode.getVariablesSet());
         assertEquals("variablesSet length", 1, mtomEncode.getVariablesSet().length);
         assertEquals("variablesSet name 0", "var", mtomEncode.getVariablesSet()[0].getName());
