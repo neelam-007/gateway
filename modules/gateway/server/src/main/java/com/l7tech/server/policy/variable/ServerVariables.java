@@ -25,10 +25,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
-import com.l7tech.util.CachedCallable;
-import com.l7tech.util.Pair;
-import com.l7tech.util.TextUtils;
-import com.l7tech.util.TimeSource;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
 import javax.wsdl.Binding;
@@ -65,6 +62,14 @@ public class ServerVariables {
     private static ClusterPropertyCache clusterPropertyCache;
     private static SecurePasswordManager securePasswordManager;
     private static ClusterInfoManager clusterInfoManager;
+
+    private static final long SELF_NODE_INF_CACHE_INTERVAL = SyspropUtil.getLong("com.l7tech.server.policy.variable.ssgnode.cacheMillis", 30000L);
+    private static final CachedCallable<ClusterNodeInfo> SELF_NODE_INF_CACHE = new CachedCallable<ClusterNodeInfo>(SELF_NODE_INF_CACHE_INTERVAL, new Callable<ClusterNodeInfo>() {
+        @Override
+        public ClusterNodeInfo call() throws Exception {
+            return clusterInfoManager == null ? null : clusterInfoManager.getSelfNodeInf();
+        }
+    });
 
     /**
      * Has default value to support simple usages in test cases.
@@ -616,28 +621,16 @@ public class ServerVariables {
             new Variable(BuiltinVariables.SSGNODE_ID, new Getter() {
                 @Override
                 Object get(String name, PolicyEnforcementContext context) {
-                    ClusterNodeInfo inf = clusterInfoManager == null ? null : clusterInfoManager.getSelfNodeInf();
+                    ClusterNodeInfo inf = getSelfNodeInfCached();
                     return inf == null ? null : inf.getNodeIdentifier();
                 }
             }),
 
             new Variable(BuiltinVariables.SSGNODE_NAME, new Getter() {
-                final CachedCallable<ClusterNodeInfo> cache = new CachedCallable<ClusterNodeInfo>(60000L, new Callable<ClusterNodeInfo>() {
-                    @Override
-                    public ClusterNodeInfo call() throws Exception {
-                        return clusterInfoManager == null ? null : clusterInfoManager.getSelfNodeInf();
-                    }
-                });
-
                 @Override
                 Object get(String name, PolicyEnforcementContext context) {
-                    try {
-                        ClusterNodeInfo inf = cache.call();
-                        return inf == null ? null : inf.getName();
-                    } catch (Exception e) {
-                        // Can't happen
-                        return null;
-                    }
+                    ClusterNodeInfo inf = getSelfNodeInfCached();
+                    return inf == null ? null : inf.getName();
                 }
             }),
 
@@ -1397,5 +1390,14 @@ public class ServerVariables {
     static char[] getPlaintextPassword(SecurePassword securePassword) throws FindException, ParseException {
         String encoded = securePassword.getEncodedPassword();
         return encoded == null || encoded.length() < 1 ? null : securePasswordManager.decryptPassword(encoded);
+    }
+
+    static ClusterNodeInfo getSelfNodeInfCached() {
+        try {
+            return SELF_NODE_INF_CACHE.call();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to get self node info: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return null;
+        }
     }
 }
