@@ -178,6 +178,8 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                 String id = (String) pk;
                 int sepIndex = id.indexOf(":");
                 return (ET) keyStoreManager.lookupKeyByKeyAlias(id.substring(sepIndex+1), Long.parseLong(id.substring(0,sepIndex)));
+            } else if (EntityType.SSG_KEYSTORE == type) {
+                return (ET) keyStoreManager.findByPrimaryKey(Long.valueOf((String)pk));
             } else if (pk instanceof String) {
                 try {
                     tempPk = Long.valueOf((String)pk);

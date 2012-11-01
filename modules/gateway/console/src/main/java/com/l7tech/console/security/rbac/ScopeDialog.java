@@ -304,7 +304,7 @@ class ScopeDialog extends JDialog {
         permission.getScope().clear();
 
         if (scopeSpecificRadioButton.isSelected() && specificEntity != null) {
-            final ObjectIdentityPredicate pred = new ObjectIdentityPredicate(permission, specificEntity.getOid());
+            final ObjectIdentityPredicate pred = new ObjectIdentityPredicate(permission, specificEntity.getStrId());
             pred.setHeader(specificEntity);
             permission.getScope().add(pred);
         } else if (scopePredicatesRadioButton.isSelected()) {

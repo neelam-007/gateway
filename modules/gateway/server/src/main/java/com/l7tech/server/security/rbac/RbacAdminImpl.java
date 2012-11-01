@@ -78,9 +78,7 @@ public class RbacAdminImpl implements RbacAdmin {
                     try {
                         oip.setHeader(entityFinder.findHeader(permission.getEntityType(), id));
                     } catch (FindException e) {
-                        logger.severe("Couldn't look up EntityHeader for " +
-                                e.getClass().getSimpleName() +
-                                " #" + id);
+                        logger.log(Level.WARNING, "Couldn't look up EntityHeader for " + permission.getEntityType().getName() + " id=" + id + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
                 }
             }
