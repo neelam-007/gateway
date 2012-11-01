@@ -25,6 +25,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
+import com.l7tech.util.CachedCallable;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.TimeSource;
@@ -40,6 +41,7 @@ import java.net.URL;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -620,10 +622,22 @@ public class ServerVariables {
             }),
 
             new Variable(BuiltinVariables.SSGNODE_NAME, new Getter() {
+                final CachedCallable<ClusterNodeInfo> cache = new CachedCallable<ClusterNodeInfo>(60000L, new Callable<ClusterNodeInfo>() {
+                    @Override
+                    public ClusterNodeInfo call() throws Exception {
+                        return clusterInfoManager == null ? null : clusterInfoManager.getSelfNodeInf();
+                    }
+                });
+
                 @Override
                 Object get(String name, PolicyEnforcementContext context) {
-                    ClusterNodeInfo inf = clusterInfoManager == null ? null : clusterInfoManager.getSelfNodeInf();
-                    return inf == null ? null : inf.getName();
+                    try {
+                        ClusterNodeInfo inf = cache.call();
+                        return inf == null ? null : inf.getName();
+                    } catch (Exception e) {
+                        // Can't happen
+                        return null;
+                    }
                 }
             }),
 
