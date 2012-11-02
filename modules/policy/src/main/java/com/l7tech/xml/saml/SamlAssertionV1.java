@@ -411,11 +411,7 @@ public class SamlAssertionV1 extends SamlAssertion {
             Validity validity = DsigUtil.verify(sigContext, signature, signingKey);
 
             if (!validity.getCoreValidity()) {
-                StringBuffer msg = new StringBuffer("Unable to verify signature of SAML assertion: Validity not achieved. " + validity.getSignedInfoMessage());
-                for (int i = 0; i < validity.getNumberOfReferences(); i++) {
-                    msg.append("\n\tElement ").append(validity.getReferenceURI(i)).append(": ").append(validity.getReferenceMessage(i));
-                }
-                throw new CausedSignatureException(msg.toString());
+                throw new CausedSignatureException("Unable to verify signature of SAML assertion: Validity not achieved. " + DsigUtil.getInvalidSignatureMessage(validity));
             }
 
             if (!resolvedAssertionId[0]) {

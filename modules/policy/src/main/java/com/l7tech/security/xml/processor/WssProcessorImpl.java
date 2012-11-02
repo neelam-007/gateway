@@ -2183,12 +2183,9 @@ public class WssProcessorImpl implements WssProcessor {
                             "purposes. this signature will therefore be ignored.");
                 return;
             }
-            StringBuilder msg = new StringBuilder("Signature not valid. " + validity.getSignedInfoMessage());
-            for (int i = 0; i < validity.getNumberOfReferences(); i++) {
-                msg.append("\n\tElement ").append(validity.getReferenceURI(i)).append(": ").append(validity.getReferenceMessage(i));
-            }
-            logger.warning(msg.toString());
-            throw new InvalidDocumentSignatureException(msg.toString());
+            String msg = DsigUtil.getInvalidSignatureMessage(validity);
+            logger.warning(msg);
+            throw new InvalidDocumentSignatureException(msg);
         }
 
         // Save the SignatureValue
