@@ -338,7 +338,7 @@ public class JmsQueuesWindow extends JDialog {
                 public void actionPerformed(ActionEvent event) {
                     final JmsQueuePropertiesDialog jmsQueuePropertiesDialog = JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, null, null, false);
                     jmsQueuePropertiesDialog.pack();
-                    Utilities.centerOnParentWindow(jmsQueuePropertiesDialog);
+                    Utilities.centerOnScreen(jmsQueuePropertiesDialog);
                     DialogDisplayer.display(jmsQueuePropertiesDialog, new Runnable() {
                         @Override
                         public void run() {
@@ -375,7 +375,7 @@ public class JmsQueuesWindow extends JDialog {
                             final JmsQueuePropertiesDialog pd = JmsQueuePropertiesDialog.createInstance(
                                     JmsQueuesWindow.this, newConnection, newEndpoint, false);
                             pd.pack();
-                            Utilities.centerOnParentWindow(pd);
+                            Utilities.centerOnScreen(pd);
                             pd.selectNameField();
                             DialogDisplayer.display(pd, new Runnable() {
                                 @Override
@@ -438,7 +438,7 @@ public class JmsQueuesWindow extends JDialog {
                         final JmsQueuePropertiesDialog pd =
                                 JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, connection, endpoint, false);
                         pd.pack();
-                        Utilities.centerOnParentWindow(pd);
+                        Utilities.centerOnScreen(pd);
                         DialogDisplayer.display(pd, refreshEndpointList(endpoint)); //refresh after any changes
                     }
                 } catch (FindException fe) {
