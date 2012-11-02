@@ -17,6 +17,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.LineBreak;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.variable.*;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -309,6 +310,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                 return calendarFields.getDisplayName();
             }
         }));
+        dateOffsetComboBox.addActionListener(dateFormatListener);
 
         //
         // Sets dialog to assertion data.
@@ -444,7 +446,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         dateOffsetStatusLabel.setText(null);
     }
 
-    private void generateDatePreview() {
+    private void generateDatePreview(@Nullable Integer offset) {
         if (getSelectedDataType() != DataType.DATE_TIME) {
             return;
         }
@@ -468,9 +470,21 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                     date = dateParser.parseDateFromString(dateInput);
                 }
 
+                final Date dateToUse;
+                if (offset != null) {
+                    final int calendarField = ((CalendarFields) dateOffsetComboBox.getSelectedItem()).getCalendarField();
+                    final Calendar calendar = Calendar.getInstance();
+                    calendar.setTime(date);
+                    calendar.add(calendarField, offset);
+                    dateToUse = calendar.getTime();
+                } else {
+                    dateToUse = date;
+                }
+
                 final SimpleDateFormat format = new SimpleDateFormat(DateUtils.ISO8601_PATTERN);
                 format.setTimeZone(DateUtils.getZuluTimeZone());
-                message = format.format(date);
+                message = format.format(dateToUse);
+
             } catch (ParseException e) {
                 message = ExceptionUtils.getMessage(e);
             } catch (DateTimeConfigUtils.UnknownDateFormatException e) {
@@ -586,31 +600,17 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
 
             // validate offset
             final String offsetExp = dateOffsetTextField.getText().trim();
-            boolean isValid = true;
-            String errorMsg = null;
-            try {
-                if (!Syntax.isAnyVariableReferenced(offsetExp) && !offsetExp.isEmpty()) {
-                    try {
-                        Integer.valueOf(offsetExp);
-                    } catch (NumberFormatException e) {
-                        isValid = false;
-                        errorMsg = "Invalid integer";
-                    }
-                }
-            } catch (VariableNameSyntaxException e) {
-                errorMsg = "Invalid variable reference";
-                isValid = false;
-            }
+            final Either<String, Option<Integer>> timeOffsetEither = getTimeOffset(offsetExp);
 
-            if (isValid) {
+            if (timeOffsetEither.isRight()) {
                 dateOffsetStatusLabel.setIcon(OK_ICON);
                 dateOffsetStatusLabel.setText("OK");
             } else {
                 dateOffsetStatusLabel.setIcon(WARNING_ICON);
-                dateOffsetStatusLabel.setText(errorMsg);
+                dateOffsetStatusLabel.setText(timeOffsetEither.left());
                 ok = false;
             }
-            generateDatePreview();
+            generateDatePreview(timeOffsetEither.isRight()? timeOffsetEither.right().toNull(): null);
         }
 
         // Expression. Blank is OK.
@@ -661,5 +661,39 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
 
     public boolean isAssertionModified() {
         return _assertionModified;
+    }
+
+    // - PRIVATE
+
+    /**
+     * Get the value of the time offset.
+     *
+     * @param offsetExp expression to validate.
+     * @return Either. When left it's not null if no variable was referenced. When right it's the validation error message.
+     */
+    private Either<String, Option<Integer>> getTimeOffset(String offsetExp) {
+        boolean isValid = true;
+        String errorMsg = null;
+
+        Integer value = null;
+        try {
+            if (!Syntax.isAnyVariableReferenced(offsetExp) && !offsetExp.isEmpty()) {
+                try {
+                    value = Integer.valueOf(offsetExp);
+                } catch (NumberFormatException e) {
+                    isValid = false;
+                    errorMsg = "Invalid integer";
+                }
+            }
+        } catch (VariableNameSyntaxException e) {
+            errorMsg = "Invalid variable reference";
+            isValid = false;
+        }
+
+        if (!isValid) {
+            return Either.left(errorMsg);
+        } else {
+            return Either.rightOption(value);
+        }
     }
 }
