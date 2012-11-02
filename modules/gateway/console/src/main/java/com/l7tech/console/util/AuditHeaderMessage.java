@@ -1,6 +1,6 @@
 package com.l7tech.console.util;
 
-import com.l7tech.gateway.common.audit.AuditRecordGuidHeader;
+import com.l7tech.gateway.common.audit.ExternalAuditRecordHeader;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
 
 import java.io.IOException;
@@ -74,7 +74,7 @@ public class AuditHeaderMessage extends AbstractAuditMessage {
     }
     
     public String getGuid(){
-        return header instanceof AuditRecordGuidHeader ? ((AuditRecordGuidHeader) header).getGuid() : null;
+        return header instanceof ExternalAuditRecordHeader ? ((ExternalAuditRecordHeader) header).getGuid() : null;
     }
 
     //- PRIVATE

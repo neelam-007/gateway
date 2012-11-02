@@ -1,11 +1,15 @@
 package com.l7tech.server;
 
+import com.l7tech.gateway.common.Component;
+import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyHeader;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
@@ -28,6 +32,7 @@ import java.io.Serializable;
 import java.security.KeyStoreException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
@@ -162,7 +167,25 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             } catch (NumberFormatException e) {
                 return policyManager.findByGuid(id);
             }
-        } else {
+        }
+        else if (header instanceof ExternalAuditRecordHeader){
+            // use mock entity objects for audit records from the external audits system
+            ExternalAuditRecordHeader auditHeader = (ExternalAuditRecordHeader) header;
+            if(auditHeader.getRecordType().equals(AuditRecordUtils.TYPE_ADMIN)){
+                return new AdminAuditRecord(
+                        auditHeader.getLevel(),auditHeader.getNodeId(),123,null, auditHeader.getName(),AdminAuditRecord.ACTION_OTHER,null,-2,"fake",null,null);
+            }else if(auditHeader.getRecordType().equals(AuditRecordUtils.TYPE_MESSAGE)){
+                return new MessageSummaryAuditRecord(
+                        auditHeader.getLevel(),auditHeader.getNodeId(),  null,AssertionStatus.NONE,null,null, 3,
+                        null, 3, 4, 3,45, null, null,false, SecurityTokenType.HTTP_BASIC,4,null, null);
+            }else if(auditHeader.getRecordType().equals(AuditRecordUtils.TYPE_SYSTEM)){
+               return  new SystemAuditRecord(auditHeader.getLevel(), auditHeader.getNodeId(), Component.GW_AUDIT_SYSTEM,
+                       "fake", false, 0L, null, null, "fake", "0.0.0.0");
+            }
+            throw new FindException("Error looking audit record type: " + auditHeader.getRecordType());
+        }
+        else
+        {
             return find(EntityTypeRegistry.getEntityClass(header.getType()), header.getStrId());
         }
     }

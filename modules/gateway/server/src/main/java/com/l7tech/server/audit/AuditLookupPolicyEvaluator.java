@@ -243,7 +243,7 @@ public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
 
             for(int i = 0 ; i < (Integer)sizeObj ; ++i){
                 String id = ExternalAuditsUtils.getStringData(id_var[i]);
-                AuditRecordGuidHeader header;
+                ExternalAuditRecordHeader header;
 
                 // try getting id from audit records
                 AuditRecord record = getAuditRecordFromCache(id,null);
@@ -266,8 +266,9 @@ public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
                     String signature = ExternalAuditsUtils.getStringData(signature_var[i]);
                     String type = ExternalAuditsUtils.getStringData(type_var[i]);
 
-                    header = new AuditRecordGuidHeader(
+                    header = new ExternalAuditRecordHeader(
                             id,
+                            type,
                             oid,
                             type.equals("message")? name : "",
                             message,
@@ -279,7 +280,7 @@ public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
                             0);
 
                 }else{
-                    header = new AuditRecordGuidHeader(record,id);
+                    header = new ExternalAuditRecordHeader(record,id);
 
 
                 }
