@@ -105,7 +105,10 @@ public class ValidationUtils {
 
         if(present){
             try {
-                new URI(uriText);
+                URI test = new URI(uriText);
+                if (isQueryWithSquareBracket(test.getQuery())) {
+                    error = "Square bracket is not allowed in query.";
+                }
             } catch (URISyntaxException e) {
                 // so is invalid
                 error = ExceptionUtils.getMessage(e);
@@ -204,6 +207,10 @@ public class ValidationUtils {
                         ok = true;
                     } 
                 }
+                if (isQueryWithSquareBracket(test.getQuery())) {
+                    ok = false;
+                }
+
             } catch (URISyntaxException e) {
                 // so is invalid
             }
@@ -214,6 +221,31 @@ public class ValidationUtils {
 
         return ok;
     }
+
+    /**
+     * According to RFC 3986 section 3.2.2
+     * "A host identified by an Internet Protocol literal address, version
+     * [RFC3513] or later, is distinguished by enclosing the IP literal
+     * within square brackets ("[" and "]").  This is the only place where
+     * square bracket characters are allowed in the URI syntax."
+     *
+     * "[", "]" are added under RFC2732, however, from Java URI implementation
+     * it applied to the whole URL instead only on the Internet Protocol literal address.
+     *
+     * The query should not allow string with "[" or "]"
+     * Refer to bug 11594
+     *
+     * @param q query String
+     * @return True of query contains "[" or "]" otherwise false
+     */
+    private static boolean isQueryWithSquareBracket(String q) {
+        if (q != null) {
+            return (q.contains("[") || q.contains("]"));
+        }
+        return false;
+    }
+
+
 
     /**
      * Check if an integer string is valid.

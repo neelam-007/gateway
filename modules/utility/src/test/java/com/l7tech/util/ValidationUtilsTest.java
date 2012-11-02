@@ -183,4 +183,17 @@ public class ValidationUtilsTest {
         assertTrue(ValidationUtils.isValidUri("valid"));
         assertTrue(ValidationUtils.isValidUri("http://valid.com:8080/path?query"));
     }
+
+    @BugNumber(11594)
+    @Test
+    public void testIsValidUriQuery() throws Exception {
+        assertTrue(ValidationUtils.isValidUri("http://valid.com:8080/path"));
+        assertFalse(ValidationUtils.isValidUri("http://valid.com:8080/path?query=abc]"));
+        assertFalse(ValidationUtils.isValidUri("http://valid.com:8080/path?query=[abc]"));
+        assertFalse(ValidationUtils.isValidUri("http://valid.com:8080/path?query=abc]"));
+
+        assertFalse(ValidationUtils.isValidUrl("http://valid.com:8080/path?query=abc]", false, null));
+        assertFalse(ValidationUtils.isValidUrl("http://valid.com:8080/path?query=[abc]", false, null));
+        assertFalse(ValidationUtils.isValidUrl("http://valid.com:8080/path?query=abc]", false, null));
+    }
 }

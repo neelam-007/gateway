@@ -381,6 +381,10 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(hconf, method, " from ") + ": " + ExceptionUtils.getMessage(e), e);
                 } catch ( SocketTimeoutException e){
                     throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(hconf, method, " from ") + ": " + ExceptionUtils.getMessageWithCause(e) + ". Timed out at "+ method.getParams().getSoTimeout() +"ms", e);
+                } catch (URIException e) {
+                    String error = ValidationUtils.isValidUriString(targetUrl.getFile());
+                    if (error == null) error = "";
+                    throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(hconf, method, " from ") + ": " + ExceptionUtils.getMessageWithCause(e) + ". " + error, e);
                 } catch (IOException e) {
                     throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(hconf, method, " from ") + ": " + ExceptionUtils.getMessageWithCause(e), e);
                 } catch (NumberFormatException e) {
