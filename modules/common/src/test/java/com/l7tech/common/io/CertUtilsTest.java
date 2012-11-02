@@ -508,7 +508,7 @@ public class CertUtilsTest {
     @Test
     @BugNumber(13337)
     public void testSANWithPropertiesName() throws Exception {
-        X509Certificate certificate = CertUtils.decodeFromPEM(BUG_13337);
+        X509Certificate certificate = CertUtils.decodeFromPEM(BUG_13337_WITH_SAN);
         List<Pair<String, String>> attrs = CertUtils.getCertProperties(certificate);
         String expected = "URL=http://petrov.ca/\n" +
                 "IP Address=192.168.0.2\n" +
@@ -516,7 +516,7 @@ public class CertUtilsTest {
                 "DNS Name=petrov.ca\n" +
                 "RFC822 Name=stoyan.petrov@gmail.com\n" +
                 "Directory Name=1.2.840.113549.1.9.1=stoyan@petrov.ca,cn=fish,ou=petrovs,o=fish corp.,c=bg\n" +
-                "DNS Name=yahoo.com";
+                "DNS Name=yahoo.com\n";
         for (Pair<String, String> pair: attrs) {
             if (pair.getKey().equals(CertUtils.CERT_PROP_SAN)) {
                 assertEquals(expected, pair.getValue());
@@ -524,6 +524,18 @@ public class CertUtilsTest {
         }
     }
 
+    @Test
+    @BugNumber(13422)
+    public void testSANWithByteArrayPropertiesName() throws Exception {
+        X509Certificate certificate = CertUtils.decodeFromPEM(BUG_13422_CERT_WITH_BYTE_ARRAY_SAN);
+        List<Pair<String, String>> attrs = CertUtils.getCertProperties(certificate);
+        String expected = "DNS Name=tacoma.seattle.local\n";
+        for (Pair<String, String> pair: attrs) {
+            if (pair.getKey().equals(CertUtils.CERT_PROP_SAN)) {
+                assertEquals(expected, pair.getValue());
+            }
+        }
+    }
     /**
      * Test certificate with CRL and OCSP URLS and a CRT URL
      */
@@ -661,7 +673,7 @@ public class CertUtilsTest {
             "gjePYkAkbVGpu/QoiwmbCAEz0GcPpxBF2SQdJnBuARvEJ35rHdP0A1ryKWaT6sUbCJHNDZNpl6kN\n" +
             "vsRR9QwrI4lCj8+qqcNNANvpec86xti4Tx128ptXkGSuta27HAVQqXrS4jK7zpFheEy6";
 
-    private static final String BUG_13337 =
+    private static final String BUG_13337_WITH_SAN =
             "MIIElTCCA32gAwIBAgIBAjANBgkqhkiG9w0BAQUFADCBpjELMAkGA1UEBhMCQ0ExGTAXBgNVBAgM\n" +
             "EEJyaXRpc2ggQ29sdW1iaWExEjAQBgNVBAcMCVZhbmNvdXZlcjEdMBsGA1UECgwUTGF5ZXIgNyBU\n" +
             "ZWNobm9sb2dpZXMxEDAOBgNVBAsMB1Rlc3RpbmcxFjAUBgNVBAMMDVN0b3lhbiBQZXRyb3YxHzAd\n" +
@@ -683,5 +695,36 @@ public class CertUtilsTest {
             "hofuAxHk/wYnhwN1isPyrhU+2dnrd5bnkiMGWyqUAakkYwyx7xL6I87xAPZA0zjqIL9gt57q0luu\n" +
             "HjUcXjprvF3YHosODKXDo/kUGeCXoZKQ4yL/ascXK5OCHO8F6i3zYxl+IHmR4H8yZKMuFv+KbUL4\n" +
             "xjPxGSqYeiVKi6yvaxOvpwqvhJx0FZSnFcbkzLJuCnP+XKpklQ==";
+
+    private static final String BUG_13422_CERT_WITH_BYTE_ARRAY_SAN =
+            "MIIGBDCCBOygAwIBAgIKSHorMAAAAAAABjANBgkqhkiG9w0BAQUFADBUMRUwEwYKCZImiZPyLGQB\n" +
+            "GRYFbG9jYWwxFzAVBgoJkiaJk/IsZAEZFgdzZWF0dGxlMSIwIAYDVQQDExlyb290LnRhY29tYS5z\n" +
+            "ZWF0dGxlLmxvY2FsMB4XDTEyMDYxMTE4MzkyNVoXDTEzMDYxMTE4MzkyNVowHzEdMBsGA1UEAxMU\n" +
+            "dGFjb21hLnNlYXR0bGUubG9jYWwwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCp/LYO\n" +
+            "QpQ2sjkvYBZ8OURjY/x529IRq2Ew2kYL5bkWoG0oJi3x7JEAHU0VLDLNUBn2Kprb98uFkvvsxgzf\n" +
+            "NnS7KnToCo9OLLvxdg0NwgpuswQlFS2c7vw7gTo6knx8ydmPkTTqxp8svjT/raEcbfKjDdV3Ab/y\n" +
+            "MYQ65u+Rb6yd9GL7obSDd9syGnCqzbPK+fNiiVx3hXhtMgbv4D8EfIBSg07WpqVpoWTmCUozXWH9\n" +
+            "fJbtISWv+/kYnfSedgDN9pmpWgYKeyZSRvH6GjC/FdfwQ8s51gTA8oXmTQHNPuAYalqftyG0PjAm\n" +
+            "dFLAySU41Jo0ckAWeTzHjXnr6e5nmBkBAgMBAAGjggMLMIIDBzAvBgkrBgEEAYI3FAIEIh4gAEQA\n" +
+            "bwBtAGEAaQBuAEMAbwBuAHQAcgBvAGwAbABlAHIwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUF\n" +
+            "BwMBMA4GA1UdDwEB/wQEAwIFoDB4BgkqhkiG9w0BCQ8EazBpMA4GCCqGSIb3DQMCAgIAgDAOBggq\n" +
+            "hkiG9w0DBAICAIAwCwYJYIZIAWUDBAEqMAsGCWCGSAFlAwQBLTALBglghkgBZQMEAQIwCwYJYIZI\n" +
+            "AWUDBAEFMAcGBSsOAwIHMAoGCCqGSIb3DQMHMB0GA1UdDgQWBBTQObtNFLopBdbANO9s7rFmcL26\n" +
+            "WzAfBgNVHSMEGDAWgBQW7BkEtU7osTDoxdYESQrkCYGq1zCB2AYDVR0fBIHQMIHNMIHKoIHHoIHE\n" +
+            "hoHBbGRhcDovLy9DTj1yb290LnRhY29tYS5zZWF0dGxlLmxvY2FsLENOPXRhY29tYSxDTj1DRFAs\n" +
+            "Q049UHVibGljJTIwS2V5JTIwU2VydmljZXMsQ049U2VydmljZXMsQ049Q29uZmlndXJhdGlvbixE\n" +
+            "Qz1zZWF0dGxlLERDPWxvY2FsP2NlcnRpZmljYXRlUmV2b2NhdGlvbkxpc3Q/YmFzZT9vYmplY3RD\n" +
+            "bGFzcz1jUkxEaXN0cmlidXRpb25Qb2ludDCBzQYIKwYBBQUHAQEEgcAwgb0wgboGCCsGAQUFBzAC\n" +
+            "hoGtbGRhcDovLy9DTj1yb290LnRhY29tYS5zZWF0dGxlLmxvY2FsLENOPUFJQSxDTj1QdWJsaWMl\n" +
+            "MjBLZXklMjBTZXJ2aWNlcyxDTj1TZXJ2aWNlcyxDTj1Db25maWd1cmF0aW9uLERDPXNlYXR0bGUs\n" +
+            "REM9bG9jYWw/Y0FDZXJ0aWZpY2F0ZT9iYXNlP29iamVjdENsYXNzPWNlcnRpZmljYXRpb25BdXRo\n" +
+            "b3JpdHkwQAYDVR0RBDkwN6AfBgkrBgEEAYI3GQGgEgQQ6BOhb85ttECBPdrCize8G4IUdGFjb21h\n" +
+            "LnNlYXR0bGUubG9jYWwwDQYJKoZIhvcNAQEFBQADggEBADd9Uv5QsPZ9tVjE1ADZf9UEhQ6SaEkE\n" +
+            "vEy/iEhNGn23ORDwLr+3bEb9SW7dWNimuybe5Td5V/HTnNUvReQpVWlRZ/CbF1cw98mxZENH6Pw0\n" +
+            "PIq2H2m753C7NG6EtY7oQUlRaiebElIzRUkNUM+HIX1yVD+iuk621jvoU+JfvggiuISingm1Kh8p\n" +
+            "QAYuoPtFToXUeHxAyGtMbzWNMPp3+Ty/LWjXvAVVmArXbKMUgpUWh1Hxs8Hl3w750xf9nJzbPwpi\n" +
+            "yxVMOlbs8IyLyLOP5K/WcM216/C+C7f6gkh2uM4pVVFknhofXt/5RWigam6gt8LdVrcGrkdjap9d\n" +
+            "NKX+L5E=";
+
 
 }

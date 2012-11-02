@@ -1135,12 +1135,15 @@ public class CertUtils {
                 for (List sna : snas) {
                     if (sna.size() == 2) {
                         //The the first value in the list is the type and the second value is the name
-                        sb.append(getSubjectAlternativeName(sna));
-                        sb.append('\n');
+                        String sanProperty = getSubjectAlternativeName(sna);
+                        if (sanProperty != null) {
+                            sb.append(getSubjectAlternativeName(sna));
+                            sb.append('\n');
+                        }
                     }
                 }
                 if (sb.length() > 0) {
-                    l.add(new Pair<String, String>(CERT_PROP_SAN, sb.substring(0, sb.length()-1)));
+                    l.add(new Pair<String, String>(CERT_PROP_SAN, sb.substring(0, sb.length())));
                 }
             }
         } catch (CertificateParsingException e) {
@@ -1158,11 +1161,28 @@ public class CertUtils {
      */
     private static String getSubjectAlternativeName(List san) {
         Integer type = (Integer) san.get(0);
-        String value = (String) san.get(1);
+        String value = "";
+
+        if (san.get(1) instanceof String) {
+            value = (String) san.get(1);
+        } else if (san.get(1) instanceof byte[] ){
+            byte[] b = (byte[]) san.get(1);
+            ASN1InputStream ais = new ASN1InputStream(b);
+            try {
+                DERObject o = ais.readObject();
+                value = o.toString();
+            } catch (IOException e) {
+                return null;
+            }
+        } else {
+            return null;
+        }
 
         switch (type) {
-            case 0:
-                return "Other Name=" + value;
+            //Ignore Other Name
+            //Other name is ignored in Microsoft cert viewer
+            //case 0:
+            //    return "Other Name=" + value;
             case 1:
                 return "RFC822 Name=" + value;
             case 2:
@@ -1180,8 +1200,7 @@ public class CertUtils {
             case 8:
                 return "Registered ID=" + value;
             default:
-                return value;
-
+                return null;
         }
     }
 
