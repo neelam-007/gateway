@@ -191,7 +191,7 @@ public class SamlAssertionValidate {
             }
 
             if (assertion == null) {
-                Error result = new Error("No SAML assertion found in security Header", null);
+                Error result = new Error("No SAML assertion found" + ((isSoap) ? " in security Header" : ""), null);
                 validationResults.add(result);
                 logger.finer(result.toString());
                 return;
@@ -206,7 +206,7 @@ public class SamlAssertionValidate {
             if (isSoap || (!isSoap && isSignatureAlwaysRequired)) {
                 //always require a signature when it's SOAP. Otherwise only check when a signature is always required
                 if (embeddedSignatureToken == null && signingTokens.length == 0) {
-                    Error result = new Error("Unsigned SAML assertion found in security Header", null);
+                    Error result = new Error("Unsigned SAML assertion found" + ((isSoap) ? " in security Header" : ""), null);
                     validationResults.add(result);
                     logger.finer(result.toString());
                     return;

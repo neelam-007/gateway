@@ -172,7 +172,7 @@ public class ServerValidateNonSoapSamlTokenAssertionTest {
         }
 
         assertTrue(testAudit.isAuditPresent(AssertionMessages.SAML_STMT_VALIDATE_FAILED));
-        assertTrue(testAudit.isAuditPresentContaining("Unsigned SAML assertion found in security Header"));
+        assertTrue(testAudit.isAuditPresentContaining("Unsigned SAML assertion found"));
     }
 
     @Test
