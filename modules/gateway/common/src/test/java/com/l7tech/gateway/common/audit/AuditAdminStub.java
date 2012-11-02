@@ -47,6 +47,11 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
+    public boolean isAuditArchiveEnabled() {
+        return true;
+    }
+
+    @Override
     public ClusterProperty getFtpAuditArchiveConfig() {
         throw new UnsupportedOperationException("Not supoprted in stub mode");
     }

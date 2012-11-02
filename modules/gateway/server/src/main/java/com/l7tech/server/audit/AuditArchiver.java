@@ -89,6 +89,10 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
         validatedConfig = getValidatedConfig(config, logger);
     }
 
+    public boolean isEnabled() {
+        return enabled;
+    }
+
     private Lock getNewLock() {
         // makes sure the same cluster property is used for each new lock
         return new ClusterLock(clusterPropertyManager, transactionManager, PARAM_AUDIT_ARCHIVER_IN_PROGRESS, staleTimeout);

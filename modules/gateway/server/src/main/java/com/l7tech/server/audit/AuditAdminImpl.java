@@ -261,6 +261,11 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
     }
 
     @Override
+    public boolean isAuditArchiveEnabled(){
+        return auditArchiver.isEnabled();
+    }
+
+    @Override
     public ClusterProperty getFtpAuditArchiveConfig() {
         ClusterProperty result = null;
         try {

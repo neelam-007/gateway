@@ -112,6 +112,8 @@ public interface AuditAdmin extends AsyncAdminMethods{
     @Secured(types=AUDIT_RECORD, stereotype = DELETE_MULTI)
     void doAuditArchive();
 
+    boolean isAuditArchiveEnabled();
+
     /**
      * Retrieves the Audit Archiver FTP destination configured for the cluster.
      */

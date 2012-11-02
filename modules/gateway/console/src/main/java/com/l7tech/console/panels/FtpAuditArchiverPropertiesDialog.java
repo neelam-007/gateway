@@ -59,6 +59,7 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
     private JButton _testButton;
     private JButton _okButton;
     private JButton _cancelButton;
+    private JLabel statusLabel;
 
     private FtpClientConfig ftpConfig;
     private ClusterProperty ftpConfigClusterProp;
@@ -235,6 +236,15 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
                 FtpAuditArchiverPropertiesDialog.this.dispose();
             }
         });
+
+        if(Registry.getDefault().getAuditAdmin().isAuditArchiveEnabled()) {
+            statusLabel.setEnabled(false);
+            statusLabel.setVisible(false);
+        } else {
+            statusLabel.setEnabled(true);
+            statusLabel.setVisible(true);
+            statusLabel.setText("<html><b>Note:</b> Audit archiver is currently disabled.");
+        }
     }
 
     private void onOk() {
