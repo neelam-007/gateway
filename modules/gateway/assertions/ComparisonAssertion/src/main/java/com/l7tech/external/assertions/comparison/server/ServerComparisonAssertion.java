@@ -53,15 +53,15 @@ public class ServerComparisonAssertion extends AbstractServerAssertion<Compariso
 
         final Object left;
 
-        if(assertion.isTreatVariableAsExpression()) {
-            left = ExpandVariables.process(assertion.getExpression1(), vars, getAudit());
-        } else {
+        if(assertion.isFailIfVariableNotFound()) {
             left = getValue(assertion.getExpression1(), vars, getAudit());
 
             if(left == null) {
                 logAndAudit(AssertionMessages.COMPARISON_NULL);
                 return AssertionStatus.FAILED;
             }
+        } else {
+            left = ExpandVariables.process(assertion.getExpression1(), vars, getAudit());
         }
 
         final State state = makeState( left, vars );

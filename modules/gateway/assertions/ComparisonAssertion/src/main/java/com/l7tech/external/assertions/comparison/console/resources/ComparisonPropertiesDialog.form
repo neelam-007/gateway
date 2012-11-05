@@ -149,7 +149,7 @@
         </constraints>
         <properties>
           <selected value="false"/>
-          <text value="Treat single variable reference as expression"/>
+          <text value="Fail if variable not found"/>
         </properties>
       </component>
     </children>

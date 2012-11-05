@@ -51,7 +51,7 @@ public class ComparisonAssertionTest {
     public void testClone() {
         final ComparisonAssertion ca = new ComparisonAssertion();
         ca.setExpression1( "expression goes here" );
-        ca.setTreatVariableAsExpression(true);
+        ca.setFailIfVariableNotFound(true);
         ca.setMultivaluedComparison( MultivaluedComparison.ANY );
         ca.setPredicates(new EmptyPredicate());
 
@@ -59,7 +59,7 @@ public class ComparisonAssertionTest {
         assertEquals( "Expression", "expression goes here", cloned.getExpression1() );
         assertEquals( "MultivaluedComparison", MultivaluedComparison.ANY, cloned.getMultivaluedComparison() );
         assertEquals( "Predicates length", 1L, (long) cloned.getPredicates().length );
-        assertEquals( "Treat Variable As Expression switch", true, cloned.isTreatVariableAsExpression());
+        assertEquals( "Treat Variable As Expression switch", true, cloned.isFailIfVariableNotFound());
         assertNotSame( "Predicates array copied", ca.getPredicates(), cloned.getPredicates() );
         assertNotSame( "Predicates copied", ca.getPredicates()[0], cloned.getPredicates()[0] );
     }

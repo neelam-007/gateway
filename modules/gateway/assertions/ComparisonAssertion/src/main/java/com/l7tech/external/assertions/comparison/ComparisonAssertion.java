@@ -44,7 +44,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
     private String leftValue;
     private Predicate[] predicates = new Predicate[0];
     private MultivaluedComparison multivaluedComparison = MultivaluedComparison.ALL;
-    private boolean treatVariableAsExpression = false;
+    private boolean failIfVariableNotFound = true;
     public static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.comparison.ComparisonAssertion");
 
     /**
@@ -106,12 +106,12 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
                 multivaluedComparison;
     }
 
-    public boolean isTreatVariableAsExpression() {
-        return treatVariableAsExpression;
+    public boolean isFailIfVariableNotFound() {
+        return failIfVariableNotFound;
     }
 
-    public void setTreatVariableAsExpression(boolean treatVariableAsExpression) {
-        this.treatVariableAsExpression = treatVariableAsExpression;
+    public void setFailIfVariableNotFound(boolean failIfVariableNotFound) {
+        this.failIfVariableNotFound = failIfVariableNotFound;
     }
 
     private boolean check() {

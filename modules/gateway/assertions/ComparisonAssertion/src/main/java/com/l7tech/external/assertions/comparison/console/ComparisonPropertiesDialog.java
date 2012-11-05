@@ -148,7 +148,7 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         } ));
         multivaluedComboBox.setSelectedItem(assertion.getMultivaluedComparison());
 
-        variableTreatmentCheckBox.setSelected(assertion.isTreatVariableAsExpression());
+        variableTreatmentCheckBox.setSelected(assertion.isFailIfVariableNotFound());
 
         addPredicateButton.addActionListener(new ActionListener() {
             @Override
@@ -234,7 +234,7 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         assertion.setExpression1(expressionField.getText());
         assertion.setMultivaluedComparison((MultivaluedComparison)multivaluedComboBox.getSelectedItem());
         assertion.setPredicates(newPreds.toArray(new Predicate[newPreds.size()]));
-        assertion.setTreatVariableAsExpression(variableTreatmentCheckBox.isSelected());
+        assertion.setFailIfVariableNotFound(variableTreatmentCheckBox.isSelected());
     }
 
     void enableButtons() {

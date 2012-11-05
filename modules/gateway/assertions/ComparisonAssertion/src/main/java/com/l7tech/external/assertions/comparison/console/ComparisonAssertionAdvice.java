@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.comparison.console;
 
-import com.l7tech.console.panels.EmailAlertPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.advice.Advice;
 import com.l7tech.console.util.TopComponents;
@@ -8,7 +7,6 @@ import com.l7tech.external.assertions.comparison.ComparisonAssertion;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 
 import java.awt.*;
 
@@ -29,8 +27,8 @@ public class ComparisonAssertionAdvice implements Advice {
 
         ComparisonAssertion subject = (ComparisonAssertion) assertions[0];
 
-        // Set the treatVariableAsExpression switch to true for new assertions
-        subject.setTreatVariableAsExpression(true);
+        // Set the failIfVariableNotFound switch to false for new assertions
+        subject.setFailIfVariableNotFound(false);
 
         final Frame mw = TopComponents.getInstance().getTopParent();
         final ComparisonPropertiesDialog dlg = new ComparisonPropertiesDialog(mw, subject);
