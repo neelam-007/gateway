@@ -31,29 +31,6 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
     }
 
 
-    public static enum CrlAction {
-        CRL_NONE("none", "No CRL checks are performed"),
-        CRL_PEER("peer", "Only check the CRL of the peer certificate"),
-        CRL_ALL("all", "Check the CRL for the whole certificate chain");
-
-        private String description;
-        private String action;
-
-        CrlAction(String action, String description) {
-            this.action = action;
-            this.description = description;
-        }
-
-        final public String getAction() {
-            return action;
-        }
-
-        final public String getDescription() {
-            return description;
-        }
-    }
-
-
     private boolean ldapSecure;
     private boolean isActiveDirectory;
     private String ldapServer;
@@ -70,7 +47,6 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
     private String serverCaCertUrl ="";
     private String serverCaCertFile ="/home/ssgconfig/certificate.pem";
     private CertAction ldapTlsReqCert= CertAction.CERT_NEVER;
-    private CrlAction ldapTlsCrlCheck= CrlAction.CRL_NONE;
     private boolean ldapTlsClientAuth =false;
     private String ldapTlsClientCertFile="";
     private String ldapTlsClientKeyFile="";
@@ -145,7 +121,6 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
             configLines.add(makeNameValuePair("LDAP_CACERT_URL", getServerCaCertUrl()));
             configLines.add(makeNameValuePair("LDAP_CACERT_FILE", getServerCaCertFile()));
             configLines.add(makeNameValuePair("LDAP_TLS_REQCERT", getLdapTlsReqCert().getAction()));
-            configLines.add(makeNameValuePair("LDAP_TLS_CRLCHECK", getLdapTlsCrlCheck().getAction()));
             configLines.add(makeNameValuePair("CLT_TLS_AUTH", convertToYesNo(isLdapTlsClientAuth())));
             configLines.add(makeNameValuePair("LDAP_TLS_CERT", getLdapTlsClientCertFile()));
             configLines.add(makeNameValuePair("LDAP_TLS_KEY", getLdapTlsClientKeyFile()));
@@ -197,11 +172,6 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
             if (getLdapTlsReqCert() != null) {
                 descs.add("\t\tClient Handling of server certificates");
                 descs.add("\t\t\t" + getLdapTlsReqCert().getDescription());
-            }
-
-            if (getLdapTlsCrlCheck() != null) {
-                descs.add("\t\tClient CRL Checking");
-                descs.add("\t\t\t" + getLdapTlsCrlCheck().getDescription());
             }
 
             if (! isLdapTlsClientAuth()) {
@@ -322,13 +292,6 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
         return ldapTlsReqCert;
     }
 
-    public void setLdapTlsCrlCheck(CrlAction ldapTlsCrlCheck) {
-        this.ldapTlsCrlCheck = ldapTlsCrlCheck;
-    }
-
-    public CrlAction getLdapTlsCrlCheck() {
-        return ldapTlsCrlCheck;
-    }
 
     public void setIsLdapTlsClientAuth(boolean ldapTlsClientAuth) {
         this.ldapTlsClientAuth = ldapTlsClientAuth;

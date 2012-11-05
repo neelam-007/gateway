@@ -158,7 +158,7 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         ldapView.setLdapCaCertURL(caCertUrl);
 
         LdapAuthTypeSettings.CertAction ldapTlsReqCert = LdapAuthTypeSettings.CertAction.CERT_NEVER;
-        LdapAuthTypeSettings.CrlAction ldapTlsCrlCheck = LdapAuthTypeSettings.CrlAction.CRL_NONE;
+
         boolean isldapTlsClientAuth = false;
         String ldapTlsClientCertFile = "";
         String ldapTlsClientKeyFile = "";
@@ -174,7 +174,6 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         boolean doTlsOptions = getConfirmationFromUser("Configure LDAPS TLS options?","n");
         if (doTlsOptions) {
             ldapTlsReqCert = maybeDoTlsReqCertPrompts(ldapTlsReqCert);
-            ldapTlsCrlCheck = maybeDoTlsCrlCheckPrompts(ldapTlsCrlCheck);
             isldapTlsClientAuth = doIsClientAuthPrompts();
             if (isldapTlsClientAuth) {
                 ldapTlsClientCertFile = doTlsClientCertFilePrompt();
@@ -195,7 +194,6 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
 
         //set all properties - may be defaults
         ldapView.setLdapTlsReqCert(ldapTlsReqCert);
-        ldapView.setLdapTlsCrlCheck(ldapTlsCrlCheck);
         ldapView.setIsLdapTlsClientAuth(isldapTlsClientAuth);
         ldapView.setLdapTlsClientCertFile(ldapTlsClientCertFile);
         ldapView.setLdapTlsClientKeyFile(ldapTlsClientKeyFile);
@@ -245,37 +243,6 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
 
     private boolean doIsClientAuthPrompts() throws IOException, WizardNavigationException {
         return getConfirmationFromUser("Configure Client Authentication?","n");
-    }
-
-    private LdapAuthTypeSettings.CrlAction maybeDoTlsCrlCheckPrompts(LdapAuthTypeSettings.CrlAction ldapTlsCrlCheck) throws IOException, WizardNavigationException {
-         if (getConfirmationFromUser("Specify how CRL checking is performed?" , "n")) {
-
-             int index = 1;
-             Map<String,LdapAuthTypeSettings.CrlAction> actionMap = new TreeMap<String,LdapAuthTypeSettings.CrlAction>();
-             for (LdapAuthTypeSettings.CrlAction crlAction : LdapAuthTypeSettings.CrlAction.values()) {
-                 actionMap.put(String.valueOf(index++),crlAction);
-             }
-
-             List<String> promptList = new ArrayList<String>();
-             for (Map.Entry<String, LdapAuthTypeSettings.CrlAction> entry : actionMap.entrySet()) {
-                 promptList.add(entry.getKey() + ") " + entry.getValue().getDescription()+ EOL);
-            }
-            String defaultChoice = "1";
-            promptList.add("Make a selection : " + "[" + defaultChoice + "] ");
-            List<String> allowedEntries = new ArrayList<String>(actionMap.keySet());
-
-            printText(EOL + "Choose an option to specify how CRL checking will be performed" + EOL);
-            String whichChoice = getData(
-                    promptList.toArray(new String[promptList.size()]),
-                    defaultChoice,
-                    allowedEntries.toArray(new String[allowedEntries.size()]),
-                    "");
-
-            if (actionMap.get(whichChoice) != null) {
-                ldapTlsCrlCheck = actionMap.get(whichChoice);
-            }
-        }
-        return ldapTlsCrlCheck;
     }
 
     private LdapAuthTypeSettings.CertAction maybeDoTlsReqCertPrompts(LdapAuthTypeSettings.CertAction ldapTlsReqCert) throws IOException, WizardNavigationException {
