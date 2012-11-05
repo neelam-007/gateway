@@ -250,26 +250,26 @@ public class JMSEndpointReference extends ExternalReference {
             List<Pair<JmsEndpoint,JmsConnection>> jmsQueues = getFinder().loadJmsQueues();
             for (Pair<JmsEndpoint,JmsConnection> jmsTuple : jmsQueues) {
                 // what makes a jms queue the same?
-                // let's say a combination of JndiUrl, CONTEXT_EL_NAME, QUEUE_EL_NAME and TOPIC_EL_NAME
+                // let's say a combination of JndiUrl, CONTEXT_EL_NAME, QueueFactoryUrl, destination type, destination name
                 if (jmsTuple.getKey().isMessageSource()) {
                     continue;
                 } else if ( !isMatch(jmsTuple.getValue().getJndiUrl(), jndiUrl) ||
                             !isMatch(jmsTuple.getValue().getInitialContextFactoryClassname(), initialContextFactoryClassname) ||
                             !isMatch(jmsTuple.getValue().getQueueFactoryUrl(), queueFactoryUrl) ||
-                            jmsTuple.getKey().isQueue() != isQueue()) {
+                            jmsTuple.getKey().isQueue() != isQueue() ||
+                            !isMatch(jmsTuple.getKey().getDestinationName(), destinationName)) {
                     continue;
                 }
-                // we have a partial match
+                // we have a match
                 tempMatches.add(jmsTuple);
             }
 
             if (tempMatches.isEmpty()) {
                 logger.warning("The JMS endpoint cannot be resolved.");
             } else {
-                // Try to discriminate using both the endpoint name and the queue name (queue name could be empty)
+                // explicitly discriminate using the endpoint name
                 for (Pair<JmsEndpoint,JmsConnection> jmsTuple : tempMatches) {
                     if ( jmsTuple.getKey().getName().equals(name) &&
-                         isMatch(jmsTuple.getKey().getDestinationName(), destinationName ) &&
                          permitMapping( getOid(), jmsTuple.getKey().getOid() )) {
                         // WE HAVE A PERFECT MATCH!
                         logger.fine("The local JMS endpoint was resolved from oid " + getOid() + " to " + jmsTuple.getKey().getOid());
@@ -278,32 +278,16 @@ public class JMSEndpointReference extends ExternalReference {
                         return true;
                     }
                 }
-                // Try to discriminate using only the queue name
-                if ( !isMissing( destinationName ) ) {
-                    for (Pair<JmsEndpoint,JmsConnection> jmsTuple : tempMatches) {
-                        if ( jmsTuple.getKey().getDestinationName().equals( destinationName ) &&
-                             permitMapping( getOid(), jmsTuple.getKey().getOid() )) {
-                            // WE HAVE A PERFECT MATCH!
-                            logger.fine("The local JMS endpoint was resolved from oid " + getOid() + " to " + jmsTuple.getKey().getOid());
-                            localEndpointId = jmsTuple.getKey().getOid();
-                            localizeType = LocalizeAction.REPLACE;
-                            return true;
-                        }
-                    }
-                }
-                // Otherwise, use a partial match if any values were present to match on
-                if ( !isMissing(jndiUrl) ||
-                     !isMissing(initialContextFactoryClassname) ||
-                     !isMissing(queueFactoryUrl) ) {
-                    for ( Pair<JmsEndpoint,JmsConnection> jmsTuple : tempMatches ) {
-                        if ( permitMapping( getOid(), jmsTuple.getKey().getOid() ) ) {
-                            logger.fine("The local JMS endpoint was resolved from oid " + getOid() + " to " + jmsTuple.getKey().getOid());
-                            localEndpointId = jmsTuple.getKey().getOid();
-                            localizeType = LocalizeAction.REPLACE;
-                            warning("JMS Destination Found", "Near perfect match found.  Resolving JMS destination: '" +
-                                    destinationName + "' to existing destination: '" + jmsTuple.left.getDestinationName() + "'");
-                            return true;
-                        }
+
+                // explicitly discriminate for template endpoint and template connection, if not template, make sure fields are not empty
+                for (Pair<JmsEndpoint,JmsConnection> jmsTuple : tempMatches) {
+                    if ( ( isTemplate(jmsTuple) ||
+                          (!isTemplate(jmsTuple) && !isMissing(jndiUrl) && !isMissing(initialContextFactoryClassname) && !isMissing(queueFactoryUrl) && !isMissing(destinationName)) ) &&
+                         permitMapping( getOid(), jmsTuple.getKey().getOid() )) {
+                        logger.fine("The local JMS endpoint was resolved from oid " + getOid() + " to " + jmsTuple.getKey().getOid());
+                        localEndpointId = jmsTuple.getKey().getOid();
+                        localizeType = LocalizeAction.REPLACE;
+                        return true;
                     }
                 }
             }
@@ -321,6 +305,10 @@ public class JMSEndpointReference extends ExternalReference {
     private boolean isMatch( final String leftValue,
                              final String rightValue) {
         return isMissing(leftValue) ? isMissing(rightValue) : leftValue.equals(rightValue);
+    }
+
+    private boolean isTemplate(final Pair<JmsEndpoint,JmsConnection> jmsTuple) {
+        return jmsTuple.getKey().isTemplate() == endpointTemplate && jmsTuple.getValue().isTemplate() == connectionTemplate;
     }
 
     @Override
