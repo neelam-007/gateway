@@ -106,7 +106,7 @@ public class RateLimitQueryAssertion extends Assertion implements UsesVariables,
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RateLimitQueryAssertion>(){
         @Override
         public String getAssertionName( final RateLimitQueryAssertion assertion, final boolean decorate) {
-            if(!decorate) return baseName;
+            if(!decorate || assertion.getCounterName() == null) return baseName;
 
             StringBuilder sb = new StringBuilder(baseName);
             final String counterName = assertion.getCounterName();

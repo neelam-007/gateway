@@ -100,9 +100,12 @@ public class EncodeDecodeAssertion extends Assertion implements SetsVariables, U
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[]{
-                new VariableMetadata( targetVariableName, targetDataType!=DataType.STRING, false, null, true, targetDataType )
-        };
+        if(targetVariableName != null){
+            return new VariableMetadata[]{
+                    new VariableMetadata( targetVariableName, targetDataType!=DataType.STRING, false, null, true, targetDataType )
+            };
+        }
+        return new VariableMetadata[]{};
     }
 
     @Override
@@ -121,7 +124,8 @@ public class EncodeDecodeAssertion extends Assertion implements SetsVariables, U
         meta.put( POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<EncodeDecodeAssertion>(){
             @Override
             public String getAssertionName( final EncodeDecodeAssertion assertion, final boolean decorate ) {
-                if(!decorate) return baseName;
+                if(!decorate || assertion.getSourceVariableName() == null || assertion.getTargetVariableName() == null
+                        || assertion.getTargetDataType() == null || assertion.getTargetContentType() == null) return baseName;
                 StringBuilder nameBuilder = new StringBuilder(256);
                 nameBuilder.append( assertion.getTransformType()==null ? baseName : assertion.getTransformType().getName() );
                 nameBuilder.append( " ${" );

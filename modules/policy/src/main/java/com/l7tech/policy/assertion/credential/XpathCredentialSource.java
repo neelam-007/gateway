@@ -98,7 +98,7 @@ public class XpathCredentialSource extends XpathBasedAssertion {
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<XpathCredentialSource>(){
         @Override
         public String getAssertionName( final XpathCredentialSource assertion, final boolean decorate) {
-            if(!decorate) return baseName;
+            if(!decorate || assertion.getXpathExpression() == null || assertion.getXpathExpression().getExpression() == null) return baseName;
             return baseName + ": login = '" + assertion.getXpathExpression().getExpression() +
                            "', password = '" + assertion.getPasswordExpression().getExpression() + "'";
         }

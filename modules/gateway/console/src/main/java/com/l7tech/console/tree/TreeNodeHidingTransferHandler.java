@@ -23,7 +23,8 @@ public class TreeNodeHidingTransferHandler extends TransferHandler {
             Transferable t = createTransferable(comp);
             if (t != null) {
                 try {
-                    if (t instanceof PolicyTransferable) {
+                    if (!(comp instanceof  AssertionsTree) && !(((AssertionsTree)comp).getLastSelectedPathComponent() instanceof PolicyTemplateNode) && t instanceof PolicyTransferable) {
+                    //if (t instanceof PolicyTransferable) {
                         // Strip the tree nodes, since they aren't all serializable and the attempt
                         // to put them onto the system clipboard will fail.
                         t = ((PolicyTransferable)t).asClipboardSafe();
