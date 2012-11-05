@@ -27,12 +27,10 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="18d48" class="javax.swing.JList" binding="urlConflictList">
+              <component id="9fdc0" class="javax.swing.JList" binding="urlConflictList">
                 <constraints/>
                 <properties>
-                  <maximumSize width="0" height="0"/>
                   <minimumSize width="300" height="150"/>
-                  <preferredSize width="-1" height="-1"/>
                 </properties>
               </component>
             </children>
@@ -62,7 +60,7 @@
               <component id="f3f71" class="javax.swing.JList" binding="policyNameConflictList">
                 <constraints/>
                 <properties>
-                  <minimumSize width="300" height="50"/>
+                  <minimumSize width="300" height="150"/>
                 </properties>
               </component>
             </children>
