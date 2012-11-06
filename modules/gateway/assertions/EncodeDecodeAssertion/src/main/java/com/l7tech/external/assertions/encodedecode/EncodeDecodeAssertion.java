@@ -1,18 +1,13 @@
 package com.l7tech.external.assertions.encodedecode;
 
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionNodeNameFactory;
-import com.l7tech.policy.assertion.AssertionUtils;
-import com.l7tech.policy.assertion.SetsVariables;
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -49,7 +44,7 @@ public class EncodeDecodeAssertion extends Assertion implements SetsVariables, U
         return targetVariableName;
     }
 
-    public void setTargetVariableName( final String targetVariableName ) {
+    public void setTargetVariableName(@NotNull final String targetVariableName ) {
         this.targetVariableName = targetVariableName;
     }
 
