@@ -26,7 +26,7 @@ This step lets you create or set up a connection to the SSG database.
 If a connection is not configured the SSG will use an embedded
 database and will run with reduced functionality.</prompt>
     </optionGroup>
-    <optionGroup id="admin" required="false" group="db">
+    <optionGroup id="admin">
         <description>SSM Administrative Account</description>
         <prompt>
 ----------------------------
