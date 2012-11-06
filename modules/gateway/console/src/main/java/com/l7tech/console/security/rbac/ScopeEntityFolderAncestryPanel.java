@@ -92,6 +92,7 @@ public class ScopeEntityFolderAncestryPanel extends ValidatedPanel<EntityFolderA
     @Override
     protected void doUpdateModel() {
         model = new EntityFolderAncestryPredicate(permission, entityType, entityId);
+        if(entityHeader != null) model.setName(entityHeader.getName());
     }
 
     @Override
