@@ -2117,4 +2117,133 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="25d78032-31b0-4d72-b04e-eb1deb7bee89"
+               id="90832896" version="4">
+        <l7:PolicyDetail folderId="123600909" guid="25d78032-31b0-4d72-b04e-eb1deb7bee89" id="90832896" version="4">
+            <l7:Name>getCurrentToken</l7:Name>
+            <l7:PolicyType>Include</l7:PolicyType>
+            <l7:Properties>
+                <l7:Property key="revision">
+                    <l7:LongValue>5</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:PolicyDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Retrieves the current access token from session"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Input: cacheKey"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Output: current_token, clearSessionForm"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2FjaGVLZXk9JHtjYWNoZUtleX0="/&gt;
+                    &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="lookupSession"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_session_server}/oauth/session/get"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestMsgSrc stringValue="lookupSession"/&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="lookupSessionResult"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue="sessionValue"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:value/text()"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:VariablePrefix stringValue="sessionLocation"/&gt;
+                    &lt;L7p:XmlMsgSrc stringValue="lookupSessionResult"/&gt;
+                    &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
+                    &lt;L7p:Expression stringValue="/ns:found/ns:location/text()"/&gt;
+                    &lt;L7p:Namespaces mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="ns"/&gt;
+                    &lt;L7p:value stringValue="http://ns.l7tech.com/2012/11/otk-session"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="s"/&gt;
+                    &lt;L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
+                    &lt;/L7p:XpathExpression&gt;
+                    &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="sessionValue.result"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="decoded"/&gt;
+                    &lt;L7p:TransformType transformType="URL_DECODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="JHtkZWNvZGVkfQ0KDQpUaGUgYWNjZXNzIHRva2VuIHdhcyByZXRyaWV2ZWQgZnJvbSAke3Nlc3Npb25Mb2NhdGlvbi5yZXN1bHR9Lg=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="current_token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
+                    &lt;L7p:VariableToSet stringValue="clearSessionForm"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="Tm8gY3VycmVudCB0b2tlbi4="/&gt;
+                    &lt;L7p:VariableToSet stringValue="current_token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:VariableToSet stringValue="clearSessionForm"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:ExportVariables&gt;
+                    &lt;L7p:ExportedVars stringArrayValue="included"&gt;
+                    &lt;L7p:item stringValue="clearSessionForm"/&gt;
+                    &lt;L7p:item stringValue="current_token"/&gt;
+                    &lt;/L7p:ExportedVars&gt;
+                    &lt;/L7p:ExportVariables&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Policy>
 </enumeration>

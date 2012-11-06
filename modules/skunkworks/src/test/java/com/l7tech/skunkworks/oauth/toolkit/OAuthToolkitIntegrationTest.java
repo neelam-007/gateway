@@ -664,6 +664,68 @@ public class OAuthToolkitIntegrationTest extends OAuthToolkitSupport {
                 StringUtils.deleteWhitespace(getResponseBody));
     }
 
+    @Test
+    @BugNumber(13435)
+    public void deleteSession() throws Exception {
+        final Map<String, String> storeParams = buildStoreSessionParams(true);
+        final String cacheKey = storeParams.get("cacheKey");
+        final GenericHttpResponse storeResponse = requestSession("store", storeParams);
+        assertEquals(200, storeResponse.getStatus());
+
+        final Map<String, String> deleteParams = new HashMap<String, String>();
+        deleteParams.put("cacheKey", cacheKey);
+        deleteParams.put("cacheId", "OAuthToolkitIntegrationTest");
+        final GenericHttpResponse deleteResponse = requestSession("delete", deleteParams);
+        assertEquals(200, deleteResponse.getStatus());
+        final String deleteResponseBody = new String(IOUtils.slurpStream(deleteResponse.getInputStream()));
+        assertEquals("Session deleted.", deleteResponseBody);
+
+        final Map<String, String> getParams = buildGetSessionParams(cacheKey, true);
+        final GenericHttpResponse getResponse = requestSession("get", getParams);
+        assertEquals(200, getResponse.getStatus());
+        final String getResponseBody = new String(IOUtils.slurpStream(getResponse.getInputStream()));
+        assertEquals("<found xmlns=\"http://ns.l7tech.com/2012/11/otk-session\" />", getResponseBody);
+    }
+
+    /**
+     * Should not fail if session doesn't exist.
+     */
+    @Test
+    @BugNumber(13435)
+    public void deleteSessionDoesNotExist() throws Exception {
+        final Map<String, String> deleteParams = new HashMap<String, String>();
+        deleteParams.put("cacheKey", "something");
+        deleteParams.put("cacheId", "OAuthToolkitIntegrationTest");
+        final GenericHttpResponse deleteResponse = requestSession("delete", deleteParams);
+        assertEquals(200, deleteResponse.getStatus());
+        final String deleteResponseBody = new String(IOUtils.slurpStream(deleteResponse.getInputStream()));
+        assertEquals("Session deleted.", deleteResponseBody);
+    }
+
+    @Test
+    @BugNumber(13435)
+    public void deleteSessionDefaultCacheId() throws Exception {
+        final Map<String, String> deleteParams = new HashMap<String, String>();
+        // do not set cacheId param
+        deleteParams.put("cacheKey", "something");
+        final GenericHttpResponse deleteResponse = requestSession("delete", deleteParams);
+        assertEquals(200, deleteResponse.getStatus());
+        final String deleteResponseBody = new String(IOUtils.slurpStream(deleteResponse.getInputStream()));
+        assertEquals("Session deleted.", deleteResponseBody);
+    }
+
+    @Test
+    @BugNumber(13435)
+    public void deleteSessionNoCacheKey() throws Exception {
+        final Map<String, String> deleteParams = new HashMap<String, String>();
+        // do not set cacheKey param
+        deleteParams.put("cacheId", "OAuthToolkitIntegrationTest");
+        final GenericHttpResponse deleteResponse = requestSession("delete", deleteParams);
+        assertEquals(400, deleteResponse.getStatus());
+        final String deleteResponseBody = new String(IOUtils.slurpStream(deleteResponse.getInputStream()));
+        assertEquals("Invalid request", deleteResponseBody);
+    }
+
     private Map<String, String> buildStoreSessionParams(final boolean includeOptionalParams) {
         final Map<String, String> storeParams = new HashMap<String, String>();
         storeParams.put("cacheKey", UUID.randomUUID().toString());
