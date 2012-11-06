@@ -34,7 +34,7 @@
                     &lt;L7p:ExportVariables&gt;
                     &lt;L7p:ExportedVars stringArrayValue="included"&gt;
                     &lt;L7p:item stringValue="host_oauth_ovp_server"/&gt;
-                    &lt;L7p:item stringValue="oauth_v2_website_path"/&gt;
+                    &lt;L7p:item stringValue="oauth_v1_website_path"/&gt;
                     &lt;L7p:item stringValue="host_oauth_v1_server_website_baseuri"/&gt;
                     &lt;/L7p:ExportedVars&gt;
                     &lt;/L7p:ExportVariables&gt;

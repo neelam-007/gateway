@@ -874,7 +874,7 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_v1_server_website_baseuri}${oauth_v2_website_path}"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_v1_server_website_baseuri}${oauth_v1_website_path}"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
