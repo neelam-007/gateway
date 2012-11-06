@@ -343,7 +343,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
-    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.READ)
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.READ, returnCheck=NO_RETURN_CHECK)
     String[] signCSR(long keystoreId, String alias, byte[] csrBytes, X500Principal subjectDn, int expiryDays, String sigAlg, String hashAlg) throws FindException, GeneralSecurityException;
 
     /**
