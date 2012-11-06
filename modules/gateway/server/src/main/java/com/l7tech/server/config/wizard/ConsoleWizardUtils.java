@@ -167,6 +167,14 @@ public class ConsoleWizardUtils {
 
     private ConsoleWizardUtils() {}
 
-    private static final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-    private static final PrintStream out = System.out;
+    private static BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+    private static PrintStream out = System.out;
+
+    protected static void setReader(BufferedReader br) {
+        reader = br;
+    }
+
+    protected static void setOut(PrintStream ps) {
+        out = ps;
+    }
 }
