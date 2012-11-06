@@ -32,7 +32,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -41,18 +41,11 @@ import java.util.logging.Level;
  */
 public class CreateIncludeFragmentAction extends NodeAction {
     private static final int MAX_NAME_LENGTH = 255;
-    private final AssertionTreeNode assertionNode;
-    private final CompositeAssertionTreeNode parentNode;
+    private AssertionTreeNode assertionNode;
 
     public CreateIncludeFragmentAction(final AssertionTreeNode assertionNode) {
         super(assertionNode, "Create Included Fragment", "Create Include Fragment", "com/l7tech/console/resources/folder.gif");
         this.assertionNode = assertionNode;
-        final TreeNode parent = assertionNode.getParent();
-        if (parent instanceof CompositeAssertionTreeNode) {
-            this.parentNode = (CompositeAssertionTreeNode) parent;
-        } else {
-            throw new IllegalArgumentException("Parent node must be a CompositeAssertionTreeNode.");
-        }
     }
 
     @Override
@@ -145,7 +138,13 @@ public class CreateIncludeFragmentAction extends NodeAction {
     private void updatePolicy(final JTree policyTree, final List<AssertionTreeNode> selected, final String fragmentGuid) {
         final DefaultTreeModel policyModel = (DefaultTreeModel) policyTree.getModel();
         final int insertPosition = assertionNode.getParent().getIndex(assertionNode) + 1;
-        policyModel.insertNodeInto(AssertionTreeNodeFactory.asTreeNode(new Include(fragmentGuid)), parentNode, insertPosition);
+
+        final TreeNode parent = assertionNode.getParent();
+        if (! (parent instanceof CompositeAssertionTreeNode)) {
+            throw new IllegalArgumentException("Parent node must be a CompositeAssertionTreeNode.");
+        }
+
+        policyModel.insertNodeInto(AssertionTreeNodeFactory.asTreeNode(new Include(fragmentGuid)), (CompositeAssertionTreeNode)parent, insertPosition);
         for (final AssertionTreeNode assertionNode : selected) {
             policyModel.removeNodeFromParent(assertionNode);
         }
@@ -184,7 +183,31 @@ public class CreateIncludeFragmentAction extends NodeAction {
     }
 
     private List<AssertionTreeNode> getSelectedNodes(final JTree policyTree) {
-        final TreePath[] paths = policyTree.getSelectionPaths();
+        List<TreePath> paths = new ArrayList(Arrays.asList(policyTree.getSelectionPaths()));
+
+        // Remove those children paths and update assertionNode
+        int idx = 0;
+        while (idx < paths.size()) {
+            TreePath current = paths.get(idx);
+            for (int i = ++idx; i < paths.size(); ) {
+                TreePath next = paths.get(i);
+                if (current.isDescendant(next)) {
+                    TreePath removed = paths.remove(i);
+                    if (assertionNode.equals(removed.getLastPathComponent())) {
+                        assertionNode = (AssertionTreeNode) current.getLastPathComponent();
+                    }
+                } else if (next.isDescendant(current)) {
+                    TreePath removed = paths.remove(--idx);
+                    if (assertionNode.equals(removed.getLastPathComponent())) {
+                        assertionNode = (AssertionTreeNode) next.getLastPathComponent();
+                    }
+                    break;
+                } else {
+                    i++;
+                }
+            }
+        }
+
         final List<AssertionTreeNode> nodeList = new ArrayList<AssertionTreeNode>();
         if (paths != null) {
             for (TreePath path : paths) {
