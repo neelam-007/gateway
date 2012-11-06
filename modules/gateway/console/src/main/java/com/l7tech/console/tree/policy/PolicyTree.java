@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.panels.ForEachLoopAssertionPolicyNode;
 import com.l7tech.console.panels.InformationDialog;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.PolicyTransferable;
@@ -23,6 +24,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.ExceptionUtils;
@@ -344,6 +346,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
                             newAncestor = new AllAssertionTreeNode(new AllAssertion());
                         } else if(ancestor instanceof OneOrMoreAssertionTreeNode) {
                             newAncestor = new OneOrMoreAssertionTreeNode(new OneOrMoreAssertion());
+                        } else if (ancestor instanceof ForEachLoopAssertionPolicyNode) {
+                            newAncestor = new ForEachLoopAssertionPolicyNode(new ForEachLoopAssertion());
                         } else {
                             break;
                         }
