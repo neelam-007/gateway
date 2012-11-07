@@ -542,7 +542,7 @@ else
 			URL_CACERT_FILE=$(echo "$LDAP_CACERT_URL" | sed 's/.*\///')
 			wget --quiet --no-check-certificate --no-clobber --dns-timeout=2 --timeout=2 --waitretry=2 --tries=2 $LDAP_CACERT_URL
 			if [ $? -ne 0 ]; then
-				toLog "    ERROR - Retriving the CA certificate from URL failed! Exiting..."
+				toLog "    ERROR - Retrieving the CA certificate from URL failed! Exiting..."
 				STATUS=1
 			else
 				if [ -s "$URL_CACERT_FILE" ]; then
