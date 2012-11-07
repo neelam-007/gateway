@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.comparison;
 import com.l7tech.external.assertions.comparison.server.convert.ValueConverter;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
@@ -10,6 +11,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ComparisonOperator;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import com.l7tech.util.Functions;
 import org.junit.Test;
@@ -27,10 +29,27 @@ public class ComparisonAssertionTest {
         AssertionRegistry assreg = new AssertionRegistry();
         assreg.registerAssertion(ComparisonAssertion.class);
         WspConstants.setTypeMappingFinder(assreg);
-        Assertion ass = WspReader.getDefault().parseStrictly(POLICY_XML, WspReader.INCLUDE_DISABLED);
+        Assertion ass = WspReader.getDefault().parseStrictly(PRE_FANGTOOTH_POLICY_XML, WspReader.INCLUDE_DISABLED);
 
-        String what = WspWriter.getPolicyXml(ass);
-        assertEquals( "what", what, POLICY_XML );
+        String xml = WspWriter.getPolicyXml(ass);
+        assertEquals(xml, PRE_FANGTOOTH_POLICY_XML);
+    }
+
+    @Test
+    public void testSerializationBackwardsCompatibility() throws Exception {
+        AssertionRegistry assreg = new AssertionRegistry();
+        assreg.registerAssertion(ComparisonAssertion.class);
+        WspConstants.setTypeMappingFinder(assreg);
+        Assertion ass = WspReader.getDefault().parseStrictly(PRE_FANGTOOTH_POLICY_XML, WspReader.INCLUDE_DISABLED);
+
+        String xml = WspWriter.getPolicyXml(ass);
+        assertEquals(xml, PRE_FANGTOOTH_POLICY_XML);
+
+        AllAssertion allAss = (AllAssertion) ass;
+        final ComparisonAssertion assertion = (ComparisonAssertion) allAss.getChildren().get(0);
+
+        // default value of failIfVariableNotFound switch should true to maintain backwards compatibility
+        assertEquals(true, assertion.isFailIfVariableNotFound());
     }
 
     /**
@@ -59,7 +78,7 @@ public class ComparisonAssertionTest {
         assertEquals( "Expression", "expression goes here", cloned.getExpression1() );
         assertEquals( "MultivaluedComparison", MultivaluedComparison.ANY, cloned.getMultivaluedComparison() );
         assertEquals( "Predicates length", 1L, (long) cloned.getPredicates().length );
-        assertEquals( "Treat Variable As Expression switch", true, cloned.isFailIfVariableNotFound());
+        assertEquals( "Fail if variable not found", true, cloned.isFailIfVariableNotFound());
         assertNotSame( "Predicates array copied", ca.getPredicates(), cloned.getPredicates() );
         assertNotSame( "Predicates copied", ca.getPredicates()[0], cloned.getPredicates()[0] );
     }
@@ -122,7 +141,7 @@ public class ComparisonAssertionTest {
         return null;
     }
 
-    public static final String POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+    public static final String PRE_FANGTOOTH_POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +
             "        <L7p:ComparisonAssertion>\n" +
