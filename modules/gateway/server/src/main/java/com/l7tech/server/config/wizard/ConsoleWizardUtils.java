@@ -2,6 +2,7 @@ package com.l7tech.server.config.wizard;
 
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.util.Functions;
 import com.l7tech.util.TextUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -37,81 +38,97 @@ public class ConsoleWizardUtils {
         return getData(promptLines, defaultValue, isNavAware, allowedEntriesPattern, errorMessage, false);
     }
 
-    public static String getData(String[] promptLines, String defaultValue, boolean isNavAware, Pattern allowedEntriesPattern, String errorMessage, boolean isPassword) throws IOException, WizardNavigationException {
-        boolean isValidInput;
-        String input;
-        do {
-            isValidInput = true;
-            printText(promptLines);
-            if (isPassword) {
-                input = readPassword();
-            } else {
-                input = readLine();
-            }
-            if (input != null) input = input.trim();
-            handleInput(input, isNavAware);
-
-            if (StringUtils.isEmpty(input)) {
-               if (defaultValue != null) input = defaultValue;
-            }
-
-            //if the wizard didn't recognize the input (i.e. non navigation input) then check it's validity here
-            if (allowedEntriesPattern != null) {
-                Matcher matcher = allowedEntriesPattern.matcher(input);
-                isValidInput = matcher.matches();
-            }
-            if (!isValidInput) {
-                if (StringUtils.isEmpty(errorMessage))
-                    printText("*** Invalid Selection. Please select one of the options shown. ***\n");
-                else
-                    printText(errorMessage + "\n");
-            }
-        } while (!isValidInput);
-
-        return input;
-    }
-
-
-    public static String getData(String[] promptLines, String defaultValue, boolean isNavAware, String[] allowedEntries, String errorMessage, boolean isPassword) throws IOException, WizardNavigationException {
-        boolean isValidInput;
-        String input;
-        do {
-            isValidInput = true;
-            printText(promptLines);
-            if (isPassword) {
-                input = readPassword();
-            } else {
-                input = readLine();
-            }
-            if (input != null) input = input.trim();
-            handleInput(input, isNavAware);
-
-            if (StringUtils.isEmpty(input)) {
-               if (defaultValue != null) input = defaultValue;
-            }
-
-            //if the wizard didn't recognize the input (i.e. non navigation input) then check it's validity here
-            if (allowedEntries != null && allowedEntries.length != 0) {
-                boolean foundAMatch = false;
-                for (String allowedEntry : allowedEntries) {
-                    foundAMatch = StringUtils.equals(input, allowedEntry);
-                    if (foundAMatch) break;
+    public static String getData(String[] promptLines, String defaultValue, boolean isNavAware, final Pattern allowedEntriesPattern, String errorMessage, boolean isPassword) throws IOException, WizardNavigationException {
+        final Functions.UnaryVoidThrows<String,Exception> verifier = new Functions.UnaryVoidThrows<String,Exception>(){
+            @Override
+            public void call( final String input ) throws Exception {
+                if (allowedEntriesPattern != null) {
+                    Matcher matcher = allowedEntriesPattern.matcher(input);
+                    if (!matcher.matches() ) {
+                        throw new IllegalArgumentException("Pattern not match.");
+                    }
                 }
-                isValidInput = foundAMatch;
             }
-            if (!isValidInput) {
-                if (StringUtils.isEmpty(errorMessage))
-                    printText("*** Invalid Selection. Please select one of the options shown. ***\n");
-                else
-                    printText(errorMessage + "\n");
+        };
 
-            }
-        } while (!isValidInput);
-
-        return input;
+        return getData(promptLines, defaultValue, isNavAware, verifier, errorMessage, isPassword);
     }
+
     public static String getData(String[] promptLines, String defaultValue, boolean isNavAware, String[] allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
         return getData(promptLines, defaultValue, isNavAware, allowedEntries, errorMessage, false);
+    }
+
+    public static String getData(String[] promptLines, String defaultValue, boolean isNavAware, final String[] allowedEntries, String errorMessage, boolean isPassword) throws IOException, WizardNavigationException {
+
+        final Functions.UnaryVoidThrows<String,Exception> verifier = new Functions.UnaryVoidThrows<String,Exception>(){
+            @Override
+            public void call( final String input ) throws Exception {
+                if (allowedEntries != null && allowedEntries.length != 0) {
+                    boolean foundAMatch = false;
+                    for (String allowedEntry : allowedEntries) {
+                        foundAMatch = StringUtils.equals(input, allowedEntry);
+                        if (foundAMatch) break;
+                    }
+                    if (!foundAMatch) {
+                        throw new IllegalArgumentException("Entry not match with any allowed entries");
+                    }
+                }
+            }
+        };
+        return getData(promptLines, defaultValue, isNavAware, verifier, errorMessage, isPassword);
+
+    }
+
+    /**
+     * @param promptLines The prompt message to ask for input
+     * @param defaultValue The default value if no input from user (user press enter without input)
+     * @param isNavAware
+     * @param verifer The verifier to verify the input, call without exception consider as success
+     *                throw any exception will consider validation failed. Null for no validation will apply to the input
+     * @param errorMessage The error message when validate failed.
+     * @param isPassword True if it is a password input.
+     * @return The value of user input.
+     *
+     * @throws IOException
+     * @throws WizardNavigationException
+     */
+    public static String getData(String[] promptLines, String defaultValue, boolean isNavAware, Functions.UnaryVoidThrows<String, Exception> verifer, String errorMessage, boolean isPassword) throws IOException, WizardNavigationException {
+        boolean isValidInput;
+        String input;
+        do {
+            isValidInput = true;
+            printText(promptLines);
+            if (isPassword) {
+                input = readPassword();
+            } else {
+                input = readLine();
+            }
+            if (input != null) input = input.trim();
+            handleInput(input, isNavAware);
+
+            if (StringUtils.isEmpty(input)) {
+                if (defaultValue != null) input = defaultValue;
+            }
+
+            //if the wizard didn't recognize the input (i.e. non navigation input) then check it's validity here
+            if (verifer != null) {
+                try {
+                    verifer.call(input);
+                    isValidInput = true;
+                } catch (Exception e) {
+                    isValidInput = false;
+                }
+            }
+            if (!isValidInput) {
+                if (StringUtils.isEmpty(errorMessage))
+                    printText("*** Invalid Selection. Please select one of the options shown. ***\n");
+                else
+                    printText(errorMessage + "\n");
+
+            }
+        } while (!isValidInput);
+
+        return input;
     }
 
     public static String readLine() throws IOException {

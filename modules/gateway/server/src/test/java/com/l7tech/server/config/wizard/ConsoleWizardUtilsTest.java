@@ -1,5 +1,7 @@
 package com.l7tech.server.config.wizard;
 
+import com.l7tech.util.Functions;
+import com.l7tech.util.ValidationUtils;
 import org.junit.Test;
 
 import java.io.*;
@@ -13,7 +15,12 @@ public class ConsoleWizardUtilsTest {
 
     @Test
     public void testGetDataAllowEntries() throws Exception {
-        ConsoleWizardUtils.setReader(new BufferedReader(new InputStreamReader(new ByteArrayInputStream("c\nY\n".getBytes()))));
+        StringBuilder sb = new StringBuilder();
+        //Failed value
+        sb.append("c\n");
+        //Success value
+        sb.append("Y\n");
+        ConsoleWizardUtils.setReader(new BufferedReader(new InputStreamReader(new ByteArrayInputStream(sb.toString().getBytes()))));
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         ConsoleWizardUtils.setOut(new PrintStream(os));
         ConsoleWizardUtils.getData(new String[]{}, "", true, new String[]{"Y", "N"}, ERROR_MESSAGE);
@@ -22,11 +29,38 @@ public class ConsoleWizardUtilsTest {
 
     @Test
     public void testGetDataPattern() throws Exception {
-        ConsoleWizardUtils.setReader(new BufferedReader(new InputStreamReader(new ByteArrayInputStream("a b\na\n".getBytes()))));
+        StringBuilder sb = new StringBuilder();
+        //Failed value
+        sb.append("a b\n");
+        //Success value
+        sb.append("a\n");
+        ConsoleWizardUtils.setReader(new BufferedReader(new InputStreamReader(new ByteArrayInputStream(sb.toString().getBytes()))));
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         ConsoleWizardUtils.setOut(new PrintStream(os));
         //Match anything no whitespace
         ConsoleWizardUtils.getData(new String[]{}, "", true, Pattern.compile("\\S+"), ERROR_MESSAGE);
+        assertEquals(ERROR_MESSAGE, os.toString().trim());
+    }
+
+    @Test
+    public void testGetDataGeneric() throws Exception {
+        StringBuilder sb = new StringBuilder();
+        //Failed value
+        sb.append("abc\n");
+        //Success value
+        sb.append("http://layer7tech.com\n");
+        final Functions.UnaryVoidThrows<String,Exception> verifier = new Functions.UnaryVoidThrows<String,Exception>(){
+            @Override
+            public void call( final String input ) throws Exception {
+                if (!ValidationUtils.isValidUrl(input)) {
+                    throw new IllegalArgumentException("Invalid URL");
+                }
+            }
+        };
+        ConsoleWizardUtils.setReader(new BufferedReader(new InputStreamReader(new ByteArrayInputStream(sb.toString().getBytes()))));
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        ConsoleWizardUtils.setOut(new PrintStream(os));
+        ConsoleWizardUtils.getData(new String[]{}, "", true, verifier, ERROR_MESSAGE, false);
         assertEquals(ERROR_MESSAGE, os.toString().trim());
     }
 

@@ -3,6 +3,7 @@ package com.l7tech.server.config.wizard;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 import java.io.IOException;
 import java.util.List;
@@ -105,6 +106,15 @@ public abstract class BaseConsoleStep<CBT extends ConfigurationBean, CCT extends
     protected String getData(String[] promptLines, String defaultValue, Pattern allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
         return getData(promptLines, defaultValue, allowedEntries, errorMessage,false);
     }
+
+    protected String getData(String[] promptLines, String defaultValue,  Functions.UnaryVoidThrows<String, Exception> verifer, String errorMessage, boolean isPassword) throws IOException, WizardNavigationException {
+        return ConsoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), verifer, errorMessage, isPassword);
+    }
+
+    protected String getData(String[] promptLines, String defaultValue,  Functions.UnaryVoidThrows<String, Exception> verifer, String errorMessage) throws IOException, WizardNavigationException {
+        return getData(promptLines, defaultValue, verifer, errorMessage, false);
+    }
+
 
     protected void printText(List<String> textToPrint) {
         if (textToPrint != null) ConsoleWizardUtils.printText(textToPrint.toArray(new String[textToPrint.size()]));

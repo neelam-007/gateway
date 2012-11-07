@@ -2,6 +2,8 @@ package com.l7tech.server.config.systemconfig;
 
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.wizard.BaseConsoleStep;
+import com.l7tech.util.Functions;
+import com.l7tech.util.ValidationUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -141,10 +143,18 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         String caCertFile = "";
         boolean isCaCertAtUrl = getConfirmationFromUser("Specify the URL to a PEM containing the certificate?", "n");
         if (isCaCertAtUrl) {
+            final Functions.UnaryVoidThrows<String,Exception> verifier = new Functions.UnaryVoidThrows<String,Exception>(){
+                @Override
+                public void call( final String input ) throws Exception {
+                    if (!ValidationUtils.isValidUrl(input)) {
+                        throw new IllegalArgumentException("Invalid URL");
+                    }
+                }
+            };
             caCertUrl = getData(
                     new String[] {"Specify the URL where the PEM formatted CA certificate can be located : "},
                     "",
-                    Pattern.compile("\\S+"),
+                    verifier,
                     "*** Invalid URL: please provide a valid URL ***");
 
         } else {
