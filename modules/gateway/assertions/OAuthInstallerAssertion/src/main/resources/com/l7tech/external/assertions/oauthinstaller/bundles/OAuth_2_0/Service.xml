@@ -3869,6 +3869,18 @@
                     &lt;L7p:Base64Expression stringValue=""/&gt;
                     &lt;L7p:VariableToSet stringValue="authorizeRedirectURI.result"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="MzAwMA=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="ownerCacheAge"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="NjAw"/&gt;
+                    &lt;L7p:VariableToSet stringValue="sessionIdCacheAge"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="NQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="deleteCacheAge"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:ProtectedServiceUrl
@@ -4108,7 +4120,7 @@
                     &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHtyZXNvdXJjZV9vd25lcn0mY2FjaGVJZD11c2VyU2Vzc2lvbklEQ2FjaGVWMiZjYWNoZUFnZT0zMDAwJmNhY2hlTWF4RW50cmllcz0xMDAwJmNhY2hlTWF4U2l6ZT0xMDAwMCZ2YWx1ZT0ke3Nlc3Npb25WYWx1ZX0="/&gt;
+                    stringValue="Y2FjaGVLZXk9JHtyZXNvdXJjZV9vd25lcn0mY2FjaGVJZD11c2VyU2Vzc2lvbklEQ2FjaGVWMiZjYWNoZUFnZT0ke293bmVyQ2FjaGVBZ2V9JmNhY2hlTWF4RW50cmllcz0xMDAwJmNhY2hlTWF4U2l6ZT0xMDAwMCZ2YWx1ZT0ke3Nlc3Npb25WYWx1ZX0="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeSession"/&gt;
@@ -4174,7 +4186,7 @@
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHtyZXNvdXJjZV9vd25lcn0mY2FjaGVJZD11c2VyU2Vzc2lvbklEQ2FjaGVWMiZjYWNoZUFnZT0zMDAw"/&gt;
+                    stringValue="Y2FjaGVLZXk9JHtyZXNvdXJjZV9vd25lcn0mY2FjaGVJZD11c2VyU2Vzc2lvbklEQ2FjaGVWMiZjYWNoZUFnZT0ke293bmVyQ2FjaGVBZ2V9"/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="lookupSession"/&gt;
@@ -4358,7 +4370,7 @@
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnNlc3Npb25JRH0mY2FjaGVJZD1hdXRob3JpemVDYWNoZSZjYWNoZUFnZT0zMDA="/&gt;
+                    stringValue="Y2FjaGVLZXk9JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnNlc3Npb25JRH0mY2FjaGVJZD1hdXRob3JpemVDYWNoZSZjYWNoZUFnZT0ke3Nlc3Npb25JZENhY2hlQWdlfQ=="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="lookupSession"/&gt;
@@ -4522,7 +4534,7 @@
                     &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnNlc3Npb25JRH0mY2FjaGVJZD1hdXRob3JpemVDYWNoZSZjYWNoZUFnZT01JmNhY2hlTWF4RW50cmllcz0xMDAwMCZjYWNoZU1heFNpemU9MTAwMDAmdmFsdWU9JHtzZXNzaW9uVmFsdWV9"/&gt;
+                    stringValue="Y2FjaGVLZXk9JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnNlc3Npb25JRH0mY2FjaGVJZD1hdXRob3JpemVDYWNoZSZjYWNoZUFnZT0ke2RlbGV0ZUNhY2hlQWdlfSZjYWNoZU1heEVudHJpZXM9MTAwMDAmY2FjaGVNYXhTaXplPTEwMDAwJnZhbHVlPSR7c2Vzc2lvblZhbHVlfQ=="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeSession"/&gt;
@@ -5024,7 +5036,7 @@
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnNlc3Npb25JRH0mY2FjaGVJZD1hdXRob3JpemVDYWNoZSZjYWNoZUFnZT02MDA="/&gt;
+                    stringValue="Y2FjaGVLZXk9JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnNlc3Npb25JRH0mY2FjaGVJZD1hdXRob3JpemVDYWNoZSZjYWNoZUFnZT0ke3Nlc3Npb25JZENhY2hlQWdlfQ=="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="lookupSession"/&gt;
@@ -5170,7 +5182,7 @@
                     &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnNlc3Npb25JRH0mY2FjaGVJZD1hdXRob3JpemVDYWNoZSZjYWNoZUFnZT01JmNhY2hlTWF4RW50cmllcz0xMDAwMCZjYWNoZU1heFNpemU9MTAwMDAmdmFsdWU9JHtzZXNzaW9uVmFsdWV9"/&gt;
+                    stringValue="Y2FjaGVLZXk9JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnNlc3Npb25JRH0mY2FjaGVJZD1hdXRob3JpemVDYWNoZSZjYWNoZUFnZT0ke2RlbGV0ZUNhY2hlQWdlfSZjYWNoZU1heEVudHJpZXM9MTAwMDAmY2FjaGVNYXhTaXplPTEwMDAwJnZhbHVlPSR7c2Vzc2lvblZhbHVlfQ=="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeSession"/&gt;
@@ -5667,7 +5679,7 @@
                     &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHtzZXNzaW9uSURbMF19JmNhY2hlSWQ9YXV0aG9yaXplQ2FjaGUmY2FjaGVBZ2U9NjAwJmNhY2hlTWF4RW50cmllcz0xMDAwMCZjYWNoZU1heFNpemU9MTAwMDAmdmFsdWU9JHtzZXNzaW9uVmFsdWV9"/&gt;
+                    stringValue="Y2FjaGVLZXk9JHtzZXNzaW9uSURbMF19JmNhY2hlSWQ9YXV0aG9yaXplQ2FjaGUmY2FjaGVBZ2U9JHtzZXNzaW9uSWRDYWNoZUFnZX0mY2FjaGVNYXhFbnRyaWVzPTEwMDAwJmNhY2hlTWF4U2l6ZT0xMDAwMCZ2YWx1ZT0ke3Nlc3Npb25WYWx1ZX0="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeSession"/&gt;
