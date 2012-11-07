@@ -186,19 +186,20 @@ if [ "$1" = "start" ] ; then
     if [ -z "${IS_APPLIANCE}" -a -z "${PC_CALL}" ] ; then
       echo "Starting Process Controller..."
       ${PC_CONTROL} start
+    else
+        ensureNotRunning
+
+        #enable logging of stdout/stderr using JDK logging as well as the standard SSG logging facilities
+        ${RUNASUSER} <<-SUEND
+        "${SSG_JAVA_HOME}/bin/java" -Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}" &
+
+        if [ ! -z "${GATEWAY_PID}" ]; then
+            rm -f "${GATEWAY_PID}"
+            echo \$! > "${GATEWAY_PID}"
+        fi
+SUEND
     fi
 
-    ensureNotRunning
-
-    #enable logging of stdout/stderr using JDK logging as well as the standard SSG logging facilities
-    ${RUNASUSER} <<-SUEND
-	"${SSG_JAVA_HOME}/bin/java" -Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}" &
-	
-	if [ ! -z "${GATEWAY_PID}" ]; then
-	    rm -f "${GATEWAY_PID}"
-	    echo \$! > "${GATEWAY_PID}"
-	fi
-	SUEND
 
 elif [ "$1" = "run" ] ; then
     shift
@@ -206,16 +207,16 @@ elif [ "$1" = "run" ] ; then
     if [ -z "${IS_APPLIANCE}" -a -z "${PC_CALL}" ] ; then
       echo "Starting Process Controller..."
       ${PC_CONTROL} start
+    else
+        ensureNotRunning
+
+        if [ -n "${GATEWAY_PID}" ]; then
+            rm -f "${GATEWAY_PID}"
+            echo $$ > "${GATEWAY_PID}"
+        fi
+
+        exec "${SSG_JAVA_HOME}/bin/java" ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}"
     fi
-
-    ensureNotRunning
-
-    if [ -n "${GATEWAY_PID}" ]; then
-        rm -f "${GATEWAY_PID}"
-        echo $$ > "${GATEWAY_PID}"
-    fi
-
-    exec "${SSG_JAVA_HOME}/bin/java" ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}"
 
 elif [ "$1" = "stop" ] ; then
   shift
@@ -271,5 +272,3 @@ else
   echoOptions
   exit 17
 fi
-
-

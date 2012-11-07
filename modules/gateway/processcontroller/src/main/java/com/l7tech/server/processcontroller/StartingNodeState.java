@@ -26,6 +26,7 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
     private final OutputCollectorThread stdoutThread, stderrThread;
     private final Process process;
     private final ProcessController processController;
+    private Died died = null;
 
     private volatile ProcessController.HasApi api;
 
@@ -46,24 +47,49 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
         process = proc;
     }
 
-    StartStatus getStatus() {
+    /**
+     * Get the start status of this starting node, assumed to be represented by our owned subprocess.
+     * <p/>
+     * If the process we created has exited, this returns StartStatus.Died with the exit value and output.
+     * Otherwise, this method just calls {@link #getStartStatusUsingPing()}.
+     *
+     * @return the start status: STARTING, STARTED, or an instance of Died.
+     */
+    StartStatus getStartStatusOfSubprocess() {
         long now = System.currentTimeMillis();
         if (now - sinceWhen < processController.getNodeStartTimeMin()) {
             logger.fine(node.getName() + " hasn't had enough time to start yet; not going to bother checking on it");
             return STARTING;
         }
 
+        if (died != null)
+            return died;
+
         try {
             int errorlevel = process.exitValue();
             logger.warning(node.getName() + " exited with status " + errorlevel);
             outputDoneSignal.set(true);
             final Pair<byte[], byte[]> byteses = finishOutput();
-
-            return new Died(errorlevel, byteses.left, byteses.right);
+            died = new Died(errorlevel, byteses.left, byteses.right);
+            return died;
         } catch (IllegalThreadStateException e) {
             logger.fine(node.getName() + " isn't dead yet!");
         }
 
+        return getStartStatusUsingPing();
+    }
+
+    /**
+     * Get the start status of this node, which may or may not be our owned subprocess (eg, we may be taking control
+     * of an uncontrolled Gateway started by someone else).
+     * <p/>
+     * This method attempts to ping the node via the node API and returns a status based on the result.
+     *
+     * @return STARTED if ping is successful (or would be except that node control is disabled); new Died if the node
+     *         is running but declines to have the PC take control of it because it is not configured for use with the PC;
+     *         or STARTING in all other cases (eg, ping fails for connection refused or any other reason not listed).
+     */
+    StartStatus getStartStatusUsingPing() {
         final ProcessController.HasApi api = processController.getNodeApi(node);
         try {
             NodeApi nodeApi = api.getApi(false);
@@ -83,11 +109,12 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
             } else if (e instanceof SOAPFaultException) {
                 SOAPFaultException sfe = (SOAPFaultException)e;
                 if (NodeApi.NODE_NOT_CONFIGURED_FOR_PC.equals(sfe.getFault().getFaultString())) {
-                    logger.warning(node.getName() + " is already running but has not been configured for use with the PC; will continue pinging it.");
+                    logger.warning(node.getName() + " is already running but has not been configured for use with the PC; will not continue pinging it.");
 
                     outputDoneSignal.set(true);
                     final Pair<byte[], byte[]> byteses = finishOutput();
-                    return new Died(-1, byteses.left, byteses.right);
+                    died = new Died(-1, byteses.left, byteses.right);
+                    return died;
                 }
             }
 

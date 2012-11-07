@@ -97,7 +97,7 @@ public class ProcessController implements InitializingBean {
         NODE_CRASH_DETECTION_TIME = configService.getIntProperty( "host.controller.crashDetectionTime", NODE_CRASH_DETECTION_TIME );
         DEFAULT_STOP_TIMEOUT = configService.getIntProperty( "host.controller.nodeStopTimeout", DEFAULT_STOP_TIMEOUT );
         NODE_SHUTDOWN_TIMEOUT = configService.getIntProperty( "host.controller.nodeShutdownTimeout", NODE_SHUTDOWN_TIMEOUT );
-        PC_SHUTDOWN_TIMEOUT = configService.getIntProperty( "host.controller.pcShutdownTimeout", PC_SHUTDOWN_TIMEOUT );
+        PC_SHUTDOWN_TIMEOUT = configService.getIntProperty("host.controller.pcShutdownTimeout", PC_SHUTDOWN_TIMEOUT);
         KILL_RUNNING_NODE = configService.getBooleanProperty( "host.controller.restartRunningNode", KILL_RUNNING_NODE);
     }
 
@@ -555,8 +555,18 @@ public class ProcessController implements InitializingBean {
      * Retry pings, counting retries and waiting for either successful startup or a timeout, whichever comes first.
      */
     private void handleStartingState(PCNodeConfig node, StartingNodeState state) {
-        final StartingNodeState.StartStatus status = state.getStatus();
-        final long now = System.currentTimeMillis();
+        StartingNodeState.StartStatus status = state.getStartStatusOfSubprocess();
+
+        {
+            StartingNodeState.Died died = status instanceof StartingNodeState.Died ? (StartingNodeState.Died) status : null;
+            boolean alreadyRunning = died != null && died.exitValue == 33;
+            if (alreadyRunning) {
+                logger.log(Level.WARNING, node.getName() + " already running; will attempt to take control of it");
+                status = state.getStartStatusUsingPing();
+            }
+        }
+
+        long now = System.currentTimeMillis();
 
         if (status == StartingNodeState.STARTED) {
             logger.info(node.getName() + " started");
@@ -590,18 +600,13 @@ public class ProcessController implements InitializingBean {
             }
         } else if (status instanceof StartingNodeState.Died) {
             final StartingNodeState.Died died = (StartingNodeState.Died)status;
-            if ( died.exitValue == 33 ) {
-                logger.warning(node.getName() + " is already running");    
-                nodeStates.put(node.getName(), new RunningNodeState(node, null, getNodeApi(node)));
-            } else {
-                logger.warning(node.getName() + " crashed on startup with exit code " + died.exitValue);
+            logger.warning(node.getName() + " crashed on startup with exit code " + died.exitValue);
 
-                logger.warning(node.getName() + " crashed on startup; copying its output:");
-                spew("STDERR", died.stderr);
-                spew("STDOUT", died.stdout);
+            logger.warning(node.getName() + " crashed on startup; copying its output:");
+            spew("STDERR", died.stderr);
+            spew("STDOUT", died.stdout);
 
-                nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
-            }
+            nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
         } else {
             logger.warning("Unexpected StartStatus: " + status);
             nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
