@@ -171,10 +171,6 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
         assertEquals(CALLBACK + "?error=invalid_request&state=state_test", locationHeader);
     }
 
-    /**
-     * This test is broken by fix for http://sarek.l7tech.com/bugzilla/show_bug.cgi?id=13419.
-     */
-    @Ignore
     @Test
     @BugNumber(13256)
     public void authorizeNoClientIdOrState() throws Exception {

@@ -3484,7 +3484,6 @@
                     &lt;L7p:RightValue stringValue="true"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:AuditDetailAssertion&gt;
                     &lt;L7p:Detail stringValue="Deleting expired tokens from the token store"/&gt;
@@ -4405,7 +4404,6 @@
                     &lt;L7p:RightValue stringValue="store"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:Include&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -4523,7 +4521,6 @@
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="ZGVmYXVsdENhY2hl"/&gt;
@@ -4551,7 +4548,6 @@
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="MzYwMDAw"/&gt;
@@ -4579,7 +4575,6 @@
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="MTA="/&gt;
@@ -4607,7 +4602,6 @@
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="MTAwMDAw"/&gt;
@@ -4635,7 +4629,6 @@
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtjYWNoZUFnZX0="/&gt;
@@ -4713,7 +4706,6 @@
                     &lt;L7p:RightValue stringValue="get"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;L7p:HtmlFormDataAssertion&gt;
@@ -4779,7 +4771,6 @@
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="ZGVmYXVsdENhY2hl"/&gt;
@@ -4807,7 +4798,6 @@
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="MzYwMDAw"/&gt;
@@ -4896,7 +4886,6 @@
                     &lt;L7p:RightValue stringValue="0"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue=""/&gt;
@@ -4916,7 +4905,6 @@
                     &lt;L7p:RightValue stringValue="${sessionQuery.session_expiration}"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:EncodeDecode&gt;
                     &lt;L7p:SourceVariableName stringValue="sessionQuery.session_value"/&gt;
@@ -5001,7 +4989,6 @@
                     &lt;L7p:RightValue stringValue="deleteExpired"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;L7p:HtmlFormDataAssertion&gt;
@@ -5184,7 +5171,6 @@
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${error}"/&gt;
@@ -5198,7 +5184,6 @@
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:HardcodedResponse&gt;
                     &lt;L7p:Base64ResponseBody stringValue="JHtlcnJvcn0="/&gt;

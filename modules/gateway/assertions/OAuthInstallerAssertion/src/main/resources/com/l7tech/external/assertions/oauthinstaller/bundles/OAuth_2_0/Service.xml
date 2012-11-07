@@ -2164,6 +2164,7 @@
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
                     &lt;L7p:Expression1 stringValue="${otherClientId}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -2229,6 +2230,7 @@
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
                     &lt;L7p:Expression1 stringValue="${otherClientId}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -2571,6 +2573,7 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${scope}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -5347,6 +5350,7 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${sessionID}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -5862,7 +5866,6 @@
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
@@ -5883,7 +5886,6 @@
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
@@ -5904,7 +5906,6 @@
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
@@ -5917,6 +5918,7 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${request.http.parameter.state}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -5924,7 +5926,6 @@
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
-                    &lt;L7p:TreatVariableAsExpression booleanValue="true"/&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression

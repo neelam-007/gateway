@@ -99,6 +99,7 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${state}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;

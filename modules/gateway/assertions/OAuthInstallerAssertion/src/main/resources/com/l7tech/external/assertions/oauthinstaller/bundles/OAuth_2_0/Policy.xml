@@ -675,6 +675,7 @@
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
                     &lt;L7p:Expression1 stringValue="${ext}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -918,6 +919,7 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${access_token}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -931,6 +933,7 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${authorizationHeader}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -1051,6 +1054,7 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${access_token}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -1112,6 +1116,7 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${authorizationHeader}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -1370,6 +1375,7 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${params}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -1421,6 +1427,7 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${authorizationHeader}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
