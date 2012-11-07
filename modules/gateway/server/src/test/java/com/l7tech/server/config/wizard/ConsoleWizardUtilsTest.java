@@ -29,4 +29,36 @@ public class ConsoleWizardUtilsTest {
         ConsoleWizardUtils.getData(new String[]{}, "", true, Pattern.compile("\\S+"), ERROR_MESSAGE);
         assertEquals(ERROR_MESSAGE, os.toString().trim());
     }
+
+    @Test
+    public void testGetDataAllowEntriesDefault() throws Exception {
+        ConsoleWizardUtils.setReader(new BufferedReader(new InputStreamReader(new ByteArrayInputStream("\n".getBytes()))));
+        String data = ConsoleWizardUtils.getData(new String[]{}, "Y", true, new String[]{"Y", "N"}, ERROR_MESSAGE);
+        assertEquals("Y", data);
+    }
+
+    @Test
+    public void testGetDataPatternDefault() throws Exception {
+        ConsoleWizardUtils.setReader(new BufferedReader(new InputStreamReader(new ByteArrayInputStream("\n".getBytes()))));
+        String data = ConsoleWizardUtils.getData(new String[]{}, "Default", true, Pattern.compile("\\S+"), ERROR_MESSAGE);
+        assertEquals("Default", data);
+    }
+
+    @Test
+    public void testGetDataAllowEntriesNull() throws Exception {
+        ConsoleWizardUtils.setReader(new BufferedReader(new InputStreamReader(new ByteArrayInputStream("\n".getBytes()))));
+        String data = ConsoleWizardUtils.getData(new String[]{}, "Y", true, (String[]) null, ERROR_MESSAGE);
+        assertEquals("Y", data);
+        String data2 = ConsoleWizardUtils.getData(new String[]{}, "Y", true, new String[]{}, ERROR_MESSAGE);
+        assertEquals("Y", data2);
+
+    }
+
+    @Test
+    public void testGetDataPatternNull() throws Exception {
+        ConsoleWizardUtils.setReader(new BufferedReader(new InputStreamReader(new ByteArrayInputStream("\n".getBytes()))));
+        String data = ConsoleWizardUtils.getData(new String[]{}, "Default", true, (Pattern) null, ERROR_MESSAGE);
+        assertEquals("Default", data);
+    }
+
 }
