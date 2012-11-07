@@ -446,14 +446,14 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
         messageFields.put("savedResponseContentLength", new FieldGetter<MessageSummaryAuditRecord>() {
             @Override
             public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
-                return new Selection(rec.getResponseXml() == null? -1 : rec.getResponseContentLength());
+                return new Selection(rec.getResponseContentLength());
             }
         });
 
         messageFields.put("savedRequestContentLength", new FieldGetter<MessageSummaryAuditRecord>() {
             @Override
             public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
-                return new Selection(rec.getRequestXml() == null? -1 : rec.getRequestContentLength());
+                return new Selection(rec.getRequestContentLength());
             }
         });
 
