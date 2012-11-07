@@ -1719,7 +1719,7 @@
                     &lt;L7p:VariableToSet stringValue="oauth2_token_path"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="ZHJhZnQtaWV0Zi1vYXV0aC12Mi0zMQ=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="Mi4wIChSRkMgNjc0OSk="/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth2_version"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
