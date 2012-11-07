@@ -114,25 +114,16 @@ if [ "X$1" == "Xldap_only" ]; then
     	fi
 	if [ "X$(grep "^URI" $OPENLDAP_CONF_FILE | tr -d '/' | cut -f 1 -d \: | awk '{print $2}')" == "Xldaps" ]; then
         	echo "LDAP communication is encrypted:"
-        	if [ "X$(grep "^TLS_CERT" $NSS_LDAP_CONF_FILE | wc -l)" == "X1" ] && [ "X$(grep "^TLS_KEY" $NSS_LDAP_CONF_FILE | wc -l)" == "X1" ]; then
-			echo "Mutual authentication is configured."
-            		echo "  Server/CA certificate file is: $(grep "^tls_cacert" $NSS_LDAP_CONF_FILE | awk '{print $2}')"
-            		echo "  Client certificate file is: $(grep "^TLS_CERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')"
-            		echo "  Client key file is: $(grep "^TLS_KEY" $NSS_LDAP_CONF_FILE | awk '{print $2}')" 
-        	else
-			echo "Simple authentication is configured."
-            		echo "  Server/CA certificate file is: $(grep "^tls_cacert" $NSS_LDAP_CONF_FILE | awk '{print $2}')"
-        	fi
-        
-		echo "Client handling of server's certificate: $(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')"
+       		echo "  Server/CA certificate file is: $(grep "^tls_cacert" $NSS_LDAP_CONF_FILE | awk '{print $2}')"  
+		echo "  Client handling of server's certificate: $(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')"
 		if [  "X$(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')" == "Xnever" ]; then
-			echo "  The client will not request or check the server certificate."
+			echo "    The client will not request or check the server certificate."
 		elif [ "X$(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')" == "Xallow" ]; then
-			echo "  The client proceeds if no certificate or a bad certificate is presented."
+			echo "    The client proceeds if no certificate or a bad certificate is presented."
 		elif [ "X$(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')" == "Xtry" ]; then
-			echo "  The session is immediately terminated if a bad certificate is presented."
+			echo "    The session is immediately terminated if a bad certificate is presented."
 		elif [ "X$(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')" == "Xhard" ] || [ "X$(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')" == "Xdemand" ]; then
-			echo "  The session is immediately terminated if no certificate or a bad certificate is presented."
+			echo "    The session is immediately terminated if no certificate or a bad certificate is presented."
 		fi
     	else
         	echo "LDAP communication is not encrypted."
@@ -165,25 +156,16 @@ elif [ "X$1" == "Xradius_with_ldap" ]; then
         fi
         if [ "X$(grep "^URI" $OPENLDAP_CONF_FILE | tr -d '/' | cut -f 1 -d \: | awk '{print $2}')" == "Xldaps" ]; then
                 echo "LDAP communication is encrypted:"
-                if [ "X$(grep "^TLS_CERT" $NSS_LDAP_CONF_FILE | wc -l)" == "X1" ] && [ "X$(grep "^TLS_KEY" $NSS_LDAP_CONF_FILE | wc -l)" == "X1" ]; then
-                        echo "Mutual authentication is configured."
-                        echo "  Server/CA certificate file is: $(grep "^tls_cacert" $NSS_LDAP_CONF_FILE | awk '{print $2}')"
-                        echo "  Client certificate file is: $(grep "^TLS_CERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')"
-                        echo "  Client key file is: $(grep "^TLS_KEY" $NSS_LDAP_CONF_FILE | awk '{print $2}')"
-                else
-                        echo "Simple authentication is configured."
-                        echo "  Server/CA certificate file is: $(grep "^tls_cacert" $NSS_LDAP_CONF_FILE | awk '{print $2}')"
-                fi
-
-                echo "Client handling of server's certificate: $(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')"
+                echo "  Server/CA certificate file is: $(grep "^tls_cacert" $NSS_LDAP_CONF_FILE | awk '{print $2}')"
+                echo "  Client handling of server's certificate: $(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')"
                 if [  "X$(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')" == "Xnever" ]; then
-                        echo "  The client will not request or check the server certificate."
+                        echo "    The client will not request or check the server certificate."
                 elif [ "X$(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')" == "Xallow" ]; then
-                        echo "  The client proceeds if no certificate or a bad certificate is presented."
+                        echo "    The client proceeds if no certificate or a bad certificate is presented."
                 elif [ "X$(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')" == "Xtry" ]; then
-                        echo "  The session is immediately terminated if a bad certificate is presented."
+                        echo "    The session is immediately terminated if a bad certificate is presented."
                 elif [ "X$(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')" == "Xhard" ] || [ "X$(grep "^TLS_REQCERT" $NSS_LDAP_CONF_FILE | awk '{print $2}')" == "Xdemand" ]; then
-                        echo "  The session is immediately terminated if no certificate or a bad certificate is presented."
+                        echo "    The session is immediately terminated if no certificate or a bad certificate is presented."
                 fi
         else
                 echo "LDAP communication is not encrypted."
@@ -635,38 +617,6 @@ else
 			fi
 		fi
 				
-		# client tls auth (mutual authentication)
-		if [ "X$CLT_TLS_AUTH" == "Xyes" ]; then
-			# TLS_CERT in /etc/ldap.conf
-			if [ "X$LDAP_TLS_CERT" != "X" ]; then
-				sed -i "s|\(^#tls_cert.*$\)|\1\n# Added by $0 on $DATE_TIME:\nTLS_CERT $LDAP_TLS_CERT\n|" $NSS_LDAP_CONF_FILE
-				if [ $? -ne 0 ] || [ "X$(grep "^TLS_CERT" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$LDAP_TLS_CERT" ]; then
-					toLog "    ERROR - Configuring 'TLS_CERT' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-					STATUS=1
-				else
-					toLog "    Success - 'TLS_CERT' set to $LDAP_TLS_CERT in $NSS_LDAP_CONF_FILE."
-				fi
-			fi
-						
-			# TLS_KEY in /etc/ldap.conf
-			if [ "X$LDAP_TLS_KEY" != "X" ]; then
-				chmod 600 $LDAP_TLS_KEY
-				if [ "X$(stat -c %a $LDAP_TLS_KEY)" == "X600" ]; then
-					toLog "    Success - the key file has the right permission set now."
-				else
-					toLog "    ERROR - changing the permission on the key file failed. Exiting..."
-					STATUS=1
-				fi
-				sed -i "s|\(^#tls_key.*$\)|\1\n# Added by $0 on $DATE_TIME:\nTLS_KEY $LDAP_TLS_KEY\n|" $NSS_LDAP_CONF_FILE
-				if [ $? -ne 0 ] || [ "X$(grep "^TLS_KEY" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$LDAP_TLS_KEY" ]; then
-					toLog "    ERROR - Configuring 'TLS_KEY' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-					STATUS=1
-				else
-					toLog "    Success - 'TLS_KEY' set to $LDAP_TLS_KEY in $NSS_LDAP_CONF_FILE."
-				fi
-			fi
-		fi
-
 		# TLS_REQCERT in /etc/ldap.conf
 		if [ "X$LDAP_TLS_REQCERT" != "X" ]; then
 			echo "# Added by $0 on $DATE_TIME" >> $NSS_LDAP_CONF_FILE
