@@ -691,9 +691,9 @@ public class AssertionMessages extends Messages {
 
     // ComparisonAssertion (formerly known as EqualityAssertion)
     public static final M COMPARISON_OK = m(7100, Level.FINE, "Comparison matched");
-    public static final M COMPARISON_NOT = m(7101, Level.INFO, "Comparison did not match: {0}");
+    public static final M COMPARISON_NOT = m(7101, Level.FINE, "Comparison did not match: {0}");
     public static final M COMPARISON_BAD_OPERATOR = m(7102, Level.WARNING, "Unsupported operator: {0}");
-    public static final M COMPARISON_NULL = m(7103, Level.INFO, "At least one comparison value was null");
+    public static final M COMPARISON_NULL = m(7103, Level.FINE, "At least one comparison value was null");
     public static final M COMPARISON_CONVERTING = m(7104, Level.FINE, "Converting {0} value into {1}");
     public static final M COMPARISON_CANT_CONVERT = m(7105, Level.INFO, "Value of type {0} cannot be converted to {1}");
     public static final M COMPARISON_NOT_COMPARABLE = m(7106, Level.INFO, "{0} Value for binary predicate ''{1}'' is not Comparable; using value.toString() instead");
