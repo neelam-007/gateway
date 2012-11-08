@@ -556,11 +556,13 @@ public class ProcessController implements InitializingBean {
      */
     private void handleStartingState(PCNodeConfig node, StartingNodeState state) {
         StartingNodeState.StartStatus status = state.getStartStatusOfSubprocess();
+        Process process = state.getProcess();
 
         {
             StartingNodeState.Died died = status instanceof StartingNodeState.Died ? (StartingNodeState.Died) status : null;
             boolean alreadyRunning = died != null && died.exitValue == 33;
             if (alreadyRunning) {
+                process = null; // Do not continue to track this Process handle into RUNNING state -- it has already died (with exit 33), the actual Gateway was started by someone else
                 logger.log(Level.WARNING, node.getName() + " already running; will attempt to take control of it");
                 status = state.getStartStatusUsingPing();
             }
@@ -570,7 +572,7 @@ public class ProcessController implements InitializingBean {
 
         if (status == StartingNodeState.STARTED) {
             logger.info(node.getName() + " started");
-            nodeStates.put(node.getName(), new RunningNodeState(node, state.getProcess(), state.getApiHaver()));
+            nodeStates.put(node.getName(), new RunningNodeState(node, process, state.getApiHaver()));
         } else if (status == StartingNodeState.STARTING) {
             final long howLong = now - state.sinceWhen;
             if (howLong <= NODE_START_TIME_MAX) {
@@ -596,7 +598,7 @@ public class ProcessController implements InitializingBean {
             } else {
                 // We aren't expecting the API to work, so assume node is started
                 logger.log(Level.INFO, "{0} still hasn''t started after {1}ms.  Assuming running.", new Object[] { node.getName(), NODE_START_TIME_MAX });
-                nodeStates.put(node.getName(), new RunningNodeState(node, state.getProcess(), api));
+                nodeStates.put(node.getName(), new RunningNodeState(node, process, api));
             }
         } else if (status instanceof StartingNodeState.Died) {
             final StartingNodeState.Died died = (StartingNodeState.Died)status;
