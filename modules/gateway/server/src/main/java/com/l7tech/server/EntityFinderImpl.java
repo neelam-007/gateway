@@ -4,10 +4,12 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyHeader;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -32,7 +34,6 @@ import java.io.Serializable;
 import java.security.KeyStoreException;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
@@ -158,7 +159,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             } catch (Exception e) {
                 throw new FindException("Error looking up key for: " + keyHeader, e);
             }
-        } else if (EntityType.POLICY == header.getType()) {
+        } else if (EntityType.POLICY.equals(header.getType())) {
+            if(header instanceof PolicyHeader && ((PolicyHeader)header).isAlias()){
+                return find(EntityTypeRegistry.getEntityClass(EntityType.POLICY_ALIAS), ((PolicyHeader)header).getAliasOid());
+            }
             // some policies are identified by OID, others by GUID
             // prefer the strID/GUID, but also handle the cases when the strId is an OID
             String id = header.getStrId();
@@ -183,6 +187,9 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                        "fake", false, 0L, null, null, "fake", "0.0.0.0");
             }
             throw new FindException("Error looking audit record type: " + auditHeader.getRecordType());
+        }
+        else if(header instanceof ServiceHeader && ((ServiceHeader)header).isAlias()){
+            return find(EntityTypeRegistry.getEntityClass(EntityType.SERVICE_ALIAS), ((ServiceHeader)header).getAliasOid());
         }
         else
         {

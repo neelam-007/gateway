@@ -45,13 +45,13 @@ public class TreeNodeFactory {
             return new GroupNode(entity);
         } else if (EntityType.USER.equals(entity.getType())) {
             return new UserNode(entity);
-        } else if (EntityType.SERVICE.equals(entity.getType())) {
+        } else if (EntityType.SERVICE.equals(entity.getType()) || EntityType.SERVICE_ALIAS.equals(entity.getType())) {
             ServiceHeader sh = (ServiceHeader) entity;
             if(sh.isAlias()){
                 return new ServiceNodeAlias(sh, comparator);
             }
             return new ServiceNode(sh, comparator);
-        } else if (EntityType.POLICY.equals(entity.getType())) {
+        } else if (EntityType.POLICY.equals(entity.getType()) || EntityType.POLICY_ALIAS.equals(entity.getType())) {
             PolicyHeader pH = (PolicyHeader) entity;
             if(pH.isAlias()){
                 return new PolicyEntityNodeAlias(pH, comparator);

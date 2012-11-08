@@ -1,21 +1,21 @@
 package com.l7tech.gateway.common.admin;
 
-import static com.l7tech.objectmodel.EntityType.POLICY;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
-
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-import com.l7tech.policy.*;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.Pair;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
 import java.io.Serializable;
+import java.util.*;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
+import static com.l7tech.objectmodel.EntityType.POLICY;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
  * Remote admin interface for managing {@link com.l7tech.policy.Policy} instances on the Gateway.
@@ -102,7 +102,7 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      * @throws FindException
      */
     @Transactional(readOnly = true)
-    @Secured(stereotype = MethodStereotype.FIND_HEADERS)
+    @Secured(stereotype = MethodStereotype.FIND_HEADERS, types={EntityType.POLICY, EntityType.POLICY_ALIAS})
     @Administrative(licensed = false)
     Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types, boolean includeAliases)
             throws FindException;
