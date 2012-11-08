@@ -195,7 +195,27 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
             stopValidatingSignatures();
 
             synchronized (auditHeaderLock) {
-                rawLogCache.putAll(newLogs);
+
+                for( long key : newLogs.keySet()) {
+                    if(rawLogCache.containsKey(key))  {
+
+                        AbstractAuditMessage oldMsg = rawLogCache.get(key);
+                        if(oldMsg instanceof AuditHeaderMessage){
+                            String oldGuid = ((AuditHeaderMessage) oldMsg).getGuid();
+                            byte[] sigDigest = null;
+                            try {
+                                sigDigest = oldMsg.getSignatureDigest();
+                            } catch (IOException e) {
+                                sigDigest = null ;
+                            }
+                            if(oldGuid==null || oldGuid.isEmpty() || sigDigest==null )
+                                rawLogCache.put(key,newLogs.get(key));
+                        }
+                    }
+                    else{
+                        rawLogCache.put(key,newLogs.get(key));
+                    }
+                }
                 filteredLogCache.clear();
                 filteredLogCache.addAll(rawLogCache.values());
                 //data structures have no order. For now simply start again at the start.
