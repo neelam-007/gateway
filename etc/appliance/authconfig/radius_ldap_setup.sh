@@ -546,40 +546,26 @@ else
 				STATUS=1
 			else
 				if [ -s "$URL_CACERT_FILE" ]; then
-					# Basic verification to make sure the file is a certificate:
-					if [ "X$(openssl verify $URL_CACERT_FILE) 2>&1 | grep "^unable")" == "Xunable to load certificate" ]; then
-						toLog "    ERROR - The CA certificate retrieved does not seem to be a certificate! Exiting..."
-						STATUS=1
-					else
-						toLog "    Success - CA certificate has been retreived successfuly."
-						mv -f --backup=numbered $URL_CACERT_FILE /etc/openldap/cacerts/
-						if [ $? -ne 0 ]; then
-							toLog "    ERROR - Installing the CA certificate in /etc/openldap/cacerts directory failed! Exiting..."
-							STATUS=1
-						else
-							toLog "    Success - CA certificate installation completed."
-							CACERT_FILE_NAME=$URL_CACERT_FILE
-						fi
-					fi
-				fi
-			fi
-		else
-			# a file copied via scp on the SSG system will be used:
-			if [ -s "$LDAP_CACERT_FILE" ]; then
-				# Basic verification to make sure the file is a certificate:
-				if [ "X$(openssl verify $LDAP_CACERT_FILE) 2>&1 | grep "^unable")" == "Xunable to load certificate" ]; then
-					toLog "    ERROR - The CA certificate retrieved does not seem to be a certificate! Exiting..."
-					STATUS=1
-				else
-					/bin/cp -a --backup=numbered $LDAP_CACERT_FILE /etc/openldap/cacerts/
+					toLog "    Success - CA certificate has been retreived successfuly."
+					mv -f --backup=numbered $URL_CACERT_FILE /etc/openldap/cacerts/
 					if [ $? -ne 0 ]; then
-						toLog "    ERROR - Copying the CA certificate file failed or the certificate file is empty. Exiting..."
+						toLog "    ERROR - Installing the CA certificate in /etc/openldap/cacerts directory failed! Exiting..."
 						STATUS=1
 					else
 						toLog "    Success - CA certificate installation completed."
-						CACERT_FILE_NAME=$(basename $LDAP_CACERT_FILE)
+						CACERT_FILE_NAME=$URL_CACERT_FILE
 					fi
 				fi
+			fi
+		# a file copied via scp on the SSG system will be used:
+		elif [ -s "$LDAP_CACERT_FILE" ]; then
+			/bin/cp -a --backup=numbered $LDAP_CACERT_FILE /etc/openldap/cacerts/
+			if [ $? -ne 0 ]; then
+				toLog "    ERROR - Copying the CA certificate file failed or the certificate file is empty. Exiting..."
+				STATUS=1
+			else
+				toLog "    Success - CA certificate installation completed."
+				CACERT_FILE_NAME=$(basename $LDAP_CACERT_FILE)
 			fi
 		fi
 
@@ -1278,6 +1264,16 @@ elif [ $# -eq 2 ]; then
                                                                         STATUS=1
                                                                 fi
                                                         fi
+
+							toLog "Info - update /etc/sudoers."
+                                                        doUpdateSudoers
+                                                        if [ "X$RETVAL" == "X1" ]; then
+                                                                toLog "  ERROR - Updating /etc/sudoers file failed! Exiting..."
+                                                                STATUS=1
+                                                        else
+                                                                toLog "  Success - /etc/sudoers updated successfully."
+                                                        fi
+
                                                         # Configuration of pam to create home directories at sucessful login:
                                                         doConfigPAMmkHomeDir
                                                         if [ "X$RETVAL" == "X1" ]; then
@@ -1355,7 +1351,7 @@ elif [ $# -eq 2 ]; then
                                 esac
 
                                 toLog "Info - backup and delete the config file:"
-                                doBackup "$2"
+                                doBackup $2
 				if [ $RETVAL -eq 0 ]; then
 					rm -rf "$2"
 					if [ $? -eq 0 ]; then
