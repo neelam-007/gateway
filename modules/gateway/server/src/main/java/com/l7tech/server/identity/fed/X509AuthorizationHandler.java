@@ -49,7 +49,7 @@ class X509AuthorizationHandler extends FederatedAuthorizationHandler {
         if (requestCert == null) {
             throw new MissingCredentialsException("Can only authorize credentials that include a certificate");
         }
-        String subjectDn = requestCert.getSubjectDN().getName();
+        String subjectDn = CertUtils.getSubjectDN( requestCert );
         String issuerDn = CertUtils.getIssuerDN( requestCert );
 
         if ( !certOidSet.isEmpty() ) {

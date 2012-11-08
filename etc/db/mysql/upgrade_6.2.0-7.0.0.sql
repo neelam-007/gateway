@@ -29,6 +29,13 @@ ALTER TABLE rbac_predicate_attribute ADD COLUMN mode varchar(255);
 ALTER TABLE rbac_role ADD COLUMN user_created tinyint(1) NOT NULL default 0;
 
 --
+-- Register upgrade task to canonicalize federated user subject DNs
+--
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue)
+    values (-700000, 0, "upgrade.task.700000", "com.l7tech.server.upgrade.Upgrade62To70CanonicalizeFedUserSubjectDNs");
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

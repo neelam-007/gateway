@@ -1,32 +1,31 @@
 package com.l7tech.server.util;
 
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.gateway.common.audit.BootMessages;
-import com.l7tech.util.CollectionUtils;
-import static com.l7tech.util.CollectionUtils.set;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.BuildInfo;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.RuntimeLifecycleException;
+import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.system.Starting;
 import com.l7tech.server.event.system.SystemEvent;
 import com.l7tech.server.upgrade.FatalUpgradeException;
 import com.l7tech.server.upgrade.NonfatalUpgradeException;
 import com.l7tech.server.upgrade.UpgradeTask;
-import com.l7tech.server.RuntimeLifecycleException;
-import org.hibernate.TransactionException;
-import org.hibernate.SessionFactory;
+import com.l7tech.util.BuildInfo;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.TransactionException;
 import org.hibernate.jdbc.Work;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -34,12 +33,14 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 import java.util.logging.Logger;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.sql.Statement;
+
+import static com.l7tech.util.CollectionUtils.set;
 
 /**
  * Bean that checks sanity of the database/cluster/local configuration before allowing bootup to proceed.
@@ -71,7 +72,8 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                     "com.l7tech.server.upgrade.Upgrade52To53UpdateJmsProviderType",
                     "com.l7tech.server.upgrade.Upgrade531To54UpdateRoles",
                     "com.l7tech.server.upgrade.Upgrade61to615UpdateGatewayManagementWsdl",
-                    "com.l7tech.server.upgrade.Upgrade61To615AddRoles" ) )
+                    "com.l7tech.server.upgrade.Upgrade61To615AddRoles",
+                    "com.l7tech.server.upgrade.Upgrade62To70CanonicalizeFedUserSubjectDNs" ) )
             .put(Starting.class, set(
                     "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions" ))
             .put(Started.class, set(

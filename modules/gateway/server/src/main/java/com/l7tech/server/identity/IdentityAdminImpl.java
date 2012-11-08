@@ -1,5 +1,6 @@
 package com.l7tech.server.identity;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.password.IncorrectPasswordException;
 import com.l7tech.common.password.PasswordHasher;
@@ -9,6 +10,7 @@ import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.ntlm.adapter.NetlogonAdapter;
@@ -358,6 +360,11 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                     final boolean updateRequired = passwordManager.configureUserPasswordHashes(internalUser, clearTextPassword);
                     assert (updateRequired);
                 }
+            }
+
+            if (user instanceof FederatedUser) {
+                FederatedUser federatedUser = (FederatedUser) user;
+                federatedUser.setSubjectDn(CertUtils.formatDN(federatedUser.getSubjectDn()));
             }
 
             if (isSave) {

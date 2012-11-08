@@ -124,13 +124,13 @@ class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         try {
             FederatedUser u;
             if (SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat) || niFormat == null) {
-                u = getUserManager().findBySubjectDN(niValue);
+                u = getUserManager().findBySubjectDN(CertUtils.formatDN(niValue));
                 if (u == null) u = getUserManager().findByEmail(niValue);
                 if (u == null) u = getUserManager().findByLogin(niValue);
             } else if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
                 u = getUserManager().findByEmail(niValue);
             } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat)) {
-                u = getUserManager().findBySubjectDN(niValue);
+                u = getUserManager().findBySubjectDN(CertUtils.formatDN(niValue));
             } else {
                 u = getUserManager().findByLogin(niValue);
             }
@@ -199,7 +199,7 @@ class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         final String niFormat = assertion.getNameIdentifierFormat();
         final String niValue = assertion.getNameIdentifierValue();
         try {
-            FederatedUser u = getUserManager().findBySubjectDN(certSubjectDn);
+            FederatedUser u = getUserManager().findBySubjectDN(CertUtils.formatDN(certSubjectDn));
             if (u == null) {
                 if (certOidSet.isEmpty()) return null; // Virtual users not supported with no trusted certs
                 u = createVirtualUser(certSubjectDn, niFormat, niValue);
