@@ -18,7 +18,7 @@
 		<dependency name="layer7-gateway-common" rev="latest.integration" conf="core"/>
 		<dependency name="layer7-gateway-console" rev="latest.integration" conf="core"/>
 		<dependency name="layer7-gateway-server" rev="latest.integration" conf="core"/>
-
+        <dependency org="org.apache" name="commons-cli" rev="1.2" force="true" conf="core"/>
 		<exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
 	</dependencies>
 </ivy-module>

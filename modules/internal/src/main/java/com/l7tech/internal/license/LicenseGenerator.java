@@ -17,9 +17,11 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
+import java.util.Random;
 
 /**
  * Class that generates License XML files.  An instance of this class may only be used to generate one license.
@@ -223,5 +225,15 @@ public final class LicenseGenerator {
         } catch (SAXException e) {
             throw new LicenseGeneratorException(e); // unlikely
         }
+    }
+
+    public static long generateRandomId(Random random) {
+        long rand;
+
+        do {
+            rand = Math.abs(random.nextLong());
+        } while (rand == 0); // reroll zeros
+
+        return rand;
     }
 }

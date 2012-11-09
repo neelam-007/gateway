@@ -1908,6 +1908,13 @@
             depends="package.internal"/>
 
     <!--
+      Package the command line BatchLicenseGenerator utility (Aways invoked by hand)
+    -->
+    <target name="package.batchlicensegenerator"
+            description="Compile and package the command line BatchLicenseGenerator utility."
+            depends="package.internal"/>
+
+    <!--
       Build the windows installers
     -->
     <target name="package.installclients" unless="ssg.only" depends="package.installclient, package.installmanager">

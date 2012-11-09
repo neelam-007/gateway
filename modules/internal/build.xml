@@ -6,7 +6,7 @@
     <property name="module.main" value="com.l7tech.skunkworks"/>
     <property name="vendor.name" value="Layer 7 Technologies Inc."/>
 
-    <target name="package.custom.post" depends="package.licensegenerator, package.auditsignaturechecker, package.generatecertificate"/>
+    <target name="package.custom.post" depends="package.licensegenerator, package.auditsignaturechecker, package.generatecertificate, package.batchlicensegenerator"/>
 
     <!--
       Build a Jar containing all dependencies
@@ -153,5 +153,44 @@
 
         <mkdir dir="${src.root}/build/installer"/>
         <copy file="${build.dir}/GenerateCertificate.jar" todir="${src.root}/build/installer"/>
+    </target>
+
+    <!--
+      Package the BatchLicenseGenerator
+    -->
+    <target name="package.batchlicensegenerator"
+            description="Compile and package the command line BatchLicenseGenerator utility."
+            depends="init">
+        <property name="package.classes.dir" value="${classes.main.dir}"/>
+        <property name="package.batchlibs.dir" value="${build.dir}/batchlicensegenerator"/>
+        <delete dir="${package.batchlibs.dir}/lib"/>
+        <mkdir dir="${package.batchlibs.dir}/lib"/>
+
+        <ivy:resolve file="batchlicensegenerator-ivy.xml"
+                     showprogress="false"
+                     log="quiet"/>
+        <ivy:retrieve pattern="${package.batchlibs.dir}/lib/[artifact]-[revision].[ext]"/>
+
+        <jar jarfile="${package.batchlibs.dir}/lib/BatchLicenseGeneratorMain.jar">
+            <fileset dir="${package.classes.dir}">
+                <include name="com/l7tech/internal/**/*"/>
+            </fileset>
+        </jar>
+
+        <one-jar jarfile="${build.dir}/BatchLicenseGenerator.jar"
+                 title="Batch License Generator"
+                 main="com.l7tech.internal.license.console.BatchLicenseGeneratorMain"
+                 libsDir="${package.batchlibs.dir}"/>
+
+        <mkdir dir="${src.root}/build/installer"/>
+        <tar destfile="${src.root}/build/installer/BatchLicenseGenerator-HEAD.tar.gz"
+             compression="gzip">
+            <tarfileset dir="${src.root}/etc" prefix="BatchLicenseGenerator-HEAD" filemode="755" dirmode="755">
+                <include name="BatchLicenseGenerator.sh"/>
+            </tarfileset>
+            <tarfileset dir="${build.dir}" prefix="BatchLicenseGenerator-HEAD" filemode="644" dirmode="755">
+                <include name="BatchLicenseGenerator.jar"/>
+            </tarfileset>
+        </tar>
     </target>
 </project>

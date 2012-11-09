@@ -10,6 +10,7 @@ import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.internal.license.LicenseGenerator;
 import com.l7tech.internal.license.LicenseGeneratorFeatureSets;
+import com.l7tech.internal.license.LicenseGeneratorKeystoreUtils;
 import com.l7tech.internal.license.LicenseSpec;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.util.Background;
@@ -33,11 +34,9 @@ import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.net.URL;
 import java.security.*;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Enumeration;
 import java.util.Properties;
 import java.util.TimerTask;
 import java.util.logging.Level;
@@ -52,17 +51,6 @@ public class LicenseGeneratorTopWindow extends JFrame {
 
     public static final String PROPERTY_FEATURE_LABELS = "licenseGenerator.featureLabels";
 
-    public static final String PROPERTY_KEYSTORE_PATH = "licenseGenerator.keystorePath";
-    public static final String PROPERTY_KEYSTORE_PASSWORD = "licenseGenerator.keystorePass";
-    public static final String PROPERTY_KEYSTORE_TYPE = "licenseGenerator.keystoreType";
-    public static final String PROPERTY_KEYSTORE_ALIAS = "licenseGenerator.keystoreAlias";
-    public static final String PROPERTY_KEYSTORE_ALIAS_PASSWORD = "licenseGenerator.keystoreAliasPass";
-    public static final String KEYSTORE_MESSAGE = "No keystore is configured.  Please set these system properties:\n" +
-            "\n  " + PROPERTY_KEYSTORE_PATH +
-            "\n  " + PROPERTY_KEYSTORE_PASSWORD +
-            "\n  " + PROPERTY_KEYSTORE_ALIAS +
-            "\n  " + PROPERTY_KEYSTORE_TYPE;
-    public static final String DEFAULT_KEYSTORE_TYPE = "PKCS12";
 
     private LicensePanel licensePanel = new LicensePanel("Building License", true);
     private LicenseSpecPanel specPanel = new LicenseSpecPanel();
@@ -273,9 +261,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
                 checkForChangedXml();
                 try {
                     X509Certificate cert = getSignerCert();
-                    if (cert == null) throw new RuntimeException(KEYSTORE_MESSAGE);
                     PrivateKey key = getSignerKey();
-                    if (key == null) throw new RuntimeException(KEYSTORE_MESSAGE);
 
                     License license = licensePanel.getLicense();
                     if (license == null)
@@ -555,84 +541,40 @@ public class LicenseGeneratorTopWindow extends JFrame {
     private PrivateKey privateKey = null;
     private X509Certificate signerCert = null;
 
-    private void loadKeyStore() throws GeneralSecurityException, IOException
-    {
-        String storeType = SyspropUtil.getString( PROPERTY_KEYSTORE_TYPE, DEFAULT_KEYSTORE_TYPE );
-        if (storeType == null || storeType.length() < 1) storeType = DEFAULT_KEYSTORE_TYPE; // not needed
-
-        String storePath = SyspropUtil.getProperty( PROPERTY_KEYSTORE_PATH );
-        if (storePath == null || storePath.length() < 1)
-            return;
-
-        String storePass = SyspropUtil.getString( PROPERTY_KEYSTORE_PASSWORD, "" );
-        String keyPass = SyspropUtil.getString( PROPERTY_KEYSTORE_ALIAS_PASSWORD, storePass );
-
-        KeyStore ks = KeyStore.getInstance(storeType);
-        final FileInputStream fis = new FileInputStream(storePath);
-        try {
-            ks.load(fis, storePass.toCharArray());
-        } catch (IOException e) {
-            throw (IOException)new IOException("Unable to load key store " + storePath + ": " + ExceptionUtils.getMessage(e)).initCause(e);
-        } finally {
-            //noinspection EmptyCatchBlock
-            try { fis.close(); } catch (IOException e) {}
+    private KeyStore getKeyStore() throws IOException, GeneralSecurityException {
+        if(null == keyStore) {
+            keyStore = LicenseGeneratorKeystoreUtils.loadKeyStore();
         }
 
-        String alias = SyspropUtil.getProperty( PROPERTY_KEYSTORE_ALIAS );
-        if (alias == null || alias.length() < 1) {
-            Enumeration aliases = ks.aliases();
-            while (aliases.hasMoreElements()) {
-                String a = (String)aliases.nextElement();
-                if (alias == null) {
-                    if (ks.isKeyEntry(a))
-                        alias = a;
-                }
-            }
-        }
-
-        if (alias == null)
-            throw new KeyStoreException("No alias configured: please set the system property " + PROPERTY_KEYSTORE_ALIAS +
-                    "\nto the alias of the signing cert (using key store: " + storePath + ")");
-
-        Key key = ks.getKey(alias, keyPass.toCharArray());
-        if (key == null)
-            throw new KeyStoreException("The alias " + alias + " was not found in the key store " + storePath + ".");
-
-        if (!(key instanceof PrivateKey))
-            throw new KeyStoreException("The alias " + alias + " is not a private key (using key store: " + storePath + ".");
-
-        this.privateKey = (PrivateKey)key;
-
-        Certificate[] chain = ks.getCertificateChain(alias);
-        if (chain == null || chain.length < 1 || chain[0] == null)
-            throw new KeyStoreException("The alias " + alias + " has no certificate chain (using key store: " + storePath + ".");
-
-        if (!(chain[0] instanceof X509Certificate))
-            throw new KeyStoreException("The alias " + alias + " certificate isn't X.509 (using key store: " + storePath + ".");
-
-        this.signerCert = (X509Certificate)chain[0];
+        return keyStore;
     }
 
     private X509Certificate getSignerCert() throws GeneralSecurityException, IOException
     {
-        if (keyStore == null) loadKeyStore();
+        if(null == signerCert) {
+            signerCert = LicenseGeneratorKeystoreUtils.getSignerCert(getKeyStore());
+        }
+
         return signerCert;
     }
 
     private PrivateKey getSignerKey() throws GeneralSecurityException, IOException
     {
-        if (keyStore == null) loadKeyStore();
+        if(null == privateKey) {
+            privateKey = LicenseGeneratorKeystoreUtils.getSignerKey(getKeyStore());
+        }
+
         return privateKey;
     }
 
     private void mergeAndSaveProperties() throws IOException {
         Properties props = LicenseGeneratorMain.getProperties();
         String[] propsToMerge = {
-                PROPERTY_KEYSTORE_PATH,
-                PROPERTY_KEYSTORE_PASSWORD,
-                PROPERTY_KEYSTORE_TYPE,
-                PROPERTY_KEYSTORE_ALIAS,
-                PROPERTY_KEYSTORE_ALIAS_PASSWORD,
+                LicenseGeneratorKeystoreUtils.PROPERTY_KEYSTORE_PATH,
+                LicenseGeneratorKeystoreUtils.PROPERTY_KEYSTORE_PASSWORD,
+                LicenseGeneratorKeystoreUtils.PROPERTY_KEYSTORE_TYPE,
+                LicenseGeneratorKeystoreUtils.PROPERTY_KEYSTORE_ALIAS,
+                LicenseGeneratorKeystoreUtils.PROPERTY_KEYSTORE_ALIAS_PASSWORD,
         };
 
         for (String key : propsToMerge) {
