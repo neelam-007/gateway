@@ -11,7 +11,7 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
     public final static long MIN_MILLIS_FOR_MAX_ENTRY_AGE = 0;
     public final static long MIN_SECONDS_FOR_MAX_ENTRY_AGE = 0;
     public final static long MAX_MILLIS_FOR_MAX_ENTRY_AGE = Long.MAX_VALUE;
-    public final static long MAX_SECONDS_FOR_MAX_ENTRY_AGE = Long.MAX_VALUE / 1000L;
+    public final static long MAX_SECONDS_FOR_MAX_ENTRY_AGE = MAX_MILLIS_FOR_MAX_ENTRY_AGE / 1000L;
 
     private String cacheId = "defaultCache";
     private String cacheEntryKey = "${request.url}";

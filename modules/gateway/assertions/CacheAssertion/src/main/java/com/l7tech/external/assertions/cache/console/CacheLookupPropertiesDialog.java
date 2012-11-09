@@ -67,7 +67,9 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
         });
 
         validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("cache.id.field"), cacheIdField, null);
-        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("cache.key.field"), cacheKeyField, new InputValidator.ComponentValidationRule(cacheKeyField) {
+
+        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("cache.key.field"), cacheKeyField,
+                new InputValidator.ComponentValidationRule(cacheKeyField) {
             @Override
             public String getValidationError() {
                 String[] refs = Syntax.getReferencedNames(cacheKeyField.getText());
@@ -76,17 +78,25 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
                 return null;
             }
         });
-        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entry.age.field"), maxAgeField, new InputValidator.ComponentValidationRule(maxAgeField) {
+
+        validator.constrainTextFieldToNumberRange(resourceBundle.getString("max.entry.age.field"), maxAgeField, 0,
+                CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE);
+
+        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entry.age.field"), maxAgeField,
+                new InputValidator.ComponentValidationRule(maxAgeField) {
             @Override
             public String getValidationError() {
                 if (CacheLookupAssertion.isSingleVariableOrLongWithinRange(
-                        maxAgeField.getText(), CacheLookupAssertion.MIN_SECONDS_FOR_MAX_ENTRY_AGE, CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE)) {
+                        maxAgeField.getText(), CacheLookupAssertion.MIN_SECONDS_FOR_MAX_ENTRY_AGE,
+                        CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE)) {
                     return null;
                 } else {
-                    return resourceBundle.getString("max.entry.age.field");
+                    return MessageFormat.format(resourceBundle.getString("max.entry.age.range.error"),
+                            String.valueOf(CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE));
                 }
             }
         });
+
         validator.constrainTextField(contentTypeOverride, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
@@ -97,10 +107,12 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
                     ContentTypeHeader.parseValue(contentType);
                     return null;
                 } catch (IOException e) {
-                    return MessageFormat.format(resourceBundle.getString("invalid.content.type.invalid.configured"), ExceptionUtils.getMessage(e));
+                    return MessageFormat.format(resourceBundle.getString("invalid.content.type.invalid.configured"),
+                            ExceptionUtils.getMessage(e));
                 }
             }
         });
+
         maxAgeField.setText("86400");
 
         Utilities.setEscKeyStrokeDisposes(this);

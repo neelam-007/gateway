@@ -15,6 +15,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSupport<CacheStorageAssertion> {
@@ -69,7 +70,9 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
         });
 
         validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("cache.id.field"), cacheIdField, null);
-        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("cache.key.field"), cacheKeyField, new InputValidator.ComponentValidationRule(cacheKeyField) {
+
+        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("cache.key.field"), cacheKeyField,
+                new InputValidator.ComponentValidationRule(cacheKeyField) {
             @Override
             public String getValidationError() {
                 String[] refs = Syntax.getReferencedNames(cacheKeyField.getText());
@@ -78,39 +81,46 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
                 return null;
             }
         });
-        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entries.field"), maxEntriesField, new InputValidator.ComponentValidationRule(maxEntriesField) {
+
+        validator.constrainTextField(maxEntriesField, new InputValidator.ComponentValidationRule(maxEntriesField) {
             @Override
             public String getValidationError() {
                 if (ValidationUtils.isValidInteger(maxEntriesField.getText(), false, 0, CacheStorageAssertion.kMAX_ENTRIES)
                         || Syntax.isOnlyASingleVariableReferenced(maxEntriesField.getText())) {
                     return null;
                 } else {
-                    return resourceBundle.getString("max.entries.field");
+                    return MessageFormat.format(resourceBundle.getString("max.entries.range.error"),
+                            String.valueOf(CacheStorageAssertion.kMAX_ENTRIES));
                 }
             }
         });
-        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entry.age.field"), maxEntryAgeField, new InputValidator.ComponentValidationRule(maxEntryAgeField) {
+
+        validator.constrainTextField(maxEntryAgeField, new InputValidator.ComponentValidationRule(maxEntryAgeField) {
             @Override
             public String getValidationError() {
                 if (ValidationUtils.isValidLong(maxEntryAgeField.getText(), false, 0, CacheStorageAssertion.kMAX_ENTRY_AGE_SECONDS)
                         || Syntax.isOnlyASingleVariableReferenced(maxEntryAgeField.getText())) {
                     return null;
                 } else {
-                    return resourceBundle.getString("max.entry.age.field");
+                    return MessageFormat.format(resourceBundle.getString("max.entry.age.range.error"),
+                            String.valueOf(CacheStorageAssertion.kMAX_ENTRIES));
                 }
             }
         });
-        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entry.size.field"), maxEntrySizeField, new InputValidator.ComponentValidationRule(maxEntrySizeField) {
+
+        validator.constrainTextField(maxEntrySizeField, new InputValidator.ComponentValidationRule(maxEntrySizeField) {
             @Override
             public String getValidationError() {
                 if (ValidationUtils.isValidLong(maxEntrySizeField.getText(), false, 0, CacheStorageAssertion.kMAX_ENTRY_SIZE)
                         || Syntax.isOnlyASingleVariableReferenced(maxEntrySizeField.getText())) {
                     return null;
                 } else {
-                    return resourceBundle.getString("max.entry.size.field");
+                    return MessageFormat.format(resourceBundle.getString("max.entry.size.range.error"),
+                            String.valueOf(CacheStorageAssertion.kMAX_ENTRIES));
                 }
             }
         });
+
         Utilities.setEscKeyStrokeDisposes(this);
     }
 
