@@ -106,6 +106,9 @@ public class EditPolicyAction extends NodeAction {
     protected void performAction() {
         final EntityWithPolicyNode policyNode = (EntityWithPolicyNode)node;
         try {
+            //attempt to get the target policy first - it may throw a PermissionDeniedException, if this is
+            //the case then we don't want to clear the workspace
+            final Policy policy = policyNode.getPolicy();
             TopComponents windowManager = TopComponents.getInstance();
             WorkSpacePanel wpanel = windowManager.getCurrentWorkspace();
 
@@ -122,7 +125,6 @@ public class EditPolicyAction extends NodeAction {
             Assertion startingAssertion = null;
             boolean startsDirty = false;
             try {
-                final Policy policy = policyNode.getPolicy();
                 if (policy != null && policy.isDisabled()) {
                     startsDirty = true;
                     startingAssertion = findStartingAssertion(policy);
