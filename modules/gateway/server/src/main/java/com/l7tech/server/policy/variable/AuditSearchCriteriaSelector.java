@@ -20,7 +20,7 @@ public class AuditSearchCriteriaSelector implements ExpandVariables.Selector<Aud
     @Override
     public Selection select(String contextName, AuditLookupSearchCriteria criteria, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
         if(name.equals("guid")){
-            return new Selection( criteria.getGuids());
+            return new Selection( criteria.getGuids() == null ? "" :criteria.getGuids());
         }
         if(name.equals("maxMessageSize")){
             return new Selection( criteria.getMaxMessageSize());
