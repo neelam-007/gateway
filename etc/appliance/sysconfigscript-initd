@@ -2,7 +2,7 @@
 #
 # Utility for Secure Span Gateway Server system configuration
 #
-# chkconfig: 2345 09 91
+# chkconfig: 2345 11 91
 # description: Layer7's Secure Span Gateway System Configuration Utility
 
 if [ -z "$SSGHOME" ]; then
