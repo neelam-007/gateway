@@ -1,5 +1,7 @@
 package com.l7tech.common.io;
 
+import com.l7tech.util.ExceptionUtils;
+
 import javax.net.ssl.*;
 import java.net.Socket;
 import java.security.cert.X509Certificate;
@@ -71,17 +73,24 @@ public class SslCertificateSniffer {
 
         final String[] sslProtocols = sslContext.getSupportedSSLParameters().getProtocols();
 
-        SSLException lastSSLException = null;
+        Exception lastException = null;
         for ( final String protocol : sslProtocols ) {
+            if ("SSLv2Hello".equals(protocol))
+                continue;
             try {
                 return doRetrieveCertFromUrl( purl, ignoreHostname, sslContext, protocol );
-            } catch ( SSLException se ) {
-                lastSSLException = se;
+            } catch ( SSLException e ) {
+                lastException = e;
+            } catch ( Exception e ) {
+                logger.log(Level.WARNING, "Error retrieving cert from URL: " + ExceptionUtils.getMessage(e), e );
+                lastException = e;
             }
         }
 
-        if ( lastSSLException != null ) {
-            throw lastSSLException;
+        if ( lastException instanceof SSLException ) {
+            throw (SSLException) lastException;
+        } else if ( lastException != null ) {
+            throw new SSLException( "Error: " + ExceptionUtils.getMessage(lastException) );
         } else {
             throw new SSLException( "No supported protocols" );
         }
