@@ -19,6 +19,7 @@ import com.tarari.xml.output.DomOutput;
 import com.tarari.xml.output.OutputFormat;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
@@ -283,7 +284,16 @@ class TarariElementCursor extends ElementCursor {
         } catch (IOException e) {
             throw new RuntimeException(e); // shouldn't be possible
         }
-        return (Element)output.getResultRoot();
+        Node out = output.getResultRoot();
+        return toDomElement(out);
+    }
+
+    protected Element toDomElement(Node cur) {
+        if (cur instanceof Element)
+            return (Element)cur;
+        if (cur instanceof Document)
+            return ((Document)cur).getDocumentElement();
+        throw new IllegalStateException("node not an Element or Document");
     }
 
     public byte[] canonicalize(String[] inclusiveNamespacePrefixes) throws IOException {

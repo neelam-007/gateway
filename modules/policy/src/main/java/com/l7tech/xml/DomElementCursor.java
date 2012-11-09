@@ -242,15 +242,19 @@ public class DomElementCursor extends ElementCursor {
     }
 
     public Element asDomElement(Document factory) {
-        return (Element)factory.importNode(cur, true);
+        return toDomElement(factory.importNode(cur, true));
     }
 
     public Element asDomElement() {
+        return toDomElement(this.cur);
+    }
+
+    protected Element toDomElement(Node cur) {
         if (cur instanceof Element)
             return (Element)cur;
         if (cur instanceof Document)
             return ((Document)cur).getDocumentElement();
-        throw new IllegalStateException("current node not an Element or Document");
+        throw new IllegalStateException("node not an Element or Document");
     }
 
     /**
