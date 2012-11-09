@@ -5,28 +5,19 @@
 
 package com.l7tech.console.policy;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.PolicyTemplateNode;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.util.ResourceUtils;
-import org.w3c.dom.Document;
 
 import java.awt.datatransfer.*;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Represents a snippet of policy XML that can be placed on the clipboard.
  */
 public class PolicyTransferable implements Transferable, ClipboardOwner {
-    private static final Logger logger = Logger.getLogger(PolicyTransferable.class.getName());
-
     public static final DataFlavor ASSERTION_DATAFLAVOR;
     public static final DataFlavor HEADLESS_GROUP_DATAFLAVOR;
     static {
@@ -98,26 +89,7 @@ public class PolicyTransferable implements Transferable, ClipboardOwner {
         if (treeNodes != null) {
             AllAssertion ass = new AllAssertion();
             for(AbstractTreeNode node : treeNodes) {
-                if(node instanceof PolicyTemplateNode){
-                    FileInputStream fis = null;
-                    PolicyTemplateNode template = (PolicyTemplateNode)node;
-                    try{
-                        fis = new FileInputStream(template.getFile());
-                        Document doc = XmlUtil.parse(fis);
-                        return XmlUtil.nodeToString(doc);
-                    }
-                    catch(Exception e){
-                        logger.warning("Error reading Policy Template " + template.getName());
-                        return null;
-                    }
-                    finally {
-                        if(fis != null) ResourceUtils.closeQuietly(fis);
-                    }
-                }
-                else {
-                    Assertion assertion = node.asAssertion();
-                    if(assertion != null) ass.addChild(node.asAssertion());
-                }
+                ass.addChild(node.asAssertion());
             }
             ignoreRoot = true;
             return WspWriter.getPolicyXml(ass);

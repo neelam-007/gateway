@@ -7,8 +7,10 @@ import com.l7tech.console.panels.ForEachLoopAssertionPolicyNode;
 import com.l7tech.console.panels.InformationDialog;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.PolicyTransferable;
-import com.l7tech.console.policy.exporter.PolicyExportUtils;
-import com.l7tech.console.tree.*;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.TransferableTreePath;
+import com.l7tech.console.tree.TransferableTreePaths;
+import com.l7tech.console.tree.TreeNodeHidingTransferHandler;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
@@ -44,7 +46,6 @@ import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -1820,26 +1821,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     }
 
                     for( final AbstractTreeNode node : nodeList ) {
-                        if(node instanceof PolicyTemplateNode){
-                            try {
-                                File file = ((PolicyTemplateNode) node).getFile();
-                                EntityWithPolicyNode policyNode = policyTree.getPolicyEditorPanel().getPolicyNode();
-                                Policy policy = policyNode.getPolicy();
-                                String oldPolicyXml = policy.getXml();
-                                if (PolicyExportUtils.importPolicyFromFile(policy, file)) {
-                                    policyNode.firePropertyChange(this, "policy", oldPolicyXml, policy.getXml());
-                                    return true;
-                                }
-                            } catch (Exception e) {
-                                log.log(Level.FINE, "Paste rejected: " + ExceptionUtils.getMessage(e), e);
-                                return false;
-                            }
-                        }
-                        else {
-                            Assertion clone = (Assertion)node.asAssertion().clone();
-                            if(!policyTree.importAssertion(clone)) {
-                                return false;
-                            }
+                        Assertion clone = (Assertion)node.asAssertion().clone();
+                        if(!policyTree.importAssertion(clone)) {
+                            return false;
                         }
                     }
                     return true;

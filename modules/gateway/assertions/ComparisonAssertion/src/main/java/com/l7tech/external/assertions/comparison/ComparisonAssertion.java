@@ -197,7 +197,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ComparisonAssertion>() {
         @Override
         public String getAssertionName(final ComparisonAssertion assertion, final boolean decorate) {
-            if (!decorate || assertion.getExpression1() == null) return baseName;
+            if (!decorate) return baseName;
 
             StringBuilder name = new StringBuilder(baseName).append(": ");
             String expression1 = assertion.getExpression1();

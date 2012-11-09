@@ -119,8 +119,7 @@ public class EncodeDecodeAssertion extends Assertion implements SetsVariables, U
         meta.put( POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<EncodeDecodeAssertion>(){
             @Override
             public String getAssertionName( final EncodeDecodeAssertion assertion, final boolean decorate ) {
-                if(!decorate || assertion.getSourceVariableName() == null || assertion.getTargetVariableName() == null
-                        || assertion.getTargetDataType() == null || assertion.getTargetContentType() == null) return baseName;
+                if(!decorate) return baseName;
                 StringBuilder nameBuilder = new StringBuilder(256);
                 nameBuilder.append( assertion.getTransformType()==null ? baseName : assertion.getTransformType().getName() );
                 nameBuilder.append( " ${" );

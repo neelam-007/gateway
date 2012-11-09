@@ -90,7 +90,7 @@ public class ThroughputQuotaQueryAssertion extends Assertion implements SetsVari
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ThroughputQuotaQueryAssertion>(){
         @Override
         public String getAssertionName( final ThroughputQuotaQueryAssertion assertion, final boolean decorate) {
-            if(!decorate || assertion.getCounterName() == null) return baseName;
+            if(!decorate) return baseName;
 
             StringBuilder sb = new StringBuilder(baseName);
             final String counterName = assertion.getCounterName();
