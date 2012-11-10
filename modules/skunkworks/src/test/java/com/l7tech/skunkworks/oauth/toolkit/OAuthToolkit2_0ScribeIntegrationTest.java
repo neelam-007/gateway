@@ -1,6 +1,7 @@
 package com.l7tech.skunkworks.oauth.toolkit;
 
 import com.l7tech.common.http.GenericHttpResponse;
+import com.l7tech.test.BugNumber;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -66,7 +67,71 @@ public class OAuthToolkit2_0ScribeIntegrationTest {
     public void authCode() throws Exception {
         // Obtain the Authorization Code from callback plain text response body
         System.out.println("Fetching Authorization Code...");
-        final String authCode = api.authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null);
+        final String authCode = api.authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null, "scope_test", "state_test");
+        System.out.println("Received Authorization Code: " + authCode);
+
+        // Trade the Request Token and Verifier for the Access Token
+        System.out.println("Trading the Request Token for an Access Token...");
+        final Token accessToken = service.getAccessToken(EMPTY_TOKEN, new Verifier(authCode));
+        System.out.println("Received the Access Token: " + accessToken.getToken());
+
+        getProtectedResource(accessToken);
+    }
+
+    @Test
+    @BugNumber(13456)
+    public void authCodeScopeWithWhiteSpace() throws Exception {
+        // Obtain the Authorization Code from callback plain text response body
+        System.out.println("Fetching Authorization Code...");
+        final String authCode = api.authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null, "scope+test", "state_test");
+        System.out.println("Received Authorization Code: " + authCode);
+
+        // Trade the Request Token and Verifier for the Access Token
+        System.out.println("Trading the Request Token for an Access Token...");
+        final Token accessToken = service.getAccessToken(EMPTY_TOKEN, new Verifier(authCode));
+        System.out.println("Received the Access Token: " + accessToken.getToken());
+
+        getProtectedResource(accessToken);
+    }
+
+    @Test
+    @BugNumber(13456)
+    public void authCodeNoScope() throws Exception {
+        // Obtain the Authorization Code from callback plain text response body
+        System.out.println("Fetching Authorization Code...");
+        final String authCode = api.authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null, null, "state_test");
+        System.out.println("Received Authorization Code: " + authCode);
+
+        // Trade the Request Token and Verifier for the Access Token
+        System.out.println("Trading the Request Token for an Access Token...");
+        final Token accessToken = service.getAccessToken(EMPTY_TOKEN, new Verifier(authCode));
+        System.out.println("Received the Access Token: " + accessToken.getToken());
+
+        getProtectedResource(accessToken);
+    }
+
+    @Test
+    @BugNumber(13456)
+    public void authCodeStateWithWhiteSpace() throws Exception {
+        // Obtain the Authorization Code from callback plain text response body
+        System.out.println("Fetching Authorization Code...");
+        final String authCode = api.authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null, "scope_test", "state+test");
+        System.out.println("Received Authorization Code: " + authCode);
+
+        // Trade the Request Token and Verifier for the Access Token
+        System.out.println("Trading the Request Token for an Access Token...");
+        final Token accessToken = service.getAccessToken(EMPTY_TOKEN, new Verifier(authCode));
+        System.out.println("Received the Access Token: " + accessToken.getToken());
+
+        getProtectedResource(accessToken);
+    }
+
+    @Test
+    @BugNumber(13456)
+    public void authCodeNoState() throws Exception {
+        // Obtain the Authorization Code from callback plain text response body
+        System.out.println("Fetching Authorization Code...");
+        final String authCode = api.authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null, "scope_test", null);
         System.out.println("Received Authorization Code: " + authCode);
 
         // Trade the Request Token and Verifier for the Access Token
@@ -81,7 +146,7 @@ public class OAuthToolkit2_0ScribeIntegrationTest {
     public void implicit() throws Exception {
         // Obtain an Access Token from location header fragment
         System.out.println("Fetching Access Token ...");
-        final GenericHttpResponse accessTokenResponse = api.authorize("token", CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null, false, "Grant");
+        final GenericHttpResponse accessTokenResponse = api.authorize("token", CONSUMER_KEY, CALLBACK, new PasswordAuthentication("admin", "password".toCharArray()), null, false, "Grant", "scope_test", "state_test");
         final String locationHeader = accessTokenResponse.getHeaders().getFirstValue("Location");
         final String accessToken = locationHeader.substring(locationHeader.indexOf("#access_token=") + 14, locationHeader.indexOf("&"));
         System.out.println("Received Access Token: " + accessToken);
@@ -111,6 +176,10 @@ public class OAuthToolkit2_0ScribeIntegrationTest {
         getProtectedResource(new Token(accessToken, ""));
     }
 
+    /**
+     * FIXME for changes implemented for http://sarek.l7tech.com/bugzilla/show_bug.cgi?id=13452.
+     */
+    @Ignore
     @Test
     public void saml() throws Exception {
         // Obtain an Access Token from JSON response body

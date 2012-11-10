@@ -14,8 +14,9 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLDecoder;
 
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSSLSocketFactory;
+import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSessionIdFromHtmlForm;
 import static org.junit.Assert.*;
-import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.*;
 
 /**
  * OAuth version 2.0.
@@ -64,8 +65,8 @@ public class Layer720Api extends DefaultApi20 {
     }
 
     public String authorizeAndRetrieve(final String consumerKey, final String callback, final PasswordAuthentication passwordAuthentication,
-                                       final String cookie) throws Exception {
-        final GenericHttpResponse authResponse = authorize("code", consumerKey, callback, passwordAuthentication, cookie, true, "Grant");
+                                       final String cookie, final String scope, final String state) throws Exception {
+        final GenericHttpResponse authResponse = authorize("code", consumerKey, callback, passwordAuthentication, cookie, true, "Grant", scope, state);
         assertEquals(200, authResponse.getStatus());
         final String authCode = new String(IOUtils.slurpStream(authResponse.getInputStream()));
         System.out.println("Received auth code: " + authCode);
@@ -75,14 +76,19 @@ public class Layer720Api extends DefaultApi20 {
 
     public GenericHttpResponse authorize(final String responseType, final String consumerKey, final String callback,
                                          final PasswordAuthentication passwordAuthentication, final String cookie,
-                                         final boolean followRedirects, final String action) throws Exception {
+                                         final boolean followRedirects, final String action, final String scope, final String state) throws Exception {
         final CommonsHttpClient client = new CommonsHttpClient();
         final StringBuilder urlBuilder = new StringBuilder();
         urlBuilder.append("https://").append(gatewayHost);
         urlBuilder.append(":8443/auth/oauth/v2/authorize?client_id=").append(consumerKey);
         urlBuilder.append("&response_type=").append(responseType);
-        urlBuilder.append("&scope=scope_test&state=state_test");
-        if(callback != null){
+        if (scope != null) {
+            urlBuilder.append("&scope=" + scope);
+        }
+        if (state != null) {
+            urlBuilder.append("&state=" + state);
+        }
+        if (callback != null) {
             urlBuilder.append("&redirect_uri=").append(callback);
         }
         final GenericHttpRequestParams sessionIdParams = new GenericHttpRequestParams(new URL(urlBuilder.toString()));

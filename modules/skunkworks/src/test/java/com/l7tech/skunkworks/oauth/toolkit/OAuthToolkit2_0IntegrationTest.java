@@ -86,7 +86,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     @Test
     @BugNumber(13155)
     public void authorizeWithInvalidCookie() throws Exception {
-        final GenericHttpResponse response = new Layer720Api(BASE_URL).authorize("code", CONSUMER_KEY, CALLBACK, null, "invalid", true, "Grant");
+        final GenericHttpResponse response = new Layer720Api(BASE_URL).authorize("code", CONSUMER_KEY, CALLBACK, null, "invalid", true, "Grant", "scope_test", "state_test");
 
         assertEquals(401, response.getStatus());
         final String body = new String(IOUtils.slurpStream(response.getInputStream()));
@@ -103,7 +103,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     @Test
     @BugNumber(13254)
     public void getAccessTokenNoRedirectUri() throws Exception {
-        final String authCode = new Layer720Api(BASE_URL).authorizeAndRetrieve(CONSUMER_KEY, null, PASSWORD_AUTHENTICATION, null);
+        final String authCode = new Layer720Api(BASE_URL).authorizeAndRetrieve(CONSUMER_KEY, null, PASSWORD_AUTHENTICATION, null, "scope_test", "state_test");
 
         final Map<String, String> params = new HashMap<String, String>();
         params.put("grant_type", "authorization_code");
@@ -123,7 +123,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     @Test
     @BugNumber(13254)
     public void getAccessTokenMismatchRedirectUri() throws Exception {
-        final String authCode = new Layer720Api(BASE_URL).authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, PASSWORD_AUTHENTICATION, null);
+        final String authCode = new Layer720Api(BASE_URL).authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, PASSWORD_AUTHENTICATION, null, "scope_test", "state_test");
 
         final Map<String, String> params = new HashMap<String, String>();
         params.put("grant_type", "authorization_code");
@@ -144,7 +144,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     @Test
     @BugNumber(13254)
     public void authorizeRedirectUriMismatchRegisteredCallback() throws Exception {
-        final String url = buildAuthorizeUrl(CONSUMER_KEY, "code", CALLBACK + "/mismatch", "state_test");
+        final String url = buildAuthorizeUrl(CONSUMER_KEY, "code", CALLBACK + "/mismatch", "state_test", "scope_test");
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
         params.setFollowRedirects(true);
         params.setSslSocketFactory(getSSLSocketFactory());
@@ -159,7 +159,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     @Test
     @BugNumber(13256)
     public void authorizeNoClientId() throws Exception {
-        final String url = buildAuthorizeUrl(null, "code", CALLBACK, "state_test");
+        final String url = buildAuthorizeUrl(null, "code", CALLBACK, "state_test", "scope_test");
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
         params.setFollowRedirects(false);
         params.setSslSocketFactory(getSSLSocketFactory());
@@ -174,7 +174,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     @Test
     @BugNumber(13256)
     public void authorizeNoClientIdOrState() throws Exception {
-        final String url = buildAuthorizeUrl(null, "code", CALLBACK, null);
+        final String url = buildAuthorizeUrl(null, "code", CALLBACK, null, "scope_test");
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
         params.setFollowRedirects(false);
         params.setSslSocketFactory(getSSLSocketFactory());
@@ -192,7 +192,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     @Test
     @BugNumber(13256)
     public void authorizeNoClientIdOrRedirectUri() throws Exception {
-        final String url = buildAuthorizeUrl(null, "code", null, "state_test");
+        final String url = buildAuthorizeUrl(null, "code", null, "state_test", "scope_test");
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
         params.setFollowRedirects(false);
         params.setSslSocketFactory(getSSLSocketFactory());
@@ -207,7 +207,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     @Test
     @BugNumber(13256)
     public void authorizeNoResponseType() throws Exception {
-        final String url = buildAuthorizeUrl(CONSUMER_KEY, null, CALLBACK, "state_test");
+        final String url = buildAuthorizeUrl(CONSUMER_KEY, null, CALLBACK, "state_test", "scope_test");
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
         params.setFollowRedirects(false);
         params.setSslSocketFactory(getSSLSocketFactory());
@@ -222,7 +222,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     @Test
     @BugNumber(13256)
     public void authorizeInvalidResponseType() throws Exception {
-        final String url = buildAuthorizeUrl(CONSUMER_KEY, "invalid", CALLBACK, "state_test");
+        final String url = buildAuthorizeUrl(CONSUMER_KEY, "invalid", CALLBACK, "state_test", "scope_test");
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
         params.setFollowRedirects(false);
         params.setSslSocketFactory(getSSLSocketFactory());
@@ -237,7 +237,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     @Test
     @BugNumber(13256)
     public void authorizeNoResponseTypeUseRegisteredCallback() throws Exception {
-        final String url = buildAuthorizeUrl(CONSUMER_KEY, null, null, "state_test");
+        final String url = buildAuthorizeUrl(CONSUMER_KEY, null, null, "state_test", "scope_test");
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
         params.setFollowRedirects(false);
         params.setSslSocketFactory(getSSLSocketFactory());
@@ -252,7 +252,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     @Test
     @BugNumber(13256)
     public void authorizeInvalidRedirectUri() throws Exception {
-        final String url = buildAuthorizeUrl(CONSUMER_KEY, "code", "invalidurl", "state_test");
+        final String url = buildAuthorizeUrl(CONSUMER_KEY, "code", "invalidurl", "state_test", "scope_test");
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
         params.setFollowRedirects(true);
         params.setSslSocketFactory(getSSLSocketFactory());
@@ -267,7 +267,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     @Test
     public void authorizeDeniedAuthCode() throws Exception {
         final GenericHttpResponse response = new Layer720Api(BASE_URL).authorize("code", CONSUMER_KEY, CALLBACK,
-                PASSWORD_AUTHENTICATION, null, false, "Deny");
+                PASSWORD_AUTHENTICATION, null, false, "Deny", "scope_test", "state_test");
         assertEquals(302, response.getStatus());
         final String locationHeader = response.getHeaders().getFirstValue("Location");
         assertEquals(CALLBACK + "?error=access_denied&state=state_test", locationHeader);
@@ -276,7 +276,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     @Test
     public void authorizeDeniedImplicit() throws Exception {
         final GenericHttpResponse response = new Layer720Api(BASE_URL).authorize("token", CONSUMER_KEY, CALLBACK,
-                PASSWORD_AUTHENTICATION, null, false, "Deny");
+                PASSWORD_AUTHENTICATION, null, false, "Deny", "scope_test", "state_test");
         assertEquals(302, response.getStatus());
         final String locationHeader = response.getHeaders().getFirstValue("Location");
         assertEquals(CALLBACK + "?error=access_denied&state=state_test", locationHeader);
@@ -299,7 +299,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
         assertEquals(callbacksWithWhitespace, key.getCallback());
 
         // try to authorize without specifying a redirect_uri
-        final String url = buildAuthorizeUrl(key.getClientKey(), "code", null, "state_test");
+        final String url = buildAuthorizeUrl(key.getClientKey(), "code", null, "state_test", "scope_test");
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
         params.setFollowRedirects(false);
         params.setSslSocketFactory(getSSLSocketFactory());
@@ -352,7 +352,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
 
         // get mac token
         final Layer720Api api = new Layer720Api(BASE_URL);
-        final String authCode = api.authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, passwordAuthentication, null);
+        final String authCode = api.authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, passwordAuthentication, null, "scope_test", "state_test");
 
         final Map<String, String> params = new HashMap<String, String>();
         params.put("grant_type", "authorization_code");
@@ -411,7 +411,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
 
         // get mac token
         final Layer720Api api = new Layer720Api(BASE_URL);
-        final String authCode = api.authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, passwordAuthentication, null);
+        final String authCode = api.authorizeAndRetrieve(CONSUMER_KEY, CALLBACK, passwordAuthentication, null, "scope_test", "state_test");
 
         final Map<String, String> params = new HashMap<String, String>();
         params.put("grant_type", "authorization_code");
@@ -516,7 +516,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
         return response;
     }
 
-    private String buildAuthorizeUrl(final String clientId, final String responseType, final String callback, final String state) {
+    private String buildAuthorizeUrl(final String clientId, final String responseType, final String callback, final String state, final String scope) {
         final StringBuilder urlBuilder = new StringBuilder();
         urlBuilder.append("https://").append(BASE_URL);
         urlBuilder.append(":8443/auth/oauth/v2/authorize?");
@@ -526,7 +526,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
         if (responseType != null) {
             urlBuilder.append("&response_type=").append(responseType);
         }
-        urlBuilder.append("&scope=scope_test");
+        urlBuilder.append("&scope=").append(scope);
         if (state != null) {
             urlBuilder.append("&state=").append(state);
         }
