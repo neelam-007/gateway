@@ -11,6 +11,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 import com.l7tech.util.ConfigFactory;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.Assert;
 import com.l7tech.server.management.api.node.ReportApi;
@@ -808,6 +809,7 @@ public class UtilitiesTest {
      *
      * @throws Exception
      */
+    @Ignore(value = "See bug 13477. Logic needs to be updated for day light savings")
     @Test
     public void testGetIntervalDisplayDate() throws Exception {
         String timeZone = "Canada/Pacific";

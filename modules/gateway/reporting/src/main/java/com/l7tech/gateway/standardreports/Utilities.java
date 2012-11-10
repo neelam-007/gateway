@@ -339,13 +339,13 @@ public class Utilities {
      * @param timeZone                  what timezone to use when converting the epoch start and end time values into strings
      * @return String representing the interval, to be shown alongside the interval data.
      * @throws IllegalArgumentException if the startIntervalMilliSeconds >= endIntervalMilliSeconds
-     *                                  or if the difference between the startIntervalMilliSeconds and the
+     *                                  or **NOT THROWN ANYMORE** if the difference between the startIntervalMilliSeconds and the
      *                                  endIntervalMilliSeconds is greater than the difference allowed for the UNIT_OF_TIME in intervalUnitOfTime
      */
     public static String getIntervalDisplayDate(Long startIntervalMilliSeconds, Long endIntervalMilliSeconds,
                                                 UNIT_OF_TIME intervalUnitOfTime, Integer numberOfTimeUnits, String timeZone) {
         validateStartBeforeEndTime(startIntervalMilliSeconds, endIntervalMilliSeconds);
-        checkTimeDifferenceWithinRange(intervalUnitOfTime, numberOfTimeUnits, startIntervalMilliSeconds, endIntervalMilliSeconds);
+//        checkTimeDifferenceWithinRange(intervalUnitOfTime, numberOfTimeUnits, startIntervalMilliSeconds, endIntervalMilliSeconds);
 
         TimeZone tz = getTimeZone(timeZone);
         Calendar calStart = Calendar.getInstance(tz);
@@ -418,6 +418,8 @@ public class Utilities {
     /**
      * Validate that the difference between startIntervalMilliSeconds and endIntervalMilliSeconds is not greater than
      * the unit of time represented by unitOfTime
+     *
+     * WARNING: Does not support Day Light Savings.
      *
      * @param unitOfTime             which UNIT_OF_TIME we will use as the range
      * @param numberOfTimeUnits      used to validate the time interval represented by start and end milli second args
