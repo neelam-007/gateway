@@ -33,7 +33,7 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
     private Image defaultImageIcon;
 
     public CustomAssertionTreeNode(CustomAssertionHolder assertion) {
-        super((CustomAssertionHolder) assertion.clone());
+        super(assertion);
         registrar = Registry.getDefault().getCustomAssertionsRegistrar();
 
     }
