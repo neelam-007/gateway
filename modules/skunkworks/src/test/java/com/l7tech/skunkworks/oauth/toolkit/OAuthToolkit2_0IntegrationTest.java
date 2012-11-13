@@ -438,6 +438,27 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
         setOAuth2TokenType("MAC", "BEARER");
     }
 
+    @Test
+    @BugNumber(13474)
+    public void redirectUriWithParams() throws Exception {
+        // register a client key that has a callback with a parameter
+        final Map<String, String> params = buildClientAndKeyParams(CALLBACK + "?param=value", OOB, ALL);
+        params.put("name", "OAuthToolkit2_0_IntegrationTest");
+        params.put("description", "OAuthToolkit2_0_IntegrationTest");
+        params.put("expiration", "0");
+        final String clientIdentity = params.get(CLIENT_IDENT);
+        final String clientKey = params.get(CLIENT_KEY);
+        store("client", params);
+
+        final Layer720Api api = new Layer720Api(BASE_URL);
+        final String authCode = api.authorizeAndRetrieve(clientKey, CALLBACK + "?param=value", passwordAuthentication, null, "scope_test", "state_test");
+        assertNotNull(authCode);
+
+        // restore initial state
+        delete(CLIENT_IDENT, clientIdentity, "client");
+    }
+
+
     private GenericHttpResponse getAccessToken(final Map<String, String> params) throws Exception {
         final GenericHttpRequestParams tokenParams = new GenericHttpRequestParams(new URL("https://" + BASE_URL + ":8443/auth/oauth/v2/token"));
         tokenParams.setSslSocketFactory(getSSLSocketFactory());
