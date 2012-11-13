@@ -623,20 +623,6 @@ else
 				toLog "    Success - 'tls_ciphers' set to $LDAP_TLS_CIPHER_SUITE in $NSS_LDAP_CONF_FILE."
 			fi
 		fi
-
-		# tls_checkpeer
-		if [ "X$LDAP_TLS_CHECKPEER" == "Xyes" ] || [ "X$LDAP_TLS_CHECKPEER" == "xno" ]; then
-			sed -i "s|\(^#tls_checkpeer.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntls_checkpeer $LDAP_TLS_CHECKPEER\n|" $NSS_LDAP_CONF_FILE
-			if [ $? -ne 0 ] || [ "X$(grep "^tls_checkpeer" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$LDAP_TLS_CHECKPEER" ]; then
-				toLog "    ERROR - Configuring 'tls_checkpeer' field in $NSS_LDAP_CONF_FILE failed."
-				STATUS=1
-			else
-				toLog "    Success - 'tls_checkpeer' set to $LDAP_TLS_CHECKPEER in $NSS_LDAP_CONF_FILE."
-			fi
-		else
-			toLog "    ERROR - The value of tls_checkpeer ($LDAP_TLS_CHECKPEER) directive for $NSS_LDAP_CONF_FILE is not valid!"
-			STATUS=1
-		fi
 	elif [ "X$LDAP_TYPE" == "Xldap" ]; then
 		# ssl field will be set to no:
 		sed -i "s|\(^# OpenLDAP SSL mechanism.*$\)|\1\n# Added by $0 on $DATE_TIME:\nssl no\n|" $NSS_LDAP_CONF_FILE
