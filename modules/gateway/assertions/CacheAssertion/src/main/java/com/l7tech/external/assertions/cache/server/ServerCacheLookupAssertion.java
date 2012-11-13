@@ -12,6 +12,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ValidationUtils;
 import org.springframework.beans.factory.BeanFactory;
 
 import java.io.IOException;
@@ -43,12 +44,12 @@ public class ServerCacheLookupAssertion extends AbstractMessageTargetableServerA
         final String value = assertion.getMaxEntryAgeMillis();
         final long cacheMaxEntryAgeMillis;
 
-        if (CacheLookupAssertion.isSingleVariableOrLongWithinRange(value, minMillis, maxMillis)) {
+        if (Syntax.isOnlyASingleVariableReferenced(value) || ValidationUtils.isValidLong(value, false, minMillis, maxMillis)) {
             if (Syntax.isOnlyASingleVariableReferenced(value)) {
                 final String cacheMaxEntryAgeSecondsString = ExpandVariables.process(value, vars, getAudit(), true);
                 final long minSeconds = CacheLookupAssertion.MIN_SECONDS_FOR_MAX_ENTRY_AGE;
                 final long maxSeconds = CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE;
-                if (CacheLookupAssertion.isLongWithinRange(cacheMaxEntryAgeSecondsString, minSeconds, maxSeconds)) {
+                if (ValidationUtils.isValidLong(cacheMaxEntryAgeSecondsString, false, minSeconds, maxSeconds)) {
                     cacheMaxEntryAgeMillis = Long.parseLong(cacheMaxEntryAgeSecondsString) * 1000L;
                 } else {
                     logAndAudit(AssertionMessages.CACHE_LOOKUP_VAR_CONTENTS_ILLEGAL, value, cacheMaxEntryAgeSecondsString, Long.toString(minSeconds), Long.toString(maxSeconds));

@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.cache;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.ValidationUtils;
 
 /**
  * 
@@ -165,54 +166,4 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
-
-    /**
-     * Tests is the given String is a long.
-     *
-     * @param value The value to test.
-     * @return True if the given String is a long, false otherwise.
-     */
-    public static boolean isLong(final String value) {
-        try {
-            Long.parseLong(value);
-            return true;
-        } catch (final NumberFormatException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Tests if the given String is a long within the given range (inclusive).
-     *
-     * @param value The value to test.
-     * @param min Inclusive.
-     * @param max Inclusive.
-     * @return True if the given String is a long within the given range (inclusive), false otherwise.
-     */
-    public static boolean isLongWithinRange(final String value, final long min, final long max) {
-        if (isLong(value)) {
-            final long l = Long.parseLong(value);
-            if (l >= min && l <= max) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Tests if the given String is a single context variable (for example "${xyz}") or is a long within the given range (inclusive).
-     *
-     * @param value The value to test.
-     * @param min Inclusive.
-     * @param max Inclusive.
-     * @return True if the given String is a single context variable or a long within the given range (inclusive), false otherwise.
-     */
-    public static boolean isSingleVariableOrLongWithinRange(final String value, final long min, final long max) {
-        if (Syntax.isOnlyASingleVariableReferenced(value) || isLongWithinRange(value, min, max)) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
 }

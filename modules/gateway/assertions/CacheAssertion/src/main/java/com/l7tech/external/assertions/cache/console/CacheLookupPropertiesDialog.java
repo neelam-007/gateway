@@ -8,6 +8,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -84,18 +85,19 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
 
         validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("max.entry.age.field"), maxAgeField,
                 new InputValidator.ComponentValidationRule(maxAgeField) {
-            @Override
-            public String getValidationError() {
-                if (CacheLookupAssertion.isSingleVariableOrLongWithinRange(
-                        maxAgeField.getText(), CacheLookupAssertion.MIN_SECONDS_FOR_MAX_ENTRY_AGE,
-                        CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE)) {
-                    return null;
-                } else {
-                    return MessageFormat.format(resourceBundle.getString("max.entry.age.range.error"),
-                            String.valueOf(CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE));
-                }
-            }
-        });
+                    @Override
+                    public String getValidationError() {
+                        if (Syntax.isOnlyASingleVariableReferenced(maxAgeField.getText()) ||
+                                ValidationUtils.isValidLong(maxAgeField.getText(), false,
+                                        CacheLookupAssertion.MIN_SECONDS_FOR_MAX_ENTRY_AGE,
+                                        CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE)) {
+                            return null;
+                        } else {
+                            return MessageFormat.format(resourceBundle.getString("max.entry.age.range.error"),
+                                    String.valueOf(CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE));
+                        }
+                    }
+                });
 
         validator.constrainTextField(contentTypeOverride, new InputValidator.ValidationRule() {
             @Override
@@ -146,7 +148,7 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
         cacheKeyField.setText(ass.getCacheEntryKey());
         contentTypeOverride.setText(ass.getContentTypeOverride());
 
-        if (CacheLookupAssertion.isLong(ass.getMaxEntryAgeMillis())) {
+        if (ValidationUtils.isValidLong(ass.getMaxEntryAgeMillis(), false, 0L, Long.MAX_VALUE)) {
             final long seconds = Long.parseLong(ass.getMaxEntryAgeMillis()) / 1000L;
             maxAgeField.setText(String.valueOf(seconds));
         } else {
@@ -160,7 +162,7 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
         ass.setCacheEntryKey(cacheKeyField.getText());
         ass.setContentTypeOverride(contentTypeOverride.getText());
 
-        if (CacheLookupAssertion.isLong(maxAgeField.getText())) {
+        if (ValidationUtils.isValidLong(maxAgeField.getText(), false, 0L, Long.MAX_VALUE)) {
             final long milliseconds = Long.parseLong(maxAgeField.getText()) * 1000L;
             ass.setMaxEntryAgeMillis(String.valueOf(milliseconds));
         } else {

@@ -23,6 +23,7 @@ import com.l7tech.util.MockConfig;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -127,6 +128,19 @@ public class ServerCacheStorageAssertionTest extends CacheAssertionTest {
         PolicyEnforcementContext policyContext = initPolicyContext();
         policyContext.setVariable("xyz", "-1");
         final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("2", "3", "${xyz}");
+        AssertionStatus status = serverAssertion.checkRequest(policyContext);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_ERROR));
+        assertEquals(AssertionStatus.FAILED, status);
+    }
+
+    @Test
+    @BugNumber(13194)
+    public void testCheckRequestWithInvalidContextVariableContentType_AssertionFailed() throws Exception {
+        PolicyEnforcementContext policyContext = initPolicyContext();
+        policyContext.setVariable("xyz", new Message());
+
+        final ServerCacheStorageAssertion serverAssertion = initServerCacheStorageAssertion("1", "1", "${xyz}");
+
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_STORAGE_ERROR));
         assertEquals(AssertionStatus.FAILED, status);

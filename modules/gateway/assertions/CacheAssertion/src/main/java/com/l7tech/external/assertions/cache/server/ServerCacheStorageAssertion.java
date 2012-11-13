@@ -44,7 +44,7 @@ public class ServerCacheStorageAssertion extends AbstractMessageTargetableServer
 
         try {
             final int cacheMaxEntries;
-            final String processedCacheMaxEntries = ExpandVariables.process(assertion.getMaxEntries(), vars, getAudit(), true);
+            final String processedCacheMaxEntries = ExpandVariables.process(assertion.getMaxEntries(), vars, getAudit());
             if (ValidationUtils.isValidInteger(processedCacheMaxEntries, false, 0, CacheStorageAssertion.kMAX_ENTRIES)) {
                 cacheMaxEntries = Integer.parseInt(processedCacheMaxEntries);
             } else {
@@ -57,7 +57,7 @@ public class ServerCacheStorageAssertion extends AbstractMessageTargetableServer
             final long cacheMaxEntryAgeMillis = result.value;
 
             final long cacheMaxEntrySizeBytes;
-            final String processedCacheMaxEntrySizeBytes = ExpandVariables.process(assertion.getMaxEntrySizeBytes(), vars, getAudit(), true);
+            final String processedCacheMaxEntrySizeBytes = ExpandVariables.process(assertion.getMaxEntrySizeBytes(), vars, getAudit());
             if (ValidationUtils.isValidLong(processedCacheMaxEntrySizeBytes, false, 0, CacheStorageAssertion.kMAX_ENTRY_SIZE)) {
                 cacheMaxEntrySizeBytes = Long.parseLong(processedCacheMaxEntrySizeBytes);
             } else {
@@ -67,8 +67,8 @@ public class ServerCacheStorageAssertion extends AbstractMessageTargetableServer
 
             final Message messageToCache = context.getTargetMessage(assertion, true);
             final ContentTypeHeader contentType = messageToCache.getMimeKnob().getOuterContentType();
-            final String cacheId = ExpandVariables.process(assertion.getCacheId(), vars, getAudit(), true);
-            final String cacheEntryKey = ExpandVariables.process(assertion.getCacheEntryKey(), vars, getAudit(), true);
+            final String cacheId = ExpandVariables.process(assertion.getCacheId(), vars, getAudit());
+            final String cacheEntryKey = ExpandVariables.process(assertion.getCacheEntryKey(), vars, getAudit());
             messageBody = messageToCache.getMimeKnob().getEntireMessageBodyAsInputStream();
 
             final SsgCache.Config cacheConfig = new SsgCache.Config(cacheId)

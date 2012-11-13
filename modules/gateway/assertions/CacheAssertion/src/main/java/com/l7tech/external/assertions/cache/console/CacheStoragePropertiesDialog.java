@@ -155,7 +155,7 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
         maxEntrySizeField.setText(ass.getMaxEntrySizeBytes());
         dontCacheFaults.setSelected(! ass.isStoreSoapFaults());
 
-        if (CacheLookupAssertion.isLong(ass.getMaxEntryAgeMillis())) {
+        if (ValidationUtils.isValidLong(ass.getMaxEntryAgeMillis(), false, 0L, Long.MAX_VALUE)) {
             final long seconds = Long.parseLong(ass.getMaxEntryAgeMillis()) / 1000L;
             maxEntryAgeField.setText(String.valueOf(seconds));
         } else {
@@ -172,7 +172,7 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
         ass.setCacheEntryKey(cacheKeyField.getText());
         ass.setStoreSoapFaults(! dontCacheFaults.isSelected());
 
-        if (CacheLookupAssertion.isLong(maxEntryAgeField.getText())) {
+        if (ValidationUtils.isValidLong(maxEntryAgeField.getText(), false, 0L, Long.MAX_VALUE)) {
             final long milliseconds = Long.parseLong(maxEntryAgeField.getText()) * 1000L;
             ass.setMaxEntryAgeMillis(String.valueOf(milliseconds));
         } else {
