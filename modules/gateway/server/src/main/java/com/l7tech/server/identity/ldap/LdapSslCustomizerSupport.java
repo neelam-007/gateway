@@ -157,6 +157,7 @@ public class LdapSslCustomizerSupport {
 
             Loader loader = new Loader( LdapIdentityProviderImpl.class.getClassLoader(), pool );
             loader.delegateLoadingOf( LdapSslCustomizerSupport.class.getName() );
+            loader.setDomain(LdapSslCustomizerSupport.class.getProtectionDomain());
             try {
                 loader.addTranslator(pool, translator);
             } catch (NotFoundException e) {
