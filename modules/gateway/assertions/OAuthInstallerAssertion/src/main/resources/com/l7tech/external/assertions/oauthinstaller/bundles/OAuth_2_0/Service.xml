@@ -396,6 +396,11 @@
                     &lt;L7p:ResponseMsgDest stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
+                    &lt;L7p:VariableToSet stringValue="clearSessionForm"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;
@@ -1662,6 +1667,11 @@
                     &lt;L7p:ResponseMsgDest stringValue="lookupSessionResult"/&gt;
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
+                    &lt;L7p:VariableToSet stringValue="clearSessionForm"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;
