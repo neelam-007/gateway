@@ -35,6 +35,10 @@
                     &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
                     &lt;L7p:VariableToSet stringValue="host_oauth_v1_server_website_baseuri"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="MS4wIChSRkMgNTg0OSk="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth1_version"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;L7p:ExportVariables&gt;
                     &lt;L7p:ExportedVars stringArrayValue="included"&gt;
                     &lt;L7p:item stringValue="host_oauth_ovp_server"/&gt;
