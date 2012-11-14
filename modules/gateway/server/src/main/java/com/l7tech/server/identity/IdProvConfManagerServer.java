@@ -9,15 +9,17 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import static com.l7tech.objectmodel.EntityType.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.ConfigFactory;
 import org.springframework.dao.DataAccessException;
 
 import java.text.MessageFormat;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
+import static com.l7tech.objectmodel.EntityType.*;
 
 /**
  * This IdentityProviderConfigManager is the server side manager who manages the one and only
@@ -207,12 +209,16 @@ public class IdProvConfManagerServer
                 throw new SaveException("Coudln't get existing permissions", e);
             }
 
-            if (!omnipotent) {
+            if (!omnipotent && shouldAutoAssignToNewRole()) {
                 logger.info("Assigning current User to new Role");
                 newRole.addAssignedUser(currentUser);
             }
         }
 
         roleManager.save(newRole);
+    }
+
+    private boolean shouldAutoAssignToNewRole() {
+        return ConfigFactory.getBooleanProperty("rbac.autoRole.manageProvider.autoAssign", true);
     }
 }

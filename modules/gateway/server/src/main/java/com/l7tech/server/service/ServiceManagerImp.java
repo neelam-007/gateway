@@ -15,6 +15,7 @@ import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.server.event.system.ServiceCacheEvent;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 import org.hibernate.StaleObjectStateException;
@@ -344,12 +345,16 @@ public class ServiceManagerImp
                 throw new SaveException("Coudln't get existing permissions", e);
             }
 
-            if (!omnipotent) {
+            if (!omnipotent && shouldAutoAssignToNewRole()) {
                 logger.info("Assigning current User to new Role");
                 newRole.addAssignedUser(currentUser);
             }
         }
         roleManager.save(newRole);
+    }
+
+    private boolean shouldAutoAssignToNewRole() {
+        return ConfigFactory.getBooleanProperty("rbac.autoRole.manageService.autoAssign", true);
     }
 
     @Override

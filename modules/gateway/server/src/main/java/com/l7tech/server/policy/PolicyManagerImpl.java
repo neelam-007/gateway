@@ -304,12 +304,16 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
                 throw new SaveException("Coudln't get existing permissions", e);
             }
 
-            if (!omnipotent) {
+            if (!omnipotent && shouldAutoAssignToNewRole()) {
                 logger.info("Assigning current User to new Role");
                 newRole.addAssignedUser(currentUser);
             }
         }
         roleManager.save(newRole);
+    }
+
+    private boolean shouldAutoAssignToNewRole() {
+        return ConfigFactory.getBooleanProperty("rbac.autoRole.managePolicy.autoAssign", true);
     }
 
     @Override
