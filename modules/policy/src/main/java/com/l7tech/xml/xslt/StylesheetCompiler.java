@@ -88,8 +88,6 @@ public class StylesheetCompiler {
             }
             
             return result;
-        } catch (TransformerConfigurationException e) {
-            throw (ParseException)new ParseException(ExceptionUtils.getMessage(e), 0);
         } catch (Exception e) {
             throw (ParseException)new ParseException(ExceptionUtils.getMessage(e), 0).initCause(e);
         }
