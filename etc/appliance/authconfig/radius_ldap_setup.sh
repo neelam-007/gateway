@@ -683,12 +683,12 @@ else
         if [ "X$PAM_LOGIN_ATTR" != "X" ]; then
                 if [ "X$AD" == "Xyes" ]; then
                         toLog "    INFO - Directory Server is an AD."
-                        sed -i "s|\(^# The user ID attribute.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_login_attribute sAMAccountName\n|" $NSS_LDAP_CONF_FILE
-                        if [ $? -ne 0 ] || [ "X$(grep "^pam_login_attribute" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "XsAMAccountName" ]; then
+                        sed -i "s|\(^# The user ID attribute.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_login_attribute $PAM_LOGIN_ATTR\n|" $NSS_LDAP_CONF_FILE
+                        if [ $? -ne 0 ] || [ "X$(grep "^pam_login_attribute" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_LOGIN_ATTR" ]; then
                                 toLog "    ERROR - Configuring 'pam_login_attribute' field in $NSS_LDAP_CONF_FILE failed."
                                 STATUS=1
                         else
-                                toLog "    Success - 'pam_login_attribute' field set to 'sAMAccountName' in $NSS_LDAP_CONF_FILE."
+                                toLog "    Success - 'pam_login_attribute' field set to $PAM_LOGIN_ATTR in $NSS_LDAP_CONF_FILE."
                         fi
 			
 			# mappings for AD 2003 and newer with SFU enabled
@@ -696,7 +696,7 @@ else
 nss_map_objectclass posixAccount User\n\
 nss_map_objectclass shadowAccount User\n\
 nss_map_objectclass posixGroup Group\n\
-nss_map_attribute uid sAMAccountName\n\
+nss_map_attribute uid $PAM_LOGIN_ATTR\n\
 nss_map_attribute uniqueMember Member\n\
 nss_map_attribute homeDirectory unixHomeDirectory\n|" $NSS_LDAP_CONF_FILE
 	                if [ $? -ne 0 ] || [ "X$(grep "^nss_map_attribute uid" $NSS_LDAP_CONF_FILE)" != "Xnss_map_attribute uid sAMAccountName" ]; then
