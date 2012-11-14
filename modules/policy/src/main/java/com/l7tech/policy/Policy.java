@@ -111,7 +111,7 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
             logger.warning(MessageFormat.format("Policy #{0} ({1}) has an invalid or empty policy_xml field.  Using null policy.", _oid, _name));
             return FalseAssertion.getInstance();
         }
-
+        // Warning: ESM migration depends on the cached instance of assertion being available after the policy XML has been parsed.
         if (assertion == null) {
             WspReader.Visibility v = visibility != null ? visibility : defaultVisibility;
             assertion = WspReader.getDefault().parsePermissively(xml, v);

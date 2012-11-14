@@ -185,7 +185,7 @@ public class MigrationUtils {
 
         Assertion rootAssertion;
         try {
-            rootAssertion = WspReader.getDefault().parsePermissively(policy.getXml(), WspReader.INCLUDE_DISABLED);
+            rootAssertion = policy.getAssertion();
         } catch (Exception e) {
             throw new PropertyResolverException("Error getting root assertion from policy.", e);
         }
