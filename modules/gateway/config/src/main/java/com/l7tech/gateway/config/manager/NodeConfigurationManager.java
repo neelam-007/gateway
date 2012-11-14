@@ -1,5 +1,7 @@
 package com.l7tech.gateway.config.manager;
 
+import com.l7tech.common.password.PasswordHasher;
+import com.l7tech.common.password.Sha512CryptPasswordHasher;
 import com.l7tech.gateway.config.manager.db.ClusterPropertyUtil;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.server.management.SoftwareVersion;
@@ -37,8 +39,10 @@ public class NodeConfigurationManager {
     private static final File nodesDir = new File(gatewayDir, "node");
     private static final String sqlPath = "../config/etc/sql/ssg.sql";
     private static final String configPath = "{0}/etc/conf";
+    private static final String varPath = "{0}/var";
 
     private static final String NODE_PROPS_FILE = "node.properties";
+    private static final String DERBY_SQL_FILE = "derby.sql";
 
     private static final String NODEPROPERTIES_ID = "node.id";
     private static final String NODEPROPERTIES_ENABLED = "node.enabled";
@@ -314,10 +318,24 @@ public class NodeConfigurationManager {
                 ClusterPropertyUtil.addClusterProperty( dbActions, databaseConfig.some(), CLUSTER_PROP_CLUSTERHOSTNAME, clusterHostname );
             }
         } else {
-            //TODO configure cluster hostname and administrator account for an embedded DB
-            // This could be done by dropping a file in "var" with the relvant info to be
-            // used/deleted by the Gateway on first run, else we could create the embedded
-            // DB here (though it seems good for the Gateway to manage the embedded DB itself)
+            // create temp sql script for internal_user update
+            final File varDirectory = getVarDirectory(nodeName);
+            final File derbySqlFile = new File( varDirectory, DERBY_SQL_FILE );
+
+            final PasswordHasher passwordHasher = new Sha512CryptPasswordHasher();
+            final String hashedPass = passwordHasher.hashPassword(adminPassword.getBytes(Charsets.UTF8));
+
+            FileOutputStream origFos = null;
+            try {
+                origFos = new FileOutputStream( derbySqlFile );
+                final String sql = "UPDATE internal_user set name='" + adminLogin + "',login='" + adminLogin + "',password='" + hashedPass + "',version=1 where objectid=3;";
+                origFos.write(sql.getBytes());
+                derbySqlFile.setReadable(true, false);
+            } catch (final FileNotFoundException e) {
+                throw new CausedIOException("Error writing sql file '"+derbySqlFile.getAbsolutePath()+"'.", e);
+            } finally {
+                ResourceUtils.closeQuietly(origFos);
+            }
         }
     }
 
@@ -543,6 +561,11 @@ public class NodeConfigurationManager {
 
     private static File getConfigurationDirectory( final String nodeName ) throws IOException {
         String path = MessageFormat.format( configPath, nodeName );
+        return new File( nodesDir, path ).getCanonicalFile();
+    }
+
+    private static File getVarDirectory(final String nodeName) throws IOException {
+        final String path = MessageFormat.format( varPath, nodeName );
         return new File( nodesDir, path ).getCanonicalFile();
     }
 

@@ -34,6 +34,7 @@
                 -->
                 <list>
                     <value>classpath:/com/l7tech/server/resources/ssg_embedded.sql</value>
+                    <value>file:${com.l7tech.server.varDirectory}/derby.sql</value>
                 </list>
                 <!--
                   List of SQL script resources to run when database already exists.

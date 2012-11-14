@@ -147,6 +147,7 @@ public class GatewayBoot {
             FirewallUtils.initializeFirewall();
             dbInit();
             createApplicationContext();
+            deleteTempDerbyScript();
             String ipAddress = startBootProcess();
             startListeners(ipAddress);
             itworked = true;
@@ -250,6 +251,14 @@ public class GatewayBoot {
             };
             dbcheck.setDaemon(true);
             dbcheck.start();
+        }
+    }
+
+    private static void deleteTempDerbyScript() {
+        final File varDir = ServerConfig.getInstance().getLocalDirectoryProperty( ServerConfigParams.PARAM_VAR_DIRECTORY, true );
+        final File derbySqlFile = new File( varDir, "derby.sql" );
+        if (derbySqlFile.exists() && !derbySqlFile.delete()) {
+            logger.warning("derby.sql could not be deleted");
         }
     }
 
