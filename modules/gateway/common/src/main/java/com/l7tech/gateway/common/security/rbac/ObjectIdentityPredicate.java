@@ -71,11 +71,15 @@ public class ObjectIdentityPredicate extends ScopePredicate implements ScopeEval
 
     public String toString() {
         if (header != null)
-            return header.getName() + " " + header.getType().getName();
+            return getName(header) + " " + header.getType().getName();
         
         StringBuilder sb = new StringBuilder(permission.getEntityType().getName());
         sb.append(" #").append(targetEntityId);
         return sb.toString();
+    }
+
+    private static String getName(EntityHeader header) {
+        return header.getName() != null ? header.getName() : header.getStrId();
     }
 
     @SuppressWarnings({"RedundantIfStatement"})
