@@ -9,6 +9,7 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
 
+import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,17 +32,26 @@ public class JdbcConnectionResolver implements PostStartupApplicationListener {
         if (applicationEvent instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
             if (JdbcConnection.class.equals(event.getEntityClass())) {
-                Object source = event.getSource();
-                if (source instanceof JdbcConnection) {
-                    JdbcConnection modifiedConn = (JdbcConnection)event.getSource();
-                    try {
-                        if (jdbcConnectionManager.getJdbcConnection(modifiedConn.getName()) == null) {
-                            jdbcConnectionPoolManager.deleteConnectionPool(modifiedConn);
-                        } else {
-                            jdbcConnectionPoolManager.updateConnectionPool(modifiedConn, false);
-                        }
-                    } catch (FindException e) {
-                        logger.log( Level.WARNING, "Error find a JDBC connection, " + modifiedConn.getName(), ExceptionUtils.getDebugException( e ) );
+                for (int i = 0; i < event.getEntityOperations().length; i++) {
+                    final char op = event.getEntityOperations()[i];
+                    final long oid = event.getEntityIds()[i];
+                    switch (op) {
+                        case EntityInvalidationEvent.CREATE: // Intentional fallthrough
+                        case EntityInvalidationEvent.UPDATE:
+                            try {
+                                JdbcConnection conn = jdbcConnectionManager.findByPrimaryKey(oid);
+                                jdbcConnectionPoolManager.updateConnectionPool(conn, false);
+                                break;
+                            } catch (FindException e) {
+                                if (logger.isLoggable(Level.WARNING)) {
+                                    logger.log(Level.WARNING, MessageFormat.format("Unable to find created/updated jdbc connection #{0}", oid), e);
+                                }
+                                continue;
+                            }
+                        case EntityInvalidationEvent.DELETE:
+                            // TODO remove from connection pool, need name
+//                            jdbcConnectionPoolManager.deleteConnectionPool(conn);
+                            break;
                     }
                 }
             }
