@@ -52,6 +52,7 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
         LdapIdentityProviderConfig config = new LdapIdentityProviderConfig();
         config.setReturningAttributes( new String[0] );
         config.setGroupCacheSize( 100 );
+        config.setGroupMaxNesting( 5 );
         return config;
     }
 

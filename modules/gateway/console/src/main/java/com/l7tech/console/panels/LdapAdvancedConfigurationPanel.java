@@ -111,6 +111,9 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
 
     private static final int DEFAULT_GROUP_CACHE_SIZE = 0;
     private static final long DEFAULT_GROUP_CACHE_HIERARCHY_MAXAGE = 60000L;
+    /**
+     * This is for backwards compatibility -> if no value is found, then 0 is assumed.
+     */
     private static final int DEFAULT_GROUP_MAX_NESTING = 0;
 
     private static final long MILLIS_100_YEARS = 100L * 365L * 86400L * 1000L;
