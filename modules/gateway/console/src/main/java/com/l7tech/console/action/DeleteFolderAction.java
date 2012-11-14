@@ -5,7 +5,7 @@ import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.FolderAdmin;
-import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityType;
 
@@ -27,7 +27,7 @@ public class DeleteFolderAction extends SecureAction {
     }
 
     public DeleteFolderAction(FolderNode folderToDelete, FolderAdmin folderAdmin, boolean confirmationEnabled) {
-        super(new AttemptedDeleteAll(EntityType.FOLDER));
+        super(new AttemptedDeleteSpecific(EntityType.FOLDER, folderToDelete.getFolder()));
         this.folderToDelete = folderToDelete;
         this.folderAdmin = folderAdmin;
         this.confirmationEnabled = confirmationEnabled;
