@@ -47,9 +47,6 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
     private String serverCaCertUrl ="";
     private String serverCaCertFile ="/home/ssgconfig/certificate.pem";
     private CertAction ldapTlsReqCert= CertAction.CERT_NEVER;
-    private boolean ldapTlsClientAuth =false;
-    private String ldapTlsClientCertFile="";
-    private String ldapTlsClientKeyFile="";
 
     private boolean isLdapTlsAdvanced=false;
     private String ldapTlsCiphers="HIGH:MEDIUM:+SSLv2";
@@ -121,9 +118,6 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
             configLines.add(makeNameValuePair("LDAP_CACERT_URL", getServerCaCertUrl()));
             configLines.add(makeNameValuePair("LDAP_CACERT_FILE", getServerCaCertFile()));
             configLines.add(makeNameValuePair("LDAP_TLS_REQCERT", getLdapTlsReqCert().getAction()));
-            configLines.add(makeNameValuePair("CLT_TLS_AUTH", convertToYesNo(isLdapTlsClientAuth())));
-            configLines.add(makeNameValuePair("LDAP_TLS_CERT", getLdapTlsClientCertFile()));
-            configLines.add(makeNameValuePair("LDAP_TLS_KEY", getLdapTlsClientKeyFile()));
 
             //TLS Advanced options go here, we aren't asking about them but they are still needed in the config file
             configLines.add(makeNameValuePair("ADVANCED_TLS_CONF", convertToYesNo(isLdapTlsAdvanced())));
@@ -174,15 +168,6 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
                 descs.add("\t\t\t" + getLdapTlsReqCert().getDescription());
             }
 
-            if (! isLdapTlsClientAuth()) {
-                descs.add("\tNot Using Client Authentication.");
-            } else {
-                descs.add("\tUsing Client Authentication");
-                if (isLdapTlsClientAuth()) {
-                    descs.add("\t\tClient Certificate File : " + getLdapTlsClientCertFile());
-                    descs.add("\t\tClient Key : " + getLdapTlsClientKeyFile());
-                }
-            }
         }
 
         return descs;
@@ -290,31 +275,6 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
 
     public CertAction getLdapTlsReqCert() {
         return ldapTlsReqCert;
-    }
-
-
-    public void setIsLdapTlsClientAuth(boolean ldapTlsClientAuth) {
-        this.ldapTlsClientAuth = ldapTlsClientAuth;
-    }
-
-    public boolean isLdapTlsClientAuth() {
-        return ldapTlsClientAuth;
-    }
-
-    public void setLdapTlsClientCertFile(String ldapTlsClientCertFile) {
-        this.ldapTlsClientCertFile = ldapTlsClientCertFile;
-    }
-
-    public String getLdapTlsClientCertFile() {
-        return ldapTlsClientCertFile;
-    }
-
-    public void setLdapTlsClientKeyFile(String ldapTlsClientKeyFile) {
-        this.ldapTlsClientKeyFile = ldapTlsClientKeyFile;
-    }
-
-    public String getLdapTlsClientKeyFile() {
-        return ldapTlsClientKeyFile;
     }
 
     public void setIsLdapTlsAdvanced(boolean ldapTlsAdvanced) {

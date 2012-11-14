@@ -54,11 +54,11 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
                 doRadiusPrompts();
                 break;
             case LDAP:
-                doLdapPrompts(true);
+                doLdapPrompts();
                 break;
             case LDAP_RADIUS:
                 doRadiusPrompts();
-                doLdapPrompts(false);
+                doLdapPrompts();
                 break;
             case LOCAL:
                 break;
@@ -97,13 +97,13 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         configBean.addAuthTypeView(radiusSettings);
     }
 
-    private void doLdapPrompts(boolean isLdapOnly) throws IOException, WizardNavigationException {
+    private void doLdapPrompts() throws IOException, WizardNavigationException {
 
         LdapAuthTypeSettings ldapView = new LdapAuthTypeSettings();
 
         doLdapServerPrompts(ldapView);
         doLdapBindPrompts(ldapView);
-        doLdapAccessControlPrompts(ldapView, isLdapOnly);
+        doLdapAccessControlPrompts(ldapView);
 
         if (ldapView.isLdapSecure()) {
             doLdapSecurePrompts(ldapView);
@@ -169,9 +169,6 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
 
         LdapAuthTypeSettings.CertAction ldapTlsReqCert = LdapAuthTypeSettings.CertAction.CERT_NEVER;
 
-        boolean isldapTlsClientAuth = false;
-        String ldapTlsClientCertFile = "";
-        String ldapTlsClientKeyFile = "";
         boolean ldapTlsAdvanced = false;
         String ldapTlsCiphers = "HIGH:MEDIUM:+SSLv2";
         boolean isldapTlsCheckPeer = true;
@@ -184,11 +181,6 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         boolean doTlsOptions = getConfirmationFromUser("Configure LDAPS TLS options?","n");
         if (doTlsOptions) {
             ldapTlsReqCert = maybeDoTlsReqCertPrompts(ldapTlsReqCert);
-            isldapTlsClientAuth = doIsClientAuthPrompts();
-            if (isldapTlsClientAuth) {
-                ldapTlsClientCertFile = doTlsClientCertFilePrompt();
-                ldapTlsClientKeyFile = doTlsClientKeyFilePrompt();
-            }
 
             ldapTlsAdvanced = maybeDoTlsAdvanced(ldapTlsAdvanced);
             //never true right now
@@ -204,9 +196,6 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
 
         //set all properties - may be defaults
         ldapView.setLdapTlsReqCert(ldapTlsReqCert);
-        ldapView.setIsLdapTlsClientAuth(isldapTlsClientAuth);
-        ldapView.setLdapTlsClientCertFile(ldapTlsClientCertFile);
-        ldapView.setLdapTlsClientKeyFile(ldapTlsClientKeyFile);
         ldapView.setIsLdapTlsAdvanced(ldapTlsAdvanced);
         ldapView.setLdapTlsCiphers(ldapTlsCiphers);
         ldapView.setIsLdapTlsCheckPeer(isldapTlsCheckPeer);
@@ -233,26 +222,6 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
 
     private String maybeDoTlsCiphersPrompts(String ldapTlsCiphers) {
         return ldapTlsCiphers;
-    }
-
-    private String doTlsClientKeyFilePrompt() throws IOException, WizardNavigationException {
-        return getData(
-                new String[] {"Enter the path to the client key file : "},
-                "",
-                (String[])null,
-                "");
-    }
-
-    private String doTlsClientCertFilePrompt() throws IOException, WizardNavigationException {
-        return  getData(
-                new String[] {"Enter the path to the PEM formatted client certificate file : "},
-                "",
-                (String[])null,
-                "");
-    }
-
-    private boolean doIsClientAuthPrompts() throws IOException, WizardNavigationException {
-        return getConfirmationFromUser("Configure Client Authentication?","n");
     }
 
     private LdapAuthTypeSettings.CertAction maybeDoTlsReqCertPrompts(LdapAuthTypeSettings.CertAction ldapTlsReqCert) throws IOException, WizardNavigationException {
@@ -289,7 +258,7 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         return ldapTlsReqCert;
     }
 
-    private void doLdapAccessControlPrompts(LdapAuthTypeSettings ldapView, boolean isLdapOnly) throws IOException, WizardNavigationException {
+    private void doLdapAccessControlPrompts(LdapAuthTypeSettings ldapView) throws IOException, WizardNavigationException {
 
         printText(EOL);
         String defaultGroup = "ssgconfig_ldap";
@@ -311,33 +280,31 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         printText(EOL);
         ldapView.setPamFilter(ldapView.createPamFilterFromGids(new String[]{ldapGid}));
 
-        if (isLdapOnly) {
-            String nssBasePasswd = getData(
-                new String[]{"Which object in the LDAP will be used to find the password for users : "},
-                    "",
-                DN_PATTERN,
-                "*** Invalid Entry: Please enter a valid object name***"
-            );
+        String nssBasePasswd = getData(
+            new String[]{"Which object in the LDAP will be used to find the password for users : "},
+                "",
+            DN_PATTERN,
+            "*** Invalid Entry: Please enter a valid object name***"
+        );
 
-            // Since they may have chosen a new base Object other than the default, use it
-            String nssBaseGroup = getData(
-                new String[]{"Which object in the LDAP will be used to find the groups for users : "},
-                    "",
-                DN_PATTERN,
-                "*** Invalid Entry: Please enter a valid object name***"
-            );
+        // Since they may have chosen a new base Object other than the default, use it
+        String nssBaseGroup = getData(
+            new String[]{"Which object in the LDAP will be used to find the groups for users : "},
+                "",
+            DN_PATTERN,
+            "*** Invalid Entry: Please enter a valid object name***"
+        );
 
-            String nssBaseShadow = getData(
-                new String[]{"Which object in the LDAP will be used to find the shadow entries for users : "},
-                    "",
-                DN_PATTERN,
-                "*** Invalid Entry: Please enter a valid object name***"
-            );
+        String nssBaseShadow = getData(
+            new String[]{"Which object in the LDAP will be used to find the shadow entries for users : "},
+                "",
+            DN_PATTERN,
+            "*** Invalid Entry: Please enter a valid object name***"
+        );
 
-            ldapView.setNssBasePasswdObj(nssBasePasswd);
-            ldapView.setNssBaseGroupObj(nssBaseGroup);
-            ldapView.setNssBaseShadowObj(nssBaseShadow);
-        }
+        ldapView.setNssBasePasswdObj(nssBasePasswd);
+        ldapView.setNssBaseGroupObj(nssBaseGroup);
+        ldapView.setNssBaseShadowObj(nssBaseShadow);
     }
 
     private void doLdapServerPrompts(LdapAuthTypeSettings ldapView) throws IOException, WizardNavigationException {
