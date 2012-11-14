@@ -102,7 +102,7 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      * @throws FindException
      */
     @Transactional(readOnly = true)
-    @Secured(stereotype = MethodStereotype.FIND_HEADERS, types={EntityType.POLICY, EntityType.POLICY_ALIAS})
+    @Secured(stereotype = MethodStereotype.FIND_HEADERS)
     @Administrative(licensed = false)
     Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types, boolean includeAliases)
             throws FindException;

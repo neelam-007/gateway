@@ -123,28 +123,4 @@ public class PolicyHeader extends OrganizationHeader {
     private final boolean isSoap;
     private final long policyRevision;
     private final PolicyType policyType;
-
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-
-        final PolicyHeader that = (PolicyHeader) o;
-
-        if (isSoap != that.isSoap) return false;
-        if (policyRevision != that.policyRevision) return false;
-        if (policyType != that.policyType) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (isSoap ? 1 : 0);
-        result = 31 * result + (int) (policyRevision ^ (policyRevision >>> 32));
-        result = 31 * result + (policyType != null ? policyType.hashCode() : 0);
-        return result;
-    }
 }

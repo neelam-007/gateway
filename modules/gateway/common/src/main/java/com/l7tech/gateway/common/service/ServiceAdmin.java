@@ -64,7 +64,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      * on each ServiceHeader to determine if it is an alias.
      * @throws FindException
      */
-    @Secured(stereotype=MethodStereotype.FIND_HEADERS, types={EntityType.SERVICE, EntityType.SERVICE_ALIAS})
+    @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
     ServiceHeader[] findAllPublishedServices(boolean includeAliases) throws FindException;
