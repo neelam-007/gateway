@@ -8,6 +8,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
@@ -60,6 +61,9 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             Assertion[] nass = node.asAssertions();
             for (Assertion assertion : nass) {
+                if (assertion instanceof CustomAssertionHolder) {
+                    assertion = (CustomAssertionHolder) assertion.clone();
+                }
                 AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(assertion);
                 model.insertNodeInto(as, this, position);
                 tree.scrollPathToVisible(new TreePath(as.getPath()));

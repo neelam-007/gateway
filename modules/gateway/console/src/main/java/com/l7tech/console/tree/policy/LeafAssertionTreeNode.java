@@ -9,6 +9,7 @@ import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.action.SavePolicyAction;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -66,6 +67,9 @@ public abstract class LeafAssertionTreeNode<AT extends Assertion> extends Assert
             if (nass != null) {
                 for (int i = 0; i < nass.length; i++) {
                     Assertion nas = nass[i];
+                    if (nas instanceof CustomAssertionHolder) {
+                        nas = (CustomAssertionHolder) nas.clone();
+                    }
                     AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(nas);
                     final MutableTreeNode parent = (MutableTreeNode)getParent();
                     int index = parent.getIndex(this);
