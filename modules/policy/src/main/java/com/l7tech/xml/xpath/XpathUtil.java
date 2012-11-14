@@ -192,10 +192,10 @@ public class XpathUtil {
                 reader.parse(expr);
             }
         } catch (SAXPathException e) {
-            logger.log(Level.INFO, "Unable to parse XPath expression to determine variables used: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.FINE, "Unable to parse XPath expression to determine variables used: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             /* FALLTHROUGH and leave seenvars empty */
         } catch (InvalidXpathException e) {
-            logger.log(Level.INFO, "Unable to parse XPath expression to determine variables used: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.FINE, "Unable to parse XPath expression to determine variables used: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             /* FALLTHROUGH and leave seenvars empty */
         }
         return seenvars;
