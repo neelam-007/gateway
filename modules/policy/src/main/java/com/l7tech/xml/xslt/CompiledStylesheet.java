@@ -126,10 +126,12 @@ public class CompiledStylesheet {
         try {
             Transformer transformer = softwareStylesheet.newTransformer();
             transformer.setURIResolver(XmlUtil.getSafeURIResolver());
-            if (errorListener != null) transformer.setErrorListener(errorListener);
+            if (errorListener != null)
+                transformer.setErrorListener(errorListener);
             for (String variableName : varsUsed) {
                 Object value = t.getVariableValue(variableName);
-                if (value != null) transformer.setParameter(variableName, value);
+                if (value != null)
+                    transformer.setParameter(variableName, value);
             }
             transformer.transform(source, sr);
             output.setBytes(os.toByteArray());

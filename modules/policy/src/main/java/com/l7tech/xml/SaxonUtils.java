@@ -14,6 +14,7 @@ import net.sf.saxon.lib.StringCollator;
 import net.sf.saxon.om.NamespaceResolver;
 import net.sf.saxon.om.SequenceIterator;
 import net.sf.saxon.s9api.*;
+import net.sf.saxon.serialize.MessageWarner;
 import net.sf.saxon.sxpath.IndependentContext;
 import net.sf.saxon.trans.XPathException;
 import org.jetbrains.annotations.NotNull;
@@ -132,6 +133,8 @@ public class SaxonUtils {
         if (!ConfigFactory.getBooleanProperty(PROP_SAXON_ALLOW_ENTITY_RESOLUTION, false)) {
             transfactory.setAttribute(FeatureKeys.ENTITY_RESOLVER_CLASS, SsgSaxonEntityResolver.class.getName());
         }
+
+        transfactory.setAttribute(FeatureKeys.MESSAGE_EMITTER_CLASS, MessageWarner.class.getName());
     }
 
     /**

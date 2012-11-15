@@ -10,8 +10,10 @@ import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ServerConfigParams;
@@ -35,6 +37,7 @@ import com.l7tech.xml.xslt.CompiledStylesheet;
 import org.junit.*;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -482,5 +485,52 @@ public class XslTransformationTest {
 
     private static void assertEqualsIgnoringWhitespace(String expected, String actual) {
         assertEquals(expected.replaceAll(" |\r|\n|\t", ""), actual.replaceAll(" |\r|\n|\t", ""));
+    }
+
+    private static final String XSLT_IDENTITY_WITH_MESSAGE =
+        "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">\n" +
+            "  <!-- Identity transform -->\n" +
+            "  <xsl:template match=\"@*|*|processing-instruction()|comment()\">\n" +
+            "    <xsl:message>New msg 1</xsl:message>\n" +
+            "    <xsl:message>New msg 2</xsl:message>\n" +
+            "    <xsl:copy>\n" +
+            "      <xsl:apply-templates\n" +
+            "select=\"*|@*|text()|processing-instruction()|comment()\"/>\n" +
+            "    </xsl:copy>\n" +
+            "  </xsl:template>\n" +
+            "</xsl:stylesheet>";
+
+    @BugNumber(13218)
+    @Test
+    public void testXslMessages() throws Exception {
+        doTestXslMessages("1.0");
+    }
+
+    @BugNumber(13218)
+    @Test
+    public void testXslMessagesXslt20() throws Exception {
+        doTestXslMessages("2.0");
+    }
+
+    private void doTestXslMessages(String xsltVersion) throws SAXException, IOException, PolicyAssertionException, NoSuchVariableException {
+        XslTransformation assertion = new XslTransformation();
+        assertion.setTarget(TargetMessageType.REQUEST);
+        AssertionResourceInfo ri = new StaticResourceInfo(XSLT_IDENTITY_WITH_MESSAGE);
+        assertion.setResourceInfo(ri);
+        assertion.setMsgVarPrefix("pfx");
+        assertion.setXsltVersion(xsltVersion);
+        ServerAssertion sa = new TestStaticOnlyServerXslTransformation(assertion);
+
+        Message request = new Message(XmlUtil.stringToDocument(DUMMY_SOAP_XML));
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+
+        AssertionStatus result = sa.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+
+        String[] messages = (String[])context.getVariable("pfx.messages");
+        assertEquals(2, messages.length);
+
+        assertEquals("New msg 1", context.getVariable("pfx.messages.first"));
+        assertEquals("New msg 2", context.getVariable("pfx.messages.last"));
     }
 }

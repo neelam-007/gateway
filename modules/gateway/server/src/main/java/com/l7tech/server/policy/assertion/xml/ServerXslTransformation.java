@@ -55,8 +55,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -252,7 +251,7 @@ public class ServerXslTransformation
                 return AssertionStatus.SERVER_ERROR;
         }
 
-        final List<String> xsltMessages = new ArrayList<String>();
+        final LinkedHashSet<String> xsltMessages = new LinkedHashSet<String>();
         try {
             return doCheckRequest(message, context, xsltMessages);
         } catch (SAXException e) {
@@ -260,9 +259,10 @@ public class ServerXslTransformation
             return AssertionStatus.BAD_REQUEST;
         } finally {
             if ( !xsltMessages.isEmpty() ) {
-                context.setVariable(xsltMsgVarName, xsltMessages.toArray( new String[xsltMessages.size()] ));
-                context.setVariable(xsltMsgVarName + ".first", xsltMessages.get( 0 ));
-                context.setVariable(xsltMsgVarName + ".last", xsltMessages.get( xsltMessages.size()-1 ));
+                final String[] strings = xsltMessages.toArray(new String[xsltMessages.size()]);
+                context.setVariable(xsltMsgVarName, strings);
+                context.setVariable(xsltMsgVarName + ".first", strings[0]);
+                context.setVariable(xsltMsgVarName + ".last", strings[strings.length - 1]);
             }
         }
     }
@@ -273,7 +273,7 @@ public class ServerXslTransformation
      */
     private AssertionStatus doCheckRequest( final Message message,
                                             final PolicyEnforcementContext context,
-                                            final List<String> xsltMessages )
+                                            final LinkedHashSet<String> xsltMessages )
             throws IOException, PolicyAssertionException, SAXException
     {
 
@@ -345,7 +345,7 @@ public class ServerXslTransformation
     private AssertionStatus transform( final TransformInput input,
                                        final TransformOutput output,
                                        final Map<String,Object> urlVars,
-                                       final List<String> xsltMessages )
+                                       final LinkedHashSet<String> xsltMessages )
             throws IOException, PolicyAssertionException
     {
         try {
@@ -407,7 +407,7 @@ public class ServerXslTransformation
         }
     }
 
-    private ErrorListener getErrorListener( final List<String> xsltMessages ) {
+    private ErrorListener getErrorListener( final LinkedHashSet<String> xsltMessages ) {
         return new ErrorListener() {
             @Override
             public void warning(TransformerException exception) throws TransformerException {
@@ -422,9 +422,7 @@ public class ServerXslTransformation
             @Override
             public void fatalError(TransformerException exception) throws TransformerException {
                 final String message = ExceptionUtils.getMessage(exception);
-                if ( !xsltMessages.contains(message) ) { // can be reported more than once
-                    xsltMessages.add( message );
-                }
+                xsltMessages.add( message );
                 throw exception;
             }
         };
