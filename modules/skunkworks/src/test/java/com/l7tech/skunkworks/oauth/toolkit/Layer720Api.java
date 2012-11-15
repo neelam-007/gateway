@@ -2,6 +2,8 @@ package com.l7tech.skunkworks.oauth.toolkit;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import org.scribe.builder.api.DefaultApi20;
 import org.scribe.extractors.AccessTokenExtractor;
@@ -13,6 +15,7 @@ import org.scribe.utils.OAuthEncoder;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 
 import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSSLSocketFactory;
 import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.getSessionIdFromHtmlForm;
@@ -145,8 +148,9 @@ public class Layer720Api extends DefaultApi20 {
 
     public GenericHttpResponse authorizeWithSAMLToken(final PasswordAuthentication clientCredentials, final PasswordAuthentication passwordAuthentication) throws Exception {
         final CommonsHttpClient client = new CommonsHttpClient();
+        final String tokenRestrictionsEncoded = URLEncoder.encode(String.format("https://%s:8443/auth/oauth/v2/token", gatewayHost), "UTF-8");
         final GenericHttpRequestParams samlTokenParams = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
-                ":8443/oauth/v2/samlTokenServer"));
+                ":8443/oauth/v2/samlTokenServer?audience_recipient_restriction=" + tokenRestrictionsEncoded));
         samlTokenParams.setSslSocketFactory(getSSLSocketFactory());
         samlTokenParams.setPasswordAuthentication(passwordAuthentication);
         samlTokenParams.setFollowRedirects(false);
@@ -156,14 +160,15 @@ public class Layer720Api extends DefaultApi20 {
         final String locationHeader = samlResponse.getHeaders().getFirstValue("Location");
         final String samlToken = locationHeader.substring(locationHeader.indexOf("saml=") + 5, locationHeader.length());
         final String decodedSamlToken = URLDecoder.decode(samlToken, "UTF-8");
+        final String base64EncodedToken = HexUtils.encodeBase64(decodedSamlToken.getBytes(Charsets.UTF8));
 
         final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("https://" + gatewayHost +
                 ":8443/auth/oauth/v2/token"));
         params.setSslSocketFactory(getSSLSocketFactory());
         params.setPasswordAuthentication(clientCredentials);
         final GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
-        request.addParameter("grant_type", "http://oauth.net/grant_type/assertion/saml/2.0/bearer");
-        request.addParameter("assertion", decodedSamlToken);
+        request.addParameter("grant_type", "urn:ietf:params:oauth:grant-type:saml2-bearer");
+        request.addParameter("assertion", base64EncodedToken);
         final GenericHttpResponse response = request.getResponse();
         assertEquals(200, response.getStatus());
         return response;

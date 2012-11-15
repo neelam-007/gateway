@@ -176,10 +176,6 @@ public class OAuthToolkit2_0ScribeIntegrationTest {
         getProtectedResource(new Token(accessToken, ""));
     }
 
-    /**
-     * FIXME for changes implemented for http://sarek.l7tech.com/bugzilla/show_bug.cgi?id=13452.
-     */
-    @Ignore
     @Test
     public void saml() throws Exception {
         // Obtain an Access Token from JSON response body
