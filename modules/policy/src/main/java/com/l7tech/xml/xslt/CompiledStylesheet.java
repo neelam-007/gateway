@@ -138,7 +138,8 @@ public class CompiledStylesheet {
             logger.finest("software xsl transformation completed");
         } catch ( TransformerException e ) {
             final SourceLocator locator = e.getLocator();
-            if ( e.getCause() == null && locator != null && (SYSTEM_ID_MESSAGE.equals( locator.getSystemId() ) || -1 == locator.getLineNumber()) ) {
+            final boolean xalanEmptySax = e.getCause() == null && locator != null && (SYSTEM_ID_MESSAGE.equals(locator.getSystemId()) || -1 == locator.getLineNumber());
+            if (xalanEmptySax) {
                 // translate to a parse error for consistency
                 final LocatorImpl saxLocator = new LocatorImpl();
                 saxLocator.setColumnNumber( locator.getColumnNumber() );
@@ -146,6 +147,11 @@ public class CompiledStylesheet {
                 saxLocator.setPublicId( locator.getPublicId() );
                 saxLocator.setSystemId( locator.getSystemId() );
                 throw new SAXParseException( ExceptionUtils.getMessage(e), saxLocator, e );
+            }
+            final boolean saxonEmptySax = locator == null && e.getCause() != null && e.getCause().getMessage() != null && e.getCause().getMessage().contains("Premature end of file");
+            if (saxonEmptySax) {
+                // translate to a parse error for consistency (Bug #13235)
+                throw new SAXParseException( ExceptionUtils.getMessage(e), null, e );
             }
             throw e;
         } finally {
