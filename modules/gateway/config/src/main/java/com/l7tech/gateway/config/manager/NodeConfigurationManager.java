@@ -58,6 +58,7 @@ public class NodeConfigurationManager {
     private static final String NODEPROPERTIES_DB_TYPE_FORMAT = "node.db.config.{0}.type";
 
     private static final String CLUSTER_PROP_CLUSTERHOSTNAME = "cluster.hostname";
+    private static final Long CLUSTER_PROP_CLUSTERHOSTNAME_OID = -1L;
 
     private static final DBActions dbActions = new DBActions();
 
@@ -315,21 +316,26 @@ public class NodeConfigurationManager {
 
             AccountReset.resetAccount(databaseConfig.some(), adminLogin, adminPassword);
             if ( clusterHostname != null ) {
-                ClusterPropertyUtil.addClusterProperty( dbActions, databaseConfig.some(), CLUSTER_PROP_CLUSTERHOSTNAME, clusterHostname );
+                ClusterPropertyUtil.addClusterProperty( dbActions, databaseConfig.some(), CLUSTER_PROP_CLUSTERHOSTNAME_OID, CLUSTER_PROP_CLUSTERHOSTNAME, clusterHostname );
             }
         } else {
-            // create temp sql script for internal_user update
+            // create temp sql script for updates required after derby db is created
             final File varDirectory = getVarDirectory(nodeName);
             final File derbySqlFile = new File( varDirectory, DERBY_SQL_FILE );
-
-            final PasswordHasher passwordHasher = new Sha512CryptPasswordHasher();
-            final String hashedPass = passwordHasher.hashPassword(adminPassword.getBytes(Charsets.UTF8));
 
             FileOutputStream origFos = null;
             try {
                 origFos = new FileOutputStream( derbySqlFile );
-                final String sql = "UPDATE internal_user set name='" + adminLogin + "',login='" + adminLogin + "',password='" + hashedPass + "',version=1 where objectid=3;";
-                origFos.write(sql.getBytes());
+                if (adminLogin != null && adminPassword != null) {
+                    final PasswordHasher passwordHasher = new Sha512CryptPasswordHasher();
+                    final String hashedPass = passwordHasher.hashPassword(adminPassword.getBytes(Charsets.UTF8));
+                    final String internalUserSql = "UPDATE internal_user set name='" + adminLogin + "',login='" + adminLogin + "',password='" + hashedPass + "',version=1 where objectid=3;";
+                    origFos.write(internalUserSql.getBytes());
+                }
+                if (clusterHostname != null) {
+                final String clusterHostSql = "UPDATE cluster_properties set propvalue='" + clusterHostname + "',version=1 where objectid=" + CLUSTER_PROP_CLUSTERHOSTNAME_OID + " and propkey='cluster.hostname';";
+                    origFos.write(clusterHostSql.getBytes());
+                }
                 derbySqlFile.setReadable(true, false);
             } catch (final FileNotFoundException e) {
                 throw new CausedIOException("Error writing sql file '"+derbySqlFile.getAbsolutePath()+"'.", e);
