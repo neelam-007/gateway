@@ -88,6 +88,16 @@ public class SaxonUtils {
     }
 
     /**
+     * Can be used to disable bytecode generation in an environment where it would not be safe to attempt to do so
+     * (such as on the applet).
+     *
+     * @param enable false to disable bytecode generation in the shared Saxon configuration.
+     */
+    public static void setEnableByteCodeGeneration(boolean enable) {
+        getConfiguration().setConfigurationProperty(FeatureKeys.GENERATE_BYTE_CODE, enable);
+    }
+
+    /**
      * Configure the specified Saxon TransformerFactory to be secure, to the extent possible, even when processing
      * not-entirely-trusted stylesheets.
      *

@@ -5,9 +5,9 @@
 
 package com.l7tech.console;
 
-import org.springframework.context.ApplicationEvent;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.xml.SaxonUtils;
+import org.springframework.context.ApplicationEvent;
 
 /**
  * Disables some SsmApplication features when running as Applet.
@@ -22,8 +22,14 @@ public class SsmApplicationApplet extends SsmApplication {
     }
 
     public synchronized void run() {
+        performAppletSpecificInitialization();
         mainWindow = new MainWindow(this);
         TopComponents.getInstance().registerComponent("mainWindow", mainWindow);
+    }
+
+    private void performAppletSpecificInitialization() {
+        // Disable Saxon bytecode generation since loading classes won't work in the applet (Bug #13268)
+        SaxonUtils.setEnableByteCodeGeneration(false);
     }
 
     public boolean isApplet() {
