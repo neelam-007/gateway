@@ -20,6 +20,7 @@ import com.l7tech.gui.widgets.IpListPanel;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
@@ -28,7 +29,9 @@ import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ValidationUtils;
 import com.l7tech.wsdl.Wsdl;
@@ -1066,12 +1069,28 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             for (int i = 0; i < oids.length; i++) {
                 Long oid = oids[i];
                 String name = assertion.certName(i);
+                if (name == null || name.trim().length() < 1) {
+                    // Look up name (Bug #12127)
+                    name = lookUpTrustedCertName(oid);
+                    if (name == null)
+                        name = "<Missing Trusted Certificate OID #" + oid + ">";
+                }
                 tlsTrustedCerts.add(new EntityHeader(oid, EntityType.TRUSTED_CERT, name, "Trusted SSL/TLS server cert"));
             }
         }
         trustedServerCertsButton.setEnabled(!bra);
 
         enableOrDisableProxyFields();
+    }
+
+    private String lookUpTrustedCertName(long oid) {
+        try {
+            TrustedCert cert = Registry.getDefault().getTrustedCertManager().findCertByPrimaryKey(oid);
+            return cert == null ? null : cert.getName();
+        } catch (FindException e) {
+            log.log(Level.INFO, "Unable to retrieve trusted certificate OID " + oid + ": " + ExceptionUtils.getMessage(e), e);
+            return null;
+        }
     }
 
     /**
