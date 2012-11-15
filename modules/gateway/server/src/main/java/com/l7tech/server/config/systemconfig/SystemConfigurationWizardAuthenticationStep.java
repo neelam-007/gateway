@@ -54,11 +54,11 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
                 doRadiusPrompts();
                 break;
             case LDAP:
-                doLdapPrompts();
+                doLdapPrompts(true);
                 break;
             case LDAP_RADIUS:
                 doRadiusPrompts();
-                doLdapPrompts();
+                doLdapPrompts(false);
                 break;
             case LOCAL:
                 break;
@@ -97,11 +97,11 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         configBean.addAuthTypeView(radiusSettings);
     }
 
-    private void doLdapPrompts() throws IOException, WizardNavigationException {
+    private void doLdapPrompts(boolean isLdapOnly) throws IOException, WizardNavigationException {
 
         LdapAuthTypeSettings ldapView = new LdapAuthTypeSettings();
 
-        doLdapServerPrompts(ldapView);
+        doLdapServerPrompts(ldapView, isLdapOnly);
         doLdapBindPrompts(ldapView);
         doLdapAccessControlPrompts(ldapView);
 
@@ -307,9 +307,12 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         ldapView.setNssBaseShadowObj(nssBaseShadow);
     }
 
-    private void doLdapServerPrompts(LdapAuthTypeSettings ldapView) throws IOException, WizardNavigationException {
+    private void doLdapServerPrompts(LdapAuthTypeSettings ldapView, boolean isLdapOnly) throws IOException, WizardNavigationException {
 
-        boolean isAD = getConfirmationFromUser("Is the directory service to be used an Active Directory?","n");
+        boolean isAD = false;
+        if (isLdapOnly) {
+            isAD = getConfirmationFromUser("Is the directory service to be used an Active Directory?","n");
+        }
 
         boolean isLdapSecure = getConfirmationFromUser("Do you want to use LDAPS (secure)?", "n");
         String ldapServer = getData(
