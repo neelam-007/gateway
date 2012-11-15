@@ -10,9 +10,10 @@ import org.junit.Test;
 
 import java.io.StringReader;
 import java.util.Properties;
+import static org.junit.Assert.*;
 
 /**
- * 
+ *
  */
 public class NodeConfigurationManagerTest {
 
@@ -43,9 +44,9 @@ public class NodeConfigurationManagerTest {
     public void testLoadConfigurationWithSecret() throws Exception {
         Properties properties = new Properties();
         properties.load(new StringReader(configurationProperties));
-        
+
         NodeConfig config = NodeConfigurationManager.loadNodeConfig( "test", properties, true );
-        
+
         Assert.assertNotNull("Configuration not loaded.", config);
         Assert.assertNotNull("Configuration name not loaded.", config.getName());
         Assert.assertNotNull("Database configuration is missing.", config.getDatabases() );
@@ -104,6 +105,50 @@ public class NodeConfigurationManagerTest {
                 Assert.fail("Unexpected host : " + dbconfig.getHost());
             }
         }
+    }
+
+    @Test
+    public void createDerbyQueries(){
+        final String query = NodeConfigurationManager.createDerbyQueries("pmadmin", "7layer", "nodeconfigmantest.l7tech.com");
+        assertTrue(query.contains("UPDATE internal_user set name='pmadmin',login='pmadmin',password='"));
+        assertTrue(query.contains("',version=1 where objectid=3;"));
+        assertTrue(query.contains("UPDATE cluster_properties set propvalue='nodeconfigmantest.l7tech.com',version=1 where objectid=-700001 and propkey='cluster.hostname';"));
+    }
+
+    @Test
+    public void createDerbyQueriesEscapChars(){
+        final String query = NodeConfigurationManager.createDerbyQueries("pm'admin'", "7layer", "node'configman'test.l7tech.com");
+        assertTrue(query.contains("UPDATE internal_user set name='pm''admin''',login='pm''admin''',password='"));
+        assertTrue(query.contains("',version=1 where objectid=3;"));
+        assertTrue(query.contains("UPDATE cluster_properties set propvalue='node''configman''test.l7tech.com',version=1 where objectid=-700001 and propkey='cluster.hostname';"));
+    }
+
+    @Test
+    public void createDerbyQueriesNoAdminLogin(){
+        final String query = NodeConfigurationManager.createDerbyQueries(null, "7layer", "nodeconfigmantest.l7tech.com");
+        assertFalse(query.contains("UPDATE internal_user"));
+        assertTrue(query.contains("UPDATE cluster_properties set propvalue='nodeconfigmantest.l7tech.com',version=1 where objectid=-700001 and propkey='cluster.hostname';"));
+    }
+
+    @Test
+    public void createDerbyQueriesNoAdminPassword(){
+        final String query = NodeConfigurationManager.createDerbyQueries("pmadmin", null, "nodeconfigmantest.l7tech.com");
+        assertFalse(query.contains("UPDATE internal_user"));
+        assertTrue(query.contains("UPDATE cluster_properties set propvalue='nodeconfigmantest.l7tech.com',version=1 where objectid=-700001 and propkey='cluster.hostname';"));
+    }
+
+    @Test
+    public void createDerbyQueriesNoClusterHost(){
+        final String query = NodeConfigurationManager.createDerbyQueries("pmadmin", "7layer", null);
+        assertTrue(query.contains("UPDATE internal_user set name='pmadmin',login='pmadmin',password='"));
+        assertTrue(query.contains("',version=1 where objectid=3;"));
+        assertFalse(query.contains("UPDATE cluster_properties"));
+    }
+
+    @Test
+    public void derbyEscape(){
+        assertEquals("derby''s string", NodeConfigurationManager.derbyEscape("derby's string"));
+        assertEquals("derby''s test''s string", NodeConfigurationManager.derbyEscape("derby's test's string"));
     }
 
     private static final String basicConfigurationProperties =

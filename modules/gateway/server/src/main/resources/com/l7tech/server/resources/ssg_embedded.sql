@@ -1528,6 +1528,6 @@ INSERT INTO rbac_predicate VALUES (-669,0,-668);
 INSERT INTO rbac_predicate_attribute VALUES (-669,'type','MqNative','eq');
 INSERT INTO rbac_permission VALUES (-670,0,-650,'READ',NULL,'SECURE_PASSWORD');
 
--- Insert default cluster hostname
-INSERT INTO cluster_properties VALUES (-1,'cluster.hostname',0,'');
+-- Reserve -700001 objectid for cluster.hostname and insert default
+INSERT INTO cluster_properties VALUES (-700001,'cluster.hostname',0,'');
 

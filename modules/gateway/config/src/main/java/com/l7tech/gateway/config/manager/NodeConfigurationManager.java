@@ -32,7 +32,7 @@ import static com.l7tech.util.Option.some;
  * Manages configuration for a node.
  */
 public class NodeConfigurationManager {
-
+    static final PasswordHasher passwordHasher = new Sha512CryptPasswordHasher();
     private static final Logger logger = Logger.getLogger(NodeConfigurationManager.class.getName());
 
     private static final File gatewayDir = new File( ConfigFactory.getProperty( "com.l7tech.gateway.home", "/opt/SecureSpan/Gateway" ) );
@@ -58,7 +58,7 @@ public class NodeConfigurationManager {
     private static final String NODEPROPERTIES_DB_TYPE_FORMAT = "node.db.config.{0}.type";
 
     private static final String CLUSTER_PROP_CLUSTERHOSTNAME = "cluster.hostname";
-    private static final Long CLUSTER_PROP_CLUSTERHOSTNAME_OID = -1L;
+    private static final Long CLUSTER_PROP_CLUSTERHOSTNAME_OID = -700001L;
 
     private static final DBActions dbActions = new DBActions();
 
@@ -326,16 +326,7 @@ public class NodeConfigurationManager {
             FileOutputStream origFos = null;
             try {
                 origFos = new FileOutputStream( derbySqlFile );
-                if (adminLogin != null && adminPassword != null) {
-                    final PasswordHasher passwordHasher = new Sha512CryptPasswordHasher();
-                    final String hashedPass = passwordHasher.hashPassword(adminPassword.getBytes(Charsets.UTF8));
-                    final String internalUserSql = "UPDATE internal_user set name='" + adminLogin + "',login='" + adminLogin + "',password='" + hashedPass + "',version=1 where objectid=3;";
-                    origFos.write(internalUserSql.getBytes());
-                }
-                if (clusterHostname != null) {
-                final String clusterHostSql = "UPDATE cluster_properties set propvalue='" + clusterHostname + "',version=1 where objectid=" + CLUSTER_PROP_CLUSTERHOSTNAME_OID + " and propkey='cluster.hostname';";
-                    origFos.write(clusterHostSql.getBytes());
-                }
+                origFos.write(createDerbyQueries(adminLogin, adminPassword, clusterHostname).getBytes());
                 derbySqlFile.setReadable(true, false);
             } catch (final FileNotFoundException e) {
                 throw new CausedIOException("Error writing sql file '"+derbySqlFile.getAbsolutePath()+"'.", e);
@@ -501,6 +492,32 @@ public class NodeConfigurationManager {
         }
 
         return node;
+    }
+
+    /**
+     * Creates derby update queries.
+     */
+    static String createDerbyQueries(final String adminLogin, final String adminPassword, final String clusterHostname){
+        final StringBuilder stringBuilder = new StringBuilder();
+        if (adminLogin != null && adminPassword != null) {
+            final String hashedPass = passwordHasher.hashPassword(adminPassword.getBytes(Charsets.UTF8));
+            final String escapedLogin = derbyEscape(adminLogin);
+            final String internalUserQuery = "UPDATE internal_user set name='" + escapedLogin + "',login='" + escapedLogin +
+                    "',password='" + hashedPass + "',version=1 where objectid=3;";
+            stringBuilder.append(internalUserQuery);
+        }
+        if (clusterHostname != null) {
+            stringBuilder.append("UPDATE cluster_properties set propvalue='" + derbyEscape(clusterHostname) +
+                    "',version=1 where objectid=" + CLUSTER_PROP_CLUSTERHOSTNAME_OID + " and propkey='cluster.hostname';");
+        }
+        return stringBuilder.toString();
+    }
+
+    /**
+     * Escapes derby special characters.
+     */
+    static String derbyEscape(@NotNull final String toEscape){
+        return toEscape.replaceAll("'", "''");
     }
 
     private static DatabaseConfig loadNodeDatabaseConfig( final Properties nodeProperties,
