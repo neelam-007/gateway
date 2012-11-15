@@ -144,6 +144,7 @@ public abstract class Syntax {
      * @return all the variable names which are contained within our variable reference syntax of ${...} in String s
      * @throws VariableNameSyntaxException If strict and an error occurs
      */
+    @NotNull
     public static String[] getReferencedNames(final @Nullable String s, final boolean strict) {
         final List<String> vars = new ArrayList<String>();
         if ( s != null ) {

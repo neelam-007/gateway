@@ -1,22 +1,18 @@
 package com.l7tech.external.assertions.cache;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.ValidationUtils;
 
 /**
  * 
  */
 public class CacheLookupAssertion extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
 
-    public final static long MIN_MILLIS_FOR_MAX_ENTRY_AGE = 0;
     public final static long MIN_SECONDS_FOR_MAX_ENTRY_AGE = 0;
-    public final static long MAX_MILLIS_FOR_MAX_ENTRY_AGE = Long.MAX_VALUE;
-    public final static long MAX_SECONDS_FOR_MAX_ENTRY_AGE = MAX_MILLIS_FOR_MAX_ENTRY_AGE / 1000L;
+    public final static long MAX_SECONDS_FOR_MAX_ENTRY_AGE = Long.MAX_VALUE / 1000L;
 
     private String cacheId = "defaultCache";
     private String cacheEntryKey = "${request.url}";
-    private String maxEntryAgeMillis = String.valueOf(1000L * 300); // 300s
+    private String maxEntryAgeSeconds = String.valueOf(300); // 300s
     private String contentTypeOverride = null;
 
     public CacheLookupAssertion() {
@@ -26,7 +22,7 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        return super.doGetVariablesUsed().withExpressions( cacheId, cacheEntryKey, maxEntryAgeMillis );
+        return super.doGetVariablesUsed().withExpressions( cacheId, cacheEntryKey, maxEntryAgeSeconds);
     }
 
     /** @return the name of the cache in which the item is to be looked up.  May contain variables that need interpolation. */
@@ -69,31 +65,25 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
     }
 
     /**
-     * Two different Strings can be returned:
-     * <ol>
-     *     <li>A long between the {@link CacheLookupAssertion#MIN_MILLIS_FOR_MAX_ENTRY_AGE} and {@link CacheLookupAssertion#MAX_MILLIS_FOR_MAX_ENTRY_AGE} values (inclusive) with the units being milliseconds.</li>
-     *     <li>A context variable (for example "${xyz}").
-     *     It's contents are not interpolated yet but are expected to be a long between {@link CacheLookupAssertion#MIN_SECONDS_FOR_MAX_ENTRY_AGE} and {@link CacheLookupAssertion#MAX_SECONDS_FOR_MAX_ENTRY_AGE} values (inclusive) with the units being seconds.</li>
-     * </ol>
-     *
-     * @return Either a long or a context variable as described above.
-     * @see com.l7tech.external.assertions.cache.server.ServerCacheLookupAssertion
-     */
-    public String getMaxEntryAgeMillis() {
-        return maxEntryAgeMillis;
-    }
-
-    /**
      * This method exists for backwards compatibility with serialized CacheLookupAssertions.
      *
-     * This method simply calls {@link #setMaxEntryAgeMillis(String)} by converting the given long to a String.
+     * This method simply calls {@link #setMaxEntryAgeSeconds(String)} by converting the given long from
+     * milliseconds to seconds and storing the value as a String.
      *
-     * @deprecated Use {@link #setMaxEntryAgeMillis(String)} instead.
-     * @see #setMaxEntryAgeMillis(String)
+     * @deprecated Use {@link #setMaxEntryAgeSeconds(String)} instead.
+     * @see #setMaxEntryAgeSeconds(String)
      */
     @Deprecated
     public void setMaxEntryAgeMillis(final long maxEntryAgeMillis) {
-        setMaxEntryAgeMillis(Long.toString(maxEntryAgeMillis));
+        setMaxEntryAgeSeconds(Long.toString(maxEntryAgeMillis / 1000));
+    }
+
+    /**
+     * @return Max entry age in seconds. May reference a variable.
+     * @see com.l7tech.external.assertions.cache.server.ServerCacheLookupAssertion
+     */
+    public String getMaxEntryAgeSeconds() {
+        return maxEntryAgeSeconds;
     }
 
     /**
@@ -105,17 +95,10 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
      * This setting controls removal from the cache via this assertion; the cache itself has its own setting,
      * the {@link #cacheId}'s maximum entry age, that should not be confused with this setting.
      *
-     * The parameter accepts two different Strings:
-     * <ol>
-     *     <li>A long between the {@link CacheLookupAssertion#MIN_MILLIS_FOR_MAX_ENTRY_AGE} and {@link CacheLookupAssertion#MAX_MILLIS_FOR_MAX_ENTRY_AGE} values (inclusive) with the units being milliseconds.</li>
-     *     <li>A context variable (for example "${xyz}").
-     *     It's contents are not interpolated yet but are expected to be a long between {@link CacheLookupAssertion#MIN_SECONDS_FOR_MAX_ENTRY_AGE} and {@link CacheLookupAssertion#MAX_SECONDS_FOR_MAX_ENTRY_AGE} values (inclusive) with the units being seconds.</li>
-     * </ol>
-     *
-     * @param maxEntryAgeMillis Either a long or a context variable as described above. If zero, this assertion will never return success.
+     * @param maxEntryAgeSeconds Max age value. May be a variable reference.
      */
-    public void setMaxEntryAgeMillis(final String maxEntryAgeMillis) {
-         this.maxEntryAgeMillis = maxEntryAgeMillis;
+    public void setMaxEntryAgeSeconds(final String maxEntryAgeSeconds) {
+         this.maxEntryAgeSeconds = maxEntryAgeSeconds;
     }
 
     /**

@@ -12,11 +12,14 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ValidationUtils;
 import org.springframework.beans.factory.BeanFactory;
 
 import java.io.IOException;
 import java.util.Map;
+
+import static com.l7tech.external.assertions.cache.CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE;
+import static com.l7tech.external.assertions.cache.CacheLookupAssertion.MIN_SECONDS_FOR_MAX_ENTRY_AGE;
+import static com.l7tech.util.ValidationUtils.isValidLong;
 
 /**
  * Server side implementation of the CacheLookupAssertion.
@@ -31,6 +34,13 @@ public class ServerCacheLookupAssertion extends AbstractMessageTargetableServerA
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
         this.cacheManager = SsgCacheManager.getInstance(beanFactory);
+        final String maxAgeExpression = assertion.getMaxEntryAgeSeconds();
+        final String[] refs = Syntax.getReferencedNames(maxAgeExpression);
+        if (refs.length > 0) {
+            if (!Syntax.isOnlyASingleVariableReferenced(maxAgeExpression)) {
+                throw new PolicyAssertionException(assertion, "Invalid value for max age. Only a single variable may be referenced: '" + maxAgeExpression + "'");
+            }
+        }
     }
 
     @Override
@@ -39,33 +49,20 @@ public class ServerCacheLookupAssertion extends AbstractMessageTargetableServerA
         final String cacheName = ExpandVariables.process(assertion.getCacheId(), vars, getAudit(), true);
         final String key = ExpandVariables.process(assertion.getCacheEntryKey(), vars, getAudit(), true);
 
-        final long minMillis = CacheLookupAssertion.MIN_MILLIS_FOR_MAX_ENTRY_AGE;
-        final long maxMillis = CacheLookupAssertion.MAX_MILLIS_FOR_MAX_ENTRY_AGE;
-        final String value = assertion.getMaxEntryAgeMillis();
-        final long cacheMaxEntryAgeMillis;
+        final String maxAcceptableAge = assertion.getMaxEntryAgeSeconds();
+        final String cacheMaxAgeSeconds = ExpandVariables.process(maxAcceptableAge, vars, getAudit(), true);
 
-        if (Syntax.isOnlyASingleVariableReferenced(value) || ValidationUtils.isValidLong(value, false, minMillis, maxMillis)) {
-            if (Syntax.isOnlyASingleVariableReferenced(value)) {
-                final String cacheMaxEntryAgeSecondsString = ExpandVariables.process(value, vars, getAudit(), true);
-                final long minSeconds = CacheLookupAssertion.MIN_SECONDS_FOR_MAX_ENTRY_AGE;
-                final long maxSeconds = CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE;
-                if (ValidationUtils.isValidLong(cacheMaxEntryAgeSecondsString, false, minSeconds, maxSeconds)) {
-                    cacheMaxEntryAgeMillis = Long.parseLong(cacheMaxEntryAgeSecondsString) * 1000L;
-                } else {
-                    logAndAudit(AssertionMessages.CACHE_LOOKUP_VAR_CONTENTS_ILLEGAL, value, cacheMaxEntryAgeSecondsString, Long.toString(minSeconds), Long.toString(maxSeconds));
-                    return AssertionStatus.FAILED;
-                }
-            } else {
-                cacheMaxEntryAgeMillis = Long.parseLong(value);
-            }
-        } else {
-            logAndAudit(AssertionMessages.CACHE_LOOKUP_NOT_VAR_OR_LONG, value, Long.toString(minMillis), Long.toString(maxMillis));
+        if (!isValidLong(cacheMaxAgeSeconds, false, MIN_SECONDS_FOR_MAX_ENTRY_AGE, MAX_SECONDS_FOR_MAX_ENTRY_AGE)) {
+            logAndAudit(AssertionMessages.CACHE_LOOKUP_INVALID_MAX_AGE, cacheMaxAgeSeconds, String.valueOf(MIN_SECONDS_FOR_MAX_ENTRY_AGE), String.valueOf(MAX_SECONDS_FOR_MAX_ENTRY_AGE));
             return AssertionStatus.FAILED;
         }
+
+        final long cacheMaxEntryAgeMillis = Long.parseLong(cacheMaxAgeSeconds) * 1000;
 
         SsgCache cache = cacheManager.getCache(cacheName);
         SsgCache.Entry cachedEntry = cache.lookup(key);
         if (cachedEntry == null || cachedEntry.getTimeStamp() < System.currentTimeMillis() - cacheMaxEntryAgeMillis) {
+            logAndAudit(AssertionMessages.CACHE_LOOKUP_MISS, key);
             return AssertionStatus.FALSIFIED;
         }
 

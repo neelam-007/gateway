@@ -16,8 +16,11 @@ import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.MockConfig;
 import org.junit.Test;
 
+import java.text.MessageFormat;
 import java.util.*;
 
+import static com.l7tech.external.assertions.cache.CacheLookupAssertion.MAX_SECONDS_FOR_MAX_ENTRY_AGE;
+import static com.l7tech.external.assertions.cache.CacheLookupAssertion.MIN_SECONDS_FOR_MAX_ENTRY_AGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -31,12 +34,12 @@ public class ServerCacheLookupAssertionTest extends CacheAssertionTest {
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
     }
 
-    private ServerCacheLookupAssertion initServerCacheLookupAssertion(final String a) throws PolicyAssertionException {
+    private ServerCacheLookupAssertion initServerCacheLookupAssertion(final String maxEntryAgeSeconds) throws PolicyAssertionException {
         final CacheLookupAssertion assertion = new CacheLookupAssertion();
         assertion.setCacheEntryKey("");
         assertion.setCacheId("");
         assertion.setContentTypeOverride("");
-        assertion.setMaxEntryAgeMillis(a);
+        assertion.setMaxEntryAgeSeconds(maxEntryAgeSeconds);
         final ServerCacheLookupAssertion serverAssertion = new ServerCacheLookupAssertion(assertion, getBeanFactory());
         final AuditFactory auditFactory = new TestAudit().factory();
         testAudit = (TestAudit) auditFactory.newInstance(null, null);
@@ -54,7 +57,16 @@ public class ServerCacheLookupAssertionTest extends CacheAssertionTest {
         PolicyEnforcementContext policyContext = initPolicyContext();
         final ServerCacheLookupAssertion serverAssertion = initServerCacheLookupAssertion("-1");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_LOOKUP_NOT_VAR_OR_LONG));
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_LOOKUP_INVALID_MAX_AGE));
+        final String format = MessageFormat.format(
+                AssertionMessages.CACHE_LOOKUP_INVALID_MAX_AGE.getMessage(),
+                "-1", String.valueOf(MIN_SECONDS_FOR_MAX_ENTRY_AGE), String.valueOf(MAX_SECONDS_FOR_MAX_ENTRY_AGE));
+
+        assertTrue(testAudit.isAuditPresentContaining(format));
         assertEquals(AssertionStatus.FAILED, status);
     }
 
@@ -65,7 +77,16 @@ public class ServerCacheLookupAssertionTest extends CacheAssertionTest {
         policyContext.setVariable("xyz", "-1");
         final ServerCacheLookupAssertion serverAssertion = initServerCacheLookupAssertion("${xyz}");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_LOOKUP_VAR_CONTENTS_ILLEGAL));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_LOOKUP_INVALID_MAX_AGE));
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        final String format = MessageFormat.format(
+                AssertionMessages.CACHE_LOOKUP_INVALID_MAX_AGE.getMessage(),
+                "-1", String.valueOf(MIN_SECONDS_FOR_MAX_ENTRY_AGE), String.valueOf(MAX_SECONDS_FOR_MAX_ENTRY_AGE));
+        assertTrue(testAudit.isAuditPresentContaining(format));
+
         assertEquals(AssertionStatus.FAILED, status);
     }
 
@@ -77,7 +98,19 @@ public class ServerCacheLookupAssertionTest extends CacheAssertionTest {
         policyContext.setVariable("xyz", Long.toString(Long.MAX_VALUE));
         final ServerCacheLookupAssertion serverAssertion = initServerCacheLookupAssertion("${xyz}");
         AssertionStatus status = serverAssertion.checkRequest(policyContext);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_LOOKUP_VAR_CONTENTS_ILLEGAL));
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CACHE_LOOKUP_INVALID_MAX_AGE));
+
+        final String format = MessageFormat.format(
+                AssertionMessages.CACHE_LOOKUP_INVALID_MAX_AGE.getMessage(),
+                Long.toString(Long.MAX_VALUE), String.valueOf(MIN_SECONDS_FOR_MAX_ENTRY_AGE), String.valueOf(MAX_SECONDS_FOR_MAX_ENTRY_AGE));
+
+        assertTrue(testAudit.isAuditPresentContaining(format));
+
         assertEquals(AssertionStatus.FAILED, status);
     }
 

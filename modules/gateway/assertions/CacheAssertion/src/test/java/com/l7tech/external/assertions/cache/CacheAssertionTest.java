@@ -237,49 +237,22 @@ public class CacheAssertionTest {
         assertEquals( messageBodyToString( ctx.getResponse() ), origResponse );
     }
 
+    /**
+     * Validate that pre fangtooth XML which contains a max age in seconds is correctly converted to seconds when
+     * parsed.
+     * @throws Exception
+     */
     @Test
     @BugNumber(12094)
-    public void testCacheLookupWithPreFangtoothXml() throws Exception {
-        cacheLookupHelper(LOOKUP_PRE_FANGTOOTH, "2");
+    public void testMaxEntryAgeWithPreFangtoothXml() throws Exception {
+        validateMaxEntryAgeProperty(LOOKUP_PRE_FANGTOOTH, "2");
     }
 
     @Test
     @BugNumber(12094)
-    public void testCacheLookupWithPostFangtoothXml() throws Exception {
-        cacheLookupHelper(LOOKUP_POST_FANGTOOTH, "3");
+    public void testMaxEntryAgeWithPostFangtoothXml() throws Exception {
+        validateMaxEntryAgeProperty(LOOKUP_POST_FANGTOOTH, "3");
     }
-
-    private void cacheLookupHelper(final String xml, final String value) throws Exception {
-        AssertionRegistry assReg = new AssertionRegistry();
-        assReg.registerAssertion(CacheLookupAssertion.class);
-        WspConstants.setTypeMappingFinder(assReg);
-        Assertion ass = WspReader.getDefault().parseStrictly(xml, WspReader.INCLUDE_DISABLED);
-
-        AllAssertion allAss = (AllAssertion) ass;
-        final List<Assertion> children = allAss.getChildren();
-        final CacheLookupAssertion cacheLookupAss = (CacheLookupAssertion) children.get(0);
-        assertEquals(value, cacheLookupAss.getMaxEntryAgeMillis());
-    }
-
-    private final String LOOKUP_PRE_FANGTOOTH = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-            "        <wsp:All wsp:Usage=\"Required\">\n" +
-            "                <L7p:CacheLookup>\n" +
-            "                    <L7p:ContentTypeOverride stringValue=\"\"/>\n" +
-            "                    <L7p:MaxEntryAgeMillis longValue=\"2\"/>\n" +
-            "                </L7p:CacheLookup>\n" +
-            "        </wsp:All>\n" +
-            "    </wsp:Policy>\n";
-
-    private final String LOOKUP_POST_FANGTOOTH = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-            "        <wsp:All wsp:Usage=\"Required\">\n" +
-            "                <L7p:CacheLookup>\n" +
-            "                    <L7p:ContentTypeOverride stringValue=\"\"/>\n" +
-            "                    <L7p:MaxEntryAgeMillis stringValue=\"3\"/>\n" +
-            "                </L7p:CacheLookup>\n" +
-            "        </wsp:All>\n" +
-            "    </wsp:Policy>\n";
 
     @Test
     @BugNumber(12094)
@@ -293,19 +266,29 @@ public class CacheAssertionTest {
         cacheStorageHelper(STORAGE_POST_FANGTOOTH, "7", "11", "13");
     }
 
-    private void cacheStorageHelper(final String xml, final String maxEntries, final String maxAgeMillis, final String maxSizeBytes) throws Exception {
-        AssertionRegistry assReg = new AssertionRegistry();
-        assReg.registerAssertion(CacheStorageAssertion.class);
-        WspConstants.setTypeMappingFinder(assReg);
-        Assertion ass = WspReader.getDefault().parseStrictly(xml, WspReader.INCLUDE_DISABLED);
+    // - PRIVATE
 
-        AllAssertion allAss = (AllAssertion) ass;
-        final List<Assertion> children = allAss.getChildren();
-        final CacheStorageAssertion cacheStorageAss = (CacheStorageAssertion) children.get(0);
-        assertEquals(maxEntries, cacheStorageAss.getMaxEntries());
-        assertEquals(maxAgeMillis, cacheStorageAss.getMaxEntryAgeMillis());
-        assertEquals(maxSizeBytes, cacheStorageAss.getMaxEntrySizeBytes());
-    }
+    private final static String LOOKUP_PRE_FANGTOOTH = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:CacheLookup>\n" +
+            "            <L7p:ContentTypeOverride stringValue=\"\"/>\n" +
+            "            <L7p:MaxEntryAgeMillis longValue=\"2000\"/>\n" +
+            "            <L7p:Target target=\"REQUEST\"/>\n" +
+            "        </L7p:CacheLookup>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+    private final static String LOOKUP_POST_FANGTOOTH = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:CacheLookup>\n" +
+            "            <L7p:ContentTypeOverride stringValue=\"\"/>\n" +
+            "            <L7p:MaxEntryAgeSeconds stringValue=\"3\"/>\n" +
+            "            <L7p:Target target=\"REQUEST\"/>\n" +
+            "        </L7p:CacheLookup>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>\n";
 
     private final String STORAGE_PRE_FANGTOOTH = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
@@ -328,6 +311,32 @@ public class CacheAssertionTest {
             "                    </L7p:CacheStorage>\n" +
             "        </wsp:All>\n" +
             "    </wsp:Policy>";
+
+    private void validateMaxEntryAgeProperty(final String xml, final String expectedMaxAgeValueInSeconds) throws Exception {
+        AssertionRegistry assReg = new AssertionRegistry();
+        assReg.registerAssertion(CacheLookupAssertion.class);
+        WspConstants.setTypeMappingFinder(assReg);
+        Assertion ass = WspReader.getDefault().parseStrictly(xml, WspReader.INCLUDE_DISABLED);
+
+        AllAssertion allAss = (AllAssertion) ass;
+        final List<Assertion> children = allAss.getChildren();
+        final CacheLookupAssertion cacheLookupAss = (CacheLookupAssertion) children.get(0);
+        assertEquals(expectedMaxAgeValueInSeconds, cacheLookupAss.getMaxEntryAgeSeconds());
+    }
+
+    private void cacheStorageHelper(final String xml, final String maxEntries, final String maxAgeMillis, final String maxSizeBytes) throws Exception {
+        AssertionRegistry assReg = new AssertionRegistry();
+        assReg.registerAssertion(CacheStorageAssertion.class);
+        WspConstants.setTypeMappingFinder(assReg);
+        Assertion ass = WspReader.getDefault().parseStrictly(xml, WspReader.INCLUDE_DISABLED);
+
+        AllAssertion allAss = (AllAssertion) ass;
+        final List<Assertion> children = allAss.getChildren();
+        final CacheStorageAssertion cacheStorageAss = (CacheStorageAssertion) children.get(0);
+        assertEquals(maxEntries, cacheStorageAss.getMaxEntries());
+        assertEquals(maxAgeMillis, cacheStorageAss.getMaxEntryAgeMillis());
+        assertEquals(maxSizeBytes, cacheStorageAss.getMaxEntrySizeBytes());
+    }
 
     private static final class TestStashManagerFactory implements StashManagerFactory {
         private static AtomicLong stashFileUnique = new AtomicLong( 0 );

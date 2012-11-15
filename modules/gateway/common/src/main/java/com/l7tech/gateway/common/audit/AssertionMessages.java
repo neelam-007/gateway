@@ -1186,9 +1186,9 @@ public class AssertionMessages extends Messages {
     public static final M ADAPTIVE_LOAD_BALANCING_WRONG_VAR_TYPE = m(9724, Level.WARNING, "{0} variable is not the right type!");
     public static final M ADAPTIVE_LOAD_BALANCING_CRS_NO_ROUTES = m(9725, Level.WARNING, "Create Routing Strategy Assertion has no routes!");
 
-    public static final M CACHE_LOOKUP_NOT_VAR_OR_LONG = m(9800, Level.WARNING, "Message cache error: ''{0}'' is not single variable reference or a long between ''{1}'' and ''{2}'' inclusive");
-    public static final M CACHE_LOOKUP_VAR_CONTENTS_ILLEGAL = m(9801, Level.WARNING, "Message cache error: Variable ''{0}'' with contents ''{1}'' is not a long between ''{2}'' and ''{3}'' inclusive");
-    public static final M CACHE_LOOKUP_RETRIEVED = m(9802, Level.FINE, "Retrieved from cache: ''{0}''");
+    public static final M CACHE_LOOKUP_INVALID_MAX_AGE = m(9800, Level.WARNING, "Resolved maximum acceptable cache age value is invalid ''{0}''. Value must be in seconds between ''{1}'' and ''{2}'' inclusive");
+    public static final M CACHE_LOOKUP_RETRIEVED = m(9801, Level.FINE, "Retrieved from cache: ''{0}''");
+    public static final M CACHE_LOOKUP_MISS = m(9802, Level.FINE, "Cache miss with key: ''{0}''");
 
     public static final M CACHE_STORAGE_ERROR = m(9900, Level.WARNING, "Message cache error: {0}");
     public static final M CACHE_STORAGE_STORED = m(9901, Level.FINE, "Stored to cache: ''{0}''");
