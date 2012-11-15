@@ -2,7 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.panels.TrustedEsmManagerWindow;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadAny;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
@@ -12,7 +12,7 @@ import com.l7tech.objectmodel.EntityType;
  */
 public class ManageTrustedEsmUsersAction extends SecureAction {
     public ManageTrustedEsmUsersAction() {
-        super(new AttemptedReadAll(EntityType.TRUSTED_ESM), "service:EnterpriseManageable");
+        super(new AttemptedReadAny(EntityType.TRUSTED_ESM), "service:EnterpriseManageable");
     }
 
     @Override
