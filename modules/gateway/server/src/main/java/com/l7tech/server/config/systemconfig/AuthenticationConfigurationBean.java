@@ -37,6 +37,10 @@ public class AuthenticationConfigurationBean extends BaseConfigurationBean{
         this.authType = authType;
     }
 
+    public AuthType getAuthType() {
+        return authType;
+    }
+
     public void addAuthTypeView(AuthTypeSettings authType) {
         authTypeSettingses.add(authType);
     }

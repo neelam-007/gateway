@@ -11,8 +11,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static com.l7tech.server.config.beans.BaseConfigurationBean.EOL;
-import static com.l7tech.server.config.systemconfig.AuthenticationConfigurationBean.AuthType.LOCAL;
-import static com.l7tech.server.config.systemconfig.AuthenticationConfigurationBean.AuthType.values;
+import static com.l7tech.server.config.systemconfig.AuthenticationConfigurationBean.AuthType.*;
 
 /**
  * author: megery
@@ -54,11 +53,11 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
                 doRadiusPrompts();
                 break;
             case LDAP:
-                doLdapPrompts(true);
+                doLdapPrompts();
                 break;
             case LDAP_RADIUS:
                 doRadiusPrompts();
-                doLdapPrompts(false);
+                doLdapPrompts();
                 break;
             case LOCAL:
                 break;
@@ -97,11 +96,11 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         configBean.addAuthTypeView(radiusSettings);
     }
 
-    private void doLdapPrompts(boolean isLdapOnly) throws IOException, WizardNavigationException {
+    private void doLdapPrompts() throws IOException, WizardNavigationException {
 
         LdapAuthTypeSettings ldapView = new LdapAuthTypeSettings();
 
-        doLdapServerPrompts(ldapView, isLdapOnly);
+        doLdapServerPrompts(ldapView);
         doLdapBindPrompts(ldapView);
         doLdapAccessControlPrompts(ldapView);
 
@@ -307,10 +306,11 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         ldapView.setNssBaseShadowObj(nssBaseShadow);
     }
 
-    private void doLdapServerPrompts(LdapAuthTypeSettings ldapView, boolean isLdapOnly) throws IOException, WizardNavigationException {
+    private void doLdapServerPrompts(LdapAuthTypeSettings ldapView) throws IOException, WizardNavigationException {
 
+        AuthenticationConfigurationBean.AuthType whatAuthType = configBean.getAuthType();
         boolean isAD = false;
-        if (isLdapOnly) {
+        if (whatAuthType != LDAP_RADIUS && whatAuthType != RADIUS) {
             isAD = getConfirmationFromUser("Is the directory service to be used an Active Directory?","n");
         }
 
