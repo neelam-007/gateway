@@ -66,7 +66,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             else if (EntityType.SSG_KEYSTORE == type)
                 return findAllKeyStoreHeaders();
             //noinspection unchecked
-            else if(!(PersistentEntity.class.isAssignableFrom(entityClass) || EntityType.USER.equals(type) || EntityType.GROUP.equals(type)))
+            else if(!(Entity.class.isAssignableFrom(entityClass) || EntityType.USER.equals(type) || EntityType.GROUP.equals(type)))
                 throw new UnsupportedEntityTypeException("The entity type of '" + type.getName() + "' is not supported.");
             else return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<EntityHeaderSet<EntityHeader>>() {
                 @Override
