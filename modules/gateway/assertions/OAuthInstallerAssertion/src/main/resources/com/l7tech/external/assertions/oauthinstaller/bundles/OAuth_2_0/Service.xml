@@ -2639,11 +2639,11 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
                     &lt;L7p:Expression1 stringValue="${request.http.parameter.grant_type}"/&gt;
-                    &lt;L7p:Expression2 stringValue="http://oauth.net/grant_type/assertion/saml/2.0/bearer"/&gt;
+                    &lt;L7p:Expression2 stringValue="urn:ietf:params:oauth:grant-type:saml2-bearer"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
-                    &lt;L7p:RightValue stringValue="http://oauth.net/grant_type/assertion/saml/2.0/bearer"/&gt;
+                    &lt;L7p:RightValue stringValue="urn:ietf:params:oauth:grant-type:saml2-bearer"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
