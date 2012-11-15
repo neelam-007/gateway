@@ -46,7 +46,7 @@ public class ManagerAppletServlet extends HttpServlet {
 
     private static final String APPLET_CLOSE =
             "\n" +
-                    "Java runtime 5.0 or higher is required.  You can <a href=\"http://www.java.com/getjava/\">download it for free</a>.\n" +
+                    "Java runtime version 7 or higher is required.  You can <a href=\"http://www.java.com/getjava/\">download it for free</a>.\n" +
                     "</applet>";
 
     private WebApplicationContext applicationContext;
