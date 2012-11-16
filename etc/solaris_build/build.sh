@@ -82,7 +82,8 @@ du -a ./opt/SecureSpan/Controller/etc | awk '{print $2}' | pkgproto | sed -e "s/
 du -a ./opt/SecureSpan/Controller/var/logs | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/layer7 gateway/"   >> ../pkgbuild/Prototype
 du -a ./opt/SecureSpan/Controller/var/run | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/layer7 gateway/"   >> ../pkgbuild/Prototype
 du -a ./opt/SecureSpan/Controller/var/patches | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/layer7 gateway/"   >> ../pkgbuild/Prototype
-du -a ./opt/SecureSpan/Gateway/node/default/var             | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/gateway gateway/" >> ../pkgbuild/Prototype
+chmod 775 ./opt/SecureSpan/Gateway/node/default/var
+du -a ./opt/SecureSpan/Gateway/node/default/var | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/gateway gateway/" >> ../pkgbuild/Prototype
 
 echo Done
 
