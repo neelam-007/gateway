@@ -80,10 +80,12 @@ public class SslCertificateSniffer {
             try {
                 return doRetrieveCertFromUrl( purl, ignoreHostname, sslContext, protocol );
             } catch ( SSLException e ) {
+                // For SSLException, assume handshake failure and try again with one of the other TLS versions
                 lastException = e;
             } catch ( Exception e ) {
-                logger.log(Level.WARNING, "Error retrieving cert from URL: " + ExceptionUtils.getMessage(e), e );
+                // For any other exception type (including SocketTimeoutException), record the failure and give up
                 lastException = e;
+                break;
             }
         }
 
@@ -130,7 +132,7 @@ public class SslCertificateSniffer {
             try {
                 conn.connect();
             } catch (IOException e) {
-                logger.log( Level.INFO, "Unable to connect to: " + purl + " using " + protocol);
+                logger.log( Level.INFO, "Unable to connect to: " + purl + " using " + protocol + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
 
                 // rethrow it
                 throw e;
