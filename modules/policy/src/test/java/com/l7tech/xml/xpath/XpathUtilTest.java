@@ -504,6 +504,10 @@ public class XpathUtilTest {
         assertEquals(2, got.size());
         assertEquals("foo", got.get(0));
         assertEquals("bar", got.get(1));
+
+        List<String> got2 = XpathUtil.getUnprefixedVariablesUsedInXpath("//employee[startDateTime > xs:dateTime($dateTime)]", XpathVersion.XPATH_2_0);
+        assertEquals(1, got2.size());
+        assertEquals("dateTime", got2.get(0));
     }
 
     @Test

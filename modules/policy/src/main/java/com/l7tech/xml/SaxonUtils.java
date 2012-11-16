@@ -43,18 +43,18 @@ public class SaxonUtils {
 
     // Layer 7 Technologies license key for Saxon Enterprise Edition
     private static final String key =
-        "j0j0kbj09b3b0bv0v0b0q0kbj0000bj0k00bf0kb0bq03bv0fbf00bj0a030" +
-        "90bb0bbb3ba0q0j0k0q0a0a090f0k0a0b00bq03bfb0bb0k0bbf030j00030" +
-        "a0b0q0j0q09090q0q090j0j00bfbj030a00bk0k0kb00309bv030b0f0k0a0" +
-        "bbk0a000r093kj9jbjf3w3j3q309zaza303000r00jqjf3bb9303w3f3w393" +
-        "bjw3q3f3rbza303000r00jqjf3bb93b3f3kjj3aj99zakj933j93w3r0w3d3" +
-        "q3bjf3kjq3ajvj9bzad3w3r0w3d3q3bjf39j$3f33j9bzaf0a0a0a0a9r0kj" +
-        "930j99zav030a0a0a0a0j9r0$3f3q3kj9309zaj9r00j93q3kj9309zab0k0" +
-        "rkq0a0rkk0f0a0k0r0b3939j0j0jqbza0j93qjr039fb09za0j93qjr0f9fb" +
-        "09za0j93qjr0b9fb09za9b9br0w3d3q3bjq3b39bzar3d303wkv30393bjj0" +
-        "kj93qjf3$3ab$3$3f3w3q333f3r0$3q3f3r39bzaj0akkj93qjf3$bakrb9b" +
-        "dbr0qjw3f3ajr3d30bza$3$3f3w3q33bakjj93kjb3w3fbr093930jw39303" +
-        "q3$bzaf303q3w3d3vjf309r0kjd30jw39303q3$b";
+            "j0j0kbj09b3b0bv0v0b0q0kbj0000bj0k00bf0kb0bq03bv0fbf00bj0a030" +
+                    "90bb0bbb3ba0q0j0k0q0a0a090f0k0a0b00bq03bfb0bb0k0bbf030j00030" +
+                    "a0b0q0j0q09090q0q090j0j00bfbj030a00bk0k0kb00309bv030b0f0k0a0" +
+                    "bbk0a000r093kj9jbjf3w3j3q309zaza303000r00jqjf3bb9303w3f3w393" +
+                    "bjw3q3f3rbza303000r00jqjf3bb93b3f3kjj3aj99zakj933j93w3r0w3d3" +
+                    "q3bjf3kjq3ajvj9bzad3w3r0w3d3q3bjf39j$3f33j9bzaf0a0a0a0a9r0kj" +
+                    "930j99zav030a0a0a0a0j9r0$3f3q3kj9309zaj9r00j93q3kj9309zab0k0" +
+                    "rkq0a0rkk0f0a0k0r0b3939j0j0jqbza0j93qjr039fb09za0j93qjr0f9fb" +
+                    "09za0j93qjr0b9fb09za9b9br0w3d3q3bjq3b39bzar3d303wkv30393bjj0" +
+                    "kj93qjf3$3ab$3$3f3w3q333f3r0$3q3f3r39bzaj0akkj93qjf3$bakrb9b" +
+                    "dbr0qjw3f3ajr3d30bza$3$3f3w3q33bakjj93kjb3w3fbr093930jw39303" +
+                    "q3$bzaf303q3w3d3vjf309r0kjd30jw39303q3$b";
 
     private static final Configuration configuration;
     private static final Processor processor;
@@ -109,8 +109,8 @@ public class SaxonUtils {
     public static void configureSecureSaxonTransformerFactory(@NotNull TransformerFactory transfactory, boolean useSharedConfiguration) throws TransformerConfigurationException {
         // Share global configuration for now
         final Configuration config = useSharedConfiguration
-                                        ? getConfiguration()
-                                        : Configuration.newConfiguration();
+                ? getConfiguration()
+                : Configuration.newConfiguration();
         transfactory.setAttribute(FeatureKeys.CONFIGURATION, config);
 
         // disable calls to reflexive Java extension functions, system property access, relative result-document URIs, and XSLT extension instructions
@@ -157,8 +157,8 @@ public class SaxonUtils {
      */
     public static List<String> getUnprefixedVariablesUsedInXpath(@NotNull String expr, @NotNull XpathVersion xpathVersion) throws InvalidXpathException {
         final XPathCompiler compiler = SaxonUtils.getProcessor().newXPathCompiler();
-
-        final PrefixCollectingNamespaceResolver pcnr = new PrefixCollectingNamespaceResolver();
+        final Map<String, String> namespaces = getNamespaces(compiler);
+        final PrefixCollectingNamespaceResolver pcnr = new PrefixCollectingNamespaceResolver(namespaces);
         ((IndependentContext)compiler.getUnderlyingStaticContext()).setNamespaceResolver(pcnr);
 
         XPathExecutable xpe = compile(expr, xpathVersion, compiler);
@@ -186,13 +186,23 @@ public class SaxonUtils {
      */
     public static Set<String> getNamespacePrefixesUsedByXpath(@NotNull String expr, @NotNull XpathVersion xpathVersion) throws InvalidXpathException {
         final XPathCompiler compiler = SaxonUtils.getProcessor().newXPathCompiler();
-
-        final PrefixCollectingNamespaceResolver pcnr = new PrefixCollectingNamespaceResolver();
+        final Map<String, String> namespaces = getNamespaces(compiler);
+        final PrefixCollectingNamespaceResolver pcnr = new PrefixCollectingNamespaceResolver(namespaces);
         ((IndependentContext)compiler.getUnderlyingStaticContext()).setNamespaceResolver(pcnr);
 
         compile(expr, xpathVersion, compiler);
 
         return pcnr.getSeenPrefixes();
+    }
+
+    private static Map<String, String> getNamespaces(XPathCompiler compiler){
+        final Map<String, String> namespaces = new HashMap<String, String>();
+        final NamespaceResolver resolver = ((IndependentContext)compiler.getUnderlyingStaticContext()).getNamespaceResolver();
+        for(Iterator<String> it = ((IndependentContext)compiler.getUnderlyingStaticContext()).iteratePrefixes(); it.hasNext(); ){
+            String o = it.next();
+            namespaces.put(o, resolver.getURIForPrefix(o, true));
+        }
+        return namespaces;
     }
 
     private static XPathExecutable compile(String expr, XpathVersion xpathVersion, XPathCompiler compiler) throws InvalidXpathException {
@@ -230,6 +240,11 @@ public class SaxonUtils {
 
     private static class PrefixCollectingNamespaceResolver implements NamespaceResolver {
         private Set<String> seenPrefixes = new HashSet<String>();
+        final private Map<String, String> namespaces;
+
+        private PrefixCollectingNamespaceResolver(final Map<String, String> namespaces) {
+            this.namespaces = Collections.unmodifiableMap(namespaces);
+        }
 
         @Override
         public String getURIForPrefix(String prefix, boolean useDefault) {
@@ -237,7 +252,8 @@ public class SaxonUtils {
                 return "";
 
             seenPrefixes.add(prefix);
-            return "http://l7tech.com/ns/xpath/placeholder/nsprefix/" + prefix;
+            String uri = namespaces.get(prefix);
+            return uri == null ? "http://l7tech.com/ns/xpath/placeholder/nsprefix/" + prefix : uri;
         }
 
         @Override

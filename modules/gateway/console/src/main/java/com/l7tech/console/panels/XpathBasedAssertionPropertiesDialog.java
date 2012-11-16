@@ -1458,7 +1458,11 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             final Set<String> variables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
             final XpathVersion xpathVersion = getXpathVersion();
             XpathUtil.validate( xpath, xpathVersion, namespaces );
-            XpathUtil.testXpathExpression(testEvaluator, xpath, xpathVersion, namespaces, buildXpathVariableFinder(variables));
+            final List<String> varsUsed = XpathUtil.getUnprefixedVariablesUsedInXpath(xpath, xpathVersion);
+            //test the expression if it does not use any context vars.
+            if(varsUsed.isEmpty()){
+                XpathUtil.testXpathExpression(testEvaluator, xpath, xpathVersion, namespaces, buildXpathVariableFinder(variables));
+            }
             XpathFeedBack feedback = new XpathFeedBack(-1, xpath, null, null);
             feedback.hardwareAccelFeedback = getHardwareAccelFeedBack(nsMap, xpath);
             return feedback;
@@ -1525,7 +1529,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             @Override
             public Object getVariableValue( final String namespaceUri,
                                             final String variableName ) throws NoSuchXpathVariableException {
-                if ( namespaceUri != null )
+                if ( namespaceUri != null && namespaceUri.length() > 0 )
                     throw new NoSuchXpathVariableException("Unsupported XPath variable namespace '"+namespaceUri+"'.");
 
                 if ( !variables.contains(variableName) )
