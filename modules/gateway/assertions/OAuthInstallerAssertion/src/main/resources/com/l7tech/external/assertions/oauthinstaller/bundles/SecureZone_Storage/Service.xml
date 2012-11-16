@@ -4671,7 +4671,7 @@
                     &lt;L7p:CacheEntryKey stringValue="${cacheKey}"/&gt;
                     &lt;L7p:CacheId stringValue="${cacheId}"/&gt;
                     &lt;L7p:MaxEntries stringValue="${cacheMaxEntries}"/&gt;
-                    &lt;L7p:MaxEntryAgeMillis stringValue="${cacheAge}"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="${cacheAge}"/&gt;
                     &lt;L7p:MaxEntrySizeBytes stringValue="${cacheMaxSize}"/&gt;
                     &lt;L7p:OtherTargetMessageVariable stringValue="valueMessage"/&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
@@ -5124,7 +5124,7 @@
                     &lt;L7p:CacheStorage&gt;
                     &lt;L7p:CacheEntryKey stringValue="${cacheKey}"/&gt;
                     &lt;L7p:CacheId stringValue="${cacheId}"/&gt;
-                    &lt;L7p:MaxEntryAgeMillis stringValue="0"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="0"/&gt;
                     &lt;L7p:OtherTargetMessageVariable stringValue="valueMessage"/&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;/L7p:CacheStorage&gt;

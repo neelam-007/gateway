@@ -1,13 +1,11 @@
 package com.l7tech.external.assertions.cache.console;
 
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
-import com.l7tech.external.assertions.cache.CacheLookupAssertion;
 import com.l7tech.external.assertions.cache.CacheStorageAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,6 +15,11 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
+
+import static com.l7tech.external.assertions.cache.CacheStorageAssertion.kMAX_ENTRIES;
+import static com.l7tech.external.assertions.cache.CacheStorageAssertion.kMAX_ENTRY_AGE_SECONDS;
+import static com.l7tech.external.assertions.cache.CacheStorageAssertion.kMAX_ENTRY_SIZE;
+import static com.l7tech.util.ValidationUtils.isValidLong;
 
 public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSupport<CacheStorageAssertion> {
 
@@ -76,7 +79,7 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
             @Override
             public String getValidationError() {
                 String[] refs = Syntax.getReferencedNames(cacheKeyField.getText());
-                if (refs == null || refs.length < 1)
+                if (refs.length < 1)
                     return resourceBundle.getString("the.cache.entry.key.error");
                 return null;
             }
@@ -85,43 +88,49 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
         validator.constrainTextField(maxEntriesField, new InputValidator.ComponentValidationRule(maxEntriesField) {
             @Override
             public String getValidationError() {
-                if (ValidationUtils.isValidInteger(maxEntriesField.getText(), false, 0, CacheStorageAssertion.kMAX_ENTRIES)
-                        || Syntax.isOnlyASingleVariableReferenced(maxEntriesField.getText())) {
-                    return null;
-                } else {
-                    return MessageFormat.format(resourceBundle.getString("max.entries.range.error"),
-                            String.valueOf(CacheStorageAssertion.kMAX_ENTRIES));
-                }
+                return validateField(maxEntriesField.getText(), "max.entries.variable.error", "max.entries.range.error", kMAX_ENTRIES);
             }
         });
 
         validator.constrainTextField(maxEntryAgeField, new InputValidator.ComponentValidationRule(maxEntryAgeField) {
             @Override
             public String getValidationError() {
-                if (ValidationUtils.isValidLong(maxEntryAgeField.getText(), false, 0, CacheStorageAssertion.kMAX_ENTRY_AGE_SECONDS)
-                        || Syntax.isOnlyASingleVariableReferenced(maxEntryAgeField.getText())) {
-                    return null;
-                } else {
-                    return MessageFormat.format(resourceBundle.getString("max.entry.age.range.error"),
-                            String.valueOf(CacheStorageAssertion.kMAX_ENTRIES));
-                }
+                return validateField(maxEntryAgeField.getText(), "max.entry.age.variable.error", "max.entry.age.range.error", kMAX_ENTRY_AGE_SECONDS);
             }
         });
 
         validator.constrainTextField(maxEntrySizeField, new InputValidator.ComponentValidationRule(maxEntrySizeField) {
             @Override
             public String getValidationError() {
-                if (ValidationUtils.isValidLong(maxEntrySizeField.getText(), false, 0, CacheStorageAssertion.kMAX_ENTRY_SIZE)
-                        || Syntax.isOnlyASingleVariableReferenced(maxEntrySizeField.getText())) {
-                    return null;
-                } else {
-                    return MessageFormat.format(resourceBundle.getString("max.entry.size.range.error"),
-                            String.valueOf(CacheStorageAssertion.kMAX_ENTRIES));
-                }
+                return validateField(maxEntrySizeField.getText(), "max.entry.size.variable.error", "max.entry.size.range.error", kMAX_ENTRY_SIZE);
             }
         });
 
         Utilities.setEscKeyStrokeDisposes(this);
+    }
+
+    private String validateField(String expression,
+                                 String resourceKeyForVarRefError,
+                                 String resourceKeyForRangeError,
+                                 long maxValue){
+        if (Syntax.isOnlyASingleVariableReferenced(expression)) {
+            // no validation of a context variable reference.
+            return null;
+        }
+
+        final String[] refs = Syntax.getReferencedNames(expression);
+        if (refs.length > 0) {
+            return resourceBundle.getString(resourceKeyForVarRefError);
+        } else {
+            final boolean isWithinRange = isValidLong(expression, false, 0, maxValue);
+            if (!isWithinRange) {
+                return MessageFormat.format(resourceBundle.getString(resourceKeyForRangeError),
+                        String.valueOf(maxValue));
+            }
+        }
+
+        return null;
+
     }
 
     private void onOK() {
@@ -154,14 +163,7 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
         maxEntriesField.setText(ass.getMaxEntries());
         maxEntrySizeField.setText(ass.getMaxEntrySizeBytes());
         dontCacheFaults.setSelected(! ass.isStoreSoapFaults());
-
-        if (ValidationUtils.isValidLong(ass.getMaxEntryAgeMillis(), false, 0L, Long.MAX_VALUE)) {
-            final long seconds = Long.parseLong(ass.getMaxEntryAgeMillis()) / 1000L;
-            maxEntryAgeField.setText(String.valueOf(seconds));
-        } else {
-            // It's a context variable reference.
-            maxEntryAgeField.setText(ass.getMaxEntryAgeMillis());
-        }
+        maxEntryAgeField.setText(ass.getMaxEntryAgeSeconds());
     }
 
     @Override
@@ -171,14 +173,7 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
         ass.setCacheId(cacheIdField.getText());
         ass.setCacheEntryKey(cacheKeyField.getText());
         ass.setStoreSoapFaults(! dontCacheFaults.isSelected());
-
-        if (ValidationUtils.isValidLong(maxEntryAgeField.getText(), false, 0L, Long.MAX_VALUE)) {
-            final long milliseconds = Long.parseLong(maxEntryAgeField.getText()) * 1000L;
-            ass.setMaxEntryAgeMillis(String.valueOf(milliseconds));
-        } else {
-            // It's a context variable reference.
-            ass.setMaxEntryAgeMillis(maxEntryAgeField.getText());
-        }
+        ass.setMaxEntryAgeSeconds(maxEntryAgeField.getText().trim());
 
         return ass;
     }

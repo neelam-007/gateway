@@ -75,7 +75,7 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
      */
     @Deprecated
     public void setMaxEntryAgeMillis(final long maxEntryAgeMillis) {
-        setMaxEntryAgeSeconds(Long.toString(maxEntryAgeMillis / 1000));
+        setMaxEntryAgeSeconds(Long.toString(maxEntryAgeMillis / 1000L));
     }
 
     /**

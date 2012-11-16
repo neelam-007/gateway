@@ -1190,7 +1190,7 @@ public class AssertionMessages extends Messages {
     public static final M CACHE_LOOKUP_RETRIEVED = m(9801, Level.FINE, "Retrieved from cache: ''{0}''");
     public static final M CACHE_LOOKUP_MISS = m(9802, Level.FINE, "Cache miss with key: ''{0}''");
 
-    public static final M CACHE_STORAGE_ERROR = m(9900, Level.WARNING, "Message cache error: {0}");
+    public static final M CACHE_STORAGE_INVALID_VALUE = m(9900, Level.WARNING, "Invalid configuration value: {0}");
     public static final M CACHE_STORAGE_STORED = m(9901, Level.FINE, "Stored to cache: ''{0}''");
 
     public static final M OTK_INSTALLER_ERROR = m(9920, Level.WARNING, "OTK Installation Problem: {0}");

@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.cache;
 
 import com.l7tech.external.assertions.cache.server.SsgCache;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.Syntax;
 
 /**
  * 
@@ -11,13 +10,11 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
 
     public static final int kMAX_ENTRIES = 1000000;
     public static final long kMAX_ENTRY_AGE_SECONDS = 100000000L;
-    public static final long kMAX_ENTRY_AGE_MILLIS = kMAX_ENTRY_AGE_SECONDS * 1000L;
-
     public static final long kMAX_ENTRY_SIZE = 1000000000L;
 
     private String cacheId = "defaultCache";
     private String maxEntries = Integer.toString(SsgCache.Config.DEFAULT_MAX_ENTRIES);
-    private String maxEntryAgeMillis = Long.toString(SsgCache.Config.DEFAULT_MAX_AGE_MILLIS);
+    private String maxEntryAgeSeconds = Long.toString(SsgCache.Config.DEFAULT_MAX_AGE_MILLIS / 1000L);
     private String maxEntrySizeBytes = Long.toString(SsgCache.Config.DEFAULT_MAX_SIZE_BYTES);
     private String cacheEntryKey = "${request.url}";
     private boolean storeSoapFaults = false;
@@ -29,7 +26,7 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        return super.doGetVariablesUsed().withExpressions( cacheId, cacheEntryKey, maxEntries, maxEntryAgeMillis, maxEntrySizeBytes );
+        return super.doGetVariablesUsed().withExpressions( cacheId, cacheEntryKey, maxEntries, maxEntryAgeSeconds, maxEntrySizeBytes );
     }
 
     /** @return the name of the cache in which to store the item.  May contain variables that need interpolation. */
@@ -87,39 +84,33 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
         this.maxEntries = maxEntries;
     }
 
-    public String getMaxEntryAgeMillis() {
-        return maxEntryAgeMillis;
+    public String getMaxEntryAgeSeconds() {
+        return maxEntryAgeSeconds;
     }
 
     /**
      * This method exists for backwards compatibility with serialized CacheStorageAssertions.
      *
-     * This method simply calls {@link #setMaxEntryAgeMillis(String)} by converting the given long to a String.
+     * This method simply calls {@link #setMaxEntryAgeSeconds} by converting the given long from
+     * milliseconds to seconds and storing the value as a String.
      *
-     * @deprecated Use {@link #setMaxEntryAgeMillis(String)} instead.
-     * @see #setMaxEntryAgeMillis(String)
+     * @deprecated Use {@link #setMaxEntryAgeSeconds} instead.
+     * @see #setMaxEntryAgeSeconds
      */
     @Deprecated
     public void setMaxEntryAgeMillis(final long maxEntryAgeMillis) {
-        setMaxEntryAgeMillis(Long.toString(maxEntryAgeMillis));
+        setMaxEntryAgeSeconds(Long.toString(maxEntryAgeMillis / 1000L));
     }
 
     /**
      * Configure the maximum time an entry will be kept in the cache (if a new cache is created).
-     * If the cache named by cacheId already exists, its maxEntryAgeMillis will already have been configured
+     * If the cache named by cacheId already exists, its max entry age will already have been configured
      * when it was created and this value will be ignored.
      *
-     * The parameter accepts two different Strings:
-     * <ol>
-     *     <li>A long between 0 and kMAX_ENTRY_AGE (inclusive) with the units being milliseconds.</li>
-     *     <li>A context variable (for example "${xyz}").
-     *     It's contents are not interpolated yet but are expected to be a long between 0 and kMAX_ENTRY_AGE_SECONDS values (inclusive) with the units being seconds.</li>
-     * </ol>
-     *
-     * @param maxEntryAgeMillis maximum age of a cached entry in milliseconds.
+     * @param maxEntryAgeSeconds maximum age of a cached entry in milliseconds. May be a variable reference
      */
-    public void setMaxEntryAgeMillis(final String maxEntryAgeMillis) {
-        this.maxEntryAgeMillis = maxEntryAgeMillis;
+    public void setMaxEntryAgeSeconds(final String maxEntryAgeSeconds) {
+        this.maxEntryAgeSeconds = maxEntryAgeSeconds;
     }
 
     public String getMaxEntrySizeBytes() {
@@ -144,14 +135,7 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
      * If the cache named by cacheId already exists, its maxEntrySizeBytes will already have been configured
      * when it was created and this value will be ignored.
      *
-     * The parameter accepts two different Strings:
-     * <ol>
-     *     <li>A long between 0 and kMAX_ENTRY_SIZE (inclusive).</li>
-     *     <li>A context variable (for example "${xyz}").
-     *     It's contents are not interpolated yet but are expected to be an integer between 0 and kMAX_ENTRY_SIZE (inclusive).</li>
-     * </ol>
-     *
-     * @param maxEntrySizeBytes maximum size of a single cache entry in bytes
+     * @param maxEntrySizeBytes maximum size of a single cache entry in bytes. A variable may be referenced.
      */
     public void setMaxEntrySizeBytes(final String maxEntrySizeBytes) {
         this.maxEntrySizeBytes = maxEntrySizeBytes;

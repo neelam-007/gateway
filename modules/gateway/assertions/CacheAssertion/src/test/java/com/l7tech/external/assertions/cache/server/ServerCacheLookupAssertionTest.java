@@ -114,4 +114,10 @@ public class ServerCacheLookupAssertionTest extends CacheAssertionTest {
         assertEquals(AssertionStatus.FAILED, status);
     }
 
+    @Test(expected = PolicyAssertionException.class)
+    @BugNumber(13188)
+    public void testMoreThanOneVariableThrowsInConstructor() throws Exception {
+        initServerCacheLookupAssertion("${var1}${var2}");
+    }
+
 }
