@@ -4824,7 +4824,7 @@
                     &lt;L7p:CacheEntryKey stringValue="${cacheKey}"/&gt;
                     &lt;L7p:CacheId stringValue="${cacheId}"/&gt;
                     &lt;L7p:ContentTypeOverride stringValue=""/&gt;
-                    &lt;L7p:MaxEntryAgeMillis stringValue="${cacheAge}"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="${cacheAge}"/&gt;
                     &lt;L7p:OtherTargetMessageVariable stringValue="foundMessage"/&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;/L7p:CacheLookup&gt;
