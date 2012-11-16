@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.mqnative.server;
 /**
  * This exception is thrown when there's a MQ native problem.
  */
-class MqNativeException extends Exception {
+public class MqNativeException extends Exception {
     public MqNativeException(String message) {
         super( message );
     }

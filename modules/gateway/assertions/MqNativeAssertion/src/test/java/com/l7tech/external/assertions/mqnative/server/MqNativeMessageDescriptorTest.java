@@ -84,6 +84,50 @@ public class MqNativeMessageDescriptorTest {
     }
 
     @Test
+    public void applyProperties() throws MQException, MqNativeConfigException {
+        final Map<String,String> properties = new HashMap<String, String>(18);
+        properties.put(MQ_PROPERTY_APPDATA, testValueStr);
+        properties.put(MQ_PROPERTY_APPORIGIN, testValueStr);
+        properties.put(MQ_PROPERTY_CHARSET, testValueStr);
+        properties.put(MQ_PROPERTY_ENCODING, testValueStr);
+        properties.put(MQ_PROPERTY_EXPIRY, testValueStr);
+        properties.put(MQ_PROPERTY_FEEDBACK, testValueStr);
+        properties.put(MQ_PROPERTY_FORMAT, testValueStr);
+        properties.put(MQ_PROPERTY_GROUPID, testValueStr);
+        properties.put(MQ_PROPERTY_MSG_FLAGS, testValueStr);
+        properties.put(MQ_PROPERTY_MSG_SEQNUM, testValueStr);
+        properties.put(MQ_PROPERTY_MSG_TYPE, testValueStr);
+        properties.put(MQ_PROPERTY_OFFSET, testValueStr);
+        properties.put(MQ_PROPERTY_PERSISTENCE, testValueStr);
+        properties.put(MQ_PROPERTY_PRIORITY, testValueStr);
+        properties.put(MQ_PROPERTY_APPNAME, testValueStr);
+        properties.put(MQ_PROPERTY_APPTYPE, testValueStr);
+        properties.put(MQ_PROPERTY_REPORT, testValueStr);
+        properties.put(MQ_PROPERTY_USERID, testValueStr);
+
+        final MqNativeMessageDescriptor mqmd = new MqNativeMessageDescriptor(new MQMessage());
+        mqmd.applyDescriptors(properties, null, null);
+
+        assertEquals(testValueStr, mqmd.applicationIdData);
+        assertEquals(testValueStr, mqmd.applicationOriginData);
+        assertEquals(testValueInt, mqmd.characterSet);
+        assertEquals(testValueInt, mqmd.encoding);
+        assertEquals(testValueInt, mqmd.expiry);
+        assertEquals(testValueInt, mqmd.feedback);
+        assertEquals(testValueStr, mqmd.format);
+        assertArrayEquals(HexUtils.decodeBase64(testValueStr), mqmd.groupId);
+        assertEquals(testValueInt, mqmd.messageFlags);
+        assertEquals(testValueInt, mqmd.messageType);
+        assertEquals(testValueInt, mqmd.offset);
+        assertEquals(testValueInt, mqmd.persistence);
+        assertEquals(testValueInt, mqmd.priority);
+        assertEquals(testValueStr, mqmd.putApplicationName);
+        assertEquals(testValueInt, mqmd.putApplicationType);
+        assertEquals(testValueInt, mqmd.report);
+        assertEquals(testValueStr, mqmd.userId);
+    }
+
+    @Test
     public void applyPropertiesToMessage() throws MQException, MqNativeConfigException {
         final Map<String,String> properties = new HashMap<String, String>(18);
         properties.put(MQ_PROPERTY_APPDATA, testValueStr);
@@ -106,7 +150,7 @@ public class MqNativeMessageDescriptorTest {
         properties.put(MQ_PROPERTY_USERID, testValueStr);
 
         final MQMessage mqMessage = new MQMessage();
-        MqNativeMessageDescriptor.applyPropertiesToMessage(properties, mqMessage);
+        MqNativeMessageDescriptor.applyDescriptorsToMessage(properties, mqMessage, null, null);
 
         assertEquals(testValueStr, mqMessage.applicationIdData);
         assertEquals(testValueStr, mqMessage.applicationOriginData);
