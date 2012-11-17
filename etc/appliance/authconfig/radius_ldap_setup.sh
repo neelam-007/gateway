@@ -679,6 +679,20 @@ else
                 STATUS=1
         fi
 
+	# pam_filter field
+        if [ "X$PAM_FILTER" != "X" ]; then
+                sed -i "s|\(^# Filter to AND with.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_filter $PAM_FILTER\n|" $NSS_LDAP_CONF_FILE
+                if [ $? -ne 0 ] || [ "X$(grep "^pam_filter" $NSS_LDAP_CONF_FILE)" != "Xpam_filter $PAM_FILTER" ]; then
+                        toLog "    ERROR - Configuring 'pam_filter' field in $NSS_LDAP_CONF_FILE failed."
+                        STATUS=1
+                else
+                        toLog "    Success - 'pam_filter' field set to $PAM_FILTER in $NSS_LDAP_CONF_FILE."
+                fi
+        else
+                toLog "    ERROR - PAM_FILTER cannot be empty!"
+                STATUS=1
+        fi
+
         # pam_login_attribute field
         if [ "X$PAM_LOGIN_ATTR" != "X" ]; then
                 if [ "X$AD" == "Xyes" ]; then
@@ -696,7 +710,7 @@ else
 nss_map_objectclass posixAccount User\n\
 nss_map_objectclass shadowAccount User\n\
 nss_map_objectclass posixGroup Group\n\
-nss_map_attribute uid $PAM_LOGIN_ATTR\n\
+nss_map_attribute uid sAMAccountName\n\
 nss_map_attribute uniqueMember Member\n\
 nss_map_attribute homeDirectory unixHomeDirectory\n|" $NSS_LDAP_CONF_FILE
 	                if [ $? -ne 0 ] || [ "X$(grep "^nss_map_attribute uid" $NSS_LDAP_CONF_FILE)" != "Xnss_map_attribute uid sAMAccountName" ]; then
@@ -722,22 +736,8 @@ nss_map_attribute homeDirectory unixHomeDirectory\n|" $NSS_LDAP_CONF_FILE
                 toLog "    ERROR - PAM_LOGIN_ATTR cannot be empty!"
                 STATUS=1
         fi
-
-        # pam_filter field
-        if [ "X$PAM_FILTER" != "X" ]; then
-                sed -i "s|\(^# Filter to AND with.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_filter $PAM_FILTER\n|" $NSS_LDAP_CONF_FILE
-                if [ $? -ne 0 ] || [ "X$(grep "^pam_filter" $NSS_LDAP_CONF_FILE)" != "Xpam_filter $PAM_FILTER" ]; then
-                        toLog "    ERROR - Configuring 'pam_filter' field in $NSS_LDAP_CONF_FILE failed."
-                        STATUS=1
-                else
-                        toLog "    Success - 'pam_filter' field set to $PAM_FILTER in $NSS_LDAP_CONF_FILE."
-                fi
-        else
-                toLog "    ERROR - PAM_FILTER cannot be empty!"
-                STATUS=1
-        fi
-
-        # pam_min_uid field
+        
+	# pam_min_uid field
         if [ "X$PAM_MIN_UID" != "X" ]; then
                 sed -i "s|\(^#pam_min_uid.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_min_uid $PAM_MIN_UID|" $NSS_LDAP_CONF_FILE
                 if [ $? -ne 0 ] || [ "X$(grep "^pam_min_uid" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_MIN_UID" ]; then
