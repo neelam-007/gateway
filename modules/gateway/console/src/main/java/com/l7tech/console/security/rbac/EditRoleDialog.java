@@ -45,7 +45,7 @@ public class EditRoleDialog extends JDialog {
     private JTextField roleName;
     private JTextArea roleDescription;
     private JButton addPermission;
-    private JButton editPermission;
+    private JButton viewPermission;
     private JButton removePermission;
     private JTable permissionsTable;
     private JButton addAssignment;
@@ -148,7 +148,7 @@ public class EditRoleDialog extends JDialog {
         boolean canEdit = flags.canUpdateSome() || flags.canCreateSome();
 
         addPermission.setVisible(shouldAllowEdits);
-        editPermission.setVisible(shouldAllowEdits);
+        viewPermission.setVisible(shouldAllowEdits);
         removePermission.setVisible(shouldAllowEdits);
 
         roleName.setEditable(canEdit && shouldAllowEdits);
@@ -157,7 +157,7 @@ public class EditRoleDialog extends JDialog {
         addAssignment.setEnabled(flags.canUpdateSome() || flags.canCreateSome());
 
         // these are enabled later if selections / permissions allow
-        editPermission.setEnabled(false);
+        viewPermission.setEnabled(false);
         removePermission.setEnabled(false);
         removeAssignment.setEnabled(false);        
     }
@@ -170,7 +170,7 @@ public class EditRoleDialog extends JDialog {
 
         //we should only enable the permission edit/remove buttons if a valid row is selected AND if we are allowing
         // edits because of the mode AND if the user has permission in the first place.
-        editPermission.setEnabled(validRowSelected && hasEditPermission && shouldAllowEdits);
+        viewPermission.setEnabled(validRowSelected && hasEditPermission && shouldAllowEdits);
         removePermission.setEnabled(validRowSelected && hasEditPermission && shouldAllowEdits);
     }
 
@@ -259,7 +259,7 @@ public class EditRoleDialog extends JDialog {
                 if (e.getClickCount() == 2 && shouldAllowEdits) {
                     final Permission perm = getSelectedPermission();
                     if (perm != null) {
-                        Permission p = showEditPermissionDialog(perm);
+                        Permission p = showEditPermissionDialog(perm, false);
                         if (p != null) {
                             perm.copyFrom(p);
                             permissionsTableModel.fireTableDataChanged();
@@ -302,7 +302,7 @@ public class EditRoleDialog extends JDialog {
         });
 
         addPermission.addActionListener(permissionsListener);
-        editPermission.addActionListener(permissionsListener);
+        viewPermission.addActionListener(permissionsListener);
         removePermission.addActionListener(permissionsListener);
 
         addAssignment.addActionListener(new ActionListener() {
@@ -377,7 +377,7 @@ public class EditRoleDialog extends JDialog {
         JButton srcButton = (JButton) src;
         if (srcButton == addPermission) {
             final Permission perm = new Permission(role, null, EntityType.ANY);
-            Permission p = showEditPermissionDialog(perm);
+            Permission p = showEditPermissionDialog(perm, true);
             if (p != null) {
                 perm.copyFrom(p);
                 permissionsTableModel.addRow(perm);
@@ -388,8 +388,8 @@ public class EditRoleDialog extends JDialog {
         final Permission perm = getSelectedPermission();
         if (perm == null) return;
 
-        if (srcButton == editPermission) {
-            Permission p = showEditPermissionDialog(perm);
+        if (srcButton == viewPermission) {
+            Permission p = showEditPermissionDialog(perm, false);
             if (p != null) {
                 perm.copyFrom(p);
                 permissionsTableModel.fireTableDataChanged();
@@ -410,8 +410,8 @@ public class EditRoleDialog extends JDialog {
     // Returns a possibly-edited anymous copy of the specified permission if the edit dialog is confirmed, or null if the dialog was canceled.
     // Caller is responsible for ensuring that any changes get written back to the appropriate place.
     // Note that the permission returned by this method, being an anonymous copy, will have a null role.
-    private Permission showEditPermissionDialog(Permission perm) {
-        EditPermissionsDialog dlg = new EditPermissionsDialog(perm.getAnonymousClone(), this);
+    private Permission showEditPermissionDialog(Permission perm, boolean allowChanges) {
+        EditPermissionsDialog dlg = new EditPermissionsDialog(perm.getAnonymousClone(), this, allowChanges);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);

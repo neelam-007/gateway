@@ -79,7 +79,7 @@ public enum EntityType implements Comparable<EntityType> {
 
     SECURE_PASSWORD("Secure Password", true, true),
 
-    HTTP_CONFIGURATION("HTTP Options", true, true),
+    HTTP_CONFIGURATION("HTTP Options", "HTTP Options", true, true),
     RESOURCE_ENTRY("Global Resource", true, true),
     RESOLUTION_CONFIGURATION("Service Resolution Configuration", true, true),
     PASSWORD_POLICY("Password Policy", true, true),

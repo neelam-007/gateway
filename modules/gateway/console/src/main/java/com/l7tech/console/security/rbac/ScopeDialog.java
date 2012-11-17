@@ -32,6 +32,7 @@ class ScopeDialog extends JDialog {
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
 
+    private final boolean allowChanges;
     private boolean confirmed = false;
     private Permission permission;
     private final EntityType entityType;
@@ -39,7 +40,6 @@ class ScopeDialog extends JDialog {
     private JScrollPane scopesTableScrollPane;
     private JTable scopesTable;
     private JButton removeButton;
-    private JButton editButton;
     private JButton addButton;
     private JRadioButton noScopePredicatesRadioButton;
     private JRadioButton scopePredicatesRadioButton;
@@ -72,10 +72,11 @@ class ScopeDialog extends JDialog {
         OPTION_ATTRIBUTE
     };
 
-    public ScopeDialog(Window owner, Permission perm, EntityType etype) throws HeadlessException {
+    public ScopeDialog(Window owner, Permission perm, EntityType etype, boolean allowChanges) throws HeadlessException {
         super(owner);
         this.permission = perm;
         this.entityType = etype;
+        this.allowChanges = allowChanges;
         initialize();
     }
 
@@ -168,17 +169,6 @@ class ScopeDialog extends JDialog {
             }
         });
 
-        editButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int row = scopesTable.getSelectedRow();
-                ScopePredicate scope = scopesTableModel.getRowObject(row);
-                if (scope != null) {
-                    doEditScope(scope, row);
-                }
-            }
-        });
-
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -220,6 +210,8 @@ class ScopeDialog extends JDialog {
             }
         });
 
+        Utilities.enableGrayOnDisabled(okButton, noScopePredicatesRadioButton, scopeSpecificRadioButton, scopePredicatesRadioButton,
+            specificFindButton, addButton, removeButton);
         enableDisable();
 
         add(mainPanel);
@@ -290,14 +282,17 @@ class ScopeDialog extends JDialog {
     private void enableDisable() {
         final boolean hasSpecificScope = scopeSpecificRadioButton.isSelected();
         specificPanel.setEnabled(hasSpecificScope);
-        specificFindButton.setEnabled(hasSpecificScope);
+        specificFindButton.setEnabled(allowChanges && hasSpecificScope);
 
         boolean hasCustomScopes = scopePredicatesRadioButton.isSelected();
         scopesTableScrollPane.setEnabled(hasCustomScopes);
         scopesTable.setEnabled(hasCustomScopes);
-        addButton.setEnabled(hasCustomScopes);
-        editButton.setEnabled(hasCustomScopes && scopesTable.getSelectedRow() >= 0);
-        removeButton.setEnabled(hasCustomScopes && scopesTable.getSelectedRow() >= 0);
+        addButton.setEnabled(allowChanges && hasCustomScopes);
+        removeButton.setEnabled(allowChanges && hasCustomScopes && scopesTable.getSelectedRow() >= 0);
+
+        noScopePredicatesRadioButton.setEnabled(allowChanges);
+        scopeSpecificRadioButton.setEnabled(allowChanges);
+        scopePredicatesRadioButton.setEnabled(allowChanges);
     }
 
     void ok() {

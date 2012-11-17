@@ -26,6 +26,7 @@ public class EditPermissionsDialog extends JDialog {
     private JTextArea scopeField;
     private JButton browseForScope;
 
+    private final boolean allowChanges;
     private Permission permission;
     private boolean confirmed = false;
     private JLabel scopeLabel;
@@ -37,9 +38,10 @@ public class EditPermissionsDialog extends JDialog {
         }
     });
 
-    public EditPermissionsDialog(Permission permission, Dialog parent) {
+    public EditPermissionsDialog(Permission permission, Dialog parent, boolean allowChanges) {
         super(parent);
         this.permission = permission;
+        this.allowChanges = allowChanges;
         initialize();
     }
 
@@ -90,13 +92,17 @@ public class EditPermissionsDialog extends JDialog {
             scopeField.setText(getScopeString(permission));
         }
 
+        Utilities.enableGrayOnDisabled(buttonOK, operationSelection,  typeSelection);
+
         pack();
         enableDisable();
     }
 
     void enableDisable() {
         EntityType etype = (EntityType)typeSelection.getSelectedItem();
-        buttonOK.setEnabled(etype != null && operationSelection.getSelectedItem() != null);
+        buttonOK.setEnabled(allowChanges && etype != null && operationSelection.getSelectedItem() != null);
+        operationSelection.setEnabled(allowChanges);
+        typeSelection.setEnabled(allowChanges);
 
         boolean scopeEnabled = RbacUtilities.isEnableRoleEditing() || etype == EntityType.SERVICE;
         scopeLabel.setVisible(scopeEnabled);
@@ -123,7 +129,7 @@ public class EditPermissionsDialog extends JDialog {
 
         browseForScope.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                ScopeDialog sd = new ScopeDialog(EditPermissionsDialog.this, permission.getAnonymousClone(), (EntityType)typeSelection.getSelectedItem());
+                ScopeDialog sd = new ScopeDialog(EditPermissionsDialog.this, permission.getAnonymousClone(), (EntityType)typeSelection.getSelectedItem(), allowChanges);
                 sd.pack();
                 Utilities.centerOnScreen(sd);
                 sd.setVisible(true);
