@@ -96,7 +96,7 @@ sed -i -e "s/^\(jvmarch=\).*$/\1i386/" %{buildroot}/opt/SecureSpan/Gateway/runti
 %attr(0600,root,root) /opt/SecureSpan/Appliance/libexec/patchVerifier.jar
 
 # Extra ssg files
-%attr(0555,layer7,layer7) /opt/SecureSpan/Gateway/runtime/etc/profile.d/*.sh
+%config(noreplace) %attr(0555,layer7,layer7) /opt/SecureSpan/Gateway/runtime/etc/profile.d/*.sh
 
 #Appliance Config Wizards
 %defattr(0444,layer7,layer7,0775)
@@ -119,7 +119,7 @@ sed -i -e "s/^\(jvmarch=\).*$/\1i386/" %{buildroot}/opt/SecureSpan/Gateway/runti
 %attr(0750,ssgconfig,ssgconfig) /home/ssgconfig/.bash_profile
 
 # Appliance migration configuration
-%attr(0644,layer7,layer7) /opt/SecureSpan/Gateway/config/backup/cfg/backup_manifest
+%config(noreplace) %attr(0644,layer7,layer7) /opt/SecureSpan/Gateway/config/backup/cfg/backup_manifest
 
 %pre
 
