@@ -77,10 +77,10 @@ public class WizardInteraction extends ConfigurationInteraction {
 
                         if ( !optionGroup.isRequired() && !isOptionGroupValid( optionGroup.getId() ) ) {
                             println();
-                            println("This step is optional, enter \"Yes\" to continue or \"No\" to skip.");
+                            println("This step is optional.  Enter \"Yes\" to continue or \"No\" to skip.");
                             println();
 
-                            if ( !promptConfirm( optionGroup.getDescription() + "?", false ) ) {
+                            if ( !promptConfirm( optionGroup.getDescription() + "?", optionGroup.isOptionalDefault() ) ) {
                                 skipGroupIds.add( optionGroup.getId() );
                                 previousOptions.push(i);
                                 continue;

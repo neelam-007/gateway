@@ -13,6 +13,7 @@ import javax.xml.bind.annotation.XmlType;
 public class OptionGroup {
     private String id; // unique id
     private Boolean required = true; // is this group required
+    private Boolean optionalDefault = false; // whether a non-required group should be prompted-for by default
     private Boolean deletable = true; // is this group deletable (if not required)
     private String group; // The group for this option group
     private String prompt; // wizard step prompt
@@ -35,6 +36,15 @@ public class OptionGroup {
     public void setRequired(Boolean required) {
         if ( required == null ) throw new NullPointerException(); 
         this.required = required;
+    }
+
+    @XmlAttribute
+    public Boolean isOptionalDefault() {
+        return optionalDefault;
+    }
+
+    public void setOptionalDefault(Boolean optionalDefault) {
+        this.optionalDefault = optionalDefault;
     }
 
     @XmlAttribute

@@ -13,7 +13,7 @@ At any time type "quit" to quit.</prompt>
     <!--
       Option Groups
     -->
-    <optionGroup id="db" required="false">
+    <optionGroup id="db" required="false" optionalDefault="true">
         <description>Database Connection</description>
         <prompt>
 -----------------------
