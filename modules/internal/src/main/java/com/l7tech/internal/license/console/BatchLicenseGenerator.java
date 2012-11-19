@@ -27,19 +27,19 @@ public class BatchLicenseGenerator {
 
     // license details record fields
     private static final int NUMBER_OF_FIELDS = 13;
-    private static final int LICENSEE_NAME_FIELD = 0;
+    private static final int LICENSEE_NAME_FIELD = 0;       //required
     private static final int LICENSEE_EMAIL_FIELD = 1;
     private static final int HOST_FIELD = 2;
     private static final int IP_ADDRESS_FIELD = 3;
-    private static final int PRODUCT_CODE_FIELD = 4;
-    private static final int MAJOR_VERSION_FIELD = 5;
+    private static final int PRODUCT_CODE_FIELD = 4;        //required
+    private static final int MAJOR_VERSION_FIELD = 5;       //required
     private static final int MINOR_VERSION_FIELD = 6;
-    private static final int DURATION_FIELD = 7;
-    private static final int DESCRIPTION_FIELD = 8;
+    private static final int DURATION_FIELD = 7;            //required
+    private static final int DESCRIPTION_FIELD = 8;         //required
     private static final int ATTRIBUTES_FIELD = 9;
     private static final int FEATURE_LABEL_FIELD = 10;
-    private static final int FEATURE_SET_CODES_FIELD = 11;
-    private static final int NUMBER_FIELD = 12;
+    private static final int FEATURE_SET_CODES_FIELD = 11;  //required
+    private static final int NUMBER_FIELD = 12;             //required
 
     // license name segments
     private static final char DASH_SEPARATOR = '_';
@@ -173,7 +173,7 @@ public class BatchLicenseGenerator {
 
         licenseDetailsRecord.setDescription(description);
 
-        String featureSetCodes = record.get(FEATURE_SET_CODES_FIELD);
+        String featureSetCodes = record.get(FEATURE_SET_CODES_FIELD).trim();
 
         if(featureSetCodes.isEmpty()) {
             throw new LicenseGeneratorException("Feature Sets are required: " + record.toString());
@@ -183,13 +183,27 @@ public class BatchLicenseGenerator {
 
         if(!featureSetCodes.isEmpty()) {
             for(String featureSetCode : featureSetCodes.split(",")) {
-                featureSets.add(getFeatureSet(featureSetCode));
+                featureSets.add(getFeatureSet(featureSetCode.trim()));
             }
         }
 
         licenseDetailsRecord.setFeatureSets(featureSets);
         licenseDetailsRecord.setAttributes(new HashSet<String>(Arrays.asList(record.get(ATTRIBUTES_FIELD).split(","))));
-        licenseDetailsRecord.setNumber(Integer.parseInt(record.get(NUMBER_FIELD)));
+
+        int number = 0;
+
+        try {
+            number = Integer.parseInt(record.get(NUMBER_FIELD));
+        } catch (NumberFormatException e) {
+            throw new LicenseGeneratorException("Invalid number of licenses for licensee " +
+                    licenseDetailsRecord.getLicensee() + ".");
+        }
+
+        if(number < 1) {
+            throw new LicenseGeneratorException("Number of licenses must be at least 1: " + record.toString());
+        }
+
+        licenseDetailsRecord.setNumber(number);
 
         return licenseDetailsRecord;
     }

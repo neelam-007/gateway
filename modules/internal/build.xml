@@ -186,6 +186,9 @@
         <tar destfile="${src.root}/build/installer/BatchLicenseGenerator-HEAD.tar.gz"
              compression="gzip">
             <tarfileset dir="${src.root}/etc" prefix="BatchLicenseGenerator-HEAD" filemode="755" dirmode="755">
+                <include name="batchlicensegenerator_eula.properties"/>
+            </tarfileset>
+            <tarfileset dir="${src.root}/etc" prefix="BatchLicenseGenerator-HEAD" filemode="755" dirmode="755">
                 <include name="BatchLicenseGenerator.sh"/>
             </tarfileset>
             <tarfileset dir="${build.dir}" prefix="BatchLicenseGenerator-HEAD" filemode="644" dirmode="755">

@@ -41,7 +41,8 @@ public class BatchLicenseGeneratorMain {
     private static final String OPTION_FILE_DESCRIPTION = "Specify CSV file path from which to read license details";
     private static final String OPTION_EULA_OPT = "e";
     private static final String OPTION_EULA_ARG_NAME = "eula";
-    private static final String OPTION_EULA_DESCRIPTION = "Specify DEFAULT, US, or custom eula file path";
+    private static final String OPTION_EULA_DESCRIPTION =
+            "Specify DEFAULT, a custom EULA code, or custom EULA file path";
     private static final String OPTION_SAVE_ONLY_UNSIGNED_LICENSES_OPT = "u";
     private static final String OPTION_SAVE_ONLY_UNSIGNED_LICENSES_DESCRIPTION = "Save unsigned licenses only";
     private static final String OPTION_SAVE_BOTH_SIGNED_AND_UNSIGNED_LICENSES_OPT = "b";
@@ -241,9 +242,16 @@ public class BatchLicenseGeneratorMain {
         printHelp(options);
     }
 
-    private static File createLicenseArchive(Map<String,Document> licenses, String archiveFileName) throws IOException {
+    private static File createLicenseArchive(Map<String,Document> licenses, String archiveFileName) throws IOException, LicenseGeneratorException {
 
-        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(archiveFileName));
+        File archive = new File(archiveFileName);
+
+        if(archive.exists()) {
+            throw new LicenseGeneratorException("License archive file '" + archiveFileName + "' already exists! " +
+                    "Only one record for each Licensee/Product combination can be present in the input file.");
+        }
+
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(archive));
 
         try {
             for (String name : licenses.keySet()) {
