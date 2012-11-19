@@ -4,6 +4,7 @@ import com.ibm.mq.MQException;
 import com.ibm.mq.MQMessage;
 import com.ibm.mq.headers.MQDataException;
 import com.ibm.mq.headers.MQRFH2;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
@@ -17,11 +18,8 @@ import java.util.Map;
 import static com.ibm.mq.constants.CMQC.MQFMT_RF_HEADER;
 import static com.ibm.mq.constants.CMQC.MQFMT_RF_HEADER_2;
 import static com.ibm.mq.constants.MQPropertyIdentifiers.*;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class MqNativeUtilsTest {
     /**
@@ -124,7 +122,7 @@ public class MqNativeUtilsTest {
         final MqNativeMessageDescriptor mqmd = new MqNativeMessageDescriptor(new MQMessage());
         mqmd.messageType = 8;
         mqmd.format = MQFMT_RF_HEADER;
-        mqmd.messageId = "AMQ coreDevQueuerÁÏO14".getBytes();
+        mqmd.messageId = HexUtils.decodeBase64("QU1RIGNvcmVEZXZRdWV1ZXLDgcOPTzE0");
 
         final MQRFH2 rfh2 = new MQRFH2(new DataInputStream(new ByteArrayInputStream(MQ_MESSAGE_FORCE_HEADER)));
 
