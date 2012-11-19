@@ -32,7 +32,7 @@ public class BatchLicenseGeneratorMain {
             "com/l7tech/internal/license/console/resources/licenseFeatureSets";
 
     // external properties files
-    private static final String EULA_PROPERTIES_FILE_PATH = "./eula.properties";
+    private static final String EULA_PROPERTIES_FILE_PATH = "./batchlicensegenerator_eula.properties";
 
     private static final String OPTION_HELP_OPT = "h";
     private static final String OPTION_HELP_DESCRIPTION = "print this message";
