@@ -426,4 +426,82 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="950d7c13-dcd8-472f-a7ae-2f4d50b8bfdd"
+               id="123732005" version="12">
+        <l7:PolicyDetail folderId="123600904" guid="950d7c13-dcd8-472f-a7ae-2f4d50b8bfdd" id="123732005" version="12">
+            <l7:Name>OAuth 2.0 Context Variables</l7:Name>
+            <l7:PolicyType>Include</l7:PolicyType>
+            <l7:Properties>
+                <l7:Property key="revision">
+                    <l7:LongValue>13</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:PolicyDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:AuditDetailAssertion&gt;
+                    &lt;L7p:Detail stringValue="Policy Fragment: OAuth Context Variables"/&gt;
+                    &lt;/L7p:AuditDetailAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_ovp_server"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="QkVBUkVS"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_token_type"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth2_auth_template_server"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="L2F1dGgvb2F1dGgvdjIvYXV0aG9yaXplL3dlYnNpdGU="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_auth_template_path"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="MTAw"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_client_max_fail_per_sec"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="MTAw"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_resource_owner_max_fail_per_sec"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth2_auth_server"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="L2F1dGgvb2F1dGgvdjIvYXV0aG9yaXpl"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_auth_path"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="L2F1dGgvb2F1dGgvdjIvdG9rZW4="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_token_path"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:ExportVariables&gt;
+                    &lt;L7p:ExportedVars stringArrayValue="included"&gt;
+                    &lt;L7p:item stringValue="oauth2_auth_path"/&gt;
+                    &lt;L7p:item stringValue="host_oauth2_auth_server"/&gt;
+                    &lt;L7p:item stringValue="oauth2_auth_template_path"/&gt;
+                    &lt;L7p:item stringValue="host_oauth2_auth_template_server"/&gt;
+                    &lt;L7p:item stringValue="oauth2_client_max_fail_per_sec"/&gt;
+                    &lt;L7p:item stringValue="oauth2_resource_owner_max_fail_per_sec"/&gt;
+                    &lt;L7p:item stringValue="oauth2_token_path"/&gt;
+                    &lt;L7p:item stringValue="oauth2_token_type"/&gt;
+                    &lt;L7p:item stringValue="host_oauth_ovp_server"/&gt;
+                    &lt;/L7p:ExportedVars&gt;
+                    &lt;/L7p:ExportVariables&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Policy>
 </enumeration>
