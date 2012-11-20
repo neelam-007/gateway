@@ -273,7 +273,7 @@ public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
                             type.equals("message")? name : "",
                             message,
                             null,
-                            signature.isEmpty()? null: signature,
+                            signature==null || signature.isEmpty()? null: signature,
                             nodeid,
                             time,
                             Level.parse(auditLevel),
