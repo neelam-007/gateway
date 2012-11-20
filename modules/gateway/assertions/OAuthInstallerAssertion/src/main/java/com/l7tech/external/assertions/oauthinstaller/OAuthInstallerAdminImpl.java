@@ -361,7 +361,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                     return ExceptionUtils.getMessage(e);
                 } finally {
                     // do not remember this connection
-                    jdbcConnectionPoolManager.deleteConnectionPool(jdbcConn);
+                    jdbcConnectionPoolManager.deleteConnectionPool(jdbcConn.getName());
                 }
 
                 return "";

@@ -43,7 +43,7 @@ public class JdbcConnectionPoolManager implements InitializingBean {
 
     private static final long MIN_CHECK_AGE = ConfigFactory.getLongProperty( "com.l7tech.server.jdbc.poolConnectionCheckMinAge", 30000L );
     private static final String[] CPDS_IGNORE_PROPS = new String[]{ "connectionPoolDataSource", "driverClass", "initialPoolSize", "jdbcUrl", "logWriter", "maxPoolSize", "minPoolSize", "password", "properties", "propertyCycle", "user", "userOverridesAsString" };
-    private static final ThreadLocal<Pair<String, DataSource>> contextualDataSource = new ThreadLocal<Pair<String, DataSource>>();
+    private static final HashMap<String, Long> oidNameMap = new HashMap<String, Long>();
 
     private final Audit auditor = new LoggingAudit(logger);
     private final JdbcConnectionManager jdbcConnectionManager;
@@ -164,6 +164,7 @@ public class JdbcConnectionPoolManager implements InitializingBean {
                 // Rebind the data source
                 try {
                     context.rebind(connection.getName(), ds);
+                    oidNameMap.put(connection.getName(),connection.getOid());
                 } catch (NamingException e) {
                     String errMsg = "Error rebind a data source with a JDBC connection name, " + connection.getName();
                     auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
@@ -197,6 +198,7 @@ public class JdbcConnectionPoolManager implements InitializingBean {
         if (! isForTesting) {
             try {
                 context.bind(connection.getName(), cpds);
+                oidNameMap.put(connection.getName(),connection.getOid());
             } catch (NamingException e) {
                 String errMsg = "Error bind a data source with a JDBC connection name, " + connection.getName();
                 auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
@@ -232,17 +234,17 @@ public class JdbcConnectionPoolManager implements InitializingBean {
     }
 
     /**
-     * Delete a connection pool associated with a JDBC Connection entity.
+     * Delete a connection pool associated with a JDBC Connection entity name.
      *
-     * @param connection: a JDBC Connection entity.
+     * @param connectionName: a JDBC Connection name.
      */
-    public void deleteConnectionPool(JdbcConnection connection) {
+    public void deleteConnectionPool(String connectionName) {
         ComboPooledDataSource cpds;
         try {
-            cpds = (ComboPooledDataSource)context.lookup(connection.getName());
+            cpds = (ComboPooledDataSource)context.lookup(connectionName);
         } catch (NamingException e) {
-            String errMsg = "Error lookup a data source by a JDBC connection name, " + connection.getName();
-            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_DELETE_CONNECTION_POOL, connection.getName(), errMsg);
+            String errMsg = "Error lookup a data source by a JDBC connection name, " + connectionName;
+            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_DELETE_CONNECTION_POOL, connectionName, errMsg);
             return;
         }
 
@@ -250,10 +252,11 @@ public class JdbcConnectionPoolManager implements InitializingBean {
         else cpds.close();
 
         try {
-            context.unbind(connection.getName());
+            context.unbind(connectionName);
+            oidNameMap.remove(connectionName);
         } catch (NamingException e) {
-            String errMsg = "Error unbind a data source with a JDBC connection name, " + connection.getName();
-            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_DELETE_CONNECTION_POOL, connection.getName(), errMsg);
+            String errMsg = "Error unbind a data source with a JDBC connection name, " + connectionName;
+            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_DELETE_CONNECTION_POOL, connectionName, errMsg);
         }
     }
 
@@ -345,5 +348,13 @@ public class JdbcConnectionPoolManager implements InitializingBean {
         Hashtable<String, String> table = new Hashtable<String, String>();
         table.put(Context.INITIAL_CONTEXT_FACTORY,"org.apache.naming.java.javaURLContextFactory");
         context = new InitialContext(table);
+    }
+
+    public String getConnectionName(long oid) {
+        for(String key: oidNameMap.keySet()){
+            if(oidNameMap.get(key) == oid)
+                return key;
+        }
+        return null;
     }
 }

@@ -49,8 +49,8 @@ public class JdbcConnectionResolver implements PostStartupApplicationListener {
                                 continue;
                             }
                         case EntityInvalidationEvent.DELETE:
-                            // TODO remove from connection pool, need name
-//                            jdbcConnectionPoolManager.deleteConnectionPool(conn);
+                            String name = jdbcConnectionPoolManager.getConnectionName(oid);
+                            jdbcConnectionPoolManager.deleteConnectionPool(name);
                             break;
                     }
                 }
