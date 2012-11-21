@@ -1383,7 +1383,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             hardwareAccelStatusLabel.setToolTipText(null);
             speedIndicator.setSpeed(SpeedIndicator.SPEED_FAST);
             String n = hardwareFeedBack == null ? "" : " be too complex to";
-            speedIndicator.setToolTipText("Hardware accelerated XPath not present on Gateway, but if it were, this expression would" + n + " run in parallel at full speed");
+            speedIndicator.setToolTipText("Accelerated XPath not present on Gateway, but if it were, this expression would" + n + " be accelerated at full speed");
             return;
         }
 
@@ -1391,12 +1391,12 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             hardwareAccelStatusLabel.setText("");
             hardwareAccelStatusLabel.setToolTipText(null);
             speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTEST);
-            speedIndicator.setToolTipText("Expression will be hardware accelerated in parallel at full speed");
+            speedIndicator.setToolTipText("Expression will be accelerated at full speed");
         } else {
             hardwareAccelStatusLabel.setText("");
             hardwareAccelStatusLabel.setToolTipText(null);
             speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTER);
-            speedIndicator.setToolTipText("Expression will be hardware accelerated, but is too complex to run in parallel at full speed");
+            speedIndicator.setToolTipText("Expression will be accelerated, but is too complex to run at full speed");
         }
     }
 
