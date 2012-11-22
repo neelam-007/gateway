@@ -5,6 +5,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -16,6 +17,8 @@ public class AuditAlertConfigBean {
     public static final String AUDIT_ALERT_LEVEL_PREFERENCE_KEY = "com.l7tech.auditalerts.warninglevel";
     public static final String AUDIT_ALERT_INTERVAL_PREFERENCE_KEY = "com.l7tech.auditalerts.checkinterval";
     public static final int DEFAULT_CHECK_INTERVAL = 30;
+
+    private static final Logger logger = Logger.getLogger(AuditAlertConfigBean.class.getName());
 
     private boolean isEnabled = true;
     private Level auditAlertLevel = Level.WARNING;
@@ -70,9 +73,21 @@ public class AuditAlertConfigBean {
 
     public void savePreferences() throws IOException {
         if (preferences != null) {
-            preferences.putProperty(AUDIT_ALERT_ENABLED_PREFERENCE_KEY, String.valueOf(isEnabled()));
-            preferences.putProperty(AUDIT_ALERT_INTERVAL_PREFERENCE_KEY, String.valueOf(getAuditCheckInterval()));
-            preferences.putProperty(AUDIT_ALERT_LEVEL_PREFERENCE_KEY, getAuditAlertLevel().getName());
+            if(!preferences.getString(AUDIT_ALERT_ENABLED_PREFERENCE_KEY).equals(String.valueOf(isEnabled()))) {
+                preferences.putProperty(AUDIT_ALERT_ENABLED_PREFERENCE_KEY, String.valueOf(isEnabled()));
+                logger.info("Audit Alerts " + (isEnabled() ? "enabled." : "disabled."));
+            }
+
+            if(!preferences.getString(AUDIT_ALERT_INTERVAL_PREFERENCE_KEY).equals(String.valueOf(getAuditCheckInterval()))) {
+                preferences.putProperty(AUDIT_ALERT_INTERVAL_PREFERENCE_KEY, String.valueOf(getAuditCheckInterval()));
+                logger.info("Audit Alert Check Interval set to " + getAuditCheckInterval() + " seconds.");
+            }
+
+            if(!preferences.getString(AUDIT_ALERT_LEVEL_PREFERENCE_KEY).equals(getAuditAlertLevel().getName())) {
+                preferences.putProperty(AUDIT_ALERT_LEVEL_PREFERENCE_KEY, getAuditAlertLevel().getName());
+                logger.info("Audit Alert Level set to " + getAuditAlertLevel().getName() + ".");
+            }
+
             preferences.store();
         }
     }
