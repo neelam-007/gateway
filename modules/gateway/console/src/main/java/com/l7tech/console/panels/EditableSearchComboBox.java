@@ -63,7 +63,7 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
     private boolean ignoreWhen = false;
 
     /**
-     * The captured type of T which is available at runtime to determine which Objects from setItem should be accecpted
+     * The captured type of T which is available at runtime to determine which Objects from setItem should be accepted
      */
     private final Class paramaterizedType;
 
@@ -298,7 +298,13 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
     public void clearSearch() {
         setSelectedItem(null);
         editor.clearSearch();
-        model.updateFilteredItems();
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                hidePopup();
+            }
+        });
     }
 
     /**
@@ -435,6 +441,14 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
         private final Color yellowBgColor = new Color(0xFF, 0xFF, 0xe1);
         private boolean enterLastKeyPressed = false;
 
+        Runnable updateFilter = new Runnable() {
+            @Override
+            public void run() {
+                filterItems(true);
+                ignoreWhen = true;
+            }
+        };
+
         public SearchFieldEditor() {
             getDocument().addDocumentListener(this);
             addFocusListener(new FocusListener() {
@@ -523,14 +537,12 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
 
         @Override
         public void insertUpdate(DocumentEvent e) {
-            filterItems(true);
-            ignoreWhen = true;
+            SwingUtilities.invokeLater(updateFilter);
         }
 
         @Override
         public void removeUpdate(DocumentEvent e) {
-            filterItems(true);
-            ignoreWhen = true;
+            SwingUtilities.invokeLater(updateFilter);
         }
 
         /**

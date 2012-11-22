@@ -7,6 +7,7 @@ import com.l7tech.console.util.WeakPropertyChangeSupport;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -433,6 +434,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      *
      * @return the <code>ImageIcon</code> or null if not found
      */
+    @Nullable
     public Image getIcon() {
         return getCachedImage(false);
     }

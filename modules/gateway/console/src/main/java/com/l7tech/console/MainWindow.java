@@ -2922,7 +2922,8 @@ public class MainWindow extends JFrame implements SheetHolder {
             final Functions.Unary<Icon, AbstractLeafPaletteNode> iconAccessorFunction = new Functions.Unary<Icon, AbstractLeafPaletteNode>() {
                 @Override
                 public Icon call(AbstractLeafPaletteNode abstractTreeNode) {
-                    return new ImageIcon(abstractTreeNode.getIcon());
+                    Image icon = abstractTreeNode.getIcon();
+                    return icon == null ? null : new ImageIcon(icon);
                 }
             };
 
