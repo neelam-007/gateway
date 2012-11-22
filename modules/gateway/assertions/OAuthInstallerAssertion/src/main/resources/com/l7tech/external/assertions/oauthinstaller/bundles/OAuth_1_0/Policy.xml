@@ -392,15 +392,13 @@
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="The fragment enables an API/ Service endpoint to require a valid oauth
-                    access token"/&gt;
+                    &lt;L7p:Comment stringValue="The fragment enables an API/ Service endpoint to require a valid oauth access token"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="Input: the http request including the oauth header"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Output: oauth_consumer_key, oauth_token, oauth_verifier,
-                    authorizationHeader"/&gt;
+                    &lt;L7p:Comment stringValue="Output: oauth_consumer_key, oauth_token, oauth_verifier, authorizationHeader"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:AuditDetailAssertion&gt;
                     &lt;L7p:Detail stringValue="Policy Fragment: Authenticate OAuth 1.0 Parameter"/&gt;
