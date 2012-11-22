@@ -338,11 +338,16 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
             String patstr = ExpandVariables.process(regexPatternOrTemplate.right(), context.getVariableMap(varNames, getAudit()), getAudit(), new Functions.Unary<String, String>() {
                 @Override
                 public String call(String s) {
+                    // patterns resolved from context variables are treated literally
                     return Pattern.quote(s);
                 }
             });
             try {
-                return Pattern.compile(patstr);
+                if (caseInsensitive) {
+                    return Pattern.compile(patstr, Pattern.CASE_INSENSITIVE);
+                } else {
+                    return Pattern.compile(patstr);
+                }
             } catch (PatternSyntaxException e) {
                 //noinspection ThrowableResultOfMethodCallIgnored
                 logAndAudit(AssertionMessages.REGEX_PATTERN_INVALID, new String[] { patstr, ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));

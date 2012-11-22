@@ -874,4 +874,15 @@ public class RegexAssertionTest {
         assertNull(vv[2]);
         assertEquals("bar ", vv[3]);
     }
+
+    @Test
+    @BugNumber(12515)
+    public void contextVariableCaseInsensitive() throws Exception {
+        final Regex regex = regex("${test}");
+        regex.setCaseInsensitive(true);
+        regex.setPatternContainsVariables(true);
+
+        final PolicyEnforcementContext context = context("FooBar", "", "test", "foobar");
+        expect(AssertionStatus.NONE, regex, context);
+    }
 }
