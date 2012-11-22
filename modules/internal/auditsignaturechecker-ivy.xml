@@ -22,9 +22,9 @@
         <dependency name="layer7-gui" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="core"/>
-        <dependency org="com.rsa" name="jcmFIPS" rev="6.0.0.1" force="true" conf="core"/>
-        <dependency org="com.rsa" name="cryptojcommon" rev="6.0.0.1" force="true" conf="core"/>
-        <dependency org="com.rsa" name="cryptojce" rev="6.0.0.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="jcmFIPS" rev="6.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojcommon" rev="6.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojce" rev="6.1" force="true" conf="core"/>
 		<dependency org="commons-codec" name="commons-codec" rev="1.6" force="true" conf="core"/>
         <dependency org="commons-collections" name="commons-collections" rev="3.2.1" force="true" conf="core"/>
         <dependency org="commons-logging" name="commons-logging" rev="1.1.1" force="true" conf="core"/>

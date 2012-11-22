@@ -27,9 +27,9 @@
         <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.5" force="true" conf="core"/>
         <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.5" force="true" conf="core"/>
         <!-- For the XVC and Bridge API, we'll always use the non-FIPS version of RSA for the time being -->
-        <dependency org="com.rsa" name="jcm" rev="6.0.0.1" force="true" conf="core"/>
-        <dependency org="com.rsa" name="cryptojcommon" rev="6.0.0.1" force="true" conf="core"/>
-        <dependency org="com.rsa" name="cryptojce" rev="6.0.0.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="jcm" rev="6.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojcommon" rev="6.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojce" rev="6.1" force="true" conf="core"/>
         <dependency org="com.rsa" name="certj" rev="6.0" force="true" conf="core"/>
         <dependency org="com.rsa" name="sslj" rev="6.0" force="true" conf="core"/>
         <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/> <!-- signed BC provider jar -->
