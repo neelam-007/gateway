@@ -1,6 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.DeleteEntityAction;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
@@ -10,6 +11,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
 import java.util.Comparator;
+import java.util.logging.Level;
 
 /**
  * The class represents an entity gui node element in the
@@ -126,8 +128,11 @@ public abstract class EntityHeaderNode<HT extends EntityHeader> extends Abstract
             long oid = getEntityHeader().getOid();
             config = getIdentityAdmin().findIdentityProviderConfigByID(oid);
             return config;
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to locate the identity provider " + getEntityHeader().getName(), e);
+        }
+        catch (Exception e) {
+            ErrorManager.getDefault().
+                    notify(Level.WARNING, e, "Unable to locate the identity provider " + getEntityHeader().getName());
+            return null;
         }
     }
 
