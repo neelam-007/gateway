@@ -122,8 +122,10 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     protected Long[] tlsTrustedCertOids;
     protected String[] tlsTrustedCertNames;
 
-    protected String testBodyMessage = "<request><message>Test</message></request>";
     private boolean forceIncludeRequestBody = false;
+
+    //the following are to store the values used in the Service Test (Test Button) function
+    private String testBodyMessage = "<request><message>Test</message></request>";
     private List<HttpRoutingServiceParameter> testParameters = new ArrayList<HttpRoutingServiceParameter>();
     private HttpMethod testHttpMethod;
     private String testContentType;

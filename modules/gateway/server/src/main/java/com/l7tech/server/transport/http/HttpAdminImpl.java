@@ -52,6 +52,7 @@ public class HttpAdminImpl implements HttpAdmin, ApplicationContextAware {
                 try {
                     assertion.setProtectedServiceUrl(serverUrl);//make sure we are testing one URL at a time, this forces it
                     assertion.setRequestMsgSrc("testRequestMessage");
+                    assertion.setCustomURLs(null);
                     final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message(), true);
                     pec.setVariable("testRequestMessage",testRequestVariable);
                     final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, getApplicationContext());
