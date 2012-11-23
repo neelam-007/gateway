@@ -52,7 +52,7 @@ public class PublishRestServiceAction extends SecureAction {
 
     @Override
     public String getName() {
-        return "Publish RESTful Service Proxy";
+        return "Publish RESTful Service Proxy With WADL";
     }
 
     @Override
