@@ -57,6 +57,7 @@ echo "" > /etc/security/opasswd
 echo "Removing ssh keys..."
 rm -f /etc/ssh/ssh_host_*
 
+rm -rf /tmp/*
 rm $0
 echo "VM prep complete, please reboot or power off now"
 echo ""
