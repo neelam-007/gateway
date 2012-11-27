@@ -1800,11 +1800,54 @@ CREATE TABLE generic_entity (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 
+DROP TABLE IF EXISTS encapsulated_assertion;
+CREATE TABLE encapsulated_assertion (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  policy_oid bigint(20) NOT NULL,
+  FOREIGN KEY (policy_oid) REFERENCES policy (objectid),
+  PRIMARY KEY (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS encapsulated_assertion_property;
+CREATE TABLE encapsulated_assertion_property (
+  encapsulated_assertion_oid bigint(20) NOT NULL,
+  name varchar(128) NOT NULL,
+  value MEDIUMTEXT NOT NULL,
+  FOREIGN KEY (encapsulated_assertion_oid) REFERENCES encapsulated_assertion (objectid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS encapsulated_assertion_argument;
+CREATE TABLE encapsulated_assertion_argument (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  encapsulated_assertion_oid bigint(20) NOT NULL,
+  argument_name varchar(128) NOT NULL,
+  argument_type varchar(128) NOT NULL,
+  default_value mediumtext,
+  gui_prompt tinyint(1) NOT NULL,
+  FOREIGN KEY (encapsulated_assertion_oid) REFERENCES encapsulated_assertion (objectid) ON DELETE CASCADE,
+  PRIMARY KEY (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS encapsulated_assertion_result;
+CREATE TABLE encapsulated_assertion_result (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  encapsulated_assertion_oid bigint(20) NOT NULL,
+  result_name varchar(128) NOT NULL,
+  result_type varchar(128) NOT NULL,
+  FOREIGN KEY (encapsulated_assertion_oid) REFERENCES encapsulated_assertion (objectid) ON DELETE CASCADE,
+  PRIMARY KEY (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+
 DROP TABLE IF EXISTS ssg_version;
 CREATE TABLE ssg_version (
    current_version char(10) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
-INSERT INTO ssg_version (current_version) VALUES ('7.0.0');
+INSERT INTO ssg_version (current_version) VALUES ('7.1.0');
 
 SET FOREIGN_KEY_CHECKS = 1;

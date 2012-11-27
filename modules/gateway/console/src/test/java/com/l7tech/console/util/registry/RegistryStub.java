@@ -460,6 +460,11 @@ public class RegistryStub extends Registry {
     }
 
     @Override
+    public EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin() {
+        return null;
+    }
+
+    @Override
     public <T> T getExtensionInterface(Class<T> interfaceClass, String instanceIdentifier) {
         //noinspection unchecked
         return (T) Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class[]{interfaceClass}, new InvocationHandler() {

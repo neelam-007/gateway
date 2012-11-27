@@ -1634,6 +1634,7 @@
                 <ref bean="policyVersionManager"/>
                 <ref bean="folderManager"/>
                 <ref bean="genericEntityManager"/>
+                <ref bean="encapsulatedAssertionConfigManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -2195,6 +2196,9 @@
                 <ref bean="serviceDocumentManager"/>
             </list>
         </property>
+    </bean>
+
+    <bean id="encapsulatedAssertionConfigManager" class="com.l7tech.server.encass.EncapsulatedAssertionConfigManagerImpl" parent="hibernateBean">
     </bean>
 
     <bean id="uddiHelper" class="com.l7tech.server.uddi.UDDIHelper">

@@ -237,9 +237,16 @@ public abstract class Registry {
 
     /**
      * @return the UDDI Registry admin interface implementation. Never null.
-     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent() 
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     public abstract UDDIRegistryAdmin getUDDIRegistryAdmin();
+
+
+    /**
+     * @return the encapsulated assertion admin interface implementation.  Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+     */
+    public abstract EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin();
 
     /**
      * Get a local proxy for an admin extension interface.
@@ -418,6 +425,11 @@ public abstract class Registry {
 
         @Override
         public UDDIRegistryAdmin getUDDIRegistryAdmin() {
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
+        }
+
+        @Override
+        public EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

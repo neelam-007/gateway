@@ -30,6 +30,7 @@ public enum EntityType implements Comparable<EntityType> {
     POLICY_ALIAS("Policy Alias", true, true),
     POLICY_VERSION("Policy Version", false, true),
     FOLDER("Folder", true, true),
+    ENCAPSULATED_ASSERTION("Encapsulated Assertion", true, true),
 
     MAP_ATTRIBUTE("Attribute Configuration", false, true),
     MAP_IDENTITY("Identity Provider Attribute Mapping", false, true),

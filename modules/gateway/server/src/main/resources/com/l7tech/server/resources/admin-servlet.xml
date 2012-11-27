@@ -129,4 +129,9 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.UDDIRegistryAdmin"/>
     </bean>
 
+    <bean name="/EncapsulatedAssertionAdmin" parent="httpInvokerParent">
+        <property name="service" ref="encapsulatedAssertionAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.admin.EncapsulatedAssertionAdmin"/>
+    </bean>
+
 </beans>

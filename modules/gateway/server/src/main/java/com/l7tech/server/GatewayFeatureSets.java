@@ -85,6 +85,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_SECURE_PASSWORD = "service:SecurePassword"; // Ability to manage secure passwords
     public static final String SERVICE_MODULELOADER = "service:ModuleLoader"; // Ability to load jars from /ssg/modules/assertions
     public static final String SERVICE_EMS = "service:EnterpriseManageable"; // Ability to be managed remotely by an Enterprise Manager Server
+    public static final String SERVICE_ENCAPSULATED_ASSERTION = "service:EncapsulatedAssertion"; // Ability to use encapsulated assertions
 
     // Constants for flag names
     public static final String FLAG_PERMAFIPS = "flag:FipsModeAlways";
@@ -233,6 +234,12 @@ public class GatewayFeatureSets {
             "Enables Gateway to be managed by an Enterprise Manager Server.",
             srv(SERVICE_EMS, "Ability to be managed remotely by an Enterprise Manager Server",
                 "Includes the ability to view and modify Trusted EMS registrations and EMS user mappings, both in the SSM and using the bootstrap web page."));
+
+        GatewayFeatureSet encass =
+        fsr("set:encass", "Enable Encapsulated Assertion support",
+            "Enables Gateway to create and use encapsulated assertions.",
+            srv(SERVICE_ENCAPSULATED_ASSERTION, "Ability to use encapsulated assertions",
+                "Includes the ability to create and manage encapsulated assertion, as well as to see them in the assertion palette and use them."));
 
         GatewayFeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",
@@ -724,6 +731,7 @@ public class GatewayFeatureSets {
             fs(policyAccel),
             fs(uiDs),
             fs(customDs),
+            fs(encass),
             fs(uddiNotificationAssertions),
             fs(esmAssertions),
             fs(generateSecurityHashAssertion),
@@ -778,6 +786,7 @@ public class GatewayFeatureSets {
             fs(mtomEncodeAssertions),
             fs(mtomValidateAssertions),
             fs(customFw),
+            fs(encass),
             fs(esmAssertions),
             fs(samlpAssertions),
             fs(samlpSsoAssertions),
@@ -816,6 +825,7 @@ public class GatewayFeatureSets {
             fs(policyAccel),
             fs(threatFw),
             fs(customFw),
+            fs(encass),
             fs(ssb),
             fs(modularAssertions),
             fs(samlpAssertions),
@@ -872,6 +882,7 @@ public class GatewayFeatureSets {
             fs(policyAccel),
             fs(threatFw),
             fs(customFw),
+            fs(encass),
             fs(ssb),
             fs(modularAssertions),
             fs(samlpSsoAssertions),
@@ -917,6 +928,7 @@ public class GatewayFeatureSets {
                 ass(WssSignElement.class),
                 mass("assertion:ProcessSamlAuthnRequest"),
                 mass("assertion:SetSamlStatus"),
+                fs(encass),
                 fs(modularAssertions));
 
         PROFILE_ALL =

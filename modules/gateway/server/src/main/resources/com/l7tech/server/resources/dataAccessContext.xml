@@ -148,6 +148,11 @@
                 <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
                 <value>com.l7tech.policy.GenericEntity</value>
 
+                <!-- Encapsulated Assertions -->
+                <value>com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig</value>
+                <value>com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor</value>
+                <value>com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor</value>
+
                 <!-- UDDI -->
                 <value>com.l7tech.gateway.common.uddi.UDDIRegistry</value>
                 <value>com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo</value>

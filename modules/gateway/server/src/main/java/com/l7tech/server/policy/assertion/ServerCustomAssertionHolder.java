@@ -126,6 +126,10 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         try {
             if (contextClassLoader != null && !customAssertionClass.getClassLoader().equals(contextClassLoader)) {
                 contextClassLoaderReplaced = true;
+
+                getClass().getProtectionDomain().getCodeSource().getLocation();
+                customAssertionClass.getProtectionDomain().getCodeSource().getLocation();
+
                 Thread.currentThread().setContextClassLoader(customAssertionClass.getClassLoader());
             }
 

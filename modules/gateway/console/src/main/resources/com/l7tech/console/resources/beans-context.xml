@@ -36,6 +36,7 @@
                 <ref bean="folderAdmin"/>
                 <ref bean="emailAdmin"/>
                 <ref bean="uddiRegistryAdmin" />
+                <ref bean="encapsulatedAssertionAdmin" />
             </list>
         </constructor-arg>
         <constructor-arg index="1" ref="httpRequestExecutor"/>
@@ -169,6 +170,11 @@
     <bean id="uddiRegistryAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/UDDIRegistryAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.UDDIRegistryAdmin"/>
+    </bean>
+
+    <bean id="encapsulatedAssertionAdmin" parent="invokerCommon">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/EncapsulatedAssertionAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.admin.EncapsulatedAssertionAdmin"/>
     </bean>
 
 </beans>

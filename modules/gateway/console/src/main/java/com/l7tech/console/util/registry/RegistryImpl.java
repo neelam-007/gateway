@@ -80,6 +80,7 @@ public final class RegistryImpl extends Registry
     private PolicyAdmin policyAdmin;
     private LogSinkAdmin logSinkAdmin;
     private UDDIRegistryAdmin uddiRegistryAdmin;
+    private EncapsulatedAssertionAdmin encapsulatedAssertionAdmin;
     private PolicyValidator policyValidator;
     private GuidBasedEntityManager<Policy> policyFinder;
     private PolicyPathBuilderFactory policyPathBuilderFactory;
@@ -369,6 +370,16 @@ public final class RegistryImpl extends Registry
     }
 
     @Override
+    public EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin() {
+        checkAdminContext();
+        if (encapsulatedAssertionAdmin != null) {
+            return encapsulatedAssertionAdmin;
+        }
+        encapsulatedAssertionAdmin = adminContext.getAdminInterface(EncapsulatedAssertionAdmin.class);
+        return encapsulatedAssertionAdmin;
+    }
+
+    @Override
     public <T> T getExtensionInterface(final Class<T> interfaceClass, final String instanceIdentifier) {
         //noinspection unchecked
         return (T)Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class[] { interfaceClass }, new InvocationHandler() {
@@ -456,6 +467,7 @@ public final class RegistryImpl extends Registry
         rbacAdmin = null;
         logSinkAdmin = null;
         uddiRegistryAdmin = null;
+        encapsulatedAssertionAdmin = null;
         emailListenerAdmin = null;
         emailAdmin = null;
         httpAdmin = null;

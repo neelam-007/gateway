@@ -486,4 +486,10 @@
         <constructor-arg ref="serviceManager"/>
     </bean>
 
+    <!-- Encapsulated assertion admin impl -->
+    <bean id="encapsulatedAssertionAdmin" class="com.l7tech.server.encass.EncapsulatedAssertionAdminImpl">
+
+    </bean>
+
+
 </beans>
