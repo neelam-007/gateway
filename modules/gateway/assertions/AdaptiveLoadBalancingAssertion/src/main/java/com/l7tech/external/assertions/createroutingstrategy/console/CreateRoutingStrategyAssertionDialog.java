@@ -42,7 +42,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
     private static final String DIALOG_TITLE_NEW_SERVICE_PROPERTIES = "New Route";
     private static final String DIALOG_TITLE_EDIT_SERVICE_PROPERTIES = "Edit Route";
     private static final String DIALOG_TITLE_CLONE_SERVICE_PROPERTIES = "Clone Route";
-    private static final String DIALOG_TITLE_EDIT_STRATEGY_PROPERTIES = "Edit Strategy Properties";
+    private static final String DIALOG_TITLE_EDIT_FAILOVER_PROPERTIES = "Edit Failover Properties";
     private static final int MAX_DISPLAYABLE_MESSAGE_LENGTH = 80;
 
     private ClusterStatusAdmin clusterStatusAdmin;
@@ -99,7 +99,7 @@ public class CreateRoutingStrategyAssertionDialog extends AssertionPropertiesOkC
                 ConfigurableFailoverStrategy s = (ConfigurableFailoverStrategy) strategy.getSelectedItem();
                 Dialog dialog = null;
                 if (s.getEditorClass() == null) {
-                    dialog = new RoutingStrategyConfigurationDialog(parent, DIALOG_TITLE_EDIT_STRATEGY_PROPERTIES, strategyProperties);
+                    dialog = new RoutingStrategyConfigurationDialog(parent, DIALOG_TITLE_EDIT_FAILOVER_PROPERTIES, strategyProperties);
                 } else {
                     try {
                         final Constructor<FailoverStrategyEditor> constructor =

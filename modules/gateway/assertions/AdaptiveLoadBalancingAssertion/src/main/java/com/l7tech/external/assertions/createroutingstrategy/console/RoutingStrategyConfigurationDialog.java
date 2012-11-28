@@ -18,8 +18,8 @@ import java.util.List;
 
 public class RoutingStrategyConfigurationDialog extends FailoverStrategyEditor {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.createroutingstrategy.console.resources.CreateRoutingStrategyResources");
-    private static final String NAME = "strategy.configure.name";
-    private static final String VALUE = "strategy.configure.value";
+    private static final String NAME = "failover.configure.name";
+    private static final String VALUE = "failover.configure.value";
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
