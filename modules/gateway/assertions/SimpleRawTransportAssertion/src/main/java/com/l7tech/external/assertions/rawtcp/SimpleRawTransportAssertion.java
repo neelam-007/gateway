@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.rawtcp;
 
 import com.l7tech.external.assertions.rawtcp.server.SimpleRawTransportAdminImpl;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
@@ -23,6 +24,8 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
     public static final String LISTEN_PROP_READ_TIMEOUT = "l7.raw.readTimeout";
     public static final String LISTEN_PROP_WRITE_TIMEOUT = "l7.raw.writeTimeout";
 
+    public static final String VAR_RAW_TCP_REASON_CODE = "rawtcp.reasonCode";
+
     private MessageTargetableSupport responseTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
     private MessageTargetableSupport requestTarget = new MessageTargetableSupport(TargetMessageType.REQUEST, false);
     private String maxResponseBytesText = Long.toString(DEFAULT_RESPONSE_SIZE_LIMIT);
@@ -30,7 +33,7 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
     private int writeTimeoutMillis = DEFAULT_WRITE_TIMEOUT;
     private int readTimeoutMillis = DEFAULT_READ_TIMEOUT;
     private String targetHost = null;
-    private int targetPort = 13224;
+    private String targetPort = "13224";
 
     public String getTargetHost() {
         return targetHost;
@@ -40,11 +43,11 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         this.targetHost = targetHost;
     }
 
-    public int getTargetPort() {
+    public String getTargetPort() {
         return targetPort;
     }
 
-    public void setTargetPort(int targetPort) {
+    public void setTargetPort(String targetPort) {
         this.targetPort = targetPort;
     }
 
@@ -195,12 +198,16 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         return requestTarget.getMessageTargetVariablesUsed().withExpressions(
             responseContentType,
             targetHost,
-                maxResponseBytesText
+                maxResponseBytesText,
+                targetPort
         ).asArray();
     }
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return responseTarget.getMessageTargetVariablesSet().with( requestTarget.getMessageTargetVariablesSet() ).asArray();
+        MessageTargetableSupport.VariablesSet variablesSet = responseTarget.getMessageTargetVariablesSet();
+        variablesSet.add(requestTarget.getMessageTargetVariablesSet());
+        variablesSet.addVariables(new VariableMetadata(VAR_RAW_TCP_REASON_CODE, false, false, VAR_RAW_TCP_REASON_CODE, false, DataType.INTEGER));
+        return variablesSet.asArray();
     }
 }

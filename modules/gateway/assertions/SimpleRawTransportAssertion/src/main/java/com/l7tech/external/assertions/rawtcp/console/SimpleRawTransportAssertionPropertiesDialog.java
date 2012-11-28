@@ -14,6 +14,7 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
 
@@ -87,7 +88,17 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         validator = new InputValidator(this,getTitle());
         validator.constrainTextFieldToBeNonEmpty("Response content type", responseContentTypeField, null);
         validator.constrainTextFieldToBeNonEmpty("Target host", targetHostField, null);
-        validator.constrainTextFieldToNumberRange("Port", targetPortField, 1, 65535);
+        validator.constrainTextFieldToBeNonEmpty("Port", targetPortField, null);
+        validator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                String[] tmp = Syntax.getReferencedNames(targetPortField.getText(), false);
+                if (tmp != null && tmp.length > 0) {
+                    return null;
+                }
+                return validator.buildTextFieldNumberRangeValidationRule("Port", targetPortField, 1, 65535, false).getValidationError();
+            }
+        });
         validator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
@@ -140,7 +151,7 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
     @Override
     public void setData(SimpleRawTransportAssertion assertion) {
         targetHostField.setText(assertion.getTargetHost());
-        targetPortField.setText(String.valueOf(assertion.getTargetPort()));
+        targetPortField.setText(assertion.getTargetPort());
         responseContentTypeField.setText(assertion.getResponseContentType());
 
         populateAndUpdateRequestSourceComboBox(assertion);
@@ -180,7 +191,7 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
 
         assertion.setResponseContentType( responseContentTypeField.getText());
         assertion.setTargetHost(targetHostField.getText());
-        assertion.setTargetPort(Integer.parseInt(targetPortField.getText()));
+        assertion.setTargetPort(targetPortField.getText());
         assertion.setRequestTarget( (MessageTargetableSupport) requestSourceComboBox.getSelectedItem() );
 
         if (saveAsContextVariableRadioButton.isSelected()) {
