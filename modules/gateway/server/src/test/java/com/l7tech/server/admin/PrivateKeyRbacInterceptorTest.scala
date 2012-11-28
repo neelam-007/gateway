@@ -100,12 +100,12 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
     "fail CHECK_ARG_OPERATION precheck that requires creating a dummy entity to check, with a wildcard keystore id, if lacking UPDATE ALL SSG_KEYSTORE" in new DefaultScope {
       // This particular situation isn't useful (create key without specifying which keystore?!) but it provides coverage of checkPermittedForKeystore() with wildcard keystore ID
       keyLookupWillSucceed
-      rbacServices.isPermittedForEntity(any, any, any, any) returns true  // use wildcard match, so will match the created dummy entity
+      rbacServices.isPermittedForEntity(any, any, beEqualTo(CREATE), any) returns true  // use wildcard match, so will match the created dummy entity
 
       testInterface.createKeyEntry(any, any) returns true
       interceptor.invoke(methodInvocation(createKeyEntry, new lang.Long(-1), keyAlias)) must throwA[PermissionDeniedException]
 
-      there was one(rbacServices).isPermittedForEntity(any, any, any, any)
+      there was one(rbacServices).isPermittedForEntity(any, any, beEqualTo(CREATE), any)
       there was one(rbacServices).isPermittedForAnyEntityOfType(any, any, any)
     }
 
