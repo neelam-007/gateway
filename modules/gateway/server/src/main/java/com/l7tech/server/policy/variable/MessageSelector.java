@@ -72,6 +72,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     // NOTE: Variable names must be lower case
     private static final String SSL_CIPHER_SUITE = "ssl.ciphersuite";
     private static final String SSL_KEY_SIZE = "ssl.keysize";
+    private static final String SSL_SESSION_ID = "ssl.sessionid";
 
     // NOTE: Variable names must be lower case
     private static final String AUTH_USER_PASSWORD = "password";
@@ -104,6 +105,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final Map<String, String> SERVLET_ATTRIBUTE_FIELDS = Collections.unmodifiableMap(new HashMap<String, String>() {{
         put(SSL_CIPHER_SUITE, "javax.servlet.request.cipher_suite");
         put(SSL_KEY_SIZE, "javax.servlet.request.key_size");
+        put(SSL_SESSION_ID, "javax.servlet.request.ssl_session");
     }});
 
     private static final Pattern PATTERN_PERIOD = Pattern.compile("\\.");
