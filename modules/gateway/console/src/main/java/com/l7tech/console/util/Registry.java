@@ -15,7 +15,6 @@ import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
-import com.l7tech.gateway.common.transport.http.HttpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
@@ -124,13 +123,6 @@ public abstract class Registry {
      * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     abstract public JdbcAdmin getJdbcConnectionAdmin();
-
-    /**
-     * @return the JDBC Connection and Pool managers. Never null.
-     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
-     */
-    abstract public HttpAdmin getHttpAdmin();
-
 
     /**
     * @return the Ftp Admin. Never null.
@@ -327,11 +319,6 @@ public abstract class Registry {
 
         @Override
         public JdbcAdmin getJdbcConnectionAdmin() {
-            throw new IllegalStateException(ILLEGAL_STATE_MSG);
-        }
-
-        @Override
-        public HttpAdmin getHttpAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

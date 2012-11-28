@@ -127,9 +127,7 @@ public class AsyncHttpRoutingAssertion extends HttpRoutingAssertion implements U
 
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new Java5EnumTypeMapping(HttpMethod.class, "httpMethod"),
-            new Java5EnumTypeMapping(GenericHttpRequestParams.HttpVersion.class, "httpVersion"),
-            new CollectionTypeMapping(List.class, HttpRoutingServiceParameter.class, ArrayList.class, "parameters"),
-            new BeanTypeMapping(HttpRoutingServiceParameter.class, "parameter")
+            new Java5EnumTypeMapping(GenericHttpRequestParams.HttpVersion.class, "httpVersion")
         )));
 
         meta.put(META_INITIALIZED, Boolean.TRUE);

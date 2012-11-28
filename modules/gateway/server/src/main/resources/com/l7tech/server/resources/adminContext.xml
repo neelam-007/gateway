@@ -384,10 +384,6 @@
         <constructor-arg ref="jdbcConnectionPoolManager"/>
         <constructor-arg ref="serverConfig"/>
     </bean>
-    
-    <!-- http admin servant -->
-    <bean id="httpAdmin" class="com.l7tech.server.transport.http.HttpAdminImpl">
-    </bean>
 
     <!-- FTP admin servant -->
     <bean id="ftpAdmin" class="com.l7tech.server.transport.ftp.FtpAdminImpl">

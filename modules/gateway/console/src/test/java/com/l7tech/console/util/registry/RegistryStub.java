@@ -26,7 +26,6 @@ import com.l7tech.gateway.common.transport.*;
 import com.l7tech.gateway.common.transport.email.*;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdminStub;
-import com.l7tech.gateway.common.transport.http.HttpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdminStub;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -113,11 +112,6 @@ public class RegistryStub extends Registry {
 
     @Override
       public JdbcAdmin getJdbcConnectionAdmin() {
-        return null;
-    }
-
-    @Override
-    public HttpAdmin getHttpAdmin() {
         return null;
     }
 

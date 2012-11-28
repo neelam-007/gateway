@@ -11,7 +11,6 @@ import com.l7tech.console.table.HttpParamRuleTableHandler;
 import com.l7tech.console.table.HttpRuleTableHandler;
 import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.transport.http.HttpAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -158,14 +157,12 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JButton trustedServerCertsButton;
     private JComboBox tlsVersionComboBox;
     private ByteLimitPanel byteLimitPanel;
-    private JButton testButton;
     private JCheckBox forceIncludeRequestBodyCheckBox;
     private JComboBox httpVersionComboBox;
 
     private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
     private final BaseAction okButtonAction;
-    private final BaseAction testButtonAction;
     private boolean confirmed = false;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.HttpRoutingAssertionDialog");
@@ -176,8 +173,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private InputValidator inputValidator;
     private String tlsCipherSuites;
     private Set<EntityHeader> tlsTrustedCerts;
-
-    private HttpRoutingAssertion testAssertion;//holds the test values for the assertion, until user Ok's the save.
 
     /**
      * Creates new form ServicePanel
@@ -207,24 +202,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             @Override
             protected void performAction() {
                 ok();
-            }
-        };
-
-        final Window windowOwner = owner.getOwner();
-        testButtonAction = new BaseAction() {
-            @Override
-            public String getName() {
-                return resources.getString("testButton.text");
-            }
-
-            @Override
-            protected String iconResource() {
-                return null;
-            }
-
-            @Override
-            protected void performAction() {
-                testDialog(windowOwner);
             }
         };
 
@@ -535,7 +512,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         initializeProxyTab();
 
         inputValidator.attachToButton(okButton, okButtonAction);
-        inputValidator.attachToButton(testButton, testButtonAction);
         okButton.setEnabled( !readOnly );
 
         cancelButton.addActionListener(new ActionListener() {
@@ -745,10 +721,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     }
 
     private void ok() {
-        ok(true);
-    }
-
-    private void ok(boolean disposeParam) {
         // Do checks before we start changing the assertion, so Cancel will work as expected
         if (wssPromoteRadio.isSelected() && null == wssPromoteActorCombo.getSelectedItem()) {
             JOptionPane.showMessageDialog(okButton, resources.getString("actorRequiredMessage"));
@@ -910,19 +882,10 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             assertion.setTlsTrustedCertNames(names);
         }
 
-        if(disposeParam){
-            //if this is not null, means user triggered the test button, we need to capture the updated values and update the assertion
-            if(testAssertion!=null){
-                assertion.setTestParameters(testAssertion.getTestParameters());
-                assertion.setTestContentType(testAssertion.getTestContentType());
-                assertion.setTestBodyMessage(testAssertion.getTestBodyMessage());
-                assertion.setTestHttpMethod(testAssertion.getTestHttpMethod());
-                assertion.setTestForceIncludeRequestBody(testAssertion.isTestForceIncludeRequestBody());
-            }
-            confirmed = true;
-            fireEventAssertionChanged(assertion);
-            this.dispose();
-        }
+        confirmed = true;
+        fireEventAssertionChanged(assertion);
+
+        this.dispose();
     }
 
     private void updateAuthMethod() {
@@ -1150,76 +1113,5 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     public boolean isConfirmed() {
         return confirmed;
-    }
-
-    private void testDialog(final Window owner){
-        ok(false);//ok button saves all the values into the assertion object that we need to pass in the test method
-
-        // check url before accepting
-        String url = urlPanel.getText();
-        String[] ipListToTest = null;
-
-        if (!ipListPanel.isURLsEnabled()) {
-            ipListToTest=new String[] {url};
-        } else {
-            ipListToTest=ipListPanel.getAddresses();
-        }
-
-        boolean hasContextVariables = false;
-        int totalNumOfContextVariablesUsed=0;
-        for(String ip: ipListToTest){
-            final int numOfContextVariablesUsed = Syntax.getReferencedNames(ip).length;
-            if (numOfContextVariablesUsed > 0) {
-                totalNumOfContextVariablesUsed+=numOfContextVariablesUsed;
-                hasContextVariables=true;
-            }
-        }
-
-        if(hasContextVariables){
-            String msg = "Unable to test a URL containing context variable" + (totalNumOfContextVariablesUsed > 1 ? "s." : ".");
-            DialogDisplayer.showMessageDialog(
-                    HttpRoutingAssertionDialog.this,
-                    msg,
-                    resources.getString("dialog.test.title"),
-                    (msg == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
-                    null);
-            return;
-        }
-        
-        if(assertion.isPassthroughHttpAuthentication()){
-            String msg = "Unable to test Security - Use HTTP Credentials from Request.";
-            DialogDisplayer.showMessageDialog(
-                    HttpRoutingAssertionDialog.this,
-                    msg,
-                    resources.getString("dialog.test.title"),
-                    (msg == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
-                    null);
-            return;
-        }
-
-        testAssertion = assertion.clone();//a copy for our test
-
-        HttpRoutingAssertionTestDialog dspd = new HttpRoutingAssertionTestDialog(owner, testAssertion, ipListToTest);
-        dspd.pack();
-        Utilities.centerOnScreen(dspd);
-        dspd.setVisible(true);
-
-        //allows us to hold the values, w/o messing the original assertion values until the user clicks on save
-        testAssertion.setTestParameters(dspd.getParameters());
-        testAssertion.setTestContentType(dspd.getTestContentType());
-        testAssertion.setTestBodyMessage(dspd.getTestBodyMessage());
-        testAssertion.setTestHttpMethod(dspd.getHttpMethod());
-        testAssertion.setTestForceIncludeRequestBody(dspd.isForceIncludeRequestBody());
-
-        dspd=null;
-    }
-
-    private HttpAdmin getHttpAdmin() {
-        Registry reg = Registry.getDefault();
-        if (!reg.isAdminContextPresent()) {
-            //logger.warning("Cannot get HTTP Admin due to no Admin Context present.");
-            return null;
-        }
-        return reg.getHttpAdmin();
     }
 }
