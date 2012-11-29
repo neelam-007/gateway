@@ -28,7 +28,6 @@ import com.l7tech.server.trace.TracePolicyEnforcementContext;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
-import javax.inject.Inject;
 import javax.wsdl.Binding;
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
