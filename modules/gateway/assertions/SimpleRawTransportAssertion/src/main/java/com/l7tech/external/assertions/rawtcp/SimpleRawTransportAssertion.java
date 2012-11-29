@@ -39,6 +39,19 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         return targetHost;
     }
 
+    /**
+     * This method exists for backwards compatibility with serialized SimpleRawTransportAssertion.
+     *
+     * This method simply calls {@link #setTargetPort(String)} by converting the given int to String
+     *
+     * @deprecated Use {@link #setTargetPort(String)} instead.
+     * @see #setTargetPort(String)
+     */
+    @Deprecated
+    public void setTargetPort(int targetPort) {
+        setTargetPort(Integer.toString(targetPort));
+    }
+
     public void setTargetHost(String targetHost) {
         this.targetHost = targetHost;
     }
