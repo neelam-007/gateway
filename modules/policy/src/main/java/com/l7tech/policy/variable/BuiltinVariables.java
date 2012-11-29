@@ -25,6 +25,7 @@ public class BuiltinVariables {
 
     public static final String SSGNODE_NAME = "ssgnode.name";
     public static final String SSGNODE_ID = "ssgnode.id";
+    public static final String SSGNODE_IP = "ssgnode.ip";
     public static final String SSGNODE_BUILD = "ssgnode.build";
 
     public static final String PREFIX_GATEWAY_TIME = "gateway.time";
@@ -174,6 +175,7 @@ public class BuiltinVariables {
 
             new VariableMetadata(SSGNODE_NAME, false, false, null, false),
             new VariableMetadata(SSGNODE_ID, false, false, null, false),
+            new VariableMetadata(SSGNODE_IP, false, false, null, false),
             new VariableMetadata(SSGNODE_BUILD, true, false, null, false, DataType.UNKNOWN),
 
             new VariableMetadata(BuiltinVariables.PREFIX_REQUEST, true, false, null, true, DataType.MESSAGE),

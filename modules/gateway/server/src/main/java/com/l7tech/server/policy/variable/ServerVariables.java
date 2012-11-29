@@ -28,6 +28,7 @@ import com.l7tech.server.trace.TracePolicyEnforcementContext;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
+import javax.inject.Inject;
 import javax.wsdl.Binding;
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
@@ -542,6 +543,13 @@ public class ServerVariables {
                 Object get(String name, PolicyEnforcementContext context) {
                     ClusterNodeInfo inf = getSelfNodeInfCached();
                     return inf == null ? null : inf.getNodeIdentifier();
+                }
+            }),
+            new Variable(BuiltinVariables.SSGNODE_IP, new Getter() {
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    ClusterNodeInfo inf = clusterInfoManager == null ? null : clusterInfoManager.getSelfNodeInf();
+                    return inf == null ? null : inf.getAddress();
                 }
             }),
 
