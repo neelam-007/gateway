@@ -4,12 +4,13 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.test.BugNumber;
-import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.io.IOException;
 
-public class SimpleRawTransportAssertionTest extends TestCase {
+import static junit.framework.Assert.assertEquals;
+
+public class SimpleRawTransportAssertionTest {
 
     @Test
     @BugNumber(9621)
@@ -32,7 +33,7 @@ public class SimpleRawTransportAssertionTest extends TestCase {
         registry.registerAssertion(SimpleRawTransportAssertion.class);
         WspReader wspr = new WspReader(registry);
         AllAssertion assertion = (AllAssertion) wspr.parsePermissively(xml, WspReader.Visibility.includeDisabled);
-        assertEquals("9999", ((SimpleRawTransportAssertion)assertion.getChildren().get(0)).getTargetPort() );
+        assertEquals("9999", ((SimpleRawTransportAssertion) assertion.getChildren().get(0)).getTargetPort());
 
     }
 }
