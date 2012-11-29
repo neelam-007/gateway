@@ -27,7 +27,7 @@ import static com.l7tech.internal.license.LicenseGenerator.*;
 public class BatchLicenseGenerator {
 
     // license details record fields
-    private static final int NUMBER_OF_FIELDS = 13;
+    private static final int NUMBER_OF_FIELDS = 14;
     private static final int LICENSEE_NAME_FIELD = 0;       //required
     private static final int LICENSEE_EMAIL_FIELD = 1;
     private static final int HOST_FIELD = 2;
@@ -41,6 +41,7 @@ public class BatchLicenseGenerator {
     private static final int FEATURE_LABEL_FIELD = 10;
     private static final int FEATURE_SET_CODES_FIELD = 11;  //required
     private static final int NUMBER_FIELD = 12;             //required
+    private static final int IDENTIFIER_FIELD = 13;         //required
 
     // license name segments
     private static final char DASH_SEPARATOR = '_';
@@ -173,6 +174,14 @@ public class BatchLicenseGenerator {
         }
 
         licenseDetailsRecord.setDescription(description);
+
+        String identifier = record.get(IDENTIFIER_FIELD);
+
+        if(identifier.isEmpty()) {
+            throw new LicenseGeneratorException("Identifier is required: " + record.toString());
+        }
+
+        licenseDetailsRecord.setIdentifier(identifier);
 
         String featureSetCodes = record.get(FEATURE_SET_CODES_FIELD).trim();
 
@@ -336,6 +345,7 @@ public class BatchLicenseGenerator {
         private String minorVersion;
         private String featureLabel;
         private String description;
+        private String identifier;
 
         private Date expiryDate;
         private ArrayList<String> featureSets;
@@ -427,6 +437,14 @@ public class BatchLicenseGenerator {
 
         public void setDescription(String description) {
             this.description = description;
+        }
+
+        public String getIdentifier() {
+            return identifier;
+        }
+
+        public void setIdentifier(String identifier) {
+            this.identifier = identifier;
         }
 
         public Date getExpiryDate() {

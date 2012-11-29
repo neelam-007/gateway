@@ -10,10 +10,7 @@ import java.security.*;
 import java.security.cert.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Handler;
-import java.util.logging.Level;
 import java.util.logging.LogManager;
-import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -35,7 +32,7 @@ public class BatchLicenseGeneratorMain {
     private static final String EULA_PROPERTIES_FILE_PATH = "./batchlicensegenerator_eula.properties";
 
     private static final String OPTION_HELP_OPT = "h";
-    private static final String OPTION_HELP_DESCRIPTION = "print this message";
+    private static final String OPTION_HELP_DESCRIPTION = "Print this message";
     private static final String OPTION_FILE_OPT = "f";
     private static final String OPTION_FILE_ARG_NAME = "file";
     private static final String OPTION_FILE_DESCRIPTION = "Specify CSV file path from which to read license details";
@@ -48,13 +45,16 @@ public class BatchLicenseGeneratorMain {
     private static final String OPTION_SAVE_BOTH_SIGNED_AND_UNSIGNED_LICENSES_OPT = "b";
     private static final String OPTION_SAVE_BOTH_SIGNED_AND_UNSIGNED_LICENSES_DESCRIPTION =
             "Save both signed and unsigned licenses";
+    private static final String OPTION_VERBOSE_OPT = "v";
+    private static final String OPTION_VERBOSE_DESCRIPTION = "Print paths of created license archives";
 
     private static final char UNDERSCORE_SEPARATOR = '_';
     private static final String UNSIGNED_PREFIX = "Unsigned_";
-    private static final String ZIP_FILE_EXTENSION = ".zip";
+    private static final String LICENSE_ARCHIVE_FILE_EXTENSION = ".lic";
 
     private static boolean saveSignedLicenses = true;
     private static boolean saveUnsignedLicenses = false;
+    private static boolean printLicensePaths = false;
 
     private static String eulaFilePath;
     private static String licenseDetailsFile;
@@ -106,24 +106,28 @@ public class BatchLicenseGeneratorMain {
             for (BatchLicenseGenerator.LicenseDetailsRecord record : licenceDetailsRecords) {
                 Map<String, Document> unsignedLicenses = batchGenerator.generateLicenses(record, eulaText);
 
-                String fileNameSuffix = UNDERSCORE_SEPARATOR + generationTimeFormatted + ZIP_FILE_EXTENSION;
+                String signedArchiveFileName = record.getLicensee() +
+                        UNDERSCORE_SEPARATOR + record.getProductCode() +
+                        UNDERSCORE_SEPARATOR + generationTimeFormatted +
+                        UNDERSCORE_SEPARATOR + record.getIdentifier() +
+                        LICENSE_ARCHIVE_FILE_EXTENSION;
 
                 if(saveUnsignedLicenses) {
-                    String unsignedArchiveFileName = UNSIGNED_PREFIX + record.getLicensee() +
-                            UNDERSCORE_SEPARATOR + record.getProductCode() + fileNameSuffix;
-
+                    String unsignedArchiveFileName = UNSIGNED_PREFIX + signedArchiveFileName;
                     File archiveUnsigned = createLicenseArchive(unsignedLicenses, unsignedArchiveFileName);
-                    System.out.println(archiveUnsigned.getAbsolutePath());
+
+                    if(printLicensePaths) {
+                        System.out.println(archiveUnsigned.getAbsolutePath());
+                    }
                 }
 
                 if(saveSignedLicenses) {
                     Map<String,Document> signedLicenses = batchGenerator.signLicenses(unsignedLicenses);
-
-                    String signedArchiveFileName = record.getLicensee() +
-                            UNDERSCORE_SEPARATOR + record.getProductCode() + fileNameSuffix;
-
                     File archiveSigned = createLicenseArchive(signedLicenses, signedArchiveFileName);
-                    System.out.println(archiveSigned.getAbsolutePath());
+
+                    if(printLicensePaths) {
+                        System.out.println(archiveSigned.getAbsolutePath());
+                    }
                 }
             }
         } catch (LicenseGeneratorException e) {
@@ -164,8 +168,11 @@ public class BatchLicenseGeneratorMain {
         Option saveBothOpt = OptionBuilder.withDescription(OPTION_SAVE_BOTH_SIGNED_AND_UNSIGNED_LICENSES_DESCRIPTION)
                 .create(OPTION_SAVE_BOTH_SIGNED_AND_UNSIGNED_LICENSES_OPT);
 
+        Option verboseOpt = OptionBuilder.withDescription(OPTION_VERBOSE_DESCRIPTION)
+                .create(OPTION_VERBOSE_OPT);
+
         if(0 == commandLineArguments.length) {
-            printHelp(fileOpt, eulaOpt, saveUnsignedOnlyOpt, saveBothOpt, helpOpt);
+            printHelp(fileOpt, eulaOpt, saveUnsignedOnlyOpt, saveBothOpt, verboseOpt, helpOpt);
             System.exit(1);
         }
 
@@ -180,6 +187,7 @@ public class BatchLicenseGeneratorMain {
         runOptions.addOption(fileOpt);
         runOptions.addOption(eulaOpt);
         runOptions.addOptionGroup(licenseSaveOptGroup);
+        runOptions.addOption(verboseOpt);
 
         CommandLineParser parser = new PosixParser();
         CommandLine cmd = null;
@@ -188,13 +196,13 @@ public class BatchLicenseGeneratorMain {
             cmd = parser.parse(helpOptions, commandLineArguments, true);
 
             if(cmd.hasOption(OPTION_HELP_OPT)) {
-                printHelp(fileOpt, eulaOpt, saveUnsignedOnlyOpt, saveBothOpt, helpOpt);
+                printHelp(fileOpt, eulaOpt, saveUnsignedOnlyOpt, saveBothOpt, verboseOpt, helpOpt);
                 System.exit(0);
             }
 
             cmd = parser.parse(runOptions, commandLineArguments);
         } catch (ParseException e) {
-            printHelp(e.getMessage(), fileOpt, eulaOpt, saveUnsignedOnlyOpt, saveBothOpt, helpOpt);
+            printHelp(e.getMessage(), fileOpt, eulaOpt, saveUnsignedOnlyOpt, saveBothOpt, verboseOpt, helpOpt);
             System.exit(1);
         }
 
@@ -211,6 +219,10 @@ public class BatchLicenseGeneratorMain {
         } else if(cmd.hasOption(saveBothOpt.getOpt())) {
             saveSignedLicenses = true;
             saveUnsignedLicenses = true;
+        }
+
+        if(cmd.hasOption(verboseOpt.getOpt())) {
+            printLicensePaths = true;
         }
     }
 
