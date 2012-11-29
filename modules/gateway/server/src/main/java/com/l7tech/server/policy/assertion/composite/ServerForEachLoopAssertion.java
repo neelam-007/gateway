@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
@@ -88,14 +87,30 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
     }
 
     private boolean isExitLoop(PolicyEnforcementContext context) {
-        boolean exit = false;
+        boolean exit;
         try {
-            exit =  Boolean.parseBoolean((String) context.getVariable(breakVar));
+            final Object breakValue = context.getVariable(breakVar);
+            exit = isTrue(breakValue);
         } catch (NoSuchVariableException e) {
-            getAudit().logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, breakVar);
+            return false;
         }
         return exit;
     }
+
+    private boolean isTrue(Object val) {
+        if (val instanceof Boolean) {
+            return (Boolean) val;
+        } else if (val instanceof String) {
+            String s = (String) val;
+            return Boolean.parseBoolean(s);
+        } else if (val instanceof Number) {
+            Number number = (Number) val;
+            return 0L != number.longValue();
+        } else {
+            return false;
+        }
+    }
+
 
     private Object findValues(PolicyEnforcementContext context) {
         // Use getVariableMap() rather than getVariable() so that empty collections do not result in NoSuchVariableException (Bug #12309)
