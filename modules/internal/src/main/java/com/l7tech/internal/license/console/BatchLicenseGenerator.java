@@ -3,6 +3,7 @@ package com.l7tech.internal.license.console;
 import com.l7tech.common.io.csv.CSVPreference;
 import com.l7tech.common.io.csv.CSVReader;
 import com.l7tech.internal.license.LicenseGenerator;
+import com.l7tech.internal.license.LicenseGeneratorFeatureSets;
 import com.l7tech.internal.license.LicenseSpec;
 import com.l7tech.server.GatewayFeatureSets;
 import org.w3c.dom.Document;
@@ -230,6 +231,10 @@ public class BatchLicenseGenerator {
         spec.setFeatureLabel(licenseDetails.getFeatureLabel());
         spec.setEulaText(eula);
 
+        for(String feature : licenseDetails.getFeatureSets()) {
+            spec.addRootFeature(feature);
+        }
+
         for(int j = 0; j < licenseCount; j++) {
             spec.setLicenseId(LicenseGenerator.generateRandomId(RANDOM));
             Document license = LicenseGenerator.generateUnsignedLicense(spec, true);
@@ -289,7 +294,7 @@ public class BatchLicenseGenerator {
     private String getFeatureSet(String featureSetCode) throws LicenseGeneratorException {
         String featureSetName = FEATURE_SETS.get(featureSetCode);
 
-        if(null == featureSetName || !GatewayFeatureSets.getRootFeatureSets().containsKey(featureSetName)) {
+        if(null == featureSetName || !LicenseGeneratorFeatureSets.getProductProfiles().containsKey(featureSetName)) {
             throw new LicenseGeneratorException("Unrecognized feature set \"" + featureSetCode + "\".");
         }
 
