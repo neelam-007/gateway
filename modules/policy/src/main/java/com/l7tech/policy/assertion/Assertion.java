@@ -51,6 +51,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     private transient Long ownerPolicyOid = null;
     private transient boolean locked = false;
     private boolean enabled = true;
+    private boolean prevEnabled = true;
     private @Nullable Comment assertionComment;
 
     // 2.1 CustomAssertion compatibility
@@ -89,6 +90,15 @@ public abstract class Assertion implements Cloneable, Serializable {
         this.enabled = enabled;
     }
 
+    public boolean isPrevEnabled() {
+        return prevEnabled;
+    }
+
+    public void setPrevEnabled(boolean prevEnabled) {
+        checkLocked();
+        this.prevEnabled = prevEnabled;
+    }
+
     @Nullable
     public Comment getAssertionComment() {
         return assertionComment;
@@ -105,6 +115,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     public void enableAncestor() {
         CompositeAssertion parent = getParent();
         while (parent != null) {
+            parent.setPrevEnabled(parent.isEnabled());
             parent.setEnabled(true);
             parent = parent.getParent();
         }
