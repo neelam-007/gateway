@@ -173,7 +173,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
     }
 
     @Override
-    public List<? extends AbstractTreeNode> collectSearchableChildren(Class assignableFromClass, NodeFilter filter) {
+    public List<? extends AbstractTreeNode> collectSearchableChildren(Class[] assignableFromClass, NodeFilter filter) {
         // Has no searchable children; override to avoid forcing a pointless WSDL download and parse (Bug #6936)
         return Collections.emptyList();
     }

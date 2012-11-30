@@ -20,6 +20,7 @@ import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.tree.servicesAndPolicies.AlterFilterAction;
+import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.*;
@@ -207,7 +208,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JPanel mainSplitPaneRight = null;
     private JTabbedPane paletteTabbedPane;
 
-    private EditableSearchComboBox<EntityHeaderNode> searchComboBox;
+    private EditableSearchComboBox<AbstractTreeNode> searchComboBox;
     private EditableSearchComboBox<AbstractLeafPaletteNode> assertionSearchComboBox;
 
     private final JLabel searchLabel = new JLabel(resapplication.getString("Search"));
@@ -2800,22 +2801,26 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
+     * Create an editable search combo box for service and policy tree panel.
+     *
      * @return The initialized editable search combo box for service and policy tree panel.
      */
-    private EditableSearchComboBox<EntityHeaderNode> getSearchComboBox() {
+    private EditableSearchComboBox<AbstractTreeNode> getSearchComboBox() {
         if (searchComboBox == null) {
-            searchComboBox = new EditableSearchComboBox<EntityHeaderNode>(new EditableSearchComboBox.Filter() {
+            searchComboBox = new EditableSearchComboBox<AbstractTreeNode>(new EditableSearchComboBox.Filter() {
                 @Override
                 public boolean accept(Object obj) {
                     if (obj == null) return false; //this should not happen
 
-                    if (!(obj instanceof EntityHeaderNode)) return false;
-                    EntityHeaderNode headerNode = (EntityHeaderNode) obj;
+                    //look for EntityHeaderNode and FolderNode, include Folder node as search result if the
+                    //Folder name match with the search text
+                    if (!(obj instanceof EntityHeaderNode) && !(obj instanceof FolderNode)) return false;
+                    AbstractTreeNode node = (AbstractTreeNode) obj;
 
                     //match display names
                     final String searchText = this.getFilterText().toLowerCase();
                     //getName contains the URI for service nodes
-                    boolean matches = headerNode.getName().toLowerCase().contains(searchText);
+                    boolean matches = node.getName().toLowerCase().contains(searchText);
 
                     //match uri as well
                     if (obj instanceof ServiceNode) {
@@ -2836,17 +2841,18 @@ public class MainWindow extends JFrame implements SheetHolder {
             searchComboBox.setEnabled(false);
             searchLabel.setEnabled(false);
 
-            final Functions.Unary<String, EntityHeaderNode> accessorFunction = new Functions.Unary<String, EntityHeaderNode>() {
+            final Functions.Unary<String, AbstractTreeNode> accessorFunction = new Functions.Unary<String, AbstractTreeNode>() {
                 @Override
-                public String call(EntityHeaderNode abstractTreeNode) {
+                public String call(AbstractTreeNode abstractTreeNode) {
                     return abstractTreeNode.getName();
 
                 }
             };
 
-            final Functions.Unary<Icon, EntityHeaderNode> iconAccessorFunction = new Functions.Unary<Icon, EntityHeaderNode>() {
+            final Functions.Unary<Icon, AbstractTreeNode> iconAccessorFunction = new Functions.Unary<Icon, AbstractTreeNode>() {
+
                 @Override
-                public Icon call(EntityHeaderNode abstractTreeNode) {
+                public Icon call(AbstractTreeNode abstractTreeNode) {
                     return new ImageIcon(abstractTreeNode.getIcon());
                 }
             };
@@ -2860,9 +2866,9 @@ public class MainWindow extends JFrame implements SheetHolder {
             searchComboBox.setRenderer(comboBoxRenderer);
 
             //create comparator to sort the filtered items
-            searchComboBox.setComparator(new Comparator<EntityHeaderNode>() {
+            searchComboBox.setComparator(new Comparator<AbstractTreeNode>() {
                 @Override
-                public int compare(EntityHeaderNode o1, EntityHeaderNode o2) {
+                public int compare(AbstractTreeNode o1, AbstractTreeNode o2) {
                     return (o1.toString().compareToIgnoreCase(o2.toString()));
                 }
             });
@@ -3008,12 +3014,12 @@ public class MainWindow extends JFrame implements SheetHolder {
     /**
      * @return  The list of searchable service and policy nodes based on the filtering selection.
      */
-    private List<EntityHeaderNode> getAllSearchableServiceAndPolicyNodes() {
+    private List<AbstractTreeNode> getAllSearchableServiceAndPolicyNodes() {
         JTree tree = getServicesAndPoliciesTree();
         RootNode rootNode = (RootNode) tree.getModel().getRoot();
         NodeFilter filter = ((FilteredTreeModel) tree.getModel()).getFilter();
 
-        return (List<EntityHeaderNode>) rootNode.collectSearchableChildren(EntityHeaderNode.class, filter);
+        return (List<AbstractTreeNode>) rootNode.collectSearchableChildren(new Class[] {EntityHeaderNode.class, FolderNode.class}, filter);
     }
 
     /**
@@ -3024,7 +3030,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         AssertionsPaletteRootNode rootNode = (AssertionsPaletteRootNode) tree.getModel().getRoot();
         NodeFilter filter = ((FilteredTreeModel) tree.getModel()).getFilter();
 
-        return (List<AbstractLeafPaletteNode>) rootNode.collectSearchableChildren(AbstractLeafPaletteNode.class, filter);
+        return (List<AbstractLeafPaletteNode>) rootNode.collectSearchableChildren(new Class[]{AbstractLeafPaletteNode.class}, filter);
     }
 
     private JLabel getFilterStatusLabel(){

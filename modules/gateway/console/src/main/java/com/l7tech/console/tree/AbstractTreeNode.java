@@ -50,11 +50,11 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     /**
      * Get all child nodes of this AbstractTreeNode which are a subclass of a specific class
      * 
-     * @param assignableFromClass Class which all retunn nodes must be assignable from
+     * @param assignableFromClasses Classes which all return nodes must be assignable from any one of them
      * @param filter NodeFilter to filter applicable nodes
      * @return List of nodes of the type assignableFromClass
      */
-    public java.util.List<? extends AbstractTreeNode> collectSearchableChildren(Class assignableFromClass, NodeFilter filter) {
+    public java.util.List<? extends AbstractTreeNode> collectSearchableChildren(Class[] assignableFromClasses, NodeFilter filter) {
         int kidCount = getChildCount(filter);
         java.util.List<AbstractTreeNode> returnList = new ArrayList<AbstractTreeNode>();
 
@@ -62,11 +62,16 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
             TreeNode kid = getChildAt(i, filter);
             if (kid instanceof AbstractTreeNode) {
                 AbstractTreeNode node = (AbstractTreeNode) kid;
-                if (node.isSearchable(filter) && assignableFromClass.isAssignableFrom(node.getClass())){
-                    returnList.add(node);
+                if (node.isSearchable(filter)) {
+                    for (Class assignableFromClass: assignableFromClasses ) {
+                        if (assignableFromClass.isAssignableFrom(node.getClass())) {
+                            returnList.add(node);
+                            break;
+                        }
+                    }
                 }
                     
-                returnList.addAll(node.collectSearchableChildren(assignableFromClass, filter));
+                returnList.addAll(node.collectSearchableChildren(assignableFromClasses, filter));
             }
         }
         return returnList;

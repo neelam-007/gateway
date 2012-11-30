@@ -126,6 +126,11 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
         return actions.toArray(new Action[actions.size()]);
     }
 
+    @Override
+    public boolean isSearchable(NodeFilter filter) {
+        return true;
+    }
+
     /**
      * Non recursive method to determine if the entity represented by the supplied oid is a direct child
      * of this folder node. Will also return true if an alias representing this entity is in this folder
