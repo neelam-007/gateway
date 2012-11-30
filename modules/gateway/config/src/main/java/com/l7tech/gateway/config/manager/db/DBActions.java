@@ -67,8 +67,6 @@ public class DBActions {
     private long  hi;
     private int lo = MAX_LOW + 1;
 
-    private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
-
     //
     // CONSTRUCTOR
     //
@@ -166,7 +164,7 @@ public class DBActions {
             throw new FileNotFoundException("File not found '"+schemaFilePath+"'.");
         }
 
-        Map<String, String[]> upgradeMap = buildUpgradeMap(file.getParentFile());
+        Map<String, String[]> upgradeMap = DbUpgradeUtil.buildUpgradeMap(file.getParentFile());
 
         Connection conn = null;
         Statement stmt = null;
@@ -185,7 +183,7 @@ public class DBActions {
                 } else {
                     logger.info("Upgrading \"" + databaseName + "\" from " + oldVersion + "->" + upgradeInfo[0]);
 
-                    String[] statements = getStatementsFromFile(upgradeInfo[1]);
+                    String[] statements = DbUpgradeUtil.getStatementsFromFile(upgradeInfo[1]);
 
                     spammer = new ProgressTimerTask(ui);
 
@@ -750,7 +748,7 @@ public class DBActions {
             int dbCheckIndex = 0;
             boolean versionFound;
             do {
-                version = checkVersionFromDatabaseVersion(conn);
+                version = DbUpgradeUtil.checkVersionFromDatabaseVersion(conn);
                 if (version != null) {
                     return version;
                 }
@@ -763,26 +761,6 @@ public class DBActions {
          }
          return version;
      }
-
-    private String checkVersionFromDatabaseVersion(Connection conn) {
-        Statement stmt = null;
-        ResultSet rs = null;
-        String version = null;
-        try {
-            stmt = conn.createStatement();
-
-            rs = stmt.executeQuery("select current_version from ssg_version");
-            while (rs.next()) {
-                version = rs.getString("current_version");
-            }
-        } catch (SQLException e) {
-            logger.warning("Error while checking the version of the ssg in the database: " + ExceptionUtils.getMessage(e));
-        } finally {
-            ResourceUtils.closeQuietly(rs);
-            ResourceUtils.closeQuietly(stmt);
-        }
-        return version;        
-    }
 
     //checks the database version heuristically by looking for table names, columns etc. known to have been introduced
     //in particular versions. The checks are, for the most part, self contained and the code is designed to be extensible.
@@ -876,7 +854,7 @@ public class DBActions {
 
     private void createTables( DatabaseConfig databaseConfig, String dbCreateScript ) throws SQLException, IOException {
         if ( dbCreateScript != null ) {
-            String[] sql = getStatementsFromFile(dbCreateScript);
+            String[] sql = DbUpgradeUtil.getStatementsFromFile(dbCreateScript);
             if ( sql != null ) {
                 logger.info( "Creating schema for " + databaseConfig.getName() + " database" );
 
@@ -919,20 +897,6 @@ public class DBActions {
 
     private String[] getPermissionChangeStatements(DatabaseConfig databaseConfig, Set<String> hosts,  boolean doGrants) {
         return new DBPermission(databaseConfig, hosts, doGrants).getStatements();
-    }
-
-    private String[] getStatementsFromFile( final String sqlScriptFilename ) throws IOException {
-        String[] statements;
-
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new FileReader(sqlScriptFilename));
-            statements = SqlUtils.getStatementsFromReader( reader );
-        } finally {
-            ResourceUtils.closeQuietly( reader );
-        }
-
-        return statements;
     }
 
     private String[] getDbCreateStatementsFromDb(Connection dbConn) throws SQLException {
@@ -985,30 +949,6 @@ public class DBActions {
         String urlPattern = ConfigFactory.getProperty( "com.l7tech.config.dburl", DEFAULT_DB_URL );
         return MessageFormat.format( urlPattern, InetAddressUtil.getHostForUrl(hostname), Integer.toString(port), dbName );
     }
-
-    private Map<String, String[]> buildUpgradeMap(File parentDir) {
-        File[] upgradeScripts = parentDir.listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File file, String s) {
-                    return s.toUpperCase().startsWith("UPGRADE") &&
-                            s.toUpperCase().endsWith("SQL");
-                }
-        });
-
-        Pattern upgradePattern = Pattern.compile(UPGRADE_SQL_PATTERN);
-        Map<String, String[]> upgradeMap = new HashMap<String, String[]>();
-
-        for (File upgradeScript : upgradeScripts) {
-            Matcher matcher = upgradePattern.matcher(upgradeScript.getName());
-            if (matcher.matches()) {
-                String startVersion = matcher.group(1);
-                String destinationVersion = matcher.group(2);
-                upgradeMap.put(startVersion, new String[]{destinationVersion, upgradeScript.getAbsolutePath()});
-            }
-        }
-        return upgradeMap;
-    }
-
 
     private boolean doDbUpgrade(DatabaseConfig databaseConfig, String schemaFilePath, String currentVersion, String dbVersion, DBActionsListener ui) throws IOException {
         boolean isOk;

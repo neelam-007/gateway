@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.setup;
 
 import com.l7tech.server.util.DerbyDbHelper;
+import com.l7tech.server.util.SchemaUpdater;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.springframework.core.io.Resource;

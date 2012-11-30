@@ -1,6 +1,6 @@
 package com.l7tech.server.ems;
 
-import static com.l7tech.server.ems.setup.SchemaUpdater.SchemaException;
+import static com.l7tech.server.util.SchemaUpdater.SchemaException;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JdkLoggerConfigurator;

@@ -1,7 +1,7 @@
-package com.l7tech.server.ems.setup;
+package com.l7tech.server.util;
 
 /**
- * Component for update of the ESM database schema.
+ * Component for update of a database schema.
  */
 public interface SchemaUpdater {
 
