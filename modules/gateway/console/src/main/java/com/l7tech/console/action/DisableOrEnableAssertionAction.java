@@ -9,7 +9,6 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Logger;
@@ -69,25 +68,7 @@ public abstract class DisableOrEnableAssertionAction extends NodeAction {
      */
     private List<AssertionTreeNode> getAllSelectedAssertionNodes() {
         final JTree policyTree = TopComponents.getInstance().getPolicyTree();
-        List<TreePath> paths = new ArrayList(Arrays.asList(policyTree.getSelectionPaths()));
-
-        // Remove those child paths
-        int idx = 0;
-        while (idx < paths.size()) {
-            TreePath current = paths.get(idx);
-            for (int i = ++idx; i < paths.size(); ) {
-                TreePath next = paths.get(i);
-                if (current.isDescendant(next)) {
-                    paths.remove(i);
-                } else if (next.isDescendant(current)) {
-                    paths.remove(--idx);
-                    break;
-                } else {
-                    i++;
-                }
-            }
-        }
-
+        TreePath[] paths = policyTree.getSelectionPaths();
         List<AssertionTreeNode> nodeList = new ArrayList<AssertionTreeNode>();
 
         if (paths != null) {
@@ -106,10 +87,7 @@ public abstract class DisableOrEnableAssertionAction extends NodeAction {
     private void disableAssertion(AssertionTreeNode node) {
         // Update the disable status of the assertion associated with the node.
         Assertion assertion = node.asAssertion();
-
-        assertion.setPrevEnabled(assertion.isEnabled());
         assertion.setEnabled(false);
-
         // Update the disable status of its descendant.
         if (assertion instanceof CompositeAssertion) {
             ((CompositeAssertion)assertion).disableDescendant();
@@ -123,14 +101,7 @@ public abstract class DisableOrEnableAssertionAction extends NodeAction {
     private void enableAssertion(AssertionTreeNode node) {
         // Update the enable status of the assertion associated with the node.
         Assertion assertion = node.asAssertion();
-
-        assertion.setPrevEnabled(assertion.isEnabled());
         assertion.setEnabled(true);
-
-        if (assertion instanceof CompositeAssertion) {
-            ((CompositeAssertion) assertion).enableDescendant();
-        }
-
         // Update the enable status of its ancestor.
         assertion.enableAncestor();
     }

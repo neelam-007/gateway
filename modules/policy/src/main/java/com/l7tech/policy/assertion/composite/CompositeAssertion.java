@@ -144,32 +144,17 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     }
 
     /**
-     * Disable all children if the composite assertion is to be disabled from enabled.
-     *
-     * Pre: the composite assertion was enabled.
+     * Disable all children if this assertion is a composite assertion and disabled.
      */
     public void disableDescendant() {
         for (Assertion child: children) {
-            child.setPrevEnabled(child.isEnabled());
-            child.setEnabled(false);  // set false, since the parent assertion is disabled, then all child assertion must be disabled.
+            // If it has been diabled, then just skip it and check the next child.
+            if (!child.isEnabled()) continue;
+
+            child.setEnabled(false);
 
             // If the child is someones' parent, then disable its descendant too.
             if (child instanceof CompositeAssertion) ((CompositeAssertion)child).disableDescendant();
-        }
-    }
-
-    /**
-     * Enable all children based on children's previous enable status, if the composite assertion is to be enabled from disabled.
-     *
-     * Pre: the composite assertion was disabled.
-     */
-    public void enableDescendant() {
-        for (Assertion child: children) {
-            child.setEnabled(child.isPrevEnabled());
-            child.setPrevEnabled(false); // set false, since the previous status of the composite assertion is disabled, which means all children previous status were in disabled.
-
-            // If the child is someones' parent, then disable its descendant too.
-            if (child instanceof CompositeAssertion) ((CompositeAssertion)child).enableDescendant();
         }
     }
 
