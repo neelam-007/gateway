@@ -547,7 +547,7 @@ public class ServerVariables {
             new Variable(BuiltinVariables.SSGNODE_IP, new Getter() {
                 @Override
                 Object get(String name, PolicyEnforcementContext context) {
-                    ClusterNodeInfo inf = clusterInfoManager == null ? null : clusterInfoManager.getSelfNodeInf();
+                    ClusterNodeInfo inf = getSelfNodeInfCached();
                     return inf == null ? null : inf.getAddress();
                 }
             }),
