@@ -8,12 +8,10 @@ import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
-import com.l7tech.server.policy.bundle.BundleResolver;
-import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
-import com.l7tech.server.policy.bundle.PolicyUtils;
-import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
+import com.l7tech.server.policy.bundle.*;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Pair;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.context.ApplicationEvent;
@@ -21,6 +19,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.io.ByteArrayOutputStream;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -174,20 +173,68 @@ public class OAuthInstallerAdminImplTest {
     }
 
     /**
-     * The same policy is contained in more than one bundle. This test validates that all policies are logically
-     * equivalent. If not then two policies / service could refer to the same policy with the same guid but receive
-     * a different policy.
+     * The same policy is contained in more than one bundle. This test validates that all policies with the same guid
+     * are logically equivalent.
+     * If not then two policies / service could refer to the same policy with the same guid but receive an unexpected
+     * implementation of that policy.
      */
     @Test
-    @Ignore
     public void testValidateTheSamePoliciesAreIdentical() throws Exception {
-        fail("Must implement to check if all bundles with the same policy guid are logically equivalent");
 
-        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, ApplicationContexts.getTestApplicationContext());
+        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
+        final OAuthToolkitBundleResolver resolver = new OAuthToolkitBundleResolver(bundleInfos);
+        final List<BundleInfo> allBundles = resolver.getResultList();
 
-        final List<BundleInfo> allBundles = admin.getAllOtkComponents();
+        // Collect all policies from each bundle
+        Map<String, Map<String, Element>> bundleToAllPolicies = new HashMap<String, Map<String, Element>>();
+        for (BundleInfo aBundle : allBundles) {
+            final Map<String, Element> guidToElementMap = new HashMap<String, Element>();
+            final Document policyDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.POLICY, false);
+            final List<Element> enumPolicyElms = GatewayManagementDocumentUtilities.getEntityElements(policyDocument.getDocumentElement(), "Policy");
+            for (Element policyElm : enumPolicyElms) {
+                final String guid = policyElm.getAttribute("guid");
+                guidToElementMap.put(guid, policyElm);
+            }
 
+            bundleToAllPolicies.put(aBundle.getId(), guidToElementMap);
+        }
 
+        // Organise all policies with the same guid
+        Map<String, List<Element>> guidToPolicyElms = new HashMap<String, List<Element>>();
+
+        for (Map.Entry<String, Map<String, Element>> entry : bundleToAllPolicies.entrySet()) {
+            System.out.println("Bundle: " + entry.getKey());
+            final Map<String, Element> value = entry.getValue();
+            for (Map.Entry<String, Element> elementEntry : value.entrySet()) {
+                final String guid = elementEntry.getKey();
+                if (!guidToPolicyElms.containsKey(guid)) {
+                    guidToPolicyElms.put(guid, new ArrayList<Element>());
+                }
+                guidToPolicyElms.get(guid).add(elementEntry.getValue());
+                System.out.println("\t" + guid);
+            }
+        }
+
+        // Validate all policies are identical
+        for (Map.Entry<String, List<Element>> entry : guidToPolicyElms.entrySet()) {
+            final String guid = entry.getKey();
+            final List<Element> policyElms = entry.getValue();
+
+            System.out.println("Guid: " + guid + " has " + policyElms.size() + " occurrences.");
+
+            String canonicalXml = null;
+            // Validate all policies for this guid are identical
+            for (Element policyElm : policyElms) {
+                final ByteArrayOutputStream byteOutExpected = new ByteArrayOutputStream();
+                XmlUtil.canonicalize(policyElm, byteOutExpected);
+                final String policyCanonical = new String(byteOutExpected.toByteArray());
+                if (canonicalXml == null) {
+                    canonicalXml = policyCanonical;
+                }
+
+                Assert.assertEquals("Inconsistent policy XML found for policy '" + guid + "'", canonicalXml, policyCanonical);
+            }
+        }
     }
 
     @Test
@@ -256,6 +303,9 @@ public class OAuthInstallerAdminImplTest {
                 if (applicationEvent instanceof InstallPolicyBundleEvent) {
                     InstallPolicyBundleEvent installEvent = (InstallPolicyBundleEvent) applicationEvent;
                     final PreBundleSavePolicyCallback savePolicyCallback = installEvent.getPreBundleSavePolicyCallback();
+                    if (savePolicyCallback == null) {
+                        fail("Policy call back should be configured.");
+                    }
                     final BundleInfo bundleInfo = installEvent.getContext().getBundleInfo();
 
                     try {
@@ -326,6 +376,13 @@ public class OAuthInstallerAdminImplTest {
         System.out.println(dbSchema);
         assertNotNull(dbSchema);
         assertFalse(dbSchema.trim().isEmpty());
+    }
+
+    @Ignore
+    @Test
+    public void testCommentReferencedFromDocs() throws Exception {
+        // check for 'grant types' on all assertion in /auth/oauth/v2/token
+        fail("Implement me");
     }
 
     private void verifyCommentAdded(Document policyResource) {
