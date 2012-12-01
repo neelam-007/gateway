@@ -1,9 +1,9 @@
 PATCH INFO
 
-This patch fixes the JSONArray to XML transformation.  This patch is made against https://github.com/douglascrockford/JSON-java/commit/90e62b0e1bd8be118f40a9bd0e660f44e224ed47
-git commit # 90e62b0e1bd8be118f40a9bd0e660f44e224ed47
+This patch fixes the JSONArray to XML transformation.  This patch is made against https://github.com/douglascrockford/JSON-java/commit/1b5a59f4285e798da1a77a9282351732c37994af
+git commit # 1b5a59f4285e798da1a77a9282351732c37994af
 
-using "diff -crB douglascrockford-JSON-java-3e3951f l7p1 > json-java-1.0-l7p1.patch"
+using "diff -rupN douglascrockford-JSON-java-3e3951f l7p1 > json-java-1.0-l7p1.patch"
 
 Currently;
 [0, 1, 2] is emitted as <array>0</array><array>1</array><array>2</array>
@@ -27,3 +27,11 @@ If a root tag name is provided, the result below is produced.
     <value>1</value>
     <value>2</value>
 </myTagName>
+
+As of patch 2;
+When transforming XML to JSON.  The library will attempt to convert numeric values into its corresponding type class and the algorithm to do this is rather buggy;
+03 is converted to an Integer of 3, which is fine.
+003 is converted to a String of 003, which is not fine as it should drop the leading 0.
+the existing code only check the first character or the first two character if the first is a minus sign.
+
+based on the client's requirement, they like to preserve the leading 0, as such, we will be removing the numeric value conversion bit.
