@@ -92,6 +92,7 @@
                 <value>com.l7tech.gateway.common.security.rbac.ScopePredicate</value>
                 <value>com.l7tech.gateway.common.security.rbac.AttributePredicate</value>
                 <value>com.l7tech.gateway.common.security.rbac.ObjectIdentityPredicate</value>
+                <value>com.l7tech.gateway.common.security.rbac.EntityFolderAncestryPredicate</value>
 
                 <!-- Audit Entities -->
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingKeys</value>
