@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
@@ -893,7 +894,6 @@ public class WspReaderTest {
         assertEquals( "Comment text", "This is not valid for XML -> \u0006", commentAssertion.getAssertionComment().getAssertionComment( Assertion.Comment.RIGHT_COMMENT ) );
     }
 
-    //@Ignore("Uses obsolete type mapping")
     @Test
     public void testForEachRoundTrip() throws Exception {
         final ForEachLoopAssertion ass = new ForEachLoopAssertion(Arrays.asList(new FalseAssertion()));
@@ -904,6 +904,34 @@ public class WspReaderTest {
         assertTrue(got instanceof ForEachLoopAssertion);
         assertEquals("things", ((ForEachLoopAssertion)got).getLoopVariableName());
     }
+
+    @Test
+    public void testOmitDisabledPreservesAssertionOrdinals() throws Exception {
+        Assertion disabledAll;
+        AllAssertion root = new AllAssertion(Arrays.asList(
+            new OneOrMoreAssertion(Arrays.asList(
+                new TrueAssertion(),
+                disabledAll = new AllAssertion(Arrays.asList(
+                    new TrueAssertion(),
+                    new FalseAssertion()
+                ))
+            )),
+            new TrueAssertion()
+        ));
+        disabledAll.setEnabled(false);
+
+        // Get policy XML
+        String policyXml = WspWriter.getPolicyXml(root);
+
+        AllAssertion includeDisabled = (AllAssertion) WspReader.getDefault().parseStrictly(policyXml, WspReader.INCLUDE_DISABLED);
+        AllAssertion omitDisabled = (AllAssertion) WspReader.getDefault().parseStrictly(policyXml, WspReader.OMIT_DISABLED);
+
+        Assertion laterOnFromIncludeDisabled = includeDisabled.getChildren().get(1);
+        Assertion laterOnFromOmitDisabled = omitDisabled.getChildren().get(1);
+
+        assertEquals("Assertion ordinals should remain the same when disabled assertions are omitted at parsing time", laterOnFromIncludeDisabled.getOrdinal(), laterOnFromOmitDisabled.getOrdinal());
+    }
+
 
     private static final String BUG_3456_POLICY = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
     "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
