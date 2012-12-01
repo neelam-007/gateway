@@ -88,13 +88,19 @@ public interface MimeKnob extends MessageKnob,Iterable<PartInfo> {
      *                     rest of the message.
      */
     void setContentLengthLimit(long sizeLimit) throws IOException;
+
+    /**
+     * Get the maximum size of the message body that the underlying MimeBody should be able to process.
+     * See {@link #setContentLengthLimit(long)}.
+     *
+     * @return the size limit enforced, or zero if limit enforcement is turned off.
+     */
     long getContentLengthLimit();
 
     /**
      * @return the outer content type of the request, or a default.  never null.
-     * @throws IOException never thrown.  TODO remove this throws clause
      */
-    ContentTypeHeader getOuterContentType() throws IOException;
+    ContentTypeHeader getOuterContentType();
 
     /**
      * Change the outer content type of the message.  This will change the value returned by future calls to {@link #getOuterContentType()}.
@@ -115,7 +121,6 @@ public interface MimeKnob extends MessageKnob,Iterable<PartInfo> {
      */
     long getContentLength() throws IOException;
 
-
     /**
      * When streaming mime parts, only include those that are marked as valid.
      *
@@ -133,6 +138,8 @@ public interface MimeKnob extends MessageKnob,Iterable<PartInfo> {
     /**
      * @param destroyAsRead true if it is OK to pass through the live input stream (if the message has not already been stashed).
      *                      Pass true only if you promise that nobody else will need to access the message stream after this point.
+     *                      <p/>
+     *                      Ignored if {@link #isBufferingDisallowed()} is true.
      * @return an InputStream that will produce the entire message body, including attachments, if any.
      * @throws IOException if there was a problem reading from the message stream
      * @throws NoSuchPartException if any part's body is unavailable, e.g. because it was read destructively
@@ -148,4 +155,17 @@ public interface MimeKnob extends MessageKnob,Iterable<PartInfo> {
      * @throws IOException if XML serialization is necessary, and it throws IOException (perhaps due to a lazy DOM)
      */
     PartInfo getFirstPart() throws IOException;
+
+    /**
+     * @param bufferingDisallowed true if this MIME knob should operate in streaming mode, by disallowing attempts to
+     *                            stash the message body to the stash manager.  If some or all of the MIME parts have
+     *                            already been stashed, setting this flag will still succeed but will not accomplish anything.
+     */
+    void setBufferingDisallowed(boolean bufferingDisallowed);
+
+    /**
+     * @return true if this MIME knob is operating in streaing mode, by disallowing attempts to stash the message body
+     *              to the stash manager.
+     */
+    boolean isBufferingDisallowed();
 }

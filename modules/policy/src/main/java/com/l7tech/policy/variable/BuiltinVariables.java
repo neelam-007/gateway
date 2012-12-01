@@ -206,6 +206,7 @@ public class BuiltinVariables {
             new VariableMetadata("request.authenticatedusers", true, true, null, false, DataType.UNKNOWN),
             new VariableMetadata("request.authenticateddn", true, false, null, false),
             new VariableMetadata("request.authenticateddns", true, false, null, false),
+            new VariableMetadata("request.buffer", true, false, null, false),
 
             new VariableMetadata("response.http", true, false, null, false),
             new VariableMetadata("response.mainpart", false, false, null, false),
@@ -218,6 +219,7 @@ public class BuiltinVariables {
             new VariableMetadata("response.authenticateddn", true, false, null, false),
             new VariableMetadata("response.authenticateddns", true, false, null, false),
             new VariableMetadata("response.soap", true, false, null, false),
+            new VariableMetadata("response.buffer", true, false, null, false),
 
             new VariableMetadata("request.tcp.remoteaddress", true, false, null, false),
             new VariableMetadata("request.tcp.remoteip", true, false, null, false),

@@ -929,6 +929,9 @@ public class WspReaderTest {
         Assertion laterOnFromIncludeDisabled = includeDisabled.getChildren().get(1);
         Assertion laterOnFromOmitDisabled = omitDisabled.getChildren().get(1);
 
+        // Only a policy authoring environment should be renumbering assertion ordinals.
+        // Other things that filter policies (like identity-specific policy views for the XVC, or WspReader.OMIT_DISABLED) should preserve numbering
+
         assertEquals("Assertion ordinals should remain the same when disabled assertions are omitted at parsing time", laterOnFromIncludeDisabled.getOrdinal(), laterOnFromOmitDisabled.getOrdinal());
     }
 

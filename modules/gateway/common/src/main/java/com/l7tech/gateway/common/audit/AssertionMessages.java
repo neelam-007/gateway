@@ -17,6 +17,7 @@ public class AssertionMessages extends Messages {
     public static final Messages.M ASSERTION_MISCONFIGURED = m(4304, Level.WARNING, false, false, "Assertion configuration error: {0}"); // Provided as less-drastic alternative to throwing PolicyAssertionException
     public static final Messages.M MESSAGE_NOT_SOAP = m(4305, Level.WARNING, "{0} message not soap. {1}");
     public static final Messages.M NO_SUCH_PART = m(4306, Level.WARNING, "{0} message has no part {1}");
+    public static final Messages.M MESSAGE_NOT_INITIALIZED = m(4307, Level.WARNING, "{0} message is not initialized");
 
     public static final M MESSAGE_TARGET_ERROR = m(4330, Level.WARNING, "Invalid target message, variable \"{0}\": {1}");
     public static final M MESSAGE_NOT_XML = m(4331, Level.WARNING, "{0} message not XML. {1}");
@@ -748,6 +749,9 @@ public class AssertionMessages extends Messages {
     public static final M MESSAGE_BODY_TOO_LARGE = m(7222, Level.WARNING, "{0} body size exceeds configured limit");
     public static final M MESSAGE_FIRST_PART_TOO_LARGE = m(7223, Level.WARNING, "{0} first part size exceeds configured limit");
     public static final M MESSAGE_BAD_CONTENT_TYPE = m(7224, Level.WARNING, "{0} content type is syntactically invalid: {1}");
+
+    // MessageBufferingAssertion
+    public static final Messages.M MESSAGE_ALREADY_BUFFERED = m(7225, Level.WARNING, "{0} message has already been buffered");
 
     // OversizedTextAssertion
     public static final M OVERSIZEDTEXT_ALREADY_ROUTED = m(7230, Level.WARNING, "Unable to protect against document structure threats -- the request has already been routed");

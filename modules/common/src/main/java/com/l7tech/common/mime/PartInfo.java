@@ -39,7 +39,7 @@ public interface PartInfo {
      * @param destroyAsRead if false, the InputStream will be stashed and subsequent callers will be able to
      *                      obtain it and read it from the beginning again.  If true, the InputStream's contents
      *                      might not be saved and subsequent calls to getInputStream() on the same PartInfo will
-     *                      fail.
+     *                      fail with NoSuchPartException.
      * @return the content of this part as an InputStream.  Never null.  Will return EOF at the end of the body part.
      * @throws NoSuchPartException if this PartInfo's InputStream has already been destructively read.
      * @throws IOException if there is a problem retrieving a stashed InputStream.
@@ -177,4 +177,30 @@ public interface PartInfo {
      *        This flag is not used by PartInfo itself in any way. 
      */
     void setValidated(boolean validated);
+
+    /**
+     * See if it will be possible to call getInputStream() on this PartInfo and get back a non-null InputStream.
+     * <p/>
+     * For a simple part (eg, not some more complex situation like one backing a DOM tree),
+     * this is equivalent to {@link #isBodyStashed()} || !{@link #isBodyRead()}.
+     *
+     * @return true if {@link #getInputStream(boolean)} would return an InputStream (perhaps meaning this Part's body has been stashed,
+     *         or is currently waiting to be read); false if it would throw {@link NoSuchPartException} (perhaps because it has already been read destructively).
+     */
+    boolean isBodyAvailable();
+
+    /**
+     * Check if this body has been stashed to the stash manager.
+     *
+     * @return true if our stash manager has an InputStream available for this part's ordinal.
+     */
+    boolean isBodyStashed();
+
+    /**
+     * Check if the body of this part has been read from the source InputStream.
+     *
+     * @return false if the body has not yet been read.  True if it has been read (it may or may not have been stashed,
+     * depending on whether it was read destructively).
+     */
+    boolean isBodyRead();
 }

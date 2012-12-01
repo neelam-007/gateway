@@ -1144,6 +1144,9 @@ public class ExpandVariablesTest {
         @Override public String getContentId( final boolean stripAngleBrackets ) { return null; }
         @Override public boolean isValidated() { return false; }
         @Override public void setValidated( final boolean validated ) { }
+        @Override public boolean isBodyAvailable() { return true; }
+        @Override public boolean isBodyStashed() { return true; }
+        @Override public boolean isBodyRead() { return true; }
     }
 
     private static class HttpRequestKnobAdapter extends TcpKnobAdapter implements HttpRequestKnob {

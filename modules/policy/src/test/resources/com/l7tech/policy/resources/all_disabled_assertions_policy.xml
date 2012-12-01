@@ -196,6 +196,9 @@
         <L7p:RequestSizeLimit>
             <L7p:Enabled booleanValue="false"/>
         </L7p:RequestSizeLimit>
+        <L7p:MessageBuffering>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:MessageBuffering>
         <L7p:Kerberos>
             <L7p:Enabled booleanValue="false"/>
         </L7p:Kerberos>

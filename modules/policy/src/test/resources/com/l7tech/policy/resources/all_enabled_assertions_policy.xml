@@ -121,6 +121,7 @@
         <L7p:SqlAttackProtection/>
         <L7p:OversizedText/>
         <L7p:RequestSizeLimit/>
+        <L7p:MessageBuffering/>
         <L7p:Kerberos/>
         <L7p:EncryptedUsernameToken/>
         <L7p:WsiBspAssertion/>

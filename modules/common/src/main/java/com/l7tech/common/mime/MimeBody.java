@@ -553,7 +553,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
 
         for (Iterator i = partInfos.iterator(); i.hasNext();) {
             PartInfoImpl partInfo = (PartInfoImpl)i.next();
-            if (!partInfo.bodyAvailable())
+            if (!partInfo.isBodyAvailable())
                 throw new NoSuchPartException("Part #" + partInfo.getPosition() + " has already been destructively read", partInfo.getPosition());
         }
     }
@@ -849,7 +849,8 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
             return ordinal;
         }
 
-        boolean isBodyRead() {
+        @Override
+        public boolean isBodyRead() {
             return bodyRead;
         }
 
@@ -857,14 +858,13 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
             this.bodyRead = true;
         }
 
-        /**
-         * See if it will be possible to call getInputStream() on this PartInfo and get back a non-null InputStream.
-         *
-         * @return true if this Part's body has been stashed, or is currently waiting to be read; false if it
-         *         has already been read destructively.
-         * @throws IOException if there is an IOException reading from the StashManager
-         */
-        boolean bodyAvailable() throws IOException {
+        @Override
+        public boolean isBodyStashed() {
+            return stashManager.peek(ordinal);
+        }
+
+        @Override
+        public boolean isBodyAvailable() {
             if (!bodyRead)
                 return true;
 

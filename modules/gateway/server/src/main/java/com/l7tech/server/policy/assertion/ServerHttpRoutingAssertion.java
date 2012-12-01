@@ -502,11 +502,20 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         try {
             final MimeKnob reqMime = requestMessage.getKnob(MimeKnob.class);
 
-            // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
-            final long contentLength = (reqMime == null || !requestMessage.isInitialized()) ? 0 : reqMime.getContentLength();
+            boolean streamingMode = reqMime != null && reqMime.isBufferingDisallowed();
+
+            final long contentLength;
+            if (streamingMode) {
+                // Avoiding using reqMime.getContentLength() since this may require stashing
+                Long cl = getContentLengthFromHeaders(requestMessage);
+                // Use chunked encoding if declared length unavailable
+                contentLength = cl == null ? -1L : cl;
+            } else {
+                // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
+                contentLength = (reqMime == null || !requestMessage.isInitialized()) ? 0 : reqMime.getContentLength();
+            }
             if (contentLength > Integer.MAX_VALUE)
                 throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
-
 
             // this will forward soapaction, content-type, cookies, etc based on assertion settings
             HttpForwardingRuleEnforcer.handleRequestHeaders(
@@ -619,7 +628,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             } else {
                 // only include payload if the method requires one (PUT or POST, or something else but with forced-body-inclusion turned on)
                 if (routedRequestParams.needsRequestBody(method)) {
-                    if (routedRequest instanceof RerunnableHttpRequest) {
+                    if (routedRequest instanceof RerunnableHttpRequest && !streamingMode) {
                         RerunnableHttpRequest rerunnableHttpRequest = (RerunnableHttpRequest) routedRequest;
                         rerunnableHttpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
                             @Override
@@ -634,7 +643,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                             }
                         });
                     } else {
-                        InputStream bodyInputStream = reqMime == null ? new EmptyInputStream() : reqMime.getEntireMessageBodyAsInputStream();
+                        InputStream bodyInputStream = reqMime == null ? new EmptyInputStream() : reqMime.getEntireMessageBodyAsInputStream(streamingMode);
                         routedRequest.setInputStream(bodyInputStream);
                     }
                 }
@@ -792,6 +801,43 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         return AssertionStatus.FAILED;
+    }
+
+    private static Long getContentLengthFromHeaders(Message message) {
+        // Return content length declared in HTTP header, or null if not there or disagreeing values
+        HasHeaders hasHeaders = message.getKnob(HttpRequestKnob.class);
+        if (hasHeaders == null)
+            hasHeaders = message.getKnob(HasHeaders.class);
+        if (hasHeaders == null)
+            return null;
+
+        String[] strings = hasHeaders.getHeaderValues("Content-Length");
+        if (strings == null || strings.length < 1)
+            return null;
+
+        Long ret = null;
+        for (String s : strings) {
+            Long len = parseLong(s);
+            if (len == null) {
+                return null;
+            }
+            if (ret == null) {
+                ret = len;
+                continue;
+            }
+            if (ret.longValue() != len)
+                return null;
+        }
+
+        return ret;
+    }
+
+    private static Long parseLong(String str) {
+        try {
+            return str == null ? null : Long.parseLong(str);
+        } catch (NumberFormatException nfe) {
+            return null;
+        }
     }
 
     private void setReasonCode(PolicyEnforcementContext context, Exception e) {

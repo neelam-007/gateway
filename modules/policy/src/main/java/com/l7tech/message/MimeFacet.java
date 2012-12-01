@@ -16,6 +16,7 @@ import java.io.InputStream;
  */
 class MimeFacet extends MessageFacet {
     private final MimeBody mimeBody;
+    private boolean bufferingDisallowed = false;
 
     protected MimeFacet(Message message) {
         super(message, null); // Null because this will normally be the last aspect
@@ -100,16 +101,26 @@ class MimeFacet extends MessageFacet {
         }
 
         public InputStream getEntireMessageBodyAsInputStream() throws IOException, NoSuchPartException {
-            return getMimeBody().getEntireMessageBodyAsInputStream(false);
+            return getMimeBody().getEntireMessageBodyAsInputStream(bufferingDisallowed);
         }
 
         @Override
         public InputStream getEntireMessageBodyAsInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
-            return getMimeBody().getEntireMessageBodyAsInputStream(destroyAsRead);
+            return getMimeBody().getEntireMessageBodyAsInputStream(destroyAsRead || bufferingDisallowed);
         }
 
         public PartInfo getFirstPart() {
             return getMimeBody().getFirstPart();
+        }
+
+        @Override
+        public void setBufferingDisallowed(boolean bufferingDisallowed) {
+            MimeFacet.this.bufferingDisallowed = bufferingDisallowed;
+        }
+
+        @Override
+        public boolean isBufferingDisallowed() {
+            return bufferingDisallowed;
         }
     }
 

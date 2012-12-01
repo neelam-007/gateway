@@ -187,7 +187,10 @@ public class HttpForwardingRuleEnforcer {
             soapAction = soapActions[0];
         }
 
-        if ( soapAction == null ) {
+        MimeKnob mk = sourceMessage.getKnob(MimeKnob.class);
+        boolean streaming = mk != null && mk.isBufferingDisallowed();
+
+        if ( soapAction == null && !streaming ) {
             try {
                 if (sourceMessage.isSoap()) {
                     try {
@@ -209,7 +212,7 @@ public class HttpForwardingRuleEnforcer {
         }
 
         if ( soapAction == null ) {
-            // Maybe the default requets is a non-SOAP or even non-XML content type that just happens to have a SOAPAction header (Bug #10629)
+            // Maybe the default request is a non-SOAP or even non-XML content type that just happens to have a SOAPAction header (Bug #10629)
             HttpRequestKnob hrk = sourceMessage.getKnob(HttpRequestKnob.class);
             if ( hrk != null ) {
                 soapAction = hrk.getHeaderFirstValue(SoapUtil.SOAPACTION);

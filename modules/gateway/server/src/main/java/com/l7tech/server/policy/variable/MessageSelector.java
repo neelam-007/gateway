@@ -20,9 +20,10 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.IOUtils;
 import com.l7tech.xml.MessageNotSoapException;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -50,6 +51,24 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String CONTENT_TYPE = "contenttype";
     private static final String MAINPART_CONTENT_TYPE = "mainpart.contenttype";
     private static final String MAINPART_SIZE_NAME = "mainpart.size";
+    private static final String BUFFER_STATUS = "buffer.status";
+
+    static enum BufferStatus {
+        UNINITIALIZED("uninitialized"),
+        UNREAD("unread"),
+        BUFFERED("buffered"),
+        GONE("gone"),
+        ;
+        private final String label;
+
+        BufferStatus(String label) {
+            this.label = label;
+        }
+
+        String getLabel() {
+            return label;
+        }
+    }
 
     // NOTE: Variable names must be lower case
     private static final String WSS_PREFIX = "wss.";
@@ -148,6 +167,8 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = originalMainPartSelector;
         } else if (MAINPART_SIZE_NAME.equals(lname)) {
             selector = mainPartSizeSelector;
+        } else if (BUFFER_STATUS.equals(lname)) {
+            selector = bufferStatusSelector;
         } else if (lname.equals(CONTENT_TYPE)) {
             selector = contentTypeSelector;
         } else if (lname.equals(MAINPART_CONTENT_TYPE)) {
@@ -228,6 +249,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
                 "tcp",
                 "ssl",
                 "soap",
+                "buffer",
                 SIZE_NAME,
                 CONTENT_TYPE,
                 AUTH_USER_PASSWORD,
@@ -318,6 +340,35 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
         }
     };
 
+    private static final MessageAttributeSelector bufferStatusSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            return new Selection(getBufferStatus(context).getLabel());
+        }
+
+        @NotNull
+        private BufferStatus getBufferStatus(Message message) {
+            if (!message.isInitialized())
+                return BufferStatus.UNINITIALIZED;
+
+            MimeKnob mimeKnob = message.getKnob(MimeKnob.class);
+            if (mimeKnob == null)
+                return BufferStatus.UNINITIALIZED;
+
+            try {
+                PartInfo pa = mimeKnob.getFirstPart();
+                if (pa.isBodyStashed())
+                    return BufferStatus.BUFFERED;
+                if (pa.isBodyAvailable())
+                    return BufferStatus.UNREAD;
+                return BufferStatus.GONE;
+
+            } catch (IOException e) {
+                return BufferStatus.GONE;
+            }
+        }
+    };
+
     private static final MessageAttributeSelector statusSelector = new MessageAttributeSelector() {
         @Override
         public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
@@ -403,11 +454,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
                 // Message not yet initialized
                 return null;
             }
-            try {
-                return new Selection(mk.getOuterContentType().getFullValue());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            return new Selection(mk.getOuterContentType().getFullValue());
         }
     };
 

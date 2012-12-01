@@ -99,7 +99,7 @@ public class XmlFacet extends MessageFacet {
             return mk.getContentLengthLimit();
         }
 
-        public ContentTypeHeader getOuterContentType() throws IOException {
+        public ContentTypeHeader getOuterContentType() {
             return mk.getOuterContentType();
         }
 
@@ -133,6 +133,16 @@ public class XmlFacet extends MessageFacet {
          */
         public PartInfo getFirstPart() throws IOException {
             return new PartInfoWrapper(mk.getFirstPart());
+        }
+
+        @Override
+        public void setBufferingDisallowed(boolean bufferingDisallowed) {
+            mk.setBufferingDisallowed(bufferingDisallowed);
+        }
+
+        @Override
+        public boolean isBufferingDisallowed() {
+            return mk.isBufferingDisallowed();
         }
 
         /**
@@ -284,6 +294,21 @@ public class XmlFacet extends MessageFacet {
 
             public void setValidated(boolean validated) {
                 delegate.setValidated(validated);
+            }
+
+            @Override
+            public boolean isBodyAvailable() {
+                return delegate.isBodyAvailable();
+            }
+
+            @Override
+            public boolean isBodyStashed() {
+                return delegate.isBodyStashed();
+            }
+
+            @Override
+            public boolean isBodyRead() {
+                return delegate.isBodyRead();
             }
         }
     }
