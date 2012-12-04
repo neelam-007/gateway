@@ -8,6 +8,7 @@ import org.w3c.dom.Element;
 
 import java.util.List;
 
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.findEntityNameFromElement;
 import static org.junit.Assert.*;
 
 public class GatewayManagementDocumentUtilitiesTest {
@@ -46,6 +47,18 @@ public class GatewayManagementDocumentUtilitiesTest {
     public void testResponse_InternalError_IsSomethingElse() throws Exception {
         final Document doc = XmlUtil.parse(CREATED_RESPONSE); // not an internal error
         assertFalse(GatewayManagementDocumentUtilities.isInternalErrorResponse(doc));
+    }
+
+    @Test
+    public void testGetEntityNameFromElement() throws Exception {
+        String xml = "<l7:Folder xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\"-5002\" id=\"123600896\" version=\"0\">\n" +
+                "        <l7:Name>OAuth</l7:Name>\n" +
+                "     </l7:Folder>";
+
+        final Document folderDoc = XmlUtil.parse(xml);
+        final Element folderElm = folderDoc.getDocumentElement();
+        final String folderName = findEntityNameFromElement(folderElm);
+        assertEquals("Incorrect folder name found", "OAuth", folderName);
     }
 
     public void testGetNamespaceMap() throws Exception {

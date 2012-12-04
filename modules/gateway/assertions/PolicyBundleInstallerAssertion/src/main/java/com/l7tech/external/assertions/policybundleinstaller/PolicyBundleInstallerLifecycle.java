@@ -29,6 +29,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse;
+
 public class PolicyBundleInstallerLifecycle implements ApplicationListener{
 
     public PolicyBundleInstallerLifecycle(final ApplicationContext spring) {
@@ -101,6 +104,8 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
                 } catch (BundleResolver.InvalidBundleException e) {
                     dryRunEvent.setProcessingException(e);
                 } catch (InterruptedException e) {
+                    dryRunEvent.setProcessingException(e);
+                } catch (AccessDeniedManagementResponse e) {
                     dryRunEvent.setProcessingException(e);
                 } finally {
                     dryRunEvent.setProcessed(true);
@@ -202,7 +207,9 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
             installEvent.setProcessingException(e);
         } catch (BundleResolver.InvalidBundleException e) {
             installEvent.setProcessingException(e);
-        } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
+        } catch (UnexpectedManagementResponse e) {
+            installEvent.setProcessingException(e);
+        } catch (AccessDeniedManagementResponse e) {
             installEvent.setProcessingException(e);
         } catch (IOException e) {
             installEvent.setProcessingException(e);

@@ -26,10 +26,12 @@ import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.policybundleinstaller.InstallerUtils.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.*;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
 
 //todo extract out interface. Allow installation folders, services and policies to be specified by clients.
 public class PolicyBundleInstaller {
@@ -59,7 +61,8 @@ public class PolicyBundleInstaller {
             throws BundleResolver.BundleResolverException,
             BundleResolver.UnknownBundleException,
             BundleResolver.InvalidBundleException,
-            InterruptedException {
+            InterruptedException,
+            AccessDeniedManagementResponse {
 
         checkInterrupted(dryRunEvent);
 
@@ -128,7 +131,10 @@ public class PolicyBundleInstaller {
             BundleResolver.UnknownBundleException,
             BundleResolver.BundleResolverException,
             InterruptedException,
-            BundleResolver.InvalidBundleException, IOException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse {
+            BundleResolver.InvalidBundleException,
+            IOException,
+            UnexpectedManagementResponse,
+            AccessDeniedManagementResponse {
 
         final PolicyBundleInstallerContext context = installEvent.getContext();
         logger.info("Installing bundle: " + context.getBundleInfo().getId());
@@ -244,9 +250,10 @@ public class PolicyBundleInstaller {
                                    @Nullable final BundleMapping bundleMapping,
                                    @Nullable final String installationPrefix)
             throws BundleResolver.InvalidBundleException,
-            GatewayManagementDocumentUtilities.UnexpectedManagementResponse,
+            UnexpectedManagementResponse,
             PreBundleSavePolicyCallback.PolicyUpdateException,
-            InterruptedException {
+            InterruptedException,
+            AccessDeniedManagementResponse {
 
         final List<Element> serviceElms = GatewayManagementDocumentUtilities.getEntityElements(serviceMgmtEnumeration.getDocumentElement(), "Service");
         for (Element serviceElm : serviceElms) {
@@ -356,7 +363,8 @@ public class PolicyBundleInstaller {
             GatewayManagementDocumentUtilities.UnexpectedManagementResponse,
             PreBundleSavePolicyCallback.PolicyUpdateException,
             BundleResolver.InvalidBundleException,
-            InterruptedException {
+            InterruptedException,
+            AccessDeniedManagementResponse {
 
         final List<Element> enumPolicyElms = GatewayManagementDocumentUtilities.getEntityElements(policyMgmtEnumeration.getDocumentElement(), "Policy");
 
@@ -394,7 +402,8 @@ public class PolicyBundleInstaller {
                                              @NotNull Document folderMgmtEnumeration,
                                              @NotNull Map<Long, Long> contextOldToNewFolderOids)
             throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse,
-            InterruptedException {
+            InterruptedException,
+            AccessDeniedManagementResponse {
         final List<Element> folderElms = GatewayManagementDocumentUtilities.getEntityElements(folderMgmtEnumeration.getDocumentElement(), "Folder");
 
         // find the root node
@@ -448,7 +457,7 @@ public class PolicyBundleInstaller {
             folder.setAttribute("id", id); //this gets overwritten and ignored by mgmt assertion.
 
             final Element name = DomUtils.createAndAppendElementNS(folder, "Name", BundleUtils.L7_NS_GW_MGMT, "l7");
-            final String folderName = DomUtils.getTextValue(DomUtils.findFirstChildElementByName(currentElm, BundleUtils.L7_NS_GW_MGMT, "Name"), true);
+            final String folderName = findEntityNameFromElement(currentElm);
             final Text nameText = document.createTextNode(folderName);
             name.appendChild(nameText);
 
@@ -521,7 +530,8 @@ public class PolicyBundleInstaller {
             BundleResolver.InvalidBundleException,
             PreBundleSavePolicyCallback.PolicyUpdateException,
             GatewayManagementDocumentUtilities.UnexpectedManagementResponse,
-            InterruptedException {
+            InterruptedException,
+            AccessDeniedManagementResponse {
 
         final String policyGuid = enumPolicyElmReadOnly.getAttribute("guid");
 
@@ -682,7 +692,8 @@ public class PolicyBundleInstaller {
      * @throws Exception searching
      */
     @NotNull
-    private List<Long> findMatchingService(String urlMapping) throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse, InterruptedException {
+    private List<Long> findMatchingService(String urlMapping) throws UnexpectedManagementResponse, InterruptedException,
+            AccessDeniedManagementResponse {
         final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
                 SERVICES_MGMT_NS, 10, "/l7:Service/l7:ServiceDetail/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern[text()='" + urlMapping + "']");
 
@@ -691,23 +702,28 @@ public class PolicyBundleInstaller {
     }
 
     private Pair<AssertionStatus, Document> callManagementCheckInterrupted(String requestXml) throws InterruptedException,
-            GatewayManagementDocumentUtilities.UnexpectedManagementResponse {
+            AccessDeniedManagementResponse, UnexpectedManagementResponse {
 
         final Pair<AssertionStatus, Document> documentPair;
         try {
             documentPair = callManagementAssertion(gatewayManagementInvoker, requestXml);
-        } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
+        } catch (UnexpectedManagementResponse e) {
             if (e.isCausedByMgmtAssertionInternalError() && policyBundleEvent.isCancelled()) {
                 throw new InterruptedException("Possible interruption detected due to internal error");
             } else {
                 throw e;
             }
+        } catch (AccessDeniedManagementResponse e) {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Access denied for request:" + e.getDeniedRequest());
+            }
+            throw e;
         }
         return documentPair;
     }
 
     @NotNull
-    private List<Long> findMatchingPolicy(String policyName) throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse, InterruptedException {
+    private List<Long> findMatchingPolicy(String policyName) throws InterruptedException, UnexpectedManagementResponse, AccessDeniedManagementResponse {
         final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
                 POLICIES_MGMT_NS, 10, "/l7:Policy/l7:PolicyDetail/l7:Name[text()='" + policyName + "']");
 
@@ -716,7 +732,7 @@ public class PolicyBundleInstaller {
     }
 
     @NotNull
-    private List<Long> findMatchingJdbcConnection(String jdbcConnection) throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse, InterruptedException {
+    private List<Long> findMatchingJdbcConnection(String jdbcConnection) throws AccessDeniedManagementResponse, InterruptedException, UnexpectedManagementResponse {
         final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
                 JDBC_MGMT_NS, 10, "/l7:JDBCConnection/l7:Name[text()='" + jdbcConnection + "']");
 
@@ -725,7 +741,7 @@ public class PolicyBundleInstaller {
     }
 
     @Nullable
-    private String getExistingPolicyGuid(String policyName) throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse, InterruptedException {
+    private String getExistingPolicyGuid(String policyName) throws InterruptedException, UnexpectedManagementResponse, AccessDeniedManagementResponse {
 
         final String getPolicyXml = MessageFormat.format(GATEWAY_MGMT_GET_ENTITY, getUuid(), POLICIES_MGMT_NS, "name", policyName);
 
@@ -746,7 +762,7 @@ public class PolicyBundleInstaller {
 
     @Nullable
     private Long getExistingFolderId(long parentId, String folderName)
-            throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse, InterruptedException {
+            throws UnexpectedManagementResponse, InterruptedException, AccessDeniedManagementResponse {
         final String folderFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
                 FOLDER_MGMT_NS, 10, "/l7:Folder[@folderId='" + parentId + "']/l7:Name[text()='" + folderName + "']");
 

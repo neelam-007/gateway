@@ -50,6 +50,7 @@ import java.util.regex.Matcher;
 
 import static com.l7tech.server.event.AdminInfo.find;
 import static com.l7tech.policy.bundle.PolicyBundleDryRunResult.DryRunItem;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse;
 
 public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OAuthInstallerAdmin {
 
@@ -784,6 +785,13 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                     return true;
                 }
 
+                if (processingException instanceof AccessDeniedManagementResponse) {
+                    AccessDeniedManagementResponse accessDeniedException = (AccessDeniedManagementResponse) processingException;
+                    throw new OAuthToolkitInstallationException("Problem installing " +
+                            bundleEvent.getContext().getBundleInfo().getName() + ": " + accessDeniedException.getMessage());
+                }
+
+                // unexpected exception
                 logger.warning("Exception type: " + processingException.getClass().getName());
                 logger.warning("Unexpected error during installation: " + ExceptionUtils.getMessage(processingException));
                 throw new OAuthToolkitInstallationException(processingException);

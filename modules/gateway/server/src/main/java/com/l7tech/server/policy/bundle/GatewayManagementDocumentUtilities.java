@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.bundle;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.util.DomUtils;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
@@ -56,6 +57,10 @@ public class GatewayManagementDocumentUtilities {
         return PolicyUtils.findElements(policyEnumeration.getDocumentElement(), ".//l7:Name");
     }
 
+    public static String findEntityNameFromElement(final Element entityElement) {
+        return DomUtils.getTextValue(DomUtils.findFirstChildElementByName(entityElement, BundleUtils.L7_NS_GW_MGMT, "Name"), true);
+    }
+
     public static class UnexpectedManagementResponse extends Exception{
         public UnexpectedManagementResponse(String message) {
             super(message);
@@ -63,10 +68,6 @@ public class GatewayManagementDocumentUtilities {
 
         public UnexpectedManagementResponse(Throwable cause) {
             super(cause);
-        }
-
-        public UnexpectedManagementResponse(String message, Throwable cause) {
-            super(message, cause);
         }
 
         public UnexpectedManagementResponse(boolean causedByMgmtAssertionInternalError) {
@@ -80,6 +81,19 @@ public class GatewayManagementDocumentUtilities {
         private boolean causedByMgmtAssertionInternalError;
     }
 
+    public static class AccessDeniedManagementResponse extends Exception {
+        public AccessDeniedManagementResponse(String message, String deniedRequest) {
+            super(message);
+            this.deniedRequest = deniedRequest;
+        }
+
+        public String getDeniedRequest() {
+            return deniedRequest;
+        }
+
+        private String deniedRequest;
+    }
+
     /**
      * Get the id values from all found wsman:Selector elements with Name attribute equal to 'id'.
      *
@@ -89,7 +103,7 @@ public class GatewayManagementDocumentUtilities {
      * @throws Exception parsing or xpath
      */
     @NotNull
-    public static List<Long> getSelectorId(final Document response, final boolean allowMultiple) throws UnexpectedManagementResponse{
+    public static List<Long> getSelectorId(final Document response, final boolean allowMultiple) throws UnexpectedManagementResponse {
         final ElementCursor cursor = new DomElementCursor(response.getDocumentElement());
 
         // Find the Selector result either from a create response of from an enumeration filter with
@@ -144,6 +158,12 @@ public class GatewayManagementDocumentUtilities {
     public static boolean isInternalErrorResponse(@NotNull final Document response) throws UnexpectedManagementResponse {
         final List<String> errorDetails = getErrorDetails(response);
         return errorDetails.contains("env:Receiver") && errorDetails.contains("wsman:InternalError");
+    }
+
+    public static boolean isAccessDeniedResponse(@NotNull final Document response) throws AccessDeniedManagementResponse,
+            UnexpectedManagementResponse {
+        final List<String> errorDetails = getErrorDetails(response);
+        return errorDetails.contains("env:Sender") && errorDetails.contains("wsman:AccessDenied");
     }
 
     public static List<String> getErrorDetails(final Document response) throws UnexpectedManagementResponse {

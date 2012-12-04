@@ -668,6 +668,53 @@ public class PolicyBundleInstallerTest {
         assertTrue(jdbcConnsThatDontExist.isEmpty());
     }
 
+    @Test
+    @BugNumber(13586)
+    public void testRequestDeniedForAdminUser() throws Exception {
+        final BundleResolver bundleResolver = getBundleResolver();
+        PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+            @Override
+            public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
+
+                try {
+                    final Document documentReadOnly = context.getRequest().getXmlKnob().getDocumentReadOnly();
+                    final String requestXml = XmlUtil.nodeToFormattedString(documentReadOnly);
+                    if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate")) {
+                        // say it doesn't exist
+                        setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
+                    } else {
+                        // access denied for first create
+                        setResponse(context, XmlUtil.parse(ACCESS_DENIED));
+                    }
+                } catch (Exception e) {
+                    fail("Unexpected exception: " + e.getMessage());
+                }
+
+                return AssertionStatus.NONE;
+            }
+        });
+
+        final BundleInfo bundleInfo = new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Any bundle will do", "Desc");
+        bundleInfo.addJdbcReference("OAuth");
+
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
+                bundleInfo,
+                -5002,
+                new HashMap<String, Object>(),
+                null, null);
+
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, bundleResolver, context, null);
+        try {
+            installer.install(installEvent);
+            fail("Access denied exception should be thrown");
+        } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse e) {
+            // pass
+            // validate that hte denied request was set and is non empty
+            assertNotNull(e.getDeniedRequest());
+            assertFalse(e.getDeniedRequest().trim().isEmpty());
+        }
+    }
+
     @NotNull
     private BundleResolver getBundleResolver(){
 
@@ -979,6 +1026,38 @@ public class PolicyBundleInstallerTest {
             "            <wsman:Items/>\n" +
             "            <wsman:EndOfSequence/>\n" +
             "        </wsen:EnumerateResponse>\n" +
+            "    </env:Body>\n" +
+            "</env:Envelope>\n";
+
+    private static final String ACCESS_DENIED = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
+            "    xmlns:mdo=\"http://schemas.wiseman.dev.java.net/metadata/messagetypes\"\n" +
+            "    xmlns:mex=\"http://schemas.xmlsoap.org/ws/2004/09/mex\"\n" +
+            "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
+            "    xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\"\n" +
+            "    xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\"\n" +
+            "    xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"\n" +
+            "    xmlns:wsmeta=\"http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd\"\n" +
+            "    xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+            "    <env:Header>\n" +
+            "        <wsa:Action env:mustUnderstand=\"true\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">http://schemas.dmtf.org/wbem/wsman/1/wsman/fault</wsa:Action>\n" +
+            "        <wsa:MessageID env:mustUnderstand=\"true\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">uuid:ca86cfbf-ecff-430e-8f98-6e02a50f1367</wsa:MessageID>\n" +
+            "        <wsa:RelatesTo xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">uuid:6a459d19-4603-4934-9a4b-8182e2fc56c1</wsa:RelatesTo>\n" +
+            "        <wsa:To env:mustUnderstand=\"true\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>\n" +
+            "    </env:Header>\n" +
+            "    <env:Body>\n" +
+            "        <env:Fault xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+            "            <env:Code>\n" +
+            "                <env:Value>env:Sender</env:Value>\n" +
+            "                <env:Subcode>\n" +
+            "                    <env:Value>wsman:AccessDenied</env:Value>\n" +
+            "                </env:Subcode>\n" +
+            "            </env:Code>\n" +
+            "            <env:Reason>\n" +
+            "                <env:Text xml:lang=\"en-US\">The sender was not authorized to access the resource.</env:Text>\n" +
+            "            </env:Reason>\n" +
+            "            <env:Detail/>\n" +
+            "        </env:Fault>\n" +
             "    </env:Body>\n" +
             "</env:Envelope>\n";
 }

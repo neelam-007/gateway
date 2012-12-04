@@ -16,14 +16,14 @@ import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.UUID;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
 
 public class InstallerUtils {
 
@@ -116,13 +116,13 @@ public class InstallerUtils {
      * @param gatewayManagementInvoker invoker which can invoke an actual gateway management server assertion
      * @param requestXml request XML to sent to server assertion
      * @return Pair of assertion status and response document
-     * @throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse if the response from the management assertion
+     * @throws UnexpectedManagementResponse if the response from the management assertion
      * is an Internal Error.
      */
     @NotNull
     static Pair<AssertionStatus, Document> callManagementAssertion(final GatewayManagementInvoker gatewayManagementInvoker,
                                                                    final String requestXml)
-            throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse {
+            throws AccessDeniedManagementResponse, UnexpectedManagementResponse{
 
         final PolicyEnforcementContext context = getContext(requestXml);
 
@@ -141,7 +141,9 @@ public class InstallerUtils {
             // validate that an Internal Error was not received. If so this is most likely due to Wiseman being interrupted
             // via user cancellation.
             if (GatewayManagementDocumentUtilities.isInternalErrorResponse(document)) {
-                throw new GatewayManagementDocumentUtilities.UnexpectedManagementResponse(true);
+                throw new UnexpectedManagementResponse(true);
+            } else if (isAccessDeniedResponse(document)) {
+                throw new AccessDeniedManagementResponse("Access Denied", requestXml);
             }
         } catch (SAXException e) {
             throw new RuntimeException("Unexpected internal error parsing gateway management response: " + e.getMessage(), e);

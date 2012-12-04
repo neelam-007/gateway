@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.oauthinstaller;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
@@ -22,22 +23,13 @@ import org.w3c.dom.Element;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.findEntityNameFromElement;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getEntityElements;
 import static org.junit.Assert.*;
 
 public class OAuthInstallerAdminImplTest {
 
     private final String baseName = "/com/l7tech/external/assertions/oauthinstaller/bundles/";
-
-    @Ignore
-    @Test
-    public void testInstallOfAllBundleFolders() throws Exception {
-//        for (String bundleName : ALL_BUNDLE_NAMES) {
-//            testInstallFolders_NoneExist(bundleName);
-//        }
-        // OAuth_2_0
-        //todo fix
-//        testInstallFolders_NoneExist("ba525763-6e55-4748-9376-76055247c8b1");
-    }
 
     /**
      * Validates that the correct number and type of spring events are published for a dry run.
@@ -94,7 +86,7 @@ public class OAuthInstallerAdminImplTest {
     }
 
     /**
-     * Validates that the correct number and type of spring events are published for a dry run.
+     * Validates that the correct number and type of spring events are published for an installation.
      */
     @Test
     public void testValidateSpringRequestsForInstall() throws Exception {
@@ -142,6 +134,12 @@ public class OAuthInstallerAdminImplTest {
 
     }
 
+    /**
+     * Test that all expected bundles are found and contain the correct values.
+     * This will need to be updated as version numbers change and / or bundles get added..
+     *
+     * @throws Exception
+     */
     @Test
     public void testListAllBundles() throws Exception {
         final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, ApplicationContexts.getTestApplicationContext());
@@ -153,6 +151,7 @@ public class OAuthInstallerAdminImplTest {
             System.out.println("Bundle: " + aBundle);
         }
 
+        assertEquals("Incorrect number of bundles found.", 5, allBundles.size());
         BundleInfo expected;
 
         expected = new BundleInfo("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "1.0", "OAuth 1.0", "Core Services and Test Client");
@@ -173,9 +172,9 @@ public class OAuthInstallerAdminImplTest {
     }
 
     /**
-     * The same policy is contained in more than one bundle. This test validates that all policies with the same guid
-     * are logically equivalent.
-     * If not then two policies / service could refer to the same policy with the same guid but receive an unexpected
+     * The same policy is contained in more than one bundle. This test validates that all policies with the same name
+     * are logically equivalent. Policy names are unique on the Gateway.
+     * If not then two policies / service could refer to the same policy with the same name but receive an unexpected
      * implementation of that policy.
      */
     @Test
@@ -190,10 +189,11 @@ public class OAuthInstallerAdminImplTest {
         for (BundleInfo aBundle : allBundles) {
             final Map<String, Element> guidToElementMap = new HashMap<String, Element>();
             final Document policyDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.POLICY, false);
-            final List<Element> enumPolicyElms = GatewayManagementDocumentUtilities.getEntityElements(policyDocument.getDocumentElement(), "Policy");
+            final List<Element> enumPolicyElms = getEntityElements(policyDocument.getDocumentElement(), "Policy");
             for (Element policyElm : enumPolicyElms) {
-                final String guid = policyElm.getAttribute("guid");
-                guidToElementMap.put(guid, policyElm);
+                final Element policyDetailElm = XmlUtil.findOnlyOneChildElementByName(policyElm, BundleUtils.L7_NS_GW_MGMT, "PolicyDetail");
+                final String policyName = findEntityNameFromElement(policyDetailElm);
+                guidToElementMap.put(policyName, policyElm);
             }
 
             bundleToAllPolicies.put(aBundle.getId(), guidToElementMap);
@@ -206,24 +206,24 @@ public class OAuthInstallerAdminImplTest {
             System.out.println("Bundle: " + entry.getKey());
             final Map<String, Element> value = entry.getValue();
             for (Map.Entry<String, Element> elementEntry : value.entrySet()) {
-                final String guid = elementEntry.getKey();
-                if (!guidToPolicyElms.containsKey(guid)) {
-                    guidToPolicyElms.put(guid, new ArrayList<Element>());
+                final String policyName = elementEntry.getKey();
+                if (!guidToPolicyElms.containsKey(policyName)) {
+                    guidToPolicyElms.put(policyName, new ArrayList<Element>());
                 }
-                guidToPolicyElms.get(guid).add(elementEntry.getValue());
-                System.out.println("\t" + guid);
+                guidToPolicyElms.get(policyName).add(elementEntry.getValue());
+                System.out.println("\t" + policyName);
             }
         }
 
         // Validate all policies are identical
         for (Map.Entry<String, List<Element>> entry : guidToPolicyElms.entrySet()) {
-            final String guid = entry.getKey();
+            final String policyName = entry.getKey();
             final List<Element> policyElms = entry.getValue();
 
-            System.out.println("Guid: " + guid + " has " + policyElms.size() + " occurrences.");
+            System.out.println("Policy: " + policyName + " has " + policyElms.size() + " occurrences.");
 
             String canonicalXml = null;
-            // Validate all policies for this guid are identical
+            // Validate all policies for this policyName are identical
             for (Element policyElm : policyElms) {
                 final ByteArrayOutputStream byteOutExpected = new ByteArrayOutputStream();
                 XmlUtil.canonicalize(policyElm, byteOutExpected);
@@ -232,28 +232,121 @@ public class OAuthInstallerAdminImplTest {
                     canonicalXml = policyCanonical;
                 }
 
-                Assert.assertEquals("Inconsistent policy XML found for policy '" + guid + "'", canonicalXml, policyCanonical);
+                Assert.assertEquals("Inconsistent policy XML found for policy '" + policyName + "'", canonicalXml, policyCanonical);
             }
         }
     }
 
     @Test
-    @Ignore
-    public void testGetId() throws Exception {
-
-    }
-
-    @Test
-    @Ignore
     public void testResponse_PermissionDenied() throws Exception {
-        //todo
-        fail("Implement");
+        final Set<String> foundAuditEvents = new HashSet<String>();
+        final Set<AuditDetail> foundDetails = new HashSet<AuditDetail>();
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
+            @Override
+            public void publishEvent(ApplicationEvent applicationEvent) {
+                // note this code will run on a separate thread to the actual test so failures here will not
+                // be reported in junit
+
+                if (applicationEvent instanceof InstallPolicyBundleEvent) {
+                    InstallPolicyBundleEvent installEvent = (InstallPolicyBundleEvent) applicationEvent;
+                    // contents of the access denied request xml not important
+                    final String deniedRequestXml = "<DeniedRequest />";
+                    installEvent.setProcessingException(new GatewayManagementDocumentUtilities.AccessDeniedManagementResponse("Access Denied", deniedRequestXml));
+                    installEvent.setProcessed(true);
+                } else if (applicationEvent instanceof OAuthInstallerAdminImpl.OtkInstallationAuditEvent) {
+                    final OAuthInstallerAdminImpl.OtkInstallationAuditEvent auditEvent = (OAuthInstallerAdminImpl.OtkInstallationAuditEvent) applicationEvent;
+                    foundDetails.addAll(auditEvent.getAuditDetails());
+                    foundAuditEvents.add(auditEvent.getNote());
+                }
+            }
+        });
+
+        final AsyncAdminMethods.JobId<ArrayList> jobId = admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1")
+                , -5002, new HashMap<String, BundleMapping>(), null);
+
+        while (!admin.getJobStatus(jobId).startsWith("inactive")) {
+            Thread.sleep(10L);
+        }
+
+        final AsyncAdminMethods.JobResult<ArrayList> installResult = admin.getJobResult(jobId);
+        final List<String> results = installResult.result;
+        assertNull(results);
+
+        assertEquals("Problem installing OAuth 1.0: Access Denied", installResult.throwableMessage);
+
+        for (String audit : foundAuditEvents) {
+            System.out.println(audit);
+        }
+
+        //audits
+        assertTrue("Required audit is missing", foundAuditEvents.contains("Problem during installation of the OAuth Toolkit"));
+
+        //verify audit details
+        boolean found = false;
+        for (AuditDetail foundDetail : foundDetails) {
+            final String[] params = foundDetail.getParams();
+            if (params != null && params.length > 0) {
+                final String actualParam = params[0];
+                if (actualParam.equals("Problem installing OAuth 1.0: Access Denied")) {
+                    found = true;
+                }
+
+            }
+        }
+
+        assertTrue("Expected audit detail not found", found);
     }
 
+    /**
+     * Tests that all folders referenced by policies and services in a bundle exist in the folder enumeration.
+     */
     @Test
     @Ignore
-    public void testAllFolderIdsAreTheSame() {
-        fail("Test to ensure that all bundle names contain the same folder ids");
+    public void testAllFolderIdsAreTheSame() throws Exception {
+        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
+        final OAuthToolkitBundleResolver resolver = new OAuthToolkitBundleResolver(bundleInfos);
+        final List<BundleInfo> allBundles = resolver.getResultList();
+
+        // Collect all ids for a folder name
+        for (BundleInfo aBundle : allBundles) {
+            System.out.println("Bundle " + aBundle.getName());
+            final Set<String> allFoldersInBundle = new HashSet<String>();
+
+            final Document folderDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.FOLDER, false);
+            final List<Element> folderElms = getEntityElements(folderDocument.getDocumentElement(), "Folder");
+            for (Element folderElm : folderElms) {
+                final String idAttr = folderElm.getAttribute("id");
+                allFoldersInBundle.add(idAttr);
+            }
+
+            final Set<String> foundFolderIds = new HashSet<String>();
+            // Get all folder ids referenced from services
+            final Document serviceDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.SERVICE, false);
+            final List<Element> serviceElements = getEntityElements(serviceDocument.getDocumentElement(), "Service");
+
+            for (Element serviceElm : serviceElements) {
+                final Element serviceDetailElm = XmlUtil.findOnlyOneChildElementByName(serviceElm, BundleUtils.L7_NS_GW_MGMT, "ServiceDetail");
+                final String folderId = serviceDetailElm.getAttribute("folderId");
+                foundFolderIds.add(folderId);
+            }
+
+            // Get all folder ids referenced from policies
+            final Document policyDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.POLICY, false);
+            final List<Element> policyElements = getEntityElements(policyDocument.getDocumentElement(), "Policy");
+
+            for (Element policyElm: policyElements) {
+                final Element policyDetailElm = XmlUtil.findOnlyOneChildElementByName(policyElm, BundleUtils.L7_NS_GW_MGMT, "PolicyDetail");
+                final String folderId = policyDetailElm.getAttribute("folderId");
+                foundFolderIds.add(folderId);
+            }
+
+            System.out.println("All folders in bundle: " + allFoldersInBundle);
+            System.out.println("All found folders    : " + foundFolderIds);
+
+            // validate all folder ids referenced exist
+            assertTrue(allFoldersInBundle.containsAll(foundFolderIds));
+        }
+
     }
 
     @Test
@@ -311,7 +404,7 @@ public class OAuthInstallerAdminImplTest {
                     try {
                         {
                             final Document policyEnum = installEvent.getBundleResolver().getBundleItem(bundleInfo.getId(), BundleResolver.BundleItem.POLICY, false);
-                            final List<Element> gatewayMgmtPolicyElments = GatewayManagementDocumentUtilities.getEntityElements(policyEnum.getDocumentElement(), "Policy");
+                            final List<Element> gatewayMgmtPolicyElments = getEntityElements(policyEnum.getDocumentElement(), "Policy");
                             for (Element policyElement : gatewayMgmtPolicyElments) {
 
                                 final Element policyResourceElmWritable = PolicyUtils.getPolicyResourceElement(policyElement, "Policy", "not used");
@@ -326,7 +419,7 @@ public class OAuthInstallerAdminImplTest {
 
                         {
                             final Document serviceEnum = installEvent.getBundleResolver().getBundleItem(bundleInfo.getId(), BundleResolver.BundleItem.SERVICE, false);
-                            final List<Element> gatewayMgmtPolicyElments = GatewayManagementDocumentUtilities.getEntityElements(serviceEnum.getDocumentElement(), "Service");
+                            final List<Element> gatewayMgmtPolicyElments = getEntityElements(serviceEnum.getDocumentElement(), "Service");
                             for (Element policyElement : gatewayMgmtPolicyElments) {
 
                                 final Element policyResourceElmWritable = PolicyUtils.getPolicyResourceElement(policyElement, "Service", "not used");
