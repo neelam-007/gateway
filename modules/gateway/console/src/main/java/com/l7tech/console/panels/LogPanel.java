@@ -273,8 +273,6 @@ public class LogPanel extends JPanel {
         }
     }
 
-    private long autoRepeatTime = -1L;
-
     /**
      * Constructor
      */
@@ -338,10 +336,7 @@ public class LogPanel extends JPanel {
         getMsgTable().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if ((System.currentTimeMillis() - autoRepeatTime) > 250L ) {
                     updateMsgDetails();
-                }
-                autoRepeatTime = System.currentTimeMillis(); //hackery to get around the linux auto-repeat problem
             }
         });
     }
