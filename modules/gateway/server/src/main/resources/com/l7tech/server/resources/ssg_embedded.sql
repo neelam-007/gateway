@@ -1550,7 +1550,7 @@ alter table encapsulated_assertion
 CREATE TABLE encapsulated_assertion_property (
   encapsulated_assertion_oid bigint NOT NULL,
   name varchar(255) NOT NULL,
-  value varchar(32672) NOT NULL
+  value clob(2147483647) NOT NULL
 );
 
 alter table encapsulated_assertion_property

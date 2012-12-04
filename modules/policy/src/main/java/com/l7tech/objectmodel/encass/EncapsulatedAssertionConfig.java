@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.util.BeanUtils;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -34,6 +35,13 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 @Inheritance(strategy= InheritanceType.SINGLE_TABLE)
 @Table(name="encapsulated_assertion")
 public class EncapsulatedAssertionConfig extends NamedEntityImp {
+    public static final String META_PROP_PREFIX = "assertionMetadata.";
+    public static final String PROP_META_BASE_NAME = META_PROP_PREFIX + AssertionMetadata.BASE_NAME;
+    public static final String PROP_META_PALETTE_NODE_NAME = META_PROP_PREFIX + AssertionMetadata.PALETTE_NODE_NAME;
+    public static final String PROP_META_PALETTE_NODE_ICON = META_PROP_PREFIX + AssertionMetadata.PALETTE_NODE_ICON;
+    public static final String PROP_PALETTE_FOLDER = "paletteFolder";
+    public static final String PROP_ICON_BASE64 = "paletteIconBase64";
+
     private Policy policy;
     private Set<EncapsulatedAssertionArgumentDescriptor> argumentDescriptors = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
     private Set<EncapsulatedAssertionResultDescriptor> resultDescriptors = new HashSet<EncapsulatedAssertionResultDescriptor>();
