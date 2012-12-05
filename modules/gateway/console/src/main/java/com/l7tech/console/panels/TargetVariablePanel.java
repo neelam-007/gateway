@@ -357,7 +357,8 @@ public class TargetVariablePanel  extends JPanel {
 
     private boolean isAtLeastOneSuffixOverwritten() {
         boolean ret = false;
-        final String variablePrefix = getVariable();
+        //need to convert to lowercase because all predecessorVariables are lowercase
+        final String variablePrefix = getVariable().toLowerCase();
         for (String suffix: suffixes) {
             if (predecessorVariables.contains(variablePrefix + "." + suffix)) {
                 ret = true;
@@ -369,7 +370,8 @@ public class TargetVariablePanel  extends JPanel {
 
     private boolean isEverySuffixPresentInPredecessors() {
         boolean ret = true;
-        final String variablePrefix = getVariable();
+        //need to convert to lowercase because all predecessorVariables are lowercase
+        final String variablePrefix = getVariable().toLowerCase();
         for (String suffix: suffixes) {
             if (!predecessorVariables.contains(variablePrefix + "." + suffix)) {
                 ret = false;
