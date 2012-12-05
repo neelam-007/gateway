@@ -100,6 +100,7 @@ public class GatewayFeatureSets {
     public static final String UI_MANAGE_LOG_SINKS = "ui:ManageLogSinks";
     public static final String UI_MANAGE_AUDIT_SINK = "ui:ManageAuditSink";
     public static final String UI_MANAGE_EMAIL_LISTENERS = "ui:ManageEmailListeners";
+    public static final String UI_MANAGE_ENCAPSULATED_ASSERTIONS = "ui:ManageEncapsulatedAssertions";
 
     public static final String FEATURE_SIGNED_ATTACHMENTS = "feature:SignedAttachments";
 
@@ -238,8 +239,8 @@ public class GatewayFeatureSets {
         GatewayFeatureSet encass =
         fsr("set:encass", "Enable Encapsulated Assertion support",
             "Enables Gateway to create and use encapsulated assertions.",
-            srv(SERVICE_ENCAPSULATED_ASSERTION, "Ability to use encapsulated assertions",
-                "Includes the ability to create and manage encapsulated assertion, as well as to see them in the assertion palette and use them."));
+            ui(UI_MANAGE_ENCAPSULATED_ASSERTIONS, "Ability to use Manage Encapsulated Assertions GUI"),
+            srv(SERVICE_ENCAPSULATED_ASSERTION, "Ability to use encapsulated assertions"));
 
         GatewayFeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",

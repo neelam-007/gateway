@@ -176,4 +176,11 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
     protected String getClosedIconResource() {
         return "com/l7tech/console/resources/folder.gif";
     }
+
+    /**
+     * @return the palette folder ID for modular assertion metadata matching purposes, eg "serviceAvailability".
+     */
+    public String getFolderId() {
+        return id;
+    }
 }

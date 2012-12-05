@@ -182,7 +182,7 @@ public final class TableUtil {
      * @param columns  one or more column descriptors.  Use {@link #column} to create one.
      * @return the SimpleTableModel that was created and assigned.
      */
-    // TODO [jdk7] @SafeVarargs
+    @SafeVarargs
     public static <RT> SimpleTableModel<RT> configureTable(JTable table, Col<RT>... columns) {
         SimpleTableModel<RT> model = new SimpleTableModel<RT>();
         model.setColumns(Arrays.<SimpleColumn<RT>>asList(columns));

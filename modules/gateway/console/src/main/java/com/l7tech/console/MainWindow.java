@@ -129,8 +129,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem manageCertificatesMenuItem = null;
     private JMenuItem managePrivateKeysMenuItem = null;
     private JMenuItem manageSecurePasswordsMenuItem = null;
-    private JMenuItem manageSsgConnectorsMenuItem = null;
-    private JMenuItem manageJdbcConnectionsMenuItem = null;
     private JMenuItem revokeCertificatesMenuItem = null;
     private JMenuItem manageGlobalResourcesMenuItem = null;
     private JMenuItem manageClusterPropertiesMenuItem = null;
@@ -193,6 +191,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ConfigureFtpAuditArchiverAction configureFtpAuditArchiver = null;
     private ManageUDDIRegistriesAction manageUDDIRegistriesAction = null;
     private ManageHttpConfigurationAction manageHttpConfigurationAction = null;
+    private ManageEncapsulatedAssertionsAction manageEncapsulatedAssertionsAction = null;
 
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
@@ -1022,6 +1021,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageUDDIRegistriesAction());
             menu.add(getManageHttpConfigurationAction());
             menu.add(getManageServiceResolutionMenuItem());
+            menu.add(getManageEncapsulatedAssertionsAction());
 
             menu.add(getCustomGlobalActionsMenu());
 
@@ -2159,6 +2159,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageSsgConnectorsAction;
     }
 
+    private Action getManageEncapsulatedAssertionsAction() {
+        if (manageEncapsulatedAssertionsAction == null) {
+            manageEncapsulatedAssertionsAction = new ManageEncapsulatedAssertionsAction();
+            disableUntilLogin(manageEncapsulatedAssertionsAction);
+        }
+        return manageEncapsulatedAssertionsAction;
+    }
+
     private Action getManageUDDIRegistriesAction() {
         if (manageUDDIRegistriesAction != null) return manageUDDIRegistriesAction;
 
@@ -2537,6 +2545,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageUDDIRegistriesAction());
                 manageMenu.add(getManageHttpConfigurationAction());
                 manageMenu.add(getManageServiceResolutionMenuItem());
+                manageMenu.add(getManageEncapsulatedAssertionsAction());
 
                 manageMenu.add(getCustomGlobalActionsMenu());
                 appletManagePopUpMenu = manageMenu;
@@ -3678,18 +3687,6 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (manageSecurePasswordsMenuItem != null)
             return manageSecurePasswordsMenuItem;
         return manageSecurePasswordsMenuItem = new JMenuItem(getManageSecurePasswordsAction());
-    }
-
-    public JMenuItem getManageSsgConnectorsMenuItem() {
-        if (manageSsgConnectorsMenuItem != null)
-            return manageSsgConnectorsMenuItem;
-        return manageSsgConnectorsMenuItem = new JMenuItem(getManageSsgConnectorsAction());
-    }
-
-    public JMenuItem getManageJdbcConnectionsMenuItem() {
-        if (manageJdbcConnectionsMenuItem != null)
-            return manageJdbcConnectionsMenuItem;
-        return manageJdbcConnectionsMenuItem = new JMenuItem(getManageJdbcConnectionsAction());
     }
 
     public JMenuItem getRevokeCertificatesMenuItem() {

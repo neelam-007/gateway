@@ -4,6 +4,9 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -60,7 +63,11 @@ public class EncapsulatedAssertion extends MessageTargetableAssertion implements
             : new EncapsulatedAssertionConfig();
 
         // Copy over simple string-valued properties
-        meta.put(BASE_NAME, config.getProperty(EncapsulatedAssertionConfig.PROP_META_BASE_NAME));
+        String baseName = config.getProperty(EncapsulatedAssertionConfig.PROP_META_BASE_NAME);
+        if (baseName == null)
+            baseName = toSafeBaseName(baseName);
+
+        meta.put(BASE_NAME, baseName);
         meta.put(PALETTE_NODE_NAME, config.getProperty(EncapsulatedAssertionConfig.PROP_META_PALETTE_NODE_NAME));
         meta.put(PALETTE_NODE_ICON, config.getProperty(EncapsulatedAssertionConfig.PROP_META_PALETTE_NODE_ICON));
 
@@ -69,5 +76,25 @@ public class EncapsulatedAssertion extends MessageTargetableAssertion implements
 
         meta.put(META_INIT, Boolean.TRUE);
         return meta;
+    }
+
+    /**
+     * Convert the specified name into a name suitable for use as a BASE_NAME assertion property.
+     *
+     * @param name name to examine.
+     * @return a BASE_NAME identifier based on this name.
+     */
+    private String toSafeBaseName(String name) {
+        // Remove any sequences of bad chars followed by a letter, and replace with just the letter
+        Pattern firstAfterBadChars = Pattern.compile("(?:^|[^a-zA-Z0-9_]+)([a-zA-Z0-9])");
+        Matcher matcher = firstAfterBadChars.matcher(name);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find())
+            matcher.appendReplacement(sb, matcher.group(1).toUpperCase());
+        matcher.appendTail(sb);
+
+        // Strip any remaining bad characters
+        Pattern badChars = Pattern.compile("[^a-zA-Z0-9_]");
+        return badChars.matcher(sb.toString()).replaceAll("");
     }
 }

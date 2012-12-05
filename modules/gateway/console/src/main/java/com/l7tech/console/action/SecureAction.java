@@ -48,6 +48,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     public static final String UI_MANAGE_LOG_SINKS = "ui:ManageLogSinks";
     public static final String UI_MANAGE_AUDIT_SINK = "ui:ManageAuditSink";
     public static final String UI_MANAGE_EMAIL_LISTENERS = "ui:ManageEmailListeners";
+    public static final String UI_MANAGE_ENCAPSULATED_ASSERTIONS = "ui:ManageEncapsulatedAssertions";
 
     /** Specify that an action requires at least one authentication assertion to be licensed. */
     public static final Collection<Class> LIC_AUTH_ASSERTIONS =
@@ -284,14 +285,9 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      */
     public final void actionPerformed(ActionEvent ev) throws AccessControlException {
         if (!isAuthorized()) {
-            logger.warning("Not authorized, action: " + getName()); // TODO pop a dialog?
+            logger.warning("Not authorized, action: " + getName());
             return;
         }
-//        TODO should we do hard license check here?
-//        or should we allow programmatic invocation of otherwise-unlicensed actions?
-//        if (!isLicensed()) {
-//            throw new AccessControlException("Not licensed, action: " + getName());
-//        }
         super.actionPerformed(ev);
     }
 

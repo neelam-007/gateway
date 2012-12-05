@@ -84,7 +84,7 @@ public class ExceptionUtils {
      * checks for a message in its cause.  If all causes have been exhaused, returns the
      * classname of the original exception.
      *
-     * @param t the Throwable to examine.  Must not be null.
+     * @param t the Throwable to examine.  May be null.
      * @return a diagnostic message that can be displayed.  Never null.
      */
     @NotNull

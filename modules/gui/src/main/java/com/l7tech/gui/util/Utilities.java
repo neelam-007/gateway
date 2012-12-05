@@ -397,6 +397,19 @@ public class Utilities {
     }
 
     /**
+     * Create an action that will dispose the specified window.
+     * @param window  the window to dispose when the action is performed.
+     * @return an Action that, when performed, will call dispose on the specified Window.
+     */
+    public static AbstractAction createDisposeAction(final Window window) {
+        return new AbstractAction() {
+            public void actionPerformed(ActionEvent evt) {
+                window.dispose();
+            }
+        };
+    }
+
+    /**
      * Update the input map of the JDialog's <code>JLayeredPane</code> so
      * the ESC keystroke  invoke dispose on the dialog.
      *
@@ -408,12 +421,7 @@ public class Utilities {
         layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escKeyStroke, KEY_ESCAPE);
         layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, KEY_ESCAPE);
         layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, KEY_ESCAPE);
-        layeredPane.getActionMap().put(KEY_ESCAPE,
-                                       new AbstractAction() {
-                                           public void actionPerformed(ActionEvent evt) {
-                                               d.dispose();
-                                           }
-                                       });
+        layeredPane.getActionMap().put(KEY_ESCAPE, createDisposeAction(d));
     }
 
     /**
@@ -427,12 +435,7 @@ public class Utilities {
         final KeyStroke escKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
         layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, KEY_ESCAPE);
         layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, KEY_ESCAPE);
-        layeredPane.getActionMap().put(KEY_ESCAPE,
-                                       new AbstractAction() {
-                                           public void actionPerformed(ActionEvent evt) {
-                                               f.dispose();
-                                           }
-                                       });
+        layeredPane.getActionMap().put(KEY_ESCAPE, createDisposeAction(f));
     }
 
     /**
