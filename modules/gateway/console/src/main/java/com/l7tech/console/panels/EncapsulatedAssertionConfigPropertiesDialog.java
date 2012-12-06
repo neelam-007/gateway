@@ -6,6 +6,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
@@ -29,6 +30,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JComboBox paletteFolderComboBox;
     private JButton changePolicyButton;
     private JLabel policyNameLabel;
+    private JButton selectIconButton;
+    private JLabel iconLabel;
 
     private final EncapsulatedAssertionConfig config;
     private final boolean readOnly;
@@ -91,6 +94,9 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                 doChangePolicy();
             }
         });
+        final OkCancelDialog okCancelDialog = new OkCancelDialog(this, "Icon", true, new IconSelectorDialog());
+        selectIconButton.addActionListener(new IconActionListener(okCancelDialog));
+        iconLabel.setIcon((ImageIcon)okCancelDialog.getValue());
 
         okButton.setEnabled(!readOnly);
         updateView();
@@ -199,5 +205,28 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private void showError(String message, @Nullable Throwable e) {
         final String suffix = e == null ? "" : message + ": " + ExceptionUtils.getMessage(e);
         DialogDisplayer.showMessageDialog(this, suffix, "Error", JOptionPane.ERROR_MESSAGE, null);
+    }
+
+    private class IconActionListener implements ActionListener {
+        private OkCancelDialog okCancelDialog;
+        private IconActionListener(final OkCancelDialog okCancelDialog){
+            this.okCancelDialog = okCancelDialog;
+        }
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            okCancelDialog.pack();
+            Utilities.centerOnParentWindow(okCancelDialog);
+            DialogDisplayer.display(okCancelDialog, new Runnable() {
+                @Override
+                public void run() {
+                    if(okCancelDialog.wasOKed()){
+                        final ImageIcon icon = (ImageIcon) okCancelDialog.getValue();
+                        iconLabel.setIcon(icon);
+                        // TODO set icon name on Encapsulated Assertion using icon.getDescription();
+                    }
+                }
+            });
+
+    }
     }
 }
