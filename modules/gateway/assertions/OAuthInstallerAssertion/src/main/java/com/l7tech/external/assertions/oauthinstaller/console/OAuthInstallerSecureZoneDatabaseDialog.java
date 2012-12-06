@@ -100,7 +100,7 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
 
         final boolean enableDbCreate = SyspropUtil.getBoolean(
                 "com.l7tech.external.assertions.oauthinstaller.console.OAuthInstallerSecureZoneDatabaseDialog.enableCreateDb",
-                false);
+                true);
 
         if (!enableDbCreate) {
             tabbedPane.remove(createDatabasePanel);
