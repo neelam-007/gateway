@@ -6,11 +6,14 @@ import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.*;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -26,6 +29,7 @@ import java.util.*;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.findEntityNameFromElement;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getEntityElements;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class OAuthInstallerAdminImplTest {
 
@@ -349,10 +353,33 @@ public class OAuthInstallerAdminImplTest {
 
     }
 
+    /**
+     * Validates the definition and usage (where possible) of any ${host_ variable.
+     *
+     * This is important as the OTK installer modifies , when requested, usages of these variable to inject the 'prefix'
+     * value to allow for side by side installs of the OTK. If the idiom is not followed correctly in the canned OTK
+     * policies, then this mechanism will not work.
+     *
+     * Rules are:
+     * Variables defined with a name of 'host_' must not end with a trailing slash.
+     * Usages of host_ variables, whether in another set variable assertion or in a HTTP routing assertion must follow
+     * the variable with a slash '/' character. This rule cannot be enforced when the usage is followed by another
+     * variable reference.
+     *
+     */
     @Test
-    @Ignore
     public void testHostnamesDoNotContainTraililngSlash() throws Exception {
-        fail("Test to ensure no hostnames contain a trailing slash");
+        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
+        final OAuthToolkitBundleResolver resolver = new OAuthToolkitBundleResolver(bundleInfos);
+        final List<BundleInfo> allBundles = resolver.getResultList();
+
+        for (BundleInfo aBundle : allBundles) {
+            final Document policyDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.POLICY, false);
+            validateEnumerationDocForHostNames(policyDocument.getDocumentElement(), "Policy");
+
+            final Document serviceDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.SERVICE, false);
+            validateEnumerationDocForHostNames(serviceDocument.getDocumentElement(), "Service");
+        }
     }
 
     @Test
@@ -500,4 +527,61 @@ public class OAuthInstallerAdminImplTest {
                             new Pair<BundleInfo, String>(new BundleInfo("a07924c0-0265-42ea-90f1-2428e31ae5ae", "1.0", "StorageManager", "Desc"), "StorageManager")
                     ));
 
+    private void validateEnumerationDocForHostNames(Element enumElement, String type) throws Exception {
+
+        final List<Element> enumPolicyElms = getEntityElements(enumElement, type);
+        for (Element policyElm : enumPolicyElms) {
+            final Element policyResourceElement = PolicyUtils.getPolicyResourceElement(policyElm, "policy", "Not needed");
+            final Document layer7Policy = PolicyUtils.getPolicyDocumentFromResource(policyResourceElement, "Policy", "Not Needed");
+            final List<Element> contextVariables = PolicyUtils.findContextVariables(layer7Policy.getDocumentElement());
+            validateSetVariableForHostVarUsage(contextVariables);
+            final List<Element> protectedUrls = PolicyUtils.findProtectedUrls(layer7Policy.getDocumentElement());
+            for (Element protectedUrl : protectedUrls) {
+                System.out.println(XmlUtil.nodeToFormattedString(protectedUrl));
+                final String urlValue = protectedUrl.getAttribute("stringValue");
+                validateHostVariableUsage(urlValue, "ProtectedServiceUrl");
+            }
+        }
+    }
+
+    private void validateSetVariableForHostVarUsage(List<Element> contextVariables) {
+        for (Element contextVariable : contextVariables) {
+            final Element variableToSet = XmlUtil.findFirstChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "VariableToSet");
+            final String varName = variableToSet.getAttribute("stringValue");
+            final String varReference = Syntax.getVariableExpression(varName);
+            final Element expression = XmlUtil.findFirstChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "Base64Expression");
+            final String base64Value = expression.getAttribute("stringValue");
+            final byte[] decodedValue = HexUtils.decodeBase64(base64Value);
+            final String varValue = new String(decodedValue, Charsets.UTF8);
+            if (varName.startsWith("host_")) {
+                assertFalse("Host variable '" + varName + "'value should not contain a trailing slash: " + varValue, varValue.endsWith("/"));
+            } else if (varValue.contains("${host_")) {
+                validateHostVariableUsage(varValue, varName);
+            }
+        }
+    }
+
+    /**
+     * Validate the usage of a ${host_ variable in a policy. The same rules apply whether it is referneced from within
+     * a context variable or a protected service URL in a routing assertion. The ${host_ variable must be followed by
+     * a slash. If it is followed by a context variable then we cannot validate that particular usage.
+     *
+     * @param usageValue The value of the variable or protected service URL which references the ${host_ variable
+     * @param description A description of the usage used when test fails to identify the usage issue.
+     */
+    private void validateHostVariableUsage(String usageValue, String description) {
+        int index = usageValue.indexOf("${host_");
+        while (index != -1) {
+            int closeIndex = usageValue.indexOf("}", index + 1);
+            char nextChar = usageValue.charAt(closeIndex + 1);
+            if (nextChar == '$') {
+                System.out.println("Cannot verify '" + description + "' with value '" + usageValue + "' as host variable usage as it is followed by a context variable");
+            } else {
+                assertEquals("Invalid ${host_ var reference for '" + description + "' with value '" + usageValue + "'. " +
+                        "Usage must be followed by a trailing slash.", "/", String.valueOf(nextChar));
+            }
+            index = usageValue.indexOf("${host_", closeIndex + 1);
+        }
+
+    }
 }

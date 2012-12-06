@@ -39,17 +39,14 @@ public class PolicyUtils {
         }
     }
 
-    //todo test coverage
     public static List<Element> findJdbcReferences(final Element layer7PolicyDoc) {
         return findElements(layer7PolicyDoc, "//L7p:JdbcQuery");
     }
 
-    //todo test coverage
     public static List<Element> findProtectedUrls(final Element layer7PolicyDoc) {
         return findElements(layer7PolicyDoc, "//L7p:ProtectedServiceUrl");
     }
 
-    //todo test coverage
     public static List<Element> findContextVariables(final Element layer7PolicyDoc) {
         return findElements(layer7PolicyDoc, "//L7p:SetVariable");
     }
@@ -135,7 +132,7 @@ public class PolicyUtils {
                 ) {
 
             // runtime programming error
-            throw new IllegalArgumentException("Invalid policy element. Cannot extract policy includes");
+            throw new IllegalArgumentException("Invalid policy element. Cannot extract policy document");
         }
 
         try {
