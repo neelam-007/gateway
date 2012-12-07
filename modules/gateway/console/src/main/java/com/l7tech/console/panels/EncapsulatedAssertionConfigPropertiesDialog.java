@@ -1,32 +1,42 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.SimpleTableModel;
+import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionDataType;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.PolicyVariableUtils;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
+import java.io.IOException;
+import java.util.*;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.gui.util.TableUtil.column;
 import static com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig.*;
+import static com.l7tech.util.Functions.propertyTransform;
 
 public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(EncapsulatedAssertionConfigPropertiesDialog.class.getName());
@@ -40,6 +50,17 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JLabel policyNameLabel;
     private JButton selectIconButton;
     private JLabel iconLabel;
+    private JTable outputsTable;
+    private JTable inputsTable;
+    private JButton addInputButton;
+    private JButton addOutputButton;
+    private JButton editInputButton;
+    private JButton editOutputButton;
+    private JButton deleteInputButton;
+    private JButton deleteOutputButton;
+
+    private SimpleTableModel<EncapsulatedAssertionArgumentDescriptor> inputsTableModel;
+    private SimpleTableModel<EncapsulatedAssertionResultDescriptor> outputsTableModel;
 
     private final EncapsulatedAssertionConfig config;
     private final boolean readOnly;
@@ -71,7 +92,12 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
         cancelButton.addActionListener(Utilities.createDisposeAction(this));
 
-        Utilities.equalizeButtonSizes(changePolicyButton, selectIconButton);
+        final AbstractButton[] buttons = {changePolicyButton, selectIconButton,
+            addInputButton, editInputButton, deleteInputButton,
+            addOutputButton, editOutputButton, deleteOutputButton,
+            okButton, cancelButton};
+        Utilities.equalizeButtonSizes(buttons);
+        Utilities.enableGrayOnDisabled(buttons);
 
         inputValidator.constrainTextFieldToBeNonEmpty("name", nameField, null);
         inputValidator.addRule(new InputValidator.ComponentValidationRule(changePolicyButton) {
@@ -109,8 +135,43 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         final OkCancelDialog<ImageIcon> okCancelDialog = new OkCancelDialog<ImageIcon>(this, "Icon", true, new IconSelectorDialog());
         selectIconButton.addActionListener(new IconActionListener(okCancelDialog));
 
+        inputsTableModel = TableUtil.configureTable(inputsTable,
+            column("GUI", 30, 30, 50, Functions.<Boolean, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiPrompt"), Boolean.class),
+            column("Name", 30, 140, 99999, propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentName")),
+            column("Type", 30, 140, 99999, Functions.<EncapsulatedAssertionDataType, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentType"), EncapsulatedAssertionDataType.class),
+            column("Default", 30, 140, 99999, propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "defaultValue")));
+
+        outputsTableModel = TableUtil.configureTable(outputsTable,
+            column("Name", 30, 140, 99999, propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultName")),
+            column("Type", 30, 140, 99999, Functions.<EncapsulatedAssertionDataType, EncapsulatedAssertionResultDescriptor>propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultType"), EncapsulatedAssertionDataType.class));
+
+        RunOnChangeListener enabler = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                enableOrDisableThings();
+            }
+        });
+        inputsTable.getSelectionModel().addListSelectionListener(enabler);
+        outputsTable.getSelectionModel().addListSelectionListener(enabler);
+
+        deleteInputButton.addActionListener(makeDeleteRowListener(inputsTable, inputsTableModel));
+        deleteOutputButton.addActionListener(makeDeleteRowListener(outputsTable, outputsTableModel));
+
         okButton.setEnabled(!readOnly);
         updateView();
+        enableOrDisableThings();
+    }
+
+    private <RT> ActionListener makeDeleteRowListener(final JTable table, final SimpleTableModel<RT> tableModel) {
+        return new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                RT row = tableModel.getRowObject(table.getSelectedRow());
+                if (row == null)
+                    return;
+                tableModel.removeRow(row);
+            }
+        };
     }
 
     public boolean isConfirmed() {
@@ -129,6 +190,9 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         iconResourceFilename = config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_RESOURCE_FILENAME);
         iconBase64 = config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64);
         iconLabel.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(config).right);
+
+        inputsTableModel.setRows(new ArrayList<EncapsulatedAssertionArgumentDescriptor>(config.getArgumentDescriptors()));
+        outputsTableModel.setRows(new ArrayList<EncapsulatedAssertionResultDescriptor>(config.getResultDescriptors()));
     }
 
     private void setPolicyAndPolicyNameLabel(Policy policy) {
@@ -152,6 +216,27 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         } else {
             config.removeProperty(PROP_ICON_BASE64);
         }
+
+        config.setArgumentDescriptors(new HashSet<EncapsulatedAssertionArgumentDescriptor>(inputsTableModel.getRows()));
+        config.setResultDescriptors(new HashSet<EncapsulatedAssertionResultDescriptor>(outputsTableModel.getRows()));
+    }
+
+    private void enableOrDisableThings() {
+        boolean haveInput = getSelectedInput() != null;
+        editInputButton.setEnabled(haveInput);
+        deleteInputButton.setEnabled(haveInput);
+
+        boolean haveOutput = getSelectedOutput() != null;
+        editOutputButton.setEnabled(haveOutput);
+        deleteOutputButton.setEnabled(haveOutput);
+    }
+
+    private EncapsulatedAssertionArgumentDescriptor getSelectedInput() {
+        return inputsTableModel.getRowObject(inputsTable.getSelectedRow());
+    }
+
+    private EncapsulatedAssertionResultDescriptor getSelectedOutput() {
+        return outputsTableModel.getRowObject(outputsTable.getSelectedRow());
     }
 
     private void loadPaletteFolders(String currentName) {
@@ -196,25 +281,29 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             }
 
             final PolicyHeader[] options = policyHeaders.toArray(new PolicyHeader[policyHeaders.size()]);
-            DialogDisplayer.showOptionDialog(this, "Select implementation policy:", "Set Implementation Policy", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, initialValue, new DialogDisplayer.OptionListener() {
+            DialogDisplayer.showInputDialog(this, "Select implementation policy:", "Set Implementation Policy", JOptionPane.QUESTION_MESSAGE, null, options, initialValue, new DialogDisplayer.InputListener() {
                 @Override
-                public void reportResult(int option) {
-                    if (JOptionPane.CLOSED_OPTION != option) {
-                        PolicyHeader policyHeader = options[option];
+                public void reportResult(Object option) {
+                    if (option == null)
+                        return;
+                    PolicyHeader policyHeader = (PolicyHeader) option;
 
-                        // Load the selected policy
-                        try {
-                            Policy newPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyHeader.getOid());
-                            if (newPolicy == null) {
-                                showError("Policy not found", null);
-                                return;
-                            }
-
-                            setPolicyAndPolicyNameLabel(newPolicy);
-
-                        } catch (FindException e) {
-                            showError("Unable to load policy", e);
+                    // Load the selected policy
+                    try {
+                        Policy newPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyHeader.getOid());
+                        if (newPolicy == null) {
+                            showError("Policy not found", null);
+                            return;
                         }
+
+                        setPolicyAndPolicyNameLabel(newPolicy);
+                        if (inputsTableModel.getRowCount() < 1)
+                            prePopulateInputsTable();
+                        if (outputsTableModel.getRowCount() < 1)
+                            prePopulateOutputsTable();
+
+                    } catch (FindException e) {
+                        showError("Unable to load policy", e);
                     }
                 }
             });
@@ -222,6 +311,70 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         } catch (FindException e) {
             showError("Unable to load list of available policy include fragments", e);
         }
+    }
+
+    @Nullable
+    private Assertion getFragmentRootAssertion() {
+        if (null == policy)
+            return null;
+        try {
+            return policy.getAssertion();
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Bad policy XML: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return null;
+        }
+    }
+
+    /**
+     * Add rows to the inputs table corresponding to the variables used by the currently-selected policy fragment.
+     */
+    private void prePopulateInputsTable() {
+        Assertion root = getFragmentRootAssertion();
+        if (null == root)
+            return;
+
+        String[] vars = PolicyVariableUtils.getVariablesUsedByDescendantsAndSelf(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
+        for (String var : vars) {
+            EncapsulatedAssertionArgumentDescriptor arg = new EncapsulatedAssertionArgumentDescriptor();
+            arg.setEncapsulatedAssertionConfig(config);
+            arg.setArgumentType(EncapsulatedAssertionDataType.STRING.name());
+            arg.setArgumentName(var);
+            arg.setGuiPrompt(false);
+            arg.setDefaultValue(null);
+            inputsTableModel.addRow(arg);
+        }
+    }
+
+    /**
+     * Add rows to the outputs table corresponding to the variables set by the currently-selected policy fragment.
+     */
+    private void prePopulateOutputsTable() {
+        Assertion root = getFragmentRootAssertion();
+        if (null == root)
+            return;
+
+        Map<String, VariableMetadata> vars = PolicyVariableUtils.getVariablesSetByDescendantsAndSelf(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
+        for (VariableMetadata vm : vars.values()) {
+            EncapsulatedAssertionResultDescriptor ret = new EncapsulatedAssertionResultDescriptor();
+            ret.setEncapsulatedAssertionConfig(config);
+            ret.setResultName(vm.getName());
+            ret.setResultType(toEncAssDataType(vm.getType()).name());
+            outputsTableModel.addRow(ret);
+        }
+    }
+
+    private EncapsulatedAssertionDataType toEncAssDataType(DataType type) {
+        if (DataType.BOOLEAN.equals(type))
+            return EncapsulatedAssertionDataType.BOOLEAN;
+        if (DataType.MESSAGE.equals(type))
+            return EncapsulatedAssertionDataType.MESSAGE;
+        if (DataType.DECIMAL.equals(type) || DataType.FLOAT.equals(type) || DataType.INTEGER.equals(type))
+            return EncapsulatedAssertionDataType.NUMBER;
+        if (DataType.DATE_TIME.equals(type))
+            return EncapsulatedAssertionDataType.DATE;
+
+        // TODO support more types
+        return EncapsulatedAssertionDataType.STRING;
     }
 
     private void showError(String message, @Nullable Throwable e) {

@@ -5,6 +5,7 @@ package com.l7tech.objectmodel.encass;
  */
 public enum EncapsulatedAssertionDataType {
     STRING,
+    BOOLEAN,
     NUMBER,
     DATE,
     MESSAGE
