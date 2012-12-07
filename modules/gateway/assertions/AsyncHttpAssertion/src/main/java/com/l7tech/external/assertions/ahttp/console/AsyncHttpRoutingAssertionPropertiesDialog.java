@@ -99,12 +99,12 @@ public class AsyncHttpRoutingAssertionPropertiesDialog extends AssertionProperti
     }
 
     private void setSelectedPolicy(String policyGuid) {
+        if (policyHeaders == null) {
+            loadPolicyHeaders();
+        }
         if (policyGuid == null) {
             policyComboBox.setSelectedItem(null);
             return;
-        }
-        if (policyHeaders == null) {
-            loadPolicyHeaders();
         }
         for (PolicyHeader policyHeader : policyHeaders) {
             if (policyGuid.equals(policyHeader.getGuid())) {
