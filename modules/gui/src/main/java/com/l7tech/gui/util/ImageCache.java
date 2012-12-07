@@ -166,6 +166,19 @@ public final class ImageCache {
     }
 
     /**
+     * Attempt to decode the specified bytes as an image in a supported format, and convert the result to a buffered image.
+     * <p/>
+     * This method does not enroll anything into the cache.
+     *
+     * @param imageBytes bytes of the image, in some supported format (eg, GIF, PNG, JPG).  Required.
+     * @param transparency transparency mode for the image, eg java.awt.Transparency.BITMASK or Transparency.TRANSLUCENT.
+     * @return a BufferedImage ready to render to a graphics context.  Never null.
+     */
+    public BufferedImage createUncachedBufferedImage(@NotNull byte[] imageBytes, int transparency) {
+        return toBufferedImage(Toolkit.getDefaultToolkit().createImage(imageBytes), transparency);
+    }
+
+    /**
      * Retrieves all icons(gif/png/jpeg) using the specified class loader.
      */
     public Collection<ImageIcon> getIcons(@NotNull final ClassLoader loader){
@@ -194,7 +207,7 @@ public final class ImageCache {
      * The method creates a BufferedImage which represents
      * the same Image as the parameter but consumes less memory.
      */
-    static final Image toBufferedImage(Image img, int transparency) {
+    static BufferedImage toBufferedImage(Image img, int transparency) {
         // load the image
         new ImageIcon(img);
         BufferedImage rep = createBufferedImage(img.getWidth(null), img.getHeight(null), transparency);
@@ -206,7 +219,7 @@ public final class ImageCache {
     }
 
     /** Creates BufferedImage with Transparency.BITMASK */
-    private static final BufferedImage createBufferedImage(int width, int height, int transparency) {
+    private static BufferedImage createBufferedImage(int width, int height, int transparency) {
         ColorModel model =
           GraphicsEnvironment.
           getLocalGraphicsEnvironment().

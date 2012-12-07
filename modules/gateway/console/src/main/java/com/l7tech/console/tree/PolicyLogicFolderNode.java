@@ -28,5 +28,6 @@ public class PolicyLogicFolderNode extends AbstractPaletteFolderNode {
         children = null;
         insertMatchingModularAssertions();
         insertMatchingCustomAssertions(Category.LOGIC);
+        insertMatchingEncapsulatedAssertions();
     }
 }

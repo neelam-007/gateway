@@ -2,6 +2,8 @@ package com.l7tech.console.tree;
 
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.console.util.Registry;
@@ -67,31 +69,44 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
      * meta() should define: meta.put(PALETTE_FOLDERS, new String[]{"policyLogic"})
      *
      * Once PALETTE_FOLDERS is defined in an assertions meta data, insertModularAssertionByType should no longer be used
-     *
-     * @return the childIndex to use for the next child inserted.  This will be the incoming nextIndex plus one
-     *         for each modular assertion that was inserted or -1 if using insert order.
      */
     protected void insertMatchingModularAssertions() {
 
         AssertionFinder assFinder = TopComponents.getInstance().getAssertionRegistry();
         Set<Assertion> bothHands = assFinder.getAssertions();
         for (Assertion ass : bothHands) {
-            // Find variants
-            Assertion[] variants = (Assertion[]) ass.meta().get(AssertionMetadata.VARIANT_PROTOTYPES);
-            if (variants == null || variants.length < 1) variants = new Assertion[]{ass};
+            insertAssertionVariants(ass);
+        }
+    }
 
-            for (Assertion variant : variants) {
-                String[] folders = (String[]) variant.meta().get(AssertionMetadata.PALETTE_FOLDERS);
-                if (folders == null || folders.length < 1) folders = new String[]{};
-                for (String folder : folders) {
-                    if (this.id.equals(folder)) {
-                        // This assertion wants to be in this folder
-                        insertModularAssertion(variant);
-                    }
+    /**
+     * Insert any encapsulated assertions that belong in this folder.
+     */
+    protected void insertMatchingEncapsulatedAssertions() {
+        Set<EncapsulatedAssertionConfig> configs = TopComponents.getInstance().getEncapsulatedAssertionRegistry().getRegisteredEncapsulatedAssertionConfigurations();
+        for (EncapsulatedAssertionConfig config : configs) {
+            Assertion ass = new EncapsulatedAssertion(config);
+            insertAssertionVariants(ass);
+        }
+    }
+
+    private void insertAssertionVariants(Assertion ass) {
+        // Find variants
+        Assertion[] variants = (Assertion[]) ass.meta().get(AssertionMetadata.VARIANT_PROTOTYPES);
+        if (variants == null || variants.length < 1) variants = new Assertion[]{ass};
+
+        for (Assertion variant : variants) {
+            String[] folders = (String[]) variant.meta().get(AssertionMetadata.PALETTE_FOLDERS);
+            if (folders == null || folders.length < 1) folders = new String[]{};
+            for (String folder : folders) {
+                if (this.id.equals(folder)) {
+                    // This assertion wants to be in this folder
+                    insertMetadataBasedAssertion(variant);
                 }
             }
         }
     }
+
 
     /**
      * Insert a modular assertion at the specified index.
@@ -115,7 +130,7 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
             for (Assertion variant : variants) {
                 if (assertionClass.isInstance(variant)) {
                     // Add assertion to folder
-                    insertModularAssertion(variant);
+                    insertMetadataBasedAssertion(variant);
                 }
             }
         }
@@ -123,13 +138,13 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
 
 
     /**
-     * Insert a palette node for the specified modular assertion into this folder, if possible.
+     * Insert a palette node for the specified assertion into this folder, if possible.
      *
      * @param ass  the prototype assertion that wants to be inserted.  Must not be null.
      * @return the childIndex to use for the next child inserted.  This will have been incremented from nextIndex
      *         if an palette node was added successfully.
      */
-    protected void insertModularAssertion(Assertion ass) {
+    protected void insertMetadataBasedAssertion(Assertion ass) {
         //noinspection unchecked
         Functions.Unary< AbstractAssertionPaletteNode, Assertion > factory =
                 (Functions.Unary<AbstractAssertionPaletteNode, Assertion>)

@@ -2,7 +2,6 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditFactory;
-import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
@@ -10,18 +9,18 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
-import com.l7tech.server.policy.variable.EncapsulatedAssertionConfigManager;
+import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -34,8 +33,9 @@ import java.util.logging.Level;
 /**
  * Server implementation of encapsulated assertion invoker.
  */
-public class ServerEncapsulatedAssertion extends AbstractMessageTargetableServerAssertion<EncapsulatedAssertion> {
+public class ServerEncapsulatedAssertion extends AbstractServerAssertion<EncapsulatedAssertion> implements InitializingBean {
     @Inject
+    @Named("encapsulatedAssertionConfigManager")
     private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
 
     @Inject
@@ -50,12 +50,14 @@ public class ServerEncapsulatedAssertion extends AbstractMessageTargetableServer
 
     public ServerEncapsulatedAssertion(final @NotNull EncapsulatedAssertion assertion) {
         super(assertion);
-        configOrErrorRef.set(loadConfig());
-        initListener();
     }
 
     public ServerEncapsulatedAssertion(final @NotNull EncapsulatedAssertion assertion, final @Nullable AuditFactory auditFactory) {
         super(assertion, auditFactory);
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
         configOrErrorRef.set(loadConfig());
         initListener();
     }
@@ -118,8 +120,12 @@ public class ServerEncapsulatedAssertion extends AbstractMessageTargetableServer
     }
 
     @Override
-    protected AssertionStatus doCheckRequest(PolicyEnforcementContext context, Message message, String messageDescription, AuthenticationContext authContext) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Either<String, EncapsulatedAssertionConfig> configOrError = configOrErrorRef.get();
+        if (configOrError == null) {
+            getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Server Encapsulated Assertion was not initialized"); // must call afterPropertiesSet()
+            return AssertionStatus.SERVER_ERROR;
+        }
         if (configOrError.isLeft()) {
             getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Invalid Encapsulated Assertion Config: " + configOrError.left());
             return AssertionStatus.SERVER_ERROR;

@@ -51,10 +51,10 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        //Note PALETTE_FOLDERS is not defined as this assertion is added by type in ThreadProtectionFolderNode
         meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "<html>Helps prevent <b>malicious code injection</b> and <b>common SQL injection</b> attacks by blocking common SQL exploits from reaching protected web services. </html>");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/SQLProtection16x16.gif");
+        meta.put(PALETTE_FOLDERS, new String[] { "threatProtection" });
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.SqlAttackDialog");
         meta.put(PROPERTIES_ACTION_NAME, "SQL Attack Protection Properties");        

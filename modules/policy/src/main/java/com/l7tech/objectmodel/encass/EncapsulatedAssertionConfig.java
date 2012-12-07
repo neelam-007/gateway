@@ -4,7 +4,6 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.util.BeanUtils;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -16,7 +15,10 @@ import javax.persistence.*;
 import javax.validation.Valid;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
@@ -35,12 +37,19 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 @Inheritance(strategy= InheritanceType.SINGLE_TABLE)
 @Table(name="encapsulated_assertion")
 public class EncapsulatedAssertionConfig extends NamedEntityImp {
-    public static final String META_PROP_PREFIX = "assertionMetadata.";
-    public static final String PROP_META_BASE_NAME = META_PROP_PREFIX + AssertionMetadata.BASE_NAME;
-    public static final String PROP_META_PALETTE_NODE_NAME = META_PROP_PREFIX + AssertionMetadata.PALETTE_NODE_NAME;
-    public static final String PROP_META_PALETTE_NODE_ICON = META_PROP_PREFIX + AssertionMetadata.PALETTE_NODE_ICON;
     public static final String PROP_PALETTE_FOLDER = "paletteFolder";
+
+    /** Base64-encoded image in a supported format (gif, png, or jpg).  Should be 16x16 pixels, for the time being. */
     public static final String PROP_ICON_BASE64 = "paletteIconBase64";
+
+    /** Base resource path in which icon file resource names are searched for. */
+    public static final String ICON_RESOURCE_DIRECTORY = "com/l7tech/console/resources/";
+
+    /** Filename (including extension, but not including full path) of icon resource under {@link #ICON_RESOURCE_DIRECTORY}; or null if not specified. */
+    public static final String PROP_ICON_RESOURCE_FILENAME = "paletteIconResourceName";
+
+    /** The default icon to use for an encapsulated assertion that doesn't specify a different one. */
+    public static final String DEFAULT_ICON_RESOURCE_FILENAME = "star16.gif";
 
     private Policy policy;
     private Set<EncapsulatedAssertionArgumentDescriptor> argumentDescriptors = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
@@ -172,14 +181,21 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
 
     @Transient
     public EncapsulatedAssertionConfig getCopy() {
+        return getCopy(false);
+    }
+
+    @Transient
+    private EncapsulatedAssertionConfig getCopy(boolean readOnly) {
         //noinspection TryWithIdenticalCatches
         try {
             EncapsulatedAssertionConfig copy = new EncapsulatedAssertionConfig();
             BeanUtils.copyProperties(this, copy,
-                BeanUtils.omitProperties(BeanUtils.getProperties(getClass()), "properties", "argumentDescriptors", "resultDescriptors"));
+                BeanUtils.omitProperties(BeanUtils.getProperties(getClass()), "properties", "argumentDescriptors", "resultDescriptors", "policy"));
             copy.setProperties(new HashMap<String, String>(getProperties()));
             copy.setArgumentDescriptors(new HashSet<EncapsulatedAssertionArgumentDescriptor>(getArgumentDescriptors()));
             copy.setResultDescriptors(new HashSet<EncapsulatedAssertionResultDescriptor>(getResultDescriptors()));
+            Policy policy = getPolicy();
+            copy.setPolicy(policy == null ? null : new Policy(policy, null, readOnly));
             return copy;
         } catch (InvocationTargetException e) {
             throw new RuntimeException(e);
@@ -190,7 +206,7 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
 
     @Transient
     public EncapsulatedAssertionConfig getReadOnlyCopy() {
-        EncapsulatedAssertionConfig copy = getCopy();
+        EncapsulatedAssertionConfig copy = getCopy(true);
         copy.setReadOnly();
         return copy;
     }

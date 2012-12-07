@@ -1,10 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.assertion.ext.Category;
 
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -32,30 +29,9 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
         // We don't allow modular assertions to invite themselves into this folder, so we don't call
         // insertMatchingModularAssertions here.
 
-        List<AbstractPaletteFolderNode> nodeList = new LinkedList<AbstractPaletteFolderNode>();
-        nodeList.add(new AccessControlFolderNode());
-        nodeList.add(new TransportLayerSecurityFolderNode());
-        nodeList.add(new DefaultAssertionPaletteFolderNode("XML Security", "xmlSecurity", Category.XML_SEC));
-        nodeList.add(new XmlFolderNode());
-        nodeList.add(new RoutingFolderNode());
-        nodeList.add(new MiscFolderNode());
-        nodeList.add(new AuditFolderNode());
-        nodeList.add(new PolicyLogicFolderNode());
-        nodeList.add(new ThreatProtectionFolderNode());
-        nodeList.add(new DefaultAssertionPaletteFolderNode("Internal Assertions", "internalAssertions", null));
+        List<AbstractPaletteFolderNode> nodeList = TopComponents.getInstance().getPaletteFolderRegistry().createPaletteFolderNodes();
 
-        for (Iterator i = nodeList.iterator(); i.hasNext();) {
-            AbstractPaletteFolderNode node = (AbstractPaletteFolderNode)i.next();
-            if (!node.isEnabledByLicense() || (node.getChildCount() < 1 && node.isHiddenIfNoChildren())) {
-                i.remove();
-            }
-        }
-
-        // include the policy templates even if empty
-        if (!TopComponents.getInstance().isApplet())
-            nodeList.add(new PolicyTemplatesFolderNode());
-
-        AbstractTreeNode[] nodes = nodeList.toArray(new AbstractTreeNode[]{});
+        AbstractTreeNode[] nodes = nodeList.toArray(new AbstractTreeNode[nodeList.size()]);
 
         children = null;
         for (int i = 0; i < nodes.length; i++) {

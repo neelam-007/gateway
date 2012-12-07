@@ -168,6 +168,7 @@
                 <L7p:Authentication/>
                 <L7p:WsiSamlAssertion/>
                 <L7p:Include/>
+                <L7p:Encapsulated/>
                 <L7p:WssVersion/>
                 <L7p:WssConfiguration/>
                 <L7p:PreemptiveCompression/>

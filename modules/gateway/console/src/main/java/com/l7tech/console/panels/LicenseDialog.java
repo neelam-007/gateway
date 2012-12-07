@@ -17,6 +17,7 @@ import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.*;
@@ -453,6 +454,7 @@ public class LicenseDialog extends JDialog {
                         showingLicenseOrError = license != null;
                         licensePanel.setLicense(license);
                         TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
+                        TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
                         Registry.getDefault().getLicenseManager().setLicense(license);
                         installButton.setText(showingLicenseOrError ? "Change License" : "Install License");
                         pack();
@@ -478,6 +480,8 @@ public class LicenseDialog extends JDialog {
                                                   JOptionPane.ERROR_MESSAGE);
                 } catch (UpdateException e1) {
                     logger.log(Level.SEVERE, "Unable to install license: " + ExceptionUtils.getMessage(e1), e1);
+                } catch (FindException ex) {
+                    logger.log(Level.SEVERE, "Unable to install license: " + ExceptionUtils.getMessage(ex), ex);
                 } finally {
                     if (is != null) //noinspection EmptyCatchBlock
                         try { is.close(); } catch (IOException ex) {}

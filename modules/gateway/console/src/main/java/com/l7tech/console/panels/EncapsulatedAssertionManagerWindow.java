@@ -1,6 +1,9 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.tree.PaletteFolderRegistry;
+import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
@@ -19,9 +22,7 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Set;
+import java.util.*;
 
 import static com.l7tech.gui.util.TableUtil.column;
 import static com.l7tech.util.Functions.propertyTransform;
@@ -35,6 +36,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     private JButton removeButton;
 
     private SimpleTableModel<EncapsulatedAssertionConfig> eacTableModel;
+    private Map<String, ImageIcon> iconCache = new HashMap<String, ImageIcon>();
 
     public EncapsulatedAssertionManagerWindow(Window parent) {
         super(parent, "Manage Encapsulated Assertion Configurations", ModalityType.APPLICATION_MODAL);
@@ -45,11 +47,12 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         Utilities.enableGrayOnDisabled(removeButton, propertiesButton);
 
         eacTableModel = TableUtil.configureTable(eacTable,
-            column("Name", 25, 130, 99999, propertyTransform(EncapsulatedAssertionConfig.class, "name")),
-            column("Palette Folder", 25, 130, 99999, paletteFolderFinder()),
-            column("Policy Name", 25, 130, 99999, policyNameFinder()),
-            column("In", 25, 30, 50, inputsFinder()),
-            column("Out", 25, 30, 50, outputsFinder()));
+            column(" ", 25, 25, 25, iconFinder(), Icon.class),
+            column("Name", 30, 140, 99999, propertyTransform(EncapsulatedAssertionConfig.class, "name")),
+            column("Palette Folder", 25, 165, 99999, paletteFolderFinder()),
+            column("Policy Name", 25, 140, 99999, policyNameFinder()),
+            column("In", 30, 30, 50, inputsFinder()),
+            column("Out", 30, 30, 50, outputsFinder()));
 
         closeButton.addActionListener(Utilities.createDisposeAction(this));
 
@@ -101,7 +104,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         });
 
         // TODO RBAC-awareness
-        loadEncapsulatedAssertionConfigs();
+        loadEncapsulatedAssertionConfigs(false);
         enableOrDisable();
     }
 
@@ -115,7 +118,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                 if (dlg.isConfirmed()) {
                     try {
                         long oid = Registry.getDefault().getEncapsulatedAssertionAdmin().saveEncapsulatedAssertionConfig(config);
-                        loadEncapsulatedAssertionConfigs();
+                        loadEncapsulatedAssertionConfigs(true);
                         selectConfigByOid(oid);
                     } catch (SaveException e) {
                         showError("Unable to save encapsulated assertion configuration", e);
@@ -157,11 +160,28 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         propertiesButton.setEnabled(haveConfig);
     }
 
+    private Functions.Unary<Icon, EncapsulatedAssertionConfig> iconFinder() {
+        return new Functions.Unary<Icon, EncapsulatedAssertionConfig>() {
+            @Override
+            public Icon call(EncapsulatedAssertionConfig encapsulatedAssertionConfig) {
+                final String id = encapsulatedAssertionConfig.getId();
+                ImageIcon icon = iconCache.get(id);
+                if (icon == null) {
+                    icon = EncapsulatedAssertionConsoleUtil.findIcon(encapsulatedAssertionConfig).right;
+                    iconCache.put(id, icon);
+                }
+                return icon;
+            }
+        };
+    }
+
     private Functions.Unary<String, EncapsulatedAssertionConfig> paletteFolderFinder() {
+        final PaletteFolderRegistry paletteFolderRegistry = TopComponents.getInstance().getPaletteFolderRegistry();
         return new Functions.Unary<String, EncapsulatedAssertionConfig>() {
             @Override
             public String call(EncapsulatedAssertionConfig encapsulatedAssertionConfig) {
-                return encapsulatedAssertionConfig.getProperty(EncapsulatedAssertionConfig.PROP_PALETTE_FOLDER);
+                String folder = encapsulatedAssertionConfig.getProperty(EncapsulatedAssertionConfig.PROP_PALETTE_FOLDER);
+                return folder == null ? "" : paletteFolderRegistry.getPaletteFolderName(folder);
             }
         };
     }
@@ -196,10 +216,16 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         };
     }
 
-    private void loadEncapsulatedAssertionConfigs() {
+    /**
+     * @param updateLocalRegistry true if the list of available encapsulated assertions may have changed, so the new list should be sent to the local EncapsulatedAssertionRegistry.
+     */
+    private void loadEncapsulatedAssertionConfigs(boolean updateLocalRegistry) {
         try {
             Collection<EncapsulatedAssertionConfig> configs = Registry.getDefault().getEncapsulatedAssertionAdmin().findAllEncapsulatedAssertionConfigs();
+            iconCache.clear();
             eacTableModel.setRows(new ArrayList<EncapsulatedAssertionConfig>(configs));
+            if (updateLocalRegistry)
+                TopComponents.getInstance().getEncapsulatedAssertionRegistry().replaceAllRegisteredConfigs(configs);
         } catch (FindException e) {
             showError("Unable to load encapsulated assertion configurations", e);
         }
@@ -208,7 +234,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     private void doDeleteEnapsulatedAssertionConfig(EncapsulatedAssertionConfig config) {
         try {
             Registry.getDefault().getEncapsulatedAssertionAdmin().deleteEncapsulatedAssertionConfig(config.getOid());
-            loadEncapsulatedAssertionConfigs();
+            loadEncapsulatedAssertionConfigs(true);
         } catch (FindException e1) {
             showError("Unable to delete encapsulated assertion config", e1);
         } catch (DeleteException e1) {

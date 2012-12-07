@@ -136,6 +136,10 @@
 
     <bean id="assertionRegistry" class="com.l7tech.console.policy.ConsoleAssertionRegistry"/>
 
+    <bean id="encapsulatedAssertionRegistry" class="com.l7tech.console.policy.EncapsulatedAssertionRegistry"/>
+
+    <bean id="paletteFolderRegistry" class="com.l7tech.console.tree.PaletteFolderRegistry"/>
+
     <bean id="wspReader" class="com.l7tech.policy.wsp.WspReader">
         <constructor-arg ref="assertionRegistry"/>
     </bean>

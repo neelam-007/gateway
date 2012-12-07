@@ -3,22 +3,32 @@ package com.l7tech.policy.assertion;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.Functions;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Assertion bean representing an invocation of server behavior for an EncapsulatedAssertionConfig.
  */
-public class EncapsulatedAssertion extends MessageTargetableAssertion implements UsesEntities, UsesVariables, SetsVariables {
+public class EncapsulatedAssertion extends Assertion implements UsesEntities, UsesVariables, SetsVariables {
     private static final String DEFAULT_OID_STR = Long.toString(EncapsulatedAssertionConfig.DEFAULT_OID);
-    private static final String META_INIT = EncapsulatedAssertion.class.getName() + ".metadataInitialized";
 
+    private DefaultAssertionMetadata meta = null;
     private String encapsulatedAssertionConfigId = DEFAULT_OID_STR;
 
     private transient EncapsulatedAssertionConfig encapsulatedAssertionConfig;
+
+    public EncapsulatedAssertion() {
+    }
+
+    public EncapsulatedAssertion(EncapsulatedAssertionConfig encapsulatedAssertionConfig) {
+        config(encapsulatedAssertionConfig);
+    }
 
     public EncapsulatedAssertionConfig config() {
         return encapsulatedAssertionConfig;
@@ -26,8 +36,9 @@ public class EncapsulatedAssertion extends MessageTargetableAssertion implements
 
     public void config(EncapsulatedAssertionConfig config) {
         this.encapsulatedAssertionConfig = config;
-        // Force metadata to be rebuilt on next call to meta()
-        defaultMeta().putNull(META_INIT);
+        if (config != null)
+            this.encapsulatedAssertionConfigId = config.getId();
+        meta = null; // Force metadata to be rebuilt
     }
 
     public String getEncapsulatedAssertionConfigId() {
@@ -54,47 +65,56 @@ public class EncapsulatedAssertion extends MessageTargetableAssertion implements
 
     @Override
     public AssertionMetadata meta() {
-        DefaultAssertionMetadata meta = defaultMeta();
-        if (meta.get(META_INIT) != null)
-            return meta;
+        if (this.meta != null)
+            return this.meta;
+
+        // Avoid using super.defaultMeta() because this assertion uses different metadata for each instance
+        DefaultAssertionMetadata meta = new DefaultAssertionMetadata(this);
 
         EncapsulatedAssertionConfig config = this.encapsulatedAssertionConfig != null
             ? this.encapsulatedAssertionConfig
             : new EncapsulatedAssertionConfig();
 
-        // Copy over simple string-valued properties
-        String baseName = config.getProperty(EncapsulatedAssertionConfig.PROP_META_BASE_NAME);
-        if (baseName == null)
-            baseName = toSafeBaseName(baseName);
+        meta.put(SHORT_NAME, config.getName());
+        meta.put(PALETTE_NODE_ICON, findIconResourcePath(config));
+        meta.put(POLICY_NODE_CLASSNAME, "com.l7tech.console.tree.policy.EncapsulatedAssertionPolicyNode");
 
-        meta.put(BASE_NAME, baseName);
-        meta.put(PALETTE_NODE_NAME, config.getProperty(EncapsulatedAssertionConfig.PROP_META_PALETTE_NODE_NAME));
-        meta.put(PALETTE_NODE_ICON, config.getProperty(EncapsulatedAssertionConfig.PROP_META_PALETTE_NODE_ICON));
+        meta.put(ASSERTION_FACTORY, new Functions.Unary< EncapsulatedAssertion, EncapsulatedAssertion >() {
+            @Override
+            public EncapsulatedAssertion call(EncapsulatedAssertion encapsulatedAssertion) {
+                EncapsulatedAssertionConfig config = encapsulatedAssertion.config();
+                if (config == null)
+                    return new EncapsulatedAssertion();
+                return new EncapsulatedAssertion(config.getReadOnlyCopy());
+            }
+        });
 
         // Copy over properties that require some adaptation
         meta.put(PALETTE_FOLDERS, new String[] { config.getProperty(EncapsulatedAssertionConfig.PROP_PALETTE_FOLDER) });
 
-        meta.put(META_INIT, Boolean.TRUE);
+        this.meta = meta;
         return meta;
     }
 
-    /**
-     * Convert the specified name into a name suitable for use as a BASE_NAME assertion property.
-     *
-     * @param name name to examine.
-     * @return a BASE_NAME identifier based on this name.
-     */
-    private String toSafeBaseName(String name) {
-        // Remove any sequences of bad chars followed by a letter, and replace with just the letter
-        Pattern firstAfterBadChars = Pattern.compile("(?:^|[^a-zA-Z0-9_]+)([a-zA-Z0-9])");
-        Matcher matcher = firstAfterBadChars.matcher(name);
-        StringBuffer sb = new StringBuffer();
-        while (matcher.find())
-            matcher.appendReplacement(sb, matcher.group(1).toUpperCase());
-        matcher.appendTail(sb);
+    private String findIconResourcePath(EncapsulatedAssertionConfig config) {
+        String filename = config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_RESOURCE_FILENAME);
+        if (filename != null)
+            return EncapsulatedAssertionConfig.ICON_RESOURCE_DIRECTORY + filename;
 
-        // Strip any remaining bad characters
-        Pattern badChars = Pattern.compile("[^a-zA-Z0-9_]");
-        return badChars.matcher(sb.toString()).replaceAll("");
+        // TODO support custom base64 image bytes
+        return EncapsulatedAssertionConfig.ICON_RESOURCE_DIRECTORY + EncapsulatedAssertionConfig.DEFAULT_ICON_RESOURCE_FILENAME;
+    }
+
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        // TODO get from config
+        return new VariableMetadata[0];
+    }
+
+    @Override
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    public String[] getVariablesUsed() {
+        // TODO get from config
+        return new String[0];
     }
 }

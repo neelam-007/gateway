@@ -1,8 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.tree.AbstractPaletteFolderNode;
-import com.l7tech.console.tree.AssertionsPaletteRootNode;
+import com.l7tech.console.tree.PaletteFolderRegistry;
+import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
@@ -19,10 +20,17 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig.*;
 
 public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(EncapsulatedAssertionConfigPropertiesDialog.class.getName());
+
     private JPanel contentPane;
     private JButton okButton;
     private JButton cancelButton;
@@ -37,6 +45,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private final boolean readOnly;
     private final InputValidator inputValidator = new InputValidator(this, getTitle());
     private Policy policy;
+    private String iconResourceFilename;
+    private String iconBase64;
     private boolean confirmed = false;
 
     /**
@@ -60,6 +70,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         getRootPane().setDefaultButton(okButton);
         Utilities.setEscKeyStrokeDisposes(this);
         cancelButton.addActionListener(Utilities.createDisposeAction(this));
+
+        Utilities.equalizeButtonSizes(changePolicyButton, selectIconButton);
 
         inputValidator.constrainTextFieldToBeNonEmpty("name", nameField, null);
         inputValidator.addRule(new InputValidator.ComponentValidationRule(changePolicyButton) {
@@ -94,9 +106,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                 doChangePolicy();
             }
         });
-        final OkCancelDialog okCancelDialog = new OkCancelDialog(this, "Icon", true, new IconSelectorDialog());
+        final OkCancelDialog<ImageIcon> okCancelDialog = new OkCancelDialog<ImageIcon>(this, "Icon", true, new IconSelectorDialog());
         selectIconButton.addActionListener(new IconActionListener(okCancelDialog));
-        iconLabel.setIcon((ImageIcon)okCancelDialog.getValue());
 
         okButton.setEnabled(!readOnly);
         updateView();
@@ -109,11 +120,15 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private void updateView() {
         nameField.setText(config.getName());
 
-        final String paletteFolderName = config.getProperty(EncapsulatedAssertionConfig.PROP_PALETTE_FOLDER);
+        final String paletteFolderName = config.getProperty(PROP_PALETTE_FOLDER);
         loadPaletteFolders(paletteFolderName);
         paletteFolderComboBox.setSelectedItem(paletteFolderName);
 
         setPolicyAndPolicyNameLabel(config.getPolicy());
+
+        iconResourceFilename = config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_RESOURCE_FILENAME);
+        iconBase64 = config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64);
+        iconLabel.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(config).right);
     }
 
     private void setPolicyAndPolicyNameLabel(Policy policy) {
@@ -123,35 +138,42 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
 
     private void updateBean() {
         config.setName(nameField.getText());
-        config.putProperty(EncapsulatedAssertionConfig.PROP_PALETTE_FOLDER, (String) paletteFolderComboBox.getSelectedItem());
+        config.putProperty(PROP_PALETTE_FOLDER, (String) paletteFolderComboBox.getSelectedItem());
         config.setPolicy(policy);
+
+        if (iconResourceFilename != null) {
+            config.putProperty(PROP_ICON_RESOURCE_FILENAME, iconResourceFilename);
+        } else {
+            config.removeProperty(PROP_ICON_RESOURCE_FILENAME);
+        }
+
+        if (iconBase64 != null) {
+            config.putProperty(PROP_ICON_BASE64, iconBase64);
+        } else {
+            config.removeProperty(PROP_ICON_BASE64);
+        }
     }
 
     private void loadPaletteFolders(String currentName) {
-        List<String> folderNames = findPaletteFolderNames();
+        final PaletteFolderRegistry paletteFolderRegistry = TopComponents.getInstance().getPaletteFolderRegistry();
+        List<String> folderNames = new ArrayList<String>(paletteFolderRegistry.getPaletteFolderIds());
 
         if (currentName != null && currentName.trim().length() > 0 && !folderNames.contains(currentName))
             folderNames.add(currentName);
 
         paletteFolderComboBox.setModel(new DefaultComboBoxModel(folderNames.toArray(new String[0])));
-    }
-
-    private static List<String> findPaletteFolderNames() {
-        List<String> folderNames = new ArrayList<String>();
-
-        // TODO set up a registry of palette folders (ideally configurable in some way).  Fow now, punt to the existing logic, which requires creating a dummy root node.
-        final AssertionsPaletteRootNode rootNode = new AssertionsPaletteRootNode("dummy root");
-        rootNode.reloadChildren();
-        Enumeration kids = rootNode.children();
-        while (kids.hasMoreElements()) {
-            Object kid = kids.nextElement();
-            if (kid instanceof AbstractPaletteFolderNode) {
-                AbstractPaletteFolderNode apfn = (AbstractPaletteFolderNode) kid;
-                folderNames.add(apfn.getFolderId());
+        paletteFolderComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                return super.getListCellRendererComponent(list, asDisplayName(value), index, isSelected, cellHasFocus);
             }
-        }
 
-        return folderNames;
+            private Object asDisplayName(Object value) {
+                return value instanceof String
+                    ? paletteFolderRegistry.getPaletteFolderName((String) value)
+                    : value;
+            }
+        });
     }
 
     private void doChangePolicy() {
@@ -159,7 +181,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             Collection<PolicyHeader> policyHeaders = Registry.getDefault().getPolicyAdmin().findPolicyHeadersWithTypes(EnumSet.of(PolicyType.INCLUDE_FRAGMENT));
 
             if (policyHeaders == null || policyHeaders.size() < 1) {
-                showError("No includable policy fragments are available to provide an implementation for this encapsulated assertion.\nPlese create a policy first.", null);
+                showError("<html><p>No policy fragments are available to provide an implementation for this encapsulated assertion. <br/>Please create a policy first.", null);
                 return;
             }
 
@@ -203,13 +225,15 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     }
 
     private void showError(String message, @Nullable Throwable e) {
-        final String suffix = e == null ? "" : message + ": " + ExceptionUtils.getMessage(e);
-        DialogDisplayer.showMessageDialog(this, suffix, "Error", JOptionPane.ERROR_MESSAGE, null);
+        final String suffix;
+        if (e == null) suffix = "";
+        else suffix = ": " + ExceptionUtils.getMessage(e);
+        DialogDisplayer.showMessageDialog(this, message + suffix, "Error", JOptionPane.ERROR_MESSAGE, null);
     }
 
     private class IconActionListener implements ActionListener {
-        private OkCancelDialog okCancelDialog;
-        private IconActionListener(final OkCancelDialog okCancelDialog){
+        private OkCancelDialog<ImageIcon> okCancelDialog;
+        private IconActionListener(final OkCancelDialog<ImageIcon> okCancelDialog){
             this.okCancelDialog = okCancelDialog;
         }
         @Override
@@ -220,13 +244,13 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                 @Override
                 public void run() {
                     if(okCancelDialog.wasOKed()){
-                        final ImageIcon icon = (ImageIcon) okCancelDialog.getValue();
+                        final ImageIcon icon = okCancelDialog.getValue();
                         iconLabel.setIcon(icon);
-                        // TODO set icon name on Encapsulated Assertion using icon.getDescription();
+                        iconResourceFilename = icon.getDescription();
+                        iconBase64 = null;
                     }
                 }
             });
-
-    }
+        }
     }
 }

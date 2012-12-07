@@ -10,6 +10,7 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
 import com.l7tech.util.EnumTranslator;
+import com.l7tech.util.Functions;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -226,6 +227,14 @@ public class SslAssertion extends ConfidentialityAssertion {
         meta.put(AssertionMetadata.DESCRIPTION, "The incoming request must either use, optionally use, or is forbidden to use SSL/TLS transport. Client certificate authentication is optional if SSL / TLS is required.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/ssl.gif");
 
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { requireClientCert ? "accessControl" : "transportLayerSecurity" });
+        meta.put(AssertionMetadata.ASSERTION_FACTORY, new Functions.Unary<SslAssertion, SslAssertion>() {
+            @Override
+            public SslAssertion call(SslAssertion sslAssertion) {
+                return new SslAssertion(sslAssertion.isRequireClientAuthentication());
+            }
+        });
+
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
                 new WspEnumTypeMapping(Option.class, "optionValue")
         )));
@@ -238,6 +247,7 @@ public class SslAssertion extends ConfidentialityAssertion {
 
         meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/ssl.gif");
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
+
         return meta;
     }
 

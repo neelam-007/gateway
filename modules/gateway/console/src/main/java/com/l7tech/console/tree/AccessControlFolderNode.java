@@ -1,9 +1,9 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 
 import java.util.logging.Logger;
 
@@ -34,8 +34,7 @@ public class AccessControlFolderNode extends AbstractPaletteFolderNode {
     protected void doLoadChildren() {
         children = null;
         insert(new IdentityNode());
-        insert(new SslTransportNode(true));
-        insertModularAssertionByType(WssBasic.class);
+        insertModularAssertionByType(WssBasic.class); // also inserts EncryptedUsernameTokenAssertion
         insertModularAssertionByType(RequireWssX509Cert.class);
         insertModularAssertionByType(RequireWssSaml2.class); //SAML2 since that is the subclass
 
@@ -52,5 +51,6 @@ public class AccessControlFolderNode extends AbstractPaletteFolderNode {
         insert(new WsFederationPassiveTokenRequestPaletteNode());
         insertMatchingModularAssertions();
         insertMatchingCustomAssertions(Category.ACCESS_CONTROL);
+        insertMatchingEncapsulatedAssertions();
     }
 }

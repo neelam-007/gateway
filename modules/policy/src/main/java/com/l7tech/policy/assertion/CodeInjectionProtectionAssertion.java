@@ -129,11 +129,10 @@ public class CodeInjectionProtectionAssertion extends MessageTargetableAssertion
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        //Note that PALETTE_FOLDERS is not defined. This is because the assertion is explicitly added to it's FolderNode
-        //in ThreatProtectionFolderNode
         meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "Provides basic threat protection against attacks on web applications by blocking malicious code injection.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/RedYellowShield16.gif");
+        meta.put(PALETTE_FOLDERS, new String[] { "threatProtection" });
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.CodeInjectionProtectionAssertionDialog");
         meta.put(PROPERTIES_ACTION_NAME, "Code Injection Protection Properties");

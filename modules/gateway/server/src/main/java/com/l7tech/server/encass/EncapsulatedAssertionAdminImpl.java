@@ -7,7 +7,7 @@ import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.policy.variable.EncapsulatedAssertionConfigManager;
+import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -29,6 +29,15 @@ public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmi
     public Collection<EncapsulatedAssertionConfig> findAllEncapsulatedAssertionConfigs() throws FindException {
         Collection<EncapsulatedAssertionConfig> ret = encapsulatedAssertionConfigManager.findAll();
         return ret != null ? ret : Collections.<EncapsulatedAssertionConfig>emptyList();
+    }
+
+    @NotNull
+    @Override
+    public EncapsulatedAssertionConfig findByPrimaryKey(long oid) throws FindException {
+        EncapsulatedAssertionConfig ret = encapsulatedAssertionConfigManager.findByPrimaryKey(oid);
+        if (ret == null)
+            throw new FindException("No encapsulated assertion config found with oid " + oid);
+        return ret;
     }
 
     @Override

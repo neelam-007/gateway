@@ -10,6 +10,7 @@ import com.l7tech.util.ConstructorInvocation;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.TarariLoader;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -187,6 +188,10 @@ public class ServerPolicyFactory implements ApplicationContextAware {
                             params[i] = applicationContext;
                         final ServerAssertion serverAssertion = (ServerAssertion) ctor.newInstance(params);
                         injector.inject( serverAssertion );
+                        if (serverAssertion instanceof InitializingBean) {
+                            InitializingBean initializingBean = (InitializingBean) serverAssertion;
+                            initializingBean.afterPropertiesSet();
+                        }
                         return serverAssertion;
                     }
                 }

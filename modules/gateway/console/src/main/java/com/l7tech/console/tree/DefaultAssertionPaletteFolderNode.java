@@ -2,6 +2,9 @@ package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.ext.Category;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * PaletteFolderNode for assertions of a given category.
  */
@@ -15,13 +18,13 @@ public class DefaultAssertionPaletteFolderNode extends AbstractPaletteFolderNode
      *
      * @param name The folder name (must not be null)
      * @param id The folder id, used to load modular assertions (must not be null)
-     * @param category The category, used to load custom assertions (optional)
+     * @param categories The categories, used to load custom assertions (optional)
      */
     public DefaultAssertionPaletteFolderNode( final String name,
                                               final String id,
-                                              final Category category ) {
+                                              final Category... categories ) {
         super( name, id );
-        this.category = category;
+        this.categories = categories == null || categories.length < 1 ? null : Arrays.asList(categories);
     }
 
     //- PROTECTED
@@ -30,13 +33,16 @@ public class DefaultAssertionPaletteFolderNode extends AbstractPaletteFolderNode
     protected void doLoadChildren() {
         // Load modular assertions and insert in sort order
         insertMatchingModularAssertions();
-        if ( category != null ) {
-            insertMatchingCustomAssertions(category);
+        if ( categories != null ) {
+            for (Category category : categories) {
+                insertMatchingCustomAssertions(category);
+            }
         }
+        insertMatchingEncapsulatedAssertions();
     }
 
     //- PRIVATE
 
-    private final Category category;
+    private final List<Category> categories;
  
 }

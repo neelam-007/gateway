@@ -239,6 +239,7 @@ public class GatewayFeatureSets {
         GatewayFeatureSet encass =
         fsr("set:encass", "Enable Encapsulated Assertion support",
             "Enables Gateway to create and use encapsulated assertions.",
+            ass(EncapsulatedAssertion.class),
             ui(UI_MANAGE_ENCAPSULATED_ASSERTIONS, "Ability to use Manage Encapsulated Assertions GUI"),
             srv(SERVICE_ENCAPSULATED_ASSERTION, "Ability to use encapsulated assertions"));
 

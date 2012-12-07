@@ -385,6 +385,8 @@
 
     <bean id="mockJdbcDatabaseManager" class="com.l7tech.server.jdbc.MockJdbcDatabaseManager"/>
 
+    <bean id="encapsulatedAssertionConfigManager" class="com.l7tech.server.policy.MockEncapsulatedAssertionConfigManager"/>
+
     <bean id="jdbcQueryingManager" class="com.l7tech.server.jdbc.JdbcQueryingManagerStub">
         <constructor-arg ref="mockJdbcDatabaseManager"/>
     </bean>

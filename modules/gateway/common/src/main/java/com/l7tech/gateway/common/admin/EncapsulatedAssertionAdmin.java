@@ -33,6 +33,18 @@ public interface EncapsulatedAssertionAdmin {
     Collection<EncapsulatedAssertionConfig> findAllEncapsulatedAssertionConfigs() throws FindException;
 
     /**
+     * Find specified encapsulated assertion template by its oid.
+     *
+     * @param oid encapsulated assertion OID to look up.
+     * @return the requested OID.  Never null.
+     * @throws FindException if not found, or there was an error performing the lookup
+     */
+    @NotNull
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITY)
+    EncapsulatedAssertionConfig findByPrimaryKey(long oid) throws FindException;
+
+    /**
      * Saves a new or existing encapsulated assertion templates.
      * @param config the {@link EncapsulatedAssertionConfig} to save.  Required.
      * @return the object id (oid) of the newly saved config

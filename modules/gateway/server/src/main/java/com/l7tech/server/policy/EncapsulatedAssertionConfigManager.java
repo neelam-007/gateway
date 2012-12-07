@@ -1,4 +1,4 @@
-package com.l7tech.server.policy.variable;
+package com.l7tech.server.policy;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;

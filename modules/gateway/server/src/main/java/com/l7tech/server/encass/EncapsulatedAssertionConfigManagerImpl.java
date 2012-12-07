@@ -4,7 +4,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.server.policy.variable.EncapsulatedAssertionConfigManager;
+import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 
 /**
  * Entity manager for {@link EncapsulatedAssertionConfig}.

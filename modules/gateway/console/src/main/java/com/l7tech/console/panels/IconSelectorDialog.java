@@ -34,6 +34,7 @@ public class IconSelectorDialog extends ValidatedPanel<ImageIcon> {
         for (final ImageIcon icon : icons) {
             final Image scaled = icon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
             final ImageIcon scaledIcon = new ImageIcon(scaled);
+            scaledIcon.setDescription(icon.getDescription());
             final JLabel iconLabel = new JLabel(scaledIcon);
             if (count == 0) {
                 // select the first one

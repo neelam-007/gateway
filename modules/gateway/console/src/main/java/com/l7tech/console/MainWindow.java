@@ -31,6 +31,7 @@ import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.util.*;
@@ -3752,13 +3753,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         public void licenseChanged(ConsoleLicenseManager licenseManager) {
             JTree tree = getAssertionPaletteTree();
             if (tree == null || tree.getModel() == null) return; // not constructed yet
-            AbstractTreeNode root = (AbstractTreeNode) tree.getModel().getRoot();
-            Utilities.collapseTree(tree);
-            root.removeAllChildren();
-            root.reloadChildren();
-            ((DefaultTreeModel) (tree.getModel())).nodeStructureChanged(root);
-            tree.validate();
-            tree.repaint();
+            TopComponents.getInstance().getPaletteFolderRegistry().refreshPaletteFolders();
         }
     };
 
@@ -3832,9 +3827,13 @@ public class MainWindow extends JFrame implements SheetHolder {
                     // Gather any modular assertions offered by this gateway early on as well, for the assertion palette
                     try {
                         TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
+                        TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
                     } catch (RuntimeException e) {
                         log.log(Level.WARNING, "Unable to update modular assertions: " + ExceptionUtils.getMessage(e) + ".",
-                                ExceptionUtils.getDebugException(e));
+                            ExceptionUtils.getDebugException(e));
+                    } catch (FindException e) {
+                        log.log(Level.WARNING, "Unable to update encapsulated assertions: " + ExceptionUtils.getMessage(e) + ".",
+                            ExceptionUtils.getDebugException(e));
                     }
 
                     String nodeName = "";

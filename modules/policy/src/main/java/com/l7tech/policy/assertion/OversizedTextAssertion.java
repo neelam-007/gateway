@@ -236,10 +236,10 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        //Note PALETTE_FOLDERS is not defined, as this assertion is inserted by type into ThreadProtectionFolderNode
         meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "Enable protection against oversized nodes, overdeep nesting, and trailers.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/OversizedElement16.gif");
+        meta.put(PALETTE_FOLDERS, new String[] { "threatProtection" });
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.OversizedTextDialog");
         meta.put(PROPERTIES_ACTION_NAME, "Document Structure Threat Protection Properties");

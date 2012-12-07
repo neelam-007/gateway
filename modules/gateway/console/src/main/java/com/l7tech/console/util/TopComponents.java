@@ -5,8 +5,10 @@ import com.l7tech.console.SsmApplication;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.ConsoleAssertionRegistry;
+import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
 import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.tree.policy.PolicyTree;
@@ -169,6 +171,16 @@ public class TopComponents {
     public ConsoleAssertionRegistry getAssertionRegistry() {
         ApplicationContext context = getApplicationContext();
         return context==null ? null : (ConsoleAssertionRegistry) context.getBean("assertionRegistry", AssertionRegistry.class);
+    }
+
+    public EncapsulatedAssertionRegistry getEncapsulatedAssertionRegistry() {
+        ApplicationContext context = getApplicationContext();
+        return context==null ? null : context.getBean("encapsulatedAssertionRegistry", EncapsulatedAssertionRegistry.class);
+    }
+
+    public PaletteFolderRegistry getPaletteFolderRegistry() {
+        ApplicationContext context = getApplicationContext();
+        return context==null ? null : context.getBean("paletteFolderRegistry", PaletteFolderRegistry.class);
     }
 
     public X509Certificate[] getSsgCert() {
