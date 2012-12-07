@@ -179,6 +179,21 @@ public class TargetVariablePanel  extends JPanel {
         return isEntryValid()?null:statusLabel.getText();
     }
 
+    /**
+     * Only used in TargetVariablePanelTest
+    */
+    protected String getMessage(){
+        validateFields();
+        return statusLabel.getText();
+    }
+
+    /**
+     * Only used in TargetVariablePanelTest
+     */
+    protected void setPredecessorVariables(Set<String> predecessorVariables){
+        this.predecessorVariables = predecessorVariables;
+    }
+
     public void addChangeListener(ChangeListener l) {
         listenerList.add(ChangeListener.class, l);
     }
@@ -357,10 +372,10 @@ public class TargetVariablePanel  extends JPanel {
 
     private boolean isAtLeastOneSuffixOverwritten() {
         boolean ret = false;
-        //need to convert to lowercase because all predecessorVariables are lowercase
-        final String variablePrefix = getVariable().toLowerCase();
+        final String variablePrefix = getVariable();
         for (String suffix: suffixes) {
-            if (predecessorVariables.contains(variablePrefix + "." + suffix)) {
+            //need to convert to lowercase because all predecessorVariables are lowercase
+            if (predecessorVariables.contains((variablePrefix + "." + suffix).toLowerCase())) {
                 ret = true;
                 break;
             }
@@ -370,10 +385,10 @@ public class TargetVariablePanel  extends JPanel {
 
     private boolean isEverySuffixPresentInPredecessors() {
         boolean ret = true;
-        //need to convert to lowercase because all predecessorVariables are lowercase
-        final String variablePrefix = getVariable().toLowerCase();
+        final String variablePrefix = getVariable();
         for (String suffix: suffixes) {
-            if (!predecessorVariables.contains(variablePrefix + "." + suffix)) {
+            //need to convert to lowercase because all predecessorVariables are lowercase
+            if (!predecessorVariables.contains((variablePrefix + "." + suffix).toLowerCase())) {
                 ret = false;
                 break;
             }
