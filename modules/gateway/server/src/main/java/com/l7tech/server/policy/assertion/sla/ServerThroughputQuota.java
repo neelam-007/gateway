@@ -13,14 +13,16 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.sla.CounterManager;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Config;
 import org.springframework.context.ApplicationContext;
 
+import javax.inject.Inject;
 import java.io.IOException;
 
 /**
@@ -37,6 +39,8 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
     private final String periodVariable;
     private final String userVariable;
     private final String maxVariable;
+    @Inject
+    private Config config;
 
     public ServerThroughputQuota(ThroughputQuota assertion, ApplicationContext ctx) {
         super(assertion);
@@ -224,10 +228,11 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
                 longValue = Long.parseLong(quota);
             }
 
-            if (SyspropUtil.getBoolean("com.l7tech.server.policy.assertion.sla.enforce_max_quota", true)) {
-                if (longValue > ThroughputQuota.MAX_THROUGHPUT_QUOTA) {
+            if (config.getBooleanProperty(ServerConfigParams.PARAM_THROUGHPUTQUOTA_ENFORCE_MAX_QUOTA, false)) {
+                final long maxQuotaValue = config.getLongProperty(ServerConfigParams.PARAM_THROUGHPUTQUOTA_MAX_THROUGHPUT_QUOTA, ThroughputQuota.MAX_THROUGHPUT_QUOTA);
+                if (longValue > maxQuotaValue) {
                     // configuration error
-                    logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_INVALID_MAX_QUOTA, String.valueOf(longValue), String.valueOf(ThroughputQuota.MAX_THROUGHPUT_QUOTA));
+                    logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_INVALID_MAX_QUOTA, String.valueOf(longValue), String.valueOf(maxQuotaValue));
                     throw new AssertionStatusException( AssertionStatus.FAILED );
                 }
             }

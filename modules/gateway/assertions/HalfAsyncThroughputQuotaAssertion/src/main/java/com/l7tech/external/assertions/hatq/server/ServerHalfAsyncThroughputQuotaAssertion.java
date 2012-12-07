@@ -7,11 +7,12 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Config;
 import org.hibernate.SessionFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -33,10 +34,12 @@ public class ServerHalfAsyncThroughputQuotaAssertion extends AbstractServerAsser
     private final String periodVariable;
     private final String userVariable;
     private final String maxVariable;
+    private final Config config;
 
     public ServerHalfAsyncThroughputQuotaAssertion(HalfAsyncThroughputQuotaAssertion assertion, ApplicationContext ctx) {
         super(assertion);
         this.applicationContext = ctx;
+        this.config = ctx.getBean("serverConfig", Config.class);
         varsUsed = assertion.getVariablesUsed();
         idVariable = assertion.idVariable();
         valueVariable = assertion.valueVariable();
@@ -216,13 +219,15 @@ public class ServerHalfAsyncThroughputQuotaAssertion extends AbstractServerAsser
                 longValue = Long.parseLong(quota);
             }
 
-            if (SyspropUtil.getBoolean("com.l7tech.external.assertions.hatq.server.enforce_max_quota", true)) {
-                if (longValue > ThroughputQuota.MAX_THROUGHPUT_QUOTA) {
+            if (config.getBooleanProperty(ServerConfigParams.PARAM_THROUGHPUTQUOTA_ENFORCE_MAX_QUOTA, false)) {
+                final long maxQuotaValue = config.getLongProperty(ServerConfigParams.PARAM_THROUGHPUTQUOTA_MAX_THROUGHPUT_QUOTA, ThroughputQuota.MAX_THROUGHPUT_QUOTA);
+                if (longValue > maxQuotaValue) {
                     // configuration error
-                    logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_INVALID_MAX_QUOTA, String.valueOf(longValue), String.valueOf(ThroughputQuota.MAX_THROUGHPUT_QUOTA));
+                    logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_INVALID_MAX_QUOTA, String.valueOf(longValue), String.valueOf(maxQuotaValue));
                     throw new AssertionStatusException( AssertionStatus.FAILED );
                 }
             }
+
         } catch ( NumberFormatException e ) {
             logAndAudit(AssertionMessages.VARIABLE_INVALID_VALUE, assertion.getQuota(), "Long");
             throw new AssertionStatusException( AssertionStatus.FAILED );
