@@ -18,6 +18,7 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.sla.CounterManager;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -221,6 +222,14 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
                 longValue = Long.parseLong(stringValue);
             } else {
                 longValue = Long.parseLong(quota);
+            }
+
+            if (SyspropUtil.getBoolean("com.l7tech.server.policy.assertion.sla.enforce_max_quota", true)) {
+                if (longValue > ThroughputQuota.MAX_THROUGHPUT_QUOTA) {
+                    // configuration error
+                    logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_INVALID_MAX_QUOTA, String.valueOf(longValue), String.valueOf(ThroughputQuota.MAX_THROUGHPUT_QUOTA));
+                    throw new AssertionStatusException( AssertionStatus.FAILED );
+                }
             }
         } catch ( NumberFormatException e ) {
             logAndAudit(AssertionMessages.VARIABLE_INVALID_VALUE, assertion.getQuota(), "Long");

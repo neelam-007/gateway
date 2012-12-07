@@ -19,17 +19,14 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.sla.CounterManager;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.sla.CounterManagerStub;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.TimeUnit;
-import com.ncipher.nfast.connect.utils.EasyConnection;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import java.text.MessageFormat;
 import java.util.Collections;
 
 /**
@@ -128,5 +125,57 @@ public class ServerThroughputQuotaTest {
         assertEquals(AssertionStatus.NONE, assertionStatus);
         assertTrue( testAudit.isAuditPresent( AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED ) );
     }
-    
+
+    @Test
+    @BugNumber(13590)
+    public void testInvalidMaximumQuota() throws Exception {
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.ALWAYS_INCREMENT);
+        final String maxQuotaValue = String.valueOf(Integer.MAX_VALUE + 1L);
+        context.setVariable("max_quota", maxQuotaValue);
+        assertion.setQuota("${max_quota}");
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        ApplicationContexts.inject( serverAssertion, Collections.singletonMap( "auditFactory", testAudit.factory() ) );
+        counterManager.setCounterValue(DEFAULT_QUOTA);
+
+        try {
+            serverAssertion.checkRequest(context);
+            fail("Assertion should throw due to invalid max quota");
+        } catch (AssertionStatusException e) {
+            for (String s : testAudit) {
+                System.out.println(s);
+            }
+            assertTrue( testAudit.isAuditPresent( AssertionMessages.THROUGHPUT_QUOTA_INVALID_MAX_QUOTA ) );
+            assertTrue( testAudit.isAuditPresentContaining(
+                    MessageFormat.format(AssertionMessages.THROUGHPUT_QUOTA_INVALID_MAX_QUOTA.getMessage(),
+                            maxQuotaValue, String.valueOf(Integer.MAX_VALUE))));
+        }
+    }
+
+    /**
+     * Max quota value is ignored when the system is configured to do so.
+     */
+    @Test
+    @BugNumber(13590)
+    public void testInvalidMaximumQuotaIgnored() throws Exception {
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.ALWAYS_INCREMENT);
+        final String maxQuotaValue = String.valueOf(Integer.MAX_VALUE + 1L);
+        context.setVariable("max_quota", maxQuotaValue);
+        assertion.setQuota("${max_quota}");
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        ApplicationContexts.inject( serverAssertion, Collections.singletonMap( "auditFactory", testAudit.factory() ) );
+        counterManager.setCounterValue(DEFAULT_QUOTA);
+
+        try {
+            System.setProperty("com.l7tech.server.policy.assertion.sla.enforce_max_quota", "false");
+            final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+            assertEquals(AssertionStatus.NONE, assertionStatus);
+
+            assertFalse( testAudit.isAuditPresent( AssertionMessages.THROUGHPUT_QUOTA_INVALID_MAX_QUOTA ) );
+        } finally {
+            System.clearProperty("com.l7tech.server.policy.assertion.sla.enforce_max_quota");
+        }
+    }
+
 }

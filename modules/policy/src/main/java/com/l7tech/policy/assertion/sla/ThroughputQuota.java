@@ -45,7 +45,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     }};
     public static final String DEFAULT_COUNTER_NAME = "ThroughputQuota-${request.authenticateduser.id}-${request.authenticateduser.providerid}";
 
-    public static final int MAX_THROUGHPUT_QUOTA = 100000;
+    public static final long MAX_THROUGHPUT_QUOTA = Integer.MAX_VALUE;
     public static final int PER_SECOND = 1;
     public static final int PER_MINUTE = 2;
     public static final int PER_HOUR = 3;
@@ -320,8 +320,8 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     public static String validateQuota(String quota) {
         String error = null;
         final String[] varsUsed = Syntax.getReferencedNames(quota);
-        if (varsUsed.length == 0 && !ValidationUtils.isValidInteger(quota, false, 1, MAX_THROUGHPUT_QUOTA)) {
-            error = "Throughput quota must be an integer between 1 and " + MAX_THROUGHPUT_QUOTA;
+        if (varsUsed.length == 0 && !ValidationUtils.isValidLong(quota, false, 1, MAX_THROUGHPUT_QUOTA)) {
+            error = "Throughput quota must be a value between 1 and " + MAX_THROUGHPUT_QUOTA;
         }
         return error;
     }

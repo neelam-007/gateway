@@ -69,6 +69,7 @@ public class HalfAsyncThroughputQuotaAssertion extends ThroughputQuota {
         }
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -85,7 +86,6 @@ public class HalfAsyncThroughputQuotaAssertion extends ThroughputQuota {
 
         meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.ThroughputQuotaPropertiesAction");
         meta.put(PROPERTIES_ACTION_NAME, "(Half-Async) Throughput Quota Properties");
-        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.ThroughputQuotaQueryPropertiesDialog");
 
         meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.hatq.server.ServerHalfAsyncThroughputQuotaAssertion");
 
