@@ -75,8 +75,7 @@ public class PaletteFolderRegistry {
     public List<AbstractPaletteFolderNode> createPaletteFolderNodes() {
         List<AbstractPaletteFolderNode> nodeList = new LinkedList<AbstractPaletteFolderNode>();
 
-        // TODO replace all with DefaultAssertionPaletteFolderNode when possible, then replace this hardcoded list builder with something more declarative
-        nodeList.add(new AccessControlFolderNode());
+        nodeList.add(new DefaultAssertionPaletteFolderNode("Access Control", "accessControl", Category.ACCESS_CONTROL));
         nodeList.add(new DefaultAssertionPaletteFolderNode("Transport Layer Security (TLS)", "transportLayerSecurity", Category.TRANSPORT_SEC));
         nodeList.add(new DefaultAssertionPaletteFolderNode("XML Security", "xmlSecurity", Category.XML_SEC));
         nodeList.add(new DefaultAssertionPaletteFolderNode("Message Validation/Transformation", "xml", Category.MESSAGE, Category.MSG_VAL_XSLT));
@@ -98,7 +97,7 @@ public class PaletteFolderRegistry {
         if (!TopComponents.getInstance().isApplet())
             nodeList.add(new PolicyTemplatesFolderNode());
 
-        // TODO mix in any user-created pa, when supportedlette folders
+        // TODO mix in any user-created palette folders, when supported
 
         return nodeList;
     }

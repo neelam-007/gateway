@@ -27,6 +27,7 @@ public class RequireWssSaml2 extends RequireWssSaml {
         DefaultAssertionMetadata meta = (DefaultAssertionMetadata) super.meta();
 
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssSaml2");
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
 
         return meta;
     }

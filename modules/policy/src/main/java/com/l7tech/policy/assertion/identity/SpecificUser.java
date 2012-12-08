@@ -9,10 +9,11 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
-import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.IdentityTarget;
+
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 /**
  * Asserts that the requester is a particular User.
@@ -111,6 +112,19 @@ public class SpecificUser extends IdentityAssertion {
     @Override
     public IdentityTarget getIdentityTarget() {
         return new IdentityTarget(IdentityTarget.TargetIdentityType.USER, getIdentityProviderOid(), getUserUid(), loggingIdentity());
+    }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = (DefaultAssertionMetadata) super.meta();
+        if (meta.get(META_INITIALIZED) != null)
+            return meta;
+
+        meta.put(AssertionMetadata.PALETTE_NODE_CLASSNAME, "com.l7tech.console.tree.IdentityNode");
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
+
+        meta.put(META_INITIALIZED, Boolean.TRUE);
+        return meta;
     }
 
     @Override

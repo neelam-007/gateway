@@ -53,6 +53,7 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "The SOAP message must contain a WS-Security signature with an X.509 security token.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "WS-Security Signature Properties");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.WssX509CertPropertiesDialog");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WssX509CertValidator");

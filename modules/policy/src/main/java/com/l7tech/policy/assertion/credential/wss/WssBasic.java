@@ -6,8 +6,10 @@
 
 package com.l7tech.policy.assertion.credential.wss;
 
-import com.l7tech.policy.assertion.*;
-import com.l7tech.util.Functions;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.AssertionNodeNameFactory;
+import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 
 /**
  * @author alex
@@ -33,6 +35,7 @@ public class WssBasic extends WssCredentialSourceAssertion {
         meta.put(AssertionMetadata.DESCRIPTION, "The requestor must provide BASIC credentials in a WSS Username Token");
         meta.putNull(AssertionMetadata.PROPERTIES_EDITOR_FACTORY);
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 

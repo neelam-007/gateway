@@ -1,11 +1,10 @@
 package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.AssertionNodeNameFactory;
-import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
-import com.l7tech.util.Functions;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 
 /**
  *  Assertion for WS-Federation using Passive Request Profile.
@@ -67,6 +66,8 @@ public class WsFederationPassiveTokenRequest extends WsFederationPassiveTokenAss
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = (DefaultAssertionMetadata) super.meta();
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        meta.put(AssertionMetadata.PALETTE_NODE_CLASSNAME, "com.l7tech.console.tree.WsFederationPassiveTokenRequestPaletteNode");
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
         return meta;
     }
 
