@@ -155,11 +155,84 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         outputsTable.getSelectionModel().addListSelectionListener(enabler);
 
         deleteInputButton.addActionListener(makeDeleteRowListener(inputsTable, inputsTableModel));
+        addInputButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doInputProperties(new EncapsulatedAssertionArgumentDescriptor(), true);
+            }
+        });
+        editInputButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doInputProperties(getSelectedInput(), false);
+            }
+        });
+
         deleteOutputButton.addActionListener(makeDeleteRowListener(outputsTable, outputsTableModel));
+        addOutputButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doOutputProperties(new EncapsulatedAssertionResultDescriptor(), true);
+            }
+        });
+        editOutputButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doOutputProperties(getSelectedOutput(), false);
+            }
+        });
 
         okButton.setEnabled(!readOnly);
         updateView();
         enableOrDisableThings();
+    }
+
+    private void doInputProperties(final EncapsulatedAssertionArgumentDescriptor input, final boolean needsInsert) {
+        if (input == null)
+            return;
+        final EncapsulatedAssertionArgumentDescriptorPropertiesDialog dlg = new EncapsulatedAssertionArgumentDescriptorPropertiesDialog(this, input);
+        dlg.pack();
+        Utilities.centerOnParentWindow(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                if (!dlg.isConfirmed())
+                    return;
+
+                input.setEncapsulatedAssertionConfig(config);
+                if (needsInsert)
+                    inputsTableModel.addRow(input);
+                int index = inputsTableModel.getRowIndex(input);
+                if (index >= 0) {
+                    inputsTableModel.fireTableRowsUpdated(index, index);
+                    inputsTable.getSelectionModel().setSelectionInterval(index, index);
+                }
+            }
+        });
+    }
+    
+    private void doOutputProperties(final EncapsulatedAssertionResultDescriptor output, final boolean needsInsert) {
+        if (output == null)
+            return;
+        final EncapsulatedAssertionResultDescriptorPropertiesDialog dlg = new EncapsulatedAssertionResultDescriptorPropertiesDialog(this, output);
+        dlg.pack();
+        Utilities.centerOnParentWindow(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                if (!dlg.isConfirmed())
+                    return;
+                
+                output.setEncapsulatedAssertionConfig(config);
+                if (needsInsert)
+                    outputsTableModel.addRow(output);
+                int index = outputsTableModel.getRowIndex(output);
+                if (index >= 0) {
+                    outputsTableModel.fireTableRowsUpdated(index, index);
+                    outputsTable.getSelectionModel().setSelectionInterval(index, index);
+                }
+            }
+        });            
     }
 
     private <RT> ActionListener makeDeleteRowListener(final JTable table, final SimpleTableModel<RT> tableModel) {
