@@ -21,9 +21,6 @@ public class ListSelector implements ExpandVariables.Selector<List> {
             remainingName = name.substring( indexOffset+1 );
         }
 
-        if ("length".equalsIgnoreCase(indexText))
-            return context == null ? null : new Selection(context.size(), process(remainingName));
-
         try {
             int index = Integer.parseInt( indexText ) - 1; // selector is one based
             if ( index < 0 || index >= context.size() ) {

@@ -8,6 +8,7 @@ import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -212,6 +213,33 @@ public final class ExpandVariables {
         }
     }});
 
+    static interface SuffixSelector {
+
+        Selector.Selection select(Object value, Syntax.SyntaxErrorHandler handler, boolean strict);
+
+        String getSuffix();
+    }
+
+    private static final String[] suffixSelectorClassnames = {
+            "com.l7tech.server.policy.variable.LengthSuffixSelector"
+    };
+
+    private static final List<SuffixSelector> suffixSelectors = Collections.unmodifiableList(new ArrayList<SuffixSelector>() {{
+        for ( final String suffixSelectorClassname : suffixSelectorClassnames ) {
+            try {
+                final Class clazz = Class.forName( suffixSelectorClassname );
+                final SuffixSelector sel = (SuffixSelector) clazz.newInstance();
+                add( sel );
+            } catch ( InstantiationException e ) {
+                throw new RuntimeException( e ); // Can't happen
+            } catch ( IllegalAccessException e ) {
+                throw new RuntimeException( e ); // Can't happen
+            } catch ( ClassNotFoundException e ) {
+                throw new RuntimeException( e ); // Can't happen
+            }
+        }
+    }});
+
     /**
      * Determine if any variable in the expression does not exist.
      *
@@ -304,6 +332,14 @@ public final class ExpandVariables {
         Object contextValue = contextObject;
         String remainingName = name;
 
+        //Process the chained selector.
+        //Only apply the SuffixSelector when there is SuffixSelector detected and the Main Selector cannot resolves the name.
+
+        //The chained selector will be terminated in the following condition:
+        //1. No selector found for the context Value, a Selection with the context value and the full unresolved remaining name (include the suffix) will return.
+        //2. The selector return null Selection, if SuffixSelector is detected, try resolve the variable without the suffix with the main selector,
+        //   and apply the SuffixSelector.
+        //3. The selector resolves the variable name.
         while (remainingName != null && remainingName.length() > 0) {
             // Try to find a Selector for values of this type
             Selector selector = null;
@@ -320,12 +356,23 @@ public final class ExpandVariables {
             }
 
             @SuppressWarnings({ "unchecked" })
-            final Selector.Selection selection = selector.select(contextName, contextValue, remainingName, handler, strict);
+            Selector.Selection selection = null;
+            try {
+                selection = selector.select(contextName, contextValue, remainingName, handler, strict);
+            } catch (IllegalArgumentException e) {
+                //when strict, and unable to resolve the variable. Try to resolve it with suffix selector
+                selection = suffixSelectify(contextName, contextValue, remainingName, handler, strict, selector);
+            }
+
+
             if (selection == null) {
-                // This name is unknown to the selector
-                String msg = handler.handleBadVariable(MessageFormat.format("{0} on {1}", remainingName, contextObject.getClass().getName()));
-                if (strict) throw new IllegalArgumentException(msg);
-                return Selector.NOT_PRESENT;
+                // This name is unknown to the selector, try suffix selector
+                selection = suffixSelectify(contextName, contextValue, remainingName, handler, strict, selector);
+                if (selection == null) {
+                    String msg = handler.handleBadVariable(MessageFormat.format("{0} on {1}", remainingName, contextObject.getClass().getName()));
+                    if (strict) throw new IllegalArgumentException(msg);
+                    return Selector.NOT_PRESENT;
+                }
             }
 
             final String tempRemainder = selection.getRemainingName();
@@ -351,7 +398,88 @@ public final class ExpandVariables {
 
             throw new IllegalStateException("Selector for " + remainingName + " returned " + selection);
         }
+
         throw new IllegalStateException("Unable to select " + name + " from " + contextObject.getClass().getName());
+    }
+
+    /**
+     * Only call this method when the main selector cannot resolve the variable.
+     * Determine the suffix selector for the provided name, if suffix selector is detected,
+     * try to expand the variable (without the suffix) with the main selector,
+     * if the variable can be resolved by the main selector, apply the suffix selector.
+     */
+    private static Selector.Selection suffixSelectify(final String contextName,
+                                                      final Object contextValue,
+                                                      final String name,
+                                                      final Syntax.SyntaxErrorHandler handler,
+                                                      final boolean strict,
+                                                      final Selector selector) {
+
+        //Find the suffix selector from the provided name.
+        SuffixSelector suffixSelector = getSuffixSelector(name);
+        if (suffixSelector != null) {
+            //If suffix selector is detected, split the variable name into 2 parts,
+            //variable name and the suffix.
+            Pair<String, String> variable = splitSuffix(name, suffixSelector);
+            if (variable.left != null) {
+                //Apply the variable name with the main selector
+                Selector.Selection selection = selector.select(contextName, contextValue, variable.left, handler, strict);
+                if (selection != null) {
+                    //Apply the suffix selector
+                    return suffixSelector.select(selection.getSelectedValue(), handler, strict);
+                }
+            } else {
+                //When there is no variable name, only the suffix, the provided name = suffix
+                return suffixSelector.select(contextValue, handler, strict);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Retrieve the suffix selector
+     *
+     * @param name The variable name.
+     * @return The SuffixSelector if the variable suffix match one of the SuffixSelector.
+     */
+    private static SuffixSelector getSuffixSelector(String name) {
+        if (name != null) {
+            for ( SuffixSelector sel : suffixSelectors) {
+                if (name.equalsIgnoreCase(sel.getSuffix())) {
+                    return sel;
+                } else if (name.toLowerCase().endsWith("." + sel.getSuffix())) {
+                    return sel;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Trim the suffix from the name, and capture the original suffix string.
+     *
+     * @param name The string to trim
+     * @return The trimmed string and the suffix. if provided string is abc.suFFix, return "abc" as the name part (left) and
+     * suFFix as the suffix (right), if provided name matches with the suffix.
+     */
+    private static Pair<String, String> splitSuffix(String name, SuffixSelector suffixSelector) {
+        if (name != null && suffixSelector != null) {
+            //The whole variable name match the suffix
+            if (name.equalsIgnoreCase(suffixSelector.getSuffix())) {
+                return new Pair(null, name);
+            } else if (name.toLowerCase().endsWith("." + suffixSelector.getSuffix())) {
+                //The suffix string contained in the suffixSelector is case insensitive,
+                //should not use the suffix as the original suffix string, has to retrieve the original string
+                //from the variable name, e.g abc.lEngTH is the variable name and "length" is the suffix.
+                //The suffix should contain lEngTH
+                int suffixStartIndex = name.length() - (suffixSelector.getSuffix().length() + 1);
+                return new Pair(name.substring(0, suffixStartIndex),
+                        name.substring(suffixStartIndex));
+            }
+        }
+        //return the full variable name if there is no suffix selector.
+        //Should not reach here.
+        return new Pair(name, null);
     }
 
     @NotNull

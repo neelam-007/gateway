@@ -6,10 +6,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.*;
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.LoggingAudit;
-import com.l7tech.gateway.common.audit.MessagesUtil;
-import com.l7tech.gateway.common.audit.TestAudit;
+import com.l7tech.gateway.common.audit.*;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.message.*;
@@ -48,6 +45,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -987,6 +985,93 @@ public class ExpandVariablesTest {
     public void testOffsetTimeZonePositive_NoColonWithMinutes() throws Exception {
         testFormattedDate(date, "mydate", "${mydate.+0530}", "2012-06-27T06:47:59.000+05:30");
     }
+
+    @BugNumber(13278)
+    @Test
+    public void testLengthOnArray() {
+        final String[] s = new String[] {"a", "b", "c"};
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("test", s);
+        }};
+        assertEquals(Integer.toString(s.length), ExpandVariables.process("${test.length}", vars, audit));
+        assertEquals(Integer.toString(s.length), ExpandVariables.process("${test.LengTH}", vars, audit));
+        assertEquals(Integer.toString(s.length), ExpandVariables.process("${test.LENGTH}", vars, audit));
+    }
+
+    @BugNumber(13278)
+    @Test
+    public void testLengthOnCollection() {
+        final List<String> s = new ArrayList<String>();
+        s.add("a");
+        s.add("b");
+        s.add("c");
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("test", s);
+        }};
+        assertEquals(Integer.toString(s.size()), ExpandVariables.process("${test.length}", vars, audit));
+        assertEquals(Integer.toString(s.size()), ExpandVariables.process("${test.LengTH}", vars, audit));
+        assertEquals(Integer.toString(s.size()), ExpandVariables.process("${test.LENGTH}", vars, audit));
+        assertEquals(Integer.toString(s.size()), ExpandVariables.process("${test.LENGTH}", vars, audit, true));
+        assertEquals("", ExpandVariables.process("${test.length.length}", vars, audit));
+    }
+
+    @BugNumber(13278)
+    @Test
+    public void testLengthOnInvalidVariable() {
+        final List<String> s = new ArrayList<String>();
+        s.add("a");
+        s.add("b");
+        s.add("c");
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("test", s);
+        }};
+        assertEquals("", ExpandVariables.process("${test.a.length}", vars, audit ));
+    }
+
+
+    @BugNumber(13278)
+    @Test
+    public void testNoSelectorWithLength() {
+        final String s = "a";
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("test", s);
+        }};
+        try {
+            ExpandVariables.process("${test.a.lengTH}", vars, audit, true);
+            fail();
+        } catch (IllegalArgumentException e) {
+            String expect = MessageFormat.format(CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE.getMessage(), "a.lengTH");
+            assertEquals(expect, e.getMessage());
+        }
+    }
+
+    @BugNumber(13278)
+    @Test
+    public void testLengthOnSingleValueVariable() {
+        final String s = "a";
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("test.length", s);
+        }};
+        assertEquals(s, ExpandVariables.process("${test.length}", vars, audit));
+    }
+
+    @BugNumber(13278)
+    @Test
+    public void testLengthOnNonCollectionObject() {
+        final String s = "a";
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("test", s);
+        }};
+        try {
+            ExpandVariables.process("${test.length}", vars, audit, true);
+            fail();
+        } catch (IllegalArgumentException e) {
+            String expect = MessageFormat.format(CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE.getMessage(), "length");
+            assertEquals(expect, e.getMessage());
+        }
+    }
+
+
 
     private byte[] generateNewSecret(int length) {
         final byte[] output = new byte[length];

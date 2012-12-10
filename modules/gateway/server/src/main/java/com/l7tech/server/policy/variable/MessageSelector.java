@@ -153,9 +153,9 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = singleHeaderSelector;
         else if (lname.startsWith(HTTP_HEADERVALUES_PREFIX))
             selector = multiHeaderSelector;
-        else if (lname.startsWith(HTTP_HEADERNAMES))
+        else if (lname.equals(HTTP_HEADERNAMES))
             selector = headerNamesSelector;
-        else if (lname.startsWith(HTTP_ALLHEADERVALUES))
+        else if (lname.equals(HTTP_ALLHEADERVALUES))
             selector = allHeaderValuesSelector;
         else if (STATUS_NAME.equals(lname)) {
             selector = statusSelector;

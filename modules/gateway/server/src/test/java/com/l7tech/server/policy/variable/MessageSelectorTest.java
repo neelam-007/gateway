@@ -21,6 +21,7 @@ import com.l7tech.server.management.config.monitoring.Header;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import org.junit.Before;
@@ -231,6 +232,73 @@ public class MessageSelectorTest {
         assertEquals("h1, h1, h2", ExpandVariables.process("${request.http.headernames}", vars, audit));
         assertEquals("h1:h1value, h12value, h1:h1value, h12value, h2:h2value", ExpandVariables.process("${request.http.allheaderValues}", vars, audit));
         assertEquals("h1value, h12value", ExpandVariables.process("${request.http.headerValues.h1}", vars, audit));
+
+    }
+
+    @BugNumber(13278)
+    @Test
+    public void testMultiValueLength() {
+        PolicyEnforcementContext c = PolicyEnforcementContextFactory.createPolicyEnforcementContext(message, message);
+        AuthenticationContext ac = c.getAuthenticationContext(message);
+        User user1 = new UserBean(123, "Tester1");
+        User user2 = new UserBean(123, "Tester2");
+        AuthenticationResult ar1 = new AuthenticationResult( user1, new OpaqueSecurityToken());
+        AuthenticationResult ar2 = new AuthenticationResult( user2, new OpaqueSecurityToken());
+        ac.addAuthenticationResult(ar1);
+        ac.addAuthenticationResult(ar2);
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "authenticatedusers", handler, false);
+        assertEquals(user2.getName(), ((String[])selection.getSelectedValue())[1]);
+        assertEquals(ac.getAllAuthenticationResults().size(), ((String[])selection.getSelectedValue()).length);
+
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("request", message);
+        }};
+
+        assertEquals(Integer.toString(ac.getAllAuthenticationResults().size()), ExpandVariables.process("${request.authenticatedusers.length}", vars, audit));
+        //Should return the last authentication result
+        assertEquals("", ExpandVariables.process("${request.authenticateduser.length}", vars, audit));
+
+        assertEquals(Integer.toString(ac.getAllAuthenticationResults().size()), ExpandVariables.process("${request.authenticateddns.length}", vars, audit));
+
+        List<HttpHeader> headers = new ArrayList<HttpHeader>();
+        HttpHeader h1 = new GenericHttpHeader(new Header("h1", "h1value"));
+        HttpHeader h12 = new GenericHttpHeader(new Header("h1", "h12value"));
+        HttpHeader h2 = new GenericHttpHeader(new Header("h2", "h2value"));
+        headers.add(h1);
+        headers.add(h12);
+        headers.add(h2);
+
+        HttpRequestKnobStub rk = new HttpRequestKnobStub(headers);
+
+        message.attachHttpRequestKnob(rk);
+
+        assertEquals(Integer.toString(headers.size()), ExpandVariables.process("${request.http.headernames.length}", vars, audit));
+        assertEquals("2", ExpandVariables.process("${request.http.headerValues.h1.length}", vars, audit));
+        assertEquals(Integer.toString(headers.size()), ExpandVariables.process("${request.http.allheaderValues.length}", vars, audit));
+
+    }
+
+    @BugNumber(13278)
+    @Test
+    public void testLengthAsVariableNameButNotSuffix() {
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("request", message);
+        }};
+
+        List<HttpHeader> headers = new ArrayList<HttpHeader>();
+        HttpHeader h1 = new GenericHttpHeader(new Header("h1.length", "h1value"));
+        HttpHeader h12 = new GenericHttpHeader(new Header("h1.length", "h12value"));
+        HttpHeader h2 = new GenericHttpHeader(new Header("h2", "h2value"));
+        headers.add(h1);
+        headers.add(h12);
+        headers.add(h2);
+
+        HttpRequestKnobStub rk = new HttpRequestKnobStub(headers);
+
+        message.attachHttpRequestKnob(rk);
+
+        assertEquals("h1value, h12value", ExpandVariables.process("${request.http.headerValues.h1.length}", vars, audit));
+        assertEquals("2", ExpandVariables.process("${request.http.headerValues.h1.length.length}", vars, audit));
 
     }
 }
