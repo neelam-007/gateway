@@ -199,7 +199,7 @@ CREATE TABLE published_service (
   name varchar(255) NOT NULL,
   policy_xml mediumtext,
   policy_oid bigint(20) default NULL,
-  wsdl_url varchar(255),
+  wsdl_url varchar(4096),
   wsdl_xml mediumtext,
   disabled TINYINT(1) NOT NULL DEFAULT 0,
   soap TINYINT(1) NOT NULL DEFAULT 1,

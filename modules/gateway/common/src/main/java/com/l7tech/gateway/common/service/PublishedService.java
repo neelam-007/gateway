@@ -139,7 +139,7 @@ public class PublishedService extends NamedEntityImp implements Flushable, HasFo
      *
      * @return the URL from which the WSDL was originally downloaded.  Never null, but could be empty.
      */
-    @Size(max=255)
+    @Size(max=4096)
     public String getWsdlUrl() {
         if (_wsdlUrl == null) _wsdlUrl = ""; // to satisfy the db
         return _wsdlUrl;

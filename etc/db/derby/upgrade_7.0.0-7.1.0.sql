@@ -66,3 +66,5 @@ alter table encapsulated_assertion_result
     foreign key (encapsulated_assertion_oid)
     references encapsulated_assertion
     on delete cascade;
+
+ALTER TABLE published_service ALTER COLUMN wsdl_url SET DATA TYPE VARCHAR(4096);

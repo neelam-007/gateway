@@ -57,6 +57,8 @@ CREATE TABLE encapsulated_assertion_result (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 
+ALTER TABLE published_service MODIFY COLUMN wsdl_url VARCHAR(4096);
+
 --
 -- Reenable FK at very end of script
 --

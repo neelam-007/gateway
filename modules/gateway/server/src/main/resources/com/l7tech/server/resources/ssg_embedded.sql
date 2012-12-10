@@ -554,7 +554,7 @@ create table published_service (
     objectid bigint not null,
     version integer not null,
     name varchar(255),
-    wsdl_url varchar(255),
+    wsdl_url varchar(4096),
     wsdl_xml clob(2147483647),
     disabled smallint,
     soap smallint,

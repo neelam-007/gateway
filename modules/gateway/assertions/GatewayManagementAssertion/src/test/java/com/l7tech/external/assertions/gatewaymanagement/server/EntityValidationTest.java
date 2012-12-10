@@ -225,13 +225,13 @@ public class EntityValidationTest {
         checkSize( service, "name", 1, 255 );
 
         // Test WSDL url 255 chars
-        service.setWsdlUrl( "http://GW/" + string(245,'a') );
+        service.setWsdlUrl( "http://GW/" + string(4086,'a') );
         service.setWsdlXml( "" );
-        valid( service, "wsdl url 255 ");
+        valid( service, "wsdl url 4096 ");
 
-        service.setWsdlUrl( "http://GW/" + string(246,'a') );
+        service.setWsdlUrl( "http://GW/" + string(4087,'a') );
         service.setWsdlXml( "" );
-        invalid( service, "wsdl url 256" );
+        invalid( service, "wsdl url 4097" );
 
         service.setWsdlUrl( null );
         service.setWsdlXml( "" );
