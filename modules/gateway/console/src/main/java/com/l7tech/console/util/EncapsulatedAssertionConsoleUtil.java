@@ -66,7 +66,7 @@ public final class EncapsulatedAssertionConsoleUtil {
 
         // Use the default icon.
         final ImageIcon icon = ImageCache.getInstance().getIconAsIcon(EncapsulatedAssertionConfig.ICON_RESOURCE_DIRECTORY + EncapsulatedAssertionConfig.DEFAULT_ICON_RESOURCE_FILENAME);
-        icon.setDescription("Encapsulated Assertion Icon");
+        icon.setDescription(EncapsulatedAssertionConfig.DEFAULT_ICON_RESOURCE_FILENAME);
         return new Pair<IconType, ImageIcon>(IconType.DEFAULT_IMAGE, icon);
     }
 }

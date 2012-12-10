@@ -40,6 +40,7 @@ import static com.l7tech.util.Functions.propertyTransform;
 
 public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(EncapsulatedAssertionConfigPropertiesDialog.class.getName());
+    private static final String SELECT_ICON = "Select Icon";
 
     private JPanel contentPane;
     private JButton okButton;
@@ -132,8 +133,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                 doChangePolicy();
             }
         });
-        final OkCancelDialog<ImageIcon> okCancelDialog = new OkCancelDialog<ImageIcon>(this, "Icon", true, new IconSelectorDialog());
-        selectIconButton.addActionListener(new IconActionListener(okCancelDialog));
+        selectIconButton.addActionListener(new IconActionListener());
 
         inputsTableModel = TableUtil.configureTable(inputsTable,
             column("GUI", 30, 30, 50, Functions.<Boolean, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiPrompt"), Boolean.class),
@@ -210,7 +210,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             }
         });
     }
-    
+
     private void doOutputProperties(final EncapsulatedAssertionResultDescriptor output, final boolean needsInsert) {
         if (output == null)
             return;
@@ -222,7 +222,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             public void run() {
                 if (!dlg.isConfirmed())
                     return;
-                
+
                 output.setEncapsulatedAssertionConfig(config);
                 if (needsInsert)
                     outputsTableModel.addRow(output);
@@ -232,7 +232,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                     outputsTable.getSelectionModel().setSelectionInterval(index, index);
                 }
             }
-        });            
+        });
     }
 
     private <RT> ActionListener makeDeleteRowListener(final JTable table, final SimpleTableModel<RT> tableModel) {
@@ -458,22 +458,20 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     }
 
     private class IconActionListener implements ActionListener {
-        private OkCancelDialog<ImageIcon> okCancelDialog;
-        private IconActionListener(final OkCancelDialog<ImageIcon> okCancelDialog){
-            this.okCancelDialog = okCancelDialog;
-        }
         @Override
         public void actionPerformed(ActionEvent e) {
+            final OkCancelDialog<String> okCancelDialog = new OkCancelDialog<String>(TopComponents.getInstance().getTopParent(),
+                    SELECT_ICON, true, new IconSelectorDialog((ImageIcon)iconLabel.getIcon()));
             okCancelDialog.pack();
             Utilities.centerOnParentWindow(okCancelDialog);
             DialogDisplayer.display(okCancelDialog, new Runnable() {
                 @Override
                 public void run() {
                     if(okCancelDialog.wasOKed()){
-                        final ImageIcon icon = okCancelDialog.getValue();
-                        iconLabel.setIcon(icon);
-                        iconResourceFilename = icon.getDescription();
+                        iconResourceFilename = okCancelDialog.getValue();
+                        config.putProperty(EncapsulatedAssertionConfig.PROP_ICON_RESOURCE_FILENAME, iconResourceFilename);
                         iconBase64 = null;
+                        iconLabel.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(config).right);
                     }
                 }
             });

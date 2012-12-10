@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.widgets.ValidatedPanel;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -10,35 +11,49 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Collection;
 
-public class IconSelectorDialog extends ValidatedPanel<ImageIcon> {
+/**
+ * A dialog which allows the user to select an icon from an image gallery. Images in the gallery are scaled to a uniform size.
+ */
+public class IconSelectorDialog extends ValidatedPanel<String> {
     private static final Border LINE_BORDER = BorderFactory.createLineBorder(Color.BLACK, 3);
     private static final Border EMPTY_BORDER = BorderFactory.createEmptyBorder();
+    private static final int WIDTH = 16;
+    private static final int HEIGHT = 16;
+    private static final int COLS = 15;
+    private static final int PADDING = 3;
+    private static final String ICON = "icon";
     private ImageIcon selected;
     private JLabel selectedLabel;
 
-    public IconSelectorDialog() {
-        super("icon");
+    /**
+     * @param selected the ImageIcon to select by default.
+     */
+    public IconSelectorDialog(@NotNull final ImageIcon selected) {
+        super(ICON);
+        this.selected = new ImageIcon(selected.getImage().getScaledInstance(WIDTH, HEIGHT, Image.SCALE_SMOOTH));
+        this.selected.setDescription(selected.getDescription());
         init();
     }
 
+    /**
+     * @return the selected icon's filename.
+     */
     @Override
-    protected ImageIcon getModel() {
-        return selected;
+    protected String getModel() {
+        return selected.getDescription();
     }
 
     @Override
     protected void initComponents() {
-        setLayout(new GridLayout(0, 15, 3, 3));
+        // # of rows is dynamic
+        setLayout(new GridLayout(0, COLS, PADDING, PADDING));
         final Collection<ImageIcon> icons = ImageCache.getInstance().getIcons(IconSelectorDialog.class.getClassLoader());
-        int count = 0;
         for (final ImageIcon icon : icons) {
-            final Image scaled = icon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
+            final Image scaled = icon.getImage().getScaledInstance(WIDTH, HEIGHT, Image.SCALE_SMOOTH);
             final ImageIcon scaledIcon = new ImageIcon(scaled);
             scaledIcon.setDescription(icon.getDescription());
             final JLabel iconLabel = new JLabel(scaledIcon);
-            if (count == 0) {
-                // select the first one
-                selected = scaledIcon;
+            if (selected.getDescription().equals(icon.getDescription())) {
                 selectedLabel = iconLabel;
                 iconLabel.setBorder(LINE_BORDER);
             } else {
@@ -46,15 +61,15 @@ public class IconSelectorDialog extends ValidatedPanel<ImageIcon> {
             }
             iconLabel.addMouseListener(new MouseListener() {
                 @Override
-                public void mouseClicked(MouseEvent e) {
+                public void mouseClicked(final MouseEvent e) {
                 }
 
                 @Override
-                public void mousePressed(MouseEvent e) {
+                public void mousePressed(final MouseEvent e) {
                 }
 
                 @Override
-                public void mouseReleased(MouseEvent e) {
+                public void mouseReleased(final MouseEvent e) {
                     if (!selected.equals(scaledIcon)) {
                         selected = scaledIcon;
                         // remove border from previously-selected icon
@@ -66,15 +81,14 @@ public class IconSelectorDialog extends ValidatedPanel<ImageIcon> {
                 }
 
                 @Override
-                public void mouseEntered(MouseEvent e) {
+                public void mouseEntered(final MouseEvent e) {
                 }
 
                 @Override
-                public void mouseExited(MouseEvent e) {
+                public void mouseExited(final MouseEvent e) {
                 }
             });
             add(iconLabel);
-            count++;
         }
     }
 
@@ -84,5 +98,6 @@ public class IconSelectorDialog extends ValidatedPanel<ImageIcon> {
 
     @Override
     protected void doUpdateModel() {
+        // no update needed as the model is just the icon file name
     }
 }
