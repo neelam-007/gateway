@@ -245,7 +245,7 @@ public abstract class AbstractPortalGenericEntityManager<T extends AbstractPorta
             if (e.getMessage().contains("generic entity is not of expected class")) {
                 // temporary workaround for bug
                 // see http://sarek.l7tech.com/bugzilla/show_bug.cgi?id=12334
-                LOGGER.log(Level.WARNING, "Generic entity with name=" + name + " was found but has the wrong classname.", ExceptionUtils.getDebugException(e));
+                LOGGER.log(Level.FINE, "Generic entity with name=" + name + " was found but has different classname.", ExceptionUtils.getDebugException(e));
             } else {
                 throw e;
             }
