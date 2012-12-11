@@ -6,6 +6,7 @@
 
 package com.l7tech.util;
 
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.filechooser.FileSystemView;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -28,8 +29,16 @@ import java.util.logging.Logger;
  * Time: 2:58:00 PM
  */
 public class FileUtils {
+    private static FileNameExtensionFilter imageFileFilter = new FileNameExtensionFilter("Image file filter", "gif", "png", "jpg", "jpeg");
     private static final Logger logger = Logger.getLogger(FileUtils.class.getName());
     private static String defaultDir;
+
+    /**
+     * @return a FileNameExtensionFilter which only accepts gif, png, jpg, or jpeg.
+     */
+    public static FileNameExtensionFilter getImageFileFilter() {
+        return imageFileFilter;
+    }
 
     /**
      * Delete a file.  This just calls {@link File#delete}, but translates a false return value into

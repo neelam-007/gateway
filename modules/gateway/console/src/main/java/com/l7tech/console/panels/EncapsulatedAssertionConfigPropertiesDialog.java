@@ -20,14 +20,14 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -457,20 +457,40 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         DialogDisplayer.showMessageDialog(this, message + suffix, "Error", JOptionPane.ERROR_MESSAGE, null);
     }
 
+    /**
+     * Listener for the 'set icon' button.
+     */
     private class IconActionListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            final OkCancelDialog<String> okCancelDialog = new OkCancelDialog<String>(TopComponents.getInstance().getTopParent(),
-                    SELECT_ICON, true, new IconSelectorDialog((ImageIcon)iconLabel.getIcon()));
+            final Pair<EncapsulatedAssertionConsoleUtil.IconType, ImageIcon> currentIcon = EncapsulatedAssertionConsoleUtil.findIcon(config);
+            final OkCancelDialog<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>> okCancelDialog = new OkCancelDialog<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>>(TopComponents.getInstance().getTopParent(),
+                    SELECT_ICON, true, new IconSelectorDialog(currentIcon.left.equals(EncapsulatedAssertionConsoleUtil.IconType.CUSTOM_IMAGE) ? null : currentIcon.right));
             okCancelDialog.pack();
             Utilities.centerOnParentWindow(okCancelDialog);
             DialogDisplayer.display(okCancelDialog, new Runnable() {
                 @Override
                 public void run() {
                     if(okCancelDialog.wasOKed()){
-                        iconResourceFilename = okCancelDialog.getValue();
-                        config.putProperty(EncapsulatedAssertionConfig.PROP_ICON_RESOURCE_FILENAME, iconResourceFilename);
-                        iconBase64 = null;
+                        final Pair<EncapsulatedAssertionConsoleUtil.IconType, String> selected = okCancelDialog.getValue();
+                        if (EncapsulatedAssertionConsoleUtil.IconType.CUSTOM_IMAGE.equals(selected.left)) {
+                            try {
+                                final byte[] fileBytes = IOUtils.slurpFile(new File(selected.right));
+                                iconBase64 = HexUtils.encodeBase64(fileBytes);
+                                config.putProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64, iconBase64);
+                            } catch (final IOException e) {
+                                logger.warning("Error reading icon file. Using default icon.");
+                                iconBase64 = null;
+                                config.removeProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64);
+                            }
+                            iconResourceFilename = null;
+                            config.removeProperty(EncapsulatedAssertionConfig.PROP_ICON_RESOURCE_FILENAME);
+                        } else {
+                            iconResourceFilename = selected.right;
+                            config.putProperty(EncapsulatedAssertionConfig.PROP_ICON_RESOURCE_FILENAME, iconResourceFilename);
+                            iconBase64 = null;
+                            config.removeProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64);
+                        }
                         iconLabel.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(config).right);
                     }
                 }

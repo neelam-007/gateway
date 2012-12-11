@@ -1,25 +1,22 @@
 package com.l7tech.gui.util;
 
+import com.l7tech.util.FileUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,9 +33,11 @@ public final class ImageCache {
 
     /** singleton instance */
     protected static final ImageCache iconManager = new ImageCache();
-    private static final String PNG = "PNG";
-    private static final String GIF = "GIF";
-    private static final String JPG = "JPG";
+
+    // icon settings - TODO make configurable
+    private static final int ICON_MAX_SIZE = 16;
+    private static final int ICON_MIN_SIZE = 16;
+    private static final String IMAGE_DIR = "com/l7tech/console/resources/";
 
     /** map of resource name to loaded icon (String, SoftRefrence (Image)) or (String, NO_ICON) */
     private final Map<String, Reference<Image>> imageMap = new ConcurrentHashMap<String, Reference<Image>>();
@@ -179,27 +178,43 @@ public final class ImageCache {
     }
 
     /**
-     * Retrieves all icons(gif/png/jpeg) using the specified class loader.
+     * Retrieves all icons using the specified class loader.
      */
     public Collection<ImageIcon> getIcons(@NotNull final ClassLoader loader){
-        final Set<ImageIcon> icons = new HashSet<ImageIcon>();
-        final URL iconDir = loader.getResource("com/l7tech/console/resources");
+        final List<ImageIcon> icons = new ArrayList<ImageIcon>();
+        final URL iconDir = loader.getResource(IMAGE_DIR);
         try {
             final File dir = new File(iconDir.toURI());
-            final File[] iconFiles = dir.listFiles(new FilenameFilter() {
+            dir.listFiles(new FileFilter() {
+                /**
+                 * Filters files that aren't valid image types or ones that are too big/small.
+                 */
                 @Override
-                public boolean accept(final File dir, final String name) {
-                    return name.toUpperCase().endsWith(PNG) || name.toUpperCase().endsWith(GIF) || name.toUpperCase().endsWith(JPG);
+                public boolean accept(final File file) {
+                    final FileNameExtensionFilter imageFileFilter = FileUtils.getImageFileFilter();
+                    final boolean validType = imageFileFilter.accept(file);
+                    if (validType) {
+                        final ImageIcon icon = getIconAsIcon(IMAGE_DIR + file.getName(), loader);
+                        if (icon != null &&
+                                icon.getIconHeight() <= ICON_MAX_SIZE && icon.getIconHeight() >= ICON_MIN_SIZE &&
+                                icon.getIconWidth() <= ICON_MAX_SIZE && icon.getIconWidth() >= ICON_MIN_SIZE) {
+                            icon.setDescription(file.getName());
+                            icons.add(icon);
+                        }
+                    }
+                    return validType;
                 }
             });
-            for (final File iconFile : iconFiles) {
-                final ImageIcon icon = getIconAsIcon("com/l7tech/console/resources/" + iconFile.getName(), loader);
-                icon.setDescription(iconFile.getName());
-                icons.add(icon);
-            }
         } catch (final URISyntaxException e) {
             logger.log(Level.WARNING, "Unable to load image resources: " + ExceptionUtils.getMessage(e), e);
         }
+
+        Collections.sort(icons, new Comparator<ImageIcon>() {
+            @Override
+            public int compare(@NotNull final ImageIcon left, @NotNull final ImageIcon right) {
+                return left.getDescription().compareTo(right.getDescription());
+            }
+        });
         return icons;
     }
 
