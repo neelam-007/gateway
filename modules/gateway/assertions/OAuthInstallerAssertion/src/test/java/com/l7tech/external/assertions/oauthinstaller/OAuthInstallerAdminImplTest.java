@@ -31,9 +31,15 @@ import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Test tests are concerned with logic relating to either the contents of the OTK bundles or logic which is controlled
+ * by this module e.g. updating of policy xml before being published.
+ */
 public class OAuthInstallerAdminImplTest {
 
     private final String baseName = "/com/l7tech/external/assertions/oauthinstaller/bundles/";
+
+    //todo test - validate that each service in an enumeration contains a unique id.
 
     /**
      * Validates that the correct number and type of spring events are published for a dry run.
@@ -176,6 +182,97 @@ public class OAuthInstallerAdminImplTest {
     }
 
     /**
+     * There are no dependencies across bundles. Any policy referenced from a service or policy must exist in the bundle.
+     */
+    @Test
+    public void testAllIncludesAreWithinTheBundle() throws Exception {
+        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
+        final OAuthToolkitBundleResolver resolver = new OAuthToolkitBundleResolver(bundleInfos);
+        final List<BundleInfo> allBundles = resolver.getResultList();
+
+        for (BundleInfo aBundle : allBundles) {
+            final Document policyDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.POLICY, false);
+            final List<Element> enumPolicyElms = getEntityElements(policyDocument.getDocumentElement(), "Policy");
+
+            // Record all policies defined in this bundle.
+            final Map<String, String> guidToPolicyNameMatch = new HashMap<String, String>();
+            // Record all includes for a policy
+            final Map<String, Set<String>> policyGuidToPolicyRefMap = new HashMap<String, Set<String>>();
+            // Record all included policies
+            final Map<String, String> policyIncludeToReferantPolicyMap = new HashMap<String, String>();
+            for (Element policyElm : enumPolicyElms) {
+                final String policyGuid = policyElm.getAttribute("guid");
+                //todo use utility method
+                final Element policyDetailElm = XmlUtil.findOnlyOneChildElementByName(policyElm, BundleUtils.L7_NS_GW_MGMT, "PolicyDetail");
+                final String policyDetailGuid = policyDetailElm.getAttribute("guid");
+                assertEquals("Invalid Gateway Mgmt Policy XML. Guids must be the same.", policyGuid, policyDetailGuid);
+                final String policyName = findEntityNameFromElement(policyDetailElm);
+                guidToPolicyNameMatch.put(policyGuid, policyName);
+
+                final Element policyResourceElement = PolicyUtils.getPolicyResourceElement(policyElm, "Policy", "Not used");
+                final Document layer7Policy = PolicyUtils.getPolicyDocumentFromResource(policyResourceElement, "Policy", "Not used");
+                final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(layer7Policy);
+                Set<String> allIncludes = new HashSet<String>();
+                for (Element policyInclude : policyIncludes) {
+                    final String includeGuid = policyInclude.getAttribute("stringValue");
+                    allIncludes.add(includeGuid);
+                    policyIncludeToReferantPolicyMap.put(includeGuid, policyGuid);
+                }
+                policyGuidToPolicyRefMap.put(policyGuid, allIncludes);
+            }
+
+            // check for policy referenced but not defined
+            for (Map.Entry<String, String> includeToPolicyEntry : policyIncludeToReferantPolicyMap.entrySet()) {
+                assertTrue("Included policy #{" + includeToPolicyEntry.getKey() + "} from policy #{" + includeToPolicyEntry.getValue() + "}" +
+                        " is not defined in bundle " + aBundle.getName(), policyGuidToPolicyRefMap.containsKey(includeToPolicyEntry.getKey()));
+            }
+
+            // validate all services policy references.
+            final Document serviceDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.SERVICE, false);
+            final List<Element> enumServiceElms = getEntityElements(serviceDocument.getDocumentElement(), "Service");
+            // all that matters is that the policy exists if referenced, does not matter if we don't record all the services that may reference a policy
+            final Map<String, String> policyGuidToServiceRefMap = new HashMap<String, String>();
+
+            for (Element enumServiceElm : enumServiceElms) {
+                //todo use utility method
+                final Element serviceDetail = XmlUtil.findFirstChildElementByName(enumServiceElm, BundleUtils.L7_NS_GW_MGMT, "ServiceDetail");
+
+                final String serviceName = GatewayManagementDocumentUtilities.findEntityNameFromElement(serviceDetail);
+
+                final Element policyResourceElement = PolicyUtils.getPolicyResourceElement(enumServiceElm, "Service", "Not used");
+                final Document layer7Policy = PolicyUtils.getPolicyDocumentFromResource(policyResourceElement, "Policy", "Not used");
+                final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(layer7Policy);
+                for (Element policyInclude : policyIncludes) {
+                    final String policyGuid = policyInclude.getAttribute("stringValue");
+                    policyGuidToServiceRefMap.put(policyGuid, serviceName);
+                }
+            }
+
+            // check for missing references.
+            for (Map.Entry<String, String> guidToServiceEntry : policyGuidToServiceRefMap.entrySet()) {
+                assertTrue("Policy with guid #{" + guidToServiceEntry.getKey() + "} referenced from serivce '" +
+                        guidToServiceEntry.getValue() + "' does not exist in bundle " + aBundle.getName(),
+                        guidToPolicyNameMatch.containsKey(guidToServiceEntry.getKey()));
+            }
+
+            // check for any unused policy includes e.g. policy defined but not referenced
+            for (Map.Entry<String, String> entry : guidToPolicyNameMatch.entrySet()) {
+                if (!policyGuidToServiceRefMap.containsKey(entry.getKey())) {
+                    // check if a policy includes it (note: circular includes are not allowed on the gateway)
+                    boolean found = false;
+                    for (Map.Entry<String, Set<String>> policyIncludeEntry : policyGuidToPolicyRefMap.entrySet()) {
+                        if (policyIncludeEntry.getValue().contains(entry.getKey())) {
+                            found = true;
+                        }
+                    }
+                    assertTrue("Policy with guid #{" + entry.getKey() + "} '" + entry.getValue() + "' is not referenced" +
+                            "from any service or policy in bundle " + aBundle.getName(), found);
+                }
+            }
+        }
+    }
+
+    /**
      * The same policy is contained in more than one bundle. This test validates that all policies with the same name
      * are logically equivalent. Policy names are unique on the Gateway.
      * If not then two policies / service could refer to the same policy with the same name but receive an unexpected
@@ -204,23 +301,23 @@ public class OAuthInstallerAdminImplTest {
         }
 
         // Organise all policies with the same guid
-        Map<String, List<Element>> guidToPolicyElms = new HashMap<String, List<Element>>();
+        Map<String, List<Element>> policyNameToPolicyElms = new HashMap<String, List<Element>>();
 
         for (Map.Entry<String, Map<String, Element>> entry : bundleToAllPolicies.entrySet()) {
             System.out.println("Bundle: " + entry.getKey());
             final Map<String, Element> value = entry.getValue();
             for (Map.Entry<String, Element> elementEntry : value.entrySet()) {
                 final String policyName = elementEntry.getKey();
-                if (!guidToPolicyElms.containsKey(policyName)) {
-                    guidToPolicyElms.put(policyName, new ArrayList<Element>());
+                if (!policyNameToPolicyElms.containsKey(policyName)) {
+                    policyNameToPolicyElms.put(policyName, new ArrayList<Element>());
                 }
-                guidToPolicyElms.get(policyName).add(elementEntry.getValue());
+                policyNameToPolicyElms.get(policyName).add(elementEntry.getValue());
                 System.out.println("\t" + policyName);
             }
         }
 
         // Validate all policies are identical
-        for (Map.Entry<String, List<Element>> entry : guidToPolicyElms.entrySet()) {
+        for (Map.Entry<String, List<Element>> entry : policyNameToPolicyElms.entrySet()) {
             final String policyName = entry.getKey();
             final List<Element> policyElms = entry.getValue();
 
@@ -305,7 +402,6 @@ public class OAuthInstallerAdminImplTest {
      * Tests that all folders referenced by policies and services in a bundle exist in the folder enumeration.
      */
     @Test
-    @Ignore
     public void testAllFolderIdsAreTheSame() throws Exception {
         final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
         final OAuthToolkitBundleResolver resolver = new OAuthToolkitBundleResolver(bundleInfos);
@@ -498,13 +594,6 @@ public class OAuthInstallerAdminImplTest {
         assertFalse(dbSchema.trim().isEmpty());
     }
 
-    @Ignore
-    @Test
-    public void testCommentReferencedFromDocs() throws Exception {
-        // check for 'grant types' on all assertion in /auth/oauth/v2/token
-        fail("Implement me");
-    }
-
     private void verifyCommentAdded(Document policyResource) {
         // verify version was added
         final Element allElm = XmlUtil.findFirstChildElement(policyResource.getDocumentElement());
@@ -517,15 +606,15 @@ public class OAuthInstallerAdminImplTest {
 
 
     // - PRIVATE
-    private final static List<Pair<BundleInfo, String>> ALL_BUNDLE_NAMES =
-            Collections.unmodifiableList(
-                    Arrays.asList(
-                            new Pair<BundleInfo, String>(new BundleInfo("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "1.0", "OAuth_1_0", "Desc"), "OAuth_1_0"),
-                            new Pair<BundleInfo, String>(new BundleInfo("ba525763-6e55-4748-9376-76055247c8b1", "1.0", "OAuth_2_0", "Desc"), "OAuth_2_0"),
-                            new Pair<BundleInfo, String>(new BundleInfo("f69c7d15-4999-4761-ab26-d29d58c0dd57", "1.0", "SecureZone_OVP", "Desc"), "SecureZone_OVP"),
-                            new Pair<BundleInfo, String>(new BundleInfo("b082274b-f00e-4fbf-bbb7-395a95ca2a35", "1.0", "SecureZone_Storage", "Desc"), "SecureZone_Storage"),
-                            new Pair<BundleInfo, String>(new BundleInfo("a07924c0-0265-42ea-90f1-2428e31ae5ae", "1.0", "StorageManager", "Desc"), "StorageManager")
-                    ));
+//    private final static List<Pair<BundleInfo, String>> ALL_BUNDLE_NAMES =
+//            Collections.unmodifiableList(
+//                    Arrays.asList(
+//                            new Pair<BundleInfo, String>(new BundleInfo("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "1.0", "OAuth_1_0", "Desc"), "OAuth_1_0"),
+//                            new Pair<BundleInfo, String>(new BundleInfo("ba525763-6e55-4748-9376-76055247c8b1", "1.0", "OAuth_2_0", "Desc"), "OAuth_2_0"),
+//                            new Pair<BundleInfo, String>(new BundleInfo("f69c7d15-4999-4761-ab26-d29d58c0dd57", "1.0", "SecureZone_OVP", "Desc"), "SecureZone_OVP"),
+//                            new Pair<BundleInfo, String>(new BundleInfo("b082274b-f00e-4fbf-bbb7-395a95ca2a35", "1.0", "SecureZone_Storage", "Desc"), "SecureZone_Storage"),
+//                            new Pair<BundleInfo, String>(new BundleInfo("a07924c0-0265-42ea-90f1-2428e31ae5ae", "1.0", "StorageManager", "Desc"), "StorageManager")
+//                    ));
 
     private void validateEnumerationDocForHostNames(Element enumElement, String type) throws Exception {
 

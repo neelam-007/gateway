@@ -561,7 +561,8 @@ public class PolicyBundleInstaller {
         for (Element policyIncludeElm : policyIncludes) {
             final String policyInclude = policyIncludeElm.getAttribute("stringValue");
             if (!allPolicyElms.containsKey(policyInclude)) {
-                throw new BundleResolver.InvalidBundleException("Policy with guid " + policyInclude + " was not included in bundle");
+                throw new BundleResolver.InvalidBundleException("Policy with guid " + policyInclude + " was not included in bundle "
+                        + bundleInfo.getName() + "#{" + bundleInfo.getId() + "}");
             }
             getOrCreatePolicy(installEvent, bundleInfo, allPolicyElms.get(policyInclude), oldGuidsToNewGuids, oldToNewFolderIds, allPolicyElms, guidToName, bundleMapping, installationPrefix);
         }
