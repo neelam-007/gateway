@@ -67,4 +67,6 @@ alter table encapsulated_assertion_result
     references encapsulated_assertion
     on delete cascade;
 
+ALTER TABLE cluster_properties ADD COLUMN properties clob(2147483647);
+
 ALTER TABLE published_service ALTER COLUMN wsdl_url SET DATA TYPE VARCHAR(4096);

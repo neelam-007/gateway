@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+//TODO change to use NamedEntityWithPropertiesImp
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  *

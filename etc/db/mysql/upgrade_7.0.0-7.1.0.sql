@@ -56,6 +56,7 @@ CREATE TABLE encapsulated_assertion_result (
   PRIMARY KEY (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+ALTER TABLE cluster_properties ADD COLUMN properties MEDIUMTEXT NULL AFTER propvalue;
 
 ALTER TABLE published_service MODIFY COLUMN wsdl_url VARCHAR(4096);
 

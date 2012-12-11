@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+//TODO change to use NamedEntityWithPropertiesImp
 /**
  * Configuration of an Identity Provider object.
  *

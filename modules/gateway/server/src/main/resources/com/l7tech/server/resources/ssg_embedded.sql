@@ -225,6 +225,7 @@ create table cluster_properties (
     propKey varchar(255) not null unique,
     version integer,
     propValue clob(2147483647) not null,
+    properties clob(2147483647),
     primary key (objectid)
 );
 
@@ -1529,7 +1530,7 @@ INSERT INTO rbac_predicate_attribute VALUES (-669,'type','MqNative','eq');
 INSERT INTO rbac_permission VALUES (-670,0,-650,'READ',NULL,'SECURE_PASSWORD');
 
 -- Reserve -700001 objectid for cluster.hostname and insert default
-INSERT INTO cluster_properties VALUES (-700001,'cluster.hostname',0,'');
+INSERT INTO cluster_properties VALUES (-700001,'cluster.hostname',0,'',null);
 
 --
 -- Encapsulated Assertions

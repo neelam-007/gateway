@@ -23,6 +23,7 @@ import java.util.Map;
 
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
+//TODO change to use NamedEntityWithPropertiesImp
 /**
  * Abstract superclass of {@link Group}s that are stored in the database, as opposed to in external directories.
  *

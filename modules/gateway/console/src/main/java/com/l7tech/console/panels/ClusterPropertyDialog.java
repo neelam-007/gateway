@@ -111,7 +111,7 @@ public class ClusterPropertyDialog extends JDialog {
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 if(comp instanceof JComponent) {
-                    ((JComponent)comp).setToolTipText(properties.get(row).getDescription());
+                    ((JComponent)comp).setToolTipText(properties.get(row).getProperty(ClusterProperty.DESCRIPTION_PROPERTY_KEY));
                 }
                 return comp;
             }
@@ -301,7 +301,7 @@ public class ClusterPropertyDialog extends JDialog {
             }
 
             final CaptureProperty dlg = new CaptureProperty(this, title,
-                    prop.getDescription(), prop, knownProperties, canEdit);
+                    prop.getProperty(ClusterProperty.DESCRIPTION_PROPERTY_KEY), prop, knownProperties, canEdit);
             dlg.pack();
             Utilities.centerOnScreen(dlg);
             DialogDisplayer.display(dlg, new Runnable() {

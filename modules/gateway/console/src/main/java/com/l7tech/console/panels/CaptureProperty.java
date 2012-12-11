@@ -70,6 +70,8 @@ public class CaptureProperty extends JDialog {
             valueField.setCaretPosition(0);
             final ClusterPropertyDescriptor propertyDescriptor =
                     getClusterPropertyDescriptorByName(descriptors, (String) keyComboBox.getSelectedItem());
+            //if there is a property descriptor this means that it is a property in the server config so disable the description field
+            enableDescriptionField(propertyDescriptor == null ? true : false);
             validator = propertyDescriptor == null ? null : new Unary<Boolean, String>() {
                 @Override
                 public Boolean call( final String s ) {
@@ -82,6 +84,7 @@ public class CaptureProperty extends JDialog {
                 keyComboBox.setModel(new DefaultComboBoxModel());
                 keyComboBox.setEnabled(true);
                 keyComboBox.setEditable(true);
+                enableDescriptionField(true);
             } else {
                 keyComboBox.setModel(new DefaultComboBoxModel(getNames(descriptors)));
                 keyComboBox.setEnabled(true);
@@ -94,6 +97,8 @@ public class CaptureProperty extends JDialog {
                         String description = propertyDescriptor == null? "" : propertyDescriptor.getDescription();
                         descField.setText(description);
                         descField.setCaretPosition(0);
+                        //if there is a property descriptor this means that it is a property in the server config so disable the description field
+                        enableDescriptionField(propertyDescriptor == null ? true : false);
 
                         // Get and set value
                         String initialValue = propertyDescriptor == null? "" : propertyDescriptor.getDefaultValue();
@@ -124,6 +129,7 @@ public class CaptureProperty extends JDialog {
                 if (validateUserInput(newKey(), newValue())) {
                     property.setName(newKey());
                     property.setValue(newValue());
+                    property.setProperty(ClusterProperty.DESCRIPTION_PROPERTY_KEY, newDescription());
                     oked = true;
                     dispose();
                 }
@@ -135,10 +141,20 @@ public class CaptureProperty extends JDialog {
     }
 
     /**
+     * Enable or disable the description field.
+     * @param enable
+     */
+    private void enableDescriptionField(boolean enable) {
+        descField.setEnabled(enable);
+        descField.setEditable(enable);
+        descField.setOpaque(enable);
+    }
+
+    /**
      * Retrieve all cluster properties existing in the Global Cluster Properties table.
      * @return a list of existing cluster properties
      */
-    private Collection<ClusterProperty> propulateExistingClusterProps() {
+    private Collection<ClusterProperty> populateExistingClusterProps() {
         Collection<ClusterProperty> existingProperties = new ArrayList<ClusterProperty>();
         try {
             Collection<ClusterProperty> allProperties = Registry.getDefault().getClusterStatusAdmin().getAllProperties();
@@ -160,7 +176,7 @@ public class CaptureProperty extends JDialog {
      */
     private String getCurrentPropValue(String propName) {
         String value = null;
-        for (ClusterProperty prop: propulateExistingClusterProps()) {
+        for (ClusterProperty prop: populateExistingClusterProps()) {
             if (prop.getName().equals(propName)) {
                 value = prop.getValue();
                 break;
@@ -200,6 +216,7 @@ public class CaptureProperty extends JDialog {
     private void enableReadOnlyIfNeeded() {
         keyComboBox.setEditable(isEditable);
         valueField.setEditable(isEditable);
+        descField.setEditable(isEditable);
     }
 
     private boolean validateUserInput(String key, String value) {
@@ -266,5 +283,13 @@ public class CaptureProperty extends JDialog {
 
     public String newValue() {
         return valueField.getText();
+    }
+
+    /**
+     * Returns the description in the description field.
+     * @return
+     */
+    public String newDescription(){
+        return descField.getText();
     }
 }

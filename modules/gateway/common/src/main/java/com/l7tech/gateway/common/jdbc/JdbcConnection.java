@@ -14,6 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.util.Map;
 import java.util.TreeMap;
 
+//TODO change to use NamedEntityWithPropertiesImp
 /**
  * This entity stores JDBC Connection Configuration.
  *

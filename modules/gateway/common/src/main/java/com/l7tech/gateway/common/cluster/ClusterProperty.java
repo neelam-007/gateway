@@ -6,7 +6,7 @@
  */
 package com.l7tech.gateway.common.cluster;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityWithPropertiesImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -28,12 +28,12 @@ import java.util.regex.Pattern;
 @Proxy(lazy=false)
 @Table(name="cluster_properties")
 @AttributeOverride(name="name", column=@Column(name="propKey", nullable=false, unique=true))
-public class ClusterProperty extends NamedEntityImp implements Comparable {
+public class ClusterProperty extends NamedEntityWithPropertiesImp implements Comparable {
     private static final long serialVersionUID = 1L;
     public static final Pattern PATTERN_MID_DOTS = Pattern.compile("\\.([a-zA-Z0-9_])");
+    public static final String DESCRIPTION_PROPERTY_KEY = "description";
 
     private String value;
-    private String description;
 
     // Cluster properties that are hidden in the cluster properties GUI _even if_ they are customized with a non-default value.
     // Currently, there are only a few hidden properties
@@ -87,15 +87,6 @@ public class ClusterProperty extends NamedEntityImp implements Comparable {
 
     public void setValue(String value) {
         this.value = value;
-    }
-
-    @Transient
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     /**

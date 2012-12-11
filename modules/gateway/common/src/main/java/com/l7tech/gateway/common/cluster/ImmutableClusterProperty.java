@@ -20,29 +20,39 @@ public final class ImmutableClusterProperty extends ClusterProperty {
         _version = clusterProperty.getVersion();
         _name = clusterProperty.getName();
         super.setValue(clusterProperty.getValue()==null ? "" : clusterProperty.getValue());
-        super.setDescription(clusterProperty.getDescription());
+        super.setXmlProperties(clusterProperty.getXmlProperties());
 
         if (_name == null)
             throw new IllegalArgumentException("Null name for cluster property with oid '" + _oid + "'.");
     }
 
+    @Override
     public void setOid(long oid) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setVersion(int version) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setName(String name) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setValue(String value) {
         throw new UnsupportedOperationException();
     }
 
-    public void setDescription(String description) {
+    @Override
+    public void setXmlProperties(String xml) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setProperty(String propertyName, String propertyValue) {
         throw new UnsupportedOperationException();
     }
 

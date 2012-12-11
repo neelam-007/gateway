@@ -771,6 +771,7 @@ CREATE TABLE cluster_properties (
   version integer NOT NULL,
   propkey varchar(128) NOT NULL,
   propvalue MEDIUMTEXT NOT NULL,
+  properties MEDIUMTEXT,
   PRIMARY KEY (objectid),
   UNIQUE(propkey)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -778,7 +779,7 @@ CREATE TABLE cluster_properties (
 --
 -- Reserve -700001 objectid for cluster.hostname and insert default
 --
-INSERT INTO cluster_properties VALUES (-700001,0,'cluster.hostname','');
+INSERT INTO cluster_properties VALUES (-700001,0,'cluster.hostname','',null);
 
 DROP TABLE IF EXISTS sample_messages;
 CREATE TABLE sample_messages (

@@ -15,6 +15,7 @@ import java.text.MessageFormat;
 import java.util.Map;
 import java.util.TreeMap;
 
+//TODO change to use NamedEntityWithPropertiesImp
 /**
  * This entity stores Identity Provider password policy
  *

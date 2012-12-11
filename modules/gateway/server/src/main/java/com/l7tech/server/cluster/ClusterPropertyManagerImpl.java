@@ -102,7 +102,8 @@ public class ClusterPropertyManagerImpl
         if (cp == null) return null;
         ServerConfig sc = ServerConfig.getInstance();
         String serverPropName = sc.getNameFromClusterName(cp.getName());
-        if (serverPropName != null) cp.setDescription(sc.getPropertyDescription(serverPropName));
+        //always use the description from the serverconfig.properties file if one exists. If not then the description in the database will be used.
+        if (serverPropName != null) cp.setProperty(ClusterProperty.DESCRIPTION_PROPERTY_KEY, sc.getPropertyDescription(serverPropName));
         return cp;
     }
 

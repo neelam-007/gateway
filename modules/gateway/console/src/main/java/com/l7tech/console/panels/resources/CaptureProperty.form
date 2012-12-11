@@ -78,7 +78,7 @@
                   <editable value="false"/>
                   <lineWrap value="true"/>
                   <opaque value="false"/>
-                  <requestFocusEnabled value="false"/>
+                  <requestFocusEnabled value="true"/>
                   <rows value="3"/>
                   <wrapStyleWord value="true"/>
                 </properties>

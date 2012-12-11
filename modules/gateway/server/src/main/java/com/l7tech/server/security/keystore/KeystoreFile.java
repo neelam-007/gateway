@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+//TODO change to use NamedEntityWithPropertiesImp
 /**
  * Represents raw keystore data stored in a row of the "keystore" table.
  * <p/>
