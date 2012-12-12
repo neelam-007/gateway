@@ -8,7 +8,7 @@ import javax.persistence.Lob;
  *
  * @author Victor Kazakov
  */
-public interface NamedEntityWithProperties {
+public interface NamedEntityWithProperties extends NamedEntity {
 
     /**
      * Get the value for the property key given. If no such key exists null is returned.
