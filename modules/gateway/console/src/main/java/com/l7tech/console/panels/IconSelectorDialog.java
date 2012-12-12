@@ -8,6 +8,7 @@ import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +28,7 @@ import static com.l7tech.console.util.EncapsulatedAssertionConsoleUtil.IconType;
 public class IconSelectorDialog extends ValidatedPanel<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>> {
     private static final Border LINE_BORDER = BorderFactory.createLineBorder(Color.BLACK, 3);
     private static final Border EMPTY_BORDER = BorderFactory.createEmptyBorder(3, 3, 3, 3);
+    private static final int CUSTOM_ICON_MAX_SIZE = SyspropUtil.getInteger("com.l7tech.icon.custom.max.size", 512000);
     private static final int COLS = 15;
     private static final int PADDING = 3;
     private static final String ICON = "icon";
@@ -107,7 +109,12 @@ public class IconSelectorDialog extends ValidatedPanel<Pair<EncapsulatedAssertio
 
     @Override
     protected void doUpdateModel() {
-        // validation is done in checkSyntax
+        if (!fileTextField.getText().isEmpty()) {
+            final File file = new File(fileTextField.getText());
+            if (file.length() > CUSTOM_ICON_MAX_SIZE){
+                throw new IllegalArgumentException("Maximum file size is " + CUSTOM_ICON_MAX_SIZE + " bytes.");
+            }
+        }
     }
 
     private void removeBorder() {

@@ -152,6 +152,12 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
         return s != null ? s : "com/l7tech/console/resources/policy16.gif";
     }
 
+    @Override
+    protected String base64EncodedIconImage(boolean open) {
+        final AssertionMetadata meta = asAssertion().meta();
+        return meta.get(AssertionMetadata.BASE_64_NODE_IMAGE) == null ? null : meta.get(AssertionMetadata.BASE_64_NODE_IMAGE).toString();
+    }
+
     @SuppressWarnings({"unchecked"})
     @Override
     public Action[] getActions() {

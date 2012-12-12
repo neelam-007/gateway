@@ -7,6 +7,7 @@ import com.l7tech.console.util.WeakPropertyChangeSupport;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.util.HexUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -441,7 +442,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      */
     @Nullable
     public Image getIcon() {
-        return getCachedImage(false);
+        return getIcon(false);
     }
 
     /**
@@ -451,8 +452,28 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      *
      * @return icon to use to represent the bean when opened
      */
+    @Nullable
     public Image getOpenedIcon() {
-        return getCachedImage(true);
+        return getIcon(true);
+    }
+
+    /**
+     * Gets an Image for this node from a base 64 encoded string (if available) or from ImageCache.
+     *
+     * @param open for nodes that can be opened, can have children
+     * @return an Image for this node or null if unavailable.
+     */
+    @Nullable
+    private Image getIcon(boolean open) {
+        Image image = null;
+        final String iconImage = base64EncodedIconImage(open);
+        if (iconImage != null) {
+            final byte[] imageBytes = HexUtils.decodeBase64(iconImage);
+            image = ImageCache.getInstance().createUncachedBufferedImage(imageBytes, Transparency.BITMASK);
+        } else {
+            image = getCachedImage(open);
+        }
+        return image;
     }
 
     private Image getCachedImage(boolean open) {
@@ -492,6 +513,19 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected abstract String iconResource(boolean open);
+
+    /**
+     * Override this method if this node icon has a base 64 encoded image that is not a resource.
+     *
+     * If non-null, will have priority over any resource returned by iconResource(boolean open);
+     *
+     * @param open for nodes that can be opened, can have children
+     * @return a base 64 encoded string which represents an image (can be null)
+     */
+    @Nullable
+    protected String base64EncodedIconImage(boolean open) {
+        return null;
+    }
 
 
     /**

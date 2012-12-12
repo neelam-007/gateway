@@ -51,6 +51,7 @@ public class AssertionMetadataTest {
         assertEquals("UncustomizedMetadata", am.get(WSP_EXTERNAL_NAME));
         assertEquals("com.l7tech.policy.testuncust.server.ServerUncustomizedMetadataAssertion", am.get(SERVER_ASSERTION_CLASSNAME));
         assertEquals("com.l7tech.policy.testuncust.client.ClientUncustomizedMetadataAssertion", am.get(CLIENT_ASSERTION_CLASSNAME));
+        assertNull(am.get(BASE_64_NODE_IMAGE));
         log.info("Generated defaults test OK");
     }
 

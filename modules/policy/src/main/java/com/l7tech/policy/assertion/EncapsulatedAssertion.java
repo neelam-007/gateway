@@ -168,6 +168,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
             : new EncapsulatedAssertionConfig();
 
         meta.put(SHORT_NAME, config.getName());
+        meta.put(BASE_64_NODE_IMAGE, config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64));
         meta.put(PALETTE_NODE_ICON, findIconResourcePath(config));
 
         meta.put(ASSERTION_FACTORY, new Functions.Unary< EncapsulatedAssertion, EncapsulatedAssertion >() {
@@ -192,7 +193,6 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
         if (filename != null)
             return EncapsulatedAssertionConfig.ICON_RESOURCE_DIRECTORY + filename;
 
-        // TODO support custom base64 image bytes
         return EncapsulatedAssertionConfig.ICON_RESOURCE_DIRECTORY + EncapsulatedAssertionConfig.DEFAULT_ICON_RESOURCE_FILENAME;
     }
 

@@ -21,6 +21,7 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
         super(null);
         this.name = name != null ? name : "NAME NOT SET";
         this.iconResource = iconResource;
+        this.base64EncodedIconImage = null;
     }
 
     public AbstractLeafPaletteNode(final Assertion assertion){
@@ -28,6 +29,7 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
         final AssertionMetadata meta = assertion.meta();
         this.name = meta.get(PALETTE_NODE_NAME).toString();
         this.iconResource = meta.get(PALETTE_NODE_ICON).toString();
+        this.base64EncodedIconImage = meta.get(BASE_64_NODE_IMAGE) == null ? null : meta.get(BASE_64_NODE_IMAGE).toString();
     }
 
     /**
@@ -78,6 +80,11 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
     }
 
     @Override
+    protected String base64EncodedIconImage(boolean open) {
+        return base64EncodedIconImage;
+    }
+
+    @Override
     public int compareTo( final AbstractTreeNode treeNode ) {
         return String.CASE_INSENSITIVE_ORDER.compare(getName(),treeNode.getName());
     }
@@ -86,4 +93,5 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
 
     private final String name;
     private final String iconResource;
+    private final String base64EncodedIconImage;
 }

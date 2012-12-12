@@ -3,6 +3,7 @@ package com.l7tech.gui.util;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -34,10 +35,9 @@ public final class ImageCache {
     /** singleton instance */
     protected static final ImageCache iconManager = new ImageCache();
 
-    // icon settings - TODO make configurable
-    private static final int ICON_MAX_SIZE = 16;
-    private static final int ICON_MIN_SIZE = 16;
-    private static final String IMAGE_DIR = "com/l7tech/console/resources/";
+    private static final int ICON_MAX_SIZE = SyspropUtil.getInteger("com.l7tech.icon.resource.max.size", 16);
+    private static final int ICON_MIN_SIZE = SyspropUtil.getInteger("com.l7tech.icon.resource.min.size", 16);
+    private static final String IMAGE_RESOURCE_DIR = SyspropUtil.getString("com.l7tech.icon.resource.dir", "com/l7tech/console/resources/");
 
     /** map of resource name to loaded icon (String, SoftRefrence (Image)) or (String, NO_ICON) */
     private final Map<String, Reference<Image>> imageMap = new ConcurrentHashMap<String, Reference<Image>>();
@@ -178,11 +178,18 @@ public final class ImageCache {
     }
 
     /**
+     * Retrieves all icons using the default class loader.
+     */
+    public Collection<ImageIcon> getIcons(){
+        return getIcons(loader);
+    }
+
+    /**
      * Retrieves all icons using the specified class loader.
      */
     public Collection<ImageIcon> getIcons(@NotNull final ClassLoader loader){
         final List<ImageIcon> icons = new ArrayList<ImageIcon>();
-        final URL iconDir = loader.getResource(IMAGE_DIR);
+        final URL iconDir = loader.getResource(IMAGE_RESOURCE_DIR);
         try {
             final File dir = new File(iconDir.toURI());
             dir.listFiles(new FileFilter() {
@@ -194,7 +201,7 @@ public final class ImageCache {
                     final FileNameExtensionFilter imageFileFilter = FileUtils.getImageFileFilter();
                     final boolean validType = imageFileFilter.accept(file);
                     if (validType) {
-                        final ImageIcon icon = getIconAsIcon(IMAGE_DIR + file.getName(), loader);
+                        final ImageIcon icon = getIconAsIcon(IMAGE_RESOURCE_DIR + file.getName(), loader);
                         if (icon != null &&
                                 icon.getIconHeight() <= ICON_MAX_SIZE && icon.getIconHeight() >= ICON_MIN_SIZE &&
                                 icon.getIconWidth() <= ICON_MAX_SIZE && icon.getIconWidth() >= ICON_MIN_SIZE) {

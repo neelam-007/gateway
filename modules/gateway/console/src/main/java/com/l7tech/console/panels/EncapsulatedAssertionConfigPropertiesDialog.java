@@ -465,7 +465,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                                 iconBase64 = HexUtils.encodeBase64(fileBytes);
                                 config.putProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64, iconBase64);
                             } catch (final IOException e) {
-                                logger.warning("Error reading icon file. Using default icon.");
+                                logger.log(Level.WARNING, "Error reading icon file. Using default icon.", ExceptionUtils.getDebugException(e));
                                 iconBase64 = null;
                                 config.removeProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64);
                             }

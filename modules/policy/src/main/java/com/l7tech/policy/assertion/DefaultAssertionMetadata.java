@@ -138,6 +138,8 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
             }
         });
 
+        put(BASE_64_NODE_IMAGE, null); // default no custom node image
+
         put(CLIENT_ASSERTION_POLICY_ICON, new MetadataFinder() {
             @Override
             public Object get(AssertionMetadata meta, String key) {

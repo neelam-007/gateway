@@ -177,6 +177,13 @@ public interface AssertionMetadata {
     String PALETTE_NODE_FACTORY = "paletteNodeFactory";
 
     /**
+     * Base64 encoded image to display for the palette and/or policy node for this assertion. Has priority over PALETTE_NODE_ICON and POLICY_NODE_ICON.
+     *
+     * Defaults to null.
+     */
+    String BASE_64_NODE_IMAGE = "base64NodeImage";
+
+    /**
      * Functions.Unary< FooBarAssertion, FooBarAssertion >; SSM only.
      * Creates a new Assertion bean instance configured appropriately given the specified variant prototype.
      * This is used by DefaultAssertionPaletteNode to configure a new assertion instance.
