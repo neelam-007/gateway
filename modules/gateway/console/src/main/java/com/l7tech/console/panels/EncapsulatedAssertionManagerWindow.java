@@ -102,6 +102,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                 enableOrDisable();
             }
         });
+        Utilities.setDoubleClickAction(eacTable, propertiesButton);
 
         // TODO RBAC-awareness
         loadEncapsulatedAssertionConfigs(false);

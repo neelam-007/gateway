@@ -181,6 +181,9 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             }
         });
 
+        Utilities.setDoubleClickAction(inputsTable, editInputButton);
+        Utilities.setDoubleClickAction(outputsTable, editOutputButton);
+
         okButton.setEnabled(!readOnly);
         updateView();
         enableOrDisableThings();
