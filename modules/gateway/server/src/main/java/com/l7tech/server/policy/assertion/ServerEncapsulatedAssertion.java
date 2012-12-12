@@ -3,17 +3,22 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.message.ShadowsParentVariables;
+import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
-import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
@@ -27,6 +32,7 @@ import org.springframework.context.ApplicationListener;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
@@ -46,6 +52,7 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
     private PolicyCache policyCache;
 
     private final AtomicReference<Either<String,EncapsulatedAssertionConfig>> configOrErrorRef = new AtomicReference<Either<String,EncapsulatedAssertionConfig>>();
+    private final AtomicReference<String[]> varsUsed = new AtomicReference<String[]>(new String[0]);
     private ApplicationListener updateListener;
 
     public ServerEncapsulatedAssertion(final @NotNull EncapsulatedAssertion assertion) {
@@ -58,7 +65,7 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        configOrErrorRef.set(loadConfig());
+        updateConfig(loadConfig());
         initListener();
     }
 
@@ -74,13 +81,20 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
                         for (long id : eie.getEntityIds()) {
                             if (id == ourConfigId) {
                                 logger.info("Reloading encapsulated assertion config for OID " + ourConfigId);
-                                configOrErrorRef.set(loadConfig());
+                                updateConfig(loadConfig());
                             }
                         }
                     }
                 }
             };
             applicationEventProxy.addApplicationListener(updateListener);
+        }
+    }
+
+    private void updateConfig(Either<String, EncapsulatedAssertionConfig> newVal) {
+        configOrErrorRef.set(newVal);
+        if (newVal.isRight()) {
+            varsUsed.set(new EncapsulatedAssertion(newVal.right()).getVariablesUsed());
         }
     }
 
@@ -132,29 +146,109 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
         }
 
         EncapsulatedAssertionConfig config = configOrError.right();
+        String[] varsUsed = this.varsUsed.get();
+        Map<String, Object> variableMap = context.getVariableMap(varsUsed, getAudit());
         final Policy policy = config.getPolicy();
 
+        PolicyEnforcementContext childContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(context);
+        ShadowsParentVariables spv = (ShadowsParentVariables) childContext;
+
+        populateInputVariables(config, variableMap, childContext, spv);
+
         // TODO cache policy handle in instance field until policy change is detected, instead of looking up a new one for every request
-        final ServerPolicyHandle sph = policyCache.getServerPolicy(policy.getOid());
+        AssertionStatus result = lookupAndExecutePolicy(policy.getOid(), childContext);
+
+        populateOutputVariables(context, config, childContext);
+
+        return result;
+
+    }
+
+    private AssertionStatus lookupAndExecutePolicy(final long policyOid, PolicyEnforcementContext childContext) throws PolicyAssertionException, IOException {
+        AssertionStatus result;
+        final ServerPolicyHandle sph = policyCache.getServerPolicy(policyOid);
         try {
-            PolicyEnforcementContext childContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(context);
-
-            // TODO configure input values from assertion bean
-            // TODO configure input values from UsesVariables
-
-            AssertionStatus result;
-            try {
-                result = sph.checkRequest(childContext);
-            } catch (AssertionStatusException e) {
-                result = e.getAssertionStatus();
-            } // TODO handle exception thrown by policy, if we don't want to allow it to terminate the calling policy as well
-
-            // TODO configure output values
-
-            return result;
-
+            result = executePolicy(sph, childContext);
         } finally {
             ResourceUtils.closeQuietly(sph);
         }
+        return result;
+    }
+
+    private AssertionStatus executePolicy(ServerPolicyHandle sph, PolicyEnforcementContext childContext) throws PolicyAssertionException, IOException {
+        AssertionStatus result;
+        try {
+            result = sph.checkRequest(childContext);
+        } catch (AssertionStatusException e) {
+            result = e.getAssertionStatus();
+        } // TODO handle exception thrown by policy, if we don't want to allow it to terminate the calling policy as well
+        return result;
+    }
+
+    private void populateOutputVariables(PolicyEnforcementContext context, EncapsulatedAssertionConfig config, PolicyEnforcementContext childContext) {
+        // Configure output values
+        for (EncapsulatedAssertionResultDescriptor res : config.getResultDescriptors()) {
+            try {
+                final String varName = res.getResultName();
+                Object value = childContext.getVariable(varName);
+                context.setVariable(varName, value);
+            } catch (NoSuchVariableException e) {
+                /* FALLTHROUGH and leave value undefined in parent context */
+            }
+        }
+    }
+
+    private void populateInputVariables(EncapsulatedAssertionConfig config, Map<String, Object> variableMap, PolicyEnforcementContext childContext, ShadowsParentVariables spv) {
+        // Configure input values
+        for (EncapsulatedAssertionArgumentDescriptor arg : config.getArgumentDescriptors()) {
+            if (arg.isGuiPrompt()) {
+                final String parameterValueString = assertion.getParameter(arg.getArgumentName());
+                if (parameterValueString != null) {
+                    if (EncapsulatedAssertionArgumentDescriptor.valueIsParentContextVariableNameForDataType(arg.getArgumentType())) {
+                        // Passthrough references to the specified variable
+                        spv.putParentVariable(parameterValueString, true);
+                    } else {
+                        // Populate value from assertion bean
+                        final Object value = valueFromString(variableMap, arg, parameterValueString);
+                        childContext.setVariable(arg.getArgumentName(), value);
+                    }
+                }
+            } else {
+                // Get live value from parent PEC, by passing through
+                // TODO make prefix matching configurable?
+                spv.putParentVariable(arg.getArgumentName(), true);
+            }
+        }
+    }
+
+    @Nullable
+    public Object valueFromString(Map<String,?> variableMap, EncapsulatedAssertionArgumentDescriptor arg, @Nullable String stringVal) {
+        if (stringVal == null)
+            stringVal = arg.getDefaultValue();
+
+        if (stringVal == null)
+            return stringVal;
+
+        if (EncapsulatedAssertionArgumentDescriptor.allowVariableInterpolationForDataType(arg.getArgumentType())) {
+            stringVal = ExpandVariables.process(stringVal, variableMap, getAudit());
+        }
+
+/*
+        // TODO we could support pre-initialization of non-String child context variables from GUI-specified parameters here
+        // This will require building lots of "parse-string-into-whatever" functionality into this method that is already
+        // present in other assertions such as SetVariableAssertion and EncodeDecodeAssertion.
+        DataType dataType = DataType.forName(arg.getArgumentType());
+        if (dataType == null)
+            dataType = DataType.UNKNOWN;
+
+        if (DataType.DATE_TIME.equals(dataType)) {
+            return dateTimeConfigUtils.parseDateFromString(stringVal);
+        } else if (DataType.CERTIFICATE.equals(dataType)) {
+            return CertUtils.decodeFromPEM(stringVal, false);
+        } // etcetera
+*/
+
+        // Use string val directly as target value.
+        return stringVal;
     }
 }

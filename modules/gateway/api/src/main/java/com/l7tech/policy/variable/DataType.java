@@ -95,6 +95,18 @@ public final class DataType implements Serializable {
         }
     }
 
+    /**
+     * Look up a DataType by name.
+     * @param name the name of a DataType.  May be null.
+     * @return the DataType with the specified name, or null if not found.
+     */
+    public static DataType forName(String name) {
+        Object type = name == null ? null : nameMap.get(name.toLowerCase());
+        return type instanceof DataType
+            ? (DataType) type
+            : DataType.UNKNOWN;
+    }
+
     protected Object readResolve() throws ObjectStreamException {
         return nameMap.get(shortName);
     }

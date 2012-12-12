@@ -40,7 +40,6 @@ import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
-import static com.l7tech.server.util.EntityUseUtils.getTypeName;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -57,6 +56,8 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.util.EntityUseUtils.getTypeName;
 
 /**
  * Performs server side policy validation.
@@ -120,7 +121,8 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                                  final PolicyValidationContext pvc,
                                  final AssertionLicense assertionLicense,
                                  final PolicyValidatorResult result ) throws InterruptedException {
-        if ( pvc.getPolicyType() != null && pvc.getPolicyType().isServicePolicy() ) {
+        prepareAssertionBean(assertion, result);
+        if ( pvc.getPolicyType().isServicePolicy() ) {
             // Full path validation
             super.doValidation( assertion, pvc, assertionLicense, result );
         } else {
@@ -133,6 +135,29 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                 }
             } catch ( PolicyAssertionException e) {
                 result.addError(new PolicyValidatorResult.Error(e.getAssertion(), e.getMessage(), e));
+            }
+        }
+    }
+
+    private void prepareAssertionBean(Assertion assertion, PolicyValidatorResult result) {
+        if (assertion instanceof UsesEntitiesAtDesignTime) {
+            UsesEntitiesAtDesignTime entityUser = (UsesEntitiesAtDesignTime) assertion;
+            EntityHeader[] headers = entityUser.getEntitiesUsedAtDesignTime();
+            if (headers != null) {
+                for (EntityHeader header : headers) {
+                    if (entityUser.needsProvideEntity(header)) {
+                        try {
+                            Entity entity = entityFinder.find(header);
+                            if (entity == null) {
+                                result.addError(new PolicyValidatorResult.Error(assertion, "No " + header.getType() + " found with ID " + header.getStrId(), null));
+                            } else {
+                                entityUser.provideEntity(header, entity);
+                            }
+                        } catch (FindException e) {
+                            result.addError(new PolicyValidatorResult.Error(assertion, "Unable to find " + header.getType() + " found with ID " + header.getStrId(), e));
+                        }
+                    }
+                }
             }
         }
     }
@@ -164,7 +189,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                                     final PolicyValidationContext pvc,
                                     final PolicyValidatorResult result,
                                     final AssertionPath path ) {
-        final String targetName = AssertionUtils.getTargetName( assertion );
+        final String targetName = AssertionUtils.getTargetName(assertion);
         if ( assertion instanceof IdentityAssertion) {
             final IdentityAssertion identityAssertion = (IdentityAssertion) assertion;
             int idStatus = getIdentityStatus(identityAssertion);

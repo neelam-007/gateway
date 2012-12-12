@@ -2,8 +2,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.encass.EncapsulatedAssertionDataType;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
+import com.l7tech.policy.variable.DataType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,7 +37,7 @@ public class EncapsulatedAssertionResultDescriptorPropertiesDialog extends JDial
             }
         });
 
-        typeComboBox.setModel(new DefaultComboBoxModel(EncapsulatedAssertionDataType.values()));
+        typeComboBox.setModel(new DefaultComboBoxModel(DataType.VALUES));
 
         cancelButton.addActionListener(Utilities.createDisposeAction(this));
 
@@ -47,13 +47,13 @@ public class EncapsulatedAssertionResultDescriptorPropertiesDialog extends JDial
 
     private void updateGui(EncapsulatedAssertionResultDescriptor bean) {
         nameField.setText(bean.getResultName());
-        typeComboBox.setSelectedItem(bean.getResultType() == null ? null : EncapsulatedAssertionDataType.valueOf(bean.getResultType()));
+        typeComboBox.setSelectedItem(bean.getResultType() == null ? null : DataType.forName(bean.getResultType()));
     }
 
     private EncapsulatedAssertionResultDescriptor updateBean(EncapsulatedAssertionResultDescriptor bean) {
         bean.setResultName(nameField.getText());
-        EncapsulatedAssertionDataType type = (EncapsulatedAssertionDataType) typeComboBox.getSelectedItem();
-        bean.setResultType(type == null ? null : type.name());
+        DataType type = (DataType) typeComboBox.getSelectedItem();
+        bean.setResultType(type == null ? null : type.getName());
         return bean;
     }
 

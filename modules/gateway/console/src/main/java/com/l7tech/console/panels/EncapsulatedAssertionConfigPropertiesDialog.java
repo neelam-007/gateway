@@ -11,7 +11,6 @@ import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
-import com.l7tech.objectmodel.encass.EncapsulatedAssertionDataType;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
@@ -138,12 +137,12 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         inputsTableModel = TableUtil.configureTable(inputsTable,
             column("GUI", 30, 30, 50, Functions.<Boolean, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiPrompt"), Boolean.class),
             column("Name", 30, 140, 99999, propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentName")),
-            column("Type", 30, 140, 99999, Functions.<EncapsulatedAssertionDataType, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentType"), EncapsulatedAssertionDataType.class),
+            column("Type", 30, 140, 99999, Functions.<DataType, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentType"), DataType.class),
             column("Default", 30, 140, 99999, propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "defaultValue")));
 
         outputsTableModel = TableUtil.configureTable(outputsTable,
             column("Name", 30, 140, 99999, propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultName")),
-            column("Type", 30, 140, 99999, Functions.<EncapsulatedAssertionDataType, EncapsulatedAssertionResultDescriptor>propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultType"), EncapsulatedAssertionDataType.class));
+            column("Type", 30, 140, 99999, Functions.<DataType, EncapsulatedAssertionResultDescriptor>propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultType"), DataType.class));
 
         RunOnChangeListener enabler = new RunOnChangeListener(new Runnable() {
             @Override
@@ -410,7 +409,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         for (String var : vars) {
             EncapsulatedAssertionArgumentDescriptor arg = new EncapsulatedAssertionArgumentDescriptor();
             arg.setEncapsulatedAssertionConfig(config);
-            arg.setArgumentType(EncapsulatedAssertionDataType.STRING.name());
+            arg.setArgumentType(DataType.STRING.getName());
             arg.setArgumentName(var);
             arg.setGuiPrompt(false);
             arg.setDefaultValue(null);
@@ -431,23 +430,10 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             EncapsulatedAssertionResultDescriptor ret = new EncapsulatedAssertionResultDescriptor();
             ret.setEncapsulatedAssertionConfig(config);
             ret.setResultName(vm.getName());
-            ret.setResultType(toEncAssDataType(vm.getType()).name());
+            final DataType type = vm.getType();
+            ret.setResultType(type == null ? DataType.UNKNOWN.getName() : type.getName());
             outputsTableModel.addRow(ret);
         }
-    }
-
-    private EncapsulatedAssertionDataType toEncAssDataType(DataType type) {
-        if (DataType.BOOLEAN.equals(type))
-            return EncapsulatedAssertionDataType.BOOLEAN;
-        if (DataType.MESSAGE.equals(type))
-            return EncapsulatedAssertionDataType.MESSAGE;
-        if (DataType.DECIMAL.equals(type) || DataType.FLOAT.equals(type) || DataType.INTEGER.equals(type))
-            return EncapsulatedAssertionDataType.NUMBER;
-        if (DataType.DATE_TIME.equals(type))
-            return EncapsulatedAssertionDataType.DATE;
-
-        // TODO support more types
-        return EncapsulatedAssertionDataType.STRING;
     }
 
     private void showError(String message, @Nullable Throwable e) {

@@ -20,13 +20,17 @@ import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
+import com.l7tech.objectmodel.HeaderBasedEntityFinder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.util.Either;
 import com.l7tech.util.Eithers;
 import com.l7tech.util.Option;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -318,6 +322,14 @@ public final class RegistryImpl extends Registry
         checkAdminContext();
         if (policyFinder != null) return policyFinder;
         return policyFinder = (GuidBasedEntityManager<Policy>) applicationContext.getBean("managerPolicyCache" , GuidBasedEntityManager.class);
+    }
+
+    @NotNull
+    @SuppressWarnings("unchecked")
+    @Override
+    public HeaderBasedEntityFinder<Entity,EntityHeader> getEntityFinder() {
+        checkAdminContext();
+        return (HeaderBasedEntityFinder<Entity,EntityHeader>)applicationContext.getBean("headerBasedEntityFinder", HeaderBasedEntityFinder.class);
     }
 
     @Override

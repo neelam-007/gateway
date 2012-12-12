@@ -1,13 +1,21 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -15,11 +23,13 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 /**
  * Assertion bean representing an invocation of server behavior for an EncapsulatedAssertionConfig.
  */
-public class EncapsulatedAssertion extends Assertion implements UsesEntities, UsesVariables, SetsVariables {
+public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDesignTime, UsesVariables, SetsVariables {
     private static final String DEFAULT_OID_STR = Long.toString(EncapsulatedAssertionConfig.DEFAULT_OID);
 
     private DefaultAssertionMetadata meta = null;
     private String encapsulatedAssertionConfigId = DEFAULT_OID_STR;
+
+    private Map<String,String> parameters = new TreeMap<String,String>(String.CASE_INSENSITIVE_ORDER);
 
     private transient EncapsulatedAssertionConfig encapsulatedAssertionConfig;
 
@@ -28,6 +38,17 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntities, Us
 
     public EncapsulatedAssertion(EncapsulatedAssertionConfig encapsulatedAssertionConfig) {
         config(encapsulatedAssertionConfig);
+    }
+
+    @SuppressWarnings("CloneDoesntDeclareCloneNotSupportedException")
+    @Override
+    public Object clone() {
+        EncapsulatedAssertion copy = (EncapsulatedAssertion) super.clone();
+
+        //noinspection unchecked
+        copy.parameters = (Map<String, String>) ((TreeMap<String, String>)parameters).clone();
+
+        return copy;
     }
 
     public EncapsulatedAssertionConfig config() {
@@ -47,6 +68,77 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntities, Us
 
     public void setEncapsulatedAssertionConfigId(String encapsulatedAssertionConfigId) {
         this.encapsulatedAssertionConfigId = encapsulatedAssertionConfigId;
+    }
+
+    /**
+     * @return the names of all assertion parameters stored within this assertion bean, for use by the corresponding server assertion instance.
+     */
+    @NotNull
+    public Set<String> getParameterNames() {
+        return parameters.keySet();
+    }
+
+    /**
+     * Get the value of a parameter.
+     *
+     * @param key the parameter name.  Required.
+     * @return the value of the parameter or null if not found.
+     */
+    @Nullable
+    public String getParameter(@NotNull String key) {
+        return parameters.get(key);
+    }
+
+    /**
+     * Set the value of a parameter.
+     *
+     * @param key the parameter name.  Required.
+     * @param value the value of the parameter.  Required.
+     */
+    public void putParameter(@NotNull String key, @NotNull String value) {
+        parameters.put(key, value);
+    }
+
+    /**
+     * Remove a parameter from the parameter map.
+     *
+     * @param key the parameter name.  Required.
+     * @return the previous value of the removed parameter, or null if there way no previous value.
+     */
+    public String removeParameter(@NotNull String key) {
+        return parameters.remove(key);
+    }
+
+    /**
+     * Get raw access to the current parameters map.
+     * <p/>
+     * The parameters map is used to configure values that are per-assertion-instance, typically configured in the SSM GUI,
+     * rather than those that arrive at runtime via context variables.
+     * <p/>
+     * This method should not be used directly.
+     *
+     * @return the current parameters map.
+     * @deprecated this is intended for WSP serialization purposes only.  Use {@link #getParameterNames()}, {@link #getParameter(String)}, {@link #putParameter(String, String)}, and {@link #removeParameter} instead.
+     */
+    public Map<String, String> getParameters() {
+        return parameters;
+    }
+
+    /**
+     * Replace the current parameters map.
+     * <p/>
+     * The parameters map is used to configure values that are per-assertion-instance, typically configured in the SSM GUI,
+     * rather than those that arrive at runtime via context variables.
+     * <p/>
+     * This method should not be used directly.
+     *
+     * @param parameters the new parameters map.  if null, all parameters will be cleared.
+     * @deprecated this is intended for WSP serialization purposes only.  Use {@link #getParameterNames()}, {@link #getParameter(String)}, {@link #putParameter(String, String)}, and {@link #removeParameter} instead.
+     */
+    public void setParameters(Map<String, String> parameters) {
+        this.parameters.clear();
+        if (parameters != null)
+            this.parameters.putAll(parameters);
     }
 
     @Override
@@ -77,7 +169,6 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntities, Us
 
         meta.put(SHORT_NAME, config.getName());
         meta.put(PALETTE_NODE_ICON, findIconResourcePath(config));
-        meta.put(POLICY_NODE_CLASSNAME, "com.l7tech.console.tree.policy.EncapsulatedAssertionPolicyNode");
 
         meta.put(ASSERTION_FACTORY, new Functions.Unary< EncapsulatedAssertion, EncapsulatedAssertion >() {
             @Override
@@ -107,14 +198,64 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntities, Us
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        // TODO get from config
-        return new VariableMetadata[0];
+        EncapsulatedAssertionConfig config = config();
+        if (config == null)
+            return new VariableMetadata[0];
+
+        List<VariableMetadata> ret = new ArrayList<VariableMetadata>();
+        Set<EncapsulatedAssertionResultDescriptor> outputs = config.getResultDescriptors();
+        for (EncapsulatedAssertionResultDescriptor output : outputs) {
+            ret.add(new VariableMetadata(output.getResultName(), false, false, output.getResultName(), true, DataType.forName(output.getResultType())));
+        }
+        return ret.toArray(new VariableMetadata[ret.size()]);
     }
 
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        // TODO get from config
-        return new String[0];
+        EncapsulatedAssertionConfig config = config();
+        if (config == null)
+            return new String[0];
+
+        Set<String> ret = new LinkedHashSet<String>();
+        for (EncapsulatedAssertionArgumentDescriptor descriptor : config.getArgumentDescriptors()) {
+            final String argumentName = descriptor.getArgumentName();
+            if (descriptor.isGuiPrompt()) {
+                // Parameter is specified in per-instance parameter map, so shouldn't itself be advertised in getVariablesUsed, but its value might use context variables.
+                ret.addAll(Arrays.asList(descriptor.getVariablesUsed(getParameter(argumentName))));
+            } else {
+                // Parameter is specified as context variable.  Advertise in getVariablesUsed.
+                ret.add(argumentName);
+            }
+        }
+        return ret.toArray(new String[ret.size()]);
+    }
+
+    @Override
+    public EntityHeader[] getEntitiesUsedAtDesignTime() {
+        return getEntitiesUsed();
+    }
+
+    @Override
+    public boolean needsProvideEntity(@NotNull EntityHeader header) {
+        if (EntityType.ENCAPSULATED_ASSERTION.equals(header.getType())) {
+            return config() == null;
+        }
+        return false;
+    }
+
+    @Override
+    public void provideEntity(@NotNull EntityHeader header, @NotNull Entity entity) {
+        if (entity instanceof EncapsulatedAssertionConfig) {
+            config((EncapsulatedAssertionConfig) entity);
+        }
+    }
+
+    @Override
+    public void updateTemporaryData(Assertion assertion) {
+        if (assertion instanceof EncapsulatedAssertion) {
+            EncapsulatedAssertion encapsulatedAssertion = (EncapsulatedAssertion) assertion;
+            this.config(encapsulatedAssertion.config());
+        }
     }
 }

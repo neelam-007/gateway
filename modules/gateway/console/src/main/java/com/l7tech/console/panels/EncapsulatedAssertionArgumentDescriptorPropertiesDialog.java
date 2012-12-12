@@ -3,7 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
-import com.l7tech.objectmodel.encass.EncapsulatedAssertionDataType;
+import com.l7tech.policy.variable.DataType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -41,7 +41,7 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
             }
         });
 
-        typeComboBox.setModel(new DefaultComboBoxModel(EncapsulatedAssertionDataType.values()));
+        typeComboBox.setModel(new DefaultComboBoxModel(DataType.VALUES));
 
         cancelButton.addActionListener(Utilities.createDisposeAction(this));
 
@@ -52,7 +52,7 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
     private void updateGui(EncapsulatedAssertionArgumentDescriptor bean) {
         nameField.setText(bean.getArgumentName());
         defaultValueField.setText(bean.getDefaultValue());
-        typeComboBox.setSelectedItem(bean.getArgumentType() == null ? null : EncapsulatedAssertionDataType.valueOf(bean.getArgumentType()));
+        typeComboBox.setSelectedItem(bean.getArgumentType() == null ? null : DataType.forName(bean.getArgumentType()));
         guiPromptCheckBox.setSelected(bean.isGuiPrompt());
     }
 
@@ -60,8 +60,8 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
         bean.setArgumentName(nameField.getText());
         bean.setDefaultValue(defaultValueField.getText());
         bean.setGuiPrompt(guiPromptCheckBox.isSelected());
-        EncapsulatedAssertionDataType type = (EncapsulatedAssertionDataType) typeComboBox.getSelectedItem();
-        bean.setArgumentType(type == null ? null : type.name());
+        DataType type = (DataType) typeComboBox.getSelectedItem();
+        bean.setArgumentType(type == null ? DataType.UNKNOWN.getName() : type.getName());
         return bean;
     }
 

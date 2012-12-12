@@ -17,7 +17,10 @@ import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
+import com.l7tech.objectmodel.HeaderBasedEntityFinder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyValidator;
@@ -222,6 +225,15 @@ public abstract class Registry {
     public abstract GuidBasedEntityManager<Policy> getPolicyFinder();
 
     /**
+     * Get the entity finder for entity lookup.
+     *
+     * @return the entity finder.  Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+     */
+    @NotNull
+    public abstract HeaderBasedEntityFinder<Entity,EntityHeader> getEntityFinder();
+
+    /**
      * @return the log sink admin interface implementation. Never null.
      * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
@@ -402,6 +414,12 @@ public abstract class Registry {
 
         @Override
         public GuidBasedEntityManager<Policy> getPolicyFinder() {
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
+        }
+
+        @NotNull
+        @Override
+        public HeaderBasedEntityFinder<Entity, EntityHeader> getEntityFinder() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

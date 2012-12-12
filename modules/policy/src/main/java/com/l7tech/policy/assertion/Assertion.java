@@ -900,6 +900,13 @@ public abstract class Assertion implements Cloneable, Serializable {
         return rest;
     }
 
+    /**
+     * Update any transient data in this assertion from that in the specified assertion.
+     * <p/>
+     * This should include any entities used at design time.
+     *
+     * @param assertion a copy of this assertion that has transient fields populated that this instance might not yet have.
+     */
     public void updateTemporaryData(Assertion assertion) {
     }
 

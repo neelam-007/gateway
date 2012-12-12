@@ -13,6 +13,7 @@ import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Binding;
@@ -29,7 +30,7 @@ import java.util.*;
  * by the parent PEC. The child PEC is responsible for variables, routing and
  * other instance specific duties.</p>
  */
-class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper implements HasOriginalContext {
+class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper implements HasOriginalContext, ShadowsParentVariables {
 
     //- PUBLIC
 
@@ -311,6 +312,16 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
         return parentContext;
     }
 
+
+    @Override
+    public void putParentVariable(@NotNull String variableName, boolean prefixed) {
+        if (prefixed) {
+            passthroughPrefixes.add(variableName.toLowerCase());
+        } else {
+            passthroughVariables.add(variableName.toLowerCase());
+        }
+    }
+
     //- PACKAGE
 
     ChildPolicyEnforcementContext( final PolicyEnforcementContext parent,
@@ -328,7 +339,9 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
 
         // TODO move this hardcoded config somewhere more appropriate (get from variable metadata, perhaps)
         final String lcname = name.toLowerCase();
-        return "request".equals(lcname) ||
+        return passthroughVariables.contains(name) ||
+                !passthroughPrefixes.subSet(lcname, lcname + Character.MAX_VALUE).isEmpty() ||
+                "request".equals(lcname) ||
                 "response".equals(lcname) ||
                 "service".equals(lcname) ||
                 lcname.startsWith("request.") ||
@@ -338,4 +351,6 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
 
     private final PolicyEnforcementContext context;
     private final PolicyEnforcementContext parentContext;
+    private final Set<String> passthroughVariables = new HashSet<String>();
+    private final TreeSet<String> passthroughPrefixes = new TreeSet<String>();
 }

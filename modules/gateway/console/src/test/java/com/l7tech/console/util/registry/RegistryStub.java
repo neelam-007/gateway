@@ -38,6 +38,7 @@ import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Option;
+import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
 import java.lang.reflect.InvocationHandler;
@@ -426,6 +427,12 @@ public class RegistryStub extends Registry {
     @Override
     public GuidBasedEntityManager<Policy> getPolicyFinder() {
         return  null;
+    }
+
+    @NotNull
+    @Override
+    public HeaderBasedEntityFinder<Entity, EntityHeader> getEntityFinder() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -155,6 +155,8 @@
 
     <bean id="managerPolicyCache" class="com.l7tech.console.policy.ManagerPolicyCache"/>
 
+    <bean id="headerBasedEntityFinder" class="com.l7tech.console.util.ConsoleEntityFinderImpl"/>
+
     <bean id="serviceAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/ServiceAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.service.ServiceAdmin"/>

@@ -5,7 +5,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.policy.exporter.PolicyExportUtils;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.console.action.*;
@@ -14,7 +14,6 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -23,6 +22,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
@@ -59,9 +59,42 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     AssertionTreeNode(AT assertion) {
         super(assertion);
         if (assertion == null) throw new IllegalArgumentException("Assertion is required");
-        this.assertion = assertion;
+        this.assertion = loadDesignTimeEntities(assertion);
+        if (assertion != this.assertion)
+            setUserObject(this.assertion);
         this.setAllowsChildren(false);
     }
+
+    /**
+     * Return a version (ideally the same instance) of the specified assertion with any design time entity dependencies
+     * populated.
+     *
+     * @param assertion the assertion to preprocess.  Required.
+     * @return the assertion with any design time entities filled in.
+     */
+    protected AT loadDesignTimeEntities(AT assertion) {
+        if (Registry.getDefault().isAdminContextPresent()) {
+            if (assertion instanceof UsesEntitiesAtDesignTime) {
+                final UsesEntitiesAtDesignTime entityUser = (UsesEntitiesAtDesignTime) assertion;
+                EntityHeader[] headers = entityUser.getEntitiesUsedAtDesignTime();
+                if (headers != null) {
+                    HeaderBasedEntityFinder<Entity, EntityHeader> entityFinder = Registry.getDefault().getEntityFinder();
+                    for (EntityHeader header : headers) {
+                        if (entityUser.needsProvideEntity(header)) {
+                            try {
+                                Entity entity = entityFinder.findByHeader(header);
+                                entityUser.provideEntity(header, entity);
+                            } catch (FindException e) {
+                                logger.log(Level.WARNING, "Error looking up entity for assertion: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return assertion;
+    }
+
 
     /**
      * @return the assertion this node represents

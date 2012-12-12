@@ -46,11 +46,17 @@ public class EncapsulatedAssertionResultDescriptor extends PersistentEntityImp {
         this.resultName = resultName;
     }
 
+    /**
+     * @return the data type of this result, as a name of a value of {@link com.l7tech.policy.variable.DataType}.
+     */
     @Column(name="result_type")
     public String getResultType() {
         return resultType;
     }
 
+    /**
+     * @param resultType the data type of this result, as a name of a value of {@link com.l7tech.policy.variable.DataType}.
+     */
     public void setResultType(String resultType) {
         this.resultType = resultType;
     }

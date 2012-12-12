@@ -1,7 +1,10 @@
 package com.l7tech.objectmodel.encass;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.Syntax;
 import org.hibernate.annotations.Proxy;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
@@ -64,13 +67,16 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     }
 
     /**
-     * @return the data type of this argument, as a name of an enum value of {@link EncapsulatedAssertionDataType}.
+     * @return the data type of this argument, as a name of a value of {@link com.l7tech.policy.variable.DataType}.
      */
     @Column(name="argument_type")
     public String getArgumentType() {
         return argumentType;
     }
 
+    /**
+     * @param type the data type of this argument, as a name of a value of {@link com.l7tech.policy.variable.DataType}.
+     */
     public void setArgumentType(String type) {
         this.argumentType = type;
     }
@@ -105,6 +111,54 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
 
     public void setGuiPrompt(boolean guiPrompt) {
         this.guiPrompt = guiPrompt;
+    }
+
+    /**
+     * Get context variables that would be used by the specified parameter value provided for this argument descriptor.
+     *
+     * @param parameterValue value of the parameter.  If null, this method will return an empty collection.
+     * @return a list of variable names referenced by the paramter value.  Never null.  Will be empty if this descriptor is not configured
+     *         for input via a per-assertion-instance GUI dialog, or if this descriptor's configuration (eg, data type) does not
+     *         allow context variable interpolation in the parameter value.
+     */
+    @NotNull
+    public String[] getVariablesUsed(String parameterValue) {
+        if (isGuiPrompt() && allowVariableInterpolationForDataType(getArgumentType())) {
+            try {
+                return Syntax.getReferencedNames(parameterValue);
+            } catch (RuntimeException e) {
+                /* FALLTHROUGH and return empty */
+            }
+        }
+        return new String[0];
+    }
+
+    /**
+     * Check whether context variable interpolation (${varName} references) should be permitted for the specified
+     * data type.
+     * <p/>
+     * Currently this method returns true only for the String type.
+     *
+     * @param argumentType the argument type.  If null, this method returns false.
+     * @return true if the GUI should permit entry of values for the specified data type that include context variable interpolation.
+     */
+    public static boolean allowVariableInterpolationForDataType(String argumentType) {
+        // For now we will allow only String GUI fields to by expressions that include context variables.
+        // TODO maybe we should make this selectable per argument descriptor
+        return DataType.STRING.getName().equals(argumentType);
+    }
+
+    /**
+     * Check whether GUI-preconfigured values for parameters of the specified type should be treated as names
+     * of context variables that are assumed to already exist in the parent context.
+     * <p/>
+     * Currently this method returns true only for the Message type.
+     *
+     * @param argumentType the argument type.  If null, this method returns false.
+     * @return true if a GUI-configured value for a parameter of this type should be assumed to be the name of a parent context variable instead of a raw value.
+     */
+    public static boolean valueIsParentContextVariableNameForDataType(String argumentType) {
+        return DataType.MESSAGE.getName().equals(argumentType);
     }
 
     @SuppressWarnings("RedundantIfStatement")
