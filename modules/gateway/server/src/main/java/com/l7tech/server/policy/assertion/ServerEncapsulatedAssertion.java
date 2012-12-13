@@ -82,6 +82,7 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
                             if (id == ourConfigId) {
                                 logger.info("Reloading encapsulated assertion config for OID " + ourConfigId);
                                 updateConfig(loadConfig());
+                                break;
                             }
                         }
                     }
@@ -136,10 +137,6 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Either<String, EncapsulatedAssertionConfig> configOrError = configOrErrorRef.get();
-        if (configOrError == null) {
-            getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Server Encapsulated Assertion was not initialized"); // must call afterPropertiesSet()
-            return AssertionStatus.SERVER_ERROR;
-        }
         if (configOrError.isLeft()) {
             getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Invalid Encapsulated Assertion Config: " + configOrError.left());
             return AssertionStatus.SERVER_ERROR;
@@ -252,6 +249,8 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
         return stringVal;
     }
 
+    // protected getters/setters for unit tests
+
     void setEncapsulatedAssertionConfigManager(@NotNull final EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager) {
         this.encapsulatedAssertionConfigManager = encapsulatedAssertionConfigManager;
     }
@@ -262,5 +261,13 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
 
     void setPolicyCache(@NotNull final PolicyCache policyCache) {
         this.policyCache = policyCache;
+    }
+
+    AtomicReference<Either<String, EncapsulatedAssertionConfig>> getConfigOrErrorRef() {
+        return configOrErrorRef;
+    }
+
+    ApplicationListener getUpdateListener() {
+        return updateListener;
     }
 }
