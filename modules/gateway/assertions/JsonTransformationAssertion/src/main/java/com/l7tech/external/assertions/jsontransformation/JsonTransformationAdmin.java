@@ -6,7 +6,7 @@ package com.l7tech.external.assertions.jsontransformation;
 public interface JsonTransformationAdmin {
     public String testTransform(String input, JsonTransformationAssertion.Transformation transformation,
                                 JsonTransformationAssertion.TransformationConvention convention,
-                                String rootTag, boolean prettyPrint) throws JsonTransformationTestException;
+                                String rootTag, boolean prettyPrint, boolean asArray) throws JsonTransformationTestException;
 
     static public class JsonTransformationTestException extends Exception {
 

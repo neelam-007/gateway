@@ -37,6 +37,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
     private JTabbedPane tabPane;
     private JComboBox transformationConvention;
     private JCheckBox prettyPrint;
+    private JCheckBox convertAsJSONArrayCheckBox;
     private TargetMessagePanel sourcePanel = new TargetMessagePanel() ;
     private TargetMessagePanel destinationPanel = new TargetMessagePanel();
 
@@ -51,7 +52,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
 
     private void initComponents(final Window parent) {
         super.initComponents();
-
+        convertAsJSONArrayCheckBox.setEnabled(false);
         getCancelButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -85,7 +86,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         transformationComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                toggleRootTagField();
+                onTransformationTypeChange();
             }
         });
 
@@ -94,7 +95,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         transformationConvention.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                toggleRootTagField();
+                onTransformationTypeChange();
             }
         });
         sourcePanel.setAllowNonMessageVariables(false);
@@ -169,7 +170,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         String strResponse = null;
         try {
             JsonTransformationAdmin admin = Registry.getDefault().getExtensionInterface(JsonTransformationAdmin.class, null);
-            strResponse = admin.testTransform(input, transformation, convention, rootTag, prettyPrint.isSelected());
+            strResponse = admin.testTransform(input, transformation, convention, rootTag, prettyPrint.isSelected(), convertAsJSONArrayCheckBox.isSelected());
             if(transformation.equals(JsonTransformationAssertion.Transformation.JSON_to_XML))
             {
                 Document document = XmlUtil.stringToDocument(strResponse);
@@ -202,6 +203,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         assertion.setTransformation(getTransformation());
         assertion.setConvention(getConvention());
         assertion.setPrettyPrint(prettyPrint.isSelected());
+        assertion.setArrayForm(convertAsJSONArrayCheckBox.isEnabled() && convertAsJSONArrayCheckBox.isSelected());
         return assertion;
     }
 
@@ -258,7 +260,8 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         }
         transformationConvention.setSelectedItem(convention);
         prettyPrint.setSelected(assertion.isPrettyPrint());
-        toggleRootTagField();
+        convertAsJSONArrayCheckBox.setSelected(assertion.isArrayForm());
+        onTransformationTypeChange();
     }
 
     @Override
@@ -274,12 +277,15 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         return propertyName;
     }
 
-    private void toggleRootTagField() {
+    private void onTransformationTypeChange() {
         Object target = transformationComboBox.getSelectedItem();
         Object convention = transformationConvention.getSelectedItem();
         //jsonml notation does not allow us to specify a root node in the converted xml output
         //we should disable this if it's the case.
         boolean enabled = "JSON To XML".equals(target) && "Standard".equals(convention);
         rootTagTextField.setEnabled(enabled);
+
+        boolean enableArrayForm = "XML To JSON".equals(target) && "JSONML".equals(convention);
+        convertAsJSONArrayCheckBox.setEnabled(enableArrayForm);
     }
 }

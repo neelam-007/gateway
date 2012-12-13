@@ -43,6 +43,8 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
 
     private boolean prettyPrint;
 
+    private boolean arrayForm;
+
     private TransformationConvention convention = TransformationConvention.STANDARD;
 
     public JsonTransformationAssertion() {
@@ -90,6 +92,14 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
 
     public void setPrettyPrint(final boolean prettyPrint) {
         this.prettyPrint = prettyPrint;
+    }
+
+    public boolean isArrayForm() {
+        return arrayForm;
+    }
+
+    public void setArrayForm(final boolean arrayForm) {
+        this.arrayForm = arrayForm;
     }
 
     @Override

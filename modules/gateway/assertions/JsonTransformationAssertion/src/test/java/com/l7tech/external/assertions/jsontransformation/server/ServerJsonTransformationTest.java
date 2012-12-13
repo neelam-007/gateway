@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.Assert;
 import org.junit.Before;
@@ -21,10 +22,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Test the JsonTransformationAssertion.
@@ -93,6 +91,16 @@ public class ServerJsonTransformationTest {
     private Map<Object, Object> objectMap;
     private StashManager stashManager;
 
+    private static final String TEST_XHTML_STRING = "<ul>\n" +
+            "<li style=\"color:red\">First Item</li>\n" +
+            "<li title=\"Some hover text.\" style=\"color:green\">\n" +
+            "Second Item\n" +
+            "</li>\n" +
+            "<li><span class=\"code-example-third\">Third</span>\n" +
+            "Item</li>\n" +
+            "</ul>";
+
+    private static final String EXPECTED_XHTML_JSONML = "[\"ul\",[\"li\",{\"style\":\"color:red\"},\"First Item\"],[\"li\",{\"title\":\"Some hover text.\",\"style\":\"color:green\"},\"Second Item\"],[\"li\",[\"span\",{\"class\":\"code-example-third\"},\"Third\"],\"Item\"]]";
 
     @Before
     public void setUp() throws Exception {
@@ -224,6 +232,33 @@ public class ServerJsonTransformationTest {
         Assert.assertTrue(outputObj instanceof Message);
         Map mapObj = (Map) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject();
         assertJsonmlData(mapObj);
+    }
+
+    @Test
+    public void testXmlToJsonmlAsArray() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        JsonTransformationAssertion assertion = new JsonTransformationAssertion();
+        assertion.setDestinationMessageTarget(new MessageTargetableSupport("target"));
+        assertion.setOtherTargetMessageVariable("xml");
+        assertion.setTarget(TargetMessageType.OTHER);
+        assertion.setTransformation(JsonTransformationAssertion.Transformation.XML_to_JSON);
+        assertion.setConvention(JsonTransformationAssertion.TransformationConvention.JSONML);
+        assertion.setArrayForm(true);
+        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("xml"), false);
+        xmlMessage.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(TEST_XHTML_STRING.getBytes()));
+
+        ServerJsonTransformationAssertion sjta = buildServerAssertion(assertion);
+
+        AssertionStatus result = sjta.checkRequest(context);
+
+        Assert.assertEquals(result, AssertionStatus.NONE);
+        Object outputObj = context.getVariable("target");
+        Assert.assertTrue(outputObj instanceof Message);
+        List arrayObject = (List) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject();
+        JSONArray actualArray = new JSONArray(arrayObject);
+        JSONArray expectedArray = new JSONArray(EXPECTED_XHTML_JSONML);
+        Assert.assertEquals(expectedArray.toString(), actualArray.toString());
+
     }
 
     private void assertJsonmlData(Map jsonMap) {
@@ -370,7 +405,7 @@ public class ServerJsonTransformationTest {
             String uglyJSON = ServerJsonTransformationAssertion.doTransformation(xmlStr,
                     JsonTransformationAssertion.Transformation.XML_to_JSON,
                     JsonTransformationAssertion.TransformationConvention.STANDARD,
-                    "test", false);
+                    "test", false, false);
             Assert.assertEquals(uglyJSON, EXPECTED_UGLY_JSON);
         } catch (JSONException e) {
             Assert.fail("Error testing testJsonPrettyPrint(): " + e.getMessage());
