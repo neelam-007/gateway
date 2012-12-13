@@ -1,9 +1,13 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
@@ -15,6 +19,7 @@ import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.policy.Policy;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -37,9 +42,11 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
 
     private SimpleTableModel<EncapsulatedAssertionConfig> eacTableModel;
     private Map<String, ImageIcon> iconCache = new HashMap<String, ImageIcon>();
+    private PermissionFlags flags;
 
     public EncapsulatedAssertionManagerWindow(Window parent) {
         super(parent, "Manage Encapsulated Assertion Configurations", ModalityType.APPLICATION_MODAL);
+        flags = PermissionFlags.get(EntityType.ENCAPSULATED_ASSERTION);
         setContentPane(contentPane);
         setModal(true);
         Utilities.setEscKeyStrokeDisposes(this);
@@ -104,13 +111,18 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         });
         Utilities.setDoubleClickAction(eacTable, propertiesButton);
 
-        // TODO RBAC-awareness
         loadEncapsulatedAssertionConfigs(false);
         enableOrDisable();
     }
 
-    private void doProperties(final EncapsulatedAssertionConfig config) {
-        final EncapsulatedAssertionConfigPropertiesDialog dlg = new EncapsulatedAssertionConfigPropertiesDialog(this, config, false); // TODO propagate RBAC view
+    private void doProperties(@NotNull final EncapsulatedAssertionConfig config) {
+        AttemptedOperation op = Long.valueOf(PersistentEntity.DEFAULT_OID).equals(config.getOid())
+            ? new AttemptedCreateSpecific(EntityType.ENCAPSULATED_ASSERTION, config)
+            : new AttemptedUpdate(EntityType.ENCAPSULATED_ASSERTION, config);
+        SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+        boolean readOnly = !securityProvider.hasPermission(op);
+
+        final EncapsulatedAssertionConfigPropertiesDialog dlg = new EncapsulatedAssertionConfigPropertiesDialog(this, config, readOnly);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
@@ -159,6 +171,14 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         boolean haveConfig = getSelectedConfig() != null;
         removeButton.setEnabled(haveConfig);
         propertiesButton.setEnabled(haveConfig);
+
+        if (!flags.canCreateSome()) {
+            createButton.setEnabled(false);
+        }
+
+        if (!flags.canDeleteSome()) {
+            removeButton.setEnabled(false);
+        }
     }
 
     private Functions.Unary<Icon, EncapsulatedAssertionConfig> iconFinder() {
