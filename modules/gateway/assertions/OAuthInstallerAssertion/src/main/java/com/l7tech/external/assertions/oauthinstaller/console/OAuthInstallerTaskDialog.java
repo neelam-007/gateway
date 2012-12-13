@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
+import static com.l7tech.policy.bundle.BundleInfo.getPrefixedUrlErrorMsg;
 import static com.l7tech.policy.bundle.BundleMapping.EntityType.JDBC_CONNECTION;
 
 public class OAuthInstallerTaskDialog extends JDialog {
@@ -228,25 +229,6 @@ public class OAuthInstallerTaskDialog extends JDialog {
             String exampleUrl = "https://yourgateway.com:8443/" + prefix + "/query";
             exampleRoutingUrlLabel.setText("Example prefixed URL: " + exampleUrl);
         }
-    }
-
-    @Nullable
-    private String getPrefixedUrlErrorMsg(String prefix){
-
-        // validate for XML chars
-        String [] invalidChars = new String[]{"\"", "&", "'", "<", ">"};
-        for (String invalidChar : invalidChars) {
-            if (prefix.contains(invalidChar)) {
-                return "Invalid character '" + invalidChar + "' is not allowed in the installation prefix.";
-            }
-        }
-
-        String testUri = "http://ssg.com:8080/" + prefix + "/query";
-        if (!ValidationUtils.isValidUrl(testUri)) {
-            return "It must be possible to construct a valid routing URI using the prefix.";
-        }
-
-        return null;
     }
 
     private void enableDisableComponents() {

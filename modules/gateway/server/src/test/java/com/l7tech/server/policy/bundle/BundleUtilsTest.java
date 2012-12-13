@@ -2,11 +2,9 @@ package com.l7tech.server.policy.bundle;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.bundle.BundleInfo;
-import com.l7tech.util.DomUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -78,10 +76,9 @@ public class BundleUtilsTest {
         final Document enumPolicy = XmlUtil.parse(new ByteArrayInputStream(bytes));
         final List<Element> policyElms = GatewayManagementDocumentUtilities.getEntityElements(enumPolicy.getDocumentElement(), "Policy");
         for (Element policyElm : policyElms) {
-            final Element policyDetailElm = PolicyUtils.getPolicyDetailElement(policyElm, "Policy", "Not used");
+            final Element policyDetailElm = GatewayManagementDocumentUtilities.getPolicyDetailElement(policyElm);
 //            System.out.println(XmlUtil.nodeToFormattedString(policyDetailElm));
-            final Element nameElement = PolicyUtils.getPolicyNameElement(policyDetailElm, "Policy", "Not Used");
-            System.out.println(DomUtils.getTextValue(nameElement));
+            System.out.println(GatewayManagementDocumentUtilities.getEntityName(policyDetailElm));
         }
 
     }

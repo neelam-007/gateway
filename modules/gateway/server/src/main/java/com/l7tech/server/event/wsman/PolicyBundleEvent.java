@@ -1,22 +1,14 @@
 package com.l7tech.server.event.wsman;
 
-import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import org.jetbrains.annotations.NotNull;
 
 public class PolicyBundleEvent extends WSManagementRequestEvent {
 
     public PolicyBundleEvent(final Object source,
-                             final BundleResolver bundleResolver,
                              final PolicyBundleInstallerContext context) {
         super(source);
-        this.bundleResolver = bundleResolver;
         this.context = context;
-    }
-
-    @NotNull
-    public BundleResolver getBundleResolver() {
-        return bundleResolver;
     }
 
     /**
@@ -40,8 +32,6 @@ public class PolicyBundleEvent extends WSManagementRequestEvent {
     // - PRIVATE
 
     private final static String BUNDLE_VERSION_SEPT_12 = "http://ns.l7tech.com/2012/09/policy-bundle";
-    @NotNull
-    final BundleResolver bundleResolver;
     protected String policyBundleVersionNs = BUNDLE_VERSION_SEPT_12;
     @NotNull
     final PolicyBundleInstallerContext context;

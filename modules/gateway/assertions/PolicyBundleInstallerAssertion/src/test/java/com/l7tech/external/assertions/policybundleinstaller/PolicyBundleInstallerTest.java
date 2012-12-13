@@ -8,10 +8,12 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
+import com.l7tech.server.event.wsman.PolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.*;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.DomElementCursor;
@@ -35,6 +37,7 @@ import java.text.MessageFormat;
 import java.util.*;
 
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.*;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.MGMT_VERSION_NAMESPACE;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getNamespaceMap;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
@@ -50,7 +53,13 @@ public class PolicyBundleInstallerTest {
     public void testInstallFolders_NoneExist() throws Exception {
 
         final BundleResolver bundleResolver = getBundleResolver();
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+        final List<BundleInfo> resultList = bundleResolver.getResultList();
+        final BundleInfo bundleInfo = resultList.get(0);
+
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final Functions.Nullary<Boolean> cancelledCallback = getCancelledCallback(installEvent);
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
                 try {
@@ -61,23 +70,25 @@ public class PolicyBundleInstallerTest {
                     throw new RuntimeException(e);
                 }
             }
-        });
-
-        final List<BundleInfo> resultList = bundleResolver.getResultList();
-        final BundleInfo bundleInfo = resultList.get(0);
-        //OAuth_1_0
-        final Document oAuth_1_0 = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), null);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, bundleResolver, context, null);
+        }, context, cancelledCallback);
 
         final Document folderDoc = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
-        final Map<Long, Long> oldToNewMap = bundleInstaller.installFolders(installEvent, -5002, folderDoc, new HashMap<Long, Long>());
+        final Map<Long, Long> oldToNewMap = bundleInstaller.installFolders(-5002, folderDoc);
         assertNotNull(oldToNewMap);
         assertFalse(oldToNewMap.isEmpty());
 
         for (Map.Entry<Long, Long> entry : oldToNewMap.entrySet()) {
             System.out.println(entry.getKey() + ": " + entry.getValue());
         }
+    }
+
+    private Functions.Nullary<Boolean> getCancelledCallback(final PolicyBundleEvent bundleEvent) {
+        return new Functions.Nullary<Boolean>() {
+                @Override
+                public Boolean call() {
+                    return bundleEvent.isCancelled();
+                }
+            };
     }
 
     /**
@@ -90,7 +101,14 @@ public class PolicyBundleInstallerTest {
         final Map<String, Integer> nameToIdMap = new HashMap<String, Integer>();
 
         final BundleResolver bundleResolver = getBundleResolver();
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+        final List<BundleInfo> resultList = bundleResolver.getResultList();
+        final BundleInfo bundleInfo = resultList.get(0);
+        //OAuth_1_0
+        final Document oAuth_1_0 = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
                 try {
@@ -127,15 +145,9 @@ public class PolicyBundleInstallerTest {
                     throw new RuntimeException(e);
                 }
             }
-        });
+        }, context, getCancelledCallback(installEvent));
 
-        final List<BundleInfo> resultList = bundleResolver.getResultList();
-        final BundleInfo bundleInfo = resultList.get(0);
-        //OAuth_1_0
-        final Document oAuth_1_0 = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), null);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, bundleResolver, context, null);
-        final Map<Long, Long> oldToNewMap = bundleInstaller.installFolders(installEvent, -5002, oAuth_1_0, new HashMap<Long, Long>());
+        final Map<Long, Long> oldToNewMap = bundleInstaller.installFolders(-5002, oAuth_1_0);
         assertNotNull(oldToNewMap);
         assertFalse(oldToNewMap.isEmpty());
 
@@ -163,22 +175,9 @@ public class PolicyBundleInstallerTest {
 
     @Test
     public void testAllPolicyBundlesInstall() throws Exception {
-
-        final Map<String, String> oldGuidsToNewGuids = new HashMap<String, String>(){
-            @Override
-            public String put(String key, String value) {
-
-                if (containsKey(key)) {
-                    fail("Key already recorded - map should be checked before creating any new guids");
-                }
-
-                return super.put(key, value);
-            }
-        };
-
         final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), "/com/l7tech/external/assertions/policybundleinstaller/bundles/");
         for (Pair<BundleInfo, String> bundleInfo : bundleInfos) {
-            installPoliciesTest(bundleInfo.left, oldGuidsToNewGuids, null);
+            installPoliciesTest(bundleInfo.left, null);
         }
     }
 
@@ -194,12 +193,14 @@ public class PolicyBundleInstallerTest {
      *
      */
     public void installPoliciesTest(final @NotNull BundleInfo bundleInfo,
-                                    final @NotNull Map<String, String> oldGuidsToNewGuids,
                                     final @Nullable String installationPrefix) throws Exception {
         final Map<String, String> nameToPreviousGuid = new HashMap<String, String>();
 
         final BundleResolver bundleResolver = getBundleResolver();
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), installationPrefix, bundleResolver);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
                 try {
@@ -207,26 +208,11 @@ public class PolicyBundleInstallerTest {
                     final Document enumPolicyDocument = XmlUtil.parse(requestXml);
                     if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/transfer/Create")) {
 
-                        // validate that the request contained policy XML which does not reference any old GUIDS
-                        // e.g. policy includes have been updated correctly.
-//                        System.out.println(requestXml);
-                        final Element policyResourceElmWritable = PolicyUtils.getPolicyResourceElement(enumPolicyDocument.getDocumentElement(), "Policy", "canned id");
-                        final Document includedPolicyDoc = PolicyUtils.getPolicyDocumentFromResource(policyResourceElmWritable, "Policy", "canned id");
-                        final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(includedPolicyDoc);
-
-                        //validate that these guids are not canned guids shipped with the OTK policies.
-                        for (Element policyInclude : policyIncludes) {
-                            final String guid = policyInclude.getAttribute("stringValue");
-                            assertFalse(oldGuidsToNewGuids.containsKey(guid));
-                            // guid should exist as a new value
-                            assertTrue(oldGuidsToNewGuids.containsValue(guid));
-                        }
-
                         // validate any prefix was correctly applied
                         if (installationPrefix != null) {
-                            final Element policyDetailElm = PolicyUtils.getPolicyDetailElement(enumPolicyDocument.getDocumentElement(), "Policy", "Not important");
-                            final Element policyNameElm = PolicyUtils.getPolicyNameElement(policyDetailElm, "Policy", "Not important");
-                            final String policyName = DomUtils.getTextValue(policyNameElm);
+                            final Element policyEntityEl = XmlUtil.findFirstDescendantElement(enumPolicyDocument.getDocumentElement(), MGMT_VERSION_NAMESPACE, "Policy");
+                            final Element policyDetailElm = GatewayManagementDocumentUtilities.getPolicyDetailElement(policyEntityEl);
+                            final String policyName = GatewayManagementDocumentUtilities.getEntityName(policyDetailElm);
                             System.out.println("Policy name: " + policyName);
                             assertTrue("Policy name was not prefixed", policyName.startsWith(installationPrefix));
                         }
@@ -255,7 +241,7 @@ public class PolicyBundleInstallerTest {
                     throw new RuntimeException(e);
                 }
             }
-        });
+        }, context, getCancelledCallback(installEvent));
 
         final Document policyFromBundleDoc = bundleResolver.getBundleItem(bundleInfo.getId(), POLICY, false);
 
@@ -271,7 +257,7 @@ public class PolicyBundleInstallerTest {
             fail("Incorrect test configuration");
         }
 
-        // the mocked callManagementAssertion returns
+        // record all policy names mapped to the canned GUID
         final Map<String, String> policyNameToGuid = new HashMap<String, String>();
         while (iterator.hasNext()) {
             final ElementCursor elementCursor = iterator.nextElementAsCursor();
@@ -283,16 +269,13 @@ public class PolicyBundleInstallerTest {
             policyNameToGuid.put(name, guid);
         }
 
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), null);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, bundleResolver, context, null);
-
-        bundleInstaller.installPolicies(installEvent, bundleInfo, getFolderIds(), oldGuidsToNewGuids, policyFromBundleDoc, null, installationPrefix);
+        final Map<String, String> oldGuidToNewGuidMap = bundleInstaller.installPolicies(getFolderIds(), policyFromBundleDoc);
 
         // verify that each known policy name was installed
         for (Map.Entry<String, String> bundlePolicy : policyNameToGuid.entrySet()) {
             // confirm it was installed
             assertTrue("Policy " + bundlePolicy.getKey() + " and guid " + bundlePolicy.getValue() + " was not installed.",
-                    oldGuidsToNewGuids.containsKey(bundlePolicy.getValue()));
+                    oldGuidToNewGuidMap.containsKey(bundlePolicy.getValue()));
         }
 
     }
@@ -300,7 +283,13 @@ public class PolicyBundleInstallerTest {
     @Test
     public void testInstallServices() throws Exception {
         final BundleResolver bundleResolver = getBundleResolver();
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+        final List<BundleInfo> resultList = bundleResolver.getResultList();
+        final BundleInfo bundleInfo = resultList.get(0);
+        //OAuth_1_0
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
                 try {
@@ -312,18 +301,11 @@ public class PolicyBundleInstallerTest {
                     throw new RuntimeException(e);
                 }
             }
-        });
-
-        final List<BundleInfo> resultList = bundleResolver.getResultList();
-        final BundleInfo bundleInfo = resultList.get(0);
-        //OAuth_1_0
-        final Document oAuth_1_0 = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), null);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, bundleResolver, context, null);
+        }, context, getCancelledCallback(installEvent));
 
         // OAuth_1_0
         final Document serviceFromBundleDoc = bundleResolver.getBundleItem(bundleInfo.getId(), SERVICE, false);
-        bundleInstaller.installServices(installEvent, bundleInfo, getFolderIds(), new HashMap<Long, Long>(), getPolicyGuids(), serviceFromBundleDoc, null, null);
+        bundleInstaller.installServices(getFolderIds(), getPolicyGuids(), serviceFromBundleDoc);
 
     }
 
@@ -340,7 +322,12 @@ public class PolicyBundleInstallerTest {
         final Map<String, Boolean> servicesFound = new HashMap<String, Boolean>();
         final Map<String, Set<String>> jdbcPerService = new HashMap<String, Set<String>>();
 
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
+                new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc"),
+                null, null, bundleResolver);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
                 invoked[0] = true;
@@ -384,7 +371,7 @@ public class PolicyBundleInstallerTest {
                         servicesFound.put(id, true);
                         System.out.println("Testing service: " + id);
                         try {
-                            final Element policyResourceElement = PolicyUtils.getPolicyResourceElement(serviceElement, "Service not important", id);
+                            final Element policyResourceElement = GatewayManagementDocumentUtilities.getPolicyResourceElement(serviceElement, "Service not important", id);
 //                            System.out.println(XmlUtil.nodeToFormattedString(policyResourceElement));
                             final Set<String> jdbcConnsFound = BundleUtils.searchForJdbcReferences(policyResourceElement, "Service", id);
                             jdbcPerService.put(id, jdbcConnsFound);
@@ -405,15 +392,9 @@ public class PolicyBundleInstallerTest {
                     return documentPair.left;
                 }
             }
-        });
+        }, context, getCancelledCallback(installEvent));
 
-
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc"),
-                -5002,
-                new HashMap<String, Object>(),
-                null, null);
-        bundleInstaller.install(new InstallPolicyBundleEvent(this, bundleResolver, context, null));
+        bundleInstaller.installBundle();
 
 //        assertEquals(1, jdbcConnsFound.size());
 //        assertEquals("Invalid JDBC connection name found", "OAuth", jdbcConnsFound.iterator().next());
@@ -446,21 +427,9 @@ public class PolicyBundleInstallerTest {
      */
     @Test
     public void testPolicyNamePrefixedInstallation() throws Exception {
-        final Map<String, String> oldGuidsToNewGuids = new HashMap<String, String>(){
-            @Override
-            public String put(String key, String value) {
-
-                if (containsKey(key)) {
-                    fail("Key already recorded - map should be checked before creating any new guids");
-                }
-
-                return super.put(key, value);
-            }
-        };
-
         final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), "/com/l7tech/external/assertions/policybundleinstaller/bundles/");
         for (Pair<BundleInfo, String> bundleInfo : bundleInfos) {
-            installPoliciesTest(bundleInfo.left, oldGuidsToNewGuids, "Version 1 - ");
+            installPoliciesTest(bundleInfo.left, "Version 1 - ");
         }
 
     }
@@ -469,7 +438,14 @@ public class PolicyBundleInstallerTest {
     public void testServicesUriPrefixedInstallation() throws Exception {
         final BundleResolver bundleResolver = getBundleResolver();
         final Map<String, String> serviceIdToUri = new HashMap<String, String>();
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+        final List<BundleInfo> resultList = bundleResolver.getResultList();
+        //OAuth_1_0
+        final BundleInfo bundleInfo = resultList.get(0);
+        final String prefix = "version1a";
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), prefix, bundleResolver);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
                 try {
@@ -516,18 +492,11 @@ public class PolicyBundleInstallerTest {
                     throw new RuntimeException(e);
                 }
             }
-        });
-
-        final List<BundleInfo> resultList = bundleResolver.getResultList();
-        //OAuth_1_0
-        final BundleInfo bundleInfo = resultList.get(0);
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), null);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, bundleResolver, context, null);
+        }, context, getCancelledCallback(installEvent));
 
         final Document serviceFromBundleDoc = bundleResolver.getBundleItem(bundleInfo.getId(), SERVICE, false);
 
-        final String prefix = "version1a";
-        bundleInstaller.installServices(installEvent, bundleInfo, getFolderIds(), new HashMap<Long, Long>(), getPolicyGuids(), serviceFromBundleDoc, null, prefix);
+        bundleInstaller.installServices(getFolderIds(), getPolicyGuids(), serviceFromBundleDoc);
 
         // validate all services were found and all URIs were prefixed correctly
         assertEquals("Incorrect number of services created", 7, serviceIdToUri.size());
@@ -545,7 +514,16 @@ public class PolicyBundleInstallerTest {
     @Test
     public void testDryInstallationWithConflicts() throws Exception {
         final BundleResolver bundleResolver = getBundleResolver();
-        PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+        final BundleInfo bundleInfo = new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc");
+        bundleInfo.addJdbcReference("OAuth");
+
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
+                bundleInfo,
+                null, null, bundleResolver);
+
+        final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(this, context);
+
+        PolicyBundleInstaller installer = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
 
@@ -570,19 +548,9 @@ public class PolicyBundleInstallerTest {
 
                 return AssertionStatus.NONE;
             }
-        });
+        }, context, getCancelledCallback(dryRunEvent));
 
-        final BundleInfo bundleInfo = new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc");
-        bundleInfo.addJdbcReference("OAuth");
-
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                bundleInfo,
-                -5002,
-                new HashMap<String, Object>(),
-                null, null);
-
-        final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(this, bundleResolver, context);
-        installer.dryRun(context, dryRunEvent);
+        installer.dryRunInstallBundle(dryRunEvent);
 
         final List<String> urlPatternWithConflict = dryRunEvent.getUrlPatternWithConflict();
         assertFalse(urlPatternWithConflict.isEmpty());
@@ -619,7 +587,16 @@ public class PolicyBundleInstallerTest {
     @Test
     public void testDryInstallationWithNoConflicts() throws Exception {
         final BundleResolver bundleResolver = getBundleResolver();
-        PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+        final BundleInfo bundleInfo = new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc");
+        bundleInfo.addJdbcReference("OAuth");
+
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
+                bundleInfo,
+                null, null, bundleResolver);
+
+        final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(this, context);
+
+        PolicyBundleInstaller installer = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
 
@@ -644,19 +621,9 @@ public class PolicyBundleInstallerTest {
 
                 return AssertionStatus.NONE;
             }
-        });
+        }, context, getCancelledCallback(dryRunEvent));
 
-        final BundleInfo bundleInfo = new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc");
-        bundleInfo.addJdbcReference("OAuth");
-
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                bundleInfo,
-                -5002,
-                new HashMap<String, Object>(),
-                null, null);
-
-        final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(this, bundleResolver, context);
-        installer.dryRun(context, dryRunEvent);
+        installer.dryRunInstallBundle(dryRunEvent);
 
         final List<String> urlPatternWithConflict = dryRunEvent.getUrlPatternWithConflict();
         assertTrue(urlPatternWithConflict.isEmpty());
@@ -672,7 +639,16 @@ public class PolicyBundleInstallerTest {
     @BugNumber(13586)
     public void testRequestDeniedForAdminUser() throws Exception {
         final BundleResolver bundleResolver = getBundleResolver();
-        PolicyBundleInstaller installer = new PolicyBundleInstaller(bundleResolver, new GatewayManagementInvoker() {
+        final BundleInfo bundleInfo = new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Any bundle will do", "Desc");
+        bundleInfo.addJdbcReference("OAuth");
+
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
+                bundleInfo,
+                null, null, bundleResolver);
+
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+
+        PolicyBundleInstaller installer = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
 
@@ -692,20 +668,10 @@ public class PolicyBundleInstallerTest {
 
                 return AssertionStatus.NONE;
             }
-        });
+        }, context, getCancelledCallback(installEvent));
 
-        final BundleInfo bundleInfo = new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Any bundle will do", "Desc");
-        bundleInfo.addJdbcReference("OAuth");
-
-        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                bundleInfo,
-                -5002,
-                new HashMap<String, Object>(),
-                null, null);
-
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, bundleResolver, context, null);
         try {
-            installer.install(installEvent);
+            installer.installBundle();
             fail("Access denied exception should be thrown");
         } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse e) {
             // pass

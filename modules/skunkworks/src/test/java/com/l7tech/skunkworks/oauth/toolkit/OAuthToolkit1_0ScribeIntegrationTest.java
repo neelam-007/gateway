@@ -23,6 +23,8 @@ import static org.junit.Assert.*;
  * <p/>
  * Note on SSL with Scribe: Scribe cannot handle self-signed certs.
  * You will most likely have to add the gateway SSL cert to your local cacerts file (use the keytool command).
+ * e.g. C:\Program Files\Java\jdk1.7.0_03\bin>keytool -keystore "c:\Program Files\Java\jdk1.7.0_03\jre\lib\security\cacerts" -importcert -file d:\pathtofile\filename.cer
+ *
  * If using localhost, you may have to change the gateway's default SSL cert to use 'localhost' instead of your computer name.
  */
 @Ignore

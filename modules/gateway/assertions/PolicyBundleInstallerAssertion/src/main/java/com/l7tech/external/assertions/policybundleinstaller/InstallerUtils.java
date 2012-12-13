@@ -180,7 +180,7 @@ public class InstallerUtils {
 
             @Override
             public String getRequestUrl() {
-                //todo fix url - check it's usage in mgmt server assertion.
+                // Used when creating a EndpointReferenceType for resource iterators in gateway mgmt assertion.
                 return "http://localhost:8080/wsman";
             }
         };
@@ -208,8 +208,7 @@ public class InstallerUtils {
             );
         } else {
             // no action will be allowed - this will result in permission denied later
-            //todo deal with this here
-            logger.warning("No current user");
+            logger.warning("No administrative user found. Request to install will fail.");
         }
 
         return context;

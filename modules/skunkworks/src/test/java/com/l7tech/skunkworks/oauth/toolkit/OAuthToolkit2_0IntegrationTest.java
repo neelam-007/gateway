@@ -30,16 +30,22 @@ import static org.junit.Assert.*;
  * Integration tests for the OAuth Tool Kit (oauth version 2.0). Each test requires the SSG to be running with an installed OTK that includes
  * the default OTK client.
  * <p/>
- * Requires wsman to be published on the gateway (Gateway Management Service internal service).
- * <p/>
- * Modify static Strings as needed and remove the Ignore annotation to execute the tests.
+ * Setup:
+ * <ul>
+ *     <li>Publish wsman on the gateway (Gateway Management Service internal service).</li>
+ *     <li>Modify static Strings (CONSUMER_KEY, CONSUMER_SECRET) as needed
+ *     <li>Publish a service which resolves to CALLBACK below, the contents of the service policy are located here: /com/l7tech/skunkworks/oauth/toolkit/OAuth_2_0_Callback_Policy.xml</li>
+ *     <li>Modify the clients Callback URL configuration to match the value of CALLBACK below e.g. https://localhost:8443/oauth_callback</li>
+ *     <li>Remove the class Ignore annotation in order to execute the tests individually</li>
+ * </ul>
+ *
  */
 @Ignore
 public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
     //LOCALHOST
     private static final String BASE_URL = "localhost";
-    private static final String CONSUMER_KEY = "182637fd-8b6b-4dca-9192-3d1e23d556b5";
-    private static final String CONSUMER_SECRET = "de88c414-fb69-4107-aac0-d1fdf0986017";
+    private static final String CONSUMER_KEY = "54f0c455-4d80-421f-82ca-9194df24859d";
+    private static final String CONSUMER_SECRET = "a0f2742f-31c7-436f-9802-b7015b8fd8e6";
     // this callback must be the registered callback on the client
     private static final String CALLBACK = "https://" + BASE_URL + ":8443/oauth_callback";
     private static final PasswordAuthentication PASSWORD_AUTHENTICATION = new PasswordAuthentication("admin", "password".toCharArray());

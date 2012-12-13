@@ -21,6 +21,10 @@ import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.*;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getEntityElements;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getPolicyDocumentFromResource;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getPolicyResourceElement;
+import static com.l7tech.server.policy.bundle.PolicyUtils.findJdbcReferences;
 
 /**
  * Utilities related to processing Bundle related documents e.g. BundleInfo.xml
@@ -236,9 +240,9 @@ public class BundleUtils {
         final String id = bundleInfo.getId();
         final Document policyBundleItem = bundleResolver.getBundleItem(id, POLICY, true);
         if (policyBundleItem != null) {
-            final List<Element> policyElms = GatewayManagementDocumentUtilities.getEntityElements(policyBundleItem.getDocumentElement(), "Policy");
+            final List<Element> policyElms = getEntityElements(policyBundleItem.getDocumentElement(), "Policy");
             for (Element policyElm : policyElms) {
-                final Element policyResourceElement = PolicyUtils.getPolicyResourceElement(policyElm, "Policy", getPolicyGuid(policyElm));
+                final Element policyResourceElement = getPolicyResourceElement(policyElm, "Policy", getPolicyGuid(policyElm));
                 if (policyResourceElement != null) {
                     final Set<String> jdbcConnsFound = searchForJdbcReferences(policyResourceElement, "Policy", getPolicyGuid(policyElm));
                     for (String conn : jdbcConnsFound) {
@@ -250,9 +254,9 @@ public class BundleUtils {
 
         final Document serviceBundleItem = bundleResolver.getBundleItem(id, SERVICE, true);
         if (serviceBundleItem != null) {
-            final List<Element> serviceElms = GatewayManagementDocumentUtilities.getEntityElements(serviceBundleItem.getDocumentElement(), "Service");
+            final List<Element> serviceElms = getEntityElements(serviceBundleItem.getDocumentElement(), "Service");
             for (Element serviceElm : serviceElms) {
-                final Element policyResourceElement = PolicyUtils.getPolicyResourceElement(serviceElm, "Service", getId(serviceElm));
+                final Element policyResourceElement = getPolicyResourceElement(serviceElm, "Service", getId(serviceElm));
                 if (policyResourceElement != null) {
                     final Set<String> jdbcConnsFound = searchForJdbcReferences(policyResourceElement, "Service", getId(serviceElm));
                     for (String conn : jdbcConnsFound) {
@@ -274,8 +278,8 @@ public class BundleUtils {
     public static Set<String> searchForJdbcReferences(final Element policyResourceElement, final String entityType, final String identifier) throws BundleResolver.InvalidBundleException {
         final Set<String> returnList = new HashSet<String>();
         if (policyResourceElement != null) {
-            final Document layer7PolicyXml = PolicyUtils.getPolicyDocumentFromResource(policyResourceElement, entityType, identifier);
-            final List<Element> jdbcReferences = PolicyUtils.findJdbcReferences(layer7PolicyXml.getDocumentElement());
+            final Document layer7PolicyXml = getPolicyDocumentFromResource(policyResourceElement, entityType, identifier);
+            final List<Element> jdbcReferences = findJdbcReferences(layer7PolicyXml.getDocumentElement());
             for (Element jdbcReference : jdbcReferences) {
                 try {
                     final Element connNameElm = XmlUtil.findExactlyOneChildElementByName(jdbcReference, BundleUtils.L7_NS_POLICY, "ConnectionName");

@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.server.event.HasAuditDetails;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,7 +25,7 @@ public abstract class DetailedSystemEvent extends SystemEvent implements HasAudi
         super(source, component, ipAddress, level);
     }
 
-    public DetailedSystemEvent(Object source, Component component, String ipAddress, Level level, String message) {
+    public DetailedSystemEvent(Object source, Component component, @Nullable String ipAddress, Level level, String message) {
         super(source, component, ipAddress, level, message);
     }
 

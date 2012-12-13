@@ -23,15 +23,18 @@ import static com.l7tech.skunkworks.oauth.toolkit.OAuthToolkitTestUtility.*;
  * <p/>
  * Do NOT use the default OAuth2Client (because its callback will automatically obtain the access token).
  * <p/>
- * Preconditions: <br />
- * 1. publish a REST service on the gateway for callbacks (obtaining the authorization code) - return template response with body = ${request.http.parameter.code}<br />
- * 2. register a new client using callback url from step 1<br />
- * 3. set the CONSUMER_KEY<br />
- * 4. set the CONSUMER_SECRET<br />
- * 5. set the CALLBACK using callback url from step 1
- * <p/>
+ * Preconditions:
+ * <ul>
+ *  <li>publish a REST service on the gateway for callbacks (obtaining the authorization code) - return template response with body = ${request.http.parameter.code},
+ *  the contents of file /com/l7tech/skunkworks/oauth/toolkit/OAuth_2_0_Callback_Policy.xml can be used for this service.</li>
+ *  <li>register a new client using callback url from step 1 or update the existing client to use the URL of the above serivce as the Callback URL</li>
+ *  <li>set the CONSUMER_KEY</li>
+ *  <li>set the CONSUMER_SECRET</li>
+ *  <li>set the CALLBACK using callback url from step 1</li>
+ * </ul>
  * Note on SSL with Scribe: Scribe cannot handle self-signed certs.
  * You will most likely have to add the gateway SSL cert to your local cacerts file (use the keytool command).
+ * e.g. C:\Program Files\Java\jdk1.7.0_03\bin>keytool -keystore "c:\Program Files\Java\jdk1.7.0_03\jre\lib\security\cacerts" -importcert -file d:\pathtofile\filename.cer
  * If using localhost, you may have to change the gateway's default SSL cert to use 'localhost' instead of your computer name.
  */
 @Ignore
@@ -43,8 +46,8 @@ public class OAuthToolkit2_0ScribeIntegrationTest {
 
     //LOCALHOST
     private static final String GATEWAY = "localhost";
-    private static final String CONSUMER_KEY = "182637fd-8b6b-4dca-9192-3d1e23d556b5";
-    private static final String CONSUMER_SECRET = "de88c414-fb69-4107-aac0-d1fdf0986017";
+    private static final String CONSUMER_KEY = "54f0c455-4d80-421f-82ca-9194df24859d";
+    private static final String CONSUMER_SECRET = "a0f2742f-31c7-436f-9802-b7015b8fd8e6";
 
     private static final String PROTECTED_RESOURCE_URI = "http://" + GATEWAY + ":8080/oauth/v2/protectedapi";
     private static final String CALLBACK = "https://" + GATEWAY + ":8443/oauth_callback";

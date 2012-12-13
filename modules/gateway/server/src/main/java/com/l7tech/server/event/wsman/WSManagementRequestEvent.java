@@ -45,6 +45,15 @@ public abstract class WSManagementRequestEvent extends ApplicationEvent {
         this.processed = processed;
     }
 
+    @Nullable
+    public String getReasonNotProcessed() {
+        return reasonNotProcessed;
+    }
+
+    public void setReasonNotProcessed(@Nullable String reasonNotProcessed) {
+        this.reasonNotProcessed = reasonNotProcessed;
+    }
+
     /**
      * Get the version of the policy bundle this event supports.
      * @return
@@ -72,6 +81,8 @@ public abstract class WSManagementRequestEvent extends ApplicationEvent {
     @Nullable
     private Exception processingException;
     private boolean processed = false;
+    @Nullable
+    private String reasonNotProcessed;
     private String bundleVersionNs = GATEWAY_MGMT_APRIL_10;
     private AtomicBoolean cancelled = new AtomicBoolean();
 

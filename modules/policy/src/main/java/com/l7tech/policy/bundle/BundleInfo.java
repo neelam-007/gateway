@@ -1,5 +1,8 @@
 package com.l7tech.policy.bundle;
 
+import com.l7tech.util.ValidationUtils;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -35,12 +38,6 @@ public class BundleInfo implements Serializable {
 
     public void addJdbcReference(String connectionName) {
         jdbcConnectionReferences.add(connectionName);
-    }
-
-    public static class UnknownReferenceException extends Exception{
-        public UnknownReferenceException(String message) {
-            super(message);
-        }
     }
 
     public Set<String> getJdbcConnectionReferences() {
@@ -83,6 +80,32 @@ public class BundleInfo implements Serializable {
                 ", jdbcConnectionReferences=" + jdbcConnectionReferences +
                 '}';
     }
+
+    /**
+     * Validate an installation bundle prefix.
+     *
+     * @param prefix installation prefix to validate
+     * @return null if prefix is ok to use otherwise an error message.
+     */
+    @Nullable
+    public static String getPrefixedUrlErrorMsg(String prefix){
+
+        // validate for XML chars
+        String [] invalidChars = new String[]{"\"", "&", "'", "<", ">"};
+        for (String invalidChar : invalidChars) {
+            if (prefix.contains(invalidChar)) {
+                return "Invalid character '" + invalidChar + "' is not allowed in the installation prefix.";
+            }
+        }
+
+        String testUri = "http://ssg.com:8080/" + prefix + "/query";
+        if (!ValidationUtils.isValidUrl(testUri)) {
+            return "Invalid prefix '" + prefix + "'. It must be possible to construct a valid routing URI using the prefix.";
+        }
+
+        return null;
+    }
+
 
     // - PRIVATE
 

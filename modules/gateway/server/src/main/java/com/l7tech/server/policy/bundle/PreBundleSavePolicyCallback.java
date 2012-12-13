@@ -4,7 +4,6 @@ import com.l7tech.policy.bundle.BundleInfo;
 import org.w3c.dom.Document;
 
 public interface PreBundleSavePolicyCallback {
-    //todo test coverage
 
     /**
      * Provides an opportunity for the caller to do ad-hoc configuration of the contents of the Layer 7 Policy contents

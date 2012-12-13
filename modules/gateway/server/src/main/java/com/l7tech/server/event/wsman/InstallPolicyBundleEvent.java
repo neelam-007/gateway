@@ -1,6 +1,5 @@
 package com.l7tech.server.event.wsman;
 
-import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
 import org.jetbrains.annotations.Nullable;
@@ -11,10 +10,9 @@ import org.jetbrains.annotations.Nullable;
 public class InstallPolicyBundleEvent extends PolicyBundleEvent {
 
     public InstallPolicyBundleEvent(final Object source,
-                                    final BundleResolver bundleResolver,
                                     final PolicyBundleInstallerContext context,
                                     final PreBundleSavePolicyCallback preBundleSavePolicyCallback) {
-        super(source, bundleResolver, context);
+        super(source, context);
         this.preBundleSavePolicyCallback = preBundleSavePolicyCallback;
     }
 

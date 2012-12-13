@@ -5,25 +5,43 @@ import com.l7tech.policy.bundle.BundleMapping;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
-
+/**
+ * Installation context used by clients of the Policy Bundle Installer to pass all required information
+ */
 public class PolicyBundleInstallerContext {
+
+    /**
+     * Create an installation context which has a default folder id of the root node.
+     *
+     * @param bundleInfo    bundle to install
+     * @param bundleMapping Nullable Map of mappings for the bundle to install
+     * @param installationPrefix If not null, the value will be used to prefix the installation.
+     * @param bundleResolver used to resolve items from bundleInfo
+     */
+    public PolicyBundleInstallerContext(@NotNull BundleInfo bundleInfo,
+                                        @Nullable BundleMapping bundleMapping,
+                                        @Nullable String installationPrefix,
+                                        @NotNull BundleResolver bundleResolver) {
+        this(bundleInfo, ROOT_FOLDER_OID, bundleMapping, installationPrefix, bundleResolver);
+    }
+
 
     /**
      * @param bundleInfo    bundle to install
      * @param folderOid     oid of the parent folder
-     * @param installationPrefix If not null, the value will be used to prefix the installation.
      * @param bundleMapping Nullable Map of mappings for the bundle to install
+     * @param installationPrefix If not null, the value will be used to prefix the installation.
+     * @param bundleResolver used to resolve items from bundleInfo
      */
     public PolicyBundleInstallerContext(@NotNull BundleInfo bundleInfo,
                                         long folderOid,
-                                        @NotNull Map<String, Object> contextMap,
                                         @Nullable BundleMapping bundleMapping,
-                                        @Nullable String installationPrefix) {
+                                        @Nullable String installationPrefix,
+                                        @NotNull BundleResolver bundleResolver) {
         this.bundleInfo = bundleInfo;
         this.folderOid = folderOid;
-        this.contextMap = contextMap;
         this.bundleMapping = bundleMapping;
+        this.bundleResolver = bundleResolver;
 
         this.installationPrefix = (installationPrefix == null || installationPrefix.trim().isEmpty())?
                 null:
@@ -37,11 +55,6 @@ public class PolicyBundleInstallerContext {
 
     public long getFolderOid() {
         return folderOid;
-    }
-
-    @NotNull
-    public Map<String, Object> getContextMap() {
-        return contextMap;
     }
 
     @Nullable
@@ -59,16 +72,23 @@ public class PolicyBundleInstallerContext {
         return installationPrefix;
     }
 
+    @NotNull
+    public BundleResolver getBundleResolver() {
+        return bundleResolver;
+    }
+
     // - PRIVATE
+
+    private static final long ROOT_FOLDER_OID = -5002L;
 
     @NotNull
     private final BundleInfo bundleInfo;
     private final long folderOid;
-    @NotNull
-    private final Map<String, Object> contextMap;
     @Nullable
     private final BundleMapping bundleMapping;
     @Nullable
     private final String installationPrefix;
+    @NotNull
+    final BundleResolver bundleResolver;
 
 }

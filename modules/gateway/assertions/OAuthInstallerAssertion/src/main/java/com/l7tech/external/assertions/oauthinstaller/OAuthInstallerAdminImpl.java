@@ -167,6 +167,14 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                                 @NotNull final Map<String, BundleMapping> bundleMappings,
                                                 @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
 
+        final String prefixToUse = (installationPrefix != null && !installationPrefix.isEmpty()) ? installationPrefix : null;
+        if (prefixToUse != null) {
+            final String errorMsg = BundleInfo.getPrefixedUrlErrorMsg(prefixToUse);
+            if (errorMsg != null) {
+                throw new OAuthToolkitInstallationException(errorMsg);
+            }
+        }
+
         final String taskIdentifier = UUID.randomUUID().toString();
         final JobContext jobContext = new JobContext(taskIdentifier);
         taskToJobContext.put(taskIdentifier, jobContext);
@@ -175,7 +183,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
             @Override
             public ArrayList call() throws Exception {
                 try {
-                    return new ArrayList<String>(doInstallOAuthToolkit(taskIdentifier, otkComponentId, folderOid, bundleMappings, installationPrefix));
+                    return new ArrayList<String>(doInstallOAuthToolkit(taskIdentifier, otkComponentId, folderOid, bundleMappings, prefixToUse));
                 } catch(OAuthToolkitInstallationException e) {
                     final OtkInstallationAuditEvent problemEvent = new OtkInstallationAuditEvent(this, "Problem during installation of the OAuth Toolkit", Level.WARNING);
                     problemEvent.setAuditDetails(Arrays.asList(
@@ -450,6 +458,14 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         final OtkInstallationAuditEvent startedEvent = new OtkInstallationAuditEvent(this, MessageFormat.format(preInstallationMessage, "started"), Level.INFO);
         appEventPublisher.publishEvent(startedEvent);
 
+        final String prefixToUse = (installationPrefix != null && !installationPrefix.isEmpty()) ? installationPrefix : null;
+        if (prefixToUse != null) {
+            final String errorMsg = BundleInfo.getPrefixedUrlErrorMsg(prefixToUse);
+            if (errorMsg != null) {
+                throw new OAuthToolkitInstallationException(errorMsg);
+            }
+        }
+
         final OAuthToolkitBundleResolver bundleResolver = new OAuthToolkitBundleResolver(bundleInfosFromJar);
 
         final HashMap<String, Map<DryRunItem, List<String>>> bundleToConflicts = new HashMap<String, Map<DryRunItem, List<String>>>();
@@ -464,13 +480,11 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                         break outer;
                     }
 
-                    //todo fix folder id
-                    final String prefixToUse = (installationPrefix != null && !installationPrefix.isEmpty()) ? installationPrefix : null;
                     final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                            bundleInfo, -5002, new HashMap<String, Object>(), bundleMappings.get(bundleId), prefixToUse);
+                            bundleInfo, bundleMappings.get(bundleId), prefixToUse, bundleResolver);
 
                     final DryRunInstallPolicyBundleEvent dryRunEvent =
-                            new DryRunInstallPolicyBundleEvent(bundleMappings, bundleResolver, context);
+                            new DryRunInstallPolicyBundleEvent(this, context);
                     jobContext.currentEvent = dryRunEvent;
 
                     appEventPublisher.publishEvent(dryRunEvent);
@@ -562,9 +576,6 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                                  @NotNull Map<String, BundleMapping> bundleMappings,
                                                  @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
 
-        // When installing more than one bundle, allow for optimization of not trying to recreate items already created.
-        final Map<String, Object> contextMap = new HashMap<String, Object>();
-
         final List<String> installedBundles = new ArrayList<String>();
         final OAuthToolkitBundleResolver bundleResolver = new OAuthToolkitBundleResolver(bundleInfosFromJar);
         if (isInstallInProgress.compareAndSet(false, true)) {
@@ -593,9 +604,9 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                         if (bundleInfo.getId().equals(bundleId)) {
 
                             final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                                    bundleInfo, folderOid, contextMap, bundleMappings.get(bundleId), prefixToUse);
+                                    bundleInfo, folderOid, bundleMappings.get(bundleId), prefixToUse, bundleResolver);
                             final InstallPolicyBundleEvent installEvent =
-                                    new InstallPolicyBundleEvent(this, bundleResolver,
+                                    new InstallPolicyBundleEvent(this,
                                             context,
                                             getSavePolicyCallback(prefixToUse));
                             jobContext.currentEvent = installEvent;
@@ -775,7 +786,12 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
      */
     private boolean validateEventProcessed(PolicyBundleEvent bundleEvent) throws OAuthToolkitInstallationException {
         if (!bundleEvent.isProcessed()) {
-            throw new OAuthToolkitInstallationException("Policy Bundle Installer module is not installed.");
+            final String reason = bundleEvent.getReasonNotProcessed();
+            if (reason != null) {
+                throw new OAuthToolkitInstallationException(reason);
+            } else {
+                throw new OAuthToolkitInstallationException("Policy Bundle Installer module is not installed.");
+            }
         }
 
         final Exception processingException = bundleEvent.getProcessingException();

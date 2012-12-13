@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.w3c.dom.Document;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 import static junit.framework.Assert.*;
@@ -33,13 +32,13 @@ public class PolicyBundleInstallerContextTest {
         //OAuth_1_0
         final BundleInfo bundleInfo = resultList.get(0);
         final String prefix = "    ";
-        PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), prefix);
+        PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, -5002, new BundleMapping(), prefix, bundleResolver);
         assertNull("Empty prefix should be ignored", context.getInstallationPrefix());
 
-        context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), null);
+        context = new PolicyBundleInstallerContext(bundleInfo, -5002, new BundleMapping(), null, bundleResolver);
         assertNull("Null value should remain null", context.getInstallationPrefix());
 
-        context = new PolicyBundleInstallerContext(bundleInfo, -5002, new HashMap<String, Object>(), new BundleMapping(), " value with spaces  ");
+        context = new PolicyBundleInstallerContext(bundleInfo, -5002, new BundleMapping(), " value with spaces  ", bundleResolver);
         assertEquals("Leading and trailing spaces should have been removed.", "value with spaces", context.getInstallationPrefix());
     }
 }

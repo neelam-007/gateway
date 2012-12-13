@@ -16,7 +16,6 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -26,8 +25,7 @@ import org.w3c.dom.Element;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 
-import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.findEntityNameFromElement;
-import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getEntityElements;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
@@ -40,6 +38,7 @@ public class OAuthInstallerAdminImplTest {
     private final String baseName = "/com/l7tech/external/assertions/oauthinstaller/bundles/";
 
     //todo test - validate that each service in an enumeration contains a unique id.
+    // todo test coverage for reacahibility of folders
 
     /**
      * Validates that the correct number and type of spring events are published for a dry run.
@@ -202,15 +201,14 @@ public class OAuthInstallerAdminImplTest {
             final Map<String, String> policyIncludeToReferantPolicyMap = new HashMap<String, String>();
             for (Element policyElm : enumPolicyElms) {
                 final String policyGuid = policyElm.getAttribute("guid");
-                //todo use utility method
-                final Element policyDetailElm = XmlUtil.findOnlyOneChildElementByName(policyElm, BundleUtils.L7_NS_GW_MGMT, "PolicyDetail");
+                final Element policyDetailElm = GatewayManagementDocumentUtilities.getPolicyDetailElement(policyElm);
                 final String policyDetailGuid = policyDetailElm.getAttribute("guid");
                 assertEquals("Invalid Gateway Mgmt Policy XML. Guids must be the same.", policyGuid, policyDetailGuid);
-                final String policyName = findEntityNameFromElement(policyDetailElm);
+                final String policyName = getEntityName(policyDetailElm);
                 guidToPolicyNameMatch.put(policyGuid, policyName);
 
-                final Element policyResourceElement = PolicyUtils.getPolicyResourceElement(policyElm, "Policy", "Not used");
-                final Document layer7Policy = PolicyUtils.getPolicyDocumentFromResource(policyResourceElement, "Policy", "Not used");
+                final Element policyResourceElement = getPolicyResourceElement(policyElm, "Policy", "Not used");
+                final Document layer7Policy = getPolicyDocumentFromResource(policyResourceElement, "Policy", "Not used");
                 final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(layer7Policy);
                 Set<String> allIncludes = new HashSet<String>();
                 for (Element policyInclude : policyIncludes) {
@@ -234,13 +232,11 @@ public class OAuthInstallerAdminImplTest {
             final Map<String, String> policyGuidToServiceRefMap = new HashMap<String, String>();
 
             for (Element enumServiceElm : enumServiceElms) {
-                //todo use utility method
-                final Element serviceDetail = XmlUtil.findFirstChildElementByName(enumServiceElm, BundleUtils.L7_NS_GW_MGMT, "ServiceDetail");
+                final Element serviceDetail = getServiceDetailElement(enumServiceElm);
+                final String serviceName = getEntityName(serviceDetail);
 
-                final String serviceName = GatewayManagementDocumentUtilities.findEntityNameFromElement(serviceDetail);
-
-                final Element policyResourceElement = PolicyUtils.getPolicyResourceElement(enumServiceElm, "Service", "Not used");
-                final Document layer7Policy = PolicyUtils.getPolicyDocumentFromResource(policyResourceElement, "Policy", "Not used");
+                final Element policyResourceElement = getPolicyResourceElement(enumServiceElm, "Service", "Not used");
+                final Document layer7Policy = getPolicyDocumentFromResource(policyResourceElement, "Policy", "Not used");
                 final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(layer7Policy);
                 for (Element policyInclude : policyIncludes) {
                     final String policyGuid = policyInclude.getAttribute("stringValue");
@@ -293,7 +289,7 @@ public class OAuthInstallerAdminImplTest {
             final List<Element> enumPolicyElms = getEntityElements(policyDocument.getDocumentElement(), "Policy");
             for (Element policyElm : enumPolicyElms) {
                 final Element policyDetailElm = XmlUtil.findOnlyOneChildElementByName(policyElm, BundleUtils.L7_NS_GW_MGMT, "PolicyDetail");
-                final String policyName = findEntityNameFromElement(policyDetailElm);
+                final String policyName = getEntityName(policyDetailElm);
                 guidToElementMap.put(policyName, policyElm);
             }
 
@@ -526,12 +522,12 @@ public class OAuthInstallerAdminImplTest {
 
                     try {
                         {
-                            final Document policyEnum = installEvent.getBundleResolver().getBundleItem(bundleInfo.getId(), BundleResolver.BundleItem.POLICY, false);
+                            final Document policyEnum = installEvent.getContext().getBundleResolver().getBundleItem(bundleInfo.getId(), BundleResolver.BundleItem.POLICY, false);
                             final List<Element> gatewayMgmtPolicyElments = getEntityElements(policyEnum.getDocumentElement(), "Policy");
                             for (Element policyElement : gatewayMgmtPolicyElments) {
 
-                                final Element policyResourceElmWritable = PolicyUtils.getPolicyResourceElement(policyElement, "Policy", "not used");
-                                final Document policyResource = PolicyUtils.getPolicyDocumentFromResource(policyResourceElmWritable, "Policy", "not used");
+                                final Element policyResourceElmWritable = getPolicyResourceElement(policyElement, "Policy", "not used");
+                                final Document policyResource = getPolicyDocumentFromResource(policyResourceElmWritable, "Policy", "not used");
 
 
                                 savePolicyCallback.prePublishCallback(bundleInfo, "not important", policyResource);
@@ -541,12 +537,12 @@ public class OAuthInstallerAdminImplTest {
                         }
 
                         {
-                            final Document serviceEnum = installEvent.getBundleResolver().getBundleItem(bundleInfo.getId(), BundleResolver.BundleItem.SERVICE, false);
+                            final Document serviceEnum = installEvent.getContext().getBundleResolver().getBundleItem(bundleInfo.getId(), BundleResolver.BundleItem.SERVICE, false);
                             final List<Element> gatewayMgmtPolicyElments = getEntityElements(serviceEnum.getDocumentElement(), "Service");
                             for (Element policyElement : gatewayMgmtPolicyElments) {
 
-                                final Element policyResourceElmWritable = PolicyUtils.getPolicyResourceElement(policyElement, "Service", "not used");
-                                final Document policyResource = PolicyUtils.getPolicyDocumentFromResource(policyResourceElmWritable, "Service", "not used");
+                                final Element policyResourceElmWritable = getPolicyResourceElement(policyElement, "Service", "not used");
+                                final Document policyResource = getPolicyDocumentFromResource(policyResourceElmWritable, "Service", "not used");
 
 
                                 savePolicyCallback.prePublishCallback(bundleInfo, "not important", policyResource);
@@ -620,8 +616,8 @@ public class OAuthInstallerAdminImplTest {
 
         final List<Element> enumPolicyElms = getEntityElements(enumElement, type);
         for (Element policyElm : enumPolicyElms) {
-            final Element policyResourceElement = PolicyUtils.getPolicyResourceElement(policyElm, "policy", "Not needed");
-            final Document layer7Policy = PolicyUtils.getPolicyDocumentFromResource(policyResourceElement, "Policy", "Not Needed");
+            final Element policyResourceElement = getPolicyResourceElement(policyElm, "policy", "Not needed");
+            final Document layer7Policy = getPolicyDocumentFromResource(policyResourceElement, "Policy", "Not Needed");
             final List<Element> contextVariables = PolicyUtils.findContextVariables(layer7Policy.getDocumentElement());
             validateSetVariableForHostVarUsage(contextVariables);
             final List<Element> protectedUrls = PolicyUtils.findProtectedUrls(layer7Policy.getDocumentElement());

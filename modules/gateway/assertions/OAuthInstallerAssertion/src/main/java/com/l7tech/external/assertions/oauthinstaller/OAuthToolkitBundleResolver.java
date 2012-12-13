@@ -80,9 +80,6 @@ public class OAuthToolkitBundleResolver implements BundleResolver {
         }
 
         final String resourceBase = guidToResourceDirectory.get(bundleId);
-//        logger.info("Getting bundle: " + resourceBase);
-        ///com/l7tech/external/assertions/oauthinstaller/bundles/OAuth_1_0/
-
         final String fullResourceName;
         if (resourceBase.contains("\\") && !resourceBase.endsWith("\\")) {
             fullResourceName = resourceBase + "\\" + itemName.getFileName();
@@ -109,6 +106,10 @@ public class OAuthToolkitBundleResolver implements BundleResolver {
             final XpathResult xpathResult =
                     XpathUtil.getXpathResultQuietly(
                             new DomElementCursor(itemDocument), GatewayManagementDocumentUtilities.getNamespaceMap(), ".//l7:Name");
+
+            if (xpathResult.getType() != XpathResult.TYPE_NODESET) {
+                throw new InvalidBundleException("Could not find folder name elements");
+            }
 
             final XpathResultIterator iterator = xpathResult.getNodeSet().getIterator();
             final String newOAuthFolderName = "OAuth " + installationPrefix;

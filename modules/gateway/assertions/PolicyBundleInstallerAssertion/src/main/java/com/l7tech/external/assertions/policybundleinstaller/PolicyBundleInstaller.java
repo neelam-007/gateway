@@ -5,9 +5,6 @@ import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
-import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
-import com.l7tech.server.event.wsman.PolicyBundleEvent;
-import com.l7tech.server.event.wsman.WSManagementRequestEvent;
 import com.l7tech.server.policy.bundle.*;
 import com.l7tech.util.*;
 import com.l7tech.xml.DomElementCursor;
@@ -33,45 +30,48 @@ import static com.l7tech.external.assertions.policybundleinstaller.InstallerUtil
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.*;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
 
-//todo extract out interface. Allow installation folders, services and policies to be specified by clients.
+import static com.l7tech.util.Functions.Nullary;
+
 public class PolicyBundleInstaller {
 
-    public static final String FOLDERS_CONTEXT_KEY = "FOLDERS";
-    public static final String POLICY_FRAGMENT_CONTEXT_KEY = "POLICY FRAGMENTS";
-    public static final String SERVICES_CONTEXT_KEY = "SERVICES";
-
-    public PolicyBundleInstaller(@NotNull final BundleResolver bundleResolver,
-                                 @NotNull final GatewayManagementInvoker gatewayManagementInvoker) {
-
-        this(bundleResolver, null, gatewayManagementInvoker, null);
-    }
-
-    public PolicyBundleInstaller(@NotNull final BundleResolver bundleResolver,
-                                 @Nullable final PreBundleSavePolicyCallback savePolicyCallback,
-                                 @NotNull final GatewayManagementInvoker gatewayManagementInvoker,
-                                 @Nullable final PolicyBundleEvent policyBundleEvent) {
-        this.bundleResolver = bundleResolver;
-        this.savePolicyCallback = savePolicyCallback;
+    public PolicyBundleInstaller(@NotNull final GatewayManagementInvoker gatewayManagementInvoker,
+                                 @NotNull final PolicyBundleInstallerContext context,
+                                 @NotNull final Nullary<Boolean> cancelledCallback) {
         this.gatewayManagementInvoker = gatewayManagementInvoker;
-        this.policyBundleEvent = policyBundleEvent;
+        this.cancelledCallback = cancelledCallback;
+        this.context = context;
     }
 
-    public void dryRun(final PolicyBundleInstallerContext context,
-                       final DryRunInstallPolicyBundleEvent dryRunEvent)
+    public void setSavePolicyCallback(@Nullable PreBundleSavePolicyCallback savePolicyCallback) {
+        this.savePolicyCallback = savePolicyCallback;
+    }
+
+    /**
+     * Dry run the installation looking for conflicts. Any conflicts found are updated in the dry run event.
+     *
+     * @param dryRunEvent event used to capture any conflicts.
+     *
+     * @throws BundleResolver.BundleResolverException
+     * @throws BundleResolver.UnknownBundleException
+     * @throws BundleResolver.InvalidBundleException
+     * @throws InterruptedException
+     * @throws AccessDeniedManagementResponse
+     */
+    public void dryRunInstallBundle(@NotNull final DryRunInstallPolicyBundleEvent dryRunEvent)
             throws BundleResolver.BundleResolverException,
             BundleResolver.UnknownBundleException,
             BundleResolver.InvalidBundleException,
             InterruptedException,
             AccessDeniedManagementResponse {
 
-        checkInterrupted(dryRunEvent);
+        checkInterrupted();
 
         final BundleInfo bundleInfo = context.getBundleInfo();
-        final Document serviceEnumDoc = bundleResolver.getBundleItem(bundleInfo.getId(), SERVICE, true);
+        final Document serviceEnumDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), SERVICE, true);
         final List<Element> allUrlPatternElms = GatewayManagementDocumentUtilities.findAllUrlPatternsFromEnumeration(serviceEnumDoc);
         for (Element allUrlPatternElm : allUrlPatternElms) {
-            checkInterrupted(dryRunEvent);
-            final String urlPattern = getPrefixedUrl(DomUtils.getTextValue(allUrlPatternElm), context.getInstallationPrefix());
+            checkInterrupted();
+            final String urlPattern = getPrefixedUrl(DomUtils.getTextValue(allUrlPatternElm));
             try {
                 final List<Long> matchingServices = findMatchingService(urlPattern);
                 if (!matchingServices.isEmpty()) {
@@ -82,13 +82,13 @@ public class PolicyBundleInstaller {
             }
         }
 
-        checkInterrupted(dryRunEvent);
+        checkInterrupted();
 
-        final Document policyEnumDoc = bundleResolver.getBundleItem(bundleInfo.getId(), POLICY, true);
+        final Document policyEnumDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), POLICY, true);
         final List<Element> policyNamesElms = GatewayManagementDocumentUtilities.findAllPolicyNamesFromEnumeration(policyEnumDoc);
         for (Element policyNamesElm : policyNamesElms) {
-            checkInterrupted(dryRunEvent);
-            final String policyName = getPrefixedPolicyName(context.getInstallationPrefix(), DomUtils.getTextValue(policyNamesElm));
+            checkInterrupted();
+            final String policyName = getPrefixedPolicyName(DomUtils.getTextValue(policyNamesElm));
             try {
                 final List<Long> matchingPolicies = findMatchingPolicy(policyName);
                 if (!matchingPolicies.isEmpty()) {
@@ -99,18 +99,18 @@ public class PolicyBundleInstaller {
             }
         }
 
-        checkInterrupted(dryRunEvent);
+        checkInterrupted();
 
         final Set<String> jdbcConnRefs = bundleInfo.getJdbcConnectionReferences();
         final BundleMapping bundleMapping = context.getBundleMapping();
         if (!jdbcConnRefs.isEmpty()) {
             final Map<String, String> jdbcMappings =
-                    (bundleMapping != null)? bundleMapping.getJdbcMappings(): new HashMap<String, String>();
+                    (bundleMapping != null) ? bundleMapping.getJdbcMappings() : new HashMap<String, String>();
 
             // validate each, consider any mapping that may be present.
             for (String jdbcConnRef : jdbcConnRefs) {
-                checkInterrupted(dryRunEvent);
-                final String jdbcConnToVerify = (jdbcMappings.containsKey(jdbcConnRef))? jdbcMappings.get(jdbcConnRef): jdbcConnRef;
+                checkInterrupted();
+                final String jdbcConnToVerify = (jdbcMappings.containsKey(jdbcConnRef)) ? jdbcMappings.get(jdbcConnRef) : jdbcConnRef;
                 try {
                     final List<Long> foundConns = findMatchingJdbcConnection(jdbcConnToVerify);
                     if (foundConns.isEmpty()) {
@@ -124,9 +124,9 @@ public class PolicyBundleInstaller {
     }
 
     /**
-     *
+     * Install the contents of the configured bundle
      */
-    public void install(@NotNull final InstallPolicyBundleEvent installEvent)
+    public void installBundle()
             throws InstallationException,
             BundleResolver.UnknownBundleException,
             BundleResolver.BundleResolverException,
@@ -136,80 +136,46 @@ public class PolicyBundleInstaller {
             UnexpectedManagementResponse,
             AccessDeniedManagementResponse {
 
-        final PolicyBundleInstallerContext context = installEvent.getContext();
         logger.info("Installing bundle: " + context.getBundleInfo().getId());
 
-        // allow this code to attempt to create the install folder each time.
+        checkInterrupted();
+
+        final Document folderBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), FOLDER, false);
+
         final long folderToInstallInto = context.getFolderOid();
+        assert folderBundle != null;
+        final Map<Long, Long> oldIdToNewFolderIds = installFolders(folderToInstallInto, folderBundle);
 
-        checkInterrupted(installEvent);
-
-        final Document folderBundle = bundleResolver.getBundleItem(context.getBundleInfo().getId(), FOLDER, false);
-
-        if (!context.getContextMap().containsKey(FOLDERS_CONTEXT_KEY)) {
-            final Map<Long, Long> newMap = new HashMap<Long, Long>();
-            context.getContextMap().put(FOLDERS_CONTEXT_KEY, newMap);
-        }
-        @SuppressWarnings("unchecked")
-        final Map<Long, Long> contextOldToNewFolderOids = (Map<Long, Long>) context.getContextMap().get(FOLDERS_CONTEXT_KEY);
-
-        final Map<Long, Long> oldIdToNewFolderIds = installFolders(installEvent, folderToInstallInto, folderBundle, contextOldToNewFolderOids);
-
-        checkInterrupted(installEvent);
-
-        contextOldToNewFolderOids.putAll(oldIdToNewFolderIds);
-
-        if (!context.getContextMap().containsKey(POLICY_FRAGMENT_CONTEXT_KEY)) {
-            final Map<String, String> newMap = new HashMap<String, String>();
-            context.getContextMap().put(POLICY_FRAGMENT_CONTEXT_KEY, newMap);
-        }
-        @SuppressWarnings("unchecked")
-        final Map<String, String> contextOldPolicyGuidsToNewGuids = (Map<String, String>) context.getContextMap().get(POLICY_FRAGMENT_CONTEXT_KEY);
+        checkInterrupted();
 
         // install policies
-        final Document policyBundle = bundleResolver.getBundleItem(context.getBundleInfo().getId(), POLICY, true);
+        final Document policyBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), POLICY, true);
+        final Map<String, String> contextOldPolicyGuidsToNewGuids;
         if (policyBundle == null) {
             logger.info("No policies to install for bundle " + context.getBundleInfo());
+            contextOldPolicyGuidsToNewGuids = Collections.emptyMap();
         } else {
             try {
-                installPolicies(
-                        installEvent,
-                        context.getBundleInfo(),
+                contextOldPolicyGuidsToNewGuids = installPolicies(
                         oldIdToNewFolderIds,
-                        contextOldPolicyGuidsToNewGuids,
-                        policyBundle,
-                        context.getBundleMapping(),
-                        context.getInstallationPrefix());
+                        policyBundle);
             } catch (PreBundleSavePolicyCallback.PolicyUpdateException e) {
                 throw new InstallationException(e);
             }
         }
 
-        checkInterrupted(installEvent);
-
-        // two bundles should not contain the same service, however if they do we can short circuit trying to create it
-        // by tracking it in this map
-        if (!context.getContextMap().containsKey(SERVICES_CONTEXT_KEY)) {
-            final Map<Long, Long> newMap = new HashMap<Long, Long>();
-            context.getContextMap().put(SERVICES_CONTEXT_KEY, newMap);
-        }
-        @SuppressWarnings("unchecked")
-        final Map<Long, Long> contextServices = (Map<Long, Long>) context.getContextMap().get(SERVICES_CONTEXT_KEY);
+        checkInterrupted();
 
         // install services
-        final Document serviceBundle = bundleResolver.getBundleItem(context.getBundleInfo().getId(), SERVICE, true);
+        final Document serviceBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), SERVICE, true);
         if (serviceBundle == null) {
             logger.info("No services to install for bundle " + context.getBundleInfo());
         } else {
             try {
-                installServices(installEvent,
-                        context.getBundleInfo(),
+                installServices(
                         oldIdToNewFolderIds,
-                        contextServices,
                         contextOldPolicyGuidsToNewGuids,
-                        serviceBundle,
-                        context.getBundleMapping(),
-                        context.getInstallationPrefix());
+                        serviceBundle);
             } catch (PreBundleSavePolicyCallback.PolicyUpdateException e) {
                 throw new InstallationException(e);
             }
@@ -232,32 +198,34 @@ public class PolicyBundleInstaller {
         }
     }
 
-    // - PROTECTED
-
     /**
-     * Services contain nothing unique!!!
+     * Note: Services contain nothing unique
      *
      * @param oldToNewFolderIds
+     * @param contextOldPolicyGuidsToNewGuids
+     *
      * @param serviceMgmtEnumeration
-     * @throws IOException
+     * @throws BundleResolver.InvalidBundleException
+     *
+     * @throws UnexpectedManagementResponse
+     * @throws PreBundleSavePolicyCallback.PolicyUpdateException
+     *
+     * @throws InterruptedException
+     * @throws AccessDeniedManagementResponse
      */
-    protected void installServices(@NotNull final InstallPolicyBundleEvent installEvent,
-                                   @NotNull final BundleInfo bundleInfo,
-                                   @NotNull final Map<Long, Long> oldToNewFolderIds,
-                                   @NotNull final Map<Long, Long> oldIdsToNewServiceIds,
-                                   @NotNull final Map<String, String> contextOldPolicyGuidsToNewGuids,
-                                   @NotNull final Document serviceMgmtEnumeration,
-                                   @Nullable final BundleMapping bundleMapping,
-                                   @Nullable final String installationPrefix)
+    public void installServices(@NotNull final Map<Long, Long> oldToNewFolderIds,
+                                @NotNull final Map<String, String> contextOldPolicyGuidsToNewGuids,
+                                @NotNull final Document serviceMgmtEnumeration)
             throws BundleResolver.InvalidBundleException,
             UnexpectedManagementResponse,
             PreBundleSavePolicyCallback.PolicyUpdateException,
             InterruptedException,
             AccessDeniedManagementResponse {
 
+        final Map<Long, Long> oldIdsToNewServiceIds = new HashMap<Long, Long>();
         final List<Element> serviceElms = GatewayManagementDocumentUtilities.getEntityElements(serviceMgmtEnumeration.getDocumentElement(), "Service");
         for (Element serviceElm : serviceElms) {
-            checkInterrupted(installEvent);
+            checkInterrupted();
 
             final Element serviceElmWritable = parseQuietly(XmlUtil.nodeToStringQuiet(serviceElm)).getDocumentElement();
             final String id = serviceElmWritable.getAttribute("id");
@@ -279,53 +247,45 @@ public class PolicyBundleInstaller {
             if (!oldToNewFolderIds.containsKey(Long.valueOf(bundleFolderId))) {
                 throw new BundleResolver.InvalidBundleException("Could not find updated folder for service #{" + id + "} in folder " + bundleFolderId);
             }
+            final Element urlPatternWriteableEl = XmlUtil.findFirstDescendantElement(serviceDetail, MGMT_VERSION_NAMESPACE, "UrlPattern");
 
             // lets check if the service has a URL mapping and if so, if any service already exists with that mapping.
             // if it does, then we won't install it.
             // check if it has a URL mapping
-            final ElementCursor cursor = new DomElementCursor(serviceDetail);
-            // search from the current element only
-            final XpathResult xpathResult;
-            try {
-                xpathResult = cursor.getXpathResult(
-                        new XpathExpression(".//l7:UrlPattern", GatewayManagementDocumentUtilities.getNamespaceMap()).compile());
-            } catch (XPathExpressionException e) {
-                throw new RuntimeException("Unexpected issue with internal xpath expression: " + e.getMessage(), e);
-            } catch (InvalidXpathException e) {
-                throw new RuntimeException("Unexpected issue with internal xpath expression: " + e.getMessage(), e);
-            }
 
-            if (xpathResult.matches()) {
-                final String existingUrl = xpathResult.getNodeSet().getNodeValue(0);
-                final String urlPattern = getPrefixedUrl(existingUrl, installationPrefix);
-                if (!existingUrl.equals(urlPattern)) {
-                    final Element urlPatternElmWritable = xpathResult.getNodeSet().getIterator().nextElementAsCursor().asDomElement();
-                    DomUtils.setTextContent(urlPatternElmWritable, urlPattern);
+            if (urlPatternWriteableEl != null) {
+                final String existingUrl = DomUtils.getTextValue(urlPatternWriteableEl, true);
+                final String maybePrefixedUrl = getPrefixedUrl(existingUrl);
+                if (!existingUrl.equals(maybePrefixedUrl)) {
+                    DomUtils.setTextContent(urlPatternWriteableEl, maybePrefixedUrl);
                 }
 
-                final List<Long> matchingService = findMatchingService(urlPattern);
+                final List<Long> matchingService = findMatchingService(maybePrefixedUrl);
                 if (!matchingService.isEmpty()) {
                     // Service already exists
-                    logger.info("Not installing service with id #{" + id + "} and routing URI '" + urlPattern + "' " +
+                    logger.info("Not installing service with id #{" + id + "} and routing URI '" + maybePrefixedUrl + "' " +
                             "due to existing service with conflicting resolution URI");
                     continue;
                 }
             } else {
-                //todo this must be possible via non mgmt api entry point
-                logger.info("Service with id #{" + id + "} does not use a custom resolution URI so it is not possible to detect if there are any resolution conflicts");
+                String message = "Service with id #{" + id + "} does not use a custom resolution URI so it is not possible to detect if there are any resolution conflicts";
+                if (isPrefixValid(context.getInstallationPrefix())) {
+                    message = " or to add an installation prefix";
+                }
+                logger.info(message);
             }
 
             final Long newFolderId = oldToNewFolderIds.get(Long.valueOf(bundleFolderId));
             serviceDetail.setAttribute("folderId", String.valueOf(newFolderId));
 
-            final Element policyResourceElmWritable = PolicyUtils.getPolicyResourceElement(serviceElmWritable, "Service", id);
+            final Element policyResourceElmWritable = getPolicyResourceElement(serviceElmWritable, "Service", id);
             if (policyResourceElmWritable == null) {
                 throw new BundleResolver.InvalidBundleException("Invalid policy element found. Could not retrieve policy XML from resource for Service with id #{" + id + "}");
             }
 
             // if this service has any includes we need to update them
-            final Document policyDocumentFromResource = PolicyUtils.getPolicyDocumentFromResource(policyResourceElmWritable, "Service", id);
-            updatePolicyDoc(bundleInfo, "Service", contextOldPolicyGuidsToNewGuids, id, policyResourceElmWritable, policyDocumentFromResource, bundleMapping);
+            final Document policyDocumentFromResource = getPolicyDocumentFromResource(policyResourceElmWritable, "Service", id);
+            updatePolicyDoc("Service", contextOldPolicyGuidsToNewGuids, id, policyResourceElmWritable, policyDocumentFromResource);
 
             final String serviceXmlTemplate = XmlUtil.nodeToStringQuiet(serviceElmWritable);
             final String createServiceXml = MessageFormat.format(CREATE_ENTITY_XML, getUuid(), SERVICES_MGMT_NS, serviceXmlTemplate);
@@ -342,23 +302,24 @@ public class PolicyBundleInstaller {
     }
 
     /**
-     * Policies are unique on name across a gateway
+     * Note: Policies are unique on name across a gateway
      *
+     * @param oldToNewFolderIds     gateway mgmt policy elements will reference folder ids. Before publishing a policy
+     *                              we need the actualy folder id that the policy will be published into. This is a map of
+     *                              the folder id contained in the enumeration document for a policy mapped to the actual
+     *                              folder id on the target system which represents the same logical folder.
+     * @param policyMgmtEnumeration the gateway mgmt enumeration containing all policy elements too publish.
+     * @throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse
      *
-     * @param oldToNewFolderIds
-     * @param oldGuidsToNewGuids
-     * @param policyMgmtEnumeration
-     * @param installationPrefix
-     * @return
-     * @throws Exception
+     * @throws PreBundleSavePolicyCallback.PolicyUpdateException
+     *
+     * @throws BundleResolver.InvalidBundleException
+     *
+     * @throws InterruptedException
+     * @throws AccessDeniedManagementResponse
      */
-    protected void installPolicies(@NotNull final InstallPolicyBundleEvent installEvent,
-                                   @NotNull final BundleInfo bundleInfo,
-                                   @NotNull final Map<Long, Long> oldToNewFolderIds,
-                                   @NotNull final Map<String, String> oldGuidsToNewGuids,
-                                   @NotNull final Document policyMgmtEnumeration,
-                                   @Nullable final BundleMapping bundleMapping,
-                                   @Nullable final String installationPrefix)
+    public final Map<String, String> installPolicies(@NotNull final Map<Long, Long> oldToNewFolderIds,
+                                                     @NotNull final Document policyMgmtEnumeration)
             throws
             GatewayManagementDocumentUtilities.UnexpectedManagementResponse,
             PreBundleSavePolicyCallback.PolicyUpdateException,
@@ -378,11 +339,14 @@ public class PolicyBundleInstaller {
             allPolicyElms.put(guid, policyElm);
         }
 
+        final Map<String, String> oldGuidsToNewGuids = new HashMap<String, String>();
         // fyi: circular policy includes are not supported via the Policy Manager - assume they will not be found
         for (Element policyElm : enumPolicyElms) {
             // recursive call if policy includes an include
-            getOrCreatePolicy(installEvent, bundleInfo, policyElm, oldGuidsToNewGuids, oldToNewFolderIds, allPolicyElms, guidToName, bundleMapping, installationPrefix);
+            getOrCreatePolicy(policyElm, oldGuidsToNewGuids, oldToNewFolderIds, allPolicyElms, guidToName);
         }
+
+        return oldGuidsToNewGuids;
     }
 
     /**
@@ -390,17 +354,17 @@ public class PolicyBundleInstaller {
      * Incoming XML will contain ids for folders, however these are ignored by the management api and new ids will be
      * assigned.
      *
-     * @param parentFolderOid oid of the parent folder to install into.
-     * @param folderMgmtEnumeration   Gateway management enumeration document of folders to install
+     * @param parentFolderOid       oid of the parent folder to install into.
+     * @param folderMgmtEnumeration Gateway management enumeration document of folders to install
      * @return map of all folders ids to ids in the folderMgmtEnumeration. The key is always the folders canned id, the id in the
      *         folderMgmtEnumeration, the value will either be a new id if the folder was created or it will be the id of the existing
      *         folder on the target gateway.
-     * @throws Exception //todo define exception semantics
+     * @throws AccessDeniedManagementResponse if the admin user does not contain the permission to create any required folder
+     * @throws UnexpectedManagementResponse   if the gateway mgmt assertion returns an unexpected error status
+     * @throws InterruptedException           if the installation is cancelled
      */
-    protected Map<Long, Long> installFolders(@NotNull final InstallPolicyBundleEvent installEvent,
-                                             long parentFolderOid,
-                                             @NotNull Document folderMgmtEnumeration,
-                                             @NotNull Map<Long, Long> contextOldToNewFolderOids)
+    public Map<Long, Long> installFolders(final long parentFolderOid,
+                                          @NotNull final Document folderMgmtEnumeration)
             throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse,
             InterruptedException,
             AccessDeniedManagementResponse {
@@ -426,7 +390,7 @@ public class PolicyBundleInstaller {
 
         while (!toProcess.isEmpty()) {
 
-            checkInterrupted(installEvent);
+            checkInterrupted();
 
             final Element currentElm = toProcess.pop();
             final String id = currentElm.getAttribute("id");
@@ -441,10 +405,9 @@ public class PolicyBundleInstaller {
             }
 
             if (id.equals("-5002")) {
+                // the root node will always already exist
                 continue;
             }
-
-            // todo Only create / search for folder if we don't already know what it's new id is e.g. another bundle already created it
 
             final Long newParentId = oldToNewIds.get(Long.valueOf(folderId));
             if (newParentId == null) {
@@ -457,7 +420,7 @@ public class PolicyBundleInstaller {
             folder.setAttribute("id", id); //this gets overwritten and ignored by mgmt assertion.
 
             final Element name = DomUtils.createAndAppendElementNS(folder, "Name", BundleUtils.L7_NS_GW_MGMT, "l7");
-            final String folderName = findEntityNameFromElement(currentElm);
+            final String folderName = getEntityName(currentElm);
             final Text nameText = document.createTextNode(folderName);
             name.appendChild(nameText);
 
@@ -494,15 +457,15 @@ public class PolicyBundleInstaller {
 
     // - PRIVATE
 
-    @NotNull private final BundleResolver bundleResolver;
-    @Nullable private final PreBundleSavePolicyCallback savePolicyCallback;
+    @Nullable private PreBundleSavePolicyCallback savePolicyCallback;
     @NotNull private final GatewayManagementInvoker gatewayManagementInvoker;
-    @NotNull private final PolicyBundleEvent policyBundleEvent;
+    @NotNull private final PolicyBundleInstallerContext context;
+    @NotNull private final Nullary<Boolean> cancelledCallback;
     private static final Logger logger = Logger.getLogger(PolicyBundleInstaller.class.getName());
 
-    private String getPrefixedUrl(final String existingUrlPattern, final String installationPrefix) {
-        if (isPrefixValid(installationPrefix)) {
-            final String prefixToUse = "/" + installationPrefix;
+    private String getPrefixedUrl(final String existingUrlPattern) {
+        if (isPrefixValid(context.getInstallationPrefix())) {
+            final String prefixToUse = "/" + context.getInstallationPrefix();
             return prefixToUse + existingUrlPattern;
         } else {
             return existingUrlPattern;
@@ -517,15 +480,25 @@ public class PolicyBundleInstaller {
         }
     }
 
-    private void getOrCreatePolicy(@NotNull final InstallPolicyBundleEvent installEvent,
-                                   @NotNull final BundleInfo bundleInfo,
-                                   @NotNull final Element enumPolicyElmReadOnly,
+    /**
+     *
+     * @param enumPolicyElmReadOnly
+     * @param oldGuidsToNewGuids    map of the policy's guid from the gateway mgmt enumeration document to it's actual
+     *                              guid once published. This avoids attempting to publish the same policy more than once.
+     * @param oldToNewFolderIds
+     * @param allPolicyElms
+     * @param guidToName
+     * @throws BundleResolver.InvalidBundleException
+     * @throws PreBundleSavePolicyCallback.PolicyUpdateException
+     * @throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse
+     * @throws InterruptedException
+     * @throws AccessDeniedManagementResponse
+     */
+    private void getOrCreatePolicy(@NotNull final Element enumPolicyElmReadOnly,
                                    @NotNull final Map<String, String> oldGuidsToNewGuids,
-                                   @NotNull Map<Long, Long> oldToNewFolderIds,
+                                   @NotNull final Map<Long, Long> oldToNewFolderIds,
                                    @NotNull final Map<String, Element> allPolicyElms,
-                                   @NotNull final Map<String, String> guidToName,
-                                   @Nullable final BundleMapping bundleMapping,
-                                   @Nullable final String installationPrefix)
+                                   @NotNull final Map<String, String> guidToName)
             throws
             BundleResolver.InvalidBundleException,
             PreBundleSavePolicyCallback.PolicyUpdateException,
@@ -549,53 +522,45 @@ public class PolicyBundleInstaller {
             throw new RuntimeException("Unexpected exception getting a writable policy element", e);
         }
 
-        final Element policyResourceElmWritable = PolicyUtils.getPolicyResourceElement(enumPolicyElmWritable, "Policy", policyGuid);
+        final Element policyResourceElmWritable = getPolicyResourceElement(enumPolicyElmWritable, "Policy", policyGuid);
         if (policyResourceElmWritable == null) {
             throw new BundleResolver.InvalidBundleException("Invalid policy element found. Could not retrieve policy XML from resource");
         }
 
         // we want elements that we can modify
-        final Document policyDocumentFromResource = PolicyUtils.getPolicyDocumentFromResource(policyResourceElmWritable, "Policy", policyGuid);
+        final Document policyDocWriteEl = getPolicyDocumentFromResource(policyResourceElmWritable, "Policy", policyGuid);
         // these do not belong to the policyResourceElmWritable document
-        final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(policyDocumentFromResource);
+        final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(policyDocWriteEl);
         for (Element policyIncludeElm : policyIncludes) {
             final String policyInclude = policyIncludeElm.getAttribute("stringValue");
             if (!allPolicyElms.containsKey(policyInclude)) {
                 throw new BundleResolver.InvalidBundleException("Policy with guid " + policyInclude + " was not included in bundle "
-                        + bundleInfo.getName() + "#{" + bundleInfo.getId() + "}");
+                        + context.getBundleInfo().getName() + "#{" + context.getBundleInfo().getId() + "}");
             }
-            getOrCreatePolicy(installEvent, bundleInfo, allPolicyElms.get(policyInclude), oldGuidsToNewGuids, oldToNewFolderIds, allPolicyElms, guidToName, bundleMapping, installationPrefix);
+            getOrCreatePolicy(allPolicyElms.get(policyInclude), oldGuidsToNewGuids, oldToNewFolderIds, allPolicyElms, guidToName);
         }
 
-        checkInterrupted(installEvent);
+        checkInterrupted();
 
         // get or create
         // Create a new document and modify it
-        updatePolicyDoc(bundleInfo, "Policy", oldGuidsToNewGuids, policyGuid, policyResourceElmWritable, policyDocumentFromResource, bundleMapping);
+        updatePolicyDoc("Policy", oldGuidsToNewGuids, policyGuid, policyResourceElmWritable, policyDocWriteEl, policyIncludes);
 
-        final Element policyDetail;
-        try {
-            policyDetail = XmlUtil.findExactlyOneChildElementByName(enumPolicyElmWritable, BundleUtils.L7_NS_GW_MGMT, "PolicyDetail");
-        } catch (TooManyChildElementsException e) {
-            throw new RuntimeException("Unexpected exception getting the PolicyDetail element from Policy element", e);
-        } catch (MissingRequiredElementException e) {
-            throw new RuntimeException("Unexpected exception getting the PolicyDetail element from Policy element", e);
-        }
-        final String folderId = policyDetail.getAttribute("folderId");
+        final Element policyDetailWritable = getPolicyDetailElement(enumPolicyElmWritable);
+        final String folderId = policyDetailWritable.getAttribute("folderId");
         final Long newFolderId = oldToNewFolderIds.get(Long.valueOf(folderId));
         if (newFolderId == null) {
             throw new BundleResolver.InvalidBundleException("Policy with GUID: " + policyGuid + " is contained within unknown folder id '" + folderId + "' in the bundle");
         }
 
-        policyDetail.setAttribute("folderId", String.valueOf(newFolderId));
+        policyDetailWritable.setAttribute("folderId", String.valueOf(newFolderId));
 
         final String policyNameToUse;
         // Add prefix if needed
-        if (isPrefixValid(installationPrefix)) {
-            final Element policyDetailWritable = PolicyUtils.getPolicyDetailElement(enumPolicyElmWritable, "Policy", policyGuid);
-            final Element nameElementWritable = PolicyUtils.getPolicyNameElement(policyDetailWritable, "Policy", policyGuid);
+        if (isPrefixValid(context.getInstallationPrefix())) {
+            final Element nameElementWritable = GatewayManagementDocumentUtilities.getEntityNameElement(policyDetailWritable);
             final String policyName = DomUtils.getTextValue(nameElementWritable);
-            policyNameToUse = getPrefixedPolicyName(installationPrefix, policyName);
+            policyNameToUse = getPrefixedPolicyName(policyName);
             DomUtils.setTextContent(nameElementWritable, policyNameToUse);
             assert (policyName.equals(guidToName.get(policyGuid)));
         } else {
@@ -631,31 +596,44 @@ public class PolicyBundleInstaller {
     }
 
     private boolean isPrefixValid(String installationPrefix) {
-        //todo could do validation here for valid policy name prefixes and for valid URL prefixes. Until then it's up to caller to get it right.
-
-        // leaving in trim check here to protect against any changes in policy bundle installer context
         return installationPrefix != null && !installationPrefix.trim().isEmpty();
     }
 
-    private String getPrefixedPolicyName(@Nullable String installationPrefix, @NotNull String policyName) {
-        if(isPrefixValid(installationPrefix)) {
-            return installationPrefix + " " + policyName;
+    private String getPrefixedPolicyName(@NotNull String policyName) {
+        if(isPrefixValid(context.getInstallationPrefix())) {
+            return context.getInstallationPrefix() + " " + policyName;
         } else {
             return policyName;
         }
     }
 
-    private void updatePolicyDoc(BundleInfo bundleInfo,
-                                 String entityType,
+    private void updatePolicyDoc(String entityType,
+                                 Map<String, String> oldGuidsToNewGuids,
+                                 String identifier,
+                                 Element policyResourceElmWritable,
+                                 Document policyDocumentFromResource)
+            throws BundleResolver.InvalidBundleException, PreBundleSavePolicyCallback.PolicyUpdateException {
+
+        final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(policyDocumentFromResource);
+        updatePolicyDoc(entityType, oldGuidsToNewGuids, identifier, policyResourceElmWritable, policyDocumentFromResource, policyIncludes);
+    }
+
+    /**
+     *
+     * @param policyIncludesFromPolicyDocument These elements must come from policyDocumentFromResource's Document
+     * @throws BundleResolver.InvalidBundleException
+     * @throws PreBundleSavePolicyCallback.PolicyUpdateException
+     */
+    private void updatePolicyDoc(String entityType,
                                  Map<String, String> oldGuidsToNewGuids,
                                  String identifier,
                                  Element policyResourceElmWritable,
                                  Document policyDocumentFromResource,
-                                 @Nullable BundleMapping bundleMapping) throws BundleResolver.InvalidBundleException, PreBundleSavePolicyCallback.PolicyUpdateException {
-        //todo duplicate call - for policy anyway - check for service - could have caller pass in.
-        final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(policyDocumentFromResource);
-        PolicyUtils.updatePolicyIncludes(oldGuidsToNewGuids, identifier, entityType, policyIncludes);
+                                 @NotNull List<Element> policyIncludesFromPolicyDocument)
+            throws BundleResolver.InvalidBundleException, PreBundleSavePolicyCallback.PolicyUpdateException {
+        PolicyUtils.updatePolicyIncludes(oldGuidsToNewGuids, identifier, entityType, policyIncludesFromPolicyDocument);
 
+        final BundleMapping bundleMapping = context.getBundleMapping();
         if (bundleMapping != null) {
             final Map<String, String> mappedJdbcReferences = bundleMapping.getJdbcMappings();
             if (!mappedJdbcReferences.isEmpty()) {
@@ -678,7 +656,7 @@ public class PolicyBundleInstaller {
         }
 
         if (savePolicyCallback != null) {
-            savePolicyCallback.prePublishCallback(bundleInfo, "Policy", policyDocumentFromResource);
+            savePolicyCallback.prePublishCallback(context.getBundleInfo(), "Policy", policyDocumentFromResource);
         }
 
         //write changes back to the resource document
@@ -690,7 +668,6 @@ public class PolicyBundleInstaller {
      *
      * @param urlMapping URI Resolution value for the search
      * @return list of ids of any existing service which have this routing uri
-     * @throws Exception searching
      */
     @NotNull
     private List<Long> findMatchingService(String urlMapping) throws UnexpectedManagementResponse, InterruptedException,
@@ -709,7 +686,7 @@ public class PolicyBundleInstaller {
         try {
             documentPair = callManagementAssertion(gatewayManagementInvoker, requestXml);
         } catch (UnexpectedManagementResponse e) {
-            if (e.isCausedByMgmtAssertionInternalError() && policyBundleEvent.isCancelled()) {
+            if (e.isCausedByMgmtAssertionInternalError() && cancelledCallback.call()) {
                 throw new InterruptedException("Possible interruption detected due to internal error");
             } else {
                 throw e;
@@ -771,8 +748,8 @@ public class PolicyBundleInstaller {
         return GatewayManagementDocumentUtilities.getCreatedId(documentPair.right);
     }
 
-    private void checkInterrupted(WSManagementRequestEvent wsManEvent) throws InterruptedException {
-        if (wsManEvent.isCancelled() || Thread.interrupted()) {
+    private void checkInterrupted() throws InterruptedException {
+        if (cancelledCallback.call() || Thread.interrupted()) {
             throw new InterruptedException();
         }
     }

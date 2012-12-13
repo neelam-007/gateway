@@ -353,7 +353,7 @@ public class XpathUtil {
      */
     @NotNull
     public static XpathResult getXpathResultQuietly(@NotNull final ElementCursor cursor,
-                                                    final @Nullable Map<String, String> namespaces,
+                                                    @Nullable final Map<String, String> namespaces,
                                                     @NotNull final String xpath) {
         final XpathResult xpathResult;
         try {
@@ -581,5 +581,34 @@ public class XpathUtil {
                 }
             }
         }
+    }
+
+    /**
+     * Convenience method to execute an xpath against an Element and return all found Elements.
+     *
+     * @param elementToSearch Element to execute xpath against
+     * @param xpath           Xpath to use
+     * @param namespaceMap    Required namespaces
+     * @return list of all Elements found by the xpath.
+     * @throws RuntimeException if any problems were found executing the xpath. This method should only be used
+     *                          by callers where such an exception represents a programming error.
+     */
+    @NotNull
+    public static List<Element> findElements(@NotNull final Element elementToSearch,
+                                             @NotNull final String xpath,
+                                             @NotNull final Map<String, String> namespaceMap) {
+        final List<Element> toReturn = new ArrayList<Element>();
+
+        final DomElementCursor includeCursor = new DomElementCursor(elementToSearch, false);
+        final XpathResult result = getXpathResultQuietly(includeCursor, namespaceMap, xpath);
+
+        if (result.getType() == XpathResult.TYPE_NODESET) {
+            final XpathResultIterator iterator = result.getNodeSet().getIterator();
+            while (iterator.hasNext()) {
+                toReturn.add(iterator.nextElementAsCursor().asDomElement());
+            }
+        }
+
+        return toReturn;
     }
 }

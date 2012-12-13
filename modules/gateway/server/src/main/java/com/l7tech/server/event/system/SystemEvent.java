@@ -6,6 +6,7 @@
 package com.l7tech.server.event.system;
 
 import com.l7tech.gateway.common.Component;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 
 import java.net.InetAddress;
@@ -30,18 +31,18 @@ public abstract class SystemEvent extends ApplicationEvent {
         this(source, component, null, Level.INFO);
     }
 
-    public SystemEvent(Object source, Component component, String ipAddress, Level level) {
+    public SystemEvent(Object source, Component component, @Nullable String ipAddress, Level level) {
         this(source, component, ipAddress, level, null, -1, null, null);
     }
 
-    public SystemEvent(Object source, Component component, String ipAddress, Level level, String message) {
+    public SystemEvent(Object source, Component component, @Nullable String ipAddress, Level level, String message) {
         this(source, component, ipAddress, level, message, -1, null, null);
     }
 
     public SystemEvent(
             Object source,
             Component component,
-            String ipAddress,
+            @Nullable String ipAddress,
             Level level,
             String message,
             long identityProviderOid,

@@ -1,6 +1,5 @@
 package com.l7tech.server.event.wsman;
 
-import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 
 import java.util.ArrayList;
@@ -10,9 +9,8 @@ import java.util.List;
 public class DryRunInstallPolicyBundleEvent extends PolicyBundleEvent {
 
     public DryRunInstallPolicyBundleEvent(final Object source,
-                                          final BundleResolver bundleResolver,
                                           final PolicyBundleInstallerContext context) {
-        super(source, bundleResolver, context);
+        super(source, context);
     }
 
     public void addUrlPatternWithConflict(String urlPattern) {

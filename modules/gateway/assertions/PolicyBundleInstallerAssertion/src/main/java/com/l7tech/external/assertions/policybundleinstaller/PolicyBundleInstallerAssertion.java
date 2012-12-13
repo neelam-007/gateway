@@ -18,9 +18,6 @@ public class PolicyBundleInstallerAssertion extends Assertion implements UsesVar
         return new String[0];
     }
 
-    //
-    // Metadata
-    //
     private static final String META_INITIALIZED = PolicyBundleInstallerAssertion.class.getName() + ".metadataInitialized";
 
     @Override
