@@ -251,4 +251,16 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
         // Use string val directly as target value.
         return stringVal;
     }
+
+    void setEncapsulatedAssertionConfigManager(@NotNull final EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager) {
+        this.encapsulatedAssertionConfigManager = encapsulatedAssertionConfigManager;
+    }
+
+    void setApplicationEventProxy(@NotNull final ApplicationEventProxy applicationEventProxy) {
+        this.applicationEventProxy = applicationEventProxy;
+    }
+
+    void setPolicyCache(@NotNull final PolicyCache policyCache) {
+        this.policyCache = policyCache;
+    }
 }

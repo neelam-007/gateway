@@ -28,7 +28,7 @@ import static com.l7tech.console.util.EncapsulatedAssertionConsoleUtil.IconType;
 public class IconSelectorDialog extends ValidatedPanel<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>> {
     private static final Border LINE_BORDER = BorderFactory.createLineBorder(Color.BLACK, 3);
     private static final Border EMPTY_BORDER = BorderFactory.createEmptyBorder(3, 3, 3, 3);
-    private static final int CUSTOM_ICON_MAX_SIZE = SyspropUtil.getInteger("com.l7tech.icon.custom.max.size", 512000);
+    private static final int CUSTOM_ICON_MAX_SIZE = SyspropUtil.getInteger("com.l7tech.icon.custom.max.size", 32768);
     private static final int COLS = 15;
     private static final int PADDING = 3;
     private static final String ICON = "icon";
