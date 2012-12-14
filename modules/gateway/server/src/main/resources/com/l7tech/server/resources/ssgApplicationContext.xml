@@ -124,6 +124,26 @@
         </property>
     </bean>
 
+    <bean id="configureServerVariablesSsgConnectorManager"
+          class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
+        <property name="staticMethod" value="com.l7tech.server.policy.variable.ServerVariables.setSsgConnectorManager"/>
+        <property name="arguments">
+            <list>
+                <ref local="ssgConnectorManager"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="configureServerVariablesJdbcConnectionManager"
+          class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
+        <property name="staticMethod" value="com.l7tech.server.policy.variable.ServerVariables.setJdbcConnectionManager"/>
+        <property name="arguments">
+            <list>
+                <ref local="jdbcConnectionManager"/>
+            </list>
+        </property>
+    </bean>
+
     <bean id="timeSource" class="com.l7tech.util.TimeSource"/>
 
     <bean id="configurePolicyEnforcementContextFactoryTimeSource" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">

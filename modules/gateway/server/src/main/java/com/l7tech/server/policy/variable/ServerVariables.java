@@ -4,10 +4,13 @@ import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.User;
 import com.l7tech.message.*;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
@@ -21,10 +24,12 @@ import com.l7tech.server.audit.AuditLookupPolicyEnforcementContext;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
+import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
+import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -62,6 +67,8 @@ public class ServerVariables {
     private static ClusterPropertyCache clusterPropertyCache;
     private static SecurePasswordManager securePasswordManager;
     private static ClusterInfoManager clusterInfoManager;
+    private static SsgConnectorManager ssgConnectorManager;
+    private static JdbcConnectionManager jdbcConnectionManager;
 
     private static final long SELF_NODE_INF_CACHE_INTERVAL = SyspropUtil.getLong("com.l7tech.server.policy.variable.ssgnode.cacheMillis", 30000L);
     private static final CachedCallable<ClusterNodeInfo> SELF_NODE_INF_CACHE = new CachedCallable<ClusterNodeInfo>(SELF_NODE_INF_CACHE_INTERVAL, new Callable<ClusterNodeInfo>() {
@@ -536,7 +543,18 @@ public class ServerVariables {
                     return TimeUnit.NANOSECONDS.toMillis(context.getAssertionLatencyNanos());
                 }
             }),
-
+            new Variable(BuiltinVariables.PREFIX_LISTENPORTS, new Getter() {
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    return getListenPorts(name,context);
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_JDBC_CONNECTION, new Getter() {
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    return getJdbcConnection(name, context);
+                }
+            }),
             new Variable(BuiltinVariables.SSGNODE_ID, new Getter() {
                 @Override
                 Object get(String name, PolicyEnforcementContext context) {
@@ -549,6 +567,14 @@ public class ServerVariables {
                 Object get(String name, PolicyEnforcementContext context) {
                     ClusterNodeInfo inf = getSelfNodeInfCached();
                     return inf == null ? null : inf.getAddress();
+                }
+            }),
+
+            new Variable(BuiltinVariables.SSGNODE_HOSTNAME, new Getter() {
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    final ServerConfig serverConfig = ServerConfig.getInstance();
+                    return serverConfig.getHostname();
                 }
             }),
 
@@ -692,6 +718,40 @@ public class ServerVariables {
             }),
     };
 
+
+    private static Object getJdbcConnection(String name, PolicyEnforcementContext context) {
+        name = name.substring(BuiltinVariables.PREFIX_JDBC_CONNECTION.length() + 1);
+        int dotIndex = name.indexOf('.');
+        String connectionName = name.substring(0,dotIndex);
+        try {
+            JdbcConnection connection = jdbcConnectionManager.getJdbcConnection(connectionName);
+            if(connection !=null){
+                SelectingGetter getter = SelectingGetter.selectingGetter(connectionName,connection);
+                return getter.get(name,context);
+            }
+        } catch (FindException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    private static Object getListenPorts(String name, PolicyEnforcementContext context) {
+        try {
+            Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
+            List<SsgConnector> connectorList = CollectionUtils.toList(connectors);
+
+            if(connectorList !=null){
+                SelectingGetter getter = SelectingGetter.selectingGetter(BuiltinVariables.PREFIX_LISTENPORTS,connectorList);
+                return getter.get(name,context);
+            }
+        } catch (FindException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        return null;
+    }
+
+
     private static X509Certificate getOnlyOneClientCertificateForSource(final List<LoginCredentials> credentials,
                                                                         final Class<? extends Assertion> assertionClass) {
         X509Certificate certificate = null;
@@ -795,6 +855,20 @@ public class ServerVariables {
             ServerVariables.clusterInfoManager = clusterInfoManager;
         }
     }
+
+
+    public static void setSsgConnectorManager(final SsgConnectorManager scm) {
+        if (ssgConnectorManager == null) {
+            ssgConnectorManager = scm;
+        }
+    }
+
+    public static void setJdbcConnectionManager(JdbcConnectionManager jcm) {
+        if (ServerVariables.jdbcConnectionManager == null) {
+            ServerVariables.jdbcConnectionManager = jcm;
+        }
+    }
+
 
     public static void setSecurePasswordManager(SecurePasswordManager spm) {
         securePasswordManager = spm;
