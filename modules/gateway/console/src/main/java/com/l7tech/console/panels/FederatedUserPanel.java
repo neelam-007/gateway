@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
@@ -18,6 +19,8 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.objectmodel.RuleViolationUpdateException;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -690,6 +693,9 @@ public class FederatedUserPanel extends UserPanel {
             formModified = false;
         } catch (ObjectNotFoundException e) {
             JOptionPane.showMessageDialog(topParent, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+            result = false;
+        } catch (RuleViolationUpdateException e) {
+            DialogDisplayer.showMessageDialog( this, null, ExceptionUtils.getMessage( e ), null );
             result = false;
         } catch (Exception e) {
             StringBuffer msg = new StringBuffer();

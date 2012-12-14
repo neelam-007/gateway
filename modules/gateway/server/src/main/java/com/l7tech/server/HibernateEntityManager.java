@@ -5,9 +5,9 @@ import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.Functions.UnaryThrows;
 import org.hibernate.*;
 import org.hibernate.criterion.*;
+import org.hibernate.criterion.Restrictions;
 import org.hibernate.jdbc.Work;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
@@ -33,6 +33,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.util.Functions.reduce;
+import static org.hibernate.criterion.Restrictions.conjunction;
+import static org.hibernate.criterion.Restrictions.disjunction;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 
@@ -121,26 +124,26 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * Finds a unique entity matching the specified criteria.
      *
      * @param map Criteria specification: entries in the map are ANDed.
-     * @return a list of matching entities, or an empty list if none were found.
+     * @return The matching unique entity or null
      */
-    protected ET findUnique(final Map<String, Object> map) throws FindException {
+    protected final ET findUnique( final Map<String, Object> map ) throws FindException {
+        return findUnique( asCriterion( map ) );
+    }
+
+    /**
+     * Finds a unique entity matching the specified criteria.
+     *
+     * @param criterion The criteria to match
+     * @return The matching unique entity or null
+     */
+    protected final ET findUnique( final Criterion criterion ) throws FindException {
         try {
             return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<ET>() {
                 @SuppressWarnings({ "unchecked" })
                 @Override
                 protected ET doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     final Criteria criteria = session.createCriteria(getImpClass());
-                    for ( final Map.Entry<String, Object> entry : map.entrySet() ) {
-                        final Object value = entry.getValue();
-                        if (value == null) continue;
-                        if (value == NULL) {
-                            criteria.add(Restrictions.isNull(entry.getKey()));
-                        } else if ( value == NOTNULL ) {
-                            criteria.add(Restrictions.isNotNull(entry.getKey()));
-                        } else {
-                            criteria.add(Restrictions.eq(entry.getKey(), entry.getValue()));
-                        }
-                    }
+                    criteria.add( criterion );
                     return (ET)criteria.uniqueResult();
                 }
             });
@@ -168,7 +171,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             if ( useOptimizedCount && restrictions.length == 0 && targetClass.equals( getImpClass() ) ) {
                 // Warning: This is not strictly correct since it ignores the possibility of manager
                 // specific criteria.
-                return doReadOnlyWork( new UnaryThrows<Integer,Connection,SQLException>() {
+                return doReadOnlyWork( new Functions.UnaryThrows<Integer,Connection,SQLException>() {
                     @Override
                     public Integer call( final Connection connection ) throws SQLException {
                                 final SimpleJdbcTemplate template = new SimpleJdbcTemplate( new SingleConnectionDataSource(connection, true) );
@@ -251,34 +254,71 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @param maps Criteria specification: entries in a map are ANDed, items in the collection are ORed.
      * @return a list of matching entities, or an empty list if none were found.
      */
-    protected List<ET> findMatching(final Collection<Map<String, Object>> maps) throws FindException {
-        List<ET> result = new ArrayList<ET>();
+    protected final List<ET> findMatching(final Collection<Map<String, Object>> maps) throws FindException {
+        return findMatching(asCriterion(maps));
+    }
+
+    /*
+     * Finds entities matching the specified criterion.
+     *
+     * @param criterion The criteria to match
+     * @return a list of matching entities, or an empty list if none were found.
+     */
+    protected final List<ET> findMatching( final Criterion criterion ) throws FindException {
         try {
-            for (final Map<String, Object> map : maps) {
-                result.addAll(getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<ET>>() {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<ET>>() {
                     @SuppressWarnings({ "unchecked" })
                     @Override
-                    protected List<ET> doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    protected List<ET> doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
                         Criteria criteria = session.createCriteria(getImpClass());
-                        for (Map.Entry<String, ?> entry : map.entrySet()) {
-                            Object value = entry.getValue();
-                            if (value == null) continue;
-                            if (value == NULL) {
-                                criteria.add(Restrictions.isNull(entry.getKey()));
-                            } else if ( value == NOTNULL ) {
-                                criteria.add(Restrictions.isNotNull(entry.getKey()));
-                            } else {
-                                criteria.add(Restrictions.eq(entry.getKey(), entry.getValue()));
-                            }
-                        }
+                        criteria.add( criterion );
                         return (List<ET>)criteria.list();
                     }
-                }));
-            }
+                });
         } catch (Exception e) {
-            throw new FindException("Couldn't check uniqueness", e);
+            throw new FindException("Error finding entities", e);
         }
-        return result;
+    }
+
+    /**
+     * Build a criterion for the given criteria.
+     *
+     * @param maps Criteria specification: entries in a map are ANDed, items in the collection are ORed.
+     * @param <V> The map value type
+     * @return The criterion
+     */
+    protected final <V> Criterion asCriterion( final Collection<Map<String, V>> maps ) {
+        return reduce( maps, disjunction(), new Functions.Binary<Junction, Junction, Map<String, V>>() {
+            @Override
+            public Junction call( final Junction junction, final Map<String, V> map ) {
+                junction.add( asCriterion( map ) );
+                return junction;
+            }
+        } );
+    }
+
+    /**
+     * Build a criterion for the given criteria.
+     *
+     * @param map Criteria specification: entries in the map are ANDed
+     * @param <V> The map value type
+     * @return The criterion
+     */
+    protected final <V> Criterion asCriterion( final Map<String, V> map ) {
+        return reduce(map.entrySet(), conjunction(), new Functions.Binary<Junction, Junction, Map.Entry<String, V>>() {
+            @Override
+            public Junction call(final Junction junction, final Map.Entry<String, V> entry) {
+                final Object value = entry.getValue();
+                if (value == NULL) {
+                    junction.add(Restrictions.isNull(entry.getKey()));
+                } else if (value == NOTNULL) {
+                    junction.add(Restrictions.isNotNull(entry.getKey()));
+                } else if (value != null) {
+                    junction.add(Restrictions.eq(entry.getKey(), entry.getValue()));
+                }
+                return junction;
+            }
+        });
     }
 
     /**
@@ -498,16 +538,16 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     @Override
     @Transactional(readOnly=true)
     public EntityHeaderSet<HT> findAllHeaders(final int offset, final int windowSize) {
-        List<ET> entities = getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<ET>>() {
+        List<ET> entities = getHibernateTemplate().execute( new ReadOnlyHibernateCallback<List<ET>>() {
             @SuppressWarnings({ "unchecked" })
             @Override
-            protected List<ET> doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                Criteria criteria = session.createCriteria(getImpClass());
-                criteria.setFirstResult(offset);
-                criteria.setFetchSize(windowSize);
-                return (List<ET>)criteria.list();
+            protected List<ET> doInHibernateReadOnly( Session session ) throws HibernateException, SQLException {
+                Criteria criteria = session.createCriteria( getImpClass() );
+                criteria.setFirstResult( offset );
+                criteria.setFetchSize( windowSize );
+                return (List<ET>) criteria.list();
             }
-        });
+        } );
 
         EntityHeaderSet<HT> headers = new EntityHeaderSet<HT>();
         for (ET entity : entities) {
@@ -529,8 +569,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 criteria.setFetchSize(windowSize);
 
                 if ( filters != null ) {
-                    final Junction likeRestriction = disjunction ? Restrictions.disjunction() : Restrictions.conjunction();
-                    for ( final String filterProperty : filters.keySet() ) {
+                    Junction likeRestriction = disjunction ? Restrictions.disjunction() : Restrictions.conjunction();
+                    for ( String filterProperty : filters.keySet() ) {
                         final Object filterObject = filters.get(filterProperty);
                         // todo: test based on the field's type
                         if ( filterObject instanceof Criterion ) {
@@ -1024,7 +1064,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @return The result value as returned from the callback.
      * @throws SQLException If an error occurs
      */
-    protected final <R> R doReadOnlyWork( final UnaryThrows<? extends R, Connection, SQLException> callback ) throws SQLException {
+    protected final <R> R doReadOnlyWork( final Functions.UnaryThrows<? extends R, Connection, SQLException> callback ) throws SQLException {
         return getHibernateTemplate().execute( new ReadOnlyHibernateCallback<R>() {
             @SuppressWarnings({ "unchecked" })
             @Override
@@ -1081,7 +1121,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    private static final boolean useOptimizedCount = ConfigFactory.getBooleanProperty("com.l7tech.server.hibernate.useOptimizedCount", true);
+    private static final boolean useOptimizedCount = ConfigFactory.getBooleanProperty( "com.l7tech.server.hibernate.useOptimizedCount", true );
 
     private ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Map<Long, WeakReference<CacheInfo<ET>>> cacheInfoByOid = new HashMap<Long, WeakReference<CacheInfo<ET>>>();

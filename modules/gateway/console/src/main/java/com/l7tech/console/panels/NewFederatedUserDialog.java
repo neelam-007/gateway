@@ -37,7 +37,6 @@ import java.util.logging.Level;
 /**
  * This class provides a dialog for adding a new federated user.
  *
- * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
  * $Id$
  */
@@ -95,6 +94,7 @@ public class NewFederatedUserDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
 
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent event) {
                 // user hit window manager close button
                 windowAction(CMD_CANCEL);
@@ -105,6 +105,7 @@ public class NewFederatedUserDialog extends JDialog {
         createButton.setToolTipText(resources.getString("createButton.tooltip"));
         createButton.setActionCommand(CMD_OK);
         createButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 windowAction(event.getActionCommand());
             }
@@ -113,6 +114,7 @@ public class NewFederatedUserDialog extends JDialog {
         cancelButton.setText(resources.getString("cancelButton.label"));
         cancelButton.setActionCommand(CMD_CANCEL);
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 windowAction(event.getActionCommand());
             }
@@ -121,13 +123,16 @@ public class NewFederatedUserDialog extends JDialog {
         userNameTextField.setToolTipText(resources.getString("idTextField.tooltip"));
         userNameTextField.setDocument(new FilterDocument(IdentityProviderLimits.MAX_ID_LENGTH.getValue(),
                         new FilterDocument.Filter() {
+                            @Override
                             public boolean accept(String str) {
                                 return str != null;
                             }
                         }));
         userNameTextField.addKeyListener(new KeyAdapter() {
+            @Override
             public void keyReleased(KeyEvent e) {
                 SwingUtilities.invokeLater(new Runnable() {
+                    @Override
                     public void run() {
                         if(userNameTextField.getText().length() > 0) {
                             x509SubjectDNTextField.getDocument().removeDocumentListener(documentListener);
@@ -143,6 +148,7 @@ public class NewFederatedUserDialog extends JDialog {
         x509SubjectDNTextField.setToolTipText(resources.getString("x509SubjectDNTextField.tooltip"));
         x509SubjectDNTextField.setDocument(new FilterDocument(IdentityProviderLimits.MAX_X509_SUBJECT_DN_LENGTH.getValue(),
                         new FilterDocument.Filter() {
+                            @Override
                             public boolean accept(String str) {
                                 return str != null;
                             }
@@ -153,6 +159,7 @@ public class NewFederatedUserDialog extends JDialog {
         emailTextField.setToolTipText(resources.getString("emailTextField.tooltip"));
         emailTextField.setDocument(new FilterDocument(IdentityProviderLimits.MAX_EMAIL_LENGTH.getValue(),
                         new FilterDocument.Filter() {
+                            @Override
                             public boolean accept(String str) {
                                 return str != null;
                             }
@@ -171,6 +178,7 @@ public class NewFederatedUserDialog extends JDialog {
              * The code written for this method performs the operations
              * that need to occur when an item is selected (or deselected).
              */
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 createThenEdit = e.getStateChange() == ItemEvent.SELECTED;
             }
@@ -181,6 +189,7 @@ public class NewFederatedUserDialog extends JDialog {
      * override the Dialogue method so tha we can open and editor
      * panel if requested
      */
+    @Override
     public void dispose() {
         super.dispose();
 
@@ -191,6 +200,7 @@ public class NewFederatedUserDialog extends JDialog {
                 // yes the additional properties are to be defined
                 createThenEdit = false;
                 SwingUtilities.invokeLater(new Runnable() {
+                    @Override
                     public void run() {
                         EntityHeader header = new EntityHeader();
                         header.setType(EntityType.USER);
@@ -249,9 +259,7 @@ public class NewFederatedUserDialog extends JDialog {
         String dn = x509SubjectDNTextField.getText();
         if ( dn != null && dn.trim().length() > 0 && !CertUtils.isValidDN(dn)) {
             String message = CertUtils.getDNValidationMessage(dn);
-            if ( message == null ) {
-                message = "";
-            } else {
+            if ( message != null ) {
                 message = "\n" + message;
 
                 JOptionPane.showMessageDialog(this,
@@ -276,7 +284,9 @@ public class NewFederatedUserDialog extends JDialog {
         user.setEmail(emailTextField.getText());
 
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
+                boolean duplicate = false;
                 try {
                     EntityHeader header = new EntityHeader();
                     header.setType(EntityType.USER);
@@ -292,13 +302,15 @@ public class NewFederatedUserDialog extends JDialog {
                     fireEventUserAdded(header);
                     insertSuccess = true;
                 } catch (DuplicateObjectException doe) {
+                    duplicate = true;
                     DialogDisplayer.showMessageDialog(NewFederatedUserDialog.this, null, ExceptionUtils.getMessage(doe), null);
                 } catch (ObjectModelException e) {
                     ErrorManager.getDefault().
                             notify(Level.WARNING, e, "Error encountered while adding a user\n" +
                             "The user has not been created.");
+                } finally {
+                    if (!duplicate) NewFederatedUserDialog.this.dispose();
                 }
-                NewFederatedUserDialog.this.dispose();
             }
         });
 
@@ -340,6 +352,7 @@ public class NewFederatedUserDialog extends JDialog {
 
        if(field.getProperty("name").equals("x509DN")) {
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
 
                     if(!updateFromX509SubjectDNField()) {
@@ -353,6 +366,7 @@ public class NewFederatedUserDialog extends JDialog {
 
         if(field.getProperty("name").equals("login")) {
              SwingUtilities.invokeLater(new Runnable() {
+                 @Override
                  public void run() {
 
                      if(userNameTextFieldUpdated != USER_NAME_UPDATED_WITH_X509DN && !updateFromLoginField()) {
@@ -364,6 +378,7 @@ public class NewFederatedUserDialog extends JDialog {
 
         if(field.getProperty("name").equals("email")) {
              SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     if(userNameTextFieldUpdated != USER_NAME_UPDATED_WITH_X509DN &&
                        userNameTextFieldUpdated != USER_NAME_UPDATED_WITH_LOGIN) {
@@ -485,14 +500,17 @@ public class NewFederatedUserDialog extends JDialog {
     }
 
     private final DocumentListener documentListener = new DocumentListener() {
+        @Override
         public void changedUpdate(DocumentEvent e) {
             updateUserNameField(e);
         }
 
+        @Override
         public void insertUpdate(DocumentEvent e) {
             updateUserNameField(e);
         }
 
+        @Override
         public void removeUpdate(DocumentEvent e) {
             updateUserNameField(e);
         }

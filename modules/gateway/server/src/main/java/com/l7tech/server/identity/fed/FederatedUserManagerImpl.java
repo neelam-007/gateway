@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.server.identity.fed;
 
 import com.l7tech.identity.User;
@@ -14,7 +8,10 @@ import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.PersistentUserManagerImpl;
 import com.l7tech.server.logon.LogonInfoManager;
+import com.l7tech.util.CollectionUtils;
+import static org.apache.commons.lang.StringUtils.*;
 import org.hibernate.Criteria;
+import org.hibernate.criterion.Conjunction;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.annotation.Propagation;
@@ -24,9 +21,7 @@ import java.util.*;
 
 /**
  * The {@link com.l7tech.identity.UserManager} for {@link FederatedIdentityProvider}s.
- * 
- * @author alex
- * @version $Revision$
+ *
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class FederatedUserManagerImpl
@@ -34,7 +29,7 @@ public class FederatedUserManagerImpl
         implements FederatedUserManager
 {
     public FederatedUserManagerImpl( final ClientCertManager clientCertManager, LogonInfoManager logonInfoManager ) {
-        super(clientCertManager, logonInfoManager);
+        super( clientCertManager, logonInfoManager );
     }
 
     @Override
@@ -46,7 +41,7 @@ public class FederatedUserManagerImpl
     @Transactional(propagation=Propagation.SUPPORTS)
     public FederatedUser headerToUser(IdentityHeader header) {
         FederatedUser fu = new FederatedUser(getProviderOid(), header.getName());
-        fu.setOid(header.getOid());
+        fu.setOid( header.getOid() );
         return fu;
     }
 
@@ -59,7 +54,7 @@ public class FederatedUserManagerImpl
         fu.setEmail(bean.getEmail());
         fu.setFirstName(bean.getFirstName());
         fu.setLastName(bean.getLastName());
-        fu.setSubjectDn(bean.getSubjectDn());
+        fu.setSubjectDn( bean.getSubjectDn() );
         return fu;
     }
 
@@ -74,16 +69,10 @@ public class FederatedUserManagerImpl
     }
 
     @Override
-    public String getTableName() {
-        return "fed_user";
-    }
-
-    @Override
     @Transactional(readOnly=true)
     public FederatedUser findBySubjectDN(String dn) throws FindException {
         try {
-            List results = getHibernateTemplate().find(FIND_BY_DN,
-                                                    new Object[] { getProviderOid(), dn } );
+            List results = getHibernateTemplate().find(FIND_BY_DN, getProviderOid(), dn );
             switch( results.size() ) {
                 case 0:
                     return null;
@@ -101,7 +90,7 @@ public class FederatedUserManagerImpl
     @Transactional(readOnly=true)
     public FederatedUser findByEmail(String email) throws FindException {
         try {
-            List results = getHibernateTemplate().find(FIND_BY_EMAIL, new Object[] { getProviderOid(), email } );
+            List results = getHibernateTemplate().find(FIND_BY_EMAIL, getProviderOid(), email );
             switch( results.size() ) {
                 case 0:
                     return null;
@@ -125,19 +114,19 @@ public class FederatedUserManagerImpl
     }
 
     @Override
-    protected void preSave(FederatedUser user) throws SaveException {
-        // check to see if an existing user with same name exists
-        if (user != null && user.getName() != null && user.getName().length() > 0) {
-            FederatedUser existingDude;
-            try {
-                existingDude = this.findByUniqueName(user.getName());
-            } catch (FindException e) {
-                existingDude = null;
-            }
-            if (existingDude != null) {
-                throw new DuplicateObjectException("Cannot save this user. Existing user with name \'"
-                  + user.getName() + "\' present.");
-            }
+    protected void preUpdate( final FederatedUser user ) throws UpdateException {
+        // check to see if an existing user matches
+        if ( !isUnique( user ) ) {
+            // don't include "name" in the error message since this is typically not updated
+            throw new RuleViolationUpdateException("The users login, email, or X.509 Subject DN conflict with an existing user.");
+        }
+    }
+
+    @Override
+    protected void preSave( final FederatedUser user ) throws SaveException {
+        // check to see if an existing user matches
+        if ( !isUnique( user ) ) {
+            throw new DuplicateObjectException("The users name, login, email, or X.509 Subject DN conflict with an existing user.");
         }
     }
 
@@ -162,16 +151,46 @@ public class FederatedUserManagerImpl
     }
 
     @Override
-    protected Collection<Map<String,Object>> getUniqueConstraints(FederatedUser entity) {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put("providerId", entity.getProviderId());
-        map.put("name", entity.getName());
-        return Arrays.asList(map);
+    protected UniqueType getUniqueType() {
+        return UniqueType.OTHER;
     }
 
     @Override
-    protected UniqueType getUniqueType() {
-        return UniqueType.OTHER;
+    protected Collection<Map<String,Object>> getUniqueConstraints( final FederatedUser user ) {
+        final Collection<Map<String,Object>> constraints = new ArrayList<Map<String,Object>>();
+        addConstraint( constraints, user.getProviderId(), "name", user.getName() );
+        addConstraint( constraints, user.getProviderId(), "email", user.getEmail() );
+        addConstraint( constraints, user.getProviderId(), "login", user.getLogin() );
+        addConstraint( constraints, user.getProviderId(), "subjectDn", user.getSubjectDn() );
+        return constraints;
+    }
+
+    private void addConstraint( final Collection<Map<String,Object>> constraints,
+                                final long providerId,
+                                final String propertyName,
+                                final String propertyValue ) {
+        if ( !isEmpty( trim( propertyValue ) ) ) {
+            constraints.add( CollectionUtils.<String, Object>mapBuilder()
+                            .put( "providerId", providerId )
+                            .put( propertyName, propertyValue )
+                            .map() );
+        }
+    }
+
+    private boolean isUnique( final FederatedUser user ) {
+        // check to see if an existing user matches
+        List<FederatedUser> existing;
+        try {
+            final Conjunction conjunction = Restrictions.conjunction();
+            conjunction.add( asCriterion( getUniqueConstraints( user ) ) );
+            if ( user.getOid() != FederatedUser.DEFAULT_OID ) {
+                conjunction.add( Restrictions.ne( "oid", user.getOid() ) );
+            }
+            existing = findMatching( conjunction );
+        } catch (FindException e) {
+            existing = null;
+        }
+        return existing == null || existing.isEmpty();
     }
 
     private final String FIND_BY_ =
