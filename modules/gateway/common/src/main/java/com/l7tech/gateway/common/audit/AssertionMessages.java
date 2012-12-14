@@ -95,7 +95,7 @@ public class AssertionMessages extends Messages {
     public static final M HTTPCLIENTCERT_NOT_HTTP = m(4112, Level.INFO, "Request not received over HTTP; cannot check for client certificate");
     public static final M HTTPCLIENTCERT_NO_CERT = m(4113, Level.INFO, "No Client Certificate was present in the request.");
     public static final M HTTPCLIENTCERT_FOUND = m(4114, Level.INFO, "Found client certificate for {0}");
-    public static final M HTTPCOOKIE_FOUND_EMPTY = m(4115, Level.WARNING, "Ignoring empty cookie with the name: {0}");
+    public static final M HTTPCOOKIE_FOUND_EMPTY = m(4115, Level.FINE, "Ignoring empty cookie with the name: {0}");
     //ServerNtlmAuthentication
     public static final M NTLM_AUTHENTICATION_FAILED = m(4120, Level.WARNING, "Authentication failed: {0}");
     public static final M NTLM_AUTHENTICATION_MISSING_ACCOUNT_INFO = m(4121, Level.WARNING, "Account Info is missing");

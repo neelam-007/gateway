@@ -1,19 +1,28 @@
 package com.l7tech.server.policy.assertion.credential.http;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugNumber;
+import com.l7tech.util.CollectionUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.Cookie;
 
+import java.text.MessageFormat;
+import java.util.logging.Level;
+
+import static com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion.DEFAULT_COOKIE_NAME;
 import static org.junit.Assert.*;
 
 public class ServerCookieCredentialSourceAssertionTest {
@@ -32,13 +41,13 @@ public class ServerCookieCredentialSourceAssertionTest {
     @Test
     public void checkRequestSetsContextVariableDefaults() throws Exception {
         serverAssertion = new ServerCookieCredentialSourceAssertion(assertion);
-        final Cookie cookie = new Cookie(CookieCredentialSourceAssertion.DEFAULT_COOKIE_NAME, SESSION_VALUE);
+        final Cookie cookie = new Cookie(DEFAULT_COOKIE_NAME, SESSION_VALUE);
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(createRequest(cookie), new Message());
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, assertionStatus);
-        final String contextVariable = (String) context.getVariable(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + CookieCredentialSourceAssertion.DEFAULT_COOKIE_NAME);
+        final String contextVariable = (String) context.getVariable(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + DEFAULT_COOKIE_NAME);
         assertEquals(SESSION_VALUE, contextVariable);
     }
 
@@ -63,13 +72,13 @@ public class ServerCookieCredentialSourceAssertionTest {
         final String prefix = "pre";
         assertion.setVariablePrefix(prefix);
         serverAssertion = new ServerCookieCredentialSourceAssertion(assertion);
-        final Cookie cookie = new Cookie(CookieCredentialSourceAssertion.DEFAULT_COOKIE_NAME, SESSION_VALUE);
+        final Cookie cookie = new Cookie(DEFAULT_COOKIE_NAME, SESSION_VALUE);
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(createRequest(cookie), new Message());
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, assertionStatus);
-        final String contextVariable = (String) context.getVariable(prefix + "." + CookieCredentialSourceAssertion.DEFAULT_COOKIE_NAME);
+        final String contextVariable = (String) context.getVariable(prefix + "." + DEFAULT_COOKIE_NAME);
         assertEquals(SESSION_VALUE, contextVariable);
     }
 
@@ -101,7 +110,7 @@ public class ServerCookieCredentialSourceAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.AUTH_REQUIRED, assertionStatus);
-        checkContextVariableDoesNotExist(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + CookieCredentialSourceAssertion.DEFAULT_COOKIE_NAME);
+        checkContextVariableDoesNotExist(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + DEFAULT_COOKIE_NAME);
         checkContextVariableDoesNotExist(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + cookieName);
     }
 
@@ -113,7 +122,7 @@ public class ServerCookieCredentialSourceAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.AUTH_REQUIRED, assertionStatus);
-        checkContextVariableDoesNotExist(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + CookieCredentialSourceAssertion.DEFAULT_COOKIE_NAME);
+        checkContextVariableDoesNotExist(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + DEFAULT_COOKIE_NAME);
     }
 
     /**
@@ -122,14 +131,14 @@ public class ServerCookieCredentialSourceAssertionTest {
     @Test
     public void checkRequestSetsContextVariableMultipleCookies() throws Exception {
         serverAssertion = new ServerCookieCredentialSourceAssertion(assertion);
-        final Cookie sessionCookie = new Cookie(CookieCredentialSourceAssertion.DEFAULT_COOKIE_NAME, SESSION_VALUE);
+        final Cookie sessionCookie = new Cookie(DEFAULT_COOKIE_NAME, SESSION_VALUE);
         final Cookie testCookie = new Cookie("testCookie", "testValue");
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(createRequest(sessionCookie, testCookie), new Message());
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, assertionStatus);
-        final String contextVariable = (String) context.getVariable(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + CookieCredentialSourceAssertion.DEFAULT_COOKIE_NAME);
+        final String contextVariable = (String) context.getVariable(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + DEFAULT_COOKIE_NAME);
         assertEquals(SESSION_VALUE, contextVariable);
         checkContextVariableDoesNotExist(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + ".testCookie");
     }
@@ -138,26 +147,58 @@ public class ServerCookieCredentialSourceAssertionTest {
     public void checkRequestSetsContextVariableNullPrefix() throws Exception {
         assertion.setVariablePrefix(null);
         serverAssertion = new ServerCookieCredentialSourceAssertion(assertion);
-        final Cookie cookie = new Cookie(CookieCredentialSourceAssertion.DEFAULT_COOKIE_NAME, SESSION_VALUE);
+        final Cookie cookie = new Cookie(DEFAULT_COOKIE_NAME, SESSION_VALUE);
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(createRequest(cookie), new Message());
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, assertionStatus);
-        checkContextVariableDoesNotExist(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + CookieCredentialSourceAssertion.DEFAULT_COOKIE_NAME);
+        checkContextVariableDoesNotExist(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + DEFAULT_COOKIE_NAME);
     }
 
     @Test
     public void checkRequestSetsContextVariableEmptyPrefix() throws Exception {
         assertion.setVariablePrefix("");
         serverAssertion = new ServerCookieCredentialSourceAssertion(assertion);
-        final Cookie cookie = new Cookie(CookieCredentialSourceAssertion.DEFAULT_COOKIE_NAME, SESSION_VALUE);
+        final Cookie cookie = new Cookie(DEFAULT_COOKIE_NAME, SESSION_VALUE);
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(createRequest(cookie), new Message());
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, assertionStatus);
-        checkContextVariableDoesNotExist(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + CookieCredentialSourceAssertion.DEFAULT_COOKIE_NAME);
+        checkContextVariableDoesNotExist(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + DEFAULT_COOKIE_NAME);
+    }
+
+    /**
+     * Validate that a cookie with an empty value is treated as missing
+     * <ul>
+     *     <li>checkRequest() returns AUTH_REQUIRED</li>
+     *     <li>Required audit is generated and audit is at the FINE level</li>
+     * </ul>
+     */
+    @Test
+    @BugNumber(13610)
+    public void testEmptyCookiesTreatedAsMissing() throws Exception {
+        serverAssertion = new ServerCookieCredentialSourceAssertion(assertion);
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.MapBuilder.<String, Object>builder()
+                                .put("auditFactory", testAudit.factory())
+                                .map());
+
+        final Cookie cookie = new Cookie(DEFAULT_COOKIE_NAME, "");
+        context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(createRequest(cookie), new Message());
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.AUTH_REQUIRED, assertionStatus);
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.HTTPCOOKIE_FOUND_EMPTY));
+        assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.HTTPCOOKIE_FOUND_EMPTY.getMessage(), DEFAULT_COOKIE_NAME)));
+        assertEquals(Level.FINE, AssertionMessages.HTTPCOOKIE_FOUND_EMPTY.getLevel());
+
     }
 
     private Message createRequest(final Cookie... cookies) {
