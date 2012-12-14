@@ -485,6 +485,10 @@
                     &lt;L7p:Base64Expression stringValue="L2F1dGgvb2F1dGgvdjIvdG9rZW4="/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth2_token_path"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="Mi4wIChSRkMgNjc0OSk="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_version"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;L7p:ExportVariables&gt;
                     &lt;L7p:ExportedVars stringArrayValue="included"&gt;
                     &lt;L7p:item stringValue="oauth2_auth_path"/&gt;
@@ -496,6 +500,7 @@
                     &lt;L7p:item stringValue="oauth2_token_path"/&gt;
                     &lt;L7p:item stringValue="oauth2_token_type"/&gt;
                     &lt;L7p:item stringValue="host_oauth_ovp_server"/&gt;
+                    &lt;L7p:item stringValue="oauth2_version"/&gt;
                     &lt;/L7p:ExportedVars&gt;
                     &lt;/L7p:ExportVariables&gt;
                     &lt;/wsp:All&gt;
