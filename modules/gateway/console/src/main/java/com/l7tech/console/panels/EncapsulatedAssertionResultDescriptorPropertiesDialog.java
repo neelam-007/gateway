@@ -53,7 +53,7 @@ public class EncapsulatedAssertionResultDescriptorPropertiesDialog extends JDial
     private EncapsulatedAssertionResultDescriptor updateBean(EncapsulatedAssertionResultDescriptor bean) {
         bean.setResultName(nameField.getText());
         DataType type = (DataType) typeComboBox.getSelectedItem();
-        bean.setResultType(type == null ? null : type.getName());
+        bean.setResultType(type == null ? DataType.UNKNOWN.getShortName() : type.getShortName());
         return bean;
     }
 

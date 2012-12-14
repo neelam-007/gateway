@@ -61,7 +61,7 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
         bean.setDefaultValue(defaultValueField.getText());
         bean.setGuiPrompt(guiPromptCheckBox.isSelected());
         DataType type = (DataType) typeComboBox.getSelectedItem();
-        bean.setArgumentType(type == null ? DataType.UNKNOWN.getName() : type.getName());
+        bean.setArgumentType(type == null ? DataType.UNKNOWN.getShortName() : type.getShortName());
         return bean;
     }
 

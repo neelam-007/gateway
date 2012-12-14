@@ -23,6 +23,7 @@ import com.l7tech.util.*;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -139,10 +140,12 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             column("Name", 30, 140, 99999, propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentName")),
             column("Type", 30, 140, 99999, Functions.<DataType, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentType"), DataType.class),
             column("Default", 30, 140, 99999, propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "defaultValue")));
+        inputsTable.getColumnModel().getColumn(2).setCellRenderer(dataTypePrettyPrintingTableCellRenderer());
 
         outputsTableModel = TableUtil.configureTable(outputsTable,
             column("Name", 30, 140, 99999, propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultName")),
             column("Type", 30, 140, 99999, Functions.<DataType, EncapsulatedAssertionResultDescriptor>propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultType"), DataType.class));
+        outputsTable.getColumnModel().getColumn(1).setCellRenderer(dataTypePrettyPrintingTableCellRenderer());
 
         RunOnChangeListener enabler = new RunOnChangeListener(new Runnable() {
             @Override
@@ -187,6 +190,28 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         okButton.setEnabled(!readOnly);
         updateView();
         enableOrDisableThings();
+    }
+
+    private DefaultTableCellRenderer dataTypePrettyPrintingTableCellRenderer() {
+        return new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                return super.getTableCellRendererComponent(table, prettyPrintDataType(value), isSelected, hasFocus, row, column);
+            }
+        };
+    }
+
+    private Object prettyPrintDataType(Object value) {
+        if (value instanceof DataType) {
+            DataType dataType = (DataType) value;
+            return dataType.getName();
+        } else if (value instanceof String) {
+            String s = (String) value;
+            DataType dataType = DataType.forName(s);
+            if (dataType != null)
+                return dataType.getName();
+        }
+        return value;
     }
 
     private void doInputProperties(final EncapsulatedAssertionArgumentDescriptor input, final boolean needsInsert) {
@@ -420,7 +445,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         for (String var : vars) {
             EncapsulatedAssertionArgumentDescriptor arg = new EncapsulatedAssertionArgumentDescriptor();
             arg.setEncapsulatedAssertionConfig(config);
-            arg.setArgumentType(DataType.STRING.getName());
+            arg.setArgumentType(DataType.STRING.getShortName());
             arg.setArgumentName(var);
             arg.setGuiPrompt(false);
             arg.setDefaultValue(null);
@@ -442,7 +467,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             ret.setEncapsulatedAssertionConfig(config);
             ret.setResultName(vm.getName());
             final DataType type = vm.getType();
-            ret.setResultType(type == null ? DataType.UNKNOWN.getName() : type.getName());
+            ret.setResultType(type == null ? DataType.UNKNOWN.getShortName() : type.getShortName());
             outputsTableModel.addRow(ret);
         }
     }

@@ -170,6 +170,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
         meta.put(SHORT_NAME, config.getName());
         meta.put(BASE_64_NODE_IMAGE, config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64));
         meta.put(PALETTE_NODE_ICON, findIconResourcePath(config));
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.EncapsulatedAssertionPropertiesDialog");
 
         meta.put(ASSERTION_FACTORY, new Functions.Unary< EncapsulatedAssertion, EncapsulatedAssertion >() {
             @Override
