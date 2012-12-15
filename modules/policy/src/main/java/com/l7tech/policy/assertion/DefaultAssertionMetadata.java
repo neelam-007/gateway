@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -528,7 +530,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
      * @param key the property name to set.  Must not be null.
      * @param value a static value for this property, or a Getter that will find it lazily, or null to un-customize this property.
      */
-    public void put(String key, Object value) {
+    public void put(String key, @Nullable Object value) {
         if (value == null)
             properties.remove(key);
         else

@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.policy.BigIntegerPropertyEditor;
-import com.l7tech.console.policy.EnumPropertyEditor;
+import com.l7tech.console.policy.*;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.util.ExceptionUtils;
@@ -15,9 +14,12 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyEditor;
 import java.beans.PropertyEditorManager;
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -295,7 +297,21 @@ public abstract class EditRowBasedAssertionPropertiesEditor<AT extends Assertion
             editor = new BigIntegerPropertyEditor();
         }
 
-        // TODO need editors for other useful types like DateTime
+        if (editor == null && BigDecimal.class.isAssignableFrom(propertyType)) {
+            editor = new BigDecimalPropertyEditor();
+        }
+
+        if (editor == null && Date.class.isAssignableFrom(propertyType)) {
+            editor = new DateTimePropertyEditor();
+        }
+
+        if (editor == null && X509Certificate.class.isAssignableFrom(propertyType)) {
+            editor = new ConsoleX509CertificatePropertyEditor();
+        }
+
+        if (editor == null && byte[].class.isAssignableFrom(propertyType)) {
+            editor = new ByteArrayPropertyEditor();
+        }
 
         return editor;
     }
@@ -444,7 +460,8 @@ public abstract class EditRowBasedAssertionPropertiesEditor<AT extends Assertion
         @Override
         public Object getViewValue() throws BadViewValueException {
             try {
-                getPropertyEditor().setAsText(comboBox.getSelectedItem().toString());
+                final Object tagItem = comboBox.getSelectedItem();
+                getPropertyEditor().setAsText(tagItem == null ? null : tagItem.toString());
                 return getPropertyEditor().getValue();
             } catch (IllegalArgumentException e) {
                 throw new BadViewValueException(ExceptionUtils.getMessage(e), e, getPropertyInfo().getName());

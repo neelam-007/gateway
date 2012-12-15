@@ -38,6 +38,7 @@ public final class DataType implements Serializable {
     public static final DataType UNKNOWN = new DataType("other", "Unknown/Other", new Class[] { Object.class });
 
     public static final DataType[] VALUES = new DataType[] { STRING, CERTIFICATE, INTEGER, DECIMAL, FLOAT, ELEMENT, BOOLEAN, BINARY, DATE_TIME, MESSAGE, BLOB, CLOB, UNKNOWN };
+    public static final DataType[] GUI_EDITABLE_VALUES = new DataType[] { STRING, CERTIFICATE, INTEGER, DECIMAL, FLOAT, ELEMENT, BOOLEAN, BINARY, DATE_TIME, MESSAGE };
 
     private final String shortName;
     private final String name;

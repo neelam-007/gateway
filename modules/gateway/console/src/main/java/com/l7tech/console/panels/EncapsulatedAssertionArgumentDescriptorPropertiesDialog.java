@@ -41,7 +41,7 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
             }
         });
 
-        typeComboBox.setModel(new DefaultComboBoxModel(DataType.VALUES));
+        typeComboBox.setModel(new DefaultComboBoxModel(DataType.GUI_EDITABLE_VALUES));
 
         cancelButton.addActionListener(Utilities.createDisposeAction(this));
 

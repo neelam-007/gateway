@@ -38,6 +38,11 @@ import static com.l7tech.gui.util.TableUtil.column;
 import static com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig.*;
 import static com.l7tech.util.Functions.propertyTransform;
 
+/**
+ * Properties dialog for the entity representing an  encapsulated assertion configuration.
+ * <p/>
+ * Not be confused with the properties dialog for a particular encapsulated assertion instance in policy -- for that, see {@link EncapsulatedAssertionPropertiesDialog}.
+ */
 public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(EncapsulatedAssertionConfigPropertiesDialog.class.getName());
     private static final String SELECT_ICON = "Select Icon";

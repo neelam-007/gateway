@@ -47,6 +47,8 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
 
         //noinspection unchecked
         copy.parameters = (Map<String, String>) ((TreeMap<String, String>)parameters).clone();
+        copy.encapsulatedAssertionConfig = encapsulatedAssertionConfig == null ? null : encapsulatedAssertionConfig.getCopy();
+        copy.meta = null;
 
         return copy;
     }
@@ -170,7 +172,18 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
         meta.put(SHORT_NAME, config.getName());
         meta.put(BASE_64_NODE_IMAGE, config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64));
         meta.put(PALETTE_NODE_ICON, findIconResourcePath(config));
-        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.EncapsulatedAssertionPropertiesDialog");
+
+        if (config.hasAtLeastOneGuiParameter()) {
+            // Use dialog
+            meta.put(PROPERTIES_EDITOR_FACTORY, null);
+            meta.put(PROPERTIES_ACTION_CLASSNAME, null);
+            meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.EncapsulatedAssertionPropertiesDialog");
+        } else {
+            // Disable properties editor
+            meta.putNull(PROPERTIES_ACTION_CLASSNAME);
+            meta.putNull(PROPERTIES_EDITOR_FACTORY);
+            meta.putNull(PROPERTIES_EDITOR_CLASSNAME);
+        }
 
         meta.put(ASSERTION_FACTORY, new Functions.Unary< EncapsulatedAssertion, EncapsulatedAssertion >() {
             @Override

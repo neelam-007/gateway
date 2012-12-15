@@ -1,18 +1,34 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
+import org.w3c.dom.Element;
 
 import javax.swing.*;
 import java.awt.*;
 import java.beans.PropertyEditor;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.beans.PropertyEditorSupport;
+import java.security.cert.X509Certificate;
+import java.text.ParseException;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 
+/**
+ * Properties dialog for an encapsulated assertion instance in a policy.
+ * <p/>
+ * Not to be confused with the properties dialog for the entity representing an encapsulated assertion config -- for that,
+ * see {@link EncapsulatedAssertionConfigPropertiesDialog}.
+ */
 public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertionPropertiesEditor<EncapsulatedAssertion> {
     private JPanel contentPane;
     private JPanel propertiesPanel;
@@ -34,7 +50,12 @@ public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertion
 
         Set<PropertyInfo> ret = new LinkedHashSet<PropertyInfo>();
 
-        Set<EncapsulatedAssertionArgumentDescriptor> args = config.getArgumentDescriptors();
+        Collection<EncapsulatedAssertionArgumentDescriptor> args = Functions.sort(config.getArgumentDescriptors(), new Comparator<EncapsulatedAssertionArgumentDescriptor>() {
+            @Override
+            public int compare(EncapsulatedAssertionArgumentDescriptor a, EncapsulatedAssertionArgumentDescriptor b) {
+                return a.getArgumentName().compareTo(b.getArgumentName());
+            }
+        });
         for (EncapsulatedAssertionArgumentDescriptor arg : args) {
             if (!arg.isGuiPrompt())
                 continue;
@@ -72,7 +93,13 @@ public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertion
         public PropertyEditor createPropertyEditor() {
             PropertyEditor editor = findPropertyEditorForType(propertyValueClass);
 
-            // TODO use special editor for Message that is a combobox to select the name of an in-scope Message context variable
+            if (editor == null && Message.class.isAssignableFrom(propertyValueClass)) {
+                editor = new GenericStringTagPropertyEditor(ArrayUtils.unshift(getVariableNamesOfType(DataType.MESSAGE), null));
+            }
+
+            if (editor == null && Element.class.isAssignableFrom(propertyValueClass)) {
+                editor = new GenericStringTagPropertyEditor(ArrayUtils.unshift(getVariableNamesOfType(DataType.ELEMENT), null));
+            }
 
             if (editor == null) {
                 logger.log(Level.WARNING, "No property editor for type: " + propertyValueClass + " (property " + arg.getArgumentName() + ")");
@@ -92,9 +119,39 @@ public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertion
         }
     }
 
+    private Map<String, VariableMetadata> getVariablesSetByPredecessors() {
+        Assertion previousAssertion = getPreviousAssertion();
+        return (initialAssertion != null && initialAssertion.getParent() != null) ? SsmPolicyVariableUtils.getVariablesSetByPredecessors(initialAssertion) :
+                (previousAssertion != null)? SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( previousAssertion ) :
+                    new TreeMap<String, VariableMetadata>();
+    }
+
+    private String[] getVariableNamesOfType(final DataType desiredType) {
+        final Collection<VariableMetadata> allMetas = getVariablesSetByPredecessors().values();
+        final List<VariableMetadata> messageMetas = Functions.grep(allMetas, new Functions.Unary<Boolean, VariableMetadata>() {
+            @Override
+            public Boolean call(VariableMetadata variableMetadata) {
+                return desiredType.equals(variableMetadata.getType());
+            }
+        });
+        List<String> ret = Functions.map(messageMetas, Functions.<String, VariableMetadata>propertyTransform(VariableMetadata.class, "name"));
+        return ret.toArray(new String[ret.size()]);
+    }
+
     private String encodeToString(EncapsulatedAssertionArgumentDescriptor arg, Class propertyValueClass, Object value) {
         if (Enum.class.isAssignableFrom(propertyValueClass)) {
             return value == null ? null : ((Enum)value).name();
+        } else if (Date.class.isAssignableFrom(propertyValueClass)) {
+            return value instanceof Date ? ISO8601Date.format((Date)value) : null;
+        } else if (X509Certificate.class.isAssignableFrom(propertyValueClass)) {
+            try {
+                return value instanceof X509Certificate ? CertUtils.encodeAsPEM((X509Certificate) value) : null;
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to encode certificate property: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        } else if (byte[].class.isAssignableFrom(propertyValueClass)) {
+            // The binary value is stored in the string as base64 even though it is edited in the GUI as a hex string.
+            return value instanceof byte[] ? HexUtils.encodeBase64((byte[])value) : null;
         }
         return value == null ? null : value.toString();
     }
@@ -108,11 +165,48 @@ public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertion
             return valueString;
         } else if (Boolean.class == propertyValueClass) {
             return Boolean.valueOf(valueString);
+        } else if (Date.class.isAssignableFrom(propertyValueClass)) {
+            try {
+                return valueString == null || valueString.trim().length() < 1 ? null : ISO8601Date.parse(valueString);
+            } catch (ParseException e) {
+                logger.log(Level.WARNING, "Date property not ISO 8601 string: " + valueString + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                return null;
+            }
+        } else if (X509Certificate.class.isAssignableFrom(propertyValueClass)) {
+            try {
+                return valueString == null || valueString.trim().length() < 1 ? null : CertUtils.decodeFromPEM(valueString, false);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Certificate property not a valid PEM X.509 certificate: " + valueString + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                return null;
+            }
+        } else if (byte[].class.isAssignableFrom(propertyValueClass)) {
+            // The binary value is stored in the string as base64 even though it is edited in the GUI as a hex string.
+            return valueString == null || valueString.trim().length() < 1 ? null : HexUtils.decodeBase64(valueString, true);
         } else {
             return valueString;
         }
 
-        // TODO support other types
         // TODO move this functionality somewhere more central, maybe the server side can reuse it
+    }
+
+    /**
+     * A simple property editor that just shows one or more String tags.
+     */
+    public static class GenericStringTagPropertyEditor extends PropertyEditorSupport {
+        private final String[] tags;
+
+        public GenericStringTagPropertyEditor(@NotNull String[] tags) {
+            this.tags = tags;
+        }
+
+        @Override
+        public String[] getTags() {
+            return tags;
+        }
+
+        @Override
+        public void setAsText(String text) throws IllegalArgumentException {
+            setValue(text);
+        }
     }
 }

@@ -179,6 +179,20 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
         this.properties = properties;
     }
 
+    /**
+     * @return true if this config has at least one argument descriptor marked as showInGui=true.
+     */
+    public boolean hasAtLeastOneGuiParameter() {
+        Set<EncapsulatedAssertionArgumentDescriptor> args = getArgumentDescriptors();
+        if (args == null)
+            return false;
+        for (EncapsulatedAssertionArgumentDescriptor arg : argumentDescriptors) {
+            if (arg.isGuiPrompt())
+                return true;
+        }
+        return false;
+    }
+
     @Transient
     public EncapsulatedAssertionConfig getCopy() {
         return getCopy(false);
