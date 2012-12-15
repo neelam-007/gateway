@@ -65,6 +65,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JButton deleteInputButton;
     private JButton deleteOutputButton;
     private JSplitPane inputsOutputsSplitPane;
+    private JButton moveInputUpButton;
+    private JButton moveInputDownButton;
 
     private SimpleTableModel<EncapsulatedAssertionArgumentDescriptor> inputsTableModel;
     private SimpleTableModel<EncapsulatedAssertionResultDescriptor> outputsTableModel;
@@ -101,6 +103,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
 
         final AbstractButton[] buttons = {changePolicyButton, selectIconButton,
             addInputButton, editInputButton, deleteInputButton,
+            moveInputUpButton, moveInputDownButton,
             addOutputButton, editOutputButton, deleteOutputButton,
             okButton, cancelButton};
         Utilities.equalizeButtonSizes(buttons);
@@ -146,6 +149,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             column("GUI", 30, 30, 50, Functions.<Boolean, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiPrompt"), Boolean.class),
             column("Name", 30, 140, 99999, propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentName")),
             column("Type", 30, 140, 99999, Functions.<DataType, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentType"), DataType.class),
+            column("Label", 30, 140, 99999, propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiLabel")),
             column("Default", 30, 140, 99999, propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "defaultValue")));
         inputsTable.getColumnModel().getColumn(2).setCellRenderer(dataTypePrettyPrintingTableCellRenderer());
 
@@ -190,6 +194,9 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                 doOutputProperties(getSelectedOutput(), false);
             }
         });
+
+        moveInputUpButton.addActionListener(TableUtil.createMoveUpAction(inputsTable, inputsTableModel));
+        moveInputDownButton.addActionListener(TableUtil.createMoveDownAction(inputsTable, inputsTableModel));
 
         Utilities.setDoubleClickAction(inputsTable, editInputButton);
         Utilities.setDoubleClickAction(outputsTable, editOutputButton);
@@ -298,7 +305,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         iconBase64 = config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64);
         iconLabel.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(config).right);
 
-        inputsTableModel.setRows(new ArrayList<EncapsulatedAssertionArgumentDescriptor>(config.getArgumentDescriptors()));
+        inputsTableModel.setRows(config.sortedArguments());
         outputsTableModel.setRows(new ArrayList<EncapsulatedAssertionResultDescriptor>(config.getResultDescriptors()));
     }
 
@@ -324,7 +331,12 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             config.removeProperty(PROP_ICON_BASE64);
         }
 
-        config.setArgumentDescriptors(new HashSet<EncapsulatedAssertionArgumentDescriptor>(inputsTableModel.getRows()));
+        int ord = 1;
+        final List<EncapsulatedAssertionArgumentDescriptor> inputs = inputsTableModel.getRows();
+        for (EncapsulatedAssertionArgumentDescriptor input : inputs) {
+            input.setOrdinal(ord++);
+        }
+        config.setArgumentDescriptors(new HashSet<EncapsulatedAssertionArgumentDescriptor>(inputs));
         config.setResultDescriptors(new HashSet<EncapsulatedAssertionResultDescriptor>(outputsTableModel.getRows()));
     }
 

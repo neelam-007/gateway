@@ -19,6 +19,7 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
     private JTextField nameField;
     private JTextField defaultValueField;
     private JPanel defaultValuePanel;
+    private JTextField guiLabelField;
 
     private final EncapsulatedAssertionArgumentDescriptor encapsulatedAssertionArgumentDescriptor;
     private InputValidator inputValidator;
@@ -45,8 +46,20 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
 
         cancelButton.addActionListener(Utilities.createDisposeAction(this));
 
+        Utilities.enableGrayOnDisabled(guiLabelField);
+        guiPromptCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableThings();
+            }
+        });
 
         updateGui(bean);
+        enableOrDisableThings();
+    }
+
+    private void enableOrDisableThings() {
+        guiLabelField.setEnabled(guiPromptCheckBox.isSelected());
     }
 
     private void updateGui(EncapsulatedAssertionArgumentDescriptor bean) {
@@ -54,6 +67,7 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
         defaultValueField.setText(bean.getDefaultValue());
         typeComboBox.setSelectedItem(bean.getArgumentType() == null ? null : DataType.forName(bean.getArgumentType()));
         guiPromptCheckBox.setSelected(bean.isGuiPrompt());
+        guiLabelField.setText(bean.getGuiLabel());
     }
 
     private EncapsulatedAssertionArgumentDescriptor updateBean(EncapsulatedAssertionArgumentDescriptor bean) {
@@ -62,6 +76,7 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
         bean.setGuiPrompt(guiPromptCheckBox.isSelected());
         DataType type = (DataType) typeComboBox.getSelectedItem();
         bean.setArgumentType(type == null ? DataType.UNKNOWN.getShortName() : type.getShortName());
+        bean.setGuiLabel(guiLabelField.getText());
         return bean;
     }
 

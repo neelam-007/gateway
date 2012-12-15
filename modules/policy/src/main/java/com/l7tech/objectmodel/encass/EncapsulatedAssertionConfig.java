@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.Policy;
 import com.l7tech.util.BeanUtils;
+import com.l7tech.util.Functions;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
@@ -15,10 +16,7 @@ import javax.persistence.*;
 import javax.validation.Valid;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
@@ -191,6 +189,23 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
                 return true;
         }
         return false;
+    }
+
+    /**
+     * Convenience method that returns the argument descriptors sorted by ordinal.
+     *
+     * @return a List of argument descriptors, sorted by ordinal, with the variable name used as a tie-breaker.
+     */
+    public List<EncapsulatedAssertionArgumentDescriptor> sortedArguments() {
+        return Functions.sort(getArgumentDescriptors(), new Comparator<EncapsulatedAssertionArgumentDescriptor>() {
+            @Override
+            public int compare(EncapsulatedAssertionArgumentDescriptor a, EncapsulatedAssertionArgumentDescriptor b) {
+                int result = Integer.valueOf(a.getOrdinal()).compareTo(b.getOrdinal());
+                if (result != 0)
+                    return result;
+                return a.getArgumentName().compareTo(b.getArgumentName());
+            }
+        });
     }
 
     @Transient

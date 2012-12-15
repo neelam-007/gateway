@@ -1828,6 +1828,8 @@ CREATE TABLE encapsulated_assertion_argument (
   argument_type varchar(128) NOT NULL,
   default_value mediumtext,
   gui_prompt tinyint(1) NOT NULL,
+  gui_label varchar(255),
+  ordinal int(20) NOT NULL,
   FOREIGN KEY (encapsulated_assertion_oid) REFERENCES encapsulated_assertion (objectid) ON DELETE CASCADE,
   PRIMARY KEY (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;

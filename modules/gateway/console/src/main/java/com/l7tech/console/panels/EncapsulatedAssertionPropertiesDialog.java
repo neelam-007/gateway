@@ -48,12 +48,7 @@ public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertion
 
         Set<PropertyInfo> ret = new LinkedHashSet<PropertyInfo>();
 
-        Collection<EncapsulatedAssertionArgumentDescriptor> args = Functions.sort(config.getArgumentDescriptors(), new Comparator<EncapsulatedAssertionArgumentDescriptor>() {
-            @Override
-            public int compare(EncapsulatedAssertionArgumentDescriptor a, EncapsulatedAssertionArgumentDescriptor b) {
-                return a.getArgumentName().compareTo(b.getArgumentName());
-            }
-        });
+        List<EncapsulatedAssertionArgumentDescriptor> args = config.sortedArguments();
         for (EncapsulatedAssertionArgumentDescriptor arg : args) {
             if (!arg.isGuiPrompt())
                 continue;
@@ -62,6 +57,18 @@ public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertion
         }
 
         return ret;
+    }
+
+    @Override
+    protected String getDisplayName(PropertyInfo prop) {
+        if (prop instanceof EncapsulatedAssertionArgumentDescriptorPropertyInfo) {
+            EncapsulatedAssertionArgumentDescriptorPropertyInfo argProp = (EncapsulatedAssertionArgumentDescriptorPropertyInfo) prop;
+            String label = argProp.arg.getGuiLabel();
+            if (label != null && label.trim().length() > 0) {
+                return label.endsWith(":") ? label : label + ":";
+            }
+        }
+        return super.getDisplayName(prop);
     }
 
     private Class getPropertyValueClass(EncapsulatedAssertionArgumentDescriptor arg) {

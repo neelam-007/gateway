@@ -3,12 +3,15 @@ package com.l7tech.gui.util;
 import com.l7tech.gui.SimpleColumn;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.Arrays;
 
 /**
@@ -117,6 +120,47 @@ public final class TableUtil {
     public static void setColumnWidth(JTable table, int col, int width) {
         table.getColumnModel().getColumn(col).setPreferredWidth(width);
         table.getColumnModel().getColumn(col).setMaxWidth(width);
+    }
+
+    /**
+     * Create an action that will cause the currently-selected row in the specified table, if any, to swap positions
+     * with the previous row (if possible).
+
+     * @param table table to alter.  Must use a SimpleTableModel.
+     * @param tableModel the SimpleTableModel the table is attached to.
+     * @return an ActionListener that will, when invoked, move the selected table row up one spot.
+     */
+    public static ActionListener createMoveUpAction(@NotNull final JTable table, @NotNull final SimpleTableModel<?> tableModel) {
+        return new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                swapSelectedRowWithOffset(table, tableModel, -1);
+            }
+        };
+    }
+
+    /**
+     * Create an action that will cause the currently-selected row in the specified table, if any, to swap positions
+     * with the next row (if possible).
+
+     * @param table table to alter.  Must use a SimpleTableModel.
+     * @param tableModel the SimpleTableModel the table is attached to.
+     * @return an ActionListener that will, when invoked, move the selected table row down one spot.
+     */
+    public static ActionListener createMoveDownAction(@NotNull final JTable table, @NotNull final SimpleTableModel<?> tableModel) {
+        return new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                swapSelectedRowWithOffset(table, tableModel, 1);
+            }
+        };
+    }
+
+    private static void swapSelectedRowWithOffset(JTable table, SimpleTableModel<?> tableModel, int offset) {
+        int row = table.getSelectedRow();
+        final int r2 = row + offset;
+        if (tableModel.swapRows(row, r2))
+            table.getSelectionModel().setSelectionInterval(r2, r2);
     }
 
     /**

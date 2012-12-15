@@ -60,26 +60,9 @@ public class MapValueAssertionPropertiesDialog extends AssertionPropertiesOkCanc
                 TableUtil.column("Result", 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "value")));
         mappingsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        moveUpButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int row = mappingsTable.getSelectedRow();
-                final int r2 = row - 1;
-                if (mappingsTableModel.swapRows(row, r2))
-                    mappingsTable.getSelectionModel().setSelectionInterval(r2, r2);
-            }
-        });
+        moveUpButton.addActionListener(TableUtil.createMoveUpAction(mappingsTable, mappingsTableModel));
+        moveDownButton.addActionListener(TableUtil.createMoveDownAction(mappingsTable, mappingsTableModel));
 
-        moveDownButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int row = mappingsTable.getSelectedRow();
-                final int r2 = row + 1;
-                if (mappingsTableModel.swapRows(row, r2))
-                    mappingsTable.getSelectionModel().setSelectionInterval(r2, r2);
-            }
-        });
-        
         addMappingButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {                

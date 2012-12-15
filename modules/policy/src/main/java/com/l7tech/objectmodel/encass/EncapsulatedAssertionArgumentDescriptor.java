@@ -30,9 +30,11 @@ import javax.persistence.*;
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp {
     private EncapsulatedAssertionConfig encapsulatedAssertionConfig;
+    private int ordinal;
     private String argumentName;
     private String argumentType;
     private String defaultValue;
+    private String guiLabel;
     private boolean guiPrompt;
 
     @ManyToOne(optional=false)
@@ -114,6 +116,31 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     }
 
     /**
+     * @return a label to display for this field in the GUI, if {@link #isGuiPrompt()} is true, or null to just show the raw name.
+     */
+    @Nullable
+    @Column(name="gui_label")
+    public String getGuiLabel() {
+        return guiLabel;
+    }
+
+    public void setGuiLabel(String guiLabel) {
+        this.guiLabel = guiLabel;
+    }
+
+    /**
+     * @return a number used for ordering the arguments within the properties dialog.
+     */
+    @Column(name="ordinal")
+    public int getOrdinal() {
+        return ordinal;
+    }
+
+    public void setOrdinal(int ordinal) {
+        this.ordinal = ordinal;
+    }
+
+    /**
      * Get context variables that would be used by the specified parameter value provided for this argument descriptor.
      *
      * @param parameterValue value of the parameter.  If null, this method will return an empty collection.
@@ -185,6 +212,8 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
         if (defaultValue != null ? !defaultValue.equals(that.defaultValue) : that.defaultValue != null) return false;
         if (argumentName != null ? !argumentName.equals(that.argumentName) : that.argumentName != null) return false;
         if (argumentType != null ? !argumentType.equals(that.argumentType) : that.argumentType != null) return false;
+        if (guiLabel != null ? !guiLabel.equals(that.guiLabel) : that.guiLabel != null) return false;
+        if (ordinal != that.ordinal) return false;
 
         return true;
     }
@@ -196,6 +225,8 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
         result = 31 * result + (argumentType != null ? argumentType.hashCode() : 0);
         result = 31 * result + (defaultValue != null ? defaultValue.hashCode() : 0);
         result = 31 * result + (guiPrompt ? 1 : 0);
+        result = 31 * result + (guiLabel != null ? guiLabel.hashCode() : 0);
+        result = 31 * result + ordinal;
         return result;
     }
 
@@ -203,10 +234,12 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     public String toString() {
         return "EncapsulatedAssertionArgumentDescriptor{" +
             "eacOid=" + (encapsulatedAssertionConfig == null ? null : encapsulatedAssertionConfig.getOid()) +
+            ", orderinal=" + ordinal +
             ", argumentName='" + argumentName + '\'' +
             ", argumentType='" + argumentType + '\'' +
             ", defaultValue='" + defaultValue + '\'' +
             ", guiPrompt=" + guiPrompt +
+            ", guiLabel=" + guiLabel +
             '}';
     }
 }

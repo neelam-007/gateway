@@ -42,6 +42,8 @@ CREATE TABLE encapsulated_assertion_argument (
   argument_type varchar(255) NOT NULL,
   default_value varchar(32672),
   gui_prompt smallint NOT NULL,
+  gui_label varchar(255),
+  ordinal integer NOT NULL,
   PRIMARY KEY (objectid)
 );
 
