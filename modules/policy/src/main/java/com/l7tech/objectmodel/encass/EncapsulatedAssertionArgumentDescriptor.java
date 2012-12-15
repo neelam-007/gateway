@@ -130,7 +130,18 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
                 /* FALLTHROUGH and return empty */
             }
         }
+        if (valueIsParentContextVariableNameForDataType(getArgumentType()) && parameterValue != null && parameterValue.trim().length() > 0) {
+            // The value is the name of a context variable which we will be using from the parent context
+            return new String[] { parameterValue };
+        }
         return new String[0];
+    }
+
+    /**
+     * @return a DataType instance for the current argument type.  Null if not set, and UNKNOWN if not recognized.
+     */
+    public DataType dataType() {
+        return DataType.forName(getArgumentType());
     }
 
     /**
@@ -145,20 +156,20 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     public static boolean allowVariableInterpolationForDataType(String argumentType) {
         // For now we will allow only String GUI fields to by expressions that include context variables.
         // TODO maybe we should make this selectable per argument descriptor
-        return DataType.STRING.getName().equals(argumentType);
+        return DataType.STRING.getShortName().equals(argumentType);
     }
 
     /**
      * Check whether GUI-preconfigured values for parameters of the specified type should be treated as names
      * of context variables that are assumed to already exist in the parent context.
      * <p/>
-     * Currently this method returns true only for the Message type.
+     * Currently this method returns true only for the Message and Element types.
      *
      * @param argumentType the argument type.  If null, this method returns false.
      * @return true if a GUI-configured value for a parameter of this type should be assumed to be the name of a parent context variable instead of a raw value.
      */
     public static boolean valueIsParentContextVariableNameForDataType(String argumentType) {
-        return DataType.MESSAGE.getName().equals(argumentType);
+        return DataType.MESSAGE.getShortName().equals(argumentType) || DataType.ELEMENT.getShortName().equals(argumentType);
     }
 
     @SuppressWarnings("RedundantIfStatement")

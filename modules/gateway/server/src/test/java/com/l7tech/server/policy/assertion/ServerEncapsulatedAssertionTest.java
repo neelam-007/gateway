@@ -230,6 +230,18 @@ public class ServerEncapsulatedAssertionTest {
 
     @Test
     public void checkRequestMessageInputParamFromAssertion() throws Exception {
+        /*
+            If the encapsulated assertion has an argument:
+                - "in" of type Message, gui=true
+
+            And the parent policy looks like:
+                - set variable parentMess as Message
+                - encass  in=parentMess
+
+            Then the encapsulated fragment will see a context variable:
+                - "in" of type Message, that is an alias to "parentMess" in the parent PEC
+        */
+
         final String in = "in";
         final String inVal = "inMessage";
         assertion.putParameter(in, inVal);
@@ -237,7 +249,7 @@ public class ServerEncapsulatedAssertionTest {
         context.setVariable(inVal, msg);
         inParams.add(inputParam(in, DataType.MESSAGE, true));
 
-        mockHandle(Collections.singletonMap(inVal, (Object) msg), Collections.<String, String>emptyMap(), AssertionStatus.NONE);
+        mockHandle(Collections.singletonMap(in, (Object) msg), Collections.<String, String>emptyMap(), AssertionStatus.NONE);
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
     }
@@ -285,7 +297,7 @@ public class ServerEncapsulatedAssertionTest {
     private EncapsulatedAssertionArgumentDescriptor inputParam(final String name, final DataType type, final boolean guiPrompt) {
         final EncapsulatedAssertionArgumentDescriptor input = new EncapsulatedAssertionArgumentDescriptor();
         input.setArgumentName(name);
-        input.setArgumentType(type.getName());
+        input.setArgumentType(type.getShortName());
         input.setGuiPrompt(guiPrompt);
         return input;
     }
@@ -293,7 +305,7 @@ public class ServerEncapsulatedAssertionTest {
     private EncapsulatedAssertionResultDescriptor outputParam(final String name, final DataType type) {
         final EncapsulatedAssertionResultDescriptor output = new EncapsulatedAssertionResultDescriptor();
         output.setResultName(name);
-        output.setResultType(type.getName());
+        output.setResultType(type.getShortName());
         return output;
     }
 }

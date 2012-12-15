@@ -1,10 +1,10 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionStringEncoding;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.variable.DataType;
@@ -17,8 +17,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.beans.PropertyEditor;
 import java.beans.PropertyEditorSupport;
-import java.security.cert.X509Certificate;
-import java.text.ParseException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -77,11 +75,13 @@ public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertion
 
     private class EncapsulatedAssertionArgumentDescriptorPropertyInfo implements PropertyInfo {
         private final EncapsulatedAssertionArgumentDescriptor arg;
+        private final DataType dataType;
         private final Class propertyValueClass;
 
         public EncapsulatedAssertionArgumentDescriptorPropertyInfo(EncapsulatedAssertionArgumentDescriptor arg, Class propertyValueClass) {
             this.arg = arg;
             this.propertyValueClass = propertyValueClass;
+            this.dataType = DataType.forName(arg.getArgumentType());
         }
 
         @Override
@@ -110,12 +110,12 @@ public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertion
 
         @Override
         public Object readValueFromBean(Object assertion) {
-            return decodeFromString(arg, propertyValueClass, ((EncapsulatedAssertion) assertion).getParameter(arg.getArgumentName()));
+            return EncapsulatedAssertionStringEncoding.decodeFromString(dataType, ((EncapsulatedAssertion) assertion).getParameter(arg.getArgumentName()));
         }
 
         @Override
         public void writeValueToBean(Object assertion, Object value) throws IllegalArgumentException {
-            ((EncapsulatedAssertion)assertion).putParameter(arg.getArgumentName(), encodeToString(arg, propertyValueClass, value));
+            ((EncapsulatedAssertion)assertion).putParameter(arg.getArgumentName(), EncapsulatedAssertionStringEncoding.encodeToString(dataType, value));
         }
     }
 
@@ -136,57 +136,6 @@ public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertion
         });
         List<String> ret = Functions.map(messageMetas, Functions.<String, VariableMetadata>propertyTransform(VariableMetadata.class, "name"));
         return ret.toArray(new String[ret.size()]);
-    }
-
-    private String encodeToString(EncapsulatedAssertionArgumentDescriptor arg, Class propertyValueClass, Object value) {
-        if (Enum.class.isAssignableFrom(propertyValueClass)) {
-            return value == null ? null : ((Enum)value).name();
-        } else if (Date.class.isAssignableFrom(propertyValueClass)) {
-            return value instanceof Date ? ISO8601Date.format((Date)value) : null;
-        } else if (X509Certificate.class.isAssignableFrom(propertyValueClass)) {
-            try {
-                return value instanceof X509Certificate ? CertUtils.encodeAsPEM((X509Certificate) value) : null;
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Unable to encode certificate property: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            }
-        } else if (byte[].class.isAssignableFrom(propertyValueClass)) {
-            // The binary value is stored in the string as base64 even though it is edited in the GUI as a hex string.
-            return value instanceof byte[] ? HexUtils.encodeBase64((byte[])value) : null;
-        }
-        return value == null ? null : value.toString();
-    }
-
-    private Object decodeFromString(EncapsulatedAssertionArgumentDescriptor arg, Class propertyValueClass, String valueString) {
-        if (Enum.class.isAssignableFrom(propertyValueClass)) {
-            //noinspection unchecked
-            return valueString == null ? null : Enum.valueOf((Class<? extends Enum>)propertyValueClass, valueString);
-        } else if (Message.class == propertyValueClass) {
-            // Value is the name of an in-scope Message variable
-            return valueString;
-        } else if (Boolean.class == propertyValueClass) {
-            return Boolean.valueOf(valueString);
-        } else if (Date.class.isAssignableFrom(propertyValueClass)) {
-            try {
-                return valueString == null || valueString.trim().length() < 1 ? null : ISO8601Date.parse(valueString);
-            } catch (ParseException e) {
-                logger.log(Level.WARNING, "Date property not ISO 8601 string: " + valueString + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                return null;
-            }
-        } else if (X509Certificate.class.isAssignableFrom(propertyValueClass)) {
-            try {
-                return valueString == null || valueString.trim().length() < 1 ? null : CertUtils.decodeFromPEM(valueString, false);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Certificate property not a valid PEM X.509 certificate: " + valueString + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                return null;
-            }
-        } else if (byte[].class.isAssignableFrom(propertyValueClass)) {
-            // The binary value is stored in the string as base64 even though it is edited in the GUI as a hex string.
-            return valueString == null || valueString.trim().length() < 1 ? null : HexUtils.decodeBase64(valueString, true);
-        } else {
-            return valueString;
-        }
-
-        // TODO move this functionality somewhere more central, maybe the server side can reuse it
     }
 
     /**

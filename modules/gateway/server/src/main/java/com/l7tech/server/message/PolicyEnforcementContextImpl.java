@@ -382,7 +382,8 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
             value = variables.get(name);
         }
 
-        if (value == null) throw new NoSuchVariableException(name, "The variable \"" + name + "\" could not be found.");
+        if (value == null)
+            throw new NoSuchVariableException(name, "The variable \"" + name + "\" could not be found.");
 
         return value;
     }

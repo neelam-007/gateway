@@ -64,6 +64,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JButton editOutputButton;
     private JButton deleteInputButton;
     private JButton deleteOutputButton;
+    private JSplitPane inputsOutputsSplitPane;
 
     private SimpleTableModel<EncapsulatedAssertionArgumentDescriptor> inputsTableModel;
     private SimpleTableModel<EncapsulatedAssertionResultDescriptor> outputsTableModel;
@@ -104,6 +105,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             okButton, cancelButton};
         Utilities.equalizeButtonSizes(buttons);
         Utilities.enableGrayOnDisabled(buttons);
+        Utilities.deuglifySplitPane(inputsOutputsSplitPane);
 
         inputValidator.constrainTextFieldToBeNonEmpty("name", nameField, null);
         inputValidator.addRule(new InputValidator.ComponentValidationRule(changePolicyButton) {

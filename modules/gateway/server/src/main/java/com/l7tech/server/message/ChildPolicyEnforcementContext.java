@@ -315,10 +315,10 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
 
     @Override
     public void putParentVariable(@NotNull String variableName, boolean prefixed) {
+        final String lowerVar = variableName.toLowerCase();
+        passthroughVariables.add(lowerVar);
         if (prefixed) {
-            passthroughPrefixes.add(variableName.toLowerCase());
-        } else {
-            passthroughVariables.add(variableName.toLowerCase());
+            passthroughPrefixes.add(lowerVar + ".");
         }
     }
 
@@ -339,14 +339,23 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
 
         // TODO move this hardcoded config somewhere more appropriate (get from variable metadata, perhaps)
         final String lcname = name.toLowerCase();
-        return passthroughVariables.contains(name) ||
-                !passthroughPrefixes.subSet(lcname, lcname + Character.MAX_VALUE).isEmpty() ||
+        return passthroughVariables.contains(lcname) ||
+                matchesPassthroughPrefix(lcname) ||
                 "request".equals(lcname) ||
                 "response".equals(lcname) ||
                 "service".equals(lcname) ||
                 lcname.startsWith("request.") ||
                 lcname.startsWith("response.") ||
                 lcname.startsWith("service.");
+    }
+
+    private boolean matchesPassthroughPrefix(String name) {
+        // TODO this algorithm is terrible, replace with a faster one using a smarter data structure
+        for (String prefix : passthroughPrefixes) {
+            if (name.startsWith(prefix))
+                return true;
+        }
+        return false;
     }
 
     private final PolicyEnforcementContext context;
