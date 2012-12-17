@@ -24,7 +24,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * Assertion bean representing an invocation of server behavior for an EncapsulatedAssertionConfig.
  */
 public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDesignTime, UsesVariables, SetsVariables {
-    private static final String DEFAULT_OID_STR = Long.toString(EncapsulatedAssertionConfig.DEFAULT_OID);
+    static final String DEFAULT_OID_STR = Long.toString(EncapsulatedAssertionConfig.DEFAULT_OID);
 
     private DefaultAssertionMetadata meta = null;
     private String encapsulatedAssertionConfigId = DEFAULT_OID_STR;
@@ -196,7 +196,10 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
         });
 
         // Copy over properties that require some adaptation
-        meta.put(PALETTE_FOLDERS, new String[] { config.getProperty(EncapsulatedAssertionConfig.PROP_PALETTE_FOLDER) });
+        final String folder = config.getProperty(EncapsulatedAssertionConfig.PROP_PALETTE_FOLDER);
+        if (folder != null) {
+            meta.put(PALETTE_FOLDERS, new String[] { folder });
+        }
 
         this.meta = meta;
         return meta;

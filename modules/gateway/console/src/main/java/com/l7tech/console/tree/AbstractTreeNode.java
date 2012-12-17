@@ -43,6 +43,8 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     protected Comparator<TreeNode> childrenComparator = DEFAULT_COMPARATOR;
     protected boolean expanded; // Keep tracing if the node is expanded or collapsed (for gui purpose only).
     private boolean isCut = false;
+    private Image openedIcon;
+    private Image closedIcon;
 
     public boolean isCut() {
         return isCut;
@@ -442,7 +444,10 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      */
     @Nullable
     public Image getIcon() {
-        return getIcon(false);
+        if (closedIcon == null) {
+            closedIcon = getIcon(false);
+        }
+        return closedIcon;
     }
 
     /**
@@ -454,7 +459,10 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      */
     @Nullable
     public Image getOpenedIcon() {
-        return getIcon(true);
+        if (openedIcon == null) {
+            openedIcon = getIcon(true);
+        }
+        return openedIcon;
     }
 
     /**
