@@ -42,8 +42,10 @@ import java.util.logging.Logger;
 /**
  * @see <a href="http://sarek.l7tech.com/mediawiki/index.php?title=SSG_Ping_Url">Functional specification for Ping servlet in 3.6</a>
  * @see <a href="http://sarek.l7tech.com/mediawiki/index.php?title=Expand_SSG_Ping">Functional specification for adding system info in 4.3</a>
+ * @see <a href="http://sarek/mediawiki/index.php?title=SSG_Ping_MONITOR_Mode">Functional specification for adding MONITOR mode in Goatfish</a>
  * @author alex
  * @author rmak
+ * @author jwilliams
  */
 public class PingServlet extends AuthenticatableHttpServlet {
     private static final Logger _logger = Logger.getLogger(PingServlet.class.getName());
@@ -52,7 +54,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
     private static final String MODE_PROP_NAME = "pingServletMode";
 
     /** Available operating modes. */
-    private enum Mode { OFF, REQUIRE_CREDS, OPEN }
+    private enum Mode { OFF, REQUIRE_CREDS, OPEN, MONITOR }
 
     /** Default operating mode. */
     private static final Mode DEFAULT_MODE = Mode.REQUIRE_CREDS;
@@ -153,58 +155,67 @@ public class PingServlet extends AuthenticatableHttpServlet {
         final boolean secure = request.isSecure();
         final String protocol = secure ? "https" : "http";
 
-        if (mode == Mode.OFF) {
-            respondNone(request, "mode=" + mode);
-        } else if (mode == Mode.REQUIRE_CREDS) {
-            if (!secure) {
-                respondNone(request, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
-            } else {
-                final boolean hasCredentials = findCredentialsBasic(request) != null;
-                if (!hasCredentials) {
-                    respondChallenge(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials);
-                    return;
-                }
-
-                boolean authenticated = false;
-                try {
-                    final AuthenticationResult[] results = authenticateRequestBasic(request, true);
-                    if (results.length > 0) {
-                        final User user = results[0].getUser();
-                        authenticated = _roleManager.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.CLUSTER_INFO);
-                    }
-                } catch (AuthenticationException e) {
-                    authenticated = false;
-                } catch (LicenseException e) {
-                    _logger.warning("Ping service is unlicensed; returning " + HttpServletResponse.SC_SERVICE_UNAVAILABLE + ".");
-                    respondError(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Unlicensed");
-                    return;
-                } catch (FindException e) {
-                    authenticated = false;
-                } catch (CannotCreateTransactionException e) {
-                    // Database unreachable.
-                    respondDatabaseFailureMinimal(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials);
-                    if (_logger.isLoggable(Level.FINE)) {
-                        _logger.fine("Failed to authenticate request: " + e.getMessage());
-                    }
-                    return;
-                } catch (ListenerException e) {
-                    _logger.warning("Ping service is not enabled for this port; returning " + HttpServletResponse.SC_SERVICE_UNAVAILABLE + ".");
-                    respondError(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Connector not enabled");
-                    return;
-                }
-
-                if (authenticated) {
-                    respondFull(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials + ", authenticated=" + authenticated);
+        switch (mode) {
+            case OFF:
+                respondNone(request, "mode=" + mode);
+                break;
+            case REQUIRE_CREDS:
+                if (!secure) {
+                    respondNone(request, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
                 } else {
-                    respondNone(request, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials + ", authenticated=" + authenticated);
+                    final boolean hasCredentials = findCredentialsBasic(request) != null;
+                    if (!hasCredentials) {
+                        respondChallenge(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials);
+                        return;
+                    }
+
+                    boolean authenticated = false;
+                    try {
+                        final AuthenticationResult[] results = authenticateRequestBasic(request, true);
+                        if (results.length > 0) {
+                            final User user = results[0].getUser();
+                            authenticated = _roleManager.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.CLUSTER_INFO);
+                        }
+                    } catch (AuthenticationException e) {
+                        authenticated = false;
+                    } catch (LicenseException e) {
+                        _logger.warning("Ping service is unlicensed; returning " + HttpServletResponse.SC_SERVICE_UNAVAILABLE + ".");
+                        respondError(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Unlicensed");
+                        return;
+                    } catch (FindException e) {
+                        authenticated = false;
+                    } catch (CannotCreateTransactionException e) {
+                        // Database unreachable.
+                        respondDatabaseFailureMinimal(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials);
+                        if (_logger.isLoggable(Level.FINE)) {
+                            _logger.fine("Failed to authenticate request: " + e.getMessage());
+                        }
+                        return;
+                    } catch (ListenerException e) {
+                        _logger.warning("Ping service is not enabled for this port; returning " + HttpServletResponse.SC_SERVICE_UNAVAILABLE + ".");
+                        respondError(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Connector not enabled");
+                        return;
+                    }
+
+                    if (authenticated) {
+                        respondFull(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials + ", authenticated=" + authenticated);
+                    } else {
+                        respondNone(request, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials + ", authenticated=" + authenticated);
+                    }
+                };
+                break;
+            case OPEN:
+                if (!secure) {
+                    respondMinimal(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
+                } else {
+                    respondFull(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
                 }
-            }
-        } else if (mode == Mode.OPEN) {
-            if (!secure) {
+                break;
+            case MONITOR:
                 respondMinimal(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
-            } else {
-                respondFull(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
-            }
+                break;
+            default:
+                System.out.println("UNRECOGNIZED MODE");
         }
     }
 
@@ -216,12 +227,17 @@ public class PingServlet extends AuthenticatableHttpServlet {
                               final HttpServletResponse response,
                               final Mode mode)
             throws IOException {
+
+        if (mode == Mode.OFF || mode == Mode.MONITOR) {
+            respondNone(request, "mode=" + mode);
+        }
+
         if (request.isSecure() && findCredentialsBasic(request) == null) {
             respondChallenge(response, "system info request without credentials");
             return;
         }
 
-        if (! isSystemInfoPermitted(request, mode)) {
+        if (! isSystemInfoPermitted(request)) {
             respondNone(request, "system info request not permitted");
             return;
         }
@@ -257,11 +273,9 @@ public class PingServlet extends AuthenticatableHttpServlet {
      * Determines if system info request is permitted.
      *
      * @param request   the HTTP request
-     * @param mode      the current Ping servlet operating mode
      * @return true if permitted
      */
-    private boolean isSystemInfoPermitted(final HttpServletRequest request, final Mode mode) {
-        if (mode == Mode.OFF) return false;
+    private boolean isSystemInfoPermitted(final HttpServletRequest request) {
 
         if (! request.isSecure()) return false;
 
