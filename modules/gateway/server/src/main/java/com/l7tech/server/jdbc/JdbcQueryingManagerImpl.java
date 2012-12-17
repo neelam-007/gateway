@@ -76,6 +76,11 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.setMaxRows(maxRecords);
 
+        return performJdbcQuery(jdbcTemplate, query, preparedStmtParams);
+    }
+
+    protected Object performJdbcQuery(JdbcTemplate jdbcTemplate, String query, List<Object> preparedStmtParams)
+    {
         // Query or update and return querying results.
         try {
             boolean isSelectQuery = query.toLowerCase().startsWith("select");
@@ -132,7 +137,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
             int columnCount = meta.getColumnCount();
             while(resultSet.next()){
                 for(int j = 1 ; j <= columnCount ; j++){
-                    String colName = meta.getColumnName(j).toLowerCase();
+                    String colName = meta.getColumnLabel(j).toLowerCase();
                     List<Object> col  = result.get(colName);
 
                     if(col == null){
