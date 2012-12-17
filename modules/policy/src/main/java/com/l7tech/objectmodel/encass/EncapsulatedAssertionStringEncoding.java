@@ -63,7 +63,6 @@ public class EncapsulatedAssertionStringEncoding {
         .put(DataType.CERTIFICATE, certDecoder())
         .put(DataType.BINARY, byteArrayDecoder())
         .put(DataType.BOOLEAN, booleanDecoder())
-        .put(DataType.CERTIFICATE, certDecoder())
         .unmodifiableMap();
 
     private static Functions.Unary<String, Object> dateTimeEncoder() {

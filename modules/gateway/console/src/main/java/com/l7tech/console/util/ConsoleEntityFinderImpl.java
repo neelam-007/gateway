@@ -39,8 +39,11 @@ public class ConsoleEntityFinderImpl implements HeaderBasedEntityFinder<Entity,E
         return findByEntityTypeAndPrimaryId(header.getType(), header.getStrId());
     }
 
+    /**
+     * Overridden in tests.
+     */
     @NotNull
-    private static Registry registry() throws FindException {
+    Registry registry() throws FindException {
         Registry registry = Registry.getDefault();
         if (!registry.isAdminContextPresent())
             throw new FindException("Admin context not present");

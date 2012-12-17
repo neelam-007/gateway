@@ -68,7 +68,11 @@ public class RegistryStub extends Registry {
 
     @Override
     public boolean isAdminContextPresent() {
-        return false;
+        return adminContextPresent;
+    }
+
+    public void setAdminContextPresent(boolean adminContextPresent) {
+        this.adminContextPresent = adminContextPresent;
     }
 
     @Override
@@ -462,7 +466,11 @@ public class RegistryStub extends Registry {
 
     @Override
     public EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin() {
-        return null;
+        return encapsulatedAssertionAdmin;
+    }
+
+    public void setEncapsulatedAssertionAdmin(@NotNull final EncapsulatedAssertionAdmin encapsulatedAssertionAdmin) {
+        this.encapsulatedAssertionAdmin = encapsulatedAssertionAdmin;
     }
 
     @Override
@@ -509,4 +517,6 @@ public class RegistryStub extends Registry {
     private ConsoleLicenseManager licenseManager =  null;//new TestLicenseManager();
     private LogSinkAdmin logSinkAdmin = new LogSinkAdminStub();
     private TrustedCertAdmin trustedCertAdmin = new TrustedCertAdminStub();
+    private EncapsulatedAssertionAdmin encapsulatedAssertionAdmin;
+    private boolean adminContextPresent;
 }
