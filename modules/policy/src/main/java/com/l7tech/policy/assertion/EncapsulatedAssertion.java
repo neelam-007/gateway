@@ -201,6 +201,11 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
             meta.put(PALETTE_FOLDERS, new String[] { folder });
         }
 
+        final String description = config.getProperty(EncapsulatedAssertionConfig.PROP_DESCRIPTION);
+        if (description != null) {
+            meta.put(DESCRIPTION, description);
+        }
+
         this.meta = meta;
         return meta;
     }

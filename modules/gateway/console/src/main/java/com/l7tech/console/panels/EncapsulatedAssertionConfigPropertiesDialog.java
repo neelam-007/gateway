@@ -68,6 +68,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JSplitPane inputsOutputsSplitPane;
     private JButton moveInputUpButton;
     private JButton moveInputDownButton;
+    private JTextArea descriptionTextArea;
 
     private SimpleTableModel<EncapsulatedAssertionArgumentDescriptor> inputsTableModel;
     private SimpleTableModel<EncapsulatedAssertionResultDescriptor> outputsTableModel;
@@ -306,6 +307,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
 
     private void updateView() {
         nameField.setText(config.getName());
+        descriptionTextArea.setText(config.getProperty(PROP_DESCRIPTION));
 
         final String paletteFolderName = config.getProperty(PROP_PALETTE_FOLDER);
         loadPaletteFolders(paletteFolderName);
@@ -329,6 +331,12 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private void updateBean() {
         config.setName(nameField.getText());
         config.putProperty(PROP_PALETTE_FOLDER, (String) paletteFolderComboBox.getSelectedItem());
+        String desc = descriptionTextArea.getText();
+        if (desc.trim().length() > 0) {
+            config.putProperty(PROP_DESCRIPTION, desc);
+        } else {
+            config.removeProperty(PROP_DESCRIPTION);
+        }
         config.setPolicy(policy);
 
         if (iconResourceFilename != null) {

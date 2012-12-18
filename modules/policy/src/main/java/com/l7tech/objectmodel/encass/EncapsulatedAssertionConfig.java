@@ -35,7 +35,11 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 @Inheritance(strategy= InheritanceType.SINGLE_TABLE)
 @Table(name="encapsulated_assertion")
 public class EncapsulatedAssertionConfig extends NamedEntityImp {
+    /** ID of palette folder in which to offer the encapsulated assertion. */
     public static final String PROP_PALETTE_FOLDER = "paletteFolder";
+
+    /** Description of the encapsulated assertion, if not the default. */
+    public static final String PROP_DESCRIPTION = "description";
 
     /** Base64-encoded image in a supported format (gif, png, or jpg).  Should be 16x16 pixels, for the time being. */
     public static final String PROP_ICON_BASE64 = "paletteIconBase64";
