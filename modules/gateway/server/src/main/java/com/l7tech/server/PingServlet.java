@@ -215,7 +215,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
                 respondMinimal(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
                 break;
             default:
-                System.out.println("UNRECOGNIZED MODE");
+                throw new IllegalStateException("Unrecgonized mode");
         }
     }
 
