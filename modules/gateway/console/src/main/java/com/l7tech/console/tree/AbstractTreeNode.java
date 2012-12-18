@@ -466,6 +466,14 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     }
 
     /**
+     * Clear the currently set closed and open icons so that they are refreshed next time they are retrieved.
+     */
+    public void clearIcons() {
+        closedIcon = null;
+        openedIcon = null;
+    }
+
+    /**
      * Gets an Image for this node from a base 64 encoded string (if available) or from ImageCache.
      *
      * @param open for nodes that can be opened, can have children

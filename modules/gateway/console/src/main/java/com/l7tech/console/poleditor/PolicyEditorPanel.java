@@ -36,6 +36,7 @@ import com.l7tech.util.*;
 import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.xml.NamespaceMigratable;
 import com.l7tech.xml.soap.SoapVersion;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -1504,6 +1505,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     if(at instanceof AssertionTreeNode){
                         AssertionTreeNode assertionNode = (AssertionTreeNode) at;
                         assertionNode.clearPropsString();
+                        assertionNode.clearIcons();
                     }
                 }
             }
@@ -2055,21 +2057,27 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     }
 
-    public void visitCurrentlyOpenPolicyTreeNodes(Functions.UnaryVoid<AbstractTreeNode> visitor) {
-        if (policyTree != null && rootAssertion != null) {
+    /**
+     * Visit each node that is currently open in the PolicyEditorPanel.
+     *
+     * @param visitor the function to call on each node.
+     */
+    public void visitCurrentlyOpenPolicyTreeNodes(@NotNull final Functions.UnaryVoid<AssertionTreeNode> visitor) {
+        if (rootAssertion != null) {
             recurseVisitTreeNodes(rootAssertion, visitor);
-            ((PolicyTreeModel)(policyTree.getModel())).nodeChanged(rootAssertion);
-            policyTree.updateUI();
         }
     }
 
-    private void recurseVisitTreeNodes(AbstractTreeNode node, Functions.UnaryVoid<AbstractTreeNode> visitor) {
+    /**
+     * Recursively calls the visitor function on the given node and its children.
+     */
+    private void recurseVisitTreeNodes(final @NotNull AssertionTreeNode node, final @NotNull Functions.UnaryVoid<AssertionTreeNode> visitor) {
         visitor.call(node);
-        Enumeration kidsen = node.children();
-        while (kidsen.hasMoreElements()) {
-            Object o = kidsen.nextElement();
-            if (o instanceof AbstractTreeNode) {
-                AbstractTreeNode abstractTreeNode = (AbstractTreeNode) o;
+        final Enumeration kidsEnum = node.children();
+        while (kidsEnum.hasMoreElements()) {
+            final Object child = kidsEnum.nextElement();
+            if (child instanceof AssertionTreeNode) {
+                final AssertionTreeNode abstractTreeNode = (AssertionTreeNode) child;
                 recurseVisitTreeNodes(abstractTreeNode, visitor);
             }
         }

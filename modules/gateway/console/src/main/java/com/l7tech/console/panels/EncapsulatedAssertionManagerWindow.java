@@ -5,7 +5,8 @@ import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.PaletteFolderRegistry;
-import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -248,10 +249,10 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
      */
     private void loadEncapsulatedAssertionConfigs(boolean updateLocalRegistry) {
         try {
-            Collection<EncapsulatedAssertionConfig> configs = Registry.getDefault().getEncapsulatedAssertionAdmin().findAllEncapsulatedAssertionConfigs();
+            final Collection<EncapsulatedAssertionConfig> configs = Registry.getDefault().getEncapsulatedAssertionAdmin().findAllEncapsulatedAssertionConfigs();
             iconCache.clear();
             final Map<String,EncapsulatedAssertionConfig> configsByOidStr = new HashMap<String,EncapsulatedAssertionConfig>();
-            for (EncapsulatedAssertionConfig config : configs) {
+            for (final EncapsulatedAssertionConfig config : configs) {
                 configsByOidStr.put(config.getId(), config);
             }
 
@@ -261,20 +262,22 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                 encapsulatedAssertionRegistry.replaceAllRegisteredConfigs(configs);
                 final PolicyEditorPanel pep = TopComponents.getInstance().getPolicyEditorPanel();
                 if (pep != null) {
-                    pep.visitCurrentlyOpenPolicyTreeNodes(new Functions.UnaryVoid<AbstractTreeNode>() {
+                    // update any encapsulated assertions open in the policy editor panel
+                    pep.visitCurrentlyOpenPolicyTreeNodes(new Functions.UnaryVoid<AssertionTreeNode>() {
                         @Override
-                        public void call(AbstractTreeNode abstractTreeNode) {
-                            if (abstractTreeNode instanceof DefaultAssertionPolicyNode) {
-                                DefaultAssertionPolicyNode node = (DefaultAssertionPolicyNode) abstractTreeNode;
-                                Assertion ass = node.asAssertion();
-                                if (ass instanceof EncapsulatedAssertion) {
-                                    EncapsulatedAssertion encass = (EncapsulatedAssertion) ass;
-                                    EncapsulatedAssertionConfig config = configsByOidStr.get(encass.getEncapsulatedAssertionConfigId());
-                                    if (config != null)
-                                        encass.config(config);
+                        public void call(@NotNull final AssertionTreeNode assertionTreeNode) {
+                            final Assertion ass = assertionTreeNode.asAssertion();
+                            if (ass instanceof EncapsulatedAssertion) {
+                                final EncapsulatedAssertion encass = (EncapsulatedAssertion) ass;
+                                final EncapsulatedAssertionConfig config = configsByOidStr.get(encass.getEncapsulatedAssertionConfigId());
+                                if (config != null) {
+                                    encass.config(config);
+                                }
+                                final JTree policyTree = TopComponents.getInstance().getPolicyTree();
+                                if (policyTree != null && policyTree.getModel() instanceof PolicyTreeModel) {
+                                    ((PolicyTreeModel)(policyTree.getModel())).assertionTreeNodeChanged(assertionTreeNode);
                                 }
                             }
-
                         }
                     });
                 }
