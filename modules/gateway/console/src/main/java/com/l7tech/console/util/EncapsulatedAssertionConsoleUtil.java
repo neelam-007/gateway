@@ -6,6 +6,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -39,10 +40,21 @@ public final class EncapsulatedAssertionConsoleUtil {
      */
     @NotNull
     public static Pair<IconType, ImageIcon> findIcon(@NotNull EncapsulatedAssertionConfig config) {
-        ImageIcon ret = null;
         String iconResourceFilename = config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_RESOURCE_FILENAME);
         String imageBase64 = config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64);
+        return findIcon(iconResourceFilename, imageBase64);
+    }
 
+    /**
+     * Find an icon to display for the specified encapsulated assertion config properties.
+     *
+     * @param iconResourceFilename filename of icon resource, or null.
+     * @param imageBase64 Base-64 encoded icon image, or null.
+     * @return an icon type + an icon.  Never null.
+     */
+    @NotNull
+    public static Pair<IconType, ImageIcon> findIcon(@Nullable String iconResourceFilename, @Nullable String imageBase64) {
+        ImageIcon ret = null;
         // If a resource path is set to a loadable resource, it takes precedence.
         if (iconResourceFilename != null) {
             ImageIcon icon = ImageCache.getInstance().getIconAsIcon(EncapsulatedAssertionConfig.ICON_RESOURCE_DIRECTORY + iconResourceFilename);

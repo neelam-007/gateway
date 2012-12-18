@@ -303,7 +303,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
 
         iconResourceFilename = config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_RESOURCE_FILENAME);
         iconBase64 = config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64);
-        iconLabel.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(config).right);
+        iconLabel.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(iconResourceFilename, iconBase64).right);
 
         inputsTableModel.setRows(config.sortedArguments());
         outputsTableModel.setRows(new ArrayList<EncapsulatedAssertionResultDescriptor>(config.getResultDescriptors()));
@@ -504,7 +504,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private class IconActionListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            final Pair<EncapsulatedAssertionConsoleUtil.IconType, ImageIcon> currentIcon = EncapsulatedAssertionConsoleUtil.findIcon(config);
+            final Pair<EncapsulatedAssertionConsoleUtil.IconType, ImageIcon> currentIcon = EncapsulatedAssertionConsoleUtil.findIcon(iconResourceFilename, iconBase64);
             final OkCancelDialog<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>> okCancelDialog = new OkCancelDialog<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>>(TopComponents.getInstance().getTopParent(),
                     SELECT_ICON, true, new IconSelectorDialog(currentIcon.left.equals(EncapsulatedAssertionConsoleUtil.IconType.CUSTOM_IMAGE) ? null : currentIcon.right));
             okCancelDialog.pack();
@@ -525,14 +525,11 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                                 config.removeProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64);
                             }
                             iconResourceFilename = null;
-                            config.removeProperty(EncapsulatedAssertionConfig.PROP_ICON_RESOURCE_FILENAME);
                         } else {
                             iconResourceFilename = selected.right;
-                            config.putProperty(EncapsulatedAssertionConfig.PROP_ICON_RESOURCE_FILENAME, iconResourceFilename);
                             iconBase64 = null;
-                            config.removeProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64);
                         }
-                        iconLabel.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(config).right);
+                        iconLabel.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(iconResourceFilename, iconBase64).right);
                     }
                 }
             });
