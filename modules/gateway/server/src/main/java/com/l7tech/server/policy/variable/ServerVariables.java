@@ -722,15 +722,15 @@ public class ServerVariables {
     private static Object getJdbcConnection(String name, PolicyEnforcementContext context) {
         name = name.substring(BuiltinVariables.PREFIX_JDBC_CONNECTION.length() + 1);
         int dotIndex = name.indexOf('.');
-        String connectionName = name.substring(0,dotIndex);
+        String connectionName = name.substring(0, dotIndex);
         try {
             JdbcConnection connection = jdbcConnectionManager.getJdbcConnection(connectionName);
-            if(connection !=null){
-                SelectingGetter getter = SelectingGetter.selectingGetter(connectionName,connection);
-                return getter.get(name,context);
+            if (connection != null) {
+                SelectingGetter getter = SelectingGetter.selectingGetter(connectionName, connection);
+                return getter.get(name, context);
             }
         } catch (FindException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Jdbc connections not found", ExceptionUtils.getDebugException(e));
         }
         return null;
     }
@@ -741,12 +741,12 @@ public class ServerVariables {
             Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
             List<SsgConnector> connectorList = CollectionUtils.toList(connectors);
 
-            if(connectorList !=null){
-                SelectingGetter getter = SelectingGetter.selectingGetter(BuiltinVariables.PREFIX_LISTENPORTS,connectorList);
-                return getter.get(name,context);
+            if (connectorList != null) {
+                SelectingGetter getter = SelectingGetter.selectingGetter(BuiltinVariables.PREFIX_LISTENPORTS, connectorList);
+                return getter.get(name, context);
             }
         } catch (FindException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            logger.log(Level.WARNING, "Listen ports not found",ExceptionUtils.getDebugException(e));
         }
         return null;
     }

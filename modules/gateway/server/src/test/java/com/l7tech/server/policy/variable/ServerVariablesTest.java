@@ -8,8 +8,10 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
@@ -33,6 +35,7 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernameTokenImpl;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -43,6 +46,8 @@ import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.server.policy.assertion.ServerTrueAssertion;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
+import com.l7tech.server.transport.SsgConnectionManagerStub;
+import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import org.junit.AfterClass;
@@ -64,6 +69,7 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.gateway.common.transport.SsgConnector.CLIENT_AUTH_NEVER;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
@@ -1050,6 +1056,36 @@ public class ServerVariablesTest {
     public void testRequestTime_Seconds() throws Exception {
         testBuiltInVariablePreFangtooth_Timestamp("${request.time.seconds}", PolicyEnforcementContextFactory.class, true);
     }
+
+
+    @Test
+    public void testSystemVariables() throws Exception {
+        final PolicyEnforcementContext context = context();
+        expandAndCheck(context, "${ssgnode.hostname}", ServerConfig.getInstance().getHostname());
+    }
+
+    @Test
+    public void testListenPortVariables() throws Exception {
+        final PolicyEnforcementContext context = context();
+        final SsgConnector connector = new SsgConnector(1, "foo bar", 8080, "http", false, "MESSAGE_INPUT", CLIENT_AUTH_NEVER, null, null);
+        ServerVariables.setSsgConnectorManager(new SsgConnectionManagerStub(connector));
+        expandAndCheck(context, "${listenports.length}", "1");
+        expandAndCheck(context, "${listenports.1.port}", Integer.toString(connector.getPort()));
+        expandAndCheck(context, "${listenports.1.protocol}", connector.getScheme());
+    }
+
+    @Test
+    public void testJdbcVariables() throws Exception {
+        final PolicyEnforcementContext context = context();
+        final JdbcConnection connection = new JdbcConnection();
+        connection.setName("TEST");
+        connection.setJdbcUrl("jdbc://url.l7tech.com:1234");
+        connection.setUserName("me");
+        ServerVariables.setJdbcConnectionManager(new JdbcConnectionManagerStub(connection));
+        expandAndCheck(context, "${jdbcconnection."+connection.getName()+".url}", connection.getJdbcUrl());
+        expandAndCheck(context, "${jdbcconnection." + connection.getName() + ".user}", connection.getUserName());
+    }
+
 
     // - PRIVATE
 
