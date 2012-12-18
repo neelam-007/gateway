@@ -2055,6 +2055,26 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     }
 
+    public void visitCurrentlyOpenPolicyTreeNodes(Functions.UnaryVoid<AbstractTreeNode> visitor) {
+        if (policyTree != null && rootAssertion != null) {
+            recurseVisitTreeNodes(rootAssertion, visitor);
+            ((PolicyTreeModel)(policyTree.getModel())).nodeChanged(rootAssertion);
+            policyTree.updateUI();
+        }
+    }
+
+    private void recurseVisitTreeNodes(AbstractTreeNode node, Functions.UnaryVoid<AbstractTreeNode> visitor) {
+        visitor.call(node);
+        Enumeration kidsen = node.children();
+        while (kidsen.hasMoreElements()) {
+            Object o = kidsen.nextElement();
+            if (o instanceof AbstractTreeNode) {
+                AbstractTreeNode abstractTreeNode = (AbstractTreeNode) o;
+                recurseVisitTreeNodes(abstractTreeNode, visitor);
+            }
+        }
+    }
+
     private void updateNode(AssertionTreeNode node, PolicyTreeModel model) {
         final Assertion assertion = node.asAssertion();
         if (assertion.getAssertionComment() != null) {
