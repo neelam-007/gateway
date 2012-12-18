@@ -1,11 +1,11 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.ext.Category;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.util.*;
 
 /**
@@ -58,12 +58,60 @@ public class PaletteFolderRegistry {
         if (tree == null || tree.getModel() == null)
             return;
         AbstractTreeNode root = (AbstractTreeNode) tree.getModel().getRoot();
-        Utilities.collapseTree(tree);
+
+        // Find which ones were open before
+        Set<String> opened = findOpenedPaletteFolderIds(tree);
+
         root.removeAllChildren();
         root.reloadChildren();
+
         ((DefaultTreeModel) (tree.getModel())).nodeStructureChanged(root);
+
+        reopenOpenedPaletteFolders(tree, opened);
+
         tree.validate();
         tree.repaint();
+
+    }
+
+    private Set<String> findOpenedPaletteFolderIds(JTree tree) {
+        Set<String> ret = new HashSet<String>();
+
+        int rowCount = tree.getRowCount();
+        for (int i = 0; i < rowCount; i++) {
+            TreePath path = tree.getPathForRow(i);
+            Object obj = path.getLastPathComponent();
+            if (obj instanceof AbstractPaletteFolderNode) {
+                AbstractPaletteFolderNode node = (AbstractPaletteFolderNode) obj;
+                if (tree.isExpanded(path))
+                    ret.add(node.getFolderId());
+            }
+        }
+
+        return ret;
+    }
+
+    private void reopenOpenedPaletteFolders(JTree tree, Set<String> folderIdsToExpand) {
+        Set<String> idsToExpand = new HashSet<String>(folderIdsToExpand);
+
+        boolean expandedSomething;
+        do {
+            expandedSomething = false;
+            for (int i = 0; i < tree.getRowCount(); i++) {
+                TreePath path = tree.getPathForRow(i);
+                Object obj = path.getLastPathComponent();
+                if (obj instanceof AbstractPaletteFolderNode) {
+                    AbstractPaletteFolderNode node = (AbstractPaletteFolderNode) obj;
+                    final String folderId = node.getFolderId();
+                    if (idsToExpand.contains(folderId)) {
+                        idsToExpand.remove(folderId);
+                        expandedSomething = true;
+                        tree.expandPath(path);
+                        break;
+                    }
+                }
+            }
+        } while (expandedSomething);
     }
 
     /**
