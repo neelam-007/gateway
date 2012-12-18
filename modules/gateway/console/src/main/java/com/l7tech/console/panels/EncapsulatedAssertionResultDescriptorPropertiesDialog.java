@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.ContextVariableTextComponentValidationRule;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
@@ -22,7 +23,7 @@ public class EncapsulatedAssertionResultDescriptorPropertiesDialog extends JDial
     private boolean confirmed = false;
 
     public EncapsulatedAssertionResultDescriptorPropertiesDialog(Window owner, EncapsulatedAssertionResultDescriptor bean) {
-        super(owner, "Argument Properties", ModalityType.APPLICATION_MODAL);
+        super(owner, "Result Properties", ModalityType.APPLICATION_MODAL);
         encapsulatedAssertionResultDescriptor = bean;
         setContentPane(contentPane);
         setModal(true);
@@ -36,6 +37,8 @@ public class EncapsulatedAssertionResultDescriptorPropertiesDialog extends JDial
                 dispose();
             }
         });
+
+        inputValidator.addRule(new ContextVariableTextComponentValidationRule("Name", nameField, false, false));
 
         typeComboBox.setModel(new DefaultComboBoxModel(DataType.VALUES));
 

@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.ContextVariableTextComponentValidationRule;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
@@ -41,6 +42,8 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
                 dispose();
             }
         });
+
+        inputValidator.addRule(new ContextVariableTextComponentValidationRule("Name", nameField, false, false));
 
         typeComboBox.setModel(new DefaultComboBoxModel(DataType.GUI_EDITABLE_VALUES));
 
