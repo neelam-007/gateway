@@ -5,11 +5,13 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.policy.variable.DataType;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Set;
 
 public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDialog {
     private JPanel contentPane;
@@ -25,9 +27,11 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
     private final EncapsulatedAssertionArgumentDescriptor encapsulatedAssertionArgumentDescriptor;
     private InputValidator inputValidator;
     private boolean confirmed = false;
+    private final Set<String> usedVariableNames;
 
-    public EncapsulatedAssertionArgumentDescriptorPropertiesDialog(Window owner, EncapsulatedAssertionArgumentDescriptor bean) {
+    public EncapsulatedAssertionArgumentDescriptorPropertiesDialog(@NotNull Window owner, @NotNull EncapsulatedAssertionArgumentDescriptor bean, @NotNull Set<String> reservedVariableNames) {
         super(owner, "Argument Properties", ModalityType.APPLICATION_MODAL);
+        this.usedVariableNames = reservedVariableNames;
         encapsulatedAssertionArgumentDescriptor = bean;
         setContentPane(contentPane);
         setModal(true);
@@ -44,6 +48,14 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
         });
 
         inputValidator.addRule(new ContextVariableTextComponentValidationRule("Name", nameField, false, false));
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(nameField) {
+            @Override
+            public String getValidationError() {
+                if (usedVariableNames.contains(nameField.getText()))
+                    return "The specified variable name is already used by a different argument.";
+                return null;
+            }
+        });
 
         typeComboBox.setModel(new DefaultComboBoxModel(DataType.GUI_EDITABLE_VALUES));
 

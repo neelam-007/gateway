@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 import static com.l7tech.gui.util.TableUtil.column;
 import static com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig.*;
 import static com.l7tech.util.Functions.propertyTransform;
+import static com.l7tech.util.Option.optional;
 
 /**
  * Properties dialog for the entity representing an  encapsulated assertion configuration.
@@ -146,16 +147,16 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         selectIconButton.addActionListener(new IconActionListener());
 
         inputsTableModel = TableUtil.configureTable(inputsTable,
-            column("GUI", 30, 30, 50, Functions.<Boolean, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiPrompt"), Boolean.class),
-            column("Name", 30, 140, 99999, propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentName")),
-            column("Type", 30, 140, 99999, Functions.<DataType, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentType"), DataType.class),
-            column("Label", 30, 140, 99999, propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiLabel")),
-            column("Default", 30, 140, 99999, propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "defaultValue")));
+            column("GUI", 30, 30, 50, argumentGuiPromptExtractor, Boolean.class),
+            column("Name", 30, 140, 99999, argumentNameExtractor),
+            column("Type", 30, 140, 99999, argumentTypeExtractor, DataType.class),
+            column("Label", 30, 140, 99999, argumentGuiLabelExtractor),
+            column("Default", 30, 140, 99999, argumentDefaultValueExtractor));
         inputsTable.getColumnModel().getColumn(2).setCellRenderer(dataTypePrettyPrintingTableCellRenderer());
 
         outputsTableModel = TableUtil.configureTable(outputsTable,
-            column("Name", 30, 140, 99999, propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultName")),
-            column("Type", 30, 140, 99999, Functions.<DataType, EncapsulatedAssertionResultDescriptor>propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultType"), DataType.class));
+            column("Name", 30, 140, 99999, resultNameExtractor),
+            column("Type", 30, 140, 99999, resultTypeExtractor, DataType.class));
         outputsTable.getColumnModel().getColumn(1).setCellRenderer(dataTypePrettyPrintingTableCellRenderer());
 
         RunOnChangeListener enabler = new RunOnChangeListener(new Runnable() {
@@ -228,10 +229,20 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         return value;
     }
 
+    // Find names already used by objects in the specified table model, excluding the specified self object.
+    private <RT> Set<String> findUsedNames(SimpleTableModel<RT> tableModel, Functions.Unary<String, RT> nameExtractor, RT self) {
+        Set<String> usedNames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        usedNames.addAll(Functions.map(tableModel.getRows(), nameExtractor));
+        usedNames.remove(optional(nameExtractor.call(self)).orSome(""));
+        return usedNames;
+    }
+
     private void doInputProperties(final EncapsulatedAssertionArgumentDescriptor input, final boolean needsInsert) {
         if (input == null)
             return;
-        final EncapsulatedAssertionArgumentDescriptorPropertiesDialog dlg = new EncapsulatedAssertionArgumentDescriptorPropertiesDialog(this, input);
+
+        Set<String> usedNames = findUsedNames(inputsTableModel, argumentNameExtractor, input);
+        final EncapsulatedAssertionArgumentDescriptorPropertiesDialog dlg = new EncapsulatedAssertionArgumentDescriptorPropertiesDialog(this, input, usedNames);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
@@ -255,7 +266,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private void doOutputProperties(final EncapsulatedAssertionResultDescriptor output, final boolean needsInsert) {
         if (output == null)
             return;
-        final EncapsulatedAssertionResultDescriptorPropertiesDialog dlg = new EncapsulatedAssertionResultDescriptorPropertiesDialog(this, output);
+        Set<String> usedNames = findUsedNames(outputsTableModel, resultNameExtractor, output);
+        final EncapsulatedAssertionResultDescriptorPropertiesDialog dlg = new EncapsulatedAssertionResultDescriptorPropertiesDialog(this, output, usedNames);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
@@ -535,4 +547,13 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             });
         }
     }
+
+    private static final Functions.Unary<Boolean,EncapsulatedAssertionArgumentDescriptor> argumentGuiPromptExtractor = Functions.<Boolean, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiPrompt");
+    private static final Functions.Unary<String,EncapsulatedAssertionArgumentDescriptor> argumentNameExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentName");
+    private static final Functions.Unary<DataType,EncapsulatedAssertionArgumentDescriptor> argumentTypeExtractor = Functions.<DataType, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentType");
+    private static final Functions.Unary<Object,EncapsulatedAssertionArgumentDescriptor> argumentGuiLabelExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiLabel");
+    private static final Functions.Unary<Object,EncapsulatedAssertionArgumentDescriptor> argumentDefaultValueExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "defaultValue");
+
+    private static final Functions.Unary<String,EncapsulatedAssertionResultDescriptor> resultNameExtractor = propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultName");
+    private static final Functions.Unary<DataType,EncapsulatedAssertionResultDescriptor> resultTypeExtractor = Functions.<DataType, EncapsulatedAssertionResultDescriptor>propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultType");
 }
