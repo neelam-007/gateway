@@ -28,6 +28,8 @@ import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
 import org.jetbrains.annotations.Nullable;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -52,6 +54,9 @@ public class PolicyAdminImpl implements PolicyAdmin {
     private final ClusterPropertyManager clusterPropertyManager;
     private final PolicyExporterImporterManager policyExporterImporterManager;
     private final RbacServices rbacServices;
+
+    @Inject
+    private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
 
     private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
     private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
@@ -155,6 +160,10 @@ public class PolicyAdminImpl implements PolicyAdmin {
         Policy policy = policyManager.findByPrimaryKey(oid);
         if (policy == null)
             return;
+
+        if (encapsulatedAssertionConfigManager != null && encapsulatedAssertionConfigManager.findByPolicyOid(policy.getOid()).size() > 0)
+            throw new PolicyDeletionForbiddenException(policy, EntityType.ENCAPSULATED_ASSERTION, "it is currently in use by an encapsulated assertion");
+
         if (!(PolicyType.INTERNAL.equals(policy.getType())))
             return;
         String guid = policy.getGuid();

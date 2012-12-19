@@ -112,6 +112,8 @@ public final class DeletePolicyAction extends DeleteEntityNodeAction<PolicyEntit
     private String pdfeMessage(PolicyDeletionForbiddenException pdfe) {
         if (EntityType.POLICY.equals(pdfe.getReferringEntityType()))
             return node.getName() + " cannot be deleted at this time; it is still in use by another policy";
+        if (EntityType.ENCAPSULATED_ASSERTION.equals(pdfe.getReferringEntityType()))
+            return node.getName() + " cannot be deleted at this time; it is still in use as the backing policy for an encapsulated assertion";
         return pdfe.getMessage() != null && pdfe.getMessage().contains(" trace ") ?
                 node.getName() + " cannot be deleted at this time: debug tracing is still enabled on at least one service" :
                 node.getName() + " cannot be deleted at this time; it is still in use as the audit sink policy";
