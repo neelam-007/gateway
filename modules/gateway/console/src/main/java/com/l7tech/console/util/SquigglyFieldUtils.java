@@ -9,18 +9,26 @@ import com.l7tech.util.ValidationUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.awt.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import static com.l7tech.util.Functions.grep;
 
 public class SquigglyFieldUtils {
+
+    private static Pattern leadingTrailingWhiteSpacePattern = Pattern.compile("^\\s+|\\s+$");
+
     /**
      * Validate the contents of a squiggly text field and update the UI.
      *
      * @param squigglyTextField field to validate and manage UI state for.
      * @param textSplitPattern if not null, the pattern will be applied to the contents of the field.
+     * @param trimText Set to true to trim the text in the field. Set to false to leave it untrimmed
      * @param validateFunction function to validate contents. If textSplitPattern was supplied, then this function will be
      * called once for each value after contents of text field are split. validateFunction should return null when there
      * are no errors with the resolved string value.
@@ -28,8 +36,12 @@ public class SquigglyFieldUtils {
      */
     public static boolean validateSquigglyTextFieldState(@NotNull final SquigglyTextField squigglyTextField,
                                                          @Nullable final Pattern textSplitPattern,
+                                                         final boolean trimText,
                                                          @NotNull final Functions.Unary<String, String> validateFunction) {
-        final String customText = squigglyTextField.getText().trim();
+        String customText = squigglyTextField.getText();
+        if(trimText){
+            customText = customText.trim();
+        }
         final boolean hasText = !customText.isEmpty();
         boolean invalid = false;
         if (hasText) {
@@ -60,8 +72,14 @@ public class SquigglyFieldUtils {
     }
 
     public static boolean validateSquigglyTextFieldState(@NotNull final SquigglyTextField squigglyTextField,
+                                                         @Nullable final Pattern textSplitPattern,
                                                          @NotNull final Functions.Unary<String, String> validateFunction) {
-        return validateSquigglyTextFieldState(squigglyTextField, null, validateFunction);
+        return validateSquigglyTextFieldState(squigglyTextField, textSplitPattern, true, validateFunction);
+    }
+
+    public static boolean validateSquigglyTextFieldState(@NotNull final SquigglyTextField squigglyTextField,
+                                                         @NotNull final Functions.Unary<String, String> validateFunction) {
+        return validateSquigglyTextFieldState(squigglyTextField, null, true, validateFunction);
     }
 
     /**
@@ -138,5 +156,62 @@ public class SquigglyFieldUtils {
                 });
 
         return errorCollected[0];
+    }
+
+    /**
+     * Equivalent to calling {@link #validateSquigglyFieldForRegex(com.l7tech.gui.widgets.SquigglyTextField, boolean, int, boolean)} with squigglyTextField, allowContextVariables, 0, false
+     *
+     * @param squigglyTextField     field to validate
+     * @param allowContextVariables Set to true if context variables are allowed in the regex
+     * @return True if the field is a valid regex, or if it contains only warnings and no errors. False if it is invalid.
+     */
+    public static boolean validateSquigglyFieldForRegex(@NotNull final SquigglyTextField squigglyTextField, final boolean allowContextVariables) {
+        return validateSquigglyFieldForRegex(squigglyTextField, allowContextVariables, 0, false);
+    }
+
+    /**
+     * A convenience method for validating a squiggly text field for a regex.
+     *
+     * @param squigglyTextField     field to validate
+     * @param allowContextVariables Set to true if context variables are allowed in the regex
+     * @param flags                 the flags to use with the regex
+     * @param allowEmptyPattern     set to true if a null or empty regex is allowed
+     * @return True if the field is a valid regex, or if it contains only warnings and no errors. False if it is invalid.
+     */
+    public static boolean validateSquigglyFieldForRegex(@NotNull final SquigglyTextField squigglyTextField, final boolean allowContextVariables, final int flags, final boolean allowEmptyPattern) {
+        //use a pessimistic approach
+        final AtomicBoolean regexValid = new AtomicBoolean(false);
+        SquigglyFieldUtils.validateSquigglyTextFieldState(squigglyTextField, null, false,
+                new Functions.Unary<String, String>() {
+                    @Override
+                    public String call(final String text) {
+                        if (text != null && !text.isEmpty()) {
+                            try {
+                                String parsedText = text;
+                                if (allowContextVariables && Syntax.getReferencedNames(text, false).length > 0) {
+                                    parsedText = Pattern.quote(Syntax.regexPattern.matcher(text).replaceAll("\\${$1}"));
+                                }
+                                Pattern.compile(parsedText, flags);
+
+                                // Warn on leading or trailing whitespace
+                                Matcher whiteSpaceMatcher = leadingTrailingWhiteSpacePattern.matcher(text);
+                                if (whiteSpaceMatcher.find()) {
+                                    squigglyTextField.setColor(Color.GREEN);
+                                    regexValid.set(true);
+                                    return "Pattern contains leading or trailing whitespace";
+                                }
+                            } catch (PatternSyntaxException patternSyntaxException) {
+                                //There is no consistent way to fine the range for the exception. So set range to null and the entire field will be red.
+                                squigglyTextField.setColor(Color.RED);
+                                return patternSyntaxException.getDescription() + " index: " + patternSyntaxException.getIndex();
+                            }
+                        } else if (!allowEmptyPattern) {
+                            return "Empty pattern not allowed";
+                        }
+                        regexValid.set(true);
+                        return null;
+                    }
+                });
+        return regexValid.get();
     }
 }

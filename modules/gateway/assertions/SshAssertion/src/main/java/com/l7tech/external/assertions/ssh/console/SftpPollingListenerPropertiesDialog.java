@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.ssh.console;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SquigglyFieldUtils;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -13,6 +14,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
@@ -65,6 +67,8 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     private JButton editPropertyButton;
     private JButton addPropertyButton;
     private JButton removePropertyButton;
+    private SquigglyTextField fileNamePatternField;
+    private JCheckBox filterFilesCheckBox;
     private ByteLimitPanel byteLimitPanel;
 
     private DefaultListModel propertyListModel = new DefaultListModel();
@@ -101,6 +105,8 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         passwordField.addActionListener(enableDisableListener);
         privateKeyField.addActionListener(enableDisableListener);
         directoryField.getDocument().addDocumentListener(enableDisableListener);
+        fileNamePatternField.getDocument().addDocumentListener(enableDisableListener);
+        filterFilesCheckBox.addActionListener(enableDisableListener);
         contentTypeComboBox.addActionListener(enableDisableListener);
 
         pollingIntervalField.setModel(new SpinnerNumberModel(60, 1, Integer.MAX_VALUE, 5));
@@ -326,6 +332,11 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             enableOkButton = false;
         }
 
+        fileNamePatternField.setEnabled(filterFilesCheckBox.isSelected());
+        if (filterFilesCheckBox.isSelected() && !SquigglyFieldUtils.validateSquigglyFieldForRegex(fileNamePatternField, false)) {
+            enableOkButton = false;
+        }
+
         enableOrDisablePropertyButtons();
         okButton.setEnabled(enableOkButton);
     }
@@ -359,6 +370,15 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         }
 
         directoryField.setText( connector.getProperty( PROPERTIES_KEY_SFTP_DIRECTORY, "" ) );
+
+        String fileNamePattern = connector.getProperty(PROPERTIES_KEY_SFTP_FILE_NAME_PATTERN);
+        if (fileNamePattern == null || fileNamePattern.isEmpty()) {
+            filterFilesCheckBox.setSelected(false);
+        } else {
+            filterFilesCheckBox.setSelected(true);
+            fileNamePatternField.setText(connector.getProperty(PROPERTIES_KEY_SFTP_FILE_NAME_PATTERN));
+        }
+        fileNamePatternField.setEnabled(filterFilesCheckBox.isEnabled());
 
         String ctype = connector.getProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE);
         if (ctype == null) {
@@ -434,6 +454,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         }
 
         setProperty( connector, PROPERTIES_KEY_SFTP_DIRECTORY, directoryField.getText() );
+        setProperty( connector, PROPERTIES_KEY_SFTP_FILE_NAME_PATTERN, filterFilesCheckBox.isSelected() ? fileNamePatternField.getText() : null );
         setProperty( connector, PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, contentTypeComboBox.getSelectedItem().toString() );
         setProperty( connector, PROPERTIES_KEY_POLLING_INTERVAL, pollingIntervalField.getValue().toString() );
         setProperty( connector, PROPERTIES_KEY_ENABLE_RESPONSE_MESSAGES, Boolean.toString( enableResponsesCheckBox.isSelected() ) );
@@ -565,6 +586,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
                 PROPERTIES_KEY_SFTP_HOST,
                 PROPERTIES_KEY_SFTP_PORT ,
                 PROPERTIES_KEY_SFTP_DIRECTORY,
+                PROPERTIES_KEY_SFTP_FILE_NAME_PATTERN,
                 PROPERTIES_KEY_SFTP_USERNAME,
                 PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID,
                 PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID,

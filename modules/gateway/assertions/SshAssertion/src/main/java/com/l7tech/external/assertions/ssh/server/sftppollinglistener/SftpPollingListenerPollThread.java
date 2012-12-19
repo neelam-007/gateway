@@ -61,7 +61,7 @@ class SftpPollingListenerPollThread extends Thread {
                             sftpPollingListener.doWithSftpClient( new UnaryThrows<Void, Sftp, IOException>() {
                                 @Override
                                 public Void call( final Sftp sftp ) throws IOException {
-                                    fileNames.addAll( sftpPollingListener.scanDirectoryForFiles( sftp ) );
+                                    fileNames.addAll( sftpPollingListener.scanDirectoryForFilesSetProcessing(sftp) );
                                     return null;
                                 }
                             } );

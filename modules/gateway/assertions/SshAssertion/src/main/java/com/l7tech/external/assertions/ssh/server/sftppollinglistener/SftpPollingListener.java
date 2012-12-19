@@ -27,6 +27,8 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.SSH_INVALID_PUBLIC_KEY_FINGERPRINT_EXCEPTION;
 import static com.l7tech.external.assertions.ssh.server.client.SshClientConfiguration.defaultCipherOrder;
@@ -260,21 +262,35 @@ abstract class SftpPollingListener {
     }
 
     /**
-     * Looks in the given directory for files to process.
+     * Looks in the given directory for files to process. Sets all files found to processing by appending .processing to the file name.
      *
      * @param sftp SFTP client with directory set for scanning
-     * @return collection of files to process
+     * @return collection of files to process with their names appended with .processing
      * @throws java.io.IOException caused by an error while reading the directory
      */
     @SuppressWarnings({ "unchecked" })
-    Collection<SftpFile> scanDirectoryForFiles( final Sftp sftp ) throws IOException
+    Collection<SftpFile> scanDirectoryForFilesSetProcessing(final Sftp sftp) throws IOException
     {
         final Collection<SftpFile> fileNames = new ArrayList<SftpFile>();
 
+        final String fileNameFilter = getConnectorProperty(PROPERTIES_KEY_SFTP_FILE_NAME_PATTERN);
+
+        //list the files in the directory.
+        final ArrayList<SftpFile> allFiles = list((Enumeration<SftpFile>) sftp.getDirListing());
+        final List<SftpFile> filteredFileList;
+        //if a filter is undefined use all files.
+        if (fileNameFilter != null && !fileNameFilter.isEmpty()) {
+            //This should always compile.
+            Pattern pattern = Pattern.compile(fileNameFilter, 0);
+            filteredFileList = filterFileList(allFiles, pattern);
+        } else {
+            filteredFileList = allFiles;
+        }
+
         // build a set of already processed files
         final Collection<String> processedFiles = new HashSet<String>();
-        for( final SftpFile file : list((Enumeration<SftpFile>) sftp.getDirListing()) ) {
-            if( !file.isDirectory() && file.exists() ) {
+        for( final SftpFile file : allFiles) {
+            if( !file.isDirectory() ) {
                 final String fileName = file.getFilename();
                 if(fileName.endsWith(PROCESSED_FILE_EXTENSION)) {
                     processedFiles.add(fileName.substring(0, fileName.length() - PROCESSED_FILE_EXTENSION.length()));
@@ -283,7 +299,7 @@ abstract class SftpPollingListener {
         }
 
         // look for any unprocessed files
-        for ( final SftpFile file : list((Enumeration<SftpFile>) sftp.getDirListing()) ) {
+        for ( final SftpFile file : filteredFileList) {
             final String fileName = file.getFilename();
             if(isFileForProcessing(file, processedFiles)) {
                 try {
@@ -298,9 +314,27 @@ abstract class SftpPollingListener {
         return fileNames;
     }
 
+    /**
+     * Filters an SftpFile list to only the files that match the file name pattern.
+     *
+     * @param fileList The file list to filter
+     * @param pattern The pattern to use to filter the filelist
+     * @return A filtered file list containing only files whose names match the pattern
+     */
+    private List<SftpFile> filterFileList(final List<SftpFile> fileList, @NotNull final Pattern pattern) {
+        ArrayList<SftpFile> filteredList = new ArrayList<SftpFile>();
+        for (SftpFile file : fileList) {
+            Matcher matcher = pattern.matcher(file.getFilename());
+            if (matcher.matches()) {
+                filteredList.add(file);
+            }
+        }
+        return filteredList;
+    }
+
     private boolean isFileForProcessing(@NotNull SftpFile file, @NotNull final Collection<String> processedFiles) throws SftpException {
         final String fileName = file.getFilename();
-        return !file.isDirectory() && file.exists()
+        return !file.isDirectory()
                 && !fileName.endsWith(PROCESSING_FILE_EXTENSION) && !fileName.endsWith(PROCESSED_FILE_EXTENSION) && !fileName.endsWith(RESPONSE_FILE_EXTENSION)
                 && !processedFiles.contains(fileName)
                 && !exists(ignoredFileExtensionList,

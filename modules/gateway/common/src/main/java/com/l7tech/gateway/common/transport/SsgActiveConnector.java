@@ -55,6 +55,7 @@ public class SsgActiveConnector extends NamedEntityImp {
     public static final String PROPERTIES_KEY_SFTP_HOST = "SftpHost";
     public static final String PROPERTIES_KEY_SFTP_PORT = "SftpPort";
     public static final String PROPERTIES_KEY_SFTP_DIRECTORY = "SftpDirectory";
+    public static final String PROPERTIES_KEY_SFTP_FILE_NAME_PATTERN = "SftpFileNamePattern";
     public static final String PROPERTIES_KEY_SFTP_USERNAME = "SftpUsername";
     public static final String PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID = "SftpSecurePasswordOid";
     public static final String PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID = "SftpSecurePasswordKeyOid";
