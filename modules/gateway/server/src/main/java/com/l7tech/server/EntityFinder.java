@@ -4,6 +4,7 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
@@ -15,12 +16,12 @@ import java.io.Serializable;
  * 
  * @author alex
  */
-public interface EntityFinder {
+public interface EntityFinder extends HeaderBasedEntityFinder {
     @Transactional(readOnly=true)
     EntityHeaderSet<EntityHeader> findAll(Class<? extends Entity> entityClass) throws FindException;
 
     @Transactional(readOnly=true)
-    Entity find(EntityHeader header) throws FindException;
+    Entity find(@NotNull EntityHeader header) throws FindException;
 
     @Transactional(readOnly=true)
     <ET extends Entity> ET find(Class<ET> clazz, Serializable pk) throws FindException;

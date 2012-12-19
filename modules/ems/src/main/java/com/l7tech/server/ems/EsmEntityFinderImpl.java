@@ -1,12 +1,8 @@
 package com.l7tech.server.ems;
 
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityHeaderSet;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityType;
-import org.springframework.transaction.annotation.Transactional;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 
@@ -21,7 +17,7 @@ public class EsmEntityFinderImpl implements EntityFinder {
     }
 
     @Override
-    public Entity find( final EntityHeader header ) throws FindException {
+    public Entity find( @NotNull final EntityHeader header ) throws FindException {
         return null;
     }
 

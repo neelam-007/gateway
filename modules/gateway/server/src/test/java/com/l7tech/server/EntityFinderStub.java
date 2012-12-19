@@ -4,6 +4,11 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.DesignTimeEntityProvider;
+import com.l7tech.policy.assertion.UsesEntitiesAtDesignTime;
+import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -15,8 +20,12 @@ import java.util.Map;
  *  
  * @author alex
  */
-public class EntityFinderStub implements EntityFinder {
+public class EntityFinderStub implements EntityFinder, DesignTimeEntityProvider {
     private final Map<Class<? extends Entity>, EntityManager> entityManagers;
+
+    public EntityFinderStub() {
+        this.entityManagers = new HashMap<Class<? extends Entity>, EntityManager>();
+    }
 
     public EntityFinderStub(EntityManager... entityManagers) {
         Map<Class<? extends Entity>, EntityManager> managerMap = new HashMap<Class<? extends Entity>, EntityManager>();
@@ -32,7 +41,7 @@ public class EntityFinderStub implements EntityFinder {
     }
 
     @Override
-    public Entity find(EntityHeader header) throws FindException {
+    public Entity find(@NotNull EntityHeader header) throws FindException {
         return entityManagers.get(EntityTypeRegistry.getEntityClass(header.getType())).findByPrimaryKey(header.getOid());
     }
 
@@ -45,5 +54,9 @@ public class EntityFinderStub implements EntityFinder {
     public EntityHeader findHeader(EntityType etype, Serializable pk) throws FindException {
         Entity e = entityManagers.get(EntityTypeRegistry.getEntityClass(etype)).findByPrimaryKey(Long.valueOf(pk.toString()));
         return EntityHeaderUtils.fromEntity(e);
+    }
+
+    @Override
+    public void provideNeededEntities(@NotNull UsesEntitiesAtDesignTime entityUser, @Nullable Functions.BinaryVoid<EntityHeader, FindException> errorHandler) throws FindException {
     }
 }

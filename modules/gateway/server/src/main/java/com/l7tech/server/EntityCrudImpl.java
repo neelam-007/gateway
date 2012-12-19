@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.identity.IdentityProviderConfig;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Transactional;
@@ -86,7 +87,7 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     }
 
     @Override
-    public Entity find(final EntityHeader header) throws FindException {
+    public Entity find(@NotNull final EntityHeader header) throws FindException {
         EntityManager manager = getManager(EntityTypeRegistry.getEntityClass(header.getType()));
         Entity ent = manager != null ? manager.findByHeader(header) : entityFinder.find(header);
 

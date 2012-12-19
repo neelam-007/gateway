@@ -28,6 +28,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -42,6 +43,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.inject.Inject;
 import java.io.Closeable;
 import java.io.IOException;
 import java.text.MessageFormat;
@@ -173,7 +175,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
 
     @Override
     public List<Folder> getFolderPath( final long policyOid ) {
-        final PolicyCacheEntry pce = cacheGetWithLock( policyOid );
+        final PolicyCacheEntry pce = cacheGetWithLock(policyOid);
         return pce!=null && pce.policy.getFolder()!=null ?
                 folderCache.findPathByPrimaryKey( pce.policy.getFolder().getOid() ) :
                 Collections.<Folder>emptyList();
@@ -309,7 +311,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         final Lock read = lock.readLock();
         read.lock();
         try {
-            guidToPolicyMap.remove( policyGuid );
+            guidToPolicyMap.remove(policyGuid);
             oid = guidToOidMap.get( policyGuid );
         } finally {
             read.unlock();
@@ -378,7 +380,18 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         if( policy.getOid() == Policy.DEFAULT_OID )
             throw new IllegalArgumentException( "Can't update a brand-new policy--it must be saved first" );
 
-        perhapsUpdateInternal(new Policy(policy, cacheAssertionVisibility, true));
+        perhapsUpdateInternal(preparedPolicy(policy));
+    }
+
+    /**
+     * Get a prepared version of the specified policy that is safe to enroll in the policy cache.
+     *
+     * @param policy policy to prepare.  Required.
+     * @return a read-only copy of this policy, with any design-time entities attached to the assertion beans.
+     */
+    @NotNull
+    private Policy preparedPolicy(@NotNull Policy policy) {
+        return new Policy(policy, cacheAssertionVisibility, true, entityProvider);
     }
 
     /**
@@ -538,7 +551,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                         if( policy == null ) {
                             notifyDelete( oid );
                         } else {
-                            notifyUpdate( new Policy(policy, cacheAssertionVisibility, true) );
+                            notifyUpdate(preparedPolicy(policy));
                         }
                     }
                 } catch( FindException fe ) {
@@ -570,7 +583,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                             if( policy == null ) {
                                 notifyDelete( version.getPolicyOid() );
                             } else {
-                                notifyUpdate( new Policy(policy, cacheAssertionVisibility, true) );
+                                notifyUpdate(preparedPolicy(policy));
                             }
                         }
                     }
@@ -723,6 +736,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
     private PolicyVersionManager policyVersionManager;
     private final ServerPolicyFactory policyFactory;
     private final FolderCache folderCache;
+
+    @Inject
+    private DesignTimeEntityProvider entityProvider;
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private boolean cacheIsInvalid = true;
@@ -1097,7 +1113,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                         }
                         includedOid = includedPolicy.getOid();
                         descendentPolicies.add( includedOid);
-                        includedInfo = findDependentPolicies( new Policy(includedPolicy, cacheAssertionVisibility, true), thisPolicy, seenOids, dependentVersions, events );
+                        includedInfo = findDependentPolicies(preparedPolicy(includedPolicy), thisPolicy, seenOids, dependentVersions, events );
                     } else {
                         includedOid = includedInfo.policyId;
                         descendentPolicies.add( includedOid );
@@ -1161,9 +1177,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                         return getFolderPath( thisPolicyId );
                     }
                 } );
-                pce = new PolicyCacheEntry( new Policy(thisPolicy, cacheAssertionVisibility, true), serverPolicy, null );
+                pce = new PolicyCacheEntry(preparedPolicy(thisPolicy), serverPolicy, null );
             } else {
-                pce = new PolicyCacheEntry( new Policy(thisPolicy, cacheAssertionVisibility, true), usedInvalidPolicyId );
+                pce = new PolicyCacheEntry(preparedPolicy(thisPolicy), usedInvalidPolicyId );
             }
 
             cacheReplace(pce);
@@ -1401,7 +1417,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                 }
 
                 if ( policy != null ) {
-                    updateInternal( new Policy(policy, cacheAssertionVisibility, true) );
+                    updateInternal(preparedPolicy(policy));
                 } else {
                     removeInternal( oid );
                 }

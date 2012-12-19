@@ -20,8 +20,6 @@ import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.objectmodel.HeaderBasedEntityFinder;
 import com.l7tech.policy.Policy;
@@ -327,9 +325,9 @@ public final class RegistryImpl extends Registry
     @NotNull
     @SuppressWarnings("unchecked")
     @Override
-    public HeaderBasedEntityFinder<Entity,EntityHeader> getEntityFinder() {
+    public HeaderBasedEntityFinder getEntityFinder() {
         checkAdminContext();
-        return (HeaderBasedEntityFinder<Entity,EntityHeader>)applicationContext.getBean("headerBasedEntityFinder", HeaderBasedEntityFinder.class);
+        return applicationContext.getBean("headerBasedEntityFinder", HeaderBasedEntityFinder.class);
     }
 
     @Override

@@ -78,12 +78,16 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                 final UsesEntitiesAtDesignTime entityUser = (UsesEntitiesAtDesignTime) assertion;
                 EntityHeader[] headers = entityUser.getEntitiesUsedAtDesignTime();
                 if (headers != null) {
-                    HeaderBasedEntityFinder<Entity, EntityHeader> entityFinder = Registry.getDefault().getEntityFinder();
+                    HeaderBasedEntityFinder entityFinder = Registry.getDefault().getEntityFinder();
                     for (EntityHeader header : headers) {
                         if (entityUser.needsProvideEntity(header)) {
                             try {
-                                Entity entity = entityFinder.findByHeader(header);
-                                entityUser.provideEntity(header, entity);
+                                Entity entity = entityFinder.find(header);
+                                if (entity == null) {
+                                    logger.log(Level.WARNING, "Entity not found for assertion: " + header);
+                                } else {
+                                    entityUser.provideEntity(header, entity);
+                                }
                             } catch (FindException e) {
                                 logger.log(Level.WARNING, "Error looking up entity for assertion: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                             }

@@ -435,4 +435,6 @@
     <bean id="dateTimeConfigUtils" class="com.l7tech.util.DateTimeConfigUtils" />
 
     <bean id="timeSource" class="com.l7tech.util.TimeSource"/>
+
+    <bean id="entityFinder" class="com.l7tech.server.EntityFinderStub"/>
 </beans>

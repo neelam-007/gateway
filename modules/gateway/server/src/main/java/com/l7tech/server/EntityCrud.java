@@ -3,16 +3,10 @@
  */
 package com.l7tech.server;
 
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityHeaderSet;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.objectmodel.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -44,7 +38,7 @@ public interface EntityCrud extends EntityFinder {
 
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
     @Override
-    Entity find(EntityHeader header) throws FindException;
+    Entity find(@NotNull EntityHeader header) throws FindException;
 
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
     @Override

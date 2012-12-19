@@ -1,20 +1,13 @@
 package com.l7tech.server;
 
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.util.JaasUtils;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityHeaderSet;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.identity.User;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -55,7 +48,7 @@ public class SecuredEntityCrud implements EntityCrud {
     }
 
     @Override
-    public Entity find(EntityHeader header) throws FindException {
+    public Entity find(@NotNull EntityHeader header) throws FindException {
         Entity entity = entityCrud.find(header);
         checkPermitted( OperationType.READ, entity, FindException.class );
         return entity;

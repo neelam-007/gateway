@@ -435,7 +435,7 @@ public class RegistryStub extends Registry {
 
     @NotNull
     @Override
-    public HeaderBasedEntityFinder<Entity, EntityHeader> getEntityFinder() {
+    public HeaderBasedEntityFinder getEntityFinder() {
         throw new UnsupportedOperationException();
     }
 

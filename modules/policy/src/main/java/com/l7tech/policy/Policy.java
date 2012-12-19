@@ -1,5 +1,6 @@
 package com.l7tech.policy;
 
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
@@ -8,9 +9,11 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
+import com.l7tech.policy.assertion.UsesEntitiesAtDesignTime;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.JoinColumn;
@@ -25,6 +28,8 @@ import java.io.Flushable;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
@@ -73,7 +78,7 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
      * @param policy The policy to duplicate.
      */
     public Policy(final Policy policy) {
-        this(policy, null, false);
+        this(policy, null, false, null);
     }
 
     /**
@@ -86,7 +91,7 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
      * @param visibility visibility setting to use for new policy, or null to use the setting from the copied policy.
      * @param lock true to create a read-only policy
      */
-    public Policy(final Policy policy, @Nullable WspReader.Visibility visibility, final boolean lock) {
+    public Policy(final Policy policy, @Nullable WspReader.Visibility visibility, final boolean lock, @Nullable DesignTimeEntityProvider entityProvider) {
         super(policy);
         setSoap(policy.isSoap());
         setType(policy.getType());
@@ -97,6 +102,8 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
         setGuid(policy.getGuid());
         setFolder(policy.getFolder());
         setVisibility(visibility != null ? visibility : policy.getVisibility());
+        if (entityProvider != null)
+            provideEntitiesToAssertionBeans(entityProvider);
         if ( lock ) lock();
     }
 
@@ -420,4 +427,36 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
      */
     public interface GlobalPolicyValidationGroup {}
 
+    /**
+     * Make a best-effort to provide entities to assertion beans using the specified entity provider.
+     * <p/>
+     * This method will ignore policy parsing errors -- they will presumably be handled properly next time someone attempts
+     * to use the policy assertions.
+     * <p/>
+     * This method will log errors that occur while providing entities declared as needed at design time by the assertion beans
+     * but will otherwise ignore them and continue.
+     *
+     * @param entityProvider entity provider to use.  Required.
+     */
+    private void provideEntitiesToAssertionBeans(@NotNull DesignTimeEntityProvider entityProvider) {
+        try {
+            final Assertion rootAssertion = getAssertion();
+            if (rootAssertion != null) {
+                Iterator<Assertion> it = rootAssertion.preorderIterator();
+                while (it.hasNext()) {
+                    Assertion ass = it.next();
+                    if (ass instanceof UsesEntitiesAtDesignTime) {
+                        UsesEntitiesAtDesignTime entityUser = (UsesEntitiesAtDesignTime) ass;
+                        try {
+                            entityProvider.provideNeededEntities(entityUser, null);
+                        } catch (FindException e) {
+                            logger.log(Level.WARNING, "Unable to prepare entity for assertion ordinal " + ass.getOrdinal() + " of policy GUID " + getGuid() + " (" + getName() + "): " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            // Ignore and handle it later
+        }
+    }
 }

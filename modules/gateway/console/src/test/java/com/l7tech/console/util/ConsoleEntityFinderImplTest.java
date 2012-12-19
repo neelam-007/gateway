@@ -58,7 +58,7 @@ public class ConsoleEntityFinderImplTest {
     public void findByHeader() throws Exception {
         when(encapAdmin.findByPrimaryKey(1L)).thenReturn(config);
         final EntityHeader header = new EntityHeader("1", EntityType.ENCAPSULATED_ASSERTION, null, null);
-        final Entity entity = entityFinder.findByHeader(header);
+        final Entity entity = entityFinder.find(header);
         assertEquals(config, entity);
     }
 

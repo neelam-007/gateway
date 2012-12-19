@@ -228,7 +228,7 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
             copy.setArgumentDescriptors(new HashSet<EncapsulatedAssertionArgumentDescriptor>(getArgumentDescriptors()));
             copy.setResultDescriptors(new HashSet<EncapsulatedAssertionResultDescriptor>(getResultDescriptors()));
             Policy policy = getPolicy();
-            copy.setPolicy(policy == null ? null : new Policy(policy, null, readOnly));
+            copy.setPolicy(policy == null ? null : new Policy(policy, null, readOnly, null));
             return copy;
         } catch (InvocationTargetException e) {
             throw new RuntimeException(e);

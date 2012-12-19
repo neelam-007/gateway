@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
  * A utility that provides read-only lookup services for entities, backed by the actual admin APIs for the
  * corresponding entities.  This can be used within the SSM.  RBAC enforcement is done on the actual entity APIs.
  */
-public class ConsoleEntityFinderImpl implements HeaderBasedEntityFinder<Entity,EntityHeader> {
+public class ConsoleEntityFinderImpl implements HeaderBasedEntityFinder {
 
     @NotNull
     public Entity findByEntityTypeAndPrimaryId(@NotNull EntityType entityType, @NotNull String id) throws FindException {
@@ -35,7 +35,7 @@ public class ConsoleEntityFinderImpl implements HeaderBasedEntityFinder<Entity,E
 
     @NotNull
     @Override
-    public Entity findByHeader(@NotNull EntityHeader header) throws FindException {
+    public Entity find(@NotNull EntityHeader header) throws FindException {
         return findByEntityTypeAndPrimaryId(header.getType(), header.getStrId());
     }
 

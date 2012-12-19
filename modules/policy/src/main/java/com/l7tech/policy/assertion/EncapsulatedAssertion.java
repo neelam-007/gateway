@@ -33,9 +33,17 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
 
     private transient EncapsulatedAssertionConfig encapsulatedAssertionConfig;
 
+    /**
+     * Create an EncapsulatedAssertion bean with no backing config.
+     */
     public EncapsulatedAssertion() {
     }
 
+    /**
+     * Create an EncapsulatedAssertion bean backed by the specifiec config.
+     *
+     * @param encapsulatedAssertionConfig config to provide metadata and behavior for this assertion.
+     */
     public EncapsulatedAssertion(EncapsulatedAssertionConfig encapsulatedAssertionConfig) {
         config(encapsulatedAssertionConfig);
     }
@@ -53,10 +61,20 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
         return copy;
     }
 
+    /**
+     * @return the EncapsulatedAssertionConfig that provides metadata and behavior for this assertion, or null if not currently available.
+     */
     public EncapsulatedAssertionConfig config() {
         return encapsulatedAssertionConfig;
     }
 
+    /**
+     * Set the EncapsulatedAssertionConfig instance that will provide metadata and behavior for this assertion.
+     * <p/>
+     * Calling this method will cause assertion metadata to be regenerated next time meta() is called.
+     *
+     * @param config new config, or null to clear it.
+     */
     public void config(EncapsulatedAssertionConfig config) {
         this.encapsulatedAssertionConfig = config;
         if (config != null)
@@ -64,10 +82,16 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
         meta = null; // Force metadata to be rebuilt
     }
 
+    /**
+     * @return the OID string of the encapsulated assertion config that will provide metadata and behavior for this assertion.
+     */
     public String getEncapsulatedAssertionConfigId() {
         return encapsulatedAssertionConfigId;
     }
 
+    /**
+     * @param encapsulatedAssertionConfigId the OID string of the encapsulated assertion config to provide metadata and behavior for this assertion.
+     */
     public void setEncapsulatedAssertionConfigId(String encapsulatedAssertionConfigId) {
         this.encapsulatedAssertionConfigId = encapsulatedAssertionConfigId;
     }

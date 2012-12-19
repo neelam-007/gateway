@@ -17,8 +17,6 @@ import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.objectmodel.HeaderBasedEntityFinder;
 import com.l7tech.policy.Policy;
@@ -231,7 +229,7 @@ public abstract class Registry {
      * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     @NotNull
-    public abstract HeaderBasedEntityFinder<Entity,EntityHeader> getEntityFinder();
+    public abstract HeaderBasedEntityFinder getEntityFinder();
 
     /**
      * @return the log sink admin interface implementation. Never null.
@@ -419,7 +417,7 @@ public abstract class Registry {
 
         @NotNull
         @Override
-        public HeaderBasedEntityFinder<Entity, EntityHeader> getEntityFinder() {
+        public HeaderBasedEntityFinder getEntityFinder() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
