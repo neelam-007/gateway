@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Element;
 
@@ -28,6 +29,7 @@ import java.util.logging.Level;
  * see {@link EncapsulatedAssertionConfigPropertiesDialog}.
  */
 public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertionPropertiesEditor<EncapsulatedAssertion> {
+    private static final String COLON = ":";
     private JPanel contentPane;
     private JPanel propertiesPanel;
 
@@ -60,12 +62,23 @@ public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertion
     }
 
     @Override
-    protected String getDisplayName(PropertyInfo prop) {
+    protected String getDisplayName(final PropertyInfo prop) {
         if (prop instanceof EncapsulatedAssertionArgumentDescriptorPropertyInfo) {
-            EncapsulatedAssertionArgumentDescriptorPropertyInfo argProp = (EncapsulatedAssertionArgumentDescriptorPropertyInfo) prop;
-            String label = argProp.arg.getGuiLabel();
-            if (label != null && label.trim().length() > 0) {
-                return label.endsWith(":") ? label : label + ":";
+            final EncapsulatedAssertionArgumentDescriptorPropertyInfo argProp = (EncapsulatedAssertionArgumentDescriptorPropertyInfo) prop;
+            final String name = argProp.getName();
+            if (StringUtils.isNotBlank(name)) {
+                final StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append(name);
+                if (StringUtils.isNotBlank(argProp.arg.getArgumentType())) {
+                    final String type = " (" + argProp.arg.getArgumentType() + ")";
+                    if (name.endsWith(COLON)) {
+                        stringBuilder.insert(name.length() - 1, type);
+                    } else {
+                        stringBuilder.append(type);
+                        stringBuilder.append(COLON);
+                    }
+                }
+                return stringBuilder.toString();
             }
         }
         return super.getDisplayName(prop);
@@ -93,7 +106,10 @@ public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertion
 
         @Override
         public String getName() {
-            return arg.getArgumentName();
+            // label has priority over name
+            final String label = StringUtils.isBlank(arg.getGuiLabel()) ? StringUtils.EMPTY : arg.getGuiLabel().trim();
+            final String name = StringUtils.isBlank(arg.getArgumentName()) ? StringUtils.EMPTY : arg.getArgumentName().trim();
+            return !label.isEmpty() ? label : name;
         }
 
         @Override

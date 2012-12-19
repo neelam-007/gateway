@@ -255,14 +255,8 @@ public abstract class EditRowBasedAssertionPropertiesEditor<AT extends Assertion
      *                               to a valid value for its corresponding property.
      */
     public AT getData(AT assertion) throws BadViewValueException {
-        for (EditRow row : editRows) {
-            try {
-                row.prop.writeValueToBean(assertion, row.getViewValue());
-            } catch (BadViewValueException e) {
-                setConfirmed(false);
-            } catch (IllegalArgumentException e) {
-                setConfirmed(false);
-            }
+        for (final EditRow row : editRows) {
+            row.prop.writeValueToBean(assertion, row.getViewValue());
         }
 
         return assertion;
