@@ -70,47 +70,52 @@ public class CreateFolderAction extends SecureAction {
     }
 
     private void createFolder( final String name ) {
-        Frame f = TopComponents.getInstance().getTopParent();
-        PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, name);
-        dialog.setVisible(true);
+        final Frame f = TopComponents.getInstance().getTopParent();
+        final PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, name);
+        DialogDisplayer.display(dialog, new Runnable() {
+            @Override
+            public void run() {
+                if(dialog.isConfirmed()) {
+                    final Folder folder = new Folder(dialog.getName(), parentFolder);
+                    try {
+                        folder.setOid(folderAdmin.saveFolder(folder));
 
-        if(dialog.isConfirmed()) {
-            final Folder folder = new Folder(dialog.getName(), parentFolder);
-            try {
-                folder.setOid(folderAdmin.saveFolder(folder));
+                        final JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                        if (tree != null) {
+                            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                            FolderHeader header = new FolderHeader(folder);
+                            final AbstractTreeNode sn = new FolderNode(header, parentFolder);
+                            model.insertNodeInto(sn, parentNode, parentNode.getInsertPosition(sn, RootNode.getComparator()));
 
-                final JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-                if (tree != null) {
-                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    FolderHeader header = new FolderHeader(folder);
-                    final AbstractTreeNode sn = new FolderNode(header, parentFolder);
-                    model.insertNodeInto(sn, parentNode, parentNode.getInsertPosition(sn, RootNode.getComparator()));
-
-                    tree.setSelectionPath(new TreePath(sn.getPath()));
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            //reset filter
-                            ((ServicesAndPoliciesTree) tree).filterTreeToDefault();
+                            tree.setSelectionPath(new TreePath(sn.getPath()));
+                            SwingUtilities.invokeLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    //reset filter
+                                    ((ServicesAndPoliciesTree) tree).filterTreeToDefault();
+                                }
+                            });
                         }
-                    });
-                }
-            } catch(ConstraintViolationException e) {
-                DialogDisplayer.showMessageDialog(dialog,
-                        "Folder '"+dialog.getName()+"' already exists.",
-                        "Folder Already Exists",
-                        JOptionPane.WARNING_MESSAGE, new Runnable() {
-                    @Override
-                    public void run() {
-                        createFolder( folder.getName() );
+                    } catch(ConstraintViolationException e) {
+                        DialogDisplayer.showMessageDialog(dialog,
+                                "Folder '"+dialog.getName()+"' already exists.",
+                                "Folder Already Exists",
+                                JOptionPane.WARNING_MESSAGE, new Runnable() {
+                            @Override
+                            public void run() {
+                                createFolder( folder.getName() );
+                            }
+                        });
+                    } catch(UpdateException e) {
+                        log.log(Level.WARNING, "Failed to create policy folder", e);
+                    } catch(SaveException e) {
+                        JOptionPane.showMessageDialog(f, "Cannot create folder: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE);
+                        log.log(Level.WARNING, "Failed to create policy folder", e);
                     }
-                });
-            } catch(UpdateException e) {
-                log.log(Level.WARNING, "Failed to create policy folder", e);
-            } catch(SaveException e) {
-                JOptionPane.showMessageDialog(f, "Cannot create folder: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE);
-                log.log(Level.WARNING, "Failed to create policy folder", e);
+                }
+
             }
-        }
+        });
+
     }
 }
