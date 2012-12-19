@@ -490,7 +490,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
 
             // rebuild
             for( Policy policy : policyManager.findAll() ) {
-                policy.setVisibility(cacheAssertionVisibility);
+                policy = preparedPolicy(policy);
                 findDependentPoliciesIfDirty(policy, null, new HashSet<Long>(), new HashMap<Long, Integer>(), events);
             }
 
