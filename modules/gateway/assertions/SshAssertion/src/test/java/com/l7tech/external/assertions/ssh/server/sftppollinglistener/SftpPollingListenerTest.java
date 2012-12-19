@@ -33,7 +33,6 @@ public class SftpPollingListenerTest {
 
     @Mock
     private Sftp sftp;
-    private SsgActiveConnector ssgActiveConnector;
     @Mock
     private ApplicationEventPublisher eventPublisher;
     @Mock
@@ -49,92 +48,92 @@ public class SftpPollingListenerTest {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml")}),
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml")}),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml")),
+                        Arrays.asList(new MockSftpFile("testFile.xml")),
                         null
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("anotherFile.txt"), new MockSftpFile("noExtension"), new MockSftpFile(".hidden")}),
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("anotherFile.txt"), new MockSftpFile("noExtension"), new MockSftpFile(".hidden")}),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("anotherFile.txt"), new MockSftpFile("noExtension"), new MockSftpFile(".hidden")),
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("anotherFile.txt"), new MockSftpFile("noExtension"), new MockSftpFile(".hidden")),
                         null
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml.processing")}),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml.processing")),
                         Collections.<SftpFile>emptyList(),
                         null
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("testFile.xml.processing"),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("testFile.xml.processing"),
                                 new MockSftpFile("anotherFile"), new MockSftpFile("testFile"), new MockSftpFile("fileX"), new MockSftpFile("fileX.response"),
-                                new MockSftpFile("fileZ"), new MockSftpFile("fileZ.processed")}),
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"),
-                                new MockSftpFile("anotherFile"), new MockSftpFile("testFile"), new MockSftpFile("fileX")}),
+                                new MockSftpFile("fileZ"), new MockSftpFile("fileZ.processed")),
+                        Arrays.asList(new MockSftpFile("testFile.xml"),
+                                new MockSftpFile("anotherFile"), new MockSftpFile("testFile"), new MockSftpFile("fileX")),
                         null
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile(".response"), new MockSftpFile(".processing"), new MockSftpFile("..processed"), new MockSftpFile("testFile.processed.processing"), new MockSftpFile("testFile2.processed.processed"), new MockSftpFile("testFile2"), new MockSftpFile("testFile.processed.response"), new MockSftpFile("testFileA.response.xml"), new MockSftpFile("testFileB.processed.xml")}),
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("testFile2"), new MockSftpFile("testFileA.response.xml"), new MockSftpFile("testFileB.processed.xml")}),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile(".response"), new MockSftpFile(".processing"), new MockSftpFile("..processed"), new MockSftpFile("testFile.processed.processing"), new MockSftpFile("testFile2.processed.processed"), new MockSftpFile("testFile2"), new MockSftpFile("testFile.processed.response"), new MockSftpFile("testFileA.response.xml"), new MockSftpFile("testFileB.processed.xml")),
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("testFile2"), new MockSftpFile("testFileA.response.xml"), new MockSftpFile("testFileB.processed.xml")),
                         null
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml")}),
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml")}),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml")),
+                        Arrays.asList(new MockSftpFile("testFile.xml")),
                         ".*"
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("anotherFile.txt"), new MockSftpFile("noExtension"), new MockSftpFile(".hidden")}),
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("anotherFile.txt"), new MockSftpFile("noExtension"), new MockSftpFile(".hidden")}),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("anotherFile.txt"), new MockSftpFile("noExtension"), new MockSftpFile(".hidden")),
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("anotherFile.txt"), new MockSftpFile("noExtension"), new MockSftpFile(".hidden")),
                         ".*"
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml.processing")}),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml.processing")),
                         Collections.<SftpFile>emptyList(),
                         ".*"
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("testFile.xml.processing"),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("testFile.xml.processing"),
                                 new MockSftpFile("anotherFile"), new MockSftpFile("testFile"), new MockSftpFile("fileX"), new MockSftpFile("fileX.response"),
-                                new MockSftpFile("fileZ"), new MockSftpFile("fileZ.processed")}),
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"),
-                                new MockSftpFile("anotherFile"), new MockSftpFile("testFile"), new MockSftpFile("fileX")}),
+                                new MockSftpFile("fileZ"), new MockSftpFile("fileZ.processed")),
+                        Arrays.asList(new MockSftpFile("testFile.xml"),
+                                new MockSftpFile("anotherFile"), new MockSftpFile("testFile"), new MockSftpFile("fileX")),
                         ".*"
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile(".response"), new MockSftpFile(".processing"), new MockSftpFile("..processed"), new MockSftpFile("testFile.processed.processing"), new MockSftpFile("testFile2.processed.processed"), new MockSftpFile("testFile2"), new MockSftpFile("testFile.processed.response"), new MockSftpFile("testFileA.response.xml"), new MockSftpFile("testFileB.processed.xml")}),
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("testFile2"), new MockSftpFile("testFileA.response.xml"), new MockSftpFile("testFileB.processed.xml")}),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile(".response"), new MockSftpFile(".processing"), new MockSftpFile("..processed"), new MockSftpFile("testFile.processed.processing"), new MockSftpFile("testFile2.processed.processed"), new MockSftpFile("testFile2"), new MockSftpFile("testFile.processed.response"), new MockSftpFile("testFileA.response.xml"), new MockSftpFile("testFileB.processed.xml")),
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("testFile2"), new MockSftpFile("testFileA.response.xml"), new MockSftpFile("testFileB.processed.xml")),
                         ".*"
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("testFile.xml.processing"),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("testFile.xml.processing"),
                                 new MockSftpFile("anotherFile"), new MockSftpFile("testFile"), new MockSftpFile("fileX"), new MockSftpFile("fileX.response"),
-                                new MockSftpFile("fileZ"), new MockSftpFile("fileZ.processed")}),
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("testFile")}),
+                                new MockSftpFile("fileZ"), new MockSftpFile("fileZ.processed")),
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("testFile")),
                         "test.*"
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("testFile.xml.processing"),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("testFile.xml.processing"),
                                 new MockSftpFile("anotherFile"), new MockSftpFile("testFile"), new MockSftpFile("fileX"), new MockSftpFile("fileX.response"),
-                                new MockSftpFile("fileZ.xml"), new MockSftpFile("fileZ.processed")}),
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("fileZ.xml")}),
+                                new MockSftpFile("fileZ.xml"), new MockSftpFile("fileZ.processed")),
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("fileZ.xml")),
                         ".*\\.xml"
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("testFile.xml.processing"),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("testFile.xml.processing"),
                                 new MockSftpFile("anotherFile"), new MockSftpFile("testFile"), new MockSftpFile("fileX"), new MockSftpFile("fileX.response"),
-                                new MockSftpFile("fileZ"), new MockSftpFile("fileZ.processed")}),
+                                new MockSftpFile("fileZ"), new MockSftpFile("fileZ.processed")),
                         Collections.<SftpFile>emptyList(),
                         "fileZ"
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml"), new MockSftpFile("testFile.xml.processing"),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml"), new MockSftpFile("testFile.xml.processing"),
                                 new MockSftpFile("anotherFile"), new MockSftpFile("testFile"), new MockSftpFile("fileX"), new MockSftpFile("fileX.response"),
-                                new MockSftpFile("fileZ"), new MockSftpFile("fileZ.processed")}),
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("fileX")}),
+                                new MockSftpFile("fileZ"), new MockSftpFile("fileZ.processed")),
+                        Arrays.asList(new MockSftpFile("fileX")),
                         "fileX"
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile01.xml"), new MockSftpFile("testFile01.xml.processing"),
+                {
+                        Arrays.asList(new MockSftpFile("testFile01.xml"), new MockSftpFile("testFile01.xml.processing"),
                                 new MockSftpFile("testFile02.xml"), new MockSftpFile("testFile02.xml.processed"),
                                 new MockSftpFile("testFile03.xml"), new MockSftpFile("testFile03.xml.response"),
                                 new MockSftpFile("testFile24.xml"), new MockSftpFile("testFile14.xml"),
@@ -143,21 +142,21 @@ public class SftpPollingListenerTest {
                                 new MockSftpFile("testFile100.xml"), new MockSftpFile("testFile765.xml"),
                                 new MockSftpFile("testFiles08.xml"), new MockSftpFile("xtestFile08.xml"),
                                 new MockSftpFile("testFile09.xmls"), new MockSftpFile("testFile09\\.xml"),
-                                new MockSftpFile("testFile4.xml"), new MockSftpFile("testFile14.xml")}),
+                                new MockSftpFile("testFile4.xml"), new MockSftpFile("testFile14.xml")),
                         //Note, I know testFile14.xml is there twice!!!
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile01.xml"), new MockSftpFile("testFile03.xml"),
+                        Arrays.asList(new MockSftpFile("testFile01.xml"), new MockSftpFile("testFile03.xml"),
                                 new MockSftpFile("testFile24.xml"), new MockSftpFile("testFile14.xml"),
-                                new MockSftpFile("testFile67.xml"), new MockSftpFile("testFile14.xml")}),
+                                new MockSftpFile("testFile67.xml"), new MockSftpFile("testFile14.xml")),
                         "testFile(\\d\\d)\\.xml"
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml", true), new MockSftpFile("testFile.xml")}),
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml")}),
+                {
+                        Arrays.asList(new MockSftpFile("testFile.xml", true), new MockSftpFile("testFile.xml")),
+                        Arrays.asList(new MockSftpFile("testFile.xml")),
                         null
                 },
-                new Object[]{
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile", true), new MockSftpFile("testFile.xml")}),
-                        Arrays.asList(new SftpFile[]{new MockSftpFile("testFile.xml")}),
+                {
+                        Arrays.asList(new MockSftpFile("testFile", true), new MockSftpFile("testFile.xml")),
+                        Arrays.asList(new MockSftpFile("testFile.xml")),
                         null
                 },
         });
@@ -174,7 +173,7 @@ public class SftpPollingListenerTest {
         //Process mockito annotations
         MockitoAnnotations.initMocks(this);
 
-        ssgActiveConnector = new SsgActiveConnector();
+        SsgActiveConnector ssgActiveConnector = new SsgActiveConnector();
         ssgActiveConnector.setProperty(PROPERTIES_KEY_SFTP_HOST, "host");
         ssgActiveConnector.setProperty(PROPERTIES_KEY_SFTP_PORT, "-1");
         ssgActiveConnector.setProperty(PROPERTIES_KEY_SFTP_DIRECTORY, "testDir");
