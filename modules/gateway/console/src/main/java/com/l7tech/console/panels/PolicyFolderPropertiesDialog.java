@@ -85,7 +85,7 @@ public class PolicyFolderPropertiesDialog extends JDialog {
             @Override
             public void windowOpened(WindowEvent e) {
                 if ( nameField.isEditable() ) {
-                    nameField.requestFocusInWindow();
+                    nameField.requestFocus();
                     nameField.selectAll();
                 }
             }
