@@ -4,6 +4,7 @@ import com.l7tech.console.policy.*;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.Validate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -269,6 +270,10 @@ public abstract class EditRowBasedAssertionPropertiesEditor<AT extends Assertion
             super(message, cause);
             this.propertyName = propertyName;
         }
+
+        public String getPropertyName() {
+            return propertyName;
+        }
     }
 
     /**
@@ -329,9 +334,7 @@ public abstract class EditRowBasedAssertionPropertiesEditor<AT extends Assertion
          * @param editor the property editor for this property.  Required.
          * @param editorComponent  the UI component to use for editing the property.  Required.
          */
-        public EditRow(PropertyInfo prop, PropertyEditor editor, Component editorComponent) {
-            if (prop == null || editor == null || editorComponent == null)
-                throw new NullPointerException();
+        public EditRow(@NotNull final PropertyInfo prop, @NotNull final PropertyEditor editor, @NotNull final Component editorComponent) {
             this.prop = prop;
             this.editor = editor;
             this.editorComponent = editorComponent;
@@ -368,7 +371,13 @@ public abstract class EditRowBasedAssertionPropertiesEditor<AT extends Assertion
          * @throws BadViewValueException if the current value in the view cannot be converted into a property value.
          */
         public Object getViewValue() throws BadViewValueException {
-            return editor.getValue();
+            try {
+                final Object value = editor.getValue();
+                Validate.notNull(value, "Value should not be null");
+                return value;
+            } catch (final IllegalArgumentException e) {
+                throw new BadViewValueException(ExceptionUtils.getMessage(e), e, getPropertyInfo().getName());
+            }
         }
     }
 
