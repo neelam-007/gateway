@@ -464,6 +464,7 @@ public abstract class EditRowBasedAssertionPropertiesEditor<AT extends Assertion
         public Object getViewValue() throws BadViewValueException {
             try {
                 final Object tagItem = comboBox.getSelectedItem();
+                Validate.notNull(tagItem, "Selected item cannot be null.");
                 getPropertyEditor().setAsText(tagItem == null ? null : tagItem.toString());
                 return getPropertyEditor().getValue();
             } catch (IllegalArgumentException e) {

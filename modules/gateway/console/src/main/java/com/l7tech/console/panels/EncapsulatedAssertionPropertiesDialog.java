@@ -117,11 +117,13 @@ public class EncapsulatedAssertionPropertiesDialog extends EditRowBasedAssertion
             PropertyEditor editor = findPropertyEditorForType(propertyValueClass);
 
             if (editor == null && Message.class.isAssignableFrom(propertyValueClass)) {
-                editor = new GenericStringTagPropertyEditor(ArrayUtils.unshift(getVariableNamesOfType(DataType.MESSAGE), null));
+                final String[] msgVars = getVariableNamesOfType(DataType.MESSAGE);
+                editor = new GenericStringTagPropertyEditor(msgVars.length > 0 ? msgVars : new String[]{null});
             }
 
             if (editor == null && Element.class.isAssignableFrom(propertyValueClass)) {
-                editor = new GenericStringTagPropertyEditor(ArrayUtils.unshift(getVariableNamesOfType(DataType.ELEMENT), null));
+                final String[] elementVars = getVariableNamesOfType(DataType.ELEMENT);
+                editor = new GenericStringTagPropertyEditor(elementVars.length > 0 ? elementVars : new String[]{null});
             }
 
             if (editor == null) {
