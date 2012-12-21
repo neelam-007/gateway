@@ -1,5 +1,6 @@
-package com.l7tech.console.panels;
+package com.l7tech.console.panels.encass;
 
+import com.l7tech.console.panels.EditRowBasedAssertionPropertiesEditor;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;

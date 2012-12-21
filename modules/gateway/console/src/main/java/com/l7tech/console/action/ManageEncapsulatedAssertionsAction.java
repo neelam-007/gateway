@@ -1,6 +1,6 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.EncapsulatedAssertionManagerWindow;
+import com.l7tech.console.panels.encass.EncapsulatedAssertionManagerWindow;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedAnyOperation;
 import com.l7tech.gui.util.DialogDisplayer;

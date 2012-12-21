@@ -1,4 +1,4 @@
-package com.l7tech.console.panels;
+package com.l7tech.console.panels.encass;
 
 import com.l7tech.console.util.ContextVariableTextComponentValidationRule;
 import com.l7tech.gui.util.InputValidator;

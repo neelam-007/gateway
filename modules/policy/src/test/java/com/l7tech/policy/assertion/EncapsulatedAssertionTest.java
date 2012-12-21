@@ -225,7 +225,7 @@ public class EncapsulatedAssertionTest {
         assertion.config(config);
 
         final AssertionMetadata meta = assertion.meta();
-        assertEquals("com.l7tech.console.panels.EncapsulatedAssertionPropertiesDialog", meta.get(PROPERTIES_EDITOR_CLASSNAME));
+        assertEquals("com.l7tech.console.panels.encass.EncapsulatedAssertionPropertiesDialog", meta.get(PROPERTIES_EDITOR_CLASSNAME));
     }
 
     @Test

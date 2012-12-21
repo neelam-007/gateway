@@ -253,7 +253,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
             // Use dialog
             meta.put(PROPERTIES_EDITOR_FACTORY, null);
             meta.put(PROPERTIES_ACTION_CLASSNAME, null);
-            meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.EncapsulatedAssertionPropertiesDialog");
+            meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.encass.EncapsulatedAssertionPropertiesDialog");
         } else {
             // Disable properties editor
             meta.putNull(PROPERTIES_ACTION_CLASSNAME);

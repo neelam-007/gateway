@@ -1,5 +1,6 @@
-package com.l7tech.console.panels;
+package com.l7tech.console.panels.encass;
 
+import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
 import com.l7tech.console.security.SecurityProvider;
