@@ -53,11 +53,31 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
     /** The default icon to use for an encapsulated assertion that doesn't specify a different one. */
     public static final String DEFAULT_ICON_RESOURCE_FILENAME = "star16.gif";
 
+    private String guid;
     private Policy policy;
     private Set<EncapsulatedAssertionArgumentDescriptor> argumentDescriptors = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
     private Set<EncapsulatedAssertionResultDescriptor> resultDescriptors = new HashSet<EncapsulatedAssertionResultDescriptor>();
     private Map<String,String> properties = new HashMap<String,String>();
 
+    /**
+     * @return the GUID for this encapsulated assertion configuration, or null if not yet assigned.
+     */
+    @Nullable
+    @Column(name="guid", nullable=false, length=255)
+    public String getGuid() {
+        return guid;
+    }
+
+    /**
+     * Assign a GUID for this encapsulated assertion configuration.  A GUID should only be assigned to a persisted
+     * EncapsulatedAssertion, and then only when it is first saved.
+     *
+     * @param guid GUID to use for this encapsulated assertion configuration.
+     */
+    public void setGuid(String guid) {
+        checkLocked();
+        this.guid = guid;
+    }
 
     /**
      * Get the associated Policy entity that provides the runtime implementation for this encapsulated assertion.
@@ -225,10 +245,29 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
             BeanUtils.copyProperties(this, copy,
                 BeanUtils.omitProperties(BeanUtils.getProperties(getClass()), "properties", "argumentDescriptors", "resultDescriptors", "policy"));
             copy.setProperties(new HashMap<String, String>(getProperties()));
-            copy.setArgumentDescriptors(new HashSet<EncapsulatedAssertionArgumentDescriptor>(getArgumentDescriptors()));
-            copy.setResultDescriptors(new HashSet<EncapsulatedAssertionResultDescriptor>(getResultDescriptors()));
+
+            final HashSet<EncapsulatedAssertionArgumentDescriptor> args = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
+            Set<EncapsulatedAssertionArgumentDescriptor> ourArgs = getArgumentDescriptors();
+            if (ourArgs != null) {
+                for (EncapsulatedAssertionArgumentDescriptor ourArg : ourArgs) {
+                    args.add(ourArg.getCopy(copy, readOnly));
+                }
+            }
+            copy.setArgumentDescriptors(args);
+
+            final HashSet<EncapsulatedAssertionResultDescriptor> results = new HashSet<EncapsulatedAssertionResultDescriptor>();
+            Set<EncapsulatedAssertionResultDescriptor> ourResults = getResultDescriptors();
+            if (ourResults != null) {
+                for (EncapsulatedAssertionResultDescriptor ourResult : ourResults) {
+                    results.add(ourResult.getCopy(copy, readOnly));
+                }
+            }
+            copy.setResultDescriptors(results);
+
             Policy policy = getPolicy();
             copy.setPolicy(policy == null ? null : new Policy(policy, null, readOnly, null));
+            if (readOnly)
+                copy.lock();
             return copy;
         } catch (InvocationTargetException e) {
             throw new RuntimeException(e);
@@ -255,9 +294,30 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof EncapsulatedAssertionConfig)) return false;
+        if (!super.equals(o)) return false;
+
+        EncapsulatedAssertionConfig that = (EncapsulatedAssertionConfig) o;
+
+        if (guid != null ? !guid.equals(that.guid) : that.guid != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (guid != null ? guid.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "EncapsulatedAssertionConfig{" +
             "oid=" + getOid() +
+            ", guid='" + getGuid() + "'" +
             ", name='" + getName() + "'" +
             ", policy=" + policy + "\n" +
             ", argumentDescriptors=" + argumentDescriptors + "\n" +

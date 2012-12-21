@@ -28,18 +28,15 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.springframework.context.event.ContextStartedEvent;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ServerEncapsulatedAssertionTest {
     private static final long CONFIG_ID = 1L;
+    private static final String CONFIG_GUID = UUID.randomUUID().toString();
     private static final long POLICY_ID = 2L;
     private static final String ENCAPSULATED_ASSERTION_NAME = "testEncapsulatedAssertion";
     private Policy policy;
@@ -66,13 +63,14 @@ public class ServerEncapsulatedAssertionTest {
         config = new EncapsulatedAssertionConfig();
         config.setName(ENCAPSULATED_ASSERTION_NAME);
         config.setOid(CONFIG_ID);
+        config.setGuid(CONFIG_GUID);
         config.setPolicy(policy);
         config.setArgumentDescriptors(inParams);
         config.setResultDescriptors(outParams);
         assertion = new EncapsulatedAssertion();
-        assertion.setEncapsulatedAssertionConfigId(String.valueOf(CONFIG_ID));
+        assertion.setEncapsulatedAssertionConfigGuid(CONFIG_GUID);
 
-        when(configManager.findByPrimaryKey(CONFIG_ID)).thenReturn(config);
+        when(configManager.findByGuid(CONFIG_GUID)).thenReturn(config);
         when(policyCache.getServerPolicy(POLICY_ID)).thenReturn(handle);
 
         serverAssertion = new ServerEncapsulatedAssertion(assertion);
@@ -132,14 +130,14 @@ public class ServerEncapsulatedAssertionTest {
         // change the name
         final EncapsulatedAssertionConfig updatedConfig = config.getCopy();
         updatedConfig.setName("updatedEncapsulatedAssertion");
-        when(configManager.findByPrimaryKey(CONFIG_ID)).thenReturn(updatedConfig);
+        when(configManager.findByGuid(CONFIG_GUID)).thenReturn(updatedConfig);
 
         applicationEventProxy.publishEvent(new EntityInvalidationEvent("source", EncapsulatedAssertionConfig.class,
                 new long[]{CONFIG_ID}, new char[]{EntityInvalidationEvent.UPDATE}));
 
         assertEquals("updatedEncapsulatedAssertion", serverAssertion.getConfigOrErrorRef().get().right().getName());
         // once during init and another for entity invalidation event
-        verify(configManager, times(2)).findByPrimaryKey(anyLong());
+        verify(configManager, times(2)).findByGuid(anyString());
     }
 
     @Test
@@ -151,7 +149,7 @@ public class ServerEncapsulatedAssertionTest {
 
         assertEquals(ENCAPSULATED_ASSERTION_NAME, serverAssertion.getConfigOrErrorRef().get().right().getName());
         // once during init but should not be called for entity invalidation event
-        verify(configManager, times(1)).findByPrimaryKey(anyLong());
+        verify(configManager, times(1)).findByGuid(anyString());
     }
 
     /**
@@ -167,7 +165,7 @@ public class ServerEncapsulatedAssertionTest {
 
         assertEquals(ENCAPSULATED_ASSERTION_NAME, serverAssertion.getConfigOrErrorRef().get().right().getName());
         // once during init but should not be called for entity invalidation event
-        verify(configManager, times(1)).findByPrimaryKey(anyLong());
+        verify(configManager, times(1)).findByGuid(anyString());
     }
 
     @Test
@@ -184,16 +182,16 @@ public class ServerEncapsulatedAssertionTest {
     }
 
     @Test
-    public void checkRequestMissingConfigId() throws Exception {
-        assertion.setEncapsulatedAssertionConfigId(null);
+    public void checkRequestMissingConfigGuid() throws Exception {
+        assertion.setEncapsulatedAssertionConfigGuid(null);
         serverAssertion.afterPropertiesSet();
 
         assertEquals(AssertionStatus.SERVER_ERROR, serverAssertion.checkRequest(context));
     }
 
     @Test
-    public void checkRequestInvalidConfigId() throws Exception {
-        assertion.setEncapsulatedAssertionConfigId("notANumber");
+    public void checkRequestInvalidConfigGuid() throws Exception {
+        assertion.setEncapsulatedAssertionConfigGuid("notANumber");
         serverAssertion.afterPropertiesSet();
 
         assertEquals(AssertionStatus.SERVER_ERROR, serverAssertion.checkRequest(context));
@@ -201,8 +199,9 @@ public class ServerEncapsulatedAssertionTest {
 
     @Test
     public void checkRequestCannotFindConfig() throws Exception {
-        assertion.setEncapsulatedAssertionConfigId(String.valueOf(CONFIG_ID + 1));
-        when(configManager.findByPrimaryKey(CONFIG_ID + 1)).thenReturn(null);
+        final String guid = UUID.randomUUID().toString();
+        assertion.setEncapsulatedAssertionConfigGuid(guid);
+        when(configManager.findByGuid(guid)).thenReturn(null);
         serverAssertion.afterPropertiesSet();
 
         assertEquals(AssertionStatus.SERVER_ERROR, serverAssertion.checkRequest(context));
@@ -210,8 +209,9 @@ public class ServerEncapsulatedAssertionTest {
 
     @Test
     public void checkRequestErrorFindingConfig() throws Exception {
-        assertion.setEncapsulatedAssertionConfigId(String.valueOf(CONFIG_ID + 1));
-        when(configManager.findByPrimaryKey(CONFIG_ID + 1)).thenThrow(new FindException("mocking exception"));
+        final String guid = UUID.randomUUID().toString();
+        assertion.setEncapsulatedAssertionConfigGuid(guid);
+        when(configManager.findByGuid(guid)).thenThrow(new FindException("mocking exception"));
         serverAssertion.afterPropertiesSet();
 
         assertEquals(AssertionStatus.SERVER_ERROR, serverAssertion.checkRequest(context));

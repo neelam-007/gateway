@@ -1806,9 +1806,11 @@ CREATE TABLE encapsulated_assertion (
   objectid bigint(20) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
+  guid varchar(255) NOT NULL,
   policy_oid bigint(20) NOT NULL,
   FOREIGN KEY (policy_oid) REFERENCES policy (objectid),
-  PRIMARY KEY (objectid)
+  PRIMARY KEY (objectid),
+  UNIQUE KEY i_guid (guid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS encapsulated_assertion_property;

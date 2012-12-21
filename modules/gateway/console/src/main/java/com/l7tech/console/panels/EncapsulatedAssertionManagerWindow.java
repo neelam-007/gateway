@@ -3,7 +3,6 @@ package com.l7tech.console.panels;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
 import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -251,9 +250,9 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         try {
             final Collection<EncapsulatedAssertionConfig> configs = Registry.getDefault().getEncapsulatedAssertionAdmin().findAllEncapsulatedAssertionConfigs();
             iconCache.clear();
-            final Map<String,EncapsulatedAssertionConfig> configsByOidStr = new HashMap<String,EncapsulatedAssertionConfig>();
+            final Map<String,EncapsulatedAssertionConfig> configsByGuid = new HashMap<String,EncapsulatedAssertionConfig>();
             for (final EncapsulatedAssertionConfig config : configs) {
-                configsByOidStr.put(config.getId(), config);
+                configsByGuid.put(config.getGuid(), config);
             }
 
             eacTableModel.setRows(new ArrayList<EncapsulatedAssertionConfig>(configs));
@@ -269,7 +268,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                             final Assertion ass = assertionTreeNode.asAssertion();
                             if (ass instanceof EncapsulatedAssertion) {
                                 final EncapsulatedAssertion encass = (EncapsulatedAssertion) ass;
-                                final EncapsulatedAssertionConfig config = configsByOidStr.get(encass.getEncapsulatedAssertionConfigId());
+                                final EncapsulatedAssertionConfig config = configsByGuid.get(encass.getEncapsulatedAssertionConfigGuid());
                                 if (config != null) {
                                     encass.config(config);
                                 }

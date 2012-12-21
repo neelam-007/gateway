@@ -36,13 +36,25 @@ public interface EncapsulatedAssertionAdmin {
      * Find specified encapsulated assertion template by its oid.
      *
      * @param oid encapsulated assertion OID to look up.
-     * @return the requested OID.  Never null.
+     * @return the requested config.  Never null.
      * @throws FindException if not found, or there was an error performing the lookup
      */
     @NotNull
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITY)
     EncapsulatedAssertionConfig findByPrimaryKey(long oid) throws FindException;
+
+    /**
+     * Find specified encapsulated assertion template by its GUID.
+     *
+     * @param guid GUID to look up.  Required.
+     * @return the requested config.  Never null.
+     * @throws FindException if not found, or there was an error performing the lookup
+     */
+    @NotNull
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITY)
+    EncapsulatedAssertionConfig findByGuid(@NotNull String guid) throws FindException;
 
     /**
      * Saves a new or existing encapsulated assertion templates.

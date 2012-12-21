@@ -58,10 +58,12 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
 
     public ServerEncapsulatedAssertion(final @NotNull EncapsulatedAssertion assertion) {
         super(assertion);
+        updateConfig(loadInitialConfig(assertion));
     }
 
     public ServerEncapsulatedAssertion(final @NotNull EncapsulatedAssertion assertion, final @Nullable AuditFactory auditFactory) {
         super(assertion, auditFactory);
+        updateConfig(loadInitialConfig(assertion));
     }
 
     @Override
@@ -95,12 +97,9 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
 
     private void updateConfig(Either<String, EncapsulatedAssertionConfig> newVal) {
         configOrErrorRef.set(newVal);
-        if (newVal.isRight()) {
-            // TODO fix this hack -- our actual assertion bean should have the config added to it before
-            // it is marked read-only, before the server policy is invoked to create the server assertion
-            final EncapsulatedAssertion varsBean = new EncapsulatedAssertion(newVal.right());
-            varsBean.setParameters(assertion.getParameters());
-            varsUsed.set(varsBean.getVariablesUsed());
+        if (newVal != null && newVal.isRight()) {
+            // Get most up-to-date variablesUsed based on most up-to-date config
+            varsUsed.set(EncapsulatedAssertion.getVariablesUsed(assertion, newVal.right()));
         }
     }
 
@@ -113,27 +112,32 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
         super.close();
     }
 
+    private Either<String,EncapsulatedAssertionConfig> loadInitialConfig(EncapsulatedAssertion assertion) {
+        EncapsulatedAssertionConfig config = assertion.config();
+        return config == null ? null : Either.<String,EncapsulatedAssertionConfig>right(config);
+    }
+
     private Either<String,EncapsulatedAssertionConfig> loadConfig() {
-        final String strId = assertion.getEncapsulatedAssertionConfigId();
-        if (strId == null) {
-            final String msg = "Encapsulated assertion lacks a config ID";
+        final String guid = assertion.getEncapsulatedAssertionConfigGuid();
+        if (guid == null) {
+            final String msg = "Encapsulated assertion lacks a config GUID";
             logger.log(Level.WARNING, msg);
             return Either.left(msg);
         }
         try {
-            final EncapsulatedAssertionConfig config = encapsulatedAssertionConfigManager.findByPrimaryKey(Long.parseLong(strId));
+            final EncapsulatedAssertionConfig config = encapsulatedAssertionConfigManager.findByGuid(guid);
             if (config == null) {
-                final String msg = "No encapsulated assertion config found with ID " + strId;
+                final String msg = "No encapsulated assertion config found with GUID " + guid;
                 logger.log(Level.WARNING, msg);
                 return Either.left(msg);
             }
             return Either.right(config);
         } catch (FindException e) {
-            final String msg = "Error looking up encapsulated assertion config with ID " + strId + ": " + ExceptionUtils.getMessage(e);
+            final String msg = "Error looking up encapsulated assertion config with GUID " + guid + ": " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
             return Either.left(msg);
         } catch (NumberFormatException e) {
-            final String msg = "Invalid encapsulated assertion config ID " + strId;
+            final String msg = "Invalid encapsulated assertion config GUID " + guid;
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
             return Either.left(msg);
         }

@@ -11,11 +11,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.UUID;
+
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConsoleEntityFinderImplTest {
+    private final String CONFIG_GUID = UUID.randomUUID().toString();
     private TestableConsoleEntityFinderImpl entityFinder;
     private RegistryStub registry;
     private EncapsulatedAssertionConfig config;
@@ -29,37 +33,47 @@ public class ConsoleEntityFinderImplTest {
         registry.setAdminContextPresent(true);
         registry.setEncapsulatedAssertionAdmin(encapAdmin);
         config = new EncapsulatedAssertionConfig();
+        config.setGuid(CONFIG_GUID);
     }
 
     @Test
     public void findByEntityTypeAndPrimaryId() throws Exception {
-        when(encapAdmin.findByPrimaryKey(1L)).thenReturn(config);
-        final Entity entity = entityFinder.findByEntityTypeAndPrimaryId(EntityType.ENCAPSULATED_ASSERTION, "1");
+        when(encapAdmin.findByGuid(CONFIG_GUID)).thenReturn(config);
+        final Entity entity = entityFinder.findByEntityTypeAndGuid(EntityType.ENCAPSULATED_ASSERTION, CONFIG_GUID);
         assertEquals(config, entity);
     }
 
     @Test(expected = UnsupportedEntityTypeException.class)
     public void findByEntityTypeAndPrimaryIdUnsupportedType() throws Exception {
-        entityFinder.findByEntityTypeAndPrimaryId(EntityType.POLICY, "1");
+        entityFinder.findByEntityTypeAndGuid(EntityType.POLICY, "1");
     }
 
     @Test(expected = FindException.class)
     public void findByEntityTypeAndPrimaryIdInvalidId() throws Exception {
-        entityFinder.findByEntityTypeAndPrimaryId(EntityType.ENCAPSULATED_ASSERTION, "invalid");
+        when(encapAdmin.findByGuid(anyString())).thenThrow(new FindException("not found"));
+        entityFinder.findByEntityTypeAndGuid(EntityType.ENCAPSULATED_ASSERTION, "invalid");
     }
 
     @Test(expected = FindException.class)
     public void findByEntityTypeAndPrimaryIdNotFound() throws Exception {
-        when(encapAdmin.findByPrimaryKey(1L)).thenThrow(new FindException("mocking exception"));
-        entityFinder.findByEntityTypeAndPrimaryId(EntityType.ENCAPSULATED_ASSERTION, "1");
+        when(encapAdmin.findByGuid(anyString())).thenThrow(new FindException("mocking exception"));
+        entityFinder.findByEntityTypeAndGuid(EntityType.ENCAPSULATED_ASSERTION, "1");
     }
 
     @Test
-    public void findByHeader() throws Exception {
-        when(encapAdmin.findByPrimaryKey(1L)).thenReturn(config);
-        final EntityHeader header = new EntityHeader("1", EntityType.ENCAPSULATED_ASSERTION, null, null);
+    public void findByGuidHeader() throws Exception {
+        when(encapAdmin.findByGuid(CONFIG_GUID)).thenReturn(config);
+        final GuidEntityHeader header = new GuidEntityHeader("1", EntityType.ENCAPSULATED_ASSERTION, null, null);
+        header.setGuid(CONFIG_GUID);
         final Entity entity = entityFinder.find(header);
         assertEquals(config, entity);
+    }
+
+    @Test(expected = UnsupportedEntityTypeException.class)
+    public void findByRegularHeader() throws Exception {
+        when(encapAdmin.findByPrimaryKey(1L)).thenReturn(config);
+        final EntityHeader header = new EntityHeader("1", EntityType.ENCAPSULATED_ASSERTION, null, null);
+        entityFinder.find(header);
     }
 
     private class TestableConsoleEntityFinderImpl extends ConsoleEntityFinderImpl {

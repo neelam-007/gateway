@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.inject.Inject;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.UUID;
 
 /**
  * Implementation of {@link EncapsulatedAssertionAdmin}.
@@ -40,14 +41,30 @@ public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmi
         return ret;
     }
 
+    @NotNull
+    @Override
+    public EncapsulatedAssertionConfig findByGuid(@NotNull String guid) throws FindException {
+        EncapsulatedAssertionConfig ret = encapsulatedAssertionConfigManager.findByGuid(guid);
+        if (ret == null)
+            throw new FindException("No encapsulated assertion config found with GUID  " + guid);
+        return ret;
+    }
+
     @Override
     public long saveEncapsulatedAssertionConfig(@NotNull EncapsulatedAssertionConfig config) throws SaveException, UpdateException, VersionException {
         checkLicenseEncAss();
         long oid;
 
         if (config.getOid() == EncapsulatedAssertionConfig.DEFAULT_OID) {
+            if (config.getGuid() != null) {
+                // TODO it may end up being necessary to allow this case in order to import an encass created on a different cluster
+                throw new SaveException("New encapsulated assertion config already has a GUID assigned");
+            }
+            config.setGuid(UUID.randomUUID().toString());
             oid = encapsulatedAssertionConfigManager.save(config);
         } else {
+            if (config.getGuid() == null)
+                throw new UpdateException("Unable to update existing encapsulated assertion to have a null GUID");
             encapsulatedAssertionConfigManager.update(config);
             oid = config.getOid();
         }

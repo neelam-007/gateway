@@ -10,33 +10,31 @@ import org.jetbrains.annotations.NotNull;
 public class ConsoleEntityFinderImpl implements HeaderBasedEntityFinder {
 
     @NotNull
-    public Entity findByEntityTypeAndPrimaryId(@NotNull EntityType entityType, @NotNull String id) throws FindException {
+    Entity findByEntityTypeAndGuid(EntityType type, String guid) throws FindException {
         Registry registry = registry();
-        switch (entityType) {
+        switch (type) {
             case ENCAPSULATED_ASSERTION:
-                return registry.getEncapsulatedAssertionAdmin().findByPrimaryKey(asLongOid(id));
+                return registry.getEncapsulatedAssertionAdmin().findByGuid(guid);
 
             // add new entity types here as needed
             // case WHATEVER:
-            //     return registry.getWhateverAdmin().findByPrimaryKey(id);
+            //     return registry.getWhateverAdmin().findByGuid(id);
 
             default:
-                throw new UnsupportedEntityTypeException("Entity type currently not supported: " + entityType);
-        }
-    }
-
-    private long asLongOid(String id) throws FindException {
-        try {
-            return Long.parseLong(id);
-        } catch (NumberFormatException e) {
-            throw new FindException("ID string not a valid OID: " + id, e);
+                throw new UnsupportedEntityTypeException("Entity type currently not supported: " + type);
         }
     }
 
     @NotNull
     @Override
     public Entity find(@NotNull EntityHeader header) throws FindException {
-        return findByEntityTypeAndPrimaryId(header.getType(), header.getStrId());
+        if (header instanceof GuidEntityHeader) {
+            GuidEntityHeader guidHeader = (GuidEntityHeader) header;
+            String guid = guidHeader.getGuid();
+            if (guid != null)
+                return findByEntityTypeAndGuid(header.getType(), guid);
+        }
+        throw new UnsupportedEntityTypeException("Entity type currently not supported: " + header.getType());
     }
 
     /**

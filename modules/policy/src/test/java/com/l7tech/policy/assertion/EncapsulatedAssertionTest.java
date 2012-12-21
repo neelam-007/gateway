@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
@@ -17,12 +18,14 @@ import java.util.*;
 
 import static com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig.*;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import static com.l7tech.policy.assertion.EncapsulatedAssertion.DEFAULT_OID_STR;
 import static org.junit.Assert.*;
 
+@SuppressWarnings("deprecation")
 public class EncapsulatedAssertionTest {
     private static final long CONFIG_ID = 1L;
     private static final String CONFIG_ID_STR = String.valueOf(CONFIG_ID);
+    private static final String CONFIG_GUID = UUID.randomUUID().toString();
+    private static final String CONFIG_NAME = "My Special Encass";
     private EncapsulatedAssertion assertion;
     private EncapsulatedAssertionConfig config;
 
@@ -30,31 +33,35 @@ public class EncapsulatedAssertionTest {
     public void setup() {
         assertion = new EncapsulatedAssertion();
         config = new EncapsulatedAssertionConfig();
+        config.setGuid(CONFIG_GUID);
+        config.setName(CONFIG_NAME);
         config.setOid(CONFIG_ID);
     }
 
     @Test
     public void setConfig() {
-        assertEquals(DEFAULT_OID_STR, assertion.getEncapsulatedAssertionConfigId());
+        assertNull(assertion.getEncapsulatedAssertionConfigGuid());
         final AssertionMetadata metaBeforeConfig = assertion.meta();
 
         assertion.config(config);
 
         assertEquals(config, assertion.config());
-        assertEquals(CONFIG_ID_STR, assertion.getEncapsulatedAssertionConfigId());
+        assertEquals(CONFIG_GUID, assertion.getEncapsulatedAssertionConfigGuid());
+        assertEquals(CONFIG_NAME, assertion.getEncapsulatedAssertionConfigName());
         // meta should have been re-instantiated
         assertNotSame(metaBeforeConfig, assertion.meta());
     }
 
     @Test
     public void setConfigNull() {
-        assertEquals(DEFAULT_OID_STR, assertion.getEncapsulatedAssertionConfigId());
+        assertNull(assertion.getEncapsulatedAssertionConfigGuid());
         final AssertionMetadata metaBeforeConfig = assertion.meta();
 
         assertion.config(null);
 
         assertNull(assertion.config());
-        assertEquals(DEFAULT_OID_STR, assertion.getEncapsulatedAssertionConfigId());
+        assertNull(assertion.getEncapsulatedAssertionConfigGuid());
+        assertNull(assertion.getEncapsulatedAssertionConfigName());
         // meta should have been re-instantiated
         assertNotSame(metaBeforeConfig, assertion.meta());
     }
@@ -62,15 +69,18 @@ public class EncapsulatedAssertionTest {
     @Test
     public void constructorWithConfig() {
         assertion = new EncapsulatedAssertion(config);
-        assertEquals(config, assertion.config());
-        assertEquals(CONFIG_ID_STR, assertion.getEncapsulatedAssertionConfigId());
+        assertTrue(config == assertion.config());
+        assertEquals(CONFIG_GUID, assertion.getEncapsulatedAssertionConfigGuid());
+        assertEquals(CONFIG_NAME, assertion.getEncapsulatedAssertionConfigName());
     }
 
     @Test
     public void constructorWithConfigNull() {
         assertion = new EncapsulatedAssertion(null);
         assertNull(assertion.config());
-        assertEquals(EncapsulatedAssertion.DEFAULT_OID_STR, assertion.getEncapsulatedAssertionConfigId());
+        assertNull(assertion.config());
+        assertNull(assertion.getEncapsulatedAssertionConfigGuid());
+        assertNull(assertion.getEncapsulatedAssertionConfigName());
     }
 
     @Test
@@ -116,43 +126,58 @@ public class EncapsulatedAssertionTest {
 
     @Test
     public void getEntitiesUsedNullOrDefaultConfigId() {
-        assertion.setEncapsulatedAssertionConfigId(null);
+        assertion.config(null);
         assertEquals(0, assertion.getEntitiesUsed().length);
 
-        assertion.setEncapsulatedAssertionConfigId(DEFAULT_OID_STR);
+        assertNull(assertion.getEncapsulatedAssertionConfigGuid());
+        assertNull(assertion.getEncapsulatedAssertionConfigName());
         assertEquals(0, assertion.getEntitiesUsed().length);
     }
 
     @Test
     public void getEntitiesUsed() {
-        assertion.setEncapsulatedAssertionConfigId(CONFIG_ID_STR);
+        assertion.config(config);
         assertEquals(1, assertion.getEntitiesUsed().length);
-        final EntityHeader entity = assertion.getEntitiesUsed()[0];
-        assertEquals(CONFIG_ID_STR, entity.getStrId());
-        assertEquals(EntityType.ENCAPSULATED_ASSERTION, entity.getType());
-        assertNull(entity.getName());
-        assertNull(entity.getDescription());
+        final GuidEntityHeader header = (GuidEntityHeader)assertion.getEntitiesUsed()[0];
+        assertEquals(CONFIG_ID_STR, header.getStrId());
+        assertEquals(CONFIG_GUID, header.getGuid());
+        assertEquals(CONFIG_NAME, header.getName());
+        assertEquals(EntityType.ENCAPSULATED_ASSERTION, header.getType());
+        assertNull(header.getDescription());
+    }
+
+    @Test
+    public void replaceEntityWithoutName() {
+        assertNull(assertion.getEncapsulatedAssertionConfigGuid());
+        final GuidEntityHeader header = new GuidEntityHeader("foo", EntityType.ENCAPSULATED_ASSERTION, null, null);
+        header.setGuid(CONFIG_GUID);
+        assertion.replaceEntity(null, header);
+        assertEquals(CONFIG_GUID, assertion.getEncapsulatedAssertionConfigGuid());
+        assertNull(assertion.getEncapsulatedAssertionConfigName());
     }
 
     @Test
     public void replaceEntity() {
-        assertEquals(DEFAULT_OID_STR, assertion.getEncapsulatedAssertionConfigId());
-        assertion.replaceEntity(null, new EntityHeader("foo", EntityType.ENCAPSULATED_ASSERTION, null, null));
-        assertEquals("foo", assertion.getEncapsulatedAssertionConfigId());
+        assertNull(assertion.getEncapsulatedAssertionConfigGuid());
+        final GuidEntityHeader header = new GuidEntityHeader("foo", EntityType.ENCAPSULATED_ASSERTION, CONFIG_NAME, null);
+        header.setGuid(CONFIG_GUID);
+        assertion.replaceEntity(null, header);
+        assertEquals(CONFIG_GUID, assertion.getEncapsulatedAssertionConfigGuid());
+        assertEquals(CONFIG_NAME, assertion.getEncapsulatedAssertionConfigName());
     }
 
     @Test
     public void replaceEntityNullOrWrongType() {
         assertion.config(config);
-        assertEquals(CONFIG_ID_STR, assertion.getEncapsulatedAssertionConfigId());
+        assertEquals(CONFIG_GUID, assertion.getEncapsulatedAssertionConfigGuid());
 
         assertion.replaceEntity(null, null);
         // should not have changed
-        assertEquals(CONFIG_ID_STR, assertion.getEncapsulatedAssertionConfigId());
+        assertEquals(CONFIG_GUID, assertion.getEncapsulatedAssertionConfigGuid());
 
         assertion.replaceEntity(null, new EntityHeader("foo", EntityType.POLICY, null, null));
         // should not have changed
-        assertEquals(CONFIG_ID_STR, assertion.getEncapsulatedAssertionConfigId());
+        assertEquals(CONFIG_GUID, assertion.getEncapsulatedAssertionConfigGuid());
     }
 
     @Test
@@ -267,14 +292,16 @@ public class EncapsulatedAssertionTest {
 
     @Test
     public void getEntitiesUsedAtDesignTime() {
-        assertion.setEncapsulatedAssertionConfigId(CONFIG_ID_STR);
+        assertion.config(null);
+        assertion.setEncapsulatedAssertionConfigGuid(CONFIG_GUID);
         assertEquals(1, assertion.getEntitiesUsedAtDesignTime().length);
         assertArrayEquals(assertion.getEntitiesUsed(), assertion.getEntitiesUsedAtDesignTime());
-        final EntityHeader entity = assertion.getEntitiesUsedAtDesignTime()[0];
-        assertEquals(CONFIG_ID_STR, entity.getStrId());
-        assertEquals(EntityType.ENCAPSULATED_ASSERTION, entity.getType());
-        assertNull(entity.getName());
-        assertNull(entity.getDescription());
+        final EntityHeader header = assertion.getEntitiesUsedAtDesignTime()[0];
+        assertEquals("-1", header.getStrId());
+        assertEquals(CONFIG_GUID, ((GuidEntityHeader) header).getGuid());
+        assertEquals(EntityType.ENCAPSULATED_ASSERTION, header.getType());
+        assertNull(header.getName());
+        assertNull(header.getDescription());
     }
 
     @Test
@@ -299,7 +326,7 @@ public class EncapsulatedAssertionTest {
         assertion.config(null);
         assertion.provideEntity(new EntityHeader(), config);
         assertEquals(config, assertion.config());
-        assertEquals(CONFIG_ID_STR, assertion.getEncapsulatedAssertionConfigId());
+        assertEquals(CONFIG_GUID, assertion.getEncapsulatedAssertionConfigGuid());
     }
 
     @Test
@@ -307,7 +334,8 @@ public class EncapsulatedAssertionTest {
         assertion.config(null);
         assertion.provideEntity(new EntityHeader(), new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false));
         assertNull(assertion.config());
-        assertEquals(DEFAULT_OID_STR, assertion.getEncapsulatedAssertionConfigId());
+        assertNull(assertion.getEncapsulatedAssertionConfigGuid());
+        assertNull(assertion.getEncapsulatedAssertionConfigName());
     }
 
     @Test

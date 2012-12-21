@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.UsesEntitiesAtDesignTime;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -46,7 +47,12 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     private IdentityProviderFactory identityProviderFactory;
     private PolicyManager policyManager;
     private SsgKeyStoreManager keyStoreManager;
+    private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
     private static final int MAX_RESULTS = 100;
+
+    public void setEncapsulatedAssertionConfigManager(EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager) {
+        this.encapsulatedAssertionConfigManager = encapsulatedAssertionConfigManager;
+    }
 
     public void setIdentityProviderFactory(IdentityProviderFactory ipf) {
         identityProviderFactory = ipf;        
@@ -171,8 +177,15 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             } catch (NumberFormatException e) {
                 return policyManager.findByGuid(id);
             }
-        }
-        else if (header instanceof ExternalAuditRecordHeader){
+        } else if (EntityType.ENCAPSULATED_ASSERTION == header.getType()) {
+            if (header instanceof GuidEntityHeader && encapsulatedAssertionConfigManager != null) {
+                GuidEntityHeader guidHeader = (GuidEntityHeader) header;
+                final String guid = guidHeader.getGuid();
+                if (guid != null)
+                    return encapsulatedAssertionConfigManager.findByGuid(guid);
+            }
+            return encapsulatedAssertionConfigManager.findByPrimaryKey(header.getOid());
+        } else if (header instanceof ExternalAuditRecordHeader){
             // use mock entity objects for audit records from the external audits system
             ExternalAuditRecordHeader auditHeader = (ExternalAuditRecordHeader) header;
             if(auditHeader.getRecordType().equals(AuditRecordUtils.TYPE_ADMIN)){

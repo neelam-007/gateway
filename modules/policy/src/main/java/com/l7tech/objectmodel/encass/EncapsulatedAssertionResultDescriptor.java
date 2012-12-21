@@ -27,6 +27,7 @@ public class EncapsulatedAssertionResultDescriptor extends PersistentEntityImp {
     }
 
     public void setEncapsulatedAssertionConfig(EncapsulatedAssertionConfig encapsulatedAssertionConfig) {
+        checkLocked();
         this.encapsulatedAssertionConfig = encapsulatedAssertionConfig;
     }
 
@@ -43,6 +44,7 @@ public class EncapsulatedAssertionResultDescriptor extends PersistentEntityImp {
     }
 
     public void setResultName(String resultName) {
+        checkLocked();
         this.resultName = resultName;
     }
 
@@ -58,7 +60,27 @@ public class EncapsulatedAssertionResultDescriptor extends PersistentEntityImp {
      * @param resultType the data type of this result, as a name of a value of {@link com.l7tech.policy.variable.DataType}.
      */
     public void setResultType(String resultType) {
+        checkLocked();
         this.resultType = resultType;
+    }
+
+    /**
+     * Get a copy of this result descriptor pointing at the specified config, optionally marking it as read-only.
+     * <p/>
+     * The copy will have the default (non-persisted) OID and so will compare as equals() to the original.
+     *
+     * @param newConfig config that should own the copied descriptor.  May be null.
+     * @param readOnly true to mark the copy read-only.
+     * @return a new EncapsulatedAssertionArgumentDescriptor
+     */
+    public EncapsulatedAssertionResultDescriptor getCopy(EncapsulatedAssertionConfig newConfig, boolean readOnly) {
+        EncapsulatedAssertionResultDescriptor copy = new EncapsulatedAssertionResultDescriptor();
+        copy.setEncapsulatedAssertionConfig(newConfig);
+        copy.setResultName(getResultName());
+        copy.setResultType(getResultType());
+        if (readOnly)
+            copy.lock();
+        return copy;
     }
 
     @SuppressWarnings("RedundantIfStatement")

@@ -3,6 +3,7 @@ package com.l7tech.policy.assertion;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
@@ -26,11 +27,10 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDesignTime, UsesVariables, SetsVariables {
     static final String DEFAULT_OID_STR = Long.toString(EncapsulatedAssertionConfig.DEFAULT_OID);
 
-    private DefaultAssertionMetadata meta = null;
-    private String encapsulatedAssertionConfigId = DEFAULT_OID_STR;
-
+    private GuidEntityHeader configHeader = new GuidEntityHeader();
     private Map<String,String> parameters = new TreeMap<String,String>(String.CASE_INSENSITIVE_ORDER);
 
+    private transient DefaultAssertionMetadata meta = null;
     private transient EncapsulatedAssertionConfig encapsulatedAssertionConfig;
 
     /**
@@ -55,6 +55,8 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
 
         //noinspection unchecked
         copy.parameters = (Map<String, String>) ((TreeMap<String, String>)parameters).clone();
+        copy.configHeader = new GuidEntityHeader(configHeader.getOid(), EntityType.ENCAPSULATED_ASSERTION, configHeader.getName(), configHeader.getDescription());
+        copy.configHeader.setGuid(configHeader.getGuid());
         copy.encapsulatedAssertionConfig = encapsulatedAssertionConfig == null ? null : encapsulatedAssertionConfig.getCopy();
         copy.meta = null;
 
@@ -64,6 +66,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
     /**
      * @return the EncapsulatedAssertionConfig that provides metadata and behavior for this assertion, or null if not currently available.
      */
+    @Nullable
     public EncapsulatedAssertionConfig config() {
         return encapsulatedAssertionConfig;
     }
@@ -72,28 +75,61 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
      * Set the EncapsulatedAssertionConfig instance that will provide metadata and behavior for this assertion.
      * <p/>
      * Calling this method will cause assertion metadata to be regenerated next time meta() is called.
+     * <p/>
+     * Clearing the config will also null out any cached config name and GUID.
      *
      * @param config new config, or null to clear it.
      */
-    public void config(EncapsulatedAssertionConfig config) {
+    public void config(@Nullable EncapsulatedAssertionConfig config) {
         this.encapsulatedAssertionConfig = config;
-        if (config != null)
-            this.encapsulatedAssertionConfigId = config.getId();
+        if (config == null) {
+            configHeader.setOid(-1);
+            configHeader.setGuid(null);
+            configHeader.setName(null);
+        } else {
+            configHeader.setOid(config.getOid());
+            configHeader.setGuid(config.getGuid());
+            configHeader.setName(config.getName());
+        }
         meta = null; // Force metadata to be rebuilt
     }
 
     /**
-     * @return the OID string of the encapsulated assertion config that will provide metadata and behavior for this assertion.
+     * @return the GUID of the encapsulated assertion config that will provide metadata and behavior for this assertion.
      */
-    public String getEncapsulatedAssertionConfigId() {
-        return encapsulatedAssertionConfigId;
+    @Nullable
+    public String getEncapsulatedAssertionConfigGuid() {
+        return configHeader.getGuid();
     }
 
     /**
-     * @param encapsulatedAssertionConfigId the OID string of the encapsulated assertion config to provide metadata and behavior for this assertion.
+     * Set the encapsulated assertion config GUID.  This method should not be used except for serialization purposes.
+     * The config GUID is updated when the {@link #config(com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig)} method
+     * is called to set a config.
+     *
+     * @param encapsulatedAssertionConfigGuid the GUID string of the encapsulated assertion config to provide metadata and behavior for this assertion.
      */
-    public void setEncapsulatedAssertionConfigId(String encapsulatedAssertionConfigId) {
-        this.encapsulatedAssertionConfigId = encapsulatedAssertionConfigId;
+    public void setEncapsulatedAssertionConfigGuid(String encapsulatedAssertionConfigGuid) {
+        configHeader.setGuid(encapsulatedAssertionConfigGuid);
+    }
+
+    /**
+     * @return the name of the encapsulated assertion config intended to provide metadata and behavior for this assertion, or null.
+     */
+    @Nullable
+    public String getEncapsulatedAssertionConfigName() {
+        return configHeader.getName();
+    }
+
+    /**
+     * Set the encapsulated assertion config name.  This method should not be used except for serialization purposes.
+     * The config name is updated when the {@link #config(com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig)} method
+     * is called to set a config.
+     *
+     * @param encapsulatedAssertionConfigName the name of the encapsulated assertion config intended to provide metadata and behavior for this assertion
+     */
+    public void setEncapsulatedAssertionConfigName(String encapsulatedAssertionConfigName) {
+        configHeader.setName(encapsulatedAssertionConfigName);
     }
 
     /**
@@ -161,7 +197,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
      * @param parameters the new parameters map.  if null, all parameters will be cleared.
      * @deprecated this is intended for WSP serialization purposes only.  Use {@link #getParameterNames()}, {@link #getParameter(String)}, {@link #putParameter(String, String)}, and {@link #removeParameter} instead.
      */
-    public void setParameters(Map<String, String> parameters) {
+    public void setParameters(@Nullable Map<String, String> parameters) {
         this.parameters.clear();
         if (parameters != null)
             this.parameters.putAll(parameters);
@@ -169,15 +205,31 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
 
     @Override
     public EntityHeader[] getEntitiesUsed() {
-        return encapsulatedAssertionConfigId == null || DEFAULT_OID_STR.equals(encapsulatedAssertionConfigId)
+        return configHeader.getGuid() == null
             ? new EntityHeader[0]
-            : new EntityHeader[] { new EntityHeader(encapsulatedAssertionConfigId, EntityType.ENCAPSULATED_ASSERTION, null, null) };
+            : new EntityHeader[] { makeConfigHeader() };
+    }
+
+    private GuidEntityHeader makeConfigHeader() {
+        GuidEntityHeader ret = new GuidEntityHeader(configHeader.getOid(), EntityType.ENCAPSULATED_ASSERTION, configHeader.getName(), null);
+        ret.setGuid(configHeader.getGuid());
+        return ret;
     }
 
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
-        if (newEntityHeader != null && EntityType.ENCAPSULATED_ASSERTION.equals(newEntityHeader.getType())) {
-            encapsulatedAssertionConfigId = newEntityHeader.getStrId();
+        if (newEntityHeader != null && EntityType.ENCAPSULATED_ASSERTION.equals(newEntityHeader.getType()) && newEntityHeader instanceof GuidEntityHeader) {
+            final String newGuid = ((GuidEntityHeader) newEntityHeader).getGuid();
+            final EncapsulatedAssertionConfig thisConfig = config();
+            if (thisConfig != null) {
+                // If we have a cached config entity, clear it if the new GUID is different
+                if (!newGuid.equals(thisConfig.getGuid())) {
+                    config(null);
+                }
+            }
+            configHeader.setOid(newEntityHeader.getOid());
+            configHeader.setGuid(newGuid);
+            configHeader.setName(newEntityHeader.getName());
         }
     }
 
@@ -191,7 +243,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
 
         EncapsulatedAssertionConfig config = this.encapsulatedAssertionConfig != null
             ? this.encapsulatedAssertionConfig
-            : new EncapsulatedAssertionConfig();
+            : newConfigFromHeader(configHeader);
 
         meta.put(SHORT_NAME, config.getName());
         meta.put(BASE_64_NODE_IMAGE, config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64));
@@ -219,6 +271,8 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
             }
         });
 
+        meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.EncapsulatedAssertionValidator");
+
         // Copy over properties that require some adaptation
         final String folder = config.getProperty(EncapsulatedAssertionConfig.PROP_PALETTE_FOLDER);
         if (folder != null) {
@@ -232,6 +286,14 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
 
         this.meta = meta;
         return meta;
+    }
+
+    private static EncapsulatedAssertionConfig newConfigFromHeader(GuidEntityHeader header) {
+        EncapsulatedAssertionConfig ret = new EncapsulatedAssertionConfig();
+        ret.setOid(header.getOid());
+        ret.setGuid(header.getGuid());
+        ret.setName(header.getName());
+        return ret;
     }
 
     private String findIconResourcePath(EncapsulatedAssertionConfig config) {
@@ -259,7 +321,19 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        EncapsulatedAssertionConfig config = config();
+        return getVariablesUsed(this, config());
+    }
+
+    /**
+     * Get the variables that would be declared used by the specified assertion, with its current parameters, if
+     * it were backed by the specified config entity.
+     *
+     * @param assertion the assertion to provide parameter values.  Required.
+     * @param config the config entity.  May be null.
+     * @return variables used.  May be empty but never null.
+     */
+    @NotNull
+    public static String[] getVariablesUsed(@NotNull EncapsulatedAssertion assertion, @Nullable EncapsulatedAssertionConfig config) {
         if (config == null)
             return new String[0];
 
@@ -268,7 +342,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
             final String argumentName = descriptor.getArgumentName();
             if (descriptor.isGuiPrompt()) {
                 // Parameter is specified in per-instance parameter map, so shouldn't itself be advertised in getVariablesUsed, but its value might use context variables.
-                ret.addAll(Arrays.asList(descriptor.getVariablesUsed(getParameter(argumentName))));
+                ret.addAll(Arrays.asList(descriptor.getVariablesUsed(assertion.getParameter(argumentName))));
             } else {
                 // Parameter is specified as context variable.  Advertise in getVariablesUsed.
                 ret.add(argumentName);
@@ -276,6 +350,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
         }
         return ret.toArray(new String[ret.size()]);
     }
+
 
     @Override
     public EntityHeader[] getEntitiesUsedAtDesignTime() {
@@ -300,8 +375,14 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
     @Override
     public void updateTemporaryData(Assertion assertion) {
         if (assertion instanceof EncapsulatedAssertion) {
-            EncapsulatedAssertion encapsulatedAssertion = (EncapsulatedAssertion) assertion;
-            this.config(encapsulatedAssertion.config());
+            EncapsulatedAssertion other = (EncapsulatedAssertion) assertion;
+            final EncapsulatedAssertionConfig config = other.config();
+            this.config(config);
+            if (config == null) {
+                this.configHeader.setOid(other.configHeader.getOid());
+                this.configHeader.setGuid(other.configHeader.getGuid());
+                this.configHeader.setName(other.configHeader.getName());
+            }
         }
     }
 }

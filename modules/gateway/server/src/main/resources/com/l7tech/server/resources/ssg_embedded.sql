@@ -1539,6 +1539,7 @@ CREATE TABLE encapsulated_assertion (
   objectid bigint not null,
   version integer,
   name varchar(255),
+  guid varchar(255) not null unique,
   policy_oid bigint NOT NULL,
   PRIMARY KEY (objectid)
 );

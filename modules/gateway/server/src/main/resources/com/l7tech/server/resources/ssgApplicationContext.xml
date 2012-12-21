@@ -1702,6 +1702,7 @@
                 <constructor-arg value="com.l7tech.server.security.keystore.SsgKeyStoreManager"/>
             </bean>
         </property>
+        <property name="encapsulatedAssertionConfigManager" ref="encapsulatedAssertionConfigManager"/>
     </bean>
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy" primary="true"/>

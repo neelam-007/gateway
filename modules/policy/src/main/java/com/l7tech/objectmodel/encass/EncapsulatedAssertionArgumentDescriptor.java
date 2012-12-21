@@ -44,6 +44,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     }
 
     public void setEncapsulatedAssertionConfig(EncapsulatedAssertionConfig encapsulatedAssertionConfig) {
+        checkLocked();
         this.encapsulatedAssertionConfig = encapsulatedAssertionConfig;
     }
 
@@ -65,6 +66,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     }
 
     public void setArgumentName(String name) {
+        checkLocked();
         this.argumentName = name;
     }
 
@@ -80,6 +82,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
      * @param type the data type of this argument, as a name of a value of {@link com.l7tech.policy.variable.DataType}.
      */
     public void setArgumentType(String type) {
+        checkLocked();
         this.argumentType = type;
     }
 
@@ -96,6 +99,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     }
 
     public void setDefaultValue(@Nullable String defaultValue) {
+        checkLocked();
         this.defaultValue = defaultValue;
     }
 
@@ -112,6 +116,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     }
 
     public void setGuiPrompt(boolean guiPrompt) {
+        checkLocked();
         this.guiPrompt = guiPrompt;
     }
 
@@ -125,6 +130,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     }
 
     public void setGuiLabel(String guiLabel) {
+        checkLocked();
         this.guiLabel = guiLabel;
     }
 
@@ -137,6 +143,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     }
 
     public void setOrdinal(int ordinal) {
+        checkLocked();
         this.ordinal = ordinal;
     }
 
@@ -199,6 +206,29 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
         return DataType.MESSAGE.getShortName().equals(argumentType) || DataType.ELEMENT.getShortName().equals(argumentType);
     }
 
+    /**
+     * Get a copy of this argument descriptor pointing at the specified config, optionally marking it as read-only.
+     * <p/>
+     * The copy will have the default (non-persisted) OID and so will not compare as equals() to the original.
+     *
+     * @param newConfig config that should own the copied descriptor.  May be null.
+     * @param readOnly true to mark the copy read-only.
+     * @return a new EncapsulatedAssertionArgumentDescriptor
+     */
+    public EncapsulatedAssertionArgumentDescriptor getCopy(EncapsulatedAssertionConfig newConfig, boolean readOnly) {
+        EncapsulatedAssertionArgumentDescriptor copy = new EncapsulatedAssertionArgumentDescriptor();
+        copy.setEncapsulatedAssertionConfig(newConfig);
+        copy.setOrdinal(getOrdinal());
+        copy.setArgumentName(getArgumentName());
+        copy.setArgumentType(getArgumentType());
+        copy.setDefaultValue(getDefaultValue());
+        copy.setGuiPrompt(isGuiPrompt());
+        copy.setGuiLabel(getGuiLabel());
+        if (readOnly)
+            copy.lock();
+        return copy;
+    }
+
     @SuppressWarnings("RedundantIfStatement")
     @Override
     public boolean equals(Object o) {
@@ -234,7 +264,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     public String toString() {
         return "EncapsulatedAssertionArgumentDescriptor{" +
             "eacOid=" + (encapsulatedAssertionConfig == null ? null : encapsulatedAssertionConfig.getOid()) +
-            ", orderinal=" + ordinal +
+            ", ordinal=" + ordinal +
             ", argumentName='" + argumentName + '\'' +
             ", argumentType='" + argumentType + '\'' +
             ", defaultValue='" + defaultValue + '\'' +
