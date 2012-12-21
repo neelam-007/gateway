@@ -15,7 +15,7 @@ public class RequireWssSaml2 extends RequireWssSaml {
 
     public RequireWssSaml2() {
         super();
-        setVersion(2);
+        setVersion(Integer.valueOf(2));
     }
 
     public RequireWssSaml2(RequireWssSaml requestWssSaml) {

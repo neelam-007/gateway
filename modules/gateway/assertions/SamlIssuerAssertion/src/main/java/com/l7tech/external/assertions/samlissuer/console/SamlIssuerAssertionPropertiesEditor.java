@@ -47,15 +47,10 @@ public class SamlIssuerAssertionPropertiesEditor implements AssertionPropertiesE
                                 new ConditionsWizardStepPanel(
                                     new SamlSignatureStepPanel(null, true), true, true), true, true), true), true), true), true), false), true), true);
 
-
-        final SamlIssuerAssertion workingCopy = (SamlIssuerAssertion) assertion.clone();
-        SamlPolicyAssertionWizard wiz = new SamlPolicyAssertionWizard(workingCopy, TopComponents.getInstance().getTopParent(), p, readOnly);
+        SamlPolicyAssertionWizard wiz = new SamlPolicyAssertionWizard(assertion, TopComponents.getInstance().getTopParent(), p, readOnly);
         wiz.addWizardListener(new WizardAdapter() {
             @Override
-            public void wizardFinished(WizardEvent e) {
-                confirmed = true;
-                SamlIssuerAssertionPropertiesEditor.this.assertion = workingCopy;
-            }
+            public void wizardFinished(WizardEvent e) { confirmed = true; }
         });
         wiz.addValidationRulesDefinedInWizardStepPanel(ConditionsWizardStepPanel.class, p);
         wiz.addValidationRulesDefinedInWizardStepPanel(SubjectConfirmationWizardStepPanel.class, p);
