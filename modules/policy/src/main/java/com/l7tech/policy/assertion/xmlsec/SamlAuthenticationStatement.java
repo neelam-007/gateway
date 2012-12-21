@@ -41,7 +41,9 @@ public class SamlAuthenticationStatement implements Cloneable, Serializable {
     @Override
     public Object clone() {
         try {
-            return super.clone();
+            final SamlAuthenticationStatement clone = (SamlAuthenticationStatement) super.clone();
+            clone.setAuthenticationMethods(authenticationMethods.clone());
+            return clone;
         }
         catch(CloneNotSupportedException cnse) {
             throw new RuntimeException("Clone error");

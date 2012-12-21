@@ -183,19 +183,6 @@ public abstract class RequireSaml extends SamlPolicyAssertion implements Message
     @Override
     public Object clone() {
         RequireSaml assertion = (RequireSaml) super.clone();
-
-        if (assertion.getAttributeStatement() != null) {
-            assertion.setAttributeStatement((SamlAttributeStatement)assertion.getAttributeStatement().clone());
-        }
-
-        if (assertion.getAuthenticationStatement() != null) {
-            assertion.setAuthenticationStatement((SamlAuthenticationStatement)assertion.getAuthenticationStatement().clone());
-        }
-
-        if (assertion.getAuthorizationStatement() != null) {
-            assertion.setAuthorizationStatement((SamlAuthorizationStatement)assertion.getAuthorizationStatement().clone());
-        }
-
         assertion.messageTargetableSupport = new MessageTargetableSupport( messageTargetableSupport );
 
         return assertion;
