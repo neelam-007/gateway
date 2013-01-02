@@ -620,8 +620,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             List<HttpForwardingRuleEnforcer.Param> paramRes = HttpForwardingRuleEnforcer.
                     handleRequestParameters(context, requestMessage, assertion.getRequestParamRules(), getAudit(), vars, varNames);
 
-
-            if (paramRes != null) {
+            if (!assertion.getRequestParamRules().isForwardAll() && paramRes != null) {
                 for (HttpForwardingRuleEnforcer.Param p : paramRes) {
                     routedRequest.addParameter(p.name, p.value);
                 }

@@ -42,14 +42,16 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 
 import javax.net.ssl.HttpsURLConnection;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.PasswordAuthentication;
 import java.util.*;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.*;
+import static junit.framework.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertNull;
 
 public class ServerHttpRoutingAssertionTest {
 
@@ -346,25 +348,12 @@ public class ServerHttpRoutingAssertionTest {
         final String expectedResponse = "<bar/>";
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
         final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
-        
-        final Map<String, String> actualParameters = new HashMap<String, String>();
-        mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
-            @Override
-            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
-                return mockClient.new MockGenericHttpRequest(){
-                    @Override
-                    public void addParameter(final String paramName, final String paramValue) throws IllegalArgumentException, IllegalStateException {
-                        actualParameters.put(paramName, paramValue);
-                    }
-                };
 
-            }
-        });
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
         final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
         routingAssertion.checkRequest(pec);
-
+        final Map<String, String[]> actualParameters = pec.getRequest().getHttpRequestKnob().getParameterMap();
         //actualParameters should contain foo & hello
         assertTrue("test for existence of 'foo' parameter", actualParameters.containsKey("foo"));
         assertTrue("test for existence of 'hello' parameter", actualParameters.containsKey("hello"));
@@ -737,6 +726,56 @@ public class ServerHttpRoutingAssertionTest {
         } finally {
             httpServer.stop();
         }
+    }
+
+    @BugNumber(13629)
+    @Test
+    public void testPassThroughAllRequestParametersWithInvalidBody() throws Exception {
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl("http://localhost:17380/testPassThroughAllRequestParametersWithInvalidBody");
+
+        //set to pass through all parameters
+        hra.setRequestParamRules(new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{}));
+        byte[] data = "{foo:bar}".getBytes("UTF-8");
+
+        Message request = new Message(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED, new ByteArrayInputStream(data));
+        Message response = new Message(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED, new ByteArrayInputStream(data));
+        MockServletContext servletContext = new MockServletContext();
+        MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
+        hrequest.setMethod("POST");
+        hrequest.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+        hrequest.setContent(data);
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+
+        final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED, (long)data.length, data);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        final ByteArrayOutputStream expectedResult = new ByteArrayOutputStream();
+        mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
+            @Override
+            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                return mockClient.new MockGenericHttpRequest(){
+                    @Override
+                    public void setInputStreamFactory(final InputStreamFactory isf) {
+                        try {
+                            super.setInputStreamFactory(isf);
+                            IOUtils.copyStream(isf.getInputStream(), expectedResult);
+                        } catch (IOException e) {
+                            //ignore
+                        }
+                    }
+                };
+            }
+        });
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        routingAssertion.checkRequest(pec);
+
+        assertArrayEquals(expectedResult.toByteArray(), data);
     }
 
     private static class HttpClientFactory extends IdentityBindingHttpClientFactory {
