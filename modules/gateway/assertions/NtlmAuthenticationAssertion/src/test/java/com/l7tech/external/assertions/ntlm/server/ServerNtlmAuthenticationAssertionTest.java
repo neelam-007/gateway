@@ -23,7 +23,6 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -200,7 +199,7 @@ public class ServerNtlmAuthenticationAssertionTest {
 
         public String getChallengesToSend() {
             Collections.reverse(challengesToSend);
-            return challengesToSend.get(0);
+            return challengesToSend.get(0).left;
         }
     }
 
@@ -251,8 +250,6 @@ public class ServerNtlmAuthenticationAssertionTest {
                 authenticationProvider = new NtlmAuthenticationServer(props, new LocalAuthenticationAdapter(props));
             } catch (Exception e) {
                 final String errorMsg = "Unable to create NtlmAuthenticationServer instance";
-                String[] messages = {errorMsg};
-                //logAndAudit(AssertionMessages.NTLM_AUTHENTICATION_FAILED, messages , e);
                 throw new CredentialFinderException(errorMsg, e, AssertionStatus.FAILED);
             }
             return authenticationProvider;

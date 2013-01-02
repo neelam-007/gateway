@@ -75,10 +75,9 @@ public class NettyHttpResponseKnob extends AbstractHttpResponseKnob {
      * so that Digest will be preferred over Basic, if both are present.
      */
     public void beginChallenge() {
-        Collections.sort(challengesToSend, String.CASE_INSENSITIVE_ORDER);
-        Collections.reverse(challengesToSend);
-        for (String challenge : challengesToSend) {
-            httpResponse.addHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, challenge);
+        Collections.sort(challengesToSend, new ChallengeComparator(challengeOrder));
+        for (Pair<String,Integer> challenge : challengesToSend) {
+            httpResponse.addHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, challenge.left);
         }
     }
 }

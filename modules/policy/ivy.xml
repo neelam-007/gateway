@@ -54,6 +54,8 @@
         <dependency org="com.rsa" name="jcm" rev="6.1" force="true" conf="test"/>
         <dependency org="com.rsa" name="cryptojcommon" rev="6.1" force="true" conf="test"/>
         <dependency org="com.rsa" name="cryptojce" rev="6.1" force="true" conf="test"/>
+        <!-- HttpServletResponseKnobTest needs this dependency-->
+        <dependency org="org.springframework" name="spring-test" rev="3.0.7.RELEASE" force="true" conf="test"/>
 
         <override org="jaxen" module="jaxen" matcher="exact" rev="1.1.1"/>
         <override org="antlr" module="antlr" matcher="exact" rev="2.7.7-l7p1"/>

@@ -54,14 +54,16 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
     }
 
     /**
-     * Add the challenge headers to the response.  The challenges will be sorted in reverse alphabetical order
+     * Add the challenge headers to the response. The challenges will be sorted based on the protocol preference order:
+     * * "windows" - most secure protocol comes first
+     * * "reverse" - challenge challenges will be sorted in reverse alphabetical order
      * so that Digest will be preferred over Basic, if both are present.
      */
     public void beginChallenge() {
-        Collections.sort(challengesToSend, String.CASE_INSENSITIVE_ORDER);
-        Collections.reverse(challengesToSend);
-        for (String challenge : challengesToSend) {
-            response.addHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, challenge);
+        Collections.sort(challengesToSend, new ChallengeComparator(challengeOrder));
+
+        for (Pair<String, Integer> challenge : challengesToSend) {
+            response.addHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, challenge.left);
         }
     }
 

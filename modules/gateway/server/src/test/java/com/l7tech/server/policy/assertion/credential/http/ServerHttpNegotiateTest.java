@@ -127,7 +127,7 @@ public class ServerHttpNegotiateTest {
 
         public String getChallengesToSend() {
             Collections.reverse(challengesToSend);
-            return challengesToSend.get(0);
+            return challengesToSend.get(0).left;
         }
     }
 
@@ -146,7 +146,7 @@ public class ServerHttpNegotiateTest {
                 try {
                     return new URL(KerberosConfigTest.SERVICE, KerberosConfigTest.HOST, "/test");
                 } catch (MalformedURLException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    e.printStackTrace();
                 }
                 return null;
             }
