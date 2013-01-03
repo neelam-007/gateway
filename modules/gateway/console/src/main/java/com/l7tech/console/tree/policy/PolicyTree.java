@@ -1687,6 +1687,20 @@ public class PolicyTree extends JTree implements DragSourceListener,
 // We dont need to reset the selection path, since it has not moved
     }
 
+    /**
+     * After an AssertionTreeNode has been inserted the following is performed:
+     * <ul>
+     * <li>The new node is selected in policy editor panel.</li>
+     * <li>The nodes parent has it's assertion's (it's user object) children set to include it's existing assertion
+     * children and the assertion from the newly inserted AssertionTreeNode in the correct location, which then
+     * causes the children to be reparented correctly. If this is not done then any changes made to the inserted
+     * node's assertion will be lost as the assertion in the new tree node will not be referenced from the
+     * composite assertion in the new nodes parent. </li>
+     * </ul>
+     * *
+     *
+     * @param e tree model event
+     */
     @Override
     public void treeNodesInserted(TreeModelEvent e) {
         //sayWhat(e);

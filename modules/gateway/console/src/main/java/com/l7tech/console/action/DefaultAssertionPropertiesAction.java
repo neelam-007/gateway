@@ -2,8 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.logging.PermissionDeniedErrorHandler;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -14,6 +13,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
+import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -79,13 +79,26 @@ public class DefaultAssertionPropertiesAction
             Utilities.centerOnParentWindow(dlg);
             Frame f = TopComponents.getInstance().getTopParent();
             DialogDisplayer.display(dlg, f, new Runnable() {
+                @Override
                 public void run() {
                     if (ape.isConfirmed()) {
-                        subject.setUserObject(ape.getData(ass));
-                        JTree tree = TopComponents.getInstance().getPolicyTree();
+                        AT updatedAssertion = ape.getData(ass);
+                        subject.setUserObject(updatedAssertion);
+                        PolicyTree tree = (PolicyTree) TopComponents.getInstance().getPolicyTree();
                         if (tree != null) {
                             PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
                             model.assertionTreeNodeChanged(subject);
+                            if (updatedAssertion != ass) {
+                                // a new assertion instance was returned, we must update our parent's assertion references
+                                TreeNode parent = subject.getParent();
+                                if (parent instanceof CompositeAssertionTreeNode) {
+                                    CompositeAssertionTreeNode compNode = (CompositeAssertionTreeNode) parent;
+                                    int index = compNode.getIndex(subject);
+                                    PolicyTreeModel policyTreeModel = (PolicyTreeModel) tree.getModel();
+                                    tree.treeNodesInserted(new PolicyTreeModelEvent(this,
+                                            policyTreeModel.getPathToRoot(parent), new int[]{index}, new Object[]{subject}));
+                                }
+                            }
                         } else {
                             log.log(Level.WARNING, "Unable to reach the policy tree.");
                         }
