@@ -423,8 +423,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         logAndAudit(AssertionMessages.JMS_ROUTING_GETTING_RESPONSE);
                         jmsResponse = jmsConsumer.receive( (long)timeout );
 
-                        if ( jmsResponse != null && !(jmsInboundDestination instanceof TemporaryQueue))
-                            jmsResponse.acknowledge();
+                        if (jmsResponse != null) {
+                            try {
+                                jmsResponse.acknowledge();
+                            } catch (JMSException e) {
+                                logger.log( Level.WARNING, "Error acknowledge consumed message.", e );
+                            }
+                        }
 
                     } finally {
                         if ( jmsConsumer != null ) jmsConsumer.close();
