@@ -7,9 +7,11 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,6 +21,7 @@ import java.lang.ref.SoftReference;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 /** @author alex */
 @SuppressWarnings( { "serial" } )
@@ -98,6 +101,24 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         actions.add(new MarkEntityToAliasAction(this));
         actions.add(new CreateEntityLogSinkAction(getEntityHeader()));
         actions.add(new PolicyRevisionsAction(this));
+        try {
+            EncapsulatedAssertionConfig config;
+            final Collection<EncapsulatedAssertionConfig> found = Registry.getDefault().getEncapsulatedAssertionAdmin().findByPolicyOid(getPolicy().getOid());
+            if (found.isEmpty()) {
+                config = new EncapsulatedAssertionConfig();
+                config.setPolicy(getPolicy());
+            } else {
+                config = found.iterator().next();
+            }
+            final CreateOrEditEncapsulatedAssertionAction createOrEditEncassAction = new CreateOrEditEncapsulatedAssertionAction(config, null);
+            actions.add(createOrEditEncassAction);
+            if (!createOrEditEncassAction.isAuthorized() && config.getGuid() != null) {
+                // not authorized to edit but may be able to view it
+                actions.add(new ViewEncapsulatedAssertionAction(config));
+            }
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Unable to retrieve policy", ExceptionUtils.getDebugException(e));
+        }
         actions.add(new RefreshTreeNodeAction(this));
 
         Action secureCut = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.CUT);

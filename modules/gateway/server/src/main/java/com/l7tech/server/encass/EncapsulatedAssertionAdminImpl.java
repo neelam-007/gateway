@@ -50,6 +50,16 @@ public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmi
         return ret;
     }
 
+    @NotNull
+    @Override
+    public Collection<EncapsulatedAssertionConfig> findByPolicyOid(long policyOid) throws FindException {
+        Collection<EncapsulatedAssertionConfig> ret = encapsulatedAssertionConfigManager.findByPolicyOid(policyOid);
+        if (ret == null) {
+            ret = Collections.emptySet();
+        }
+        return ret;
+    }
+
     @Override
     public long saveEncapsulatedAssertionConfig(@NotNull EncapsulatedAssertionConfig config) throws SaveException, UpdateException, VersionException {
         checkLicenseEncAss();

@@ -322,6 +322,13 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
 
         inputsTableModel.setRows(config.sortedArguments());
         outputsTableModel.setRows(new ArrayList<EncapsulatedAssertionResultDescriptor>(config.getResultDescriptors()));
+
+        if(config.getGuid() == null && config.getPolicy() != null) {
+            // this is a new config which hasn't been saved yet but has been assigned a policy
+            setPolicyAndPolicyNameLabel(config.getPolicy());
+            prePopulateInputsTable();
+            prePopulateOutputsTable();
+        }
     }
 
     private void setPolicyAndPolicyNameLabel(Policy policy) {
@@ -370,7 +377,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         editOutputButton.setEnabled(!readOnly && haveOutput);
         deleteOutputButton.setEnabled(!readOnly && haveOutput);
 
-        setEnabled(!readOnly, addInputButton, addOutputButton, changePolicyButton, selectIconButton, paletteFolderComboBox, nameField);
+        setEnabled(!readOnly, addInputButton, addOutputButton, changePolicyButton, selectIconButton, paletteFolderComboBox, nameField, moveInputDownButton, moveInputUpButton);
     }
 
     private void setEnabled(boolean enabled, JComponent... components) {
@@ -445,10 +452,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                         }
 
                         setPolicyAndPolicyNameLabel(newPolicy);
-                        if (inputsTableModel.getRowCount() < 1)
-                            prePopulateInputsTable();
-                        if (outputsTableModel.getRowCount() < 1)
-                            prePopulateOutputsTable();
+                        prePopulateInputsTable();
+                        prePopulateOutputsTable();
 
                     } catch (FindException e) {
                         showError("Unable to load policy", e);
@@ -474,41 +479,45 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     }
 
     /**
-     * Add rows to the inputs table corresponding to the variables used by the currently-selected policy fragment.
+     * If no inputs exist yet, add rows to the inputs table corresponding to the variables used by the currently-selected policy fragment.
      */
     private void prePopulateInputsTable() {
-        Assertion root = getFragmentRootAssertion();
-        if (null == root)
-            return;
+        if (inputsTableModel.getRowCount() < 1) {
+            Assertion root = getFragmentRootAssertion();
+            if (null == root)
+                return;
 
-        String[] vars = PolicyVariableUtils.getVariablesUsedByDescendantsAndSelf(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
-        for (String var : vars) {
-            EncapsulatedAssertionArgumentDescriptor arg = new EncapsulatedAssertionArgumentDescriptor();
-            arg.setEncapsulatedAssertionConfig(config);
-            arg.setArgumentType(DataType.STRING.getShortName());
-            arg.setArgumentName(var);
-            arg.setGuiPrompt(false);
-            arg.setDefaultValue(null);
-            inputsTableModel.addRow(arg);
+            String[] vars = PolicyVariableUtils.getVariablesUsedByDescendantsAndSelf(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
+            for (String var : vars) {
+                EncapsulatedAssertionArgumentDescriptor arg = new EncapsulatedAssertionArgumentDescriptor();
+                arg.setEncapsulatedAssertionConfig(config);
+                arg.setArgumentType(DataType.STRING.getShortName());
+                arg.setArgumentName(var);
+                arg.setGuiPrompt(false);
+                arg.setDefaultValue(null);
+                inputsTableModel.addRow(arg);
+            }
         }
     }
 
     /**
-     * Add rows to the outputs table corresponding to the variables set by the currently-selected policy fragment.
+     * If no outputs exist yet, add rows to the outputs table corresponding to the variables set by the currently-selected policy fragment.
      */
     private void prePopulateOutputsTable() {
-        Assertion root = getFragmentRootAssertion();
-        if (null == root)
-            return;
+        if (outputsTableModel.getRowCount() < 1) {
+            Assertion root = getFragmentRootAssertion();
+            if (null == root)
+                return;
 
-        Map<String, VariableMetadata> vars = PolicyVariableUtils.getVariablesSetByDescendantsAndSelf(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
-        for (VariableMetadata vm : vars.values()) {
-            EncapsulatedAssertionResultDescriptor ret = new EncapsulatedAssertionResultDescriptor();
-            ret.setEncapsulatedAssertionConfig(config);
-            ret.setResultName(vm.getName());
-            final DataType type = vm.getType();
-            ret.setResultType(type == null ? DataType.UNKNOWN.getShortName() : type.getShortName());
-            outputsTableModel.addRow(ret);
+            Map<String, VariableMetadata> vars = PolicyVariableUtils.getVariablesSetByDescendantsAndSelf(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
+            for (VariableMetadata vm : vars.values()) {
+                EncapsulatedAssertionResultDescriptor ret = new EncapsulatedAssertionResultDescriptor();
+                ret.setEncapsulatedAssertionConfig(config);
+                ret.setResultName(vm.getName());
+                final DataType type = vm.getType();
+                ret.setResultType(type == null ? DataType.UNKNOWN.getShortName() : type.getShortName());
+                outputsTableModel.addRow(ret);
+            }
         }
     }
 

@@ -57,6 +57,19 @@ public interface EncapsulatedAssertionAdmin {
     EncapsulatedAssertionConfig findByGuid(@NotNull String guid) throws FindException;
 
     /**
+     * Find all active/enabled encapsulated assertion configs that reference the specified policy OID as the
+     * backing policy.
+     *
+     * @param policyOid the policy OID to check.
+     * @return a collection of encapsulated assertion configs that reference this policy OID.  May be empty but never null.
+     * @throws FindException if there is a problem accessing the database
+     */
+    @NotNull
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES)
+    Collection<EncapsulatedAssertionConfig> findByPolicyOid(long policyOid) throws FindException;
+
+    /**
      * Saves a new or existing encapsulated assertion templates.
      * @param config the {@link EncapsulatedAssertionConfig} to save.  Required.
      * @return the object id (oid) of the newly saved config

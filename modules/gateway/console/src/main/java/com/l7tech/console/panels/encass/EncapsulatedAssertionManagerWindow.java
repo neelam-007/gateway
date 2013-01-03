@@ -1,12 +1,11 @@
 package com.l7tech.console.panels.encass;
 
+import com.l7tech.console.action.CreateOrEditEncapsulatedAssertionAction;
+import com.l7tech.console.action.ViewEncapsulatedAssertionAction;
 import com.l7tech.console.panels.PermissionFlags;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.PaletteFolderRegistry;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -22,8 +21,6 @@ import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
@@ -127,29 +124,17 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
             ? new AttemptedCreateSpecific(EntityType.ENCAPSULATED_ASSERTION, config)
             : new AttemptedUpdate(EntityType.ENCAPSULATED_ASSERTION, config);
         SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-        boolean readOnly = !securityProvider.hasPermission(op);
-
-        final EncapsulatedAssertionConfigPropertiesDialog dlg = new EncapsulatedAssertionConfigPropertiesDialog(this, config, readOnly);
-        dlg.pack();
-        Utilities.centerOnParentWindow(dlg);
-        DialogDisplayer.display(dlg, new Runnable() {
-            @Override
-            public void run() {
-                if (dlg.isConfirmed()) {
-                    try {
-                        long oid = Registry.getDefault().getEncapsulatedAssertionAdmin().saveEncapsulatedAssertionConfig(config);
-                        loadEncapsulatedAssertionConfigs(true);
-                        selectConfigByOid(oid);
-                    } catch (SaveException e) {
-                        showError("Unable to save encapsulated assertion configuration", e);
-                    } catch (UpdateException e) {
-                        showError("Unable to save encapsulated assertion configuration", e);
-                    } catch (VersionException e) {
-                        showError("Unable to save encapsulated assertion configuration", e);
-                    }
+        if (securityProvider.hasPermission(op)) {
+            new CreateOrEditEncapsulatedAssertionAction(config, new Runnable() {
+                @Override
+                public void run() {
+                    loadEncapsulatedAssertionConfigs(false);
+                    selectConfigByOid(config.getOid());
                 }
-            }
-        });
+            }).actionPerformed(null);
+        } else {
+            new ViewEncapsulatedAssertionAction(config).actionPerformed(null);
+        }
     }
 
     private void selectConfigByOid(final long oid) {
@@ -251,38 +236,11 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         try {
             final Collection<EncapsulatedAssertionConfig> configs = Registry.getDefault().getEncapsulatedAssertionAdmin().findAllEncapsulatedAssertionConfigs();
             iconCache.clear();
-            final Map<String,EncapsulatedAssertionConfig> configsByGuid = new HashMap<String,EncapsulatedAssertionConfig>();
-            for (final EncapsulatedAssertionConfig config : configs) {
-                configsByGuid.put(config.getGuid(), config);
-            }
-
             eacTableModel.setRows(new ArrayList<EncapsulatedAssertionConfig>(configs));
             if (updateLocalRegistry) {
                 final EncapsulatedAssertionRegistry encapsulatedAssertionRegistry = TopComponents.getInstance().getEncapsulatedAssertionRegistry();
                 encapsulatedAssertionRegistry.replaceAllRegisteredConfigs(configs);
-                final PolicyEditorPanel pep = TopComponents.getInstance().getPolicyEditorPanel();
-                if (pep != null) {
-                    // update any encapsulated assertions open in the policy editor panel
-                    pep.visitCurrentlyOpenPolicyTreeNodes(new Functions.UnaryVoid<AssertionTreeNode>() {
-                        @Override
-                        public void call(@NotNull final AssertionTreeNode assertionTreeNode) {
-                            final Assertion ass = assertionTreeNode.asAssertion();
-                            if (ass instanceof EncapsulatedAssertion) {
-                                final EncapsulatedAssertion encass = (EncapsulatedAssertion) ass;
-                                final EncapsulatedAssertionConfig config = configsByGuid.get(encass.getEncapsulatedAssertionConfigGuid());
-                                if (config != null) {
-                                    encass.config(config);
-                                }
-                                final JTree policyTree = TopComponents.getInstance().getPolicyTree();
-                                if (policyTree != null && policyTree.getModel() instanceof PolicyTreeModel) {
-                                    ((PolicyTreeModel)(policyTree.getModel())).assertionTreeNodeChanged(assertionTreeNode);
-                                }
-                            }
-                        }
-                    });
-                }
             }
-
         } catch (FindException e) {
             showError("Unable to load encapsulated assertion configurations", e);
         }

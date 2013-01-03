@@ -1,17 +1,21 @@
 package com.l7tech.console.policy;
 
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PaletteFolderRegistry;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.EncapsulatedAssertion;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import javax.swing.*;
+import java.util.*;
 
 /**
  * A simple registry that keeps track of currently-available encapsulated assertion configs.
@@ -20,7 +24,7 @@ import java.util.Set;
  */
 public class EncapsulatedAssertionRegistry {
     /** Cache of available encapsulated assertion configs.  To keep memory usage down, policy XML is not included for the embedded Policy objects.  */
-    private Set<EncapsulatedAssertionConfig> configs = new HashSet<EncapsulatedAssertionConfig>();
+    private final Map<String,EncapsulatedAssertionConfig> configs = new HashMap<String, EncapsulatedAssertionConfig>();
 
     /**
      * Register an EncapsulatedAssertionConfig.
@@ -35,7 +39,7 @@ public class EncapsulatedAssertionRegistry {
             policy.setXml(null);
         }
         config = config.getReadOnlyCopy();
-        configs.add(config);
+        configs.put(config.getGuid(), config);
     }
 
     /**
@@ -45,7 +49,7 @@ public class EncapsulatedAssertionRegistry {
      * @return true if a config was removed.
      */
     public boolean unregisterEncapsulatedAssertionConfig(@NotNull EncapsulatedAssertionConfig config) {
-        return configs.remove(config);
+        return configs.remove(config.getGuid()) != null;
     }
 
     /**
@@ -74,20 +78,45 @@ public class EncapsulatedAssertionRegistry {
     }
 
     /**
-     * @return all currently-registered encapsulated assertion configs as unmodifiable Set.
+     * @return all currently-registered encapsulated assertion configs as unmodifiable collection.
      */
-    public Set<EncapsulatedAssertionConfig> getRegisteredEncapsulatedAssertionConfigurations() {
-        return Collections.unmodifiableSet(configs);
+    public Collection<EncapsulatedAssertionConfig> getRegisteredEncapsulatedAssertionConfigurations() {
+        return Collections.unmodifiableCollection(configs.values());
     }
 
     public void notifyEncapsulatedAssertionsChanged() {
         // TODO replace with event publish/subscribe mechanism; for now, we will just hardcode interested observers here
         reloadAssertionPaletteTree();
+        reloadPolicyEditorPanel();
     }
 
     private static void reloadAssertionPaletteTree() {
         PaletteFolderRegistry paletteReg = TopComponents.getInstance().getPaletteFolderRegistry();
         if (paletteReg != null)
             paletteReg.refreshPaletteFolders();
+    }
+
+    private void reloadPolicyEditorPanel() {
+        final PolicyEditorPanel pep = TopComponents.getInstance().getPolicyEditorPanel();
+        if (pep != null) {
+            // update any encapsulated assertions open in the policy editor panel
+            pep.visitCurrentlyOpenPolicyTreeNodes(new Functions.UnaryVoid<AssertionTreeNode>() {
+                @Override
+                public void call(@NotNull final AssertionTreeNode assertionTreeNode) {
+                    final Assertion ass = assertionTreeNode.asAssertion();
+                    if (ass instanceof EncapsulatedAssertion) {
+                        final EncapsulatedAssertion encass = (EncapsulatedAssertion) ass;
+                        final EncapsulatedAssertionConfig config = configs.get(encass.getEncapsulatedAssertionConfigGuid());
+                        if (config != null) {
+                            encass.config(config);
+                        }
+                        final JTree policyTree = TopComponents.getInstance().getPolicyTree();
+                        if (policyTree != null && policyTree.getModel() instanceof PolicyTreeModel) {
+                            ((PolicyTreeModel)(policyTree.getModel())).assertionTreeNodeChanged(assertionTreeNode);
+                        }
+                    }
+                }
+            });
+        }
     }
 }

@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 
 import javax.swing.tree.TreeNode;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.logging.Level;
@@ -83,7 +84,7 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
      * Insert any encapsulated assertions that belong in this folder.
      */
     protected void insertMatchingEncapsulatedAssertions() {
-        Set<EncapsulatedAssertionConfig> configs = TopComponents.getInstance().getEncapsulatedAssertionRegistry().getRegisteredEncapsulatedAssertionConfigurations();
+        Collection<EncapsulatedAssertionConfig> configs = TopComponents.getInstance().getEncapsulatedAssertionRegistry().getRegisteredEncapsulatedAssertionConfigurations();
         for (EncapsulatedAssertionConfig config : configs) {
             Assertion ass = new EncapsulatedAssertion(config);
             insertAssertionVariants(ass);
