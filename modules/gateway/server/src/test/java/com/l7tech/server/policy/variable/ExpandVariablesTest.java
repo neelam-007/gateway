@@ -914,16 +914,37 @@ public class ExpandVariablesTest {
     }
 
     @Test
-    public void testDateSelector_local() throws Exception {
-        final Date date = new Date();
-        final HashMap<String, Object> vars = new HashMap<String, Object>();
+    public void testDateSelector_local1() throws Exception {
         //doesn't matter what the variable is called - added in .test to illustrate that all that matters is the
         // longest part of the variable reference which matches a defined variable.
-        vars.put("mydate.test", date);
-        final String actual = ExpandVariables.process("${mydate.test.local}", vars, testAudit);
+        testDateSelector_local("mydate.test", new Date(),"${mydate.test.local}",null);
+    }
+
+    @Test
+    @BugNumber(12158)
+    public void testDateSelector_local2() throws Exception {
+        //doesn't matter what the variable is called - added in .test to illustrate that all that matters is the
+        // longest part of the variable reference which matches a defined variable even though there are spaces in between them.
+        // TODO: uncomment the following if we change the behavior as part of Bug #12158 fix (DateTimeSelector is unable to parse vaiables with spaces)
+        // testDateSelector_local("mydate.test", new Date(),"${ mydate.test . local }", null);
+    }
+
+    @Test
+    @BugNumber(12158)
+    public void testDateSelector_local3() throws Exception {
+        //doesn't matter what the variable is called - added in . test , .local and .asctime to illustrate that all that matters is the
+        // longest part of the variable reference which matches a defined variable even though there are spaces in between them.
+        // TODO: uncomment the following if we change the behavior as part of Bug #12158 fix (DateTimeSelector is unable to parse vaiables with spaces)
+        // testDateSelector_local("mydate.test", new Date(),"${ mydate.test . local. asctime  }",DateUtils.ASCTIME_DEFAULT_PATTERN);
+    }
+    private void testDateSelector_local(String value, Date date, String inputValue, String format) throws Exception {
+        final HashMap<String, Object> vars = new HashMap<String, Object>();
+
+        vars.put(value, date);
+        final String actual = ExpandVariables.process(inputValue, vars, testAudit);
 
         //format according to local
-        final String expected = DateUtils.getFormattedString(date, DateUtils.getTimeZone("local"), null);
+        final String expected = DateUtils.getFormattedString(date, DateUtils.getTimeZone("local"), format);
         assertEquals(expected, actual);
 
         // no audits were created
