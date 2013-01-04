@@ -83,7 +83,7 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
                         EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
                         for (long id : eie.getEntityIds()) {
                             if (id == ourConfigId) {
-                                logger.info("Reloading encapsulated assertion config for OID " + ourConfigId);
+                                logger.log(Level.FINE, "Reloading encapsulated assertion config for OID " + ourConfigId);
                                 updateConfig(loadConfig());
                                 break;
                             }

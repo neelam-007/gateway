@@ -21,6 +21,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -81,6 +82,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private String iconResourceFilename;
     private String iconBase64;
     private boolean confirmed = false;
+    private final Set<String> usedConfigNames;
 
     /**
      * Create a new properties dialog that will show info for the specified bean,
@@ -89,11 +91,17 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
      * @param parent the parent window.  Should be specified to avoid focus/visibility issues.
      * @param config the bean to edit.  Required.
      * @param readOnly if true, the Ok button will be disabled.
+     * @param usedConfigNames EncapsulatedAssertionConfig names that are already in use.
+     *                        New EncapsulatedAssertionConfigs cannot use these names and existing EncapsulatedAssertionConfigs cannot be edited to have these names.
      */
-    public EncapsulatedAssertionConfigPropertiesDialog(Window parent, EncapsulatedAssertionConfig config, boolean readOnly) {
+    public EncapsulatedAssertionConfigPropertiesDialog(Window parent, EncapsulatedAssertionConfig config, boolean readOnly, @NotNull final Set<String> usedConfigNames) {
         super(parent, "Encapsulated Assertion Configuration", ModalityType.APPLICATION_MODAL);
         this.config = config;
         this.readOnly = readOnly;
+        this.usedConfigNames = usedConfigNames;
+        if (config.getName() != null) {
+            this.usedConfigNames.remove(config.getName());
+        }
         init();
     }
 
@@ -114,6 +122,14 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         Utilities.deuglifySplitPane(inputsOutputsSplitPane);
 
         inputValidator.constrainTextFieldToBeNonEmpty("name", nameField, null);
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(nameField) {
+            @Override
+            public String getValidationError() {
+                if (usedConfigNames.contains(nameField.getText()))
+                    return "The specified name is already in use.";
+                return null;
+            }
+        });
         inputValidator.addRule(new InputValidator.ComponentValidationRule(changePolicyButton) {
             @Override
             public String getValidationError() {

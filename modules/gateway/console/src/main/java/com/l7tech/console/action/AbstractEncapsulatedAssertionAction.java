@@ -15,6 +15,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -43,7 +46,12 @@ public abstract class AbstractEncapsulatedAssertionAction extends SecureAction {
      * @param config   the EncapsulatedAssertionConfig to display.
      */
     protected void showConfigDialog(final boolean readOnly, @NotNull final EncapsulatedAssertionConfig config) {
-        final EncapsulatedAssertionConfigPropertiesDialog dlg = new EncapsulatedAssertionConfigPropertiesDialog(TopComponents.getInstance().getTopParent(), config, readOnly);
+        final Collection<EncapsulatedAssertionConfig> existingConfigs = TopComponents.getInstance().getEncapsulatedAssertionRegistry().getRegisteredEncapsulatedAssertionConfigurations();
+        final Set<String> usedConfigNames = new HashSet<String>(existingConfigs.size());
+        for (final EncapsulatedAssertionConfig existingConfig : existingConfigs) {
+            usedConfigNames.add(existingConfig.getName());
+        }
+        final EncapsulatedAssertionConfigPropertiesDialog dlg = new EncapsulatedAssertionConfigPropertiesDialog(TopComponents.getInstance().getTopParent(), config, readOnly, usedConfigNames);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
