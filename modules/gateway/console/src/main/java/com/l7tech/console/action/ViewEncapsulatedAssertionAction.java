@@ -1,33 +1,26 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.encass.EncapsulatedAssertionConfigPropertiesDialog;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Collection;
 
 /**
- * Opens a read-only view of an EncapsulatedAssertionConfig.
+ * Action for selecting and/or viewing an EncapsulatedAssertionConfig.
  */
-public class ViewEncapsulatedAssertionAction extends SecureAction {
+public class ViewEncapsulatedAssertionAction extends AbstractSelectableEncapsulatedAssertionAction {
     private static final String NAME = "Encapsulated Assertion Properties";
     private static final String DESC = "View the Encapsulated Assertion properties";
-    private static final String ICON = "com/l7tech/console/resources/star16.gif";
-    private final EncapsulatedAssertionConfig config;
 
-    public ViewEncapsulatedAssertionAction(@NotNull final EncapsulatedAssertionConfig config) {
-        super(new AttemptedReadSpecific(EntityType.ENCAPSULATED_ASSERTION, config), NAME, DESC, ICON);
-        this.config = config;
+    public ViewEncapsulatedAssertionAction(@NotNull final Collection<EncapsulatedAssertionConfig> configs, @Nullable Runnable callback) {
+        super(configs, NAME, DESC, callback);
     }
 
+    @NotNull
     @Override
-    protected void performAction() {
-        final EncapsulatedAssertionConfigPropertiesDialog dlg = new EncapsulatedAssertionConfigPropertiesDialog(TopComponents.getInstance().getTopParent(), config, true);
-        dlg.pack();
-        Utilities.centerOnParentWindow(dlg);
-        DialogDisplayer.display(dlg, null);
+    protected OperationType getOperationType() {
+        return OperationType.READ;
     }
 }

@@ -1,6 +1,7 @@
 package com.l7tech.console.panels.encass;
 
-import com.l7tech.console.action.CreateOrEditEncapsulatedAssertionAction;
+import com.l7tech.console.action.CreateEncapsulatedAssertionAction;
+import com.l7tech.console.action.EditEncapsulatedAssertionAction;
 import com.l7tech.console.action.ViewEncapsulatedAssertionAction;
 import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
@@ -9,6 +10,7 @@ import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
@@ -119,21 +121,18 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         enableOrDisable();
     }
 
+    /**
+     * Display the config properties dialog.
+     */
     private void doProperties(@NotNull final EncapsulatedAssertionConfig config) {
-        AttemptedOperation op = Long.valueOf(PersistentEntity.DEFAULT_OID).equals(config.getOid())
-            ? new AttemptedCreateSpecific(EntityType.ENCAPSULATED_ASSERTION, config)
-            : new AttemptedUpdate(EntityType.ENCAPSULATED_ASSERTION, config);
-        SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-        if (securityProvider.hasPermission(op)) {
-            new CreateOrEditEncapsulatedAssertionAction(config, new Runnable() {
-                @Override
-                public void run() {
-                    loadEncapsulatedAssertionConfigs(false);
-                    selectConfigByOid(config.getOid());
-                }
-            }).actionPerformed(null);
+        final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+        final boolean isNew = Long.valueOf(PersistentEntity.DEFAULT_OID).equals(config.getOid());
+        if (isNew && securityProvider.hasPermission(new AttemptedCreateSpecific(EntityType.ENCAPSULATED_ASSERTION, config))) {
+            new CreateEncapsulatedAssertionAction(config, new ConfigChangeWindowUpdater(config)).actionPerformed(null);
+        } else if (!isNew && securityProvider.hasPermission(new AttemptedUpdate(EntityType.ENCAPSULATED_ASSERTION, config))) {
+            new EditEncapsulatedAssertionAction(Collections.singleton(config), new ConfigChangeWindowUpdater(config)).actionPerformed(null);
         } else {
-            new ViewEncapsulatedAssertionAction(config).actionPerformed(null);
+            new ViewEncapsulatedAssertionAction(Collections.singleton(config), null).actionPerformed(null);
         }
     }
 
@@ -261,5 +260,20 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
 
     private void showError(String message, Throwable e) {
         DialogDisplayer.showMessageDialog(this, message + ": " + ExceptionUtils.getMessage(e), "Error", JOptionPane.ERROR_MESSAGE, null);
+    }
+
+    /**
+     * Call when EncapsulatedAssertionConfigs have changed and the window needs updating.
+     */
+    private class ConfigChangeWindowUpdater implements Runnable {
+        private final EncapsulatedAssertionConfig config;
+        private ConfigChangeWindowUpdater (@NotNull final EncapsulatedAssertionConfig config) {
+            this.config = config;
+        }
+        @Override
+        public void run() {
+            loadEncapsulatedAssertionConfigs(false);
+            selectConfigByOid(config.getOid());
+        }
     }
 }

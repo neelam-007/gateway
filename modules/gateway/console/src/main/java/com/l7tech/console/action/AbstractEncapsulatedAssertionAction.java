@@ -4,12 +4,9 @@ import com.l7tech.console.panels.encass.EncapsulatedAssertionConfigPropertiesDia
 import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
-import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -21,53 +18,59 @@ import javax.swing.*;
 import java.util.logging.Level;
 
 /**
- * Action which can create/edit an EncapsulatedAssertionConfig.
+ * Parent for all actions that operate on an EncapsulatedAssertionConfig.
  */
-public class CreateOrEditEncapsulatedAssertionAction extends SecureAction {
-    private static final String CREATE = "Create Encapsulated Assertion";
-    private static final String EDIT = "Encapsulated Assertion Properties";
-    private static final String CREATE_DESC = "Create an Encapsulated Assertion from policy";
-    private static final String EDIT_DESC = "Edit the Encapsulated Assertion properties";
-    private static final String ICON = "com/l7tech/console/resources/star16.gif";
-    private static final String ERROR_MSG = "Unable to save encapsulated assertion configuration";
-    private final EncapsulatedAssertionConfig config;
+public abstract class AbstractEncapsulatedAssertionAction extends SecureAction {
+    protected static final String ICON = "com/l7tech/console/resources/star16.gif";
+    protected static final String ERROR_MSG = "Unable to save encapsulated assertion configuration";
     private final Runnable callback;
 
     /**
-     * @param config the EncapsulatedAssertionConfig to edit or create
-     * @param callback optional callback to execute after successful create/edit
+     * @param attemptedOperation the operation which will be attempted on the EncapsulatedAssertionConfig.
+     * @param name               the name of the action.
+     * @param desc               the description of the action.
+     * @param callback           callback to execute after successful operation.
      */
-    public CreateOrEditEncapsulatedAssertionAction(@NotNull final EncapsulatedAssertionConfig config, @Nullable Runnable callback) {
-        super(config.getGuid() == null ? new AttemptedCreateSpecific(EntityType.ENCAPSULATED_ASSERTION, config) : new AttemptedUpdate(EntityType.ENCAPSULATED_ASSERTION, config),
-                config.getGuid() == null ? CREATE : EDIT, config.getGuid() == null ? CREATE_DESC : EDIT_DESC, ICON);
-        this.config = config;
+    protected AbstractEncapsulatedAssertionAction(@Nullable final AttemptedOperation attemptedOperation, @NotNull final String name, @NotNull final String desc, @Nullable Runnable callback) {
+        super(attemptedOperation, name, desc, ICON);
         this.callback = callback;
     }
 
-    @Override
-    protected void performAction() {
-        final EncapsulatedAssertionConfigPropertiesDialog dlg = new EncapsulatedAssertionConfigPropertiesDialog(TopComponents.getInstance().getTopParent(), config, false);
+    /**
+     * Displays the EncapsulatedAssertionConfigPropertiesDialog and saves the EncapsulatedAssertionConfig on dialog confirmation if not readOnly.
+     *
+     * @param readOnly whether the dialog should be opened in readOnly mode (no modifications allowed).
+     * @param config   the EncapsulatedAssertionConfig to display.
+     */
+    protected void showConfigDialog(final boolean readOnly, @NotNull final EncapsulatedAssertionConfig config) {
+        final EncapsulatedAssertionConfigPropertiesDialog dlg = new EncapsulatedAssertionConfigPropertiesDialog(TopComponents.getInstance().getTopParent(), config, readOnly);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             @Override
             public void run() {
-                if (dlg.isConfirmed()) {
+                if (dlg.isConfirmed() && !readOnly) {
                     try {
                         Registry.getDefault().getEncapsulatedAssertionAdmin().saveEncapsulatedAssertionConfig(config);
                         final EncapsulatedAssertionRegistry encapsulatedAssertionRegistry = TopComponents.getInstance().getEncapsulatedAssertionRegistry();
                         encapsulatedAssertionRegistry.updateEncapsulatedAssertions();
-                        if (callback != null) {
-                            callback.run();
-                        }
+                        executeCallback();
                     } catch (final ObjectModelException e) {
                         handleException(e);
                     } catch (final VersionException e) {
                         handleException(e);
                     }
+                } else if (dlg.isConfirmed()) {
+                    executeCallback();
                 }
             }
         });
+    }
+
+    private void executeCallback() {
+        if (callback != null) {
+            callback.run();
+        }
     }
 
     private void handleException(final Exception e) {
