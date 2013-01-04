@@ -113,12 +113,14 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
     public Object clone() {
         try {
             SamlAttributeStatement copy = (SamlAttributeStatement) super.clone();
-            Attribute[] copyAttributes = copy.getAttributes();
+            final Attribute[] copyAttributes = attributes.clone();
+
             if (copyAttributes != null) {
                 for (int i = 0; i < copyAttributes.length; i++) {
                     copyAttributes[i] = (Attribute) copyAttributes[i].clone(); 
                 }
             }
+            copy.setAttributes(copyAttributes);
             return copy;
         }
         catch(CloneNotSupportedException cnse) {

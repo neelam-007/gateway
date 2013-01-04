@@ -36,6 +36,25 @@ public abstract class SamlPolicyAssertion extends Assertion {
         SamlConstants.CONFIRMATION_SAML2_BEARER
     )));
 
+    @Override
+    public Object clone() {
+        SamlPolicyAssertion assertion = (SamlPolicyAssertion) super.clone();
+
+        if (assertion.getAttributeStatement() != null) {
+            assertion.setAttributeStatement((SamlAttributeStatement)assertion.getAttributeStatement().clone());
+        }
+
+        if (assertion.getAuthenticationStatement() != null) {
+            assertion.setAuthenticationStatement((SamlAuthenticationStatement)assertion.getAuthenticationStatement().clone());
+        }
+
+        if (assertion.getAuthorizationStatement() != null) {
+            assertion.setAuthorizationStatement((SamlAuthorizationStatement)assertion.getAuthorizationStatement().clone());
+        }
+
+        return assertion;
+    }
+
     /**
      * Get the SAML version for this assertion
      *

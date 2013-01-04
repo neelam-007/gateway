@@ -12,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * This class is immutable
  * @author alex
  */
 public final class TimeUnit implements Serializable, Comparable {
