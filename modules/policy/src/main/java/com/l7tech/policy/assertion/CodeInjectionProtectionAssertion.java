@@ -39,6 +39,13 @@ public class CodeInjectionProtectionAssertion extends MessageTargetableAssertion
         super(null, false);
     }
 
+    @Override
+    public Object clone() {
+        final CodeInjectionProtectionAssertion clone = (CodeInjectionProtectionAssertion) super.clone();
+        clone._protections = _protections.clone();
+        return clone;
+    }
+
     public boolean isIncludeRequestUrl() {
         return _includeRequestUrl;
     }

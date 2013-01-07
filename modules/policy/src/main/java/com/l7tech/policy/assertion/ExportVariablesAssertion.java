@@ -15,6 +15,13 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 public class ExportVariablesAssertion extends Assertion implements UsesVariables {
     private String[] exportedVars = new String[0];
 
+    @Override
+    public ExportVariablesAssertion clone() {
+        final ExportVariablesAssertion clone = (ExportVariablesAssertion) super.clone();
+        clone.exportedVars = exportedVars.clone();
+        return clone;
+    }
+
     public String[] getExportedVars() {
         return exportedVars;
     }

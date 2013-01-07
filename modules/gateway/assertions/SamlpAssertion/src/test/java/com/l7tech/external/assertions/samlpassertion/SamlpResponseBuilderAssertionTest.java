@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.samlpassertion;
 
+import com.l7tech.policy.AllAssertionsTest;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -12,6 +13,11 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 public class SamlpResponseBuilderAssertionTest {
+
+    @Test
+    public void testCloneIsDeepCopy() throws Exception {
+        AllAssertionsTest.checkCloneIsDeepCopy(new SamlpResponseBuilderAssertion());
+    }
 
     @Test
     public void testStatusChangeIsBackwardsCompatible_PreEscolarSp1() throws Exception {

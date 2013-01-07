@@ -40,7 +40,7 @@ public class HtmlFormDataAssertion extends Assertion {
     /**
      * A FieldSpec specifies the constraints on a HTML Form field.
      */
-    public static class FieldSpec implements Serializable {
+    public static class FieldSpec implements Serializable, Cloneable {
         private String name;
         private HtmlFormDataType dataType;
         private int minOccurs;
@@ -134,6 +134,13 @@ public class HtmlFormDataAssertion extends Assertion {
      * Whether to disallow fields not specified here.
      */
     private boolean disallowOtherFields;
+
+    @Override
+    public Object clone() {
+        final HtmlFormDataAssertion clone = (HtmlFormDataAssertion) super.clone();
+        clone.fieldSpecs = fieldSpecs.clone();
+        return clone;
+    }
 
     public boolean isAllowGet() {
         return allowGet;

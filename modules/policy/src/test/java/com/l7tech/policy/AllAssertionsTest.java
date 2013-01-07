@@ -1,10 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.policy.assertion.annotation.ProcessesResponse;
@@ -111,48 +108,56 @@ public class AllAssertionsTest {
         }
     }
 
-    /**
-     * Test for deep clone
-     */
     @Test
     public void testCloneIsDeepCopy() {
         for ( Assertion assertion : AllAssertions.GATEWAY_EVERYTHING ) {
-            List<Method> getters = new ArrayList<Method>();
+            checkCloneIsDeepCopy(assertion);
+        }
+    }
+    /**
+     * Test for deep clone
+     *
+     * Note: This does not test that values of Arrays or Collections are deep clones.
+     */
+    public static void checkCloneIsDeepCopy(final Assertion assertion) {
+        List<Method> getters = new ArrayList<Method>();
 
-            for ( Method method : assertion.getClass().getMethods() ) {
-                if (Modifier.isStatic(method.getModifiers()))
-                    continue;
+        for ( Method method : assertion.getClass().getMethods() ) {
+            if (Modifier.isStatic(method.getModifiers()))
+                continue;
 
-                String name = method.getName();
-                Class[] parameterTypes = method.getParameterTypes();
+            String name = method.getName();
+            Class[] parameterTypes = method.getParameterTypes();
 
-                if (name.startsWith("get") && name.length() > 3 && parameterTypes.length==0 && !TypeMappingUtils.isIgnorableProperty(name.substring(3))) {
-                    getters.add(method);
-                }
+            if (name.startsWith("get") && name.length() > 3 && parameterTypes.length==0 && !TypeMappingUtils.isIgnorableProperty(name.substring(3))) {
+                getters.add(method);
             }
+        }
 
-            Assertion copy = (Assertion) assertion.clone();
-            for ( Method method : getters ) {
-                try {
-                    Object o1 = method.invoke(assertion);
-                    if ( o1==null ||
-                            o1 instanceof String ||                       // Add your own "immutable" classes here
-                            o1 instanceof XmlSecurityRecipientContext ||
-                            o1 instanceof SslAssertion.Option ||
-                            o1 instanceof XpathExpression ||
-                            o1 instanceof TimeUnit ||
-                            o1 instanceof SecurityTokenType ||
-                            o1 instanceof WsTrustRequestType ||
-                            o1.getClass().isArray() ||
-                            o1.getClass().isEnum() ||
-                            o1.getClass().isPrimitive() ) {
-                        continue;
-                    }
-                    Object o2 = method.invoke(copy);
-                    Assert.assertTrue("Assertion property not cloned : " + assertion.getClass().getName() + "." + method.getName(), o1!=o2);
-                } catch (IllegalAccessException e) {
-                } catch (InvocationTargetException e) {
+        Assertion copy = (Assertion) assertion.clone();
+        // Note Arrays are cloneable but must explicitly be cloned otherwise a cloned instance will share the same array instance as the original
+        for ( Method method : getters ) {
+            try {
+                Object o1 = method.invoke(assertion);
+                if ( o1==null ||
+                        o1 instanceof String ||                       // Add your own "immutable" classes here
+                        o1 instanceof XmlSecurityRecipientContext ||
+                        o1 instanceof SslAssertion.Option ||
+                        o1 instanceof XpathExpression ||
+                        o1 instanceof TimeUnit ||
+                        o1 instanceof SecurityTokenType ||
+                        o1 instanceof WsTrustRequestType ||
+                        o1 instanceof HtmlFormDataLocation ||
+                        o1 instanceof HtmlFormDataType ||
+                        o1 instanceof Integer ||
+                        o1.getClass().isEnum() ||
+                        o1.getClass().isPrimitive() ) {
+                    continue;
                 }
+                Object o2 = method.invoke(copy);
+                Assert.assertTrue("Assertion property not cloned : " + assertion.getClass().getName() + "." + method.getName(), o1!=o2);
+            } catch (IllegalAccessException e) {
+            } catch (InvocationTargetException e) {
             }
         }
     }

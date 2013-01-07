@@ -18,7 +18,7 @@ import java.util.Map;
  * @author rmak
  * @since SecureSpan 3.7
  */
-public class HtmlFormDataType implements Serializable {
+public class HtmlFormDataType implements Serializable, Cloneable {
     private static int _nextOrdinal = 0;
 
     private final int _ordinal = _nextOrdinal ++;
@@ -31,11 +31,11 @@ public class HtmlFormDataType implements Serializable {
 
     /** Map for looking up instance by wspName.
         The keys are of type String. The values are of type {@link HtmlFormDataType}. */
-    private static final Map _byWspName = new HashMap();
+    private static final Map<String, HtmlFormDataType> _byWspName = new HashMap<String, HtmlFormDataType>();
 
     /** Map for looking up instance by displayName.
         The keys are of type String. The values are of type {@link HtmlFormDataType}. */
-    private static final Map _byDisplayName = new HashMap();
+    private static final Map<String, HtmlFormDataType> _byDisplayName = new HashMap<String, HtmlFormDataType>();
 
     // Warning: Never change wspName; in order to maintain backward compatibility.
     public static final HtmlFormDataType ANY = new HtmlFormDataType("any", "<any>");
@@ -46,15 +46,15 @@ public class HtmlFormDataType implements Serializable {
     private static final HtmlFormDataType[] _values = new HtmlFormDataType[]{ANY, NUMBER, FILE, STRING};
 
     public static HtmlFormDataType[] values() {
-        return (HtmlFormDataType[])_values.clone();
+        return _values.clone();
     }
 
     public static HtmlFormDataType fromWspName(final String wspName) {
-        return (HtmlFormDataType) _byWspName.get(wspName);
+        return _byWspName.get(wspName);
     }
 
     public static HtmlFormDataType fromDisplayName(final String displayName) {
-        return (HtmlFormDataType) _byDisplayName.get(displayName);
+        return _byDisplayName.get(displayName);
     }
 
     private HtmlFormDataType(final String wspName, final String displayName) {
@@ -84,11 +84,13 @@ public class HtmlFormDataType implements Serializable {
     // This method is invoked reflectively by WspEnumTypeMapping
     public static EnumTranslator getEnumTranslator() {
         return new EnumTranslator() {
+            @Override
             public String objectToString(Object target) {
                 HtmlFormDataType dataType = (HtmlFormDataType)target;
                 return dataType.getWspName();
             }
 
+            @Override
             public Object stringToObject(String wspName) throws IllegalArgumentException {
                 HtmlFormDataType dataType = HtmlFormDataType.fromWspName(wspName);
                 if (dataType == null) throw new IllegalArgumentException("Unknown HtmlFormDataType: '" + wspName + "'");

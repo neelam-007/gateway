@@ -71,6 +71,7 @@ public class DefaultAssertionPropertiesAction
             final AT ass = subject.asAssertion();
             final AssertionPropertiesEditor<AT> ape = apeFactory.call(TopComponents.getInstance().getTopParent(), ass);
             ape.setParameter( AssertionPropertiesEditor.PARAM_READONLY, !subject.canEdit() );
+            //todo calling setData again here means assertions may initialize themselves a second time as its likely apeFactory.call caused a call to setData
             ape.setData(ass);
             final JDialog dlg = ape.getDialog();
             if (Boolean.TRUE.equals(ass.meta().get(AssertionMetadata.PROPERTIES_EDITOR_SUPPRESS_SHEET_DISPLAY)))

@@ -16,7 +16,7 @@ import java.io.Serializable;
  *
  * Warning: Any properties added here will not affect encryption until supported by {@link XmlElementEncryptionResolvedConfig}
  */
-public final class XmlElementEncryptionConfig implements Serializable, UsesVariables {
+public final class XmlElementEncryptionConfig implements Serializable, UsesVariables, Cloneable {
 
     public static final String TYPE_ATTRIBUTE_DEFAULT = "http://www.w3.org/2001/04/xmlenc#Element";
 
@@ -44,6 +44,15 @@ public final class XmlElementEncryptionConfig implements Serializable, UsesVaria
     private boolean includeEncryptedDataTypeAttribute;
 
     private String encryptedKeyRecipientAttribute;
+
+    @Override
+    public Object clone() {
+        try {
+            return super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public String getRecipientCertificateBase64() {
         return recipientCertificateBase64;

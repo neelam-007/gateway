@@ -28,6 +28,25 @@ public class SamlProtocolAssertion extends MessageTargetableAssertion {
         super(targetModified);
     }
 
+    @Override
+    public Object clone() {
+        SamlProtocolAssertion assertion = (SamlProtocolAssertion) super.clone();
+
+        if (assertion.getAttributeStatement() != null) {
+            assertion.setAttributeStatement((SamlAttributeStatement)assertion.getAttributeStatement().clone());
+        }
+
+        if (assertion.getAuthenticationStatement() != null) {
+            assertion.setAuthenticationStatement((SamlAuthenticationStatement)assertion.getAuthenticationStatement().clone());
+        }
+
+        if (assertion.getAuthorizationStatement() != null) {
+            assertion.setAuthorizationStatement((SamlpAuthorizationStatement)assertion.getAuthorizationStatement().clone());
+        }
+
+        return assertion;
+    }
+
     /**
      * Get SAML Version
      *

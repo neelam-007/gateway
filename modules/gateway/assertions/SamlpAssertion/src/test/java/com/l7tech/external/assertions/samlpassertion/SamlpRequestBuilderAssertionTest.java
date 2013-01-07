@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.samlpassertion;
 
 import static org.junit.Assert.*;
+
+import com.l7tech.policy.AllAssertionsTest;
 import org.junit.Test;
 
 /**
@@ -8,6 +10,10 @@ import org.junit.Test;
  */
 public class SamlpRequestBuilderAssertionTest extends BaseAssertionTestCase<SamlpRequestBuilderAssertion> {
 
+    @Test
+    public void testCloneIsDeepCopy() throws Exception {
+        AllAssertionsTest.checkCloneIsDeepCopy(new SamlpRequestBuilderAssertion());
+    }
 
     @Test
     public void testParseAssertion() {

@@ -103,6 +103,14 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
         this.authorizationStatement = authzStmt;
     }
 
+    @SuppressWarnings("CloneDoesntDeclareCloneNotSupportedException")
+    @Override
+    public Object clone() {
+        final SamlpRequestBuilderAssertion clone = (SamlpRequestBuilderAssertion) super.clone();
+        clone.xmlEncryptConfig = (XmlElementEncryptionConfig) xmlEncryptConfig.clone();
+        return clone;
+    }
+
     private void initTargetMessage() {
         this.setTarget(TargetMessageType.OTHER);
         this.setOtherTargetMessageVariable("samlpRequest.message");

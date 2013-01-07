@@ -180,10 +180,13 @@ public abstract class RequireSaml extends SamlPolicyAssertion implements Message
         messageTargetableSupport.setTarget(target);
     }
 
+    @SuppressWarnings("CloneDoesntDeclareCloneNotSupportedException")
     @Override
     public Object clone() {
         RequireSaml assertion = (RequireSaml) super.clone();
         assertion.messageTargetableSupport = new MessageTargetableSupport( messageTargetableSupport );
+        assertion.subjectConfirmations = subjectConfirmations.clone();
+        assertion.nameFormats = nameFormats.clone();
 
         return assertion;
     }

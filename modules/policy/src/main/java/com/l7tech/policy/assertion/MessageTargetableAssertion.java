@@ -55,8 +55,9 @@ public abstract class MessageTargetableAssertion extends Assertion implements Me
         return doGetVariablesSet().asArray();
     }
 
+    @SuppressWarnings("CloneDoesntDeclareCloneNotSupportedException")
     @Override
-    public MessageTargetableAssertion clone() {
+    public Object clone() {
         MessageTargetableAssertion mta = (MessageTargetableAssertion) super.clone();
         mta.targetSupport = new MessageTargetableSupport( targetSupport );
         return mta;

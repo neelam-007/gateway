@@ -15,6 +15,7 @@ public class SamlpRequestBuilderAssertionPropertiesEditor extends SamlpAssertion
     /**
      * @see SamlpAssertionPropertiesEditor#getMode()
      */
+    @Override
     protected AssertionMode getMode() {
         return AssertionMode.REQUEST;
     }
@@ -27,9 +28,7 @@ public class SamlpRequestBuilderAssertionPropertiesEditor extends SamlpAssertion
 
         AssertionMode mode = getMode();
 
-        IntroductionWizardStepPanel p;
-
-        p = new IntroductionWizardStepPanel(
+        IntroductionWizardStepPanel p = new IntroductionWizardStepPanel(
               new TargetMessageWizardStepPanel(
                 new SamlVersionWizardStepPanel(
                  new IssuerWizardStepPanel(
@@ -40,10 +39,14 @@ public class SamlpRequestBuilderAssertionPropertiesEditor extends SamlpAssertion
                           new SubjectConfirmationWizardStepPanel(
                             new SamlSignatureStepPanel(null, true, getPreviousAssertion()), true, mode, getPreviousAssertion()), getPreviousAssertion()), mode, getPreviousAssertion()), mode, getPreviousAssertion()), mode, getPreviousAssertion()), true), mode, getPreviousAssertion()), true, mode, getPreviousAssertion()), mode, getPreviousAssertion());
 
-        SamlpAssertionWizard wiz = new SamlpAssertionWizard(assertion, TopComponents.getInstance().getTopParent(), p, mode, readOnly);
+        final SamlpRequestBuilderAssertion workingCopy = (SamlpRequestBuilderAssertion) assertion.clone();
+        SamlpAssertionWizard wiz = new SamlpAssertionWizard(workingCopy, TopComponents.getInstance().getTopParent(), p, mode, readOnly);
         wiz.addWizardListener(new WizardAdapter() {
            @Override
-           public void wizardFinished(WizardEvent e) { confirmed = true; }
+           public void wizardFinished(WizardEvent e) {
+               confirmed = true;
+               SamlpRequestBuilderAssertionPropertiesEditor.this.assertion = workingCopy;
+           }
         });
         wiz.addValidationRulesDefinedInWizardStepPanel(SubjectConfirmationWizardStepPanel.class, p);
         return wiz;

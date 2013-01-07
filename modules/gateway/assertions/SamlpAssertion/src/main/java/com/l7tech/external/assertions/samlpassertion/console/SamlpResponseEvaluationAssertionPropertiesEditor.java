@@ -34,7 +34,8 @@ public class SamlpResponseEvaluationAssertionPropertiesEditor
         TargetMessageWizardStepPanel tmsp = new TargetMessageWizardStepPanel(svsp, mode, getPreviousAssertion());
         IntroductionWizardStepPanel p = new IntroductionWizardStepPanel(tmsp, mode, getPreviousAssertion());
 
-        SamlpAssertionWizard wiz = new SamlpAssertionWizard(assertion, 
+        final SamlpResponseEvaluationAssertion workingCopy = (SamlpResponseEvaluationAssertion) assertion.clone();
+        SamlpAssertionWizard wiz = new SamlpAssertionWizard(workingCopy,
                 TopComponents.getInstance().getTopParent(),
                 p,
                 mode,
@@ -42,7 +43,10 @@ public class SamlpResponseEvaluationAssertionPropertiesEditor
 
         wiz.addWizardListener(new WizardAdapter() {
            @Override
-           public void wizardFinished(WizardEvent e) { confirmed = true; }
+           public void wizardFinished(WizardEvent e) {
+               confirmed = true;
+               SamlpResponseEvaluationAssertionPropertiesEditor.this.assertion = workingCopy;
+           }
         });
 
         return wiz;

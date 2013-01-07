@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  * @author rmak
  * @since SecureSpan 3.7
  */
-public class CodeInjectionProtectionType implements Serializable {
+public class CodeInjectionProtectionType implements Serializable, Cloneable {
     private static int _nextOrdinal = 0;
 
     private final int _ordinal = _nextOrdinal++;

@@ -18,30 +18,35 @@ public abstract class SamlpAssertionPropertiesEditor<ASN extends Assertion> impl
     private SamlpAssertionWizard wizard;
     protected boolean readOnly;
     protected boolean confirmed;
-    private ASN assertion;
+    protected ASN assertion;
     private PolicyPositionAware.PolicyPosition policyPosition;
 
     public SamlpAssertionPropertiesEditor() {
     }
 
+    @Override
     public JDialog getDialog() {
         return wizard;
     }
 
+    @Override
     public boolean isConfirmed() {
         return confirmed;
     }
 
+    @Override
     public void setData(ASN assertion) {
         this.assertion = assertion;
 
         wizard = createAssertionWizard(assertion);
     }
 
+    @Override
     public ASN getData(ASN assertion) {
         return this.assertion;
     }
 
+    @Override
     public Object getParameter( final String name ) {
         Object value = null;
 
@@ -52,6 +57,7 @@ public abstract class SamlpAssertionPropertiesEditor<ASN extends Assertion> impl
         return value;
     }
 
+    @Override
     public void setParameter( final String name, Object value ) {
         if ( PARAM_READONLY.equals( name ) && value instanceof Boolean ) {
             readOnly = (Boolean) value;

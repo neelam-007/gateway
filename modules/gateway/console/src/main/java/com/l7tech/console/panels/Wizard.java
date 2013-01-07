@@ -31,6 +31,11 @@ import java.lang.reflect.InvocationTargetException;
 public class Wizard<ST> extends JDialog {
     private WizardStepPanel<ST> startPanel;
     private Wizard.Iterator<ST> wizardIterator;
+    /**
+     * Wizard model. This instance will be modified as the wizard progresses. For more complex wizards this should be a
+     * 'working copy' of the actual assertion, which can be discarded if cancel is invoked.
+     * Simpler cases can collect changes and apply them only on success.
+     */
     protected ST wizardInput;
     private boolean wasCanceled = false;
     private boolean enableBackButton = true;
@@ -63,6 +68,13 @@ public class Wizard<ST> extends JDialog {
         this(parent, panel, null);
     }
 
+    /**
+     *
+     * @param parent window parent
+     * @param panel first step panel
+     * @param input wizard model. Warning: This instance will be modified as the wizard progresses. To support cancel
+     *              you may want to pass in a copy of the object or ensure it is not modified unless changes should be saved.
+     */
     public Wizard(Window parent, WizardStepPanel<ST> panel, ST input) {
         super(parent, JDialog.DEFAULT_MODALITY_TYPE);
         this.wizardInput = input;

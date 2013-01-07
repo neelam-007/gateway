@@ -18,7 +18,7 @@ import java.util.Map;
  * @author rmak
  * @since SecureSpan 3.7
  */
-public class HtmlFormDataLocation implements Serializable {
+public class HtmlFormDataLocation implements Serializable, Cloneable {
     private static int _nextOrdinal = 0;
 
     private final int _ordinal = _nextOrdinal ++;
@@ -31,11 +31,11 @@ public class HtmlFormDataLocation implements Serializable {
 
     /** Map for looking up instance by wspName.
         The keys are of type String. The values are of type {@link HtmlFormDataLocation}. */
-    private static final Map _byWspName = new HashMap();
+    private static final Map<String, HtmlFormDataLocation> _byWspName = new HashMap<String, HtmlFormDataLocation>();
 
     /** Map for looking up instance by displayName.
         The keys are of type String. The values are of type {@link HtmlFormDataLocation}. */
-    private static final Map _byDisplayName = new HashMap();
+    private static final Map<String, HtmlFormDataLocation> _byDisplayName = new HashMap<String, HtmlFormDataLocation>();
 
     // Warning: Never change wspName; in order to maintain backward compatibility.
     public static final HtmlFormDataLocation ANYWHERE = new HtmlFormDataLocation("anywhere", "anywhere");
@@ -45,15 +45,15 @@ public class HtmlFormDataLocation implements Serializable {
     private static final HtmlFormDataLocation[] _values = new HtmlFormDataLocation[]{ANYWHERE, URL, BODY};
 
     public static HtmlFormDataLocation[] values() {
-        return (HtmlFormDataLocation[])_values.clone();
+        return _values.clone();
     }
 
     public static HtmlFormDataLocation fromWspName(final String wspName) {
-        return (HtmlFormDataLocation) _byWspName.get(wspName);
+        return _byWspName.get(wspName);
     }
 
     public static HtmlFormDataLocation fromDisplayName(final String displayName) {
-        return (HtmlFormDataLocation) _byDisplayName.get(displayName);
+        return _byDisplayName.get(displayName);
     }
 
     private HtmlFormDataLocation(final String wspName, final String displayName) {
@@ -83,11 +83,13 @@ public class HtmlFormDataLocation implements Serializable {
     // This method is invoked reflectively by WspEnumTypeMapping
     public static EnumTranslator getEnumTranslator() {
         return new EnumTranslator() {
+            @Override
             public String objectToString(Object target) {
                 HtmlFormDataLocation location = (HtmlFormDataLocation)target;
                 return location.getWspName();
             }
 
+            @Override
             public Object stringToObject(String wspName) throws IllegalArgumentException {
                 HtmlFormDataLocation location = HtmlFormDataLocation.fromWspName(wspName);
                 if (location == null) throw new IllegalArgumentException("Unknown HtmlFormDataLocation: '" + wspName + "'");

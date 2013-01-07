@@ -38,6 +38,10 @@
             <filterset refid="assertion.module.filterset"/>
         </copy>
 
+        <copy file="templates/TEMPLATE_AssertionTest.txt" tofile="${assertion.name}Assertion/src/test/java/com/l7tech/external/assertions/${assertion.name.lower}/${assertion.name}AssertionTest.java">
+            <filterset refid="assertion.module.filterset"/>
+        </copy>
+
         <copy file="templates/TEMPLATE_ServerAssertion.txt" tofile="${assertion.name}Assertion/src/main/java/com/l7tech/external/assertions/${assertion.name.lower}/server/Server${assertion.name}Assertion.java">
             <filterset refid="assertion.module.filterset"/>
         </copy>
