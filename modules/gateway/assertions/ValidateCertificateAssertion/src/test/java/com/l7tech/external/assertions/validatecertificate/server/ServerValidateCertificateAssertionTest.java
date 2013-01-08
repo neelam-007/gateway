@@ -59,6 +59,12 @@ public class ServerValidateCertificateAssertionTest {
                 .map());
     }
 
+    @Test(expected = PolicyAssertionException.class)
+    public void emptySourceVariable() throws Exception {
+        assertion.setSourceVariable("");
+        serverAssertion = new ServerValidateCertificateAssertion(assertion);
+    }
+
     @Test
     public void variableNotFound() throws Exception {
         context.setVariable(TEST_CERT, null);

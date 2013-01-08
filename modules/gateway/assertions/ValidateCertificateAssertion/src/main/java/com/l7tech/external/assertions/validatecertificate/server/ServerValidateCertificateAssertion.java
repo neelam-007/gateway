@@ -10,6 +10,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -28,6 +29,9 @@ public class ServerValidateCertificateAssertion extends AbstractServerAssertion<
 
     public ServerValidateCertificateAssertion(@NotNull final ValidateCertificateAssertion assertion) throws PolicyAssertionException {
         super(assertion);
+        if(StringUtils.isBlank(assertion.getSourceVariable())){
+            throw new PolicyAssertionException(assertion, "Source Variable cannot be blank");
+        }
     }
 
     /**
