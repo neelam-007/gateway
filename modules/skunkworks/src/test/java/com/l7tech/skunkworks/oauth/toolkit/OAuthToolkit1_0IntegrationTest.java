@@ -567,10 +567,11 @@ public class OAuthToolkit1_0IntegrationTest {
 
         // try to authorize the token using an invalid cookie
         final GenericHttpResponse authorizeResponse = new Layer710aApi(BASE_URL).authorize(requestToken, "invalid");
-        assertEquals(401, authorizeResponse.getStatus());
         final String authorizeResponseBody = new String(IOUtils.slurpStream(authorizeResponse.getInputStream()));
+        System.out.println(authorizeResponseBody);
+        assertEquals(401, authorizeResponse.getStatus());
         assertFalse(authorizeResponseBody.contains("verifier"));
-        assertTrue(authorizeResponseBody.contains("Authentication failed"));
+        assertTrue(authorizeResponseBody.contains("Session Expired"));
         assertEquals("l7otk1a=", authorizeResponse.getHeaders().getFirstValue("Set-Cookie"));
     }
 
