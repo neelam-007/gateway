@@ -383,6 +383,7 @@ public class GatewayFeatureSets {
             ass(WssConfigurationAssertion.class),
             ass(AddWssUsernameToken.class),
             ass(LookupTrustedCertificateAssertion.class),
+            mass("assertion:ValidateCertificate"),
             feat(FEATURE_SIGNED_ATTACHMENTS, "Signed SOAP attachments."));
 
         // Message Validation/Transform

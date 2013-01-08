@@ -1201,5 +1201,10 @@ public class AssertionMessages extends Messages {
     public static final M OTK_INSTALLER_ERROR = m(9920, Level.WARNING, "OTK Installation Problem: {0}");
     public static final M OTK_DRY_RUN_CONFLICT = m(9921, Level.INFO, "Component {0} conflicts for {1}: {2}");
 
+    // ValidateCertificate assertion
+    public static final M CERT_NOT_FOUND = m(10000, Level.WARNING, "No certificate found for variable: {0}");
+    public static final M CERT_VALIDATION_STATUS_FAILURE = m(10001, Level.WARNING, "Certificate validation type {0} failed with status: {1}");
+    public static final M CERT_VALIDATION_FAILURE = m(10002, Level.WARNING, "Certificate validation type {0} failed: {1}");
+
     // Highest ID reserved for AssertionMessages = 99999
 }
