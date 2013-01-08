@@ -7,6 +7,7 @@ package com.l7tech.console;
 
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.console.logging.CascadingErrorHandler;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.util.AppletSsmPreferences;
 import com.l7tech.console.util.Registry;
@@ -120,6 +121,8 @@ public class AppletMain extends JApplet implements SheetHolder {
 
             initHelpKeyBinding();
             initBrowserSaveErrorStrategy();
+
+            ErrorManager.installUncaughtExceptionHandler();
         }
         TopComponents.getInstance().setServiceUrl(serviceUrl);
     }
