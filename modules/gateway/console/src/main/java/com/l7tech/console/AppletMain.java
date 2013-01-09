@@ -122,7 +122,6 @@ public class AppletMain extends JApplet implements SheetHolder {
             initHelpKeyBinding();
             initBrowserSaveErrorStrategy();
 
-            ErrorManager.installUncaughtExceptionHandler();
         }
         TopComponents.getInstance().setServiceUrl(serviceUrl);
     }
@@ -472,10 +471,10 @@ public class AppletMain extends JApplet implements SheetHolder {
 
         // Set AWT error handler
         try {
-            System.setProperty("sun.awt.exception.handler", com.l7tech.console.logging.AwtErrorHandler.class.getName());
+            ErrorManager.installUncaughtExceptionHandler();
         }
         catch(SecurityException se) {
-            logger.warning("Could not install AWT exception handler.");
+            logger.warning("Could not install uncaught exception handler.");
             getApplication();//this method has the side affect of setting the application instance
             application.setTrusted(false);                        
         }
