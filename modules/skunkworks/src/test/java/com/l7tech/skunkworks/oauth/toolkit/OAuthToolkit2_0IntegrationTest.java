@@ -97,7 +97,7 @@ public class OAuthToolkit2_0IntegrationTest extends OAuthToolkitSupport {
         assertEquals(401, response.getStatus());
         final String body = new String(IOUtils.slurpStream(response.getInputStream()));
         assertFalse(body.contains("verifier"));
-        assertTrue(body.contains("Authentication failed"));
+        assertTrue(body.contains("Session Expired"));
         assertEquals("l7otk2a=", response.getHeaders().getFirstValue("Set-Cookie"));
     }
 
