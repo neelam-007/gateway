@@ -29,7 +29,7 @@ public class ServerValidateCertificateAssertion extends AbstractServerAssertion<
 
     public ServerValidateCertificateAssertion(@NotNull final ValidateCertificateAssertion assertion) throws PolicyAssertionException {
         super(assertion);
-        if(StringUtils.isBlank(assertion.getSourceVariable())){
+        if (StringUtils.isBlank(assertion.getSourceVariable())) {
             throw new PolicyAssertionException(assertion, "Source Variable cannot be blank");
         }
     }
@@ -39,20 +39,24 @@ public class ServerValidateCertificateAssertion extends AbstractServerAssertion<
      *
      * @param context the PolicyEnforcementContext which contains a X509Certificate variable.  Never null.
      * @return AssertionStatus.NONE if validation is successful or if validation fails but the assertion is configured to be logOnly.
-     * Otherwise returns AssertionStatus.FALSIFIED.
+     *         Otherwise returns AssertionStatus.FALSIFIED.
      */
     public AssertionStatus checkRequest(@NotNull final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         AssertionStatus assertionStatus = assertion.isLogOnly() ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
+        String subjectDN = "";
         try {
             final Object found = context.getVariable(assertion.getSourceVariable());
             if (found instanceof X509Certificate) {
                 final X509Certificate cert = (X509Certificate) found;
+                if (cert.getSubjectDN() != null) {
+                    subjectDN = cert.getSubjectDN().getName();
+                }
                 final CertificateValidationResult result = certValidator.check(new X509Certificate[]{cert},
                         assertion.getValidationType(), assertion.getValidationType(), CertValidationProcessor.Facility.OTHER, getAudit());
                 if (result.equals(CertificateValidationResult.OK)) {
                     assertionStatus = AssertionStatus.NONE;
                 } else {
-                    getAudit().logAndAudit(AssertionMessages.CERT_VALIDATION_STATUS_FAILURE, assertion.getValidationType().toString(), result.toString());
+                    getAudit().logAndAudit(AssertionMessages.CERT_VALIDATION_STATUS_FAILURE, subjectDN, assertion.getValidationType().toString(), result.toString());
                 }
             } else {
                 logger.log(Level.WARNING, "Context variable " + assertion.getSourceVariable() + " found but is not a certificate");
@@ -63,10 +67,10 @@ public class ServerValidateCertificateAssertion extends AbstractServerAssertion<
             getAudit().logAndAudit(AssertionMessages.CERT_NOT_FOUND, assertion.getSourceVariable());
         } catch (final CertificateException e) {
             logger.log(Level.WARNING, "Error validating certificate: " + e.getMessage(), ExceptionUtils.getDebugException(e));
-            getAudit().logAndAudit(AssertionMessages.CERT_VALIDATION_FAILURE, assertion.getValidationType().toString(), e.getMessage());
+            getAudit().logAndAudit(AssertionMessages.CERT_VALIDATION_FAILURE, subjectDN, assertion.getValidationType().toString(), e.getMessage());
         } catch (final SignatureException e) {
             logger.log(Level.WARNING, "Error validating certificate signature", ExceptionUtils.getDebugException(e));
-            getAudit().logAndAudit(AssertionMessages.CERT_VALIDATION_FAILURE, assertion.getValidationType().toString(), "error validating signature");
+            getAudit().logAndAudit(AssertionMessages.CERT_VALIDATION_FAILURE, subjectDN, assertion.getValidationType().toString(), "error validating signature");
         }
         return assertionStatus;
     }

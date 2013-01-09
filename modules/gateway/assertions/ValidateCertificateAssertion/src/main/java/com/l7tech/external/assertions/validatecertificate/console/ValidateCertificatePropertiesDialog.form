@@ -14,7 +14,7 @@
         </constraints>
         <properties>
           <text value="Source Variable:"/>
-          <toolTipText value="the name of an X509 context variable"/>
+          <toolTipText value="Name of an X509 context variable"/>
         </properties>
       </component>
       <component id="fe002" class="javax.swing.JLabel">
@@ -45,7 +45,7 @@
         </constraints>
         <properties>
           <text value="Fail on invalid certificate"/>
-          <toolTipText value="checking this box will cause the assertion to fail if the certificate fails validation"/>
+          <toolTipText value="Checking this box will cause the assertion to fail if the certificate fails validation"/>
         </properties>
       </component>
     </children>

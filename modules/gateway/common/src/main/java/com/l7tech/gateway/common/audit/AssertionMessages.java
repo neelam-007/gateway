@@ -1203,8 +1203,8 @@ public class AssertionMessages extends Messages {
 
     // ValidateCertificate assertion
     public static final M CERT_NOT_FOUND = m(10000, Level.WARNING, "No certificate found for variable: {0}");
-    public static final M CERT_VALIDATION_STATUS_FAILURE = m(10001, Level.WARNING, "Certificate validation type {0} failed with status: {1}");
-    public static final M CERT_VALIDATION_FAILURE = m(10002, Level.WARNING, "Certificate validation type {0} failed: {1}");
+    public static final M CERT_VALIDATION_STATUS_FAILURE = m(10001, Level.WARNING, "Certificate {0} validation ({1}) failed with status: {2}");
+    public static final M CERT_VALIDATION_FAILURE = m(10002, Level.WARNING, "Certificate {0} validation ({1}) failed: {2}");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

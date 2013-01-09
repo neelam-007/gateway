@@ -55,7 +55,7 @@ public class ValidateCertificateAssertion extends Assertion {
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
         meta.put(AssertionMetadata.SHORT_NAME, "Validate Certificate");
-        meta.put(AssertionMetadata.LONG_NAME, "Validate Certificate");
+        meta.put(AssertionMetadata.LONG_NAME, "Validates an X509 Certificate context variable.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/check16.gif");

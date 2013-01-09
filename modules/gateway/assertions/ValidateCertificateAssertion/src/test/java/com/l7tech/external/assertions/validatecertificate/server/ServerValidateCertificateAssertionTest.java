@@ -90,6 +90,7 @@ public class ServerValidateCertificateAssertionTest {
     public void validationNotOk() throws Exception {
         for (final CertificateValidationType type : CertificateValidationType.values()) {
             testValidationNotOk(type);
+            testAudit.reset();
         }
     }
 
@@ -97,6 +98,7 @@ public class ServerValidateCertificateAssertionTest {
     public void validationCertificateException() throws Exception {
         for (final CertificateValidationType type : CertificateValidationType.values()) {
             testValidationWithException(type, new CertificateException("mocking exception"));
+            testAudit.reset();
         }
     }
 
@@ -104,6 +106,7 @@ public class ServerValidateCertificateAssertionTest {
     public void validationSignatureException() throws Exception {
         for (final CertificateValidationType type : CertificateValidationType.values()) {
             testValidationWithException(type, new SignatureException("mocking exception"));
+            testAudit.reset();
         }
     }
 
@@ -142,7 +145,6 @@ public class ServerValidateCertificateAssertionTest {
         setupMock(validationType, ex);
         assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CERT_VALIDATION_FAILURE));
-        assertTrue(testAudit.isAuditPresentContaining("Certificate validation type " + validationType.toString() + " failed"));
     }
 
     private void testValidationNotOk(final CertificateValidationType validationType) throws Exception {
@@ -152,7 +154,7 @@ public class ServerValidateCertificateAssertionTest {
                 setupMock(validationType, result);
                 assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
                 assertTrue(testAudit.isAuditPresent(AssertionMessages.CERT_VALIDATION_STATUS_FAILURE));
-                assertTrue(testAudit.isAuditPresentContaining("Certificate validation type " + validationType.toString() + " failed with status: " + result.toString()));
+                testAudit.reset();
             }
         }
     }
