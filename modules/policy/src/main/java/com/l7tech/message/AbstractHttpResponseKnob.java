@@ -15,7 +15,7 @@ import java.util.*;
  */
 public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
     public static final int CUSTOM_ORDER = 3;
-    public static final String CHALLENGE_ORDER_PROP = "http.response.challenge.order";
+    public static final String CHALLENGE_ORDER_PROP = "io.httpChallengeOrder";
 
     protected enum ChallengeMode{
         WINDOWS,REVERSE
