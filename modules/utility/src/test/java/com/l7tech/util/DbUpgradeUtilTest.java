@@ -68,6 +68,21 @@ public class DbUpgradeUtilTest {
         final String[] yToZ = upgradeMap.get("y");
         assertEquals("z", yToZ[0]);
         assertTrue(yToZ[1].contains("upgrade_y-z.sql"));
+    }
 
+    @Test
+    public void isUpgradeScript() throws Exception {
+        // valid
+        final Pair<String, String> upgradeInfo = DbUpgradeUtil.isUpgradeScript("upgrade_x-y.sql");
+        assertNotNull(upgradeInfo);
+        assertEquals("x", upgradeInfo.getKey());
+        assertEquals("y", upgradeInfo.getValue());
+
+        // invalid
+        assertNull(DbUpgradeUtil.isUpgradeScript(""));
+        assertNull(DbUpgradeUtil.isUpgradeScript("upgrade_x-y"));
+        assertNull(DbUpgradeUtil.isUpgradeScript("upgrade_x.sql"));
+        assertNull(DbUpgradeUtil.isUpgradeScript("notupgrade"));
+        assertNull(DbUpgradeUtil.isUpgradeScript("upgrade_x-y.txt"));
     }
 }
