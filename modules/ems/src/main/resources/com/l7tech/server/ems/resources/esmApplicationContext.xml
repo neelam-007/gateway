@@ -163,6 +163,8 @@
         <property name="dataSource" ref="dataSource"/>
     </bean>
 
+    <alias name="schemaUpdater" alias="updateSchema"/>
+
     <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
 
     <bean id="managedBackgroundTimer" class="com.l7tech.server.util.ManagedTimer">

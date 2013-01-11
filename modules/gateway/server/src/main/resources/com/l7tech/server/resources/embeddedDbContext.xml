@@ -75,10 +75,10 @@
         <constructor-arg value="DERBY"/>
     </bean>
 
-    <bean id="schemaUpdater" class="com.l7tech.server.util.EmbeddedDbSchemaUpdater" init-method="ensureCurrentSchema" depends-on="createEmbeddedDB">
+    <bean id="updateSchema" class="com.l7tech.server.util.EmbeddedDbSchemaUpdater" init-method="ensureCurrentSchema" depends-on="createEmbeddedDB">
         <constructor-arg index="0" ref="transactionManager"/>
         <constructor-arg index="1">
-            <value>file:etc/db/derby</value>
+            <value>classpath:/com/l7tech/server/resources/derby</value>
         </constructor-arg>
         <property name="dataSource" ref="embeddedDataSource"/>
     </bean>

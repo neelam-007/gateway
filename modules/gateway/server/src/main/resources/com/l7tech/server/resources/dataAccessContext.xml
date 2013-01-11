@@ -186,4 +186,7 @@
     <!-- The audit events hibernate interceptor -->
     <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
 
+    <!-- Override updateSchema with any schema updates that need to be performed -->
+    <bean id="updateSchema" class="com.l7tech.server.util.NoOpSchemaUpdater"/>
+
 </beans>

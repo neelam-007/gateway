@@ -82,7 +82,9 @@
           parent="hibernateBean">
     </bean>
 
-    <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache">
+    <!-- ClusterPropertyCache loads cluster properties from db on ClusterPropertyManager setter so all db updates must
+    be performed prior to instantiating this bean -->
+    <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache" depends-on="updateSchema">
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
         <property name="clusterPropertyListener">
             <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
