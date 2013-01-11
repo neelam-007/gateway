@@ -38,8 +38,8 @@
     <property name="module.version.default.target" value="1.0"/>
     <property name="module.version.target" value="${module.version.default.target}"/>
     <property name="module.classpath.prefix" value="lib/"/>
-    <property name="module.compile.source" value="1.6"/>
-    <property name="module.compile.target" value="1.6"/>
+    <property name="module.compile.source" value="1.7"/>
+    <property name="module.compile.target" value="1.7"/>
     <property name="module.compile.optimize" value="off"/>
     <property name="module.compile.verbose" value="no"/>
     <property name="module.compile.xlint" value=":none"/> <!-- redefine as "" if you want to enable warnings -->

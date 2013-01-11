@@ -14,6 +14,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.Pair;
 import org.junit.*;
 
 import java.io.File;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
@@ -73,6 +75,8 @@ public class ServerHttpNegotiateTest {
     @Test
     public void testNoAuthentication() throws Exception {
         assertTrue(fixture.checkRequest(context) == AssertionStatus.AUTH_REQUIRED);
+        assertTrue(((Response)context.getResponse().getHttpResponseKnob()).getChallengesToSend().size() > 0);
+        assertEquals(HttpNegotiate.SCHEME, ((Response)context.getResponse().getHttpResponseKnob()).getChallengesToSend().get(0).left.trim());
     }
 
 
@@ -81,6 +85,28 @@ public class ServerHttpNegotiateTest {
     public void testAuthenticateMessage() throws Exception {
         assertTrue(sendServiceTicket() == AssertionStatus.NONE);
         assertEquals(KerberosConfigTest.REALM, context.getVariable(HttpNegotiate.KERBEROS_REALM));
+    }
+
+    @Test
+    public void shouldIgnoreMessageContainingNtlmData() throws Exception {
+        httpRequestKnob.removeHeader(HttpConstants.HEADER_AUTHORIZATION);
+        String ntlmData = "TlRMTVNTUAABAAAAFbII4AYABgAgAAAADQANACYAAABMN1RFQ0hNWVdPUktTVEFUSU9O";
+        HttpHeader header = new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, HttpNegotiate.SCHEME + " " + ntlmData);
+        httpRequestKnob.addHeader(header);
+        assertTrue(fixture.checkRequest(context) == AssertionStatus.AUTH_REQUIRED);
+        assertTrue(((Response) context.getResponse().getHttpResponseKnob()).getChallengesToSend().isEmpty());
+
+    }
+
+    @Test
+    public void shouldIgnoreMessageContainingNTLMAuthHeader() throws Exception {
+        httpRequestKnob.removeHeader(HttpConstants.HEADER_AUTHORIZATION);
+        String ntlmData = "NTLM TlRMTVNTUAABAAAAFbII4AYABgAgAAAADQANACYAAABMN1RFQ0hNWVdPUktTVEFUSU9O";
+        HttpHeader header = new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, ntlmData);
+        httpRequestKnob.addHeader(header);
+        assertTrue(fixture.checkRequest(context) == AssertionStatus.AUTH_REQUIRED);
+        assertTrue(((Response) context.getResponse().getHttpResponseKnob()).getChallengesToSend().isEmpty());
+
     }
 
     @Ignore("Require KDC Connection")
@@ -99,6 +125,19 @@ public class ServerHttpNegotiateTest {
         HttpHeader header = new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, "INVALID HEADER MESSAGE ");
         httpRequestKnob.addHeader(header);
         assertTrue(fixture.checkRequest(context) == AssertionStatus.AUTH_REQUIRED);
+        assertTrue(((Response)context.getResponse().getHttpResponseKnob()).getChallengesToSend().size() > 0);
+        assertEquals(HttpNegotiate.SCHEME, ((Response)context.getResponse().getHttpResponseKnob()).getChallengesToSend().get(0).left.trim());
+
+    }
+
+    @Test
+    public void testInvalidData() throws Exception {
+        HttpHeader header = new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, "Negotiate ");
+        httpRequestKnob.addHeader(header);
+        assertTrue(fixture.checkRequest(context) == AssertionStatus.AUTH_REQUIRED);
+        assertTrue(((Response)context.getResponse().getHttpResponseKnob()).getChallengesToSend().size() > 0);
+        assertEquals(HttpNegotiate.SCHEME, ((Response)context.getResponse().getHttpResponseKnob()).getChallengesToSend().get(0).left.trim());
+
     }
 
     @Test
@@ -106,6 +145,9 @@ public class ServerHttpNegotiateTest {
         HttpHeader header = new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, HttpNegotiate.SCHEME + " " + "INVALID_TICKET_MESSAGE");
         httpRequestKnob.addHeader(header);
         assertTrue(fixture.checkRequest(context) == AssertionStatus.AUTH_REQUIRED);
+        assertTrue(((Response)context.getResponse().getHttpResponseKnob()).getChallengesToSend().size() > 0);
+        assertEquals(HttpNegotiate.SCHEME, ((Response)context.getResponse().getHttpResponseKnob()).getChallengesToSend().get(0).left.trim());
+
     }
 
     private AssertionStatus sendServiceTicket() throws Exception {
@@ -119,15 +161,16 @@ public class ServerHttpNegotiateTest {
         return fixture.checkRequest(context);
     }
 
+
     private static class Response extends AbstractHttpResponseKnob {
 
         @Override
         public void addCookie(HttpCookie cookie) {
         }
 
-        public String getChallengesToSend() {
+        public List<Pair<String,Integer>> getChallengesToSend() {
             Collections.reverse(challengesToSend);
-            return challengesToSend.get(0).left;
+            return challengesToSend;
         }
     }
 
@@ -152,4 +195,5 @@ public class ServerHttpNegotiateTest {
             }
         };
     }
+
 }

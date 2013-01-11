@@ -2,11 +2,9 @@ package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.kerberos.KerberosClient;
-import com.l7tech.kerberos.KerberosException;
-import com.l7tech.kerberos.KerberosGSSAPReqTicket;
-import com.l7tech.kerberos.KerberosServiceTicket;
+import com.l7tech.kerberos.*;
 import com.l7tech.message.HttpRequestKnob;
+import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.TcpKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -15,6 +13,7 @@ import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
@@ -31,6 +30,9 @@ import java.net.UnknownHostException;
  * Server implementation for Negotiate (Windows Integrated) Authentication
  */
 public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiate> {
+
+    private static final byte[] NTLM_MESSAGE_PREFIX =  new byte[]{'N', 'T', 'L', 'M', 'S', 'S', 'P', 0};
+    public static final String NTLM_SCHEME = "NTLM";
 
     //- PUBLIC
 
@@ -73,7 +75,7 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
         HttpRequestKnob httpRequestKnob = request.getHttpRequestKnob();
         String wwwAuthorize = httpRequestKnob.getHeaderSingleValue(HttpConstants.HEADER_AUTHORIZATION);
         Object connectionId = httpRequestKnob.getConnectionIdentifier();
-        return findCredentials( request, wwwAuthorize, connectionId );
+        return findCredentials( request, wwwAuthorize, connectionId, authParams );
     }
 
     @Override
@@ -94,7 +96,8 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
     @SuppressWarnings({ "RedundantArrayCreation", "ThrowableResultOfMethodCallIgnored" })
     private LoginCredentials findCredentials( final Message request,
                                               final String wwwAuthorize,
-                                              final Object connectionId ) throws IOException {
+                                              final Object connectionId,
+                                              Map<String, String> authParams) throws IOException {
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) {
             LoginCredentials loginCreds = getConnectionCredentials(connectionId);
             if (loginCreds != null) {
@@ -113,12 +116,24 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
 
         String scheme = wwwAuthorize.substring( 0, spos );
         String base64 = wwwAuthorize.substring( spos + 1 );
-        if ( !scheme().equals(scheme) ) {
+        byte[] token = HexUtils.decodeBase64(base64, true);
+
+        if ( !scheme().equals(scheme) || token.length == 0) {
             logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
+            //check if the client negotiated NTLM
+            if(scheme.equals(NTLM_SCHEME)) {
+                authParams.put(NTLM_SCHEME, base64);
+                logAndAudit(AssertionMessages.HTTPNEGOTIATE_NTLM_AUTH);
+            }
             return null;
         }
-        //TODO: check if NTLM protocol is present
-        byte[] token = HexUtils.decodeBase64( base64, true );
+        //check if the client using NTLM as a part of negotiation
+        else if (ArrayUtils.matchSubarrayOrPrefix(token, 0, 1, NTLM_MESSAGE_PREFIX, 0) > -1) {
+            authParams.put(NTLM_SCHEME, base64);
+            logAndAudit(AssertionMessages.HTTPNEGOTIATE_NTLM_AUTH);
+            return null;
+        }
+
         KerberosGSSAPReqTicket ticket = new KerberosGSSAPReqTicket(token);
 
         try {
@@ -142,6 +157,30 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
         catch(KerberosException ke) {
             logAndAudit(AssertionMessages.HTTPNEGOTIATE_WARNING, new String[]{ke.getMessage()}, ExceptionUtils.getDebugException(ke));
             return null;
+        }
+    }
+
+    @Override
+    protected void challenge(PolicyEnforcementContext context, Map<String, String> authParams) {
+        //do not send Negotiate challenge if the client is using NTLM
+        if(!authParams.containsKey(NTLM_SCHEME)){
+            StringBuilder challengeHeader = new StringBuilder();
+            String scheme = scheme();
+            if (authParams.containsKey(scheme)) {
+                challengeHeader.append(scheme);
+                challengeHeader.append(" ");
+                challengeHeader.append(authParams.get(scheme));
+            }
+            else{
+                challengeHeader.append(scheme);
+            }
+
+            String challenge = challengeHeader.toString();
+            if(challenge.length() > 0) {
+                logAndAudit(AssertionMessages.HTTPCREDS_CHALLENGING, challenge);
+                HttpResponseKnob httpResponse = context.getResponse().getHttpResponseKnob();
+                httpResponse.addChallenge(challenge);
+            }
         }
     }
 

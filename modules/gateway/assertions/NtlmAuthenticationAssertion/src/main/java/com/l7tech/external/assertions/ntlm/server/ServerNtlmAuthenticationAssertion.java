@@ -47,7 +47,8 @@ import java.util.logging.Logger;
 public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSource<NtlmAuthenticationAssertion> {
     private static final Logger log = Logger.getLogger(ServerNtlmAuthenticationAssertion.class.getName());
 
-    public static final String SCHEME = "NTLM";
+    public static final String NTLM_SCHEME = "NTLM";
+    public static final String NEGOTIATE_SCHEME = "Negotiate";
 
     protected final ThreadLocal<Pair<Object, AuthenticationProvider>> ntlmAuthenticationProviderThreadLocal = new ThreadLocal<Pair<Object, AuthenticationProvider>>();
 
@@ -93,22 +94,36 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
      */
     @Override
     protected void challenge(PolicyEnforcementContext context, Map<String, String> authParams) {
-        StringBuilder challengeHeader = new StringBuilder(scheme());
-        if (authParams.containsKey(scheme())) {
+        StringBuilder challengeHeader = new StringBuilder();
+        String scheme = null;
+        try {
+            scheme = getAuthorizationScheme(context.getRequest());
+        } catch (IOException e) {
+           scheme = scheme();
+        }
+        if(scheme == null){
+            scheme = scheme();
+        }
+        if (authParams.containsKey(scheme)) {
+            challengeHeader.append(scheme);
             challengeHeader.append(" ");
-            challengeHeader.append(authParams.get(scheme()));
+            challengeHeader.append(authParams.get(scheme));
+        }
+        else{
+            challengeHeader.append(scheme);
         }
 
         String challenge = challengeHeader.toString();
-
-        logAndAudit(AssertionMessages.HTTPCREDS_CHALLENGING, challenge);
-        HttpResponseKnob httpResponse = context.getResponse().getHttpResponseKnob();
-        httpResponse.addChallenge(challenge);
+        if(challenge.length() > 0) {
+            logAndAudit(AssertionMessages.HTTPCREDS_CHALLENGING, challenge);
+            HttpResponseKnob httpResponse = context.getResponse().getHttpResponseKnob();
+            httpResponse.addChallenge(challenge);
+        }
     }
 
     @Override
     protected String scheme() {
-        return SCHEME;
+        return NTLM_SCHEME;
     }
 
     @Override
@@ -187,18 +202,21 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
         log.log(Level.FINE, "Connection ID=" + connectionId);
 
         LoginCredentials loginCredentials = null;
-
         AuthenticationProvider authenticationProvider = getOrCreateAuthenticationProvider(connectionId);
 
         NtlmToken token = checkProviderStatus(authenticationProvider);
         if (token == null) {
-            byte[] authorizationData = getAuthorizationData(request);
+            String authorizationScheme = getAuthorizationScheme(request);
+            if(authorizationScheme == null) {
+                return null;
+            }
+            byte[] authorizationData = getAuthorizationData(request, authorizationScheme);
             if (authorizationData == null) {
                 //needs authentication
                 //the challenge will be send to the client requesting NTLM authntication
                 return null;
             }
-            token = authenticateClient(authorizationData, authParams, authenticationProvider);
+            token = authenticateClient(authorizationScheme, authorizationData, authParams, authenticationProvider);
         } else if (!checkConnectionTimeouts(token, connectionId)) {
             //create a new provider that will reset the state
             log.log(Level.FINE, "Connection has expired. Recessing the provider status");
@@ -252,9 +270,7 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
                     long oid = Long.parseLong(props.get("service.passwordOid"));
                     String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), oid);
                     props.put("service.password", plaintextPassword);
-                } catch (FindException e) {
-                    throw new CredentialFinderException("Password is invalid");
-                } catch (NumberFormatException ne) {
+                } catch (FindException | NumberFormatException e) {
                     throw new CredentialFinderException("Password is invalid");
                 }
             }
@@ -278,29 +294,42 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
         return authenticationProvider;
     }
 
-
-    private byte[] getAuthorizationData(Message request) throws IOException {
+    private String getAuthorizationScheme(Message request) throws  IOException {
         String authorization = request.getHttpRequestKnob().getHeaderSingleValue(HttpConstants.HEADER_AUTHORIZATION);
 
         if (authorization == null || authorization.length() == 0) {
             logAndAudit(AssertionMessages.HTTPCREDS_NO_AUTHN_HEADER);
             return null;
         }
-        if (authorization.startsWith(SCHEME)) {
-            return HexUtils.decodeBase64(authorization.substring(5));
+        int index = authorization.indexOf(' ');
+        if (index != -1) {
+            String scheme = authorization.substring(0, index);
+            if(NTLM_SCHEME.equalsIgnoreCase(scheme) || NEGOTIATE_SCHEME.equalsIgnoreCase(scheme)) {  //only known authorization schemes returned
+                return scheme;
+            }
         }
         return null;
     }
 
 
-    private NtlmToken authenticateClient(byte[] encryptedNtlmData, Map<String, String> authParams, AuthenticationProvider authenticationProvider) throws CredentialFinderException {
+    private byte[] getAuthorizationData(Message request, String scheme) throws IOException {
+        String authorization = request.getHttpRequestKnob().getHeaderSingleValue(HttpConstants.HEADER_AUTHORIZATION);
+
+        if(authorization.length() > scheme.length() + 1) {
+            return HexUtils.decodeBase64(authorization.substring(scheme.length() + 1));
+        }
+        return null;
+    }
+
+
+    private NtlmToken authenticateClient(String authorizationScheme, byte[] encryptedNtlmData, Map<String, String> authParams, AuthenticationProvider authenticationProvider) throws CredentialFinderException {
         NtlmToken securityToken = null;
         //decode NTLM protocol data and check user credentials against AD
         try {
             byte[] ntlmToken = authenticationProvider.processAuthentication(encryptedNtlmData);
             securityToken = checkProviderStatus(authenticationProvider);
             if (securityToken == null) {
-                authParams.put(NtlmAuthenticationAssertion.NTLM, HexUtils.encodeBase64(ntlmToken, true));
+                authParams.put(authorizationScheme, HexUtils.encodeBase64(ntlmToken, true));
             }
         } catch (AuthenticationManagerException e) {
             final String errMessage = "NTLM Authentication failed";

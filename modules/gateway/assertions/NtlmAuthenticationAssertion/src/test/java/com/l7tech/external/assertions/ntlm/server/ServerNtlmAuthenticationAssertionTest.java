@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -94,21 +95,34 @@ public class ServerNtlmAuthenticationAssertionTest {
 
     @Test
     public void testNegotiateMessage() throws Exception {
-        assertTrue(sendNegotiateMsg() == AssertionStatus.AUTH_REQUIRED);
+        assertTrue(sendNegotiateMsg("NTLM") == AssertionStatus.AUTH_REQUIRED);
     }
 
+    @Test
+    public void shouldReturnAuthRequiredWhenNegotiateMessageSentWithNegotiateScheme() throws Exception {
+        assertTrue(sendNegotiateMsg("Negotiate") == AssertionStatus.AUTH_REQUIRED);
+    }
 
     @Test
     public void testAuthenticateMessage() throws Exception {
-        sendNegotiateMsg();
-        assertTrue(sendAuthenticateMsg() == AssertionStatus.NONE);
+        sendNegotiateMsg("NTLM");
+        assertTrue(sendAuthenticateMsg("NTLM") == AssertionStatus.NONE);
         assertNotNull(context.getVariable(assertion.getVariablePrefix() + "." + NtlmAuthenticationAssertion.USER_LOGIN_NAME));
     }
 
     @Test
+    public void shouldAuthenticateUsingNegotiateScheme() throws Exception {
+        assertEquals(AssertionStatus.AUTH_REQUIRED, sendNegotiateMsg("Negotiate"));
+        assertEquals(AssertionStatus.NONE, sendAuthenticateMsg("Negotiate"));
+        final Object actualAccount = context.getVariable(assertion.getVariablePrefix() + "." + NtlmAuthenticationAssertion.USER_LOGIN_NAME);
+        assertNotNull(actualAccount);
+        assertEquals(NtlmTestConstants.USER, actualAccount);
+    }
+
+    @Test
     public void testAuthenticationWithCache() throws Exception {
-        sendNegotiateMsg();
-        sendAuthenticateMsg();
+        sendNegotiateMsg("NTLM");
+        sendAuthenticateMsg("NTLM");
         //Remove the authentication header
         httpRequestKnob.removeHeader(HttpConstants.HEADER_AUTHORIZATION);
         //Clear the context
@@ -118,8 +132,8 @@ public class ServerNtlmAuthenticationAssertionTest {
 
     @Test
     public void testAuthenticationWithoutCache() throws Exception {
-        sendNegotiateMsg();
-        sendAuthenticateMsg();
+        sendNegotiateMsg("NTLM");
+        sendAuthenticateMsg("NTLM");
         //Remove the authentication header
         httpRequestKnob.removeHeader(HttpConstants.HEADER_AUTHORIZATION);
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMsg, responseMsg);
@@ -131,7 +145,7 @@ public class ServerNtlmAuthenticationAssertionTest {
 
     @Test
     public void testInvalidUser() throws Exception {
-        sendNegotiateMsg();
+        sendNegotiateMsg("NTLM");
         Response response = (Response) context.getResponse().getHttpResponseKnob();
         String type3Msg = HexUtils.encodeBase64(NtlmClient.generateType3Msg(NtlmTestConstants.USER + "INVALID", NtlmTestConstants.PASSWORD, NtlmTestConstants.DOMAIN, NtlmTestConstants.WORKSTATION, response.getChallengesToSend().substring(5)).toByteArray(), true);
         httpRequestKnob.removeHeader(HttpConstants.HEADER_AUTHORIZATION);
@@ -144,7 +158,7 @@ public class ServerNtlmAuthenticationAssertionTest {
     public void testInvalidProvider() throws Exception {
         //set invalid provider
         assertion.setLdapProviderOid(9999999);
-        sendNegotiateMsg();
+        sendNegotiateMsg("NTLM");
         assertTrue(fixture.checkRequest(context) == AssertionStatus.AUTH_FAILED);
     }
 
@@ -165,7 +179,7 @@ public class ServerNtlmAuthenticationAssertionTest {
 //    @Ignore("Need to connect to to Netlogon.")
     @Test
     public void testInvalidChallenge() throws Exception {
-        sendNegotiateMsg();
+        sendNegotiateMsg("NTLM");
         String type3Msg = HexUtils.encodeBase64(NtlmClient.generateType3Msg(NtlmTestConstants.USER, NtlmTestConstants.PASSWORD, NtlmTestConstants.DOMAIN, NtlmTestConstants.WORKSTATION,
                 HexUtils.encodeBase64(NtlmClient.generateType2Msg(NtlmTestConstants.DOMAIN, NtlmTestConstants.WORKSTATION).toByteArray(), true)).toByteArray(), true);
         httpRequestKnob.removeHeader(HttpConstants.HEADER_AUTHORIZATION);
@@ -174,19 +188,19 @@ public class ServerNtlmAuthenticationAssertionTest {
         assertTrue(fixture.checkRequest(context) == AssertionStatus.AUTH_FAILED);
     }
 
-    private AssertionStatus sendNegotiateMsg() throws Exception {
+    private AssertionStatus sendNegotiateMsg(String scheme) throws Exception {
         httpRequestKnob.removeHeader(HttpConstants.HEADER_AUTHORIZATION);
         String type1Msg = HexUtils.encodeBase64(NtlmClient.generateType1Msg(NtlmTestConstants.DOMAIN, NtlmTestConstants.WORKSTATION).toByteArray(), true);
-        HttpHeader header = new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, "NTLM " + type1Msg);
+        HttpHeader header = new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, scheme + " " + type1Msg);
         httpRequestKnob.addHeader(header);
         return fixture.checkRequest(context);
     }
 
-    private AssertionStatus sendAuthenticateMsg() throws Exception {
+    private AssertionStatus sendAuthenticateMsg(String scheme) throws Exception {
         httpRequestKnob.removeHeader(HttpConstants.HEADER_AUTHORIZATION);
         Response response = (Response) context.getResponse().getHttpResponseKnob();
-        String type3Msg = HexUtils.encodeBase64(NtlmClient.generateType3Msg(NtlmTestConstants.USER, NtlmTestConstants.PASSWORD, NtlmTestConstants.DOMAIN, NtlmTestConstants.WORKSTATION, response.getChallengesToSend().substring(5)).toByteArray(), true);
-        HttpHeader header = new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, "NTLM " + type3Msg);
+        String type3Msg = HexUtils.encodeBase64(NtlmClient.generateType3Msg(NtlmTestConstants.USER, NtlmTestConstants.PASSWORD, NtlmTestConstants.DOMAIN, NtlmTestConstants.WORKSTATION, response.getChallengesToSend().substring(scheme.length() + 1)).toByteArray(), true);
+        HttpHeader header = new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, scheme + " " + type3Msg);
         httpRequestKnob.addHeader(header);
         return fixture.checkRequest(context);
     }
