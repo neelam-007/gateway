@@ -1,6 +1,7 @@
 package com.l7tech.util;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.sql.Connection;
@@ -86,18 +87,36 @@ public final class DbUpgradeUtil {
             }
         });
 
-        Pattern upgradePattern = Pattern.compile(UPGRADE_SQL_PATTERN);
         Map<String, String[]> upgradeMap = new HashMap<String, String[]>();
 
         for (File upgradeScript : upgradeScripts) {
-            Matcher matcher = upgradePattern.matcher(upgradeScript.getName());
-            if (matcher.matches()) {
-                String startVersion = matcher.group(1);
-                String destinationVersion = matcher.group(2);
-                upgradeMap.put(startVersion, new String[]{destinationVersion, upgradeScript.getAbsolutePath()});
+            final Pair<String, String> upgradeInfo = isUpgradeScript(upgradeScript.getName());
+            if (upgradeInfo != null) {
+                upgradeMap.put(upgradeInfo.getKey(), new String[]{upgradeInfo.getValue(), upgradeScript.getAbsolutePath()});
             }
         }
         return upgradeMap;
+    }
+
+    /**
+     * Determines if the given file name is valid for an upgrade script.
+     *
+     * Valid upgrade script names must follow a convention upgrade_x-y.sql where x = the start version and y = the destination version.
+     *
+     * @param fileName the file name of the potential upgrade script.
+     * @return a Pair where key = start version and value = destination version or null if the file name is not valid for an upgrade script.
+     */
+    @Nullable
+    public static Pair<String, String> isUpgradeScript(@NotNull final String fileName) {
+        Pair<String, String> upgradeInfo = null;
+        final Pattern pattern = Pattern.compile(UPGRADE_SQL_PATTERN);
+        final Matcher matcher = pattern.matcher(fileName);
+        if (matcher.matches()) {
+            String startVersion = matcher.group(1);
+            String destinationVersion = matcher.group(2);
+            upgradeInfo = new Pair<String, String>(startVersion, destinationVersion);
+        }
+        return upgradeInfo;
     }
 
     private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";

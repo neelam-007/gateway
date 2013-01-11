@@ -23,7 +23,6 @@ public class EmbeddedDbSchemaUpdaterTest {
     private TestableEmbeddedDbSchemaUpdater updater;
     private PlatformTransactionManager transactionManager;
     private EmbeddedDatabase database;
-    private Resource upgradeScriptDirectory;
     private String softwareVersion;
 
     @Before
@@ -31,8 +30,7 @@ public class EmbeddedDbSchemaUpdaterTest {
         database = new EmbeddedDatabaseBuilder().setName("testDerbyDb").setType(EmbeddedDatabaseType.DERBY)
                 .addScript("classpath:com/l7tech/server/util/db/derby/test_ssg_embedded.sql").build();
         transactionManager = new DataSourceTransactionManager(database);
-        upgradeScriptDirectory = new ClassPathResource("com/l7tech/server/util/db/derby");
-        updater = new TestableEmbeddedDbSchemaUpdater(transactionManager, upgradeScriptDirectory);
+        updater = new TestableEmbeddedDbSchemaUpdater(transactionManager, "com/l7tech/server/util/db/derby");
         updater.setDataSource(database);
         softwareVersion = "3.0.0";
     }
@@ -44,7 +42,7 @@ public class EmbeddedDbSchemaUpdaterTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void constructorUpgradeScriptDirectoryDoesNotExist() throws IOException {
-        updater = new TestableEmbeddedDbSchemaUpdater(transactionManager, new ClassPathResource("does/not/exist"));
+        updater = new TestableEmbeddedDbSchemaUpdater(transactionManager, "does/not/exist");
     }
 
     @Test
@@ -117,7 +115,7 @@ public class EmbeddedDbSchemaUpdaterTest {
 
     private class TestableEmbeddedDbSchemaUpdater extends EmbeddedDbSchemaUpdater {
 
-        public TestableEmbeddedDbSchemaUpdater(@NotNull final PlatformTransactionManager transactionManager, @NotNull final Resource upgradeScriptDirectory) throws IOException {
+        public TestableEmbeddedDbSchemaUpdater(@NotNull final PlatformTransactionManager transactionManager, @NotNull final String upgradeScriptDirectory) throws IOException {
             super(transactionManager, upgradeScriptDirectory);
         }
 

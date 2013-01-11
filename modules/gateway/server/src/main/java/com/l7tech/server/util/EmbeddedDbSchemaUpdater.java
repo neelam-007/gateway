@@ -2,11 +2,11 @@ package com.l7tech.server.util;
 
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.DbUpgradeUtil;
+import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.io.Resource;
-import org.springframework.dao.DataAccessException;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -14,8 +14,10 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -27,14 +29,30 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
     private static final Logger logger = Logger.getLogger(EmbeddedDbSchemaUpdater.class.getName());
 
     /**
-     * @param transactionManager     the PlatformTransactionManager.
-     * @param upgradeScriptDirectory the directory which contains the derby upgrade scripts.
-     * @throws IOException if unable to read the ugprade scripts.
+     * Only valid upgrade scripts in the given directory will be used.
+     *
+     * @param transactionManager the PlatformTransactionManager to use for the schema update transaction.
+     * @param resourceDirectory the resource directory which contains the upgrade scripts.
+     * @throws IOException
      */
-    public EmbeddedDbSchemaUpdater(@NotNull final PlatformTransactionManager transactionManager, @NotNull final Resource upgradeScriptDirectory) throws IOException {
+    public EmbeddedDbSchemaUpdater(@NotNull final PlatformTransactionManager transactionManager, @NotNull final String resourceDirectory) throws IOException {
         this.transactionManager = transactionManager;
-        Validate.isTrue(upgradeScriptDirectory.exists());
-        upgradeMap.putAll(DbUpgradeUtil.buildUpgradeMap(upgradeScriptDirectory.getFile()));
+        try {
+            final Resource[] resources = new PathMatchingResourcePatternResolver().getResources(resourceDirectory + "/*.sql");
+            for (final Resource resource : resources) {
+                if (resource.exists()) {
+                    final String resourcePath = resource.getURL().getPath();
+                    final int slashIndex = resourcePath.lastIndexOf('/');
+                    final String resourceName = resourcePath.substring(slashIndex + 1);
+                    final Pair<String, String> upgradeInfo = DbUpgradeUtil.isUpgradeScript(resourceName);
+                    if (upgradeInfo != null) {
+                        upgradeMap.put(upgradeInfo.getKey(), new Pair<String, Resource>(upgradeInfo.getValue(), resource));
+                    }
+                }
+            }
+        } catch (final FileNotFoundException e) {
+            throw new IllegalArgumentException(resourceDirectory + " does not exist.");
+        }
     }
 
     /**
@@ -63,7 +81,7 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
                     throw new SchemaException("Error reading current version from database");
                 }
                 while (!dbVersion.equals(newVersion)) {
-                    final String[] upgradeInfo = upgradeMap.get(dbVersion);
+                    final Pair<String, Resource> upgradeInfo = upgradeMap.get(dbVersion);
                     if (upgradeInfo == null) {
                         final String msg = "No upgrade path from \"" + dbVersion + "\" to \"" + newVersion + "\"";
                         logger.warning(msg);
@@ -81,21 +99,16 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
     /**
      * Performs one version upgrade.
      */
-    private void upgradeSingleVersion(@NotNull final String dbVersion, @NotNull final String[] upgradeInfo, @NotNull final JdbcTemplate jdbcTemplate) {
-        final String nextVersion = upgradeInfo[0];
-        final String upgradeFilePath = upgradeInfo[1];
-        if (StringUtils.isBlank(nextVersion) || StringUtils.isBlank(upgradeFilePath)) {
-            throw new SchemaException("Unknown next version or upgrade file path");
+    private void upgradeSingleVersion(@NotNull final String dbVersion, @NotNull final Pair<String, Resource> upgradeInfo, @NotNull final JdbcTemplate jdbcTemplate) {
+        final String nextVersion = upgradeInfo.getKey();
+        final Resource upgradeResource = upgradeInfo.getValue();
+        if (StringUtils.isBlank(nextVersion) || upgradeResource == null) {
+            throw new SchemaException("Unknown next version or upgrade resource");
         }
         logger.info("Upgrading db from " + dbVersion + "->" + nextVersion);
         try {
-            final String[] upgradeStatements = DbUpgradeUtil.getStatementsFromFile(upgradeFilePath);
-            for (final String statement : upgradeStatements) {
-                jdbcTemplate.execute(statement);
-            }
-        } catch (final IOException e) {
-            throw new SchemaException("Error reading upgrade script", e);
-        } catch (final DataAccessException e) {
+            DerbyDbHelper.runScripts(getConnection(), new Resource[]{upgradeResource}, false);
+        } catch (final SQLException e) {
             throw new SchemaException("Error executing upgrade", e);
         }
         logger.info("Completed upgrade from " + dbVersion + "->" + nextVersion);
@@ -109,5 +122,5 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
     }
 
     private final PlatformTransactionManager transactionManager;
-    private final Map<String, String[]> upgradeMap = new HashMap<String, String[]>();
+    private final Map<String, Pair<String, Resource>> upgradeMap = new HashMap<String, Pair<String, Resource>>();
 }
