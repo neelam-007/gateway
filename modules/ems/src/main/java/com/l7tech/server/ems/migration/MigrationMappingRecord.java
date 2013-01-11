@@ -54,7 +54,7 @@ public class MigrationMappingRecord extends PersistentEntityImp {
         @AttributeOverride(name="entityType", column=@Column(name="source_entity_type", length=128)),
         @AttributeOverride(name="externalId",  column=@Column(name="source_external_id", length=512)),
         @AttributeOverride(name="entityId", column=@Column(name="source_entity_id", length=512)),
-        @AttributeOverride(name="entityValue", column=@Column(name="source_entity_value", length=4096)),
+        @AttributeOverride(name="entityValue", column=@Column(name="source_entity_value", length=8192)),
         @AttributeOverride(name="entityVersion", column=@Column(name="source_entity_version")),
         @AttributeOverride(name="entityName", column=@Column(name="source_entity_name", length=256)),
         @AttributeOverride(name="entityDescription", column=@Column(name="source_entity_description", length=1024))
@@ -83,7 +83,7 @@ public class MigrationMappingRecord extends PersistentEntityImp {
         @AttributeOverride(name="entityType", column=@Column(name="target_entity_type", length=128)),
         @AttributeOverride(name="externalId",  column=@Column(name="target_external_id", length=512)),
         @AttributeOverride(name="entityId", column=@Column(name="target_entity_id", length=512)),
-        @AttributeOverride(name="entityValue", column=@Column(name="target_entity_value", length=4096)),
+        @AttributeOverride(name="entityValue", column=@Column(name="target_entity_value", length=8192)),
         @AttributeOverride(name="entityVersion", column=@Column(name="target_entity_version")),
         @AttributeOverride(name="entityName", column=@Column(name="target_entity_name", length=256)),
         @AttributeOverride(name="entityDescription", column=@Column(name="target_entity_description", length=1024))

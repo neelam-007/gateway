@@ -68,9 +68,10 @@ public class SchemaUpdaterImpl extends JdbcDaoSupport implements SchemaUpdater {
      * -  1 : 1.5
      * -  2 : 1.6
      * -  3 : 1.8 (Fangtooth)
+     * -  4 : (Goatfish)
      * The version should match the value in "version.sql"
      */
-    private static final int SCHEMA_VERSION = 3;
+    private static final int SCHEMA_VERSION = 4;
 
     private final PlatformTransactionManager transactionManager;
     private final Map<Integer,Resource> scriptsBySchemaVersion;

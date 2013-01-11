@@ -158,6 +158,7 @@
                 <entry key="1" value="classpath:com/l7tech/server/ems/resources/db/schema_upgrade_1.sql"/>
                 <entry key="2" value="classpath:com/l7tech/server/ems/resources/db/schema_upgrade_2.sql"/>
                 <entry key="3" value="classpath:com/l7tech/server/ems/resources/db/schema_upgrade_3.sql"/>
+                <entry key="4" value="classpath:com/l7tech/server/ems/resources/db/schema_upgrade_4.sql"/>
             </map>
         </constructor-arg>
         <property name="dataSource" ref="dataSource"/>
