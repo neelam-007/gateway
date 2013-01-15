@@ -1,16 +1,24 @@
 package com.l7tech.server.util;
 
 import com.l7tech.common.io.PortRange;
-import com.l7tech.util.IpProtocol;
-import com.l7tech.util.*;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.FileUtils;
+import com.l7tech.util.InetAddressUtil;
+import com.l7tech.util.IpProtocol;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.*;
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.net.NetworkInterface;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Gathers information from firewall_rules files to build a map of ports in use cluster-wide.
@@ -43,43 +51,214 @@ public class FirewallRules {
         PrintStream ps = new PrintStream(fos);
         try {
             final ArrayList<SsgConnector> list = new ArrayList<SsgConnector>(connectors);
-
+            final Map<String, List<String>> mappedRules = new HashMap<String, List<String>>();
+            //create a rule for each connector and put it in the correct table
+            //if no table was specified default to 'filter'
             for (SsgConnector connector : list) {
-                String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
-                String interfaceName = null;
-                if ( bindAddress != null && ipProtocol.validateAddress(bindAddress).isEmpty() ) {
-                    interfaceName = getInterfaceForIP(bindAddress);
-                    if ( interfaceName == null ) {
-                        logger.log( Level.WARNING, "Could not determine interface for IP address ''{0}'', this connector will be inaccessible.", bindAddress);
-                        continue; // fail closed
-                    }
+                String table = connector.getProperty("table");
+                if(table == null || table.isEmpty()) table = "filter";
+                List<String> rules = mappedRules.get(table);
+                if(rules == null) rules = new ArrayList<String>();
+                rules.addAll(createFirewallRules(connector, ipProtocol));
+                mappedRules.put(table, rules);
+            }
+            for(final Map.Entry<String, List<String>> e : mappedRules.entrySet()){
+                final List<String> rules = e.getValue();
+                if(rules == null || rules.isEmpty()) continue;
+                //IPv6 does not support NAT so we should skip it
+                if(ipProtocol.equals(IpProtocol.IPv6) && "NAT".equalsIgnoreCase(e.getKey())) continue;
+                //print table header
+                ps.println("*" + e.getKey().toLowerCase());
+                for(final String rule : rules){
+                    ps.println(rule);
                 }
-
-                List<PortRange> ranges = connector.getTcpPortsUsed();
-                for (PortRange range : ranges) {
-                    int portStart = range.getPortStart();
-                    int portEnd = range.getPortEnd();
-
-                    ps.print("[0:0] -A INPUT ");
-                    if ( interfaceName != null ) {
-                        ps.print(" -i ");
-                        ps.print(interfaceName);
-                    }
-                    ps.print(" -p tcp -m tcp --dport ");
-                    if (portStart == portEnd)
-                        ps.print(portStart);
-                    else
-                        ps.printf("%d:%d", portStart, portEnd);
-                    ps.print(" -j ACCEPT");
-                    ps.println();
-                }
+                ps.println("COMMIT");
+                ps.println();
             }
             ps.flush();
-
             if (ps.checkError()) throw new IOException("Error while writing firewall rules");
         } finally {
             ps.flush();
         }
+    }
+
+    private static List<String> createFirewallRules(final SsgConnector connector, final IpProtocol ipProtocol){
+        final List<String> rules = new ArrayList<String>();
+
+        String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+        String interfaceName = null;
+        if ( bindAddress != null && ipProtocol.validateAddress(bindAddress).isEmpty() ) {
+            interfaceName = getInterfaceForIP(bindAddress);
+            if ( interfaceName == null ) {
+                logger.log( Level.WARNING, "Could not determine interface for IP address ''{0}'', this connector will be inaccessible.", bindAddress);
+                return null;
+            }
+        }
+        if(SsgConnector.SCHEME_NA.equals(connector.getScheme())){
+            final String rule = createFirewallRule(ipProtocol, connector, interfaceName);
+            if(rule != null) rules.add(rule);
+        }
+        else {
+            List<PortRange> ranges = connector.getTcpPortsUsed();
+            for (PortRange range : ranges) {
+                final StringBuilder builder = new StringBuilder();
+                int portStart = range.getPortStart();
+                int portEnd = range.getPortEnd();
+
+                builder.append("[0:0] -A INPUT ");
+                if ( interfaceName != null ) {
+                    builder.append(" -i ");
+                    builder.append(interfaceName);
+                }
+                builder.append(" -p tcp -m tcp --dport ");
+                if (portStart == portEnd)
+                    builder.append(portStart);
+                else
+                    builder.append(portStart).append(":").append(portEnd);
+                builder.append(" -j ACCEPT");
+                rules.add(builder.toString());
+            }
+        }
+
+        return rules;
+    }
+
+    private static final List<String> MATCH_GENERIC;
+    private static final List<String> MATCH_IMPLICIT_TCP;
+    private static final List<String> MATCH_IMPLICIT_UDP;
+    private static final List<String> MATCH_IMPLICIT_ICMP;
+    private static final Map<String, List<String>> JUMP_TARGET;
+    private static final Map<String, List<String>> PROTOCOL_MATCH;
+
+    static {
+        List<String> g = new ArrayList<String>();
+        g.add("p");
+        g.add("protocol");
+        g.add("s");
+        g.add("src");
+        g.add("source");
+        g.add("d");
+        g.add("dst");
+        g.add("destination");
+        g.add("i");
+        g.add("in-interface");
+        g.add("o");
+        g.add("out-interface");
+        g.add("f");
+        g.add("fragment");
+        MATCH_GENERIC = Collections.unmodifiableList(g);
+
+        List<String> t = new ArrayList<String>();
+        t.add("sport");
+        t.add("source-port");
+        t.add("dport");
+        t.add("destination-port");
+        t.add("tcp-flags");
+        t.add("syn");
+        t.add("tcp-option");
+        MATCH_IMPLICIT_TCP = Collections.unmodifiableList(t);
+
+        List<String> u = new ArrayList<String>();
+        u.add("sport");
+        u.add("source-port");
+        u.add("dport");
+        u.add("destination-port");
+        MATCH_IMPLICIT_UDP = Collections.unmodifiableList(u);
+
+        List<String> i = new ArrayList<String>();
+        i.add("icmp-type");
+        MATCH_IMPLICIT_ICMP = Collections.unmodifiableList(i);
+
+        List<String> redirect = new ArrayList<String>();
+        redirect.add("to-ports");
+
+        Map<String, List<String>> m = new HashMap<String, List<String>>();
+        m.put("REDIRECT", redirect);
+        m.put("ACCEPT", new ArrayList<String>());
+        JUMP_TARGET = Collections.unmodifiableMap(m);
+
+        Map<String, List<String>> n = new HashMap<String, List<String>>();
+        n.put("tcp", MATCH_IMPLICIT_TCP);
+        n.put("udp", MATCH_IMPLICIT_UDP);
+        n.put("icmp", MATCH_IMPLICIT_ICMP);
+        PROTOCOL_MATCH = Collections.unmodifiableMap(n);
+    }
+
+    private static String createFirewallRule(@NotNull IpProtocol ipProtocol, @NotNull final SsgConnector connector, final String interfaceName){
+        final StringBuilder builder = new StringBuilder("[0:0] -A ").append(connector.getProperty("chain"));
+
+        //generic match
+        if ( interfaceName != null ) {
+            builder.append(" -i ").append(interfaceName);
+        }
+        final String generic = getOptions(connector, MATCH_GENERIC);
+        if(!generic.isEmpty()){
+            builder.append(" ").append(generic);
+        }
+
+        //implicit match - based on protocol
+        final String protocol = getProtocol(connector);
+        final String implicit = getOptions(connector, PROTOCOL_MATCH.get(protocol));
+        if(!implicit.isEmpty()){
+            builder.append(" ").append(implicit);
+        }
+        //explicit ?
+
+        //jump target
+        final String jump = connector.getProperty("jump");
+        if(jump != null && !jump.isEmpty()){
+            builder.append(" ").append("-j ").append(jump);
+            final String targetOptions = getOptions(connector, JUMP_TARGET.get(jump));
+            if(targetOptions != null && !targetOptions.isEmpty()){
+                builder.append(" ").append(targetOptions);
+            }
+        }
+
+        final String source = getIpAddressFromConnector(connector, "source");
+        final String destination = getIpAddressFromConnector(connector, "destination");
+        //if we are using ipv4 and we got ipv6 address in the source or destination, don't write it to the ip6tables
+        //and vice-versa
+        if((ipProtocol.equals(IpProtocol.IPv4) && (InetAddressUtil.isValidIpv6Address(source) || InetAddressUtil.isValidIpv4Address(destination))) ||
+                (ipProtocol.equals(IpProtocol.IPv6) && (InetAddressUtil.isValidIpv4Address(source) || InetAddressUtil.isValidIpv4Address(destination)))){
+            return null;
+        }
+
+        return builder.toString();
+    }
+
+    private static final Pattern IP_ADDRESS = Pattern.compile("(?:!\\s+)?(.+?)(?:/(.+))?");
+
+    private static String getIpAddressFromConnector(@NotNull final SsgConnector connector, final String propertyName){
+        final String source = connector.getProperty(propertyName);
+        if(source != null){
+            final Matcher matcher = IP_ADDRESS.matcher(source);
+            if(matcher.matches()){
+                return matcher.group(1);
+            }
+        }
+        return null;
+    }
+
+    private static String getOptions(@NotNull final SsgConnector connector, final List<String> matchers){
+        final StringBuilder sb = new StringBuilder();
+        if(matchers != null){
+            for(String m : matchers){
+                final String dash = m.length() == 1 ? "-" : "--";
+                final String value = connector.getProperty(m);
+                if(value != null && !value.trim().isEmpty()){
+                    sb.append(dash).append(m).append(" ").append(value).append(" ");
+                }
+            }
+        }
+        return sb.toString().trim();
+    }
+
+    private static String getProtocol(@NotNull final SsgConnector connector){
+        String protocol = connector.getProperty("protocol");
+        if(protocol == null){
+            protocol = connector.getProperty("p");
+        }
+        return protocol;
     }
 
     private static String getInterfaceForIP( final String address ) {

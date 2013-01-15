@@ -44,7 +44,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     public static final String SCHEME_HTTPS = "HTTPS";
     public static final String SCHEME_FTP = "FTP";
     public static final String SCHEME_FTPS = "FTPS";
-
+    public static final String SCHEME_NA = "N/A";
     /** Custom cipher list.  If set, should be a comma-separated ordered list, ie "TLS_RSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_3DES_EDE_CBC_SHA". */
     public static final String PROP_TLS_CIPHERLIST = "cipherList";
 
@@ -195,10 +195,12 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
             String[] names = PATTERN_WS_COMMA_WS.split(commaDelimitedList);
             Set<Endpoint> ret = EnumSet.noneOf(Endpoint.class);
             for (String name : names) {
-                try {
-                    ret.add(Endpoint.valueOf(name));
-                } catch (IllegalArgumentException iae) {
-                    logger.log(Level.WARNING, "Ignoring unrecognized endpoint name: " + name);
+                if(name != null || !name.isEmpty()){
+                    try {
+                        ret.add(Endpoint.valueOf(name));
+                    } catch (IllegalArgumentException iae) {
+                        logger.log(Level.WARNING, "Ignoring unrecognized endpoint name: " + name);
+                    }
                 }
             }
             return ret;

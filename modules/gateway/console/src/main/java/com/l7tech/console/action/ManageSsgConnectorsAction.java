@@ -20,11 +20,11 @@ public class ManageSsgConnectorsAction extends SecureAction {
     }
 
     public String getName() {
-        return "Manage Listen Ports";
+        return "Manage Ports";
     }
 
     public String getDescription() {
-        return "View and manage listen ports";
+        return "View and manage ports";
     }
 
     protected String iconResource() {
