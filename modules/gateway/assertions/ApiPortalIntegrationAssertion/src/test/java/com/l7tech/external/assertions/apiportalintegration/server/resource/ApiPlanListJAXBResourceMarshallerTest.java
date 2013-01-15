@@ -5,33 +5,33 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
-import javax.xml.datatype.XMLGregorianCalendar;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
 public class ApiPlanListJAXBResourceMarshallerTest {
-
+    private static final String LAST_UPDATE_STRING = "2012-05-22T16:38:25.025-07:00";
+    private Date lastUpdate;
+    private Calendar calendar;
     private DefaultJAXBResourceMarshaller marshaller;
     private ApiPlanListResource planList;
     private List<ApiPlanResource> plans;
-    private final GregorianCalendar calendar = new GregorianCalendar();
 
     @Before
     public void setup() throws Exception {
         marshaller = new DefaultJAXBResourceMarshaller();
         plans = new ArrayList<ApiPlanResource>();
         planList = new ApiPlanListResource(plans);
+        calendar = new GregorianCalendar(2012, Calendar.MAY, 22, 16, 38, 25);
+        calendar.set(Calendar.MILLISECOND, 25);
+        calendar.setTimeZone(TimeZone.getTimeZone("GMT-7:00"));
+        lastUpdate = calendar.getTime();
     }
 
     @Test
     public void marshall() throws Exception {
-        plans.add(new ApiPlanResource("p1", "pName1", new Date(), "policy xml 1", false));
-        plans.add(new ApiPlanResource("p2", "pName2", new Date(), "policy xml 2", false));
+        plans.add(new ApiPlanResource("p1", "pName1", lastUpdate, "policy xml 1", false));
+        plans.add(new ApiPlanResource("p2", "pName2", lastUpdate, "policy xml 2", false));
 
         final String xml = marshaller.marshal(planList);
 
@@ -58,7 +58,7 @@ public class ApiPlanListJAXBResourceMarshallerTest {
 
     @Test
     public void marshallNullPlanId() throws Exception {
-        plans.add(new ApiPlanResource(null, "pName", new Date(), "policy xml", false));
+        plans.add(new ApiPlanResource(null, "pName", lastUpdate, "policy xml", false));
 
         final String xml = marshaller.marshal(planList);
 
@@ -67,7 +67,7 @@ public class ApiPlanListJAXBResourceMarshallerTest {
 
     @Test
     public void marshallNullPlanName() throws Exception {
-        plans.add(new ApiPlanResource("p1", null, new Date(), "policy xml", false));
+        plans.add(new ApiPlanResource("p1", null, lastUpdate, "policy xml", false));
 
         final String xml = marshaller.marshal(planList);
 
@@ -85,7 +85,7 @@ public class ApiPlanListJAXBResourceMarshallerTest {
 
     @Test
     public void marshallNullPolicyXml() throws Exception {
-        plans.add(new ApiPlanResource("p1", "pName", new Date(), null, false));
+        plans.add(new ApiPlanResource("p1", "pName", lastUpdate, null, false));
 
         final String xml = marshaller.marshal(planList);
 
@@ -105,10 +105,7 @@ public class ApiPlanListJAXBResourceMarshallerTest {
             stringBuilder.append("</l7:PlanName>");
             if (plan.getLastUpdate() != null) {
                 stringBuilder.append("<l7:LastUpdate>");
-                calendar.setTime(plan.getLastUpdate());
-                final XMLGregorianCalendar gregorianCalendar = DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar);
-                final String formatted = gregorianCalendar.toString();
-                stringBuilder.append(formatted);
+                stringBuilder.append(LAST_UPDATE_STRING);
                 stringBuilder.append("</l7:LastUpdate>");
             }
             stringBuilder.append("<l7:PlanPolicy>");

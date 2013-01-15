@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.validatecertificate.server;
 
 import com.l7tech.external.assertions.validatecertificate.ValidateCertificateAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -12,13 +13,18 @@ import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
 import java.util.logging.Level;
+
+import static com.l7tech.external.assertions.validatecertificate.ValidateCertificateAssertion.ERROR;
+import static com.l7tech.external.assertions.validatecertificate.ValidateCertificateAssertion.PASSED;
 
 /**
  * Server side implementation of ValidateCertificateAssertion which validates an X509Certificate.
@@ -31,6 +37,9 @@ public class ServerValidateCertificateAssertion extends AbstractServerAssertion<
         super(assertion);
         if (StringUtils.isBlank(assertion.getSourceVariable())) {
             throw new PolicyAssertionException(assertion, "Source Variable cannot be blank");
+        }
+        if (StringUtils.isBlank(assertion.getVariablePrefix())) {
+            throw new PolicyAssertionException(assertion, "Variable Prefix cannot be blank");
         }
     }
 
@@ -55,23 +64,31 @@ public class ServerValidateCertificateAssertion extends AbstractServerAssertion<
                         assertion.getValidationType(), assertion.getValidationType(), CertValidationProcessor.Facility.OTHER, getAudit());
                 if (result.equals(CertificateValidationResult.OK)) {
                     assertionStatus = AssertionStatus.NONE;
+                    context.setVariable(assertion.getVariablePrefix() + "." + PASSED, true);
                 } else {
-                    getAudit().logAndAudit(AssertionMessages.CERT_VALIDATION_STATUS_FAILURE, subjectDN, assertion.getValidationType().toString(), result.toString());
+                    handleError(null, context, AssertionMessages.CERT_VALIDATION_STATUS_FAILURE,
+                            new String[]{subjectDN, assertion.getValidationType().toString(), result.toString()});
                 }
             } else {
-                logger.log(Level.WARNING, "Context variable " + assertion.getSourceVariable() + " found but is not a certificate");
-                getAudit().logAndAudit(AssertionMessages.CERT_NOT_FOUND, assertion.getSourceVariable());
+                handleError(null, context, AssertionMessages.CERT_NOT_FOUND, new String[]{assertion.getSourceVariable()});
             }
         } catch (final NoSuchVariableException e) {
-            logger.log(Level.WARNING, "No certificate found for variable: " + assertion.getSourceVariable(), ExceptionUtils.getDebugException(e));
-            getAudit().logAndAudit(AssertionMessages.CERT_NOT_FOUND, assertion.getSourceVariable());
+            handleError(e, context, AssertionMessages.CERT_NOT_FOUND, new String[]{assertion.getSourceVariable()});
         } catch (final CertificateException e) {
-            logger.log(Level.WARNING, "Error validating certificate: " + e.getMessage(), ExceptionUtils.getDebugException(e));
-            getAudit().logAndAudit(AssertionMessages.CERT_VALIDATION_FAILURE, subjectDN, assertion.getValidationType().toString(), e.getMessage());
+            handleError(e, context, AssertionMessages.CERT_VALIDATION_FAILURE,
+                    new String[]{subjectDN, assertion.getValidationType().toString(), e.getMessage()});
         } catch (final SignatureException e) {
-            logger.log(Level.WARNING, "Error validating certificate signature", ExceptionUtils.getDebugException(e));
-            getAudit().logAndAudit(AssertionMessages.CERT_VALIDATION_FAILURE, subjectDN, assertion.getValidationType().toString(), "error validating signature");
+            handleError(e, context, AssertionMessages.CERT_VALIDATION_FAILURE,
+                    new String[]{subjectDN, assertion.getValidationType().toString(), e.getMessage()});
         }
         return assertionStatus;
+    }
+
+    private void handleError(@Nullable final Exception ex, final PolicyEnforcementContext context, final AuditDetailMessage message, final String[] msgParams) {
+        final String error = MessageFormat.format(message.getMessage(), msgParams);
+        logger.log(Level.WARNING, error, ExceptionUtils.getDebugException(ex));
+        context.setVariable(assertion.getVariablePrefix() + "." + PASSED, false);
+        context.setVariable(assertion.getVariablePrefix() + "." + ERROR, error);
+        getAudit().logAndAudit(message, msgParams, ex);
     }
 }

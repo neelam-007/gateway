@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.validatecertificate.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.validatecertificate.ValidateCertificateAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.widgets.TextListCellRenderer;
@@ -10,6 +11,8 @@ import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -26,6 +29,8 @@ public class ValidateCertificatePropertiesDialog extends AssertionPropertiesOkCa
     private JCheckBox failCheckBox;
     private JComboBox valTypeComboBox;
     private JTextField srcVarTextField;
+    private JPanel variablePrefixPanel;
+    private TargetVariablePanel targetVariablePanel;
     private InputValidator validators;
 
     public ValidateCertificatePropertiesDialog(final Frame parent, final ValidateCertificateAssertion assertion) {
@@ -55,6 +60,15 @@ public class ValidateCertificatePropertiesDialog extends AssertionPropertiesOkCa
                         }
                     }
                 }, null, true));
+        targetVariablePanel = new TargetVariablePanel();
+        targetVariablePanel.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(final ChangeEvent e) {
+                getOkButton().setEnabled(targetVariablePanel.isEntryValid());
+            }
+        });
+        variablePrefixPanel.setLayout(new BorderLayout());
+        variablePrefixPanel.add(targetVariablePanel, BorderLayout.CENTER);
         validators = new InputValidator(this, getTitle());
         validators.constrainTextFieldToBeNonEmpty(SOURCE_VARIABLE, srcVarTextField, null);
     }
@@ -64,6 +78,8 @@ public class ValidateCertificatePropertiesDialog extends AssertionPropertiesOkCa
         failCheckBox.setSelected(!assertion.isLogOnly());
         valTypeComboBox.setSelectedItem(assertion.getValidationType());
         srcVarTextField.setText(assertion.getSourceVariable());
+        targetVariablePanel.setAssertion(assertion, getPreviousAssertion());
+        targetVariablePanel.setVariable(assertion.getVariablePrefix());
     }
 
     @Override
@@ -72,6 +88,7 @@ public class ValidateCertificatePropertiesDialog extends AssertionPropertiesOkCa
         assertion.setLogOnly(!failCheckBox.isSelected());
         assertion.setValidationType((CertificateValidationType) valTypeComboBox.getSelectedItem());
         assertion.setSourceVariable(srcVarTextField.getText().trim());
+        assertion.setVariablePrefix(targetVariablePanel.getVariable());
         return assertion;
     }
 
