@@ -78,6 +78,7 @@ public class ValidateCertificateAssertion extends Assertion implements SetsVaria
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/check16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

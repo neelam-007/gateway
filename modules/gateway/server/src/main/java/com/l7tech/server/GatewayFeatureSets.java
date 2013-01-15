@@ -383,7 +383,6 @@ public class GatewayFeatureSets {
             ass(WssConfigurationAssertion.class),
             ass(AddWssUsernameToken.class),
             ass(LookupTrustedCertificateAssertion.class),
-            mass("assertion:ValidateCertificate"),
             feat(FEATURE_SIGNED_ATTACHMENTS, "Signed SOAP attachments."));
 
         // Message Validation/Transform
@@ -804,7 +803,8 @@ public class GatewayFeatureSets {
             fs(oAuthInstaller),
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
-            fs(jsonTransformationAssertion));
+            fs(jsonTransformationAssertion),
+            mass("assertion:ValidateCertificate"));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
             "Same features as XML Firewall for now.",
@@ -855,7 +855,8 @@ public class GatewayFeatureSets {
             fs(kerberosAuthenticationAssertion),
             fs(oAuthInstaller),
             fs(policyBundleInstaller),
-            fs(splitJoinAssertions));
+            fs(splitJoinAssertions),
+            mass("assertion:ValidateCertificate"));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
             "Same features as Gateway for now.",
@@ -909,7 +910,8 @@ public class GatewayFeatureSets {
             fs(oAuthInstaller),
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
-            fs(jsonTransformationAssertion));
+            fs(jsonTransformationAssertion),
+            mass("assertion:ValidateCertificate"));
 
         GatewayFeatureSet profileApi =
         fsp("set:Profile:Api", "Layer 7 API Proxy",
@@ -932,6 +934,7 @@ public class GatewayFeatureSets {
                 ass(WssSignElement.class),
                 mass("assertion:ProcessSamlAuthnRequest"),
                 mass("assertion:SetSamlStatus"),
+                mass("assertion:ValidateCertificate"),
                 fs(encass),
                 fs(modularAssertions));
 
