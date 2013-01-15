@@ -367,8 +367,8 @@ function migrateAndDeploy()
   echo "AMI with ID ${AMI_ID} and name ${AMI_NAME} has been created in ${REGION}.  Please shut down Instance ${INSTANCE_ID}" 
 }
 
-#mountAndCopy "us-east-1" "ami-1a249873" "${SSH_KEY_US_EAST}" "${SSH_KEY_US_EAST_FILE}" "${SSH_KEY_US_EAST_PATH}" "${SG_US_EAST}" "${SOURCE_SNAP_US_EAST_64BIT}" "${SOURCE_MIGRATION_INSTANCE_NAME}" 
-SOURCE_MIGRATION_INSTANCE_HOST="ec2-23-20-110-191.compute-1.amazonaws.com"
+mountAndCopy "us-east-1" "ami-1a249873" "${SSH_KEY_US_EAST}" "${SSH_KEY_US_EAST_FILE}" "${SSH_KEY_US_EAST_PATH}" "${SG_US_EAST}" "${SOURCE_SNAP_US_EAST_64BIT}" "${SOURCE_MIGRATION_INSTANCE_NAME}" 
+#SOURCE_MIGRATION_INSTANCE_HOST="ec2-23-20-110-191.compute-1.amazonaws.com"
 
 if [ -z "${SOURCE_MIGRATION_INSTANCE_HOST}" ] ; then
   echo "Source was not successfully exported."
