@@ -84,6 +84,6 @@ command -v ec2-register >/dev/null 2>&1 || { echo >&2 "${0} requires ec2-registe
 
 ec2-bundle-vol --generate-fstab -v ${BUILD_DIR} -s 4096 -r ${ARCH} --user 3453-1765-7600 --no-inherit --kernel ${KERNEL} --ramdisk ${RAM} -d ${MANIFEST} -c ${CERT} -k ${PK};
 ec2-upload-bundle --retry -m ${MANIFEST}/image.manifest.xml -a AKIAJ3C2GINP622T5DHA -s McXf6m6mYeE8Xo1Jfkl9pTwv9g8M4VbkTVWDpMld --location ${LOCATION} -b ${S3_DIRECTORY};
-ec2-register ${S3_DIRECTORY}/image.manifest.xml -C ${CERT} -K ${PK} --region ${REGION};
+ec2-register ${S3_DIRECTORY}/image.manifest.xml -C ${CERT} -K ${PK} --region ${REGION} --kernel ${KERNEL} --ramdisk ${RAM};
 
 exit 0;
