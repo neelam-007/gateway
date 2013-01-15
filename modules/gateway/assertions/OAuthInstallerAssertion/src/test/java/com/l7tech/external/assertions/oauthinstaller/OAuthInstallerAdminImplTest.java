@@ -39,6 +39,8 @@ public class OAuthInstallerAdminImplTest {
 
     //todo test - validate that each service in an enumeration contains a unique id.
     // todo test coverage for reacahibility of folders
+    // todo test that all policies with the same name have the same guid.
+    // todo check that logic for finding the new guid for a policy is based on the name and not the guid.
 
     /**
      * Validates that the correct number and type of spring events are published for a dry run.
@@ -163,20 +165,20 @@ public class OAuthInstallerAdminImplTest {
         assertEquals("Incorrect number of bundles found.", 5, allBundles.size());
         BundleInfo expected;
 
-        expected = new BundleInfo("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "1.0", "OAuth 1.0", "Core Services and Test Client");
+        expected = new BundleInfo("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "2.0", "OAuth 1.0", "Core Services and Test Client");
         assertTrue(allBundles.contains(expected));
 
-        expected = new BundleInfo("ba525763-6e55-4748-9376-76055247c8b1", "1.0", "OAuth 2.0", "Auth Server and Test Clients");
+        expected = new BundleInfo("ba525763-6e55-4748-9376-76055247c8b1", "2.0", "OAuth 2.0", "Auth Server and Test Clients");
         assertTrue(allBundles.contains(expected));
 
-        expected = new BundleInfo("f69c7d15-4999-4761-ab26-d29d58c0dd57", "1.0", "Secure Zone OVP", "OVP - OAuth Validation Point");
+        expected = new BundleInfo("f69c7d15-4999-4761-ab26-d29d58c0dd57", "2.0", "Secure Zone OVP", "OVP - OAuth Validation Point");
         assertTrue(allBundles.contains(expected));
 
-        expected = new BundleInfo("b082274b-f00e-4fbf-bbb7-395a95ca2a35", "1.0", "Secure Zone Storage", "Token and Client Store");
+        expected = new BundleInfo("b082274b-f00e-4fbf-bbb7-395a95ca2a35", "2.0", "Secure Zone Storage", "Token and Client Store");
         expected.addJdbcReference("OAuth");
         assertTrue(allBundles.contains(expected));
 
-        expected = new BundleInfo("a07924c0-0265-42ea-90f1-2428e31ae5ae", "1.0", "OAuth Manager", "Manager utility for Client and Token store for OAuth 1.0 and 2.0");
+        expected = new BundleInfo("a07924c0-0265-42ea-90f1-2428e31ae5ae", "2.0", "OAuth Manager", "Manager utility for Client and Token store for OAuth 1.0 and 2.0");
         assertTrue(allBundles.contains(expected));
     }
 
@@ -507,6 +509,7 @@ public class OAuthInstallerAdminImplTest {
 
         final int [] numPolicyCommentsFound = new int[1];
         final int [] numServiceCommentsFound = new int[1];
+        final String[] otkToolkitVersion = new String[1];
 
         final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
             @Override
@@ -520,6 +523,7 @@ public class OAuthInstallerAdminImplTest {
                     }
                     final BundleInfo bundleInfo = installEvent.getContext().getBundleInfo();
 
+                    final String bundleVersion = bundleInfo.getVersion();
                     try {
                         {
                             final Document policyEnum = installEvent.getContext().getBundleResolver().getBundleItem(bundleInfo.getId(), BundleResolver.BundleItem.POLICY, false);
@@ -531,7 +535,8 @@ public class OAuthInstallerAdminImplTest {
 
 
                                 savePolicyCallback.prePublishCallback(bundleInfo, "not important", policyResource);
-                                verifyCommentAdded(policyResource);
+
+                                verifyCommentAdded(policyResource, bundleVersion, otkToolkitVersion[0]);
                                 numPolicyCommentsFound[0]++;
                             }
                         }
@@ -546,7 +551,7 @@ public class OAuthInstallerAdminImplTest {
 
 
                                 savePolicyCallback.prePublishCallback(bundleInfo, "not important", policyResource);
-                                verifyCommentAdded(policyResource);
+                                verifyCommentAdded(policyResource, bundleVersion, otkToolkitVersion[0]);
                                 numServiceCommentsFound[0]++;
                             }
                         }
@@ -561,6 +566,8 @@ public class OAuthInstallerAdminImplTest {
 
             }
         });
+
+        otkToolkitVersion[0] = admin.getOAuthToolkitVersion();
 
         final AsyncAdminMethods.JobId<ArrayList> jobId =
                 admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1"), -5002, new HashMap<String, BundleMapping>(), null);
@@ -590,14 +597,14 @@ public class OAuthInstallerAdminImplTest {
         assertFalse(dbSchema.trim().isEmpty());
     }
 
-    private void verifyCommentAdded(Document policyResource) {
+    private void verifyCommentAdded(Document policyResource, String bundleVersion, String otkToolkitVersion) {
         // verify version was added
         final Element allElm = XmlUtil.findFirstChildElement(policyResource.getDocumentElement());
         final Element comment = XmlUtil.findFirstChildElement(allElm);
         assertTrue(comment.getLocalName().equals("CommentAssertion"));
         final Element commentValueElm = XmlUtil.findFirstChildElement(comment);
         final String commentValue = commentValueElm.getAttribute("stringValue");
-        assertEquals("Invalid comment value found", "Component version 1.0 installed by OAuth installer version otk1.0", commentValue);
+        assertEquals("Invalid comment value found", "Component version " + bundleVersion + " installed by OAuth installer version " + otkToolkitVersion, commentValue);
     }
 
 
