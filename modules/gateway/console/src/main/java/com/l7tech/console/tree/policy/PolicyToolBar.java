@@ -280,7 +280,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
 
         // Create a new action every time, since the disable/enable status may be always changed.
         //noinspection UnnecessaryLocalVariable
-        DisableOrEnableAssertionAction enableOrDisableAction = (lastAssertionNode.asAssertion().isEnabled())?
+        DisableOrEnableAssertionAction enableOrDisableAction = (lastAssertionNode.isAssertionEnabled())?
             new DisableAssertionAction(lastAssertionNode) {
                 @Override
                 public void performAction() {
@@ -605,6 +605,6 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             lastAssertionNode != null &&
             !lastAssertionNode.isDescendantOfInclude(false) &&
             assertionTree != null &&
-            assertionTree.getSelectionCount() > 0;        
+            assertionTree.getSelectionCount() > 0;
     }
 }

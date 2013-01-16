@@ -139,4 +139,39 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
     public String getName(boolean decorate) {
         return DefaultAssertionPolicyNode.getNameFromMeta(asAssertion(), decorate, true);
     }
+
+    /**
+     * Update the attribute "ancestorDisabled" of all descendants.
+     *
+     * @param ancestorDisabled true if the ancestor is disabled.
+     */
+    public void updateDescendantAttributeAncestorDisabled(boolean ancestorDisabled) {
+        int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            AssertionTreeNode child = (AssertionTreeNode) getChildAt(i);
+
+            if (ancestorDisabled || isAssertionEnabled()) {
+                child.setAncestorDisabled(ancestorDisabled);
+            }
+
+            if (child instanceof  CompositeAssertionTreeNode) {
+                ((CompositeAssertionTreeNode)child).updateDescendantAttributeAncestorDisabled(ancestorDisabled);
+            }
+        }
+    }
+    /**
+     * Enable all descendant nodes of the composite assertion tree node and update their attribute "ancestorDisabled" to "false".
+     */
+    public void enableAllDescendants() {
+        int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            AssertionTreeNode child = (AssertionTreeNode) getChildAt(i);
+            child.asAssertion().setEnabled(true);
+            child.setAncestorDisabled(false);
+
+            if (child instanceof  CompositeAssertionTreeNode) {
+                ((CompositeAssertionTreeNode)child).enableAllDescendants();
+            }
+        }
+    }
 }

@@ -48,6 +48,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
 
     protected AT assertion;
     private SoftReference<String> assertionPropsAsString;
+    private Boolean ancestorDisabled;  // A flag to indicate if the current node's ancestor is disabled.  Status: null, true, false, where null means the flag hasn't initialized.
 
     protected static boolean decorateComment = true; // A flag to show whether it needs to decorate the comment such as using html tags.  Default value is true.
     /**
@@ -364,6 +365,39 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     }
 
     /**
+     * Check if the node's ancestor is disabled.
+     * The attribute "ancestorDisabled" will be cached after this method called.
+     *
+     * @return true if there exists an ancestor disabled.
+     */
+    public boolean isAncestorDisabled() {
+        if (ancestorDisabled != null) return ancestorDisabled;
+
+        AssertionTreeNode parent = (AssertionTreeNode) getParent();
+        if (parent == null) ancestorDisabled = false;
+        else ancestorDisabled = parent.isAncestorDisabled()? true : !parent.assertion.isEnabled();
+
+        return ancestorDisabled;
+    }
+
+    public void setAncestorDisabled(boolean ancestorDisabled) {
+        this.ancestorDisabled = ancestorDisabled;
+    }
+
+    /**
+     * Check if an assertion node is enabled or disabled.
+     * If there exists an ancestor disabled, then the node must be disabled.
+     * Otherwise, the node enabling status depends its own enabling status.
+     *
+     * @return true if the node is evaluated as "enabled".
+     */
+    public boolean isAssertionEnabled() {
+        return isAncestorDisabled()?
+            false :                   // If the ancestor is disabled, then the node must be disabled.
+            assertion.isEnabled();    // Otherwise, the result depends on the node's enabling status.
+    }
+
+    /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
      *
@@ -375,7 +409,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         list.addAll(Arrays.asList(super.getActions()));
 
         // Add Expand/Collapse assertion action
-        // Note: the expand/collaspe assertion action is not limited into the below condition checking, since the action is purely for GUI displaying purpose.
+        // Note: the expand/collapse assertion action is not limited into the below condition checking, since the action is purely for GUI displaying purpose.
         ExpandOrCollapseAssertionAction expandOrCollapseAssertionAction;
         if (isExpanded()) {
             expandOrCollapseAssertionAction = new CollapseAssertionAction();
@@ -426,13 +460,6 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                 da.setEnabled(canDelete());
                 list.add(da);
 
-                /*
-                commented out as it is currently NOT supported
-                Action ea = new ExplainAssertionAction();
-                ea.setEnabled(canDelete());
-                list.add(ea);
-                */
-
                 Action mu = new AssertionMoveUpAction(this);
                 mu.setEnabled(canMoveUp());
                 list.add(mu);
@@ -442,10 +469,15 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                 list.add(md);
 
                 // Add a disable assertion action or an enable assertion action.
-                if (assertion.isEnabled()) {
+                if (isAssertionEnabled()) {
                     list.add(new DisableAssertionAction(this));
                 } else {
                     list.add(new EnableAssertionAction(this));
+                }
+
+                // Add "Enable All Assertions" action onto a composite tree node.
+                if (this instanceof CompositeAssertionTreeNode) {
+                    list.add(new EnableAllAssertions(this));
                 }
 
                 list.add( new AddEditDeleteCommentAction(this));
@@ -455,14 +487,6 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         } catch (Exception e) {
             throw new RuntimeException("Couldn't get current service or policy", e);
         }
-
-        /*
-            Action sp = new SavePolicyAction(this);
-            list.add(sp);
-
-            Action vp = new ValidatePolicyAction((AssertionTreeNode)getRoot());
-            list.add(vp);
-        */
 
         list.add(new AssertionInfoAction(assertion));
         return list.toArray(new Action[list.size()]);
@@ -677,6 +701,42 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     }
 
     /**
+     * Enable all disabled ancestors of the current tree node and update these ancestors' attribute "ancestorDisabled".
+     */
+    public void enableAncestors() {
+        CompositeAssertionTreeNode parent = (CompositeAssertionTreeNode) getParent();
+        CompositeAssertionTreeNode processedPrevNode = null;
+
+        while (parent != null) {
+            boolean isParentEnabled = parent.isAssertionEnabled();
+
+            if (isParentEnabled) {
+                // If an ancestor is found to be enabled, then stop searching.
+                break;
+            } else {
+                // Enable the parent (one of ancestors)
+                parent.asAssertion().setEnabled(true);
+                parent.setAncestorDisabled(false);
+
+                // Disable only next level children of the parent and update their attribute "ancestorDisabled" as "false".
+                // In UI, the parent's children should be shown as "disabled" as well, so their enabling status is forced to
+                // change to "disabled" (i.e., setEnabled(false)).
+                int count = parent.getChildCount();
+                for (int i = 0; i < count; i++) {
+                    AssertionTreeNode child = (AssertionTreeNode) parent.getChildAt(i);
+                    if (child != this && child != processedPrevNode) {
+                        child.asAssertion().setEnabled(false);
+                        child.setAncestorDisabled(false);
+                    }
+                }
+            }
+
+            processedPrevNode = parent;
+            parent = (CompositeAssertionTreeNode) parent.getParent();
+        }
+    }
+
+    /**
      * Does the assertion node accepts the abstract tree node
      *
      * @param node the node to accept
@@ -725,4 +785,3 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         return isDescendantOfInclude(true);
     }
 }
-

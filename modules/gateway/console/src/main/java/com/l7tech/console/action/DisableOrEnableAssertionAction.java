@@ -1,9 +1,9 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.CompositeAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
@@ -81,16 +81,16 @@ public abstract class DisableOrEnableAssertionAction extends NodeAction {
     }
 
     /**
-     * Disable the assertion and its descendant if applicable
+     * Disable the assertion and update ancestorDisabled attribute if applicable
      * @param node: an assertion node to be disabled.
      */
     private void disableAssertion(AssertionTreeNode node) {
         // Update the disable status of the assertion associated with the node.
-        Assertion assertion = node.asAssertion();
-        assertion.setEnabled(false);
-        // Update the disable status of its descendant.
-        if (assertion instanceof CompositeAssertion) {
-            ((CompositeAssertion)assertion).disableDescendant();
+        node.asAssertion().setEnabled(false);
+
+        // If the node is a composite assertion, then update the attribute "ancestorDisable" of its descendants
+        if (node instanceof CompositeAssertionTreeNode) {
+            ((CompositeAssertionTreeNode) node).updateDescendantAttributeAncestorDisabled(true);
         }
     }
 
@@ -100,10 +100,16 @@ public abstract class DisableOrEnableAssertionAction extends NodeAction {
      */
     private void enableAssertion(AssertionTreeNode node) {
         // Update the enable status of the assertion associated with the node.
-        Assertion assertion = node.asAssertion();
-        assertion.setEnabled(true);
-        // Update the enable status of its ancestor.
-        assertion.enableAncestor();
+        node.asAssertion().setEnabled(true);
+        node.setAncestorDisabled(false);
+
+        // If the node is a composite assertion, then update the attribute "ancestorDisable" of its descendants
+        if (node instanceof CompositeAssertionTreeNode) {
+            ((CompositeAssertionTreeNode) node).updateDescendantAttributeAncestorDisabled(false);
+        }
+
+        // Enable its disabled ancestors
+        node.enableAncestors();
     }
 
     /**

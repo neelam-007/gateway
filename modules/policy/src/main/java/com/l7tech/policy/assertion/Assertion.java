@@ -100,17 +100,6 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     /**
-     * Enable all parents if the current assertion gets enabled.
-     */
-    public void enableAncestor() {
-        CompositeAssertion parent = getParent();
-        while (parent != null) {
-            parent.setEnabled(true);
-            parent = parent.getParent();
-        }
-    }
-
-    /**
      * Notify this node that a child has been added, removed, or changed underneath it.  This causes the
      * entire policy tree to be traversed, renumbering all nodes and filling in any missing parent references.
      */
