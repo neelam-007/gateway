@@ -477,7 +477,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
 
                 // Add "Enable All Assertions" action onto a composite tree node.
                 if (this instanceof CompositeAssertionTreeNode) {
-                    list.add(new EnableAllAssertions(this));
+                    list.add(new EnableAllAssertionsAction(this));
                 }
 
                 list.add( new AddEditDeleteCommentAction(this));

@@ -13,8 +13,8 @@ import javax.swing.tree.TreeNode;
  *
  * @author ghuang
  */
-public class EnableAllAssertions extends NodeAction {
-    public EnableAllAssertions(AssertionTreeNode node) {
+public class EnableAllAssertionsAction extends NodeAction {
+    public EnableAllAssertionsAction(AssertionTreeNode node) {
         super(node);
     }
 
