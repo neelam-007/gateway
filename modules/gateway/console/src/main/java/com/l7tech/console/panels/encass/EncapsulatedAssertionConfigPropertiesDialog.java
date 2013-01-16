@@ -4,6 +4,7 @@ import com.l7tech.console.panels.IconSelectorDialog;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.SimpleTableModel;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.console.panels.encass.EncapsulatedAssertionConstants.MAX_CHARS_FOR_NAME;
 import static com.l7tech.gui.util.TableUtil.column;
 import static com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig.*;
 import static com.l7tech.util.Functions.propertyTransform;
@@ -71,6 +73,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JButton moveInputUpButton;
     private JButton moveInputDownButton;
     private JTextArea descriptionTextArea;
+    private JButton cloneInputButton;
+    private JButton cloneOutputButton;
 
     private SimpleTableModel<EncapsulatedAssertionArgumentDescriptor> inputsTableModel;
     private SimpleTableModel<EncapsulatedAssertionResultDescriptor> outputsTableModel;
@@ -99,7 +103,9 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         this.config = config;
         this.readOnly = readOnly;
         this.usedConfigNames = usedConfigNames;
-        if (config.getName() != null) {
+        if (config.getGuid() != null && config.getName() != null) {
+            // only exclude its name from the reserved names if it already exists in the database
+            // a new config may initially have the same name as an existing config
             this.usedConfigNames.remove(config.getName());
         }
         init();
@@ -122,6 +128,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         Utilities.deuglifySplitPane(inputsOutputsSplitPane);
 
         inputValidator.constrainTextFieldToBeNonEmpty("name", nameField, null);
+        inputValidator.constrainTextFieldToMaxChars("name", nameField, MAX_CHARS_FOR_NAME, null);
         inputValidator.addRule(new InputValidator.ComponentValidationRule(nameField) {
             @Override
             public String getValidationError() {
@@ -171,11 +178,13 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             column("Label", 30, 140, 99999, argumentGuiLabelExtractor),
             column("Default", 30, 140, 99999, argumentDefaultValueExtractor));
         inputsTable.getColumnModel().getColumn(2).setCellRenderer(dataTypePrettyPrintingTableCellRenderer());
+        inputsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         outputsTableModel = TableUtil.configureTable(outputsTable,
             column("Name", 30, 140, 99999, resultNameExtractor),
             column("Type", 30, 140, 99999, resultTypeExtractor, DataType.class));
         outputsTable.getColumnModel().getColumn(1).setCellRenderer(dataTypePrettyPrintingTableCellRenderer());
+        outputsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         RunOnChangeListener enabler = new RunOnChangeListener(new Runnable() {
             @Override
@@ -217,6 +226,29 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         moveInputUpButton.addActionListener(TableUtil.createMoveUpAction(inputsTable, inputsTableModel));
         moveInputDownButton.addActionListener(TableUtil.createMoveDownAction(inputsTable, inputsTableModel));
 
+        cloneInputButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final EncapsulatedAssertionArgumentDescriptor selected = getSelectedInput();
+                if (selected != null) {
+                    final EncapsulatedAssertionArgumentDescriptor clone = selected.getCopy(selected.getEncapsulatedAssertionConfig(), false);
+                    clone.setArgumentName(EntityUtils.getNameForCopy(selected.getArgumentName()).replaceAll(" ", "_"));
+                    doInputProperties(clone, true);
+                }
+            }
+        });
+        cloneOutputButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final EncapsulatedAssertionResultDescriptor selected = getSelectedOutput();
+                if (selected != null) {
+                    final EncapsulatedAssertionResultDescriptor clone = selected.getCopy(selected.getEncapsulatedAssertionConfig(), false);
+                    clone.setResultName(EntityUtils.getNameForCopy(selected.getResultName()).replaceAll(" ", "_"));
+                    doOutputProperties(clone, true);
+                }
+            }
+        });
+
         Utilities.setDoubleClickAction(inputsTable, editInputButton);
         Utilities.setDoubleClickAction(outputsTable, editOutputButton);
 
@@ -248,10 +280,12 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     }
 
     // Find names already used by objects in the specified table model, excluding the specified self object.
-    private <RT> Set<String> findUsedNames(SimpleTableModel<RT> tableModel, Functions.Unary<String, RT> nameExtractor, RT self) {
+    private <RT> Set<String> findUsedNames(SimpleTableModel<RT> tableModel, Functions.Unary<String, RT> nameExtractor, @Nullable RT self) {
         Set<String> usedNames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
         usedNames.addAll(Functions.map(tableModel.getRows(), nameExtractor));
-        usedNames.remove(optional(nameExtractor.call(self)).orSome(""));
+        if(self != null) {
+            usedNames.remove(optional(nameExtractor.call(self)).orSome(""));
+        }
         return usedNames;
     }
 
@@ -259,7 +293,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         if (input == null)
             return;
 
-        Set<String> usedNames = findUsedNames(inputsTableModel, argumentNameExtractor, input);
+        Set<String> usedNames = findUsedNames(inputsTableModel, argumentNameExtractor, needsInsert ? null : input);
         final EncapsulatedAssertionArgumentDescriptorPropertiesDialog dlg = new EncapsulatedAssertionArgumentDescriptorPropertiesDialog(this, input, usedNames);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
@@ -284,7 +318,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private void doOutputProperties(final EncapsulatedAssertionResultDescriptor output, final boolean needsInsert) {
         if (output == null)
             return;
-        Set<String> usedNames = findUsedNames(outputsTableModel, resultNameExtractor, output);
+        Set<String> usedNames = findUsedNames(outputsTableModel, resultNameExtractor, needsInsert ? null : output);
         final EncapsulatedAssertionResultDescriptorPropertiesDialog dlg = new EncapsulatedAssertionResultDescriptorPropertiesDialog(this, output, usedNames);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
@@ -309,11 +343,15 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private <RT> ActionListener makeDeleteRowListener(final JTable table, final SimpleTableModel<RT> tableModel) {
         return new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                RT row = tableModel.getRowObject(table.getSelectedRow());
-                if (row == null)
-                    return;
-                tableModel.removeRow(row);
+            public void actionPerformed(final ActionEvent e) {
+                final int[] selectedIndices = table.getSelectedRows();
+                final List<RT> rows = new ArrayList<RT>(selectedIndices.length);
+                for (int i = 0; i < selectedIndices.length; i++) {
+                    rows.add(tableModel.getRowObject(selectedIndices[i]));
+                }
+                for (final RT row : rows) {
+                    tableModel.removeRow(row);
+                }
             }
         };
     }
@@ -388,10 +426,12 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         boolean haveInput = getSelectedInput() != null;
         editInputButton.setEnabled(!readOnly && haveInput);
         deleteInputButton.setEnabled(!readOnly && haveInput);
+        cloneInputButton.setEnabled(!readOnly && haveInput);
 
         boolean haveOutput = getSelectedOutput() != null;
         editOutputButton.setEnabled(!readOnly && haveOutput);
         deleteOutputButton.setEnabled(!readOnly && haveOutput);
+        cloneOutputButton.setEnabled(!readOnly && haveOutput);
 
         setEnabled(!readOnly, addInputButton, addOutputButton, changePolicyButton, selectIconButton, paletteFolderComboBox, nameField, moveInputDownButton, moveInputUpButton);
     }

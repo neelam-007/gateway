@@ -96,6 +96,40 @@ public class InputValidator implements FocusListener {
     }
 
     /**
+     * A ComponentValidationRule which only validates the component if it is enabled.
+     */
+    public static abstract class EnabledComponentValidationRule extends ComponentValidationRule {
+        final ValidationRule additionalConstraints;
+
+        /**
+         * @param component the component to validate.
+         * @param additionalConstraints any additional constraints which should be validated.
+         */
+        protected EnabledComponentValidationRule(@NotNull final Component component, @Nullable ValidationRule additionalConstraints) {
+            super(component);
+            this.additionalConstraints = additionalConstraints;
+        }
+
+        /**
+         * Validate the component and execute any additional validations.
+         * @return an error message if the component is invalid.
+         */
+        protected abstract String validateComponent();
+
+        @Override
+        public String getValidationError() {
+            String error = null;
+            if (getComponent().isEnabled()) {
+                error = validateComponent();
+                if (error == null && additionalConstraints != null) {
+                    error = additionalConstraints.getValidationError();
+                }
+            }
+            return error;
+        }
+    }
+
+    /**
      * Validation Rule associated with a number spinner.
      */
     public static class NumberSpinnerValidationRule extends ComponentValidationRule {
@@ -359,17 +393,46 @@ public class InputValidator implements FocusListener {
                                                          final JTextComponent comp,
                                                          @Nullable final ValidationRule additionalConstraints)
     {
-        if (comp == null) throw new NullPointerException();
-        final String mess = "The " + fieldName + " field must not be empty.";
-        ValidationRule rule = new ComponentValidationRule(comp) {
+        final ValidationRule rule = new EnabledComponentValidationRule(comp, additionalConstraints) {
             @Override
-            public String getValidationError() {
-                if (!getComponent().isEnabled())
-                    return null;
+            protected String validateComponent() {
+                String error = null;
+                final String val = comp.getText();
+                if (val == null || val.trim().isEmpty()) {
+                    error = "The " + fieldName + " field must not be empty.";
+                }
+                return error;
+            }
+        };
 
-                String val = comp.getText();
-                if (val == null || val.trim().isEmpty()) return mess;
-                return additionalConstraints != null ? additionalConstraints.getValidationError() : null;
+        addRuleForComponent(comp, rule);
+        return rule;
+    }
+
+    /**
+     * Registers a ValidationRule on the text field to ensure it does not contain over a max number of characters.
+     *
+     * If the text field is not enabled, no validation will be performed.
+     *
+     * @param fieldName the name of the text field.
+     * @param comp the text field to validate.
+     * @param maxChars the maximum number of characters allowed in the text field.
+     * @param additionalConstraints any additional constraints that should be validated.
+     * @return the ValidationRule registered on the component which ensures it does not contain over a max number of characters.
+     */
+    public ValidationRule constrainTextFieldToMaxChars(@NotNull final String fieldName,
+                                                       @NotNull final JTextComponent comp,
+                                                       final int maxChars,
+                                                       @Nullable final ValidationRule additionalConstraints) {
+        final ValidationRule rule = new EnabledComponentValidationRule(comp, additionalConstraints) {
+            @Override
+            protected String validateComponent() {
+                String error = null;
+                final String val = comp.getText();
+                if (val != null && val.length() > maxChars) {
+                    error = "The " + fieldName + " field must have a maximum of " + maxChars + " characters.";
+                }
+                return error;
             }
         };
 

@@ -13,6 +13,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Set;
 
+import static com.l7tech.console.panels.encass.EncapsulatedAssertionConstants.MAX_CHARS_FOR_NAME;
+
 public class EncapsulatedAssertionResultDescriptorPropertiesDialog extends JDialog {
     private JPanel contentPane;
     private JButton okButton;
@@ -43,6 +45,7 @@ public class EncapsulatedAssertionResultDescriptorPropertiesDialog extends JDial
         });
 
         inputValidator.addRule(new ContextVariableTextComponentValidationRule("Name", nameField, false, false));
+        inputValidator.constrainTextFieldToMaxChars("Name", nameField, MAX_CHARS_FOR_NAME, null);
         inputValidator.addRule(new InputValidator.ComponentValidationRule(nameField) {
             @Override
             public String getValidationError() {
