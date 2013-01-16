@@ -16,7 +16,7 @@ public class LengthSuffixSelector implements ExpandVariables.SuffixSelector {
                 return new ExpandVariables.Selector.Selection(((Collection) value).size());
             }
         }
-        String msg = handler.handleBadVariable(MessageFormat.format("{0} on {1}", getSuffix(), value.getClass().getName()));
+        String msg = handler.handleBadVariable(MessageFormat.format("{0} on {1}", getSuffix(), value == null ? "Null" : value.getClass().getName()));
         if (strict) throw new IllegalArgumentException(msg);
         return ExpandVariables.Selector.NOT_PRESENT;
     }
