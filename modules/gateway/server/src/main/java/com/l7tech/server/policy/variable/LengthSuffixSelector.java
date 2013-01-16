@@ -9,13 +9,12 @@ public class LengthSuffixSelector implements ExpandVariables.SuffixSelector {
 
     @Override
     public ExpandVariables.Selector.Selection select(Object value, Syntax.SyntaxErrorHandler handler, boolean strict) {
-        if (value == null) {
-            return new ExpandVariables.Selector.Selection(null, getSuffix());
-        }
-        if (value.getClass().isArray()) {
-            return new ExpandVariables.Selector.Selection(((Object[])value).length);
-        } else if (value instanceof Collection) {
-            return new ExpandVariables.Selector.Selection(((Collection) value).size());
+        if (value != null) {
+            if (value.getClass().isArray()) {
+                return new ExpandVariables.Selector.Selection(((Object[]) value).length);
+            } else if (value instanceof Collection) {
+                return new ExpandVariables.Selector.Selection(((Collection) value).size());
+            }
         }
         String msg = handler.handleBadVariable(MessageFormat.format("{0} on {1}", getSuffix(), value.getClass().getName()));
         if (strict) throw new IllegalArgumentException(msg);
