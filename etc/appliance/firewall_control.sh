@@ -36,6 +36,15 @@ if [ ! -z "${2}" ] ; then
     fi
 
     find "${RULES_FILES}" -type f -exec cat {} \; > "${RULES_HOME}/${RULES_EXT}"
-    cat ${RULES_SOURCE} ${RULES_HOME}/${RULES_EXT} > ${RULES_HOME}/${RULES_ALL}
+
+    while read line
+    do
+        echo $line >> "${RULES_HOME}/${RULES_ALL}"
+        echo $line | grep -q "# ADD CUSTOM ALLOW RULES HERE"
+        [ $? -eq 0 ] && echo | awk '/*filter/,/COMMIT/' "${RULES_HOME}/${RULES_EXT}" | awk 'END{print $(NF-1)}' RS= FS="*filter|COMMIT" >> "${RULES_HOME}/${RULES_ALL}"
+    	echo $line | grep -q "# INSERT CUSTOM NAT RULES HERE"
+    	[ $? -eq 0 ] && echo | awk '/*nat/,/COMMIT/' "${RULES_HOME}/${RULES_EXT}" | awk 'END{print $(NF-1)}' RS= FS="*nat|COMMIT" >> "${RULES_HOME}/${RULES_ALL}"
+    done < "${RULES_SOURCE}"
+
     cat "${RULES_HOME}/${RULES_ALL}" | "${RESTORE_COMMAND}"
 fi
