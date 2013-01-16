@@ -43,6 +43,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     private JButton createButton;
     private JButton propertiesButton;
     private JButton removeButton;
+    private JButton cloneButton;
 
     private SimpleTableModel<EncapsulatedAssertionConfig> eacTableModel;
     private Map<String, ImageIcon> iconCache = new HashMap<String, ImageIcon>();
@@ -71,6 +72,20 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 doProperties(new EncapsulatedAssertionConfig());
+            }
+        });
+
+        cloneButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final EncapsulatedAssertionConfig selected = getSelectedConfig();
+                if (selected != null) {
+                    final EncapsulatedAssertionConfig clone = selected.getCopy();
+                    clone.setGuid(null);
+                    clone.setOid(Long.valueOf(PersistentEntity.DEFAULT_OID));
+                    clone.setName(selected.getName() + " Copy");
+                    doProperties(clone);
+                }
             }
         });
 
@@ -114,7 +129,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
             }
         });
         Utilities.setDoubleClickAction(eacTable, propertiesButton);
-
+        Utilities.setRowSorter(eacTable, eacTableModel);
         loadEncapsulatedAssertionConfigs(false);
         enableOrDisable();
     }
@@ -151,15 +166,18 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
 
     private EncapsulatedAssertionConfig getSelectedConfig() {
         int row = eacTable.getSelectedRow();
-        if (row < 0)
+        if (row < 0) {
             return null;
-        return eacTableModel.getRowObject(row);
+        }
+        final int modelRow = eacTable.convertRowIndexToModel(row);
+        return eacTableModel.getRowObject(modelRow);
     }
 
     private void enableOrDisable() {
         boolean haveConfig = getSelectedConfig() != null;
         removeButton.setEnabled(haveConfig);
         propertiesButton.setEnabled(haveConfig);
+        cloneButton.setEnabled(haveConfig);
 
         if (!flags.canCreateSome()) {
             createButton.setEnabled(false);
