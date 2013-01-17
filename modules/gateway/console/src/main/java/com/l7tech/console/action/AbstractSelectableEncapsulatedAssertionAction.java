@@ -32,6 +32,11 @@ public abstract class AbstractSelectableEncapsulatedAssertionAction extends Abst
     protected abstract OperationType getOperationType();
 
     /**
+     * @return whether this action supports auto-population of input and output parameters for new EncapsulatedAssertionConfigs.
+     */
+    protected abstract boolean autoPopulateParams();
+
+    /**
      * @param configs  the EncapsulatedAssertionConfigs that the user can choose from. Each one should already exist in the database.
      * @param name     the name of the action.
      * @param desc     the description of the action.
@@ -79,7 +84,7 @@ public abstract class AbstractSelectableEncapsulatedAssertionAction extends Abst
     protected void performAction() {
         final boolean readOnly = getOperationType().equals(OperationType.READ);
         if (configs.size() == 1) {
-            showConfigDialog(readOnly, configs.values().iterator().next());
+            showConfigDialog(readOnly, configs.values().iterator().next(), autoPopulateParams());
         } else {
             DialogDisplayer.showInputDialog(TopComponents.getInstance().getTopParent(),
                     "Please select an Encapsulated Assertion", "Select Encapsulated Assertion",
@@ -89,7 +94,7 @@ public abstract class AbstractSelectableEncapsulatedAssertionAction extends Abst
                         public void reportResult(final Object option) {
                             if (option != null) {
                                 final String configName = option.toString();
-                                showConfigDialog(readOnly, configs.get(configName));
+                                showConfigDialog(readOnly, configs.get(configName), autoPopulateParams());
                             }
                         }
                     });

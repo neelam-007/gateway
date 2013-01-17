@@ -23,4 +23,9 @@ public class ViewEncapsulatedAssertionAction extends AbstractSelectableEncapsula
     protected OperationType getOperationType() {
         return OperationType.READ;
     }
+
+    @Override
+    protected boolean autoPopulateParams() {
+        return false;
+    }
 }

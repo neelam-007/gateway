@@ -42,16 +42,17 @@ public abstract class AbstractEncapsulatedAssertionAction extends SecureAction {
     /**
      * Displays the EncapsulatedAssertionConfigPropertiesDialog and saves the EncapsulatedAssertionConfig on dialog confirmation if not readOnly.
      *
-     * @param readOnly whether the dialog should be opened in readOnly mode (no modifications allowed).
-     * @param config   the EncapsulatedAssertionConfig to display.
+     * @param readOnly           whether the dialog should be opened in readOnly mode (no modifications allowed).
+     * @param config             the EncapsulatedAssertionConfig to display.
+     * @param autoPopulateParams whether the EncapsulatedAssertionConfigPropertiesDialog should detect and auto-populate the input and output parameters for new EncapsulatedAssertionConfigs.
      */
-    protected void showConfigDialog(final boolean readOnly, @NotNull final EncapsulatedAssertionConfig config) {
+    protected void showConfigDialog(final boolean readOnly, @NotNull final EncapsulatedAssertionConfig config, final boolean autoPopulateParams) {
         final Collection<EncapsulatedAssertionConfig> existingConfigs = TopComponents.getInstance().getEncapsulatedAssertionRegistry().getRegisteredEncapsulatedAssertionConfigurations();
         final Set<String> usedConfigNames = new HashSet<String>(existingConfigs.size());
         for (final EncapsulatedAssertionConfig existingConfig : existingConfigs) {
             usedConfigNames.add(existingConfig.getName());
         }
-        final EncapsulatedAssertionConfigPropertiesDialog dlg = new EncapsulatedAssertionConfigPropertiesDialog(TopComponents.getInstance().getTopParent(), config, readOnly, usedConfigNames);
+        final EncapsulatedAssertionConfigPropertiesDialog dlg = new EncapsulatedAssertionConfigPropertiesDialog(TopComponents.getInstance().getTopParent(), config, readOnly, usedConfigNames, autoPopulateParams);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

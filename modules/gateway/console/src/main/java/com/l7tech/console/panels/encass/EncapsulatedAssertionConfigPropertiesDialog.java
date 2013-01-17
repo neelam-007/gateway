@@ -92,13 +92,15 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
      * Create a new properties dialog that will show info for the specified bean,
      * and which will edit the specified bean in-place if the Ok button is successfully activated.
      *
-     * @param parent the parent window.  Should be specified to avoid focus/visibility issues.
-     * @param config the bean to edit.  Required.
-     * @param readOnly if true, the Ok button will be disabled.
-     * @param usedConfigNames EncapsulatedAssertionConfig names that are already in use.
-     *                        New EncapsulatedAssertionConfigs cannot use these names and existing EncapsulatedAssertionConfigs cannot be edited to have these names.
+     * @param parent             the parent window.  Should be specified to avoid focus/visibility issues.
+     * @param config             the bean to edit.  Required.
+     * @param readOnly           if true, the Ok button will be disabled.
+     * @param usedConfigNames    EncapsulatedAssertionConfig names that are already in use.
+     *                           New EncapsulatedAssertionConfigs cannot use these names and existing EncapsulatedAssertionConfigs cannot be edited to have these names.
+     * @param autoPopulateParams whether the input and output params should be auto-populated if this is a new EncapsulatedAssertionConfig.
      */
-    public EncapsulatedAssertionConfigPropertiesDialog(Window parent, EncapsulatedAssertionConfig config, boolean readOnly, @NotNull final Set<String> usedConfigNames) {
+    public EncapsulatedAssertionConfigPropertiesDialog(@NotNull final Window parent, @NotNull final EncapsulatedAssertionConfig config,
+                                                       boolean readOnly, @NotNull final Set<String> usedConfigNames, final boolean autoPopulateParams) {
         super(parent, "Encapsulated Assertion Configuration", ModalityType.APPLICATION_MODAL);
         this.config = config;
         this.readOnly = readOnly;
@@ -108,10 +110,10 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             // a new config may initially have the same name as an existing config
             this.usedConfigNames.remove(config.getName());
         }
-        init();
+        init(autoPopulateParams);
     }
 
-    private void init() {
+    private void init(final boolean autoPopulateParams) {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(okButton);
@@ -119,10 +121,10 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         cancelButton.addActionListener(Utilities.createDisposeAction(this));
 
         final AbstractButton[] buttons = {changePolicyButton, selectIconButton,
-            addInputButton, editInputButton, deleteInputButton,
-            moveInputUpButton, moveInputDownButton,
-            addOutputButton, editOutputButton, deleteOutputButton,
-            okButton, cancelButton};
+                addInputButton, editInputButton, deleteInputButton,
+                moveInputUpButton, moveInputDownButton,
+                addOutputButton, editOutputButton, deleteOutputButton,
+                okButton, cancelButton};
         Utilities.equalizeButtonSizes(buttons);
         Utilities.enableGrayOnDisabled(buttons);
         Utilities.deuglifySplitPane(inputsOutputsSplitPane);
@@ -141,7 +143,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             @Override
             public String getValidationError() {
                 return policy != null ? null
-                    : "An implementation policy must be specified.";
+                        : "An implementation policy must be specified.";
             }
         });
         inputValidator.addRule(new InputValidator.ComponentValidationRule(paletteFolderComboBox) {
@@ -149,7 +151,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             public String getValidationError() {
                 String folderName = (String) paletteFolderComboBox.getSelectedItem();
                 return folderName != null && folderName.trim().length() > 0 ? null
-                    : "A palette folder must be specified.";
+                        : "A palette folder must be specified.";
             }
         });
 
@@ -172,17 +174,17 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         selectIconButton.addActionListener(new IconActionListener());
 
         inputsTableModel = TableUtil.configureTable(inputsTable,
-            column("GUI", 30, 30, 50, argumentGuiPromptExtractor, Boolean.class),
-            column("Name", 30, 140, 99999, argumentNameExtractor),
-            column("Type", 30, 140, 99999, argumentTypeExtractor, DataType.class),
-            column("Label", 30, 140, 99999, argumentGuiLabelExtractor),
-            column("Default", 30, 140, 99999, argumentDefaultValueExtractor));
+                column("GUI", 30, 30, 50, argumentGuiPromptExtractor, Boolean.class),
+                column("Name", 30, 140, 99999, argumentNameExtractor),
+                column("Type", 30, 140, 99999, argumentTypeExtractor, DataType.class),
+                column("Label", 30, 140, 99999, argumentGuiLabelExtractor),
+                column("Default", 30, 140, 99999, argumentDefaultValueExtractor));
         inputsTable.getColumnModel().getColumn(2).setCellRenderer(dataTypePrettyPrintingTableCellRenderer());
         inputsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         outputsTableModel = TableUtil.configureTable(outputsTable,
-            column("Name", 30, 140, 99999, resultNameExtractor),
-            column("Type", 30, 140, 99999, resultTypeExtractor, DataType.class));
+                column("Name", 30, 140, 99999, resultNameExtractor),
+                column("Type", 30, 140, 99999, resultTypeExtractor, DataType.class));
         outputsTable.getColumnModel().getColumn(1).setCellRenderer(dataTypePrettyPrintingTableCellRenderer());
         outputsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
@@ -253,7 +255,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         Utilities.setDoubleClickAction(outputsTable, editOutputButton);
 
         okButton.setEnabled(!readOnly);
-        updateView();
+        initView(autoPopulateParams);
         enableOrDisableThings();
     }
 
@@ -283,7 +285,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private <RT> Set<String> findUsedNames(SimpleTableModel<RT> tableModel, Functions.Unary<String, RT> nameExtractor, @Nullable RT self) {
         Set<String> usedNames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
         usedNames.addAll(Functions.map(tableModel.getRows(), nameExtractor));
-        if(self != null) {
+        if (self != null) {
             usedNames.remove(optional(nameExtractor.call(self)).orSome(""));
         }
         return usedNames;
@@ -360,7 +362,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         return confirmed;
     }
 
-    private void updateView() {
+    private void initView(final boolean autoPopulateParams) {
         nameField.setText(config.getName());
         descriptionTextArea.setText(config.getProperty(PROP_DESCRIPTION));
 
@@ -377,11 +379,13 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         inputsTableModel.setRows(config.sortedArguments());
         outputsTableModel.setRows(new ArrayList<EncapsulatedAssertionResultDescriptor>(config.getResultDescriptors()));
 
-        if(config.getGuid() == null && config.getPolicy() != null) {
+        if (config.getGuid() == null && config.getPolicy() != null) {
             // this is a new config which hasn't been saved yet but has been assigned a policy
             setPolicyAndPolicyNameLabel(config.getPolicy());
-            prePopulateInputsTable();
-            prePopulateOutputsTable();
+            if (autoPopulateParams) {
+                prePopulateInputsTable();
+                prePopulateOutputsTable();
+            }
         }
     }
 
@@ -466,8 +470,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
 
             private Object asDisplayName(Object value) {
                 return value instanceof String
-                    ? paletteFolderRegistry.getPaletteFolderName((String) value)
-                    : value;
+                        ? paletteFolderRegistry.getPaletteFolderName((String) value)
+                        : value;
             }
         });
     }
@@ -492,31 +496,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             }
 
             final PolicyHeader[] options = policyHeaders.toArray(new PolicyHeader[policyHeaders.size()]);
-            DialogDisplayer.showInputDialog(this, "Select implementation policy:", "Set Implementation Policy", JOptionPane.QUESTION_MESSAGE, null, options, initialValue, new DialogDisplayer.InputListener() {
-                @Override
-                public void reportResult(Object option) {
-                    if (option == null)
-                        return;
-                    PolicyHeader policyHeader = (PolicyHeader) option;
-
-                    // Load the selected policy
-                    try {
-                        Policy newPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyHeader.getOid());
-                        if (newPolicy == null) {
-                            showError("Policy not found", null);
-                            return;
-                        }
-
-                        setPolicyAndPolicyNameLabel(newPolicy);
-                        prePopulateInputsTable();
-                        prePopulateOutputsTable();
-
-                    } catch (FindException e) {
-                        showError("Unable to load policy", e);
-                    }
-                }
-            });
-
+            DialogDisplayer.showInputDialog(this, "Select implementation policy:", "Set Implementation Policy", JOptionPane.QUESTION_MESSAGE, null, options, initialValue, new PolicyInputListener(initialValue));
         } catch (FindException e) {
             showError("Unable to load list of available policy include fragments", e);
         }
@@ -535,17 +515,20 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     }
 
     /**
-     * If no inputs exist yet, add rows to the inputs table corresponding to the variables used by the currently-selected policy fragment.
+     * Add rows to the inputs table corresponding to the variables used by the currently-selected policy fragment.
+     * <p/>
+     * Skips variables which already exist in the table.
      */
     private void prePopulateInputsTable() {
-        if (inputsTableModel.getRowCount() < 1) {
-            Assertion root = getFragmentRootAssertion();
-            if (null == root)
-                return;
+        Assertion root = getFragmentRootAssertion();
+        if (null == root)
+            return;
 
-            String[] vars = PolicyVariableUtils.getVariablesUsedByDescendantsAndSelf(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
-            for (String var : vars) {
-                EncapsulatedAssertionArgumentDescriptor arg = new EncapsulatedAssertionArgumentDescriptor();
+        final String[] vars = PolicyVariableUtils.getVariablesUsedByDescendantsAndSelf(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
+        final Set<String> existingNames = findUsedNames(inputsTableModel, argumentNameExtractor, null);
+        for (String var : vars) {
+            if (!existingNames.contains(var)) {
+                final EncapsulatedAssertionArgumentDescriptor arg = new EncapsulatedAssertionArgumentDescriptor();
                 arg.setEncapsulatedAssertionConfig(config);
                 arg.setArgumentType(DataType.STRING.getShortName());
                 arg.setArgumentName(var);
@@ -557,17 +540,20 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     }
 
     /**
-     * If no outputs exist yet, add rows to the outputs table corresponding to the variables set by the currently-selected policy fragment.
+     * Add rows to the outputs table corresponding to the variables set by the currently-selected policy fragment.
+     * <p/>
+     * Skips variables which already exist in the table.
      */
     private void prePopulateOutputsTable() {
-        if (outputsTableModel.getRowCount() < 1) {
-            Assertion root = getFragmentRootAssertion();
-            if (null == root)
-                return;
+        Assertion root = getFragmentRootAssertion();
+        if (null == root)
+            return;
 
-            Map<String, VariableMetadata> vars = PolicyVariableUtils.getVariablesSetByDescendantsAndSelf(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
-            for (VariableMetadata vm : vars.values()) {
-                EncapsulatedAssertionResultDescriptor ret = new EncapsulatedAssertionResultDescriptor();
+        final Map<String, VariableMetadata> vars = PolicyVariableUtils.getVariablesSetByDescendantsAndSelf(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
+        final Set<String> existingNames = findUsedNames(outputsTableModel, resultNameExtractor, null);
+        for (final VariableMetadata vm : vars.values()) {
+            if (!existingNames.contains(vm.getName())) {
+                final EncapsulatedAssertionResultDescriptor ret = new EncapsulatedAssertionResultDescriptor();
                 ret.setEncapsulatedAssertionConfig(config);
                 ret.setResultName(vm.getName());
                 final DataType type = vm.getType();
@@ -598,7 +584,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             DialogDisplayer.display(okCancelDialog, new Runnable() {
                 @Override
                 public void run() {
-                    if(okCancelDialog.wasOKed()){
+                    if (okCancelDialog.wasOKed()) {
                         final Pair<EncapsulatedAssertionConsoleUtil.IconType, String> selected = okCancelDialog.getValue();
                         if (EncapsulatedAssertionConsoleUtil.IconType.CUSTOM_IMAGE.equals(selected.left)) {
                             try {
@@ -622,12 +608,65 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         }
     }
 
-    private static final Functions.Unary<Boolean,EncapsulatedAssertionArgumentDescriptor> argumentGuiPromptExtractor = Functions.<Boolean, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiPrompt");
-    private static final Functions.Unary<String,EncapsulatedAssertionArgumentDescriptor> argumentNameExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentName");
-    private static final Functions.Unary<DataType,EncapsulatedAssertionArgumentDescriptor> argumentTypeExtractor = Functions.<DataType, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentType");
-    private static final Functions.Unary<Object,EncapsulatedAssertionArgumentDescriptor> argumentGuiLabelExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiLabel");
-    private static final Functions.Unary<Object,EncapsulatedAssertionArgumentDescriptor> argumentDefaultValueExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "defaultValue");
+    /**
+     * Listener for handling policy fragment selection.
+     */
+    private class PolicyInputListener implements DialogDisplayer.InputListener {
+        private final PolicyHeader initialValue;
 
-    private static final Functions.Unary<String,EncapsulatedAssertionResultDescriptor> resultNameExtractor = propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultName");
-    private static final Functions.Unary<DataType,EncapsulatedAssertionResultDescriptor> resultTypeExtractor = Functions.<DataType, EncapsulatedAssertionResultDescriptor>propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultType");
+        private PolicyInputListener(@Nullable final PolicyHeader initialValue) {
+            this.initialValue = initialValue;
+        }
+
+        @Override
+        public void reportResult(final Object option) {
+            if (option == null)
+                return;
+            final PolicyHeader policyHeader = (PolicyHeader) option;
+            if (!policyHeader.equals(initialValue)) {
+                // Load the selected policy
+                try {
+                    final Policy newPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyHeader.getOid());
+                    if (newPolicy == null) {
+                        showError("Policy not found", null);
+                        return;
+                    }
+
+                    setPolicyAndPolicyNameLabel(newPolicy);
+                    promptForAutoPopulation(TopComponents.getInstance().getTopParent(), new DialogDisplayer.OptionListener() {
+                        @Override
+                        public void reportResult(final int option) {
+                            if (option == JOptionPane.YES_OPTION) {
+                                prePopulateInputsTable();
+                                prePopulateOutputsTable();
+                            }
+                        }
+                    });
+                } catch (FindException e) {
+                    showError("Unable to load policy", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Displays a confirmation dialog asking the user if they want to auto-populate input and output params.
+     * @param parent the parent Component for the dialog.
+     * @param optionListener OptionListener to handle the confirmation result.
+     */
+    public static void promptForAutoPopulation(@NotNull final Component parent, @NotNull final DialogDisplayer.OptionListener optionListener) {
+        DialogDisplayer.showConfirmDialog(parent, "Auto-populate inputs and outputs for the encapsulated assertion?",
+                "Confirm Auto-Population of Inputs and Outputs",
+                JOptionPane.YES_NO_OPTION,
+                optionListener);
+    }
+
+    private static final Functions.Unary<Boolean, EncapsulatedAssertionArgumentDescriptor> argumentGuiPromptExtractor = Functions.<Boolean, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiPrompt");
+    private static final Functions.Unary<String, EncapsulatedAssertionArgumentDescriptor> argumentNameExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentName");
+    private static final Functions.Unary<DataType, EncapsulatedAssertionArgumentDescriptor> argumentTypeExtractor = Functions.<DataType, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentType");
+    private static final Functions.Unary<Object, EncapsulatedAssertionArgumentDescriptor> argumentGuiLabelExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiLabel");
+    private static final Functions.Unary<Object, EncapsulatedAssertionArgumentDescriptor> argumentDefaultValueExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "defaultValue");
+
+    private static final Functions.Unary<String, EncapsulatedAssertionResultDescriptor> resultNameExtractor = propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultName");
+    private static final Functions.Unary<DataType, EncapsulatedAssertionResultDescriptor> resultTypeExtractor = Functions.<DataType, EncapsulatedAssertionResultDescriptor>propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultType");
 }

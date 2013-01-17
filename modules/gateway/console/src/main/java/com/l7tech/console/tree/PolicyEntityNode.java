@@ -108,7 +108,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
                 // policy not yet associated with an EncapsulatedAssertionConfig
                 config = new EncapsulatedAssertionConfig();
                 config.setPolicy(getPolicy());
-                actions.add(new CreateEncapsulatedAssertionAction(config, null));
+                actions.add(new CreateEncapsulatedAssertionAction(config, null, true));
             } else {
                 // policy is already associated with at least one EncapsulatedAssertionConfig
                 final EditEncapsulatedAssertionAction editAction = new EditEncapsulatedAssertionAction(found, null);

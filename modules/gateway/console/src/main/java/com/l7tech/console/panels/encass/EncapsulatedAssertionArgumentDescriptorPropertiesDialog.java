@@ -33,6 +33,7 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
 
     public EncapsulatedAssertionArgumentDescriptorPropertiesDialog(@NotNull Window owner, @NotNull EncapsulatedAssertionArgumentDescriptor bean, @NotNull Set<String> reservedVariableNames) {
         super(owner, "Argument Properties", ModalityType.APPLICATION_MODAL);
+        Utilities.setEscKeyStrokeDisposes(this);
         this.usedVariableNames = reservedVariableNames;
         encapsulatedAssertionArgumentDescriptor = bean;
         setContentPane(contentPane);

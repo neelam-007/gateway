@@ -29,6 +29,7 @@ public class EncapsulatedAssertionResultDescriptorPropertiesDialog extends JDial
 
     public EncapsulatedAssertionResultDescriptorPropertiesDialog(@NotNull Window owner, @NotNull EncapsulatedAssertionResultDescriptor bean, @NotNull Set<String> reserveVariableNames) {
         super(owner, "Result Properties", ModalityType.APPLICATION_MODAL);
+        Utilities.setEscKeyStrokeDisposes(this);
         encapsulatedAssertionResultDescriptor = bean;
         usedVariableNames = reserveVariableNames;
         setContentPane(contentPane);

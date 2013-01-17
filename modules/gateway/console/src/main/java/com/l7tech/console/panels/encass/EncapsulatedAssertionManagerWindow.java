@@ -8,6 +8,7 @@ import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
@@ -71,7 +72,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         createButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                doProperties(new EncapsulatedAssertionConfig());
+                doProperties(new EncapsulatedAssertionConfig(), true);
             }
         });
 
@@ -83,8 +84,8 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                     final EncapsulatedAssertionConfig clone = selected.getCopy();
                     clone.setGuid(null);
                     clone.setOid(Long.valueOf(PersistentEntity.DEFAULT_OID));
-                    clone.setName(selected.getName() + " Copy");
-                    doProperties(clone);
+                    clone.setName(EntityUtils.getNameForCopy(selected.getName()));
+                    doProperties(clone, false);
                 }
             }
         });
@@ -94,7 +95,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 final EncapsulatedAssertionConfig config = getSelectedConfig();
                 if (config != null)
-                    doProperties(config);
+                    doProperties(config, false);
             }
         });
 
@@ -136,12 +137,14 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
 
     /**
      * Display the config properties dialog.
+     * @param config the config to display.
+     * @param promptForAutoPopulateOnNew whether the user should be asked if they want to auto-populate inputs and outputs if this is a new config.
      */
-    private void doProperties(@NotNull final EncapsulatedAssertionConfig config) {
+    private void doProperties(@NotNull final EncapsulatedAssertionConfig config, final boolean promptForAutoPopulateOnNew) {
         final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
         final boolean isNew = Long.valueOf(PersistentEntity.DEFAULT_OID).equals(config.getOid());
         if (isNew && securityProvider.hasPermission(new AttemptedCreateSpecific(EntityType.ENCAPSULATED_ASSERTION, config))) {
-            new CreateEncapsulatedAssertionAction(config, new ConfigChangeWindowUpdater(config)).actionPerformed(null);
+            new CreateEncapsulatedAssertionAction(config, new ConfigChangeWindowUpdater(config), promptForAutoPopulateOnNew).actionPerformed(null);
         } else if (!isNew && securityProvider.hasPermission(new AttemptedUpdate(EntityType.ENCAPSULATED_ASSERTION, config))) {
             new EditEncapsulatedAssertionAction(Collections.singleton(config), new ConfigChangeWindowUpdater(config)).actionPerformed(null);
         } else {

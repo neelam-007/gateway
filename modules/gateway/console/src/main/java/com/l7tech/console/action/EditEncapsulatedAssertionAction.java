@@ -27,4 +27,9 @@ public class EditEncapsulatedAssertionAction extends AbstractSelectableEncapsula
     protected OperationType getOperationType() {
         return OperationType.UPDATE;
     }
+
+    @Override
+    protected boolean autoPopulateParams() {
+        return false;
+    }
 }
