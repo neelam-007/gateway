@@ -22,8 +22,6 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
     private JCheckBox guiPromptCheckBox;
     private JComboBox typeComboBox;
     private JTextField nameField;
-    private JTextField defaultValueField;
-    private JPanel defaultValuePanel;
     private JTextField guiLabelField;
 
     private final EncapsulatedAssertionArgumentDescriptor encapsulatedAssertionArgumentDescriptor;
@@ -83,7 +81,6 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
 
     private void updateGui(EncapsulatedAssertionArgumentDescriptor bean) {
         nameField.setText(bean.getArgumentName());
-        defaultValueField.setText(bean.getDefaultValue());
         typeComboBox.setSelectedItem(bean.getArgumentType() == null ? null : DataType.forName(bean.getArgumentType()));
         guiPromptCheckBox.setSelected(bean.isGuiPrompt());
         guiLabelField.setText(bean.getGuiLabel());
@@ -91,7 +88,6 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
 
     private EncapsulatedAssertionArgumentDescriptor updateBean(EncapsulatedAssertionArgumentDescriptor bean) {
         bean.setArgumentName(nameField.getText());
-        bean.setDefaultValue(defaultValueField.getText());
         bean.setGuiPrompt(guiPromptCheckBox.isSelected());
         DataType type = (DataType) typeComboBox.getSelectedItem();
         bean.setArgumentType(type == null ? DataType.UNKNOWN.getShortName() : type.getShortName());

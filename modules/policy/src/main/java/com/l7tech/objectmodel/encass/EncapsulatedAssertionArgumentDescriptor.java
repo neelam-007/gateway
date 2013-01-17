@@ -33,7 +33,6 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     private int ordinal;
     private String argumentName;
     private String argumentType;
-    private String defaultValue;
     private String guiLabel;
     private boolean guiPrompt;
 
@@ -84,23 +83,6 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
     public void setArgumentType(String type) {
         checkLocked();
         this.argumentType = type;
-    }
-
-    /**
-     * A default value to use if a value cannot be found at runtime.  This can be useful for versioning when
-     * new parameters are added to a previously-used encapsulated assertion.
-     *
-     * @return default value for this argument if a value cannot be found at runtime.  May be null.
-     */
-    @Nullable
-    @Column(name="default_value")
-    public String getDefaultValue() {
-        return defaultValue;
-    }
-
-    public void setDefaultValue(@Nullable String defaultValue) {
-        checkLocked();
-        this.defaultValue = defaultValue;
     }
 
     /**
@@ -221,7 +203,6 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
         copy.setOrdinal(getOrdinal());
         copy.setArgumentName(getArgumentName());
         copy.setArgumentType(getArgumentType());
-        copy.setDefaultValue(getDefaultValue());
         copy.setGuiPrompt(isGuiPrompt());
         copy.setGuiLabel(getGuiLabel());
         if (readOnly)
@@ -239,7 +220,6 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
         EncapsulatedAssertionArgumentDescriptor that = (EncapsulatedAssertionArgumentDescriptor) o;
 
         if (guiPrompt != that.guiPrompt) return false;
-        if (defaultValue != null ? !defaultValue.equals(that.defaultValue) : that.defaultValue != null) return false;
         if (argumentName != null ? !argumentName.equals(that.argumentName) : that.argumentName != null) return false;
         if (argumentType != null ? !argumentType.equals(that.argumentType) : that.argumentType != null) return false;
         if (guiLabel != null ? !guiLabel.equals(that.guiLabel) : that.guiLabel != null) return false;
@@ -253,7 +233,6 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
         int result = super.hashCode();
         result = 31 * result + (argumentName != null ? argumentName.hashCode() : 0);
         result = 31 * result + (argumentType != null ? argumentType.hashCode() : 0);
-        result = 31 * result + (defaultValue != null ? defaultValue.hashCode() : 0);
         result = 31 * result + (guiPrompt ? 1 : 0);
         result = 31 * result + (guiLabel != null ? guiLabel.hashCode() : 0);
         result = 31 * result + ordinal;
@@ -267,7 +246,6 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
             ", ordinal=" + ordinal +
             ", argumentName='" + argumentName + '\'' +
             ", argumentType='" + argumentType + '\'' +
-            ", defaultValue='" + defaultValue + '\'' +
             ", guiPrompt=" + guiPrompt +
             ", guiLabel=" + guiLabel +
             '}';

@@ -1837,7 +1837,6 @@ CREATE TABLE encapsulated_assertion_argument (
   encapsulated_assertion_oid bigint(20) NOT NULL,
   argument_name varchar(128) NOT NULL,
   argument_type varchar(128) NOT NULL,
-  default_value mediumtext,
   gui_prompt tinyint(1) NOT NULL,
   gui_label varchar(255),
   ordinal int(20) NOT NULL,

@@ -177,8 +177,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                 column("GUI", 30, 30, 50, argumentGuiPromptExtractor, Boolean.class),
                 column("Name", 30, 140, 99999, argumentNameExtractor),
                 column("Type", 30, 140, 99999, argumentTypeExtractor, DataType.class),
-                column("Label", 30, 140, 99999, argumentGuiLabelExtractor),
-                column("Default", 30, 140, 99999, argumentDefaultValueExtractor));
+                column("Label", 30, 140, 99999, argumentGuiLabelExtractor));
         inputsTable.getColumnModel().getColumn(2).setCellRenderer(dataTypePrettyPrintingTableCellRenderer());
         inputsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
@@ -533,7 +532,6 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                 arg.setArgumentType(DataType.STRING.getShortName());
                 arg.setArgumentName(var);
                 arg.setGuiPrompt(false);
-                arg.setDefaultValue(null);
                 inputsTableModel.addRow(arg);
             }
         }
@@ -665,7 +663,6 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private static final Functions.Unary<String, EncapsulatedAssertionArgumentDescriptor> argumentNameExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentName");
     private static final Functions.Unary<DataType, EncapsulatedAssertionArgumentDescriptor> argumentTypeExtractor = Functions.<DataType, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentType");
     private static final Functions.Unary<Object, EncapsulatedAssertionArgumentDescriptor> argumentGuiLabelExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiLabel");
-    private static final Functions.Unary<Object, EncapsulatedAssertionArgumentDescriptor> argumentDefaultValueExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "defaultValue");
 
     private static final Functions.Unary<String, EncapsulatedAssertionResultDescriptor> resultNameExtractor = propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultName");
     private static final Functions.Unary<DataType, EncapsulatedAssertionResultDescriptor> resultTypeExtractor = Functions.<DataType, EncapsulatedAssertionResultDescriptor>propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultType");

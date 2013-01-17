@@ -236,9 +236,6 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
     @Nullable
     public Object valueFromString(Map<String,?> variableMap, EncapsulatedAssertionArgumentDescriptor arg, @Nullable String stringVal) {
         if (stringVal == null)
-            stringVal = arg.getDefaultValue();
-
-        if (stringVal == null)
             return null;
 
         if (EncapsulatedAssertionArgumentDescriptor.allowVariableInterpolationForDataType(arg.getArgumentType())) {

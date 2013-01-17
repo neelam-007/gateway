@@ -1576,7 +1576,6 @@ CREATE TABLE encapsulated_assertion_argument (
   encapsulated_assertion_oid bigint NOT NULL,
   argument_name varchar(255) NOT NULL,
   argument_type varchar(255) NOT NULL,
-  default_value varchar(32672),
   gui_prompt smallint NOT NULL,
   gui_label varchar(255),
   ordinal integer NOT NULL,
