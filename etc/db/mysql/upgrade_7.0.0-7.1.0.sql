@@ -60,6 +60,15 @@ CREATE TABLE encapsulated_assertion_result (
   PRIMARY KEY (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+INSERT INTO rbac_role VALUES (-1350,0,'Manage Encapsulated Assertions', null,'ENCAPSULATED_ASSERTION',null, 'Users assigned to the {0} role have the ability to create/read/update/delete encapsulated assertions.',0);
+INSERT INTO rbac_permission VALUES (-1351,0,-1350,'CREATE',null,'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission VALUES (-1352,0,-1350,'READ',NULL,'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission VALUES (-1353,0,-1350,'UPDATE',null, 'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission VALUES (-1354,0,-1350,'DELETE',NULL,'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission VALUES (-1355,0,-1350,'READ',NULL,'POLICY');
+INSERT INTO rbac_predicate VALUES (-1356,0,-1355);
+INSERT INTO rbac_predicate_attribute VALUES (-1356,'type','Included Policy Fragment','eq');
+
 ALTER TABLE cluster_properties ADD COLUMN properties MEDIUMTEXT NULL AFTER propvalue;
 
 ALTER TABLE published_service MODIFY COLUMN wsdl_url VARCHAR(4096);

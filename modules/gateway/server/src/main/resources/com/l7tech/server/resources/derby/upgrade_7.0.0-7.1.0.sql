@@ -70,6 +70,15 @@ alter table encapsulated_assertion_result
     references encapsulated_assertion
     on delete cascade;
 
+INSERT INTO rbac_role VALUES (-1350,0,'Manage Encapsulated Assertions', null,'ENCAPSULATED_ASSERTION',null, 'Users assigned to the {0} role have the ability to create/read/update/delete encapsulated assertions.',0);
+INSERT INTO rbac_permission VALUES (-1351,0,-1350,'CREATE',null,'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission VALUES (-1352,0,-1350,'READ',NULL,'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission VALUES (-1353,0,-1350,'UPDATE',null, 'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission VALUES (-1354,0,-1350,'DELETE',NULL,'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission VALUES (-1355,0,-1350,'READ',NULL,'POLICY');
+INSERT INTO rbac_predicate VALUES (-1356,0,-1355);
+INSERT INTO rbac_predicate_attribute VALUES (-1356,'type','Included Policy Fragment','eq');
+
 ALTER TABLE cluster_properties ADD COLUMN properties clob(2147483647);
 
 ALTER TABLE published_service ALTER COLUMN wsdl_url SET DATA TYPE VARCHAR(4096);
