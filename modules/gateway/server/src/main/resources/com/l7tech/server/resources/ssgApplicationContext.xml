@@ -750,6 +750,7 @@
     </bean>
 
     <bean id="counterManager" class="com.l7tech.server.sla.CounterManagerImpl">
+        <constructor-arg ref="transactionManager"/>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 

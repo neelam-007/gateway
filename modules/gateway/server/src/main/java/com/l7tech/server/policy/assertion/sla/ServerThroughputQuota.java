@@ -39,6 +39,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
     private final String periodVariable;
     private final String userVariable;
     private final String maxVariable;
+    private final boolean synchronous;
     @Inject
     private Config config;
 
@@ -51,6 +52,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         periodVariable = assertion.periodVariable();
         userVariable = assertion.userVariable();
         maxVariable = assertion.maxVariable();
+        synchronous = assertion.isSynchronous();
     }
 
     @Override
@@ -86,9 +88,11 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         long val;
 
         final CounterManager counterManager = applicationContext.getBean("counterManager", CounterManager.class);
+        final String counterName = getCounterName(context);
         if (requiresIncrement) {
             try {
-                val = counterManager.incrementOnlyWithinLimitAndReturnValue(getCounterName(context),
+                val = counterManager.incrementOnlyWithinLimitAndReturnValue(synchronous,
+                                                                     counterName,
                                                                      now,
                                                                      assertion.getTimeUnit(),
                                                                      quota);
@@ -99,28 +103,28 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
             } catch (CounterManager.LimitAlreadyReachedException e) {
                 String msg = "throughput quota limit is already reached.";
                 logger.info(msg);
-                logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_ALREADY_MET, getCounterName(context));
+                logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_ALREADY_MET, counterName);
                 if(assertion.isLogOnly()){
-                    this.setValue(context, counterManager.getCounterValue(getCounterName(context), assertion.getTimeUnit()));
+                    this.setValue(context, counterManager.getCounterValue(counterName, assertion.getTimeUnit()));
                     return AssertionStatus.NONE;
                 }else{
                     return AssertionStatus.FALSIFIED;
                 }
             } finally {
                 // no sync issue here: this flag array belongs to the context which lives inside one thread only
-                context.getIncrementedCounters().add(getCounterName(context));
+                context.getIncrementedCounters().add(counterName);
             }
         } else {
-            val = counterManager.getCounterValue(getCounterName(context), assertion.getTimeUnit());
+            val = counterManager.getCounterValue(counterName, assertion.getTimeUnit());
             this.setValue(context, val);
             if (val <= quota) {
                 logger.fine("the quota was not exceeded. " + val + " smaller than " + quota);
                 return AssertionStatus.NONE;
             } else {
                 String limit = "max " + quota + " per " + TIME_UNITS[assertion.getTimeUnit()-1];
-                String msg = "the quota " + getCounterName(context) + " [" + limit +
+                String msg = "the quota " + counterName + " [" + limit +
                              "] was exceeded " + "(current value is " + val + ")";
-                logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, getCounterName(context), limit, Long.toString(val));
+                logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, counterName, limit, Long.toString(val));
                 logger.info(msg);
                 return assertion.isLogOnly() ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
             }
@@ -132,7 +136,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
 
         if (alreadyIncrementedInThisContext(context)) {
             final String counterName = getCounterName(context);
-            counterManager.decrement(counterName);
+            counterManager.decrement(synchronous, counterName);
             logger.fine("counter decremented " + counterName);
             forgetIncrementInThisContext(context); // to prevent double decrement and enable re-increment
         } else {
@@ -151,12 +155,13 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         boolean requiresIncrement = !alreadyIncrementedInThisContext(context);
         long now = System.currentTimeMillis();
         long val;
+        final String counterName = getCounterName(context);
         if (requiresIncrement) {
-            val = counterManager.incrementAndReturnValue(getCounterName(context), now, assertion.getTimeUnit());
+            val = counterManager.incrementAndReturnValue(synchronous, counterName, now, assertion.getTimeUnit());
             // no sync issue here: this flag array belongs to the context which lives inside one thread only
-            context.getIncrementedCounters().add(getCounterName(context));
+            context.getIncrementedCounters().add(counterName);
         } else {
-            val = counterManager.getCounterValue(getCounterName(context), assertion.getTimeUnit());
+            val = counterManager.getCounterValue(counterName, assertion.getTimeUnit());
         }
         this.setValue(context, val);
         if (val <= quota) {
@@ -164,7 +169,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
             return AssertionStatus.NONE;
         } else {
             String limit = "max " + quota + " per " + TIME_UNITS[assertion.getTimeUnit()-1];
-            logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, getCounterName(context), limit, Long.toString(val));
+            logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, counterName, limit, Long.toString(val));
             return assertion.isLogOnly() ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
         }
     }
@@ -188,7 +193,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
 
         final CounterManager counterManager = (CounterManager)applicationContext.getBean("counterManager");
         try {
-            counterManager.checkOrCreateCounter(resolvedCounterName, true);
+            counterManager.ensureCounterExists(resolvedCounterName);
         } catch (ObjectModelException e) {
             // should not happen
             throw new IOException("Could not get counter, " + resolvedCounterName + ": " + e.getMessage());

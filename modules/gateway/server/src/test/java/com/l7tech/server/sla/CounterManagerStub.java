@@ -31,12 +31,11 @@ public class CounterManagerStub implements CounterManager{
     }
 
     @Override
-    public boolean checkOrCreateCounter(@NotNull String counterName, boolean create) throws ObjectModelException {
-        return true;
+    public void ensureCounterExists(@NotNull String counterName) throws ObjectModelException {
     }
 
     @Override
-    public long incrementOnlyWithinLimitAndReturnValue(String counterName, long timestamp, int fieldOfInterest, long limit) throws LimitAlreadyReachedException {
+    public long incrementOnlyWithinLimitAndReturnValue(boolean sync, String counterName, long timestamp, int fieldOfInterest, long limit) throws LimitAlreadyReachedException {
         if(throwException){
             throw new LimitAlreadyReachedException("Throwing exception from stub.");
         }
@@ -44,7 +43,7 @@ public class CounterManagerStub implements CounterManager{
     }
 
     @Override
-    public long incrementAndReturnValue(String counterName, long timestamp, int fieldOfInterest) {
+    public long incrementAndReturnValue(boolean sync, String counterName, long timestamp, int fieldOfInterest) {
         return counterValue;
     }
 
@@ -59,6 +58,6 @@ public class CounterManagerStub implements CounterManager{
     }
 
     @Override
-    public void decrement(String counterName) {
+    public void decrement(boolean sync, String counterName) {
     }
 }

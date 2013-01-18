@@ -10,18 +10,22 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface CounterManager {
     /**
-     * Check if a counter exists or not.  If it does not exist, then optionally create a new counter with a given counter name.
+     * Ensure that a counter with the specified name exists in the database and is cached on this node.
+     *
      * @param counterName: used to check if the database has such counter whose name is counterName.
-     * @param create true if counter should be created if it doesn't already exist.
      * @throws com.l7tech.objectmodel.ObjectModelException : thrown when data access errors occur.
-     * @return true iff. the counter already existed when this method was called.
      */
-    boolean checkOrCreateCounter(@NotNull String counterName, boolean create) throws ObjectModelException;
+    void ensureCounterExists(@NotNull String counterName) throws ObjectModelException;
 
     /**
      * Increment the counter identified by objectId only if the resulting value of the counter for
      * the passed fieldOfInterest will not exceed the passed limit.
+     * <p/>
+     * If synchronous is false, this method may return without throwing LimitAlreadyReachedException even
+     * though the DB increment will later be rejected (if other threads took our place).
      *
+     * @param synchronous true if the increment should be done synchronously, in a new transaction.
+     *                    false if it is OK to schedule the DB increment to occur later in a batch.
      * @param counterName the name of the counter used for counter lookup
      * @param timestamp the time for which this increment should be recorded at
      * @param fieldOfInterest ThroughputQuota.PER_SECOND, ThroughputQuota.PER_HOUR, ThroughputQuota.PER_DAY or
@@ -29,20 +33,27 @@ public interface CounterManager {
      * @return the counter value of interest if incremented. if the limit is already reached, an exceptio is thrown
      * @throws com.l7tech.server.sla.CounterManager.LimitAlreadyReachedException if the limit was already reached
      */
-    public long incrementOnlyWithinLimitAndReturnValue(String counterName,
+    public long incrementOnlyWithinLimitAndReturnValue(boolean synchronous,
+                                                       String counterName,
                                                        long timestamp,
                                                        int fieldOfInterest,
                                                        long limit) throws CounterManager.LimitAlreadyReachedException;
 
     /**
      * Increment this counter, and return the specific value of interest
+     * <p/>
+     * If synchronous is false, this method may return without throwing LimitAlreadyReachedException even
+     * though the DB increment will later be rejected (if other threads took our place).
+     *
+     * @param synchronous true if the increment should be done synchronously, in a new transaction.
+     *                    false if it is OK to schedule the DB increment to occur later in a batch.
      * @param counterName the name of the counter used for counter lookup
      * @param timestamp the time for which this increment should be recorded at
      * @param fieldOfInterest ThroughputQuota.PER_SECOND, ThroughputQuota.PER_HOUR, ThroughputQuota.PER_DAY or
      * ThroughputQuota.PER_MONTH
      * @return the counter value of interest
      */
-    public long incrementAndReturnValue(String counterName, long timestamp, int fieldOfInterest);
+    public long incrementAndReturnValue(boolean synchronous, String counterName, long timestamp, int fieldOfInterest);
 
     /**
      * get a current counter value without incrementing anything
@@ -59,8 +70,11 @@ public interface CounterManager {
 
     /**
      * Decrement the counter.
+     * @param synchronous true if the decrement should be done synchronously, in a new transaction.
+     *                    false if it is OK to schedule the DB decrement to occur later in a batch.
+     * @param counterName the name of the counter used for counter lookup
      */
-    public void decrement(String counterName);
+    public void decrement(boolean synchronous, String counterName);
 
     public class LimitAlreadyReachedException extends Exception {
         public LimitAlreadyReachedException(String msg) {

@@ -3,7 +3,7 @@
   <grid id="51a70" binding="mainPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="16" y="0" width="545" height="464"/>
+      <xy x="16" y="0" width="545" height="468"/>
     </constraints>
     <properties>
       <preferredSize width="660" height="472"/>
@@ -49,7 +49,7 @@
           </hspacer>
         </children>
       </grid>
-      <grid id="9fd55" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="9fd55" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="10" left="10" bottom="10" right="10"/>
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -120,6 +120,15 @@
               </component>
             </children>
           </grid>
+          <component id="9b973" class="javax.swing.JCheckBox" binding="synchronousCheckBox" default-binding="true">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Update counter synchronously"/>
+              <toolTipText value="Synchronous updates guarantee that the assertion will never pass if a counter update would fail, substantially reduce counter performance and scalability."/>
+            </properties>
+          </component>
         </children>
       </grid>
       <grid id="26202" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">

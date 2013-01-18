@@ -64,6 +64,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     private String maxVariable;
     private String variablePrefix = "";
     private String quota = "200";
+    private boolean synchronous = true; // true by default to preserve old behavior for pre-Goatfish policy XML
 
     @SuppressWarnings({"UnusedDeclaration"})
     @Deprecated
@@ -248,6 +249,22 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
      */
     public void setLogOnly(final boolean logOnly) {
         this.logOnly = logOnly;
+    }
+
+    /**
+     * @return true if the counter should be updated in synchronous mode, with a new transaction for each update.
+     *         false to use half-async mode where combining updates into a batched-up transaction is acceptable.
+     */
+    public boolean isSynchronous() {
+        return synchronous;
+    }
+
+    /**
+     * @param synchronous true if the counter should be updated in synchronous mode, with a new transaction for each update.
+     *                    false to use half-async mode where combining updates into a batched-up transaction is acceptable.
+     */
+    public void setSynchronous(boolean synchronous) {
+        this.synchronous = synchronous;
     }
 
     @Override
