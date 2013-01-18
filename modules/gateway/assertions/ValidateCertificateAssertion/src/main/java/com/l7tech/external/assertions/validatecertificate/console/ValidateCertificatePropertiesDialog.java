@@ -30,6 +30,7 @@ public class ValidateCertificatePropertiesDialog extends AssertionPropertiesOkCa
     private JComboBox valTypeComboBox;
     private JTextField srcVarTextField;
     private JPanel variablePrefixPanel;
+    private JLabel warningLabel;
     private TargetVariablePanel targetVariablePanel;
     private InputValidator validators;
 
@@ -41,6 +42,7 @@ public class ValidateCertificatePropertiesDialog extends AssertionPropertiesOkCa
     @Override
     protected void initComponents() {
         super.initComponents();
+        warningLabel.setText(ValidateCertificateAssertion.DISCLAIMER);
         for (final CertificateValidationType type : CertificateValidationType.values()) {
             valTypeComboBox.addItem(type);
         }

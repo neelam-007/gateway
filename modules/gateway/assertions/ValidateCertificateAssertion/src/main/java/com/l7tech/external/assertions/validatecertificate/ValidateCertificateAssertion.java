@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * Assertion which can validate an X509Certificate.
  */
 public class ValidateCertificateAssertion extends Assertion implements SetsVariables {
+    public static final String DISCLAIMER = "<html><strong>WARNING:</strong> This assertion should not be used for authentication as it does not enforce the possession of the private key.";
     public static final String PASSED = "passed";
     public static final String ERROR = "error";
 
@@ -73,8 +74,8 @@ public class ValidateCertificateAssertion extends Assertion implements SetsVaria
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
         meta.put(AssertionMetadata.SHORT_NAME, "Validate Certificate");
-        meta.put(AssertionMetadata.LONG_NAME, "Validates an X509 Certificate context variable.");
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
+        meta.put(AssertionMetadata.LONG_NAME, "Validates an X509 Certificate context variable. " + DISCLAIMER);
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xml"});
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/check16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");

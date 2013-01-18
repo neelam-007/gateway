@@ -65,7 +65,7 @@
         <border type="none"/>
         <children/>
       </grid>
-      <component id="c986e" class="javax.swing.JLabel">
+      <component id="c986e" class="javax.swing.JLabel" binding="warningLabel">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
@@ -74,7 +74,7 @@
           <horizontalAlignment value="2"/>
           <horizontalTextPosition value="11"/>
           <icon value="com/l7tech/console/resources/Warning16.png"/>
-          <text value="&lt;html&gt;&lt;strong&gt;WARNING:&lt;/strong&gt; This assertion should not be used for authentication as it does not enforce the possession of the private key."/>
+          <text value=""/>
           <verticalTextPosition value="1"/>
         </properties>
       </component>

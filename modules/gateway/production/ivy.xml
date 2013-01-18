@@ -77,6 +77,7 @@
         <dependency name="AdaptiveLoadBalancingAssertion" rev="latest.integration" conf="module"/>
         <dependency name="OAuthInstallerAssertion" rev="latest.integration" conf="module"/>
         <dependency name="PolicyBundleInstallerAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="ValidateCertificateAssertion" rev="latest.integration" conf="module"/>
         <!-- Optional Modular Assertions are copied to "dist" but not packaged -->
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="module-optional"/>
     </dependencies>
