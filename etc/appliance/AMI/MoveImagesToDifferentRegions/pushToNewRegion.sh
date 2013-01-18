@@ -14,6 +14,8 @@
 #13) turn volume into snapshot
 #14) register snapshot as ami
 
+SOURCE_MIGRATION_INSTANCE_HOST=$1
+
 # Values to Modify between environments
 #SCRIPTS TO RUN REMOTELY
 GRAB_PACK_SCRIPT="copyFromSnapshotToTarBall.sh"
@@ -45,13 +47,13 @@ VOLUME_NAME_64BIT="ssg_v70_64bit_EBS"
 SNAPSHOT_NAME_64BIT="ssg_v70_64bit_EBS"
 MIGRATION_INSTANCE_NAMES="SSG EBS Migration Instance 64BIT"
 SOURCE_MIGRATION_INSTANCE_NAME="SSG EBS Migration Instance Source 64BIT"
-SOURCE_MIGRATION_INSTANCE_HOST=""
 AMI_TAR_BALL="v70_ebs_ami.tgz"
 ARCH_32BIT="i386"
 ARCH_64BIT="x86_64"
 
 #US_EAST
 SG_US_EAST="Standard SSG Firewall"
+AMI_ID_US_EAST="ami-1a249873"
 SOURCE_SNAP_US_EAST_32BIT="snap-3a0dd775"
 SOURCE_SNAP_US_EAST_64BIT="snap-9a3dd3d5"
 
@@ -88,8 +90,8 @@ AMI_ID_AP_SE_1="ami-a2a7e7f0"
 SG_AP_SE_1="Standard SSG Firewall"
 
 #ap-southeast-2
-KERNEL_ID_AP_SE_2="aki-1e1a644c"
-RAM_ID_AP_SE_2="ari-141a6446"
+KERNEL_ID_AP_SE_2=""
+RAM_ID_AP_SE_2=""
 AMI_ID_AP_SE_2="ami-b3990e89"
 
 #ap-northeast-1
@@ -296,7 +298,7 @@ function migrateAndDeploy()
   FILES_TO_UPLOAD="${GRAB_UNPACK_SCRIPT_LOCATION} ${SOURCE_SSH_KEY_PATH}"
   
   scpOutWithRetries "${PUBLIC_DNS}" "ec2-user" "${DESTINATION_SSH_KEY_PATH}" 10 "${FILES_TO_UPLOAD}"   
-  sshWithRetries "${PUBLIC_DNS}" "ec2-user" "${DESTINATION_SSH_KEY_PATH}" 10 "ls -lt; ./${GRAB_UNPACK_SCRIPT} ${SOURCE_SSH_KEY_FILE} ec2-user ${SOURCE_INSTANCE} v70_ebs_ami.tgz 2>&1 | tee -a ./${PUBLIC_DNS}_${DATE_PREFIX}.log"
+  sshWithRetries "${PUBLIC_DNS}" "ec2-user" "${DESTINATION_SSH_KEY_PATH}" 10 "ls -lt; ./${GRAB_UNPACK_SCRIPT} ${SOURCE_SSH_KEY_FILE} ec2-user ${SOURCE_INSTANCE} ${AMI_TAR_BALL} 2>&1 | tee -a ./${PUBLIC_DNS}_${DATE_PREFIX}.log"
   scpInWithRetries "${PUBLIC_DNS}" "ec2-user" "${DESTINATION_SSH_KEY_PATH}" 10 "${PUBLIC_DNS}_${DATE_PREFIX}.log"
   sshWithRetries "${PUBLIC_DNS}" "ec2-user" "${DESTINATION_SSH_KEY_PATH}" 10 "ls -lt; sudo rm -rf ~/*; ls -lt"
   
@@ -367,8 +369,11 @@ function migrateAndDeploy()
   echo "AMI with ID ${AMI_ID} and name ${AMI_NAME} has been created in ${REGION}.  Please shut down Instance ${INSTANCE_ID}" 
 }
 
-mountAndCopy "us-east-1" "ami-1a249873" "${SSH_KEY_US_EAST}" "${SSH_KEY_US_EAST_FILE}" "${SSH_KEY_US_EAST_PATH}" "${SG_US_EAST}" "${SOURCE_SNAP_US_EAST_64BIT}" "${SOURCE_MIGRATION_INSTANCE_NAME}" 
-#SOURCE_MIGRATION_INSTANCE_HOST="ec2-23-20-110-191.compute-1.amazonaws.com"
+if [ -z "${SOURCE_MIGRATION_INSTANCE_HOST}" ] ; then
+  mountAndCopy "us-east-1" "${AMI_ID_US_EAST}" "${SSH_KEY_US_EAST}" "${SSH_KEY_US_EAST_FILE}" "${SSH_KEY_US_EAST_PATH}" "${SG_US_EAST}" "${SOURCE_SNAP_US_EAST_64BIT}" "${SOURCE_MIGRATION_INSTANCE_NAME}" 
+else
+  echo "Use ${SOURCE_MIGRATION_INSTANCE_HOST} as the Source."
+fi
 
 if [ -z "${SOURCE_MIGRATION_INSTANCE_HOST}" ] ; then
   echo "Source was not successfully exported."
