@@ -11,6 +11,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.TextUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -23,8 +24,10 @@ import java.util.regex.Pattern;
 public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAssertion<SqlAttackAssertion> {
     private static final EnumSet<HttpMethod> putAndPost = EnumSet.of(HttpMethod.POST, HttpMethod.PUT);
 
-    public ServerSqlAttackAssertion(SqlAttackAssertion assertion) {
+    public ServerSqlAttackAssertion(SqlAttackAssertion assertion) throws PolicyAssertionException {
         super(assertion);
+
+        validateAssertion(assertion);
     }
 
     @Override
@@ -50,15 +53,10 @@ public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAss
         if (isRequest()) {
             final HttpServletRequestKnob httpServletRequestKnob = msg.getKnob(HttpServletRequestKnob.class);
             boolean isHttp = httpServletRequestKnob != null;
-            /**
-             * to ensure backwards compatibility, if neither the URL nor the body has been selected to be
-             * scanned, the body will be scanned by default
-             */
-            boolean includeRequestBody = assertion.isIncludeRequestBody()
-                    || (!assertion.isIncludeRequestBody() && !assertion.isIncludeRequestUrl());
-            scanBody = includeRequestBody && (!isHttp || putAndPost.contains(httpServletRequestKnob.getMethod()));
 
-            if (assertion.isIncludeRequestUrl()) {
+            scanBody = assertion.isIncludeBody() && (!isHttp || putAndPost.contains(httpServletRequestKnob.getMethod()));
+
+            if (assertion.isIncludeUrl()) {
                 if (!isHttp) {
                     logAndAudit(AssertionMessages.SQLATTACK_NOT_HTTP);
                 } else {
@@ -160,6 +158,27 @@ public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAss
         }
 
         return protectionViolated;
+    }
+
+    private void validateAssertion(final SqlAttackAssertion assertion) throws PolicyAssertionException {
+        if(!assertion.isIncludeUrl() && !assertion.isIncludeBody()) {
+            throw new PolicyAssertionException(assertion, "The assertion is misconfigured. No part of the message selected to be scanned.");
+        }
+
+        if(assertion.getTarget() == TargetMessageType.RESPONSE && assertion.isIncludeUrl()) {
+            throw new PolicyAssertionException(assertion, "The assertion is misconfigured. URL cannot be checked for Response message.");
+        }
+
+        if(assertion.getTarget() == TargetMessageType.OTHER && assertion.isIncludeUrl()) {
+            throw new PolicyAssertionException(assertion, "The assertion is misconfigured. URL cannot be checked for Context Variable.");
+        }
+    }
+
+    private void throwIfNullOrBlank(final SqlAttackAssertion assertion, final String toCheck,
+                                    final String errorMessage) throws PolicyAssertionException {
+        if (StringUtils.isBlank(toCheck)) {
+            throw new PolicyAssertionException(assertion, errorMessage);
+        }
     }
 
     private void logAndAudit(String where, StringBuilder evidence, String protectionViolated) {

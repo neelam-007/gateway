@@ -1,11 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.policy.assertion.SqlAttackAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -29,11 +27,7 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
     private JPanel attackNameList;
 
     private JCheckBox requestUrlCheckBox;
-    private JRadioButton requestRadioButton;
     private JCheckBox requestBodyCheckBox;
-    private JRadioButton responseRadioButton;
-    private JRadioButton contextVariableRadioButton;
-    private JTextField contextVarName;
 
     private SqlAttackAssertion sqlAssertion;
     private JButton okButton;
@@ -77,13 +71,8 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
             }
         });
 
-        requestRadioButton.setSelected(TargetMessageType.REQUEST == sqlAssertion.getTarget());
-        requestUrlCheckBox.setSelected(sqlAssertion.isIncludeRequestUrl());
-        requestBodyCheckBox.setSelected(sqlAssertion.isIncludeRequestBody());
-        responseRadioButton.setSelected(TargetMessageType.RESPONSE == sqlAssertion.getTarget());
-        contextVariableRadioButton.setSelected(TargetMessageType.OTHER == sqlAssertion.getTarget());
-        contextVarName.setText(sqlAssertion.getOtherTargetMessageVariable());
-        contextVarName.setEnabled(contextVariableRadioButton.isSelected());
+        requestUrlCheckBox.setSelected(sqlAssertion.isIncludeUrl());
+        requestBodyCheckBox.setSelected(sqlAssertion.isIncludeBody());
 
         Utilities.setEscKeyStrokeDisposes(this);
         populateProtectionList();
@@ -91,27 +80,6 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
     }
 
     private void initAssertionTargetComponents() {
-
-        requestRadioButton.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                requestUrlCheckBox.setEnabled(requestRadioButton.isSelected());
-                requestBodyCheckBox.setEnabled(requestRadioButton.isSelected());
-                enableOkButton();
-            }
-        });
-
-        requestRadioButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                attackDescription.setText("Scan request message URL or body. Effective only if this assertion is placed before routing assertion.");
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                attackDescription.setText("");
-            }
-        });
 
         requestUrlCheckBox.addItemListener(new ItemListener() {
             @Override
@@ -150,45 +118,6 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
                 attackDescription.setText("");
             }
         });
-
-        responseRadioButton.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                enableOkButton();
-            }
-        });
-
-        responseRadioButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                attackDescription.setText("Scan response message body. Applies only if this assertion is placed after routing assertion. Use this only if the response is not supposed to contain keywords being screened for.");
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                attackDescription.setText("");
-            }
-        });
-
-        contextVariableRadioButton.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                contextVarName.setEnabled(contextVariableRadioButton.isSelected());
-                enableOkButton();
-            }
-        });
-
-        contextVariableRadioButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                attackDescription.setText("Scan the contents of the selected context variable.");
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                attackDescription.setText("");
-            }
-        });
     }
 
     @Override
@@ -210,13 +139,6 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
             }
         }
 
-        // If applying to request messages, further ensures either URL or body is selected.
-        if (requestRadioButton.isSelected()) {
-            ok &= requestUrlCheckBox.isSelected() || requestBodyCheckBox.isSelected();
-        } else {
-            ok &= true;
-        }
-
         okButton.setEnabled(ok && !isReadOnly());
     }
 
@@ -226,17 +148,8 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
     }
 
     private void doSave() {
-        sqlAssertion.setTarget( requestRadioButton.isSelected() ? TargetMessageType.REQUEST :
-                responseRadioButton.isSelected() ? TargetMessageType.RESPONSE : TargetMessageType.OTHER);
-
-        if ( contextVariableRadioButton.isSelected() ) {
-            sqlAssertion.setOtherTargetMessageVariable(VariablePrefixUtil.fixVariableName(contextVarName.getText()));
-        } else {
-            sqlAssertion.setOtherTargetMessageVariable(null);
-        }
-
-        sqlAssertion.setIncludeRequestUrl(requestUrlCheckBox.isSelected());
-        sqlAssertion.setIncludeRequestBody(requestBodyCheckBox.isSelected());
+        sqlAssertion.setIncludeUrl(requestUrlCheckBox.isSelected());
+        sqlAssertion.setIncludeBody(requestBodyCheckBox.isSelected());
 
         for (JCheckBox checkBox : attacks) {
             String thekey = (String) checkBox.getClientProperty(PROTECTION_KEY);

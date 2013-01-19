@@ -78,8 +78,8 @@ public class ServerSqlAttackAssertionTest {
             "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +
             "        <L7p:SqlAttackProtection>\n" +
-            "            <L7p:IncludeRequestBody booleanValue=\"true\"/>\n" +
-            "            <L7p:IncludeRequestUrl booleanValue=\"true\"/>\n" +
+            "            <L7p:IncludeBody booleanValue=\"false\"/>\n" +
+            "            <L7p:IncludeUrl booleanValue=\"true\"/>\n" +
             "            <L7p:Protections stringSetValue=\"included\">\n" +
             "                <L7p:item stringValue=\"MsSql\"/>\n" +
             "                <L7p:item stringValue=\"SqlMetaText\"/>\n" +
@@ -124,7 +124,10 @@ public class ServerSqlAttackAssertionTest {
         Assertion ass = WspReader.getDefault().parseStrictly(POLICY_XML, WspReader.INCLUDE_DISABLED);
 
         String policyXmlString = WspWriter.getPolicyXml(ass);
-        assertEquals(policyXmlString, POLICY_XML);
+
+        System.out.println(policyXmlString + "\n\n");
+        System.out.println(POLICY_XML + "\n\n");
+        assertEquals(POLICY_XML, policyXmlString);
     }
 
     // Message body tests
@@ -936,8 +939,8 @@ public class ServerSqlAttackAssertionTest {
         SqlAttackAssertion assertion = new SqlAttackAssertion();
 
         assertion.setTarget(targetMessageType);
-        assertion.setIncludeRequestUrl(includeRequestUrl);
-        assertion.setIncludeRequestBody(includeRequestBody);
+        assertion.setIncludeUrl(includeRequestUrl);
+        assertion.setIncludeBody(includeRequestBody);
 
         for(String protection : protections) {
             assertion.setProtection(protection);
@@ -946,7 +949,7 @@ public class ServerSqlAttackAssertionTest {
         return assertion;
     }
 
-    private ServerSqlAttackAssertion createServer(SqlAttackAssertion assertion) {
+    private ServerSqlAttackAssertion createServer(SqlAttackAssertion assertion) throws PolicyAssertionException {
         ServerSqlAttackAssertion serverAssertion = new ServerSqlAttackAssertion(assertion);
 
         ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()

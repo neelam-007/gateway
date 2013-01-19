@@ -27,15 +27,17 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
             Collections.unmodifiableMap(createProtectionMap());
 
     /** Whether to apply protections to request URL. */
-    private boolean includeRequestUrl;
+    private boolean includeUrl;
 
     /** Whether to apply protections to request body. */
-    private boolean includeRequestBody;
+    private boolean includeBody;
 
     Set<String> protections = new HashSet<String>();
 
     public SqlAttackAssertion() {
         super(false);
+
+        includeBody = true;
     }
 
     private final static String baseName = "Protect Against SQL Attacks";
@@ -44,7 +46,18 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
         @Override
         public String getAssertionName( final SqlAttackAssertion assertion, final boolean decorate) {
             if(!decorate) return baseName;
-            return AssertionUtils.decorateName(assertion, baseName);
+
+            StringBuilder sb = new StringBuilder(baseName);
+
+            if(assertion.includeUrl && !assertion.includeBody) {
+                sb.append(" [URL]");
+            } else if(assertion.includeUrl && assertion.includeBody) {
+                sb.append(" [URL + Body]");
+            } else if(!assertion.includeUrl && assertion.includeBody) {
+                sb.append(" [Body]");
+            }
+
+            return AssertionUtils.decorateName(assertion, sb);
         }
     };
 
@@ -56,9 +69,10 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/SQLProtection16x16.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "threatProtection" });
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.SqlAttackDialog");
         meta.put(PROPERTIES_ACTION_NAME, "SQL Attack Protection Properties");        
-        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.SqlAttackAssertionAdvice");
         meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.SqlAttackAssertionValidator");
         meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, SqlAttackAssertion>(){
             @Override
@@ -169,30 +183,25 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
                 : protectionType.getPattern();
     }
 
-    public boolean isIncludeRequestUrl() {
-        return includeRequestUrl;
+    public boolean isIncludeUrl() {
+        return includeUrl;
     }
 
-    public void setIncludeRequestUrl(boolean includeRequestUrl) {
-        this.includeRequestUrl = includeRequestUrl;
+    public void setIncludeUrl(boolean includeUrl) {
+        this.includeUrl = includeUrl;
     }
 
-    public boolean isIncludeRequestBody() {
-        return includeRequestBody;
+    public boolean isIncludeBody() {
+        return includeBody;
     }
 
-    public void setIncludeRequestBody(boolean includeRequestBody) {
-        this.includeRequestBody = includeRequestBody;
+    public void setIncludeBody(boolean includeBody) {
+        this.includeBody = includeBody;
     }
 
     @Override
     public void setTarget( final TargetMessageType target ) {
         super.setTarget(target);
-        if ( target == TargetMessageType.REQUEST &&
-                !( includeRequestUrl || includeRequestBody) ) {
-            includeRequestUrl = true;
-            includeRequestBody = true;
-        }
     }
 
     private static Map<String, SqlAttackProtectionType> createProtectionMap() {
