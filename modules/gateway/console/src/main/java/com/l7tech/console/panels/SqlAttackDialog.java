@@ -26,8 +26,8 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
     private JTextArea attackDescription;
     private JPanel attackNameList;
 
-    private JCheckBox requestUrlCheckBox;
-    private JCheckBox requestBodyCheckBox;
+    private JCheckBox urlCheckBox;
+    private JCheckBox bodyCheckBox;
 
     private SqlAttackAssertion sqlAssertion;
     private JButton okButton;
@@ -71,8 +71,8 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
             }
         });
 
-        requestUrlCheckBox.setSelected(sqlAssertion.isIncludeUrl());
-        requestBodyCheckBox.setSelected(sqlAssertion.isIncludeBody());
+        urlCheckBox.setSelected(sqlAssertion.isIncludeUrl());
+        bodyCheckBox.setSelected(sqlAssertion.isIncludeBody());
 
         Utilities.setEscKeyStrokeDisposes(this);
         populateProtectionList();
@@ -81,14 +81,14 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
 
     private void initAssertionTargetComponents() {
 
-        requestUrlCheckBox.addItemListener(new ItemListener() {
+        urlCheckBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 enableOkButton();
             }
         });
 
-        requestUrlCheckBox.addMouseListener(new MouseAdapter() {
+        urlCheckBox.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
                 attackDescription.setText("Scan parameter values in URL query string.");
@@ -100,14 +100,14 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
             }
         });
 
-        requestBodyCheckBox.addItemListener(new ItemListener() {
+        bodyCheckBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 enableOkButton();
             }
         });
 
-        requestBodyCheckBox.addMouseListener(new MouseAdapter() {
+        bodyCheckBox.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
                 attackDescription.setText("Scan request message body.");
@@ -139,6 +139,8 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
             }
         }
 
+        ok &= (urlCheckBox.isSelected() || bodyCheckBox.isSelected());
+
         okButton.setEnabled(ok && !isReadOnly());
     }
 
@@ -148,8 +150,8 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
     }
 
     private void doSave() {
-        sqlAssertion.setIncludeUrl(requestUrlCheckBox.isSelected());
-        sqlAssertion.setIncludeBody(requestBodyCheckBox.isSelected());
+        sqlAssertion.setIncludeUrl(urlCheckBox.isSelected());
+        sqlAssertion.setIncludeBody(bodyCheckBox.isSelected());
 
         for (JCheckBox checkBox : attacks) {
             String thekey = (String) checkBox.getClientProperty(PROTECTION_KEY);
