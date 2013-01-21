@@ -484,6 +484,13 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                 return;
             }
 
+            policyHeaders = Functions.sort(policyHeaders, new Comparator<PolicyHeader>() {
+                @Override
+                public int compare(PolicyHeader a, PolicyHeader b) {
+                    return String.CASE_INSENSITIVE_ORDER.compare(String.valueOf(a), String.valueOf(b));
+                }
+            });
+
             PolicyHeader initialValue = null;
             if (policy != null) {
                 for (PolicyHeader policyHeader : policyHeaders) {
