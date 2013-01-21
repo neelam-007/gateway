@@ -229,28 +229,25 @@ public class PolicyTreeModel extends DefaultTreeModel {
     }
 
     /**
-     * Keep consistency on the assertion-disable status with the parent node when inerting/moving a new child in.
+     * Keep consistency on the assertion-enabling status with the parent node, where a new child inserted or moved into.
      *
      * @param newChild the new node
      * @param parent the parent node
      */
     private void updateAssertionTreeNodeDisableStatus(MutableTreeNode newChild, MutableTreeNode parent) {
-        // Precheck if child and parent are valid.
+        // Pre-check if child and parent are valid.
         if (newChild == null || parent == null ||
             !(newChild instanceof AssertionTreeNode) ||
             !(parent instanceof CompositeAssertionTreeNode)) {
             return;
         }
 
-        boolean isParentEnabled = ((CompositeAssertionTreeNode)parent).asAssertion().isEnabled();
+        boolean isParentEnabled = ((CompositeAssertionTreeNode) parent).isAssertionEnabled();
         if (! isParentEnabled) {
-            ((AssertionTreeNode)newChild).asAssertion().setEnabled(false);
-            // If the new child is a composite assertion, then disable all descendant.
+            ((AssertionTreeNode) newChild).setAncestorDisabled(true);
+
             if (newChild instanceof CompositeAssertionTreeNode) {
-                for (int i = 0; i < newChild.getChildCount(); i++) {
-                    MutableTreeNode grandchild =(MutableTreeNode) ((CompositeAssertionTreeNode)newChild).getChildAt(i);
-                    updateAssertionTreeNodeDisableStatus(grandchild, newChild);
-                }
+                ((CompositeAssertionTreeNode) newChild).updateDescendantAttributeAncestorDisabled(true);
             }
         }
     }
@@ -429,4 +426,3 @@ public class PolicyTreeModel extends DefaultTreeModel {
         }
     }
 }
-

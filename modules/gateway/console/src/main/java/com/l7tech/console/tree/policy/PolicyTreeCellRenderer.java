@@ -61,7 +61,9 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
 
         if ((!enabled) || isIncluded(node)) {
             setForeground(Color.GRAY);
-            setFont(italicFont);
+            if ((! node.asAssertion().isEnabled()) || isIncluded(node)) {
+                setFont(italicFont);
+            }
         } else {
             setForeground( sel ? getTextSelectionColor() : getTextNonSelectionColor() );
             setFont(isRoutingAssertionNode(node) ? boldFont : plainFont);
