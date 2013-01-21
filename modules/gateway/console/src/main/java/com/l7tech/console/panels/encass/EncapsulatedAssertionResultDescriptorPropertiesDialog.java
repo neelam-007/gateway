@@ -57,6 +57,7 @@ public class EncapsulatedAssertionResultDescriptorPropertiesDialog extends JDial
         });
 
         typeComboBox.setModel(new DefaultComboBoxModel(DataType.VALUES));
+        inputValidator.ensureComboBoxSelection("Type", typeComboBox);
 
         cancelButton.addActionListener(Utilities.createDisposeAction(this));
 
@@ -66,7 +67,7 @@ public class EncapsulatedAssertionResultDescriptorPropertiesDialog extends JDial
 
     private void updateGui(EncapsulatedAssertionResultDescriptor bean) {
         nameField.setText(bean.getResultName());
-        typeComboBox.setSelectedItem(bean.getResultType() == null ? null : DataType.forName(bean.getResultType()));
+        typeComboBox.setSelectedItem(bean.getResultType() == null ? typeComboBox.getItemAt(0) : DataType.forName(bean.getResultType()));
     }
 
     private EncapsulatedAssertionResultDescriptor updateBean(EncapsulatedAssertionResultDescriptor bean) {

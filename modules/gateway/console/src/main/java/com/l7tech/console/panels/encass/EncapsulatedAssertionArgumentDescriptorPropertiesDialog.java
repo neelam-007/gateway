@@ -60,6 +60,7 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
         });
 
         typeComboBox.setModel(new DefaultComboBoxModel(DataType.GUI_EDITABLE_VALUES));
+        inputValidator.ensureComboBoxSelection("Type", typeComboBox);
 
         cancelButton.addActionListener(Utilities.createDisposeAction(this));
 
@@ -81,7 +82,7 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
 
     private void updateGui(EncapsulatedAssertionArgumentDescriptor bean) {
         nameField.setText(bean.getArgumentName());
-        typeComboBox.setSelectedItem(bean.getArgumentType() == null ? null : DataType.forName(bean.getArgumentType()));
+        typeComboBox.setSelectedItem(bean.getArgumentType() == null ? typeComboBox.getItemAt(0) : DataType.forName(bean.getArgumentType()));
         guiPromptCheckBox.setSelected(bean.isGuiPrompt());
         guiLabelField.setText(bean.getGuiLabel());
     }
