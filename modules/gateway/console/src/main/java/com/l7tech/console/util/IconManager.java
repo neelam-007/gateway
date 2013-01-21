@@ -1,8 +1,18 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.MainWindow;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import javax.swing.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A singleton class that contains icon resources.
@@ -14,6 +24,7 @@ public class IconManager {
     /* this class classloader */
     private final ClassLoader cl = IconManager.class.getClassLoader();
     private static IconManager instance = new IconManager();
+    private static final Logger logger = Logger.getLogger(IconManager.class.getName());
 
     public static IconManager getInstance() {
         return instance;
@@ -25,7 +36,6 @@ public class IconManager {
     protected IconManager() {
         loadimages();
     }
-
 
     /**
      * load icon images using this instance ClassLoader.
@@ -56,6 +66,8 @@ public class IconManager {
 
         openFolder
           = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/FolderOpen16.gif"));
+
+        imageNames = retrieveImageNames();
  }
 
 
@@ -100,6 +112,48 @@ public class IconManager {
         return openFolder;
     }
 
+    /**
+     * @return a list of available console image names. May be empty but never null.
+     */
+    @NotNull
+    public List<String> getImageNames() {
+        return imageNames;
+    }
+
+    /**
+     * Scans com/l7tech/console/resources for names of images resources.
+     *
+     * @return a set of image resource names found in com/l7tech/console/resources.
+     */
+    private List<String> retrieveImageNames() {
+        final List<String> names = new ArrayList<String>();
+        final PathMatchingResourcePatternResolver resourceResolver = new PathMatchingResourcePatternResolver(cl);
+        try {
+            for (final String extension : FileUtils.getImageFileFilter().getExtensions()) {
+                names.addAll(retrieveImageNamesByExtension(resourceResolver, extension));
+            }
+        } catch (final IOException e) {
+            logger.log(Level.WARNING, "Error retrieving icon names: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+        }
+        return names;
+    }
+
+    private List<String> retrieveImageNamesByExtension(@NotNull final PathMatchingResourcePatternResolver resolver, @NotNull final String imageExtension) throws IOException {
+        final List<String> names = new ArrayList<String>();
+        final Resource[] resources = resolver.getResources(MainWindow.RESOURCE_PATH + "/*." + imageExtension);
+        if (resources != null) {
+            for (final Resource resource : resources) {
+                final String path = resource.getURL().getPath();
+                final int slashIndex = path.lastIndexOf("/");
+                if (slashIndex > -1) {
+                    final String name = path.substring(slashIndex + 1);
+                    names.add(name);
+                }
+            }
+        }
+        return names;
+    }
+
     private ImageIcon iconAdd;
     private ImageIcon iconAddAll;
     private ImageIcon iconRemove;
@@ -115,4 +169,5 @@ public class IconManager {
     private ImageIcon upOneLevel;
     /** the 'action open folder' icon */
     private ImageIcon openFolder;
+    private List<String> imageNames;
 }

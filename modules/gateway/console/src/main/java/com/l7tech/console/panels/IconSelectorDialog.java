@@ -1,7 +1,9 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
+import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.ImageCache;
@@ -18,7 +20,7 @@ import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
-import java.util.Collection;
+import java.util.*;
 
 import static com.l7tech.console.util.EncapsulatedAssertionConsoleUtil.IconType;
 
@@ -26,6 +28,8 @@ import static com.l7tech.console.util.EncapsulatedAssertionConsoleUtil.IconType;
  * A dialog which allows the user to select an icon from an image gallery or browse for an image file.
  */
 public class IconSelectorDialog extends ValidatedPanel<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>> {
+    private static final int ICON_MAX_SIZE = SyspropUtil.getInteger("com.l7tech.icon.resource.max.size", 16);
+    private static final int ICON_MIN_SIZE = SyspropUtil.getInteger("com.l7tech.icon.resource.min.size", 16);
     private static final Border LINE_BORDER = BorderFactory.createLineBorder(Color.BLACK, 3);
     private static final Border EMPTY_BORDER = BorderFactory.createEmptyBorder(3, 3, 3, 3);
     private static final int CUSTOM_ICON_MAX_SIZE = SyspropUtil.getInteger("com.l7tech.icon.custom.max.size", 32768);
@@ -84,19 +88,7 @@ public class IconSelectorDialog extends ValidatedPanel<Pair<EncapsulatedAssertio
     protected void initComponents() {
         // # of rows is dynamic
         galleryPanel.setLayout(new GridLayout(0, COLS, PADDING, PADDING));
-        final Collection<ImageIcon> icons = ImageCache.getInstance().getIcons(IconSelectorDialog.class.getClassLoader());
-        for (final ImageIcon icon : icons) {
-            final JLabel iconLabel = new JLabel(icon);
-            if (defaultSelect != null && defaultSelect.getDescription().equals(icon.getDescription())) {
-                selectedLabel = iconLabel;
-                iconLabel.setBorder(LINE_BORDER);
-            } else {
-                iconLabel.setBorder(EMPTY_BORDER);
-            }
-            iconLabel.setToolTipText(icon.getDescription());
-            iconLabel.addMouseListener(new IconLabelMouseListener(iconLabel, icon.getDescription()));
-            galleryPanel.add(iconLabel);
-        }
+        createIconGallery();
         browseButton.addActionListener(new FileButtonActionListener());
         fileTextField.addKeyListener(new FileTextFieldKeyListener());
         setLayout(new BorderLayout());
@@ -111,8 +103,31 @@ public class IconSelectorDialog extends ValidatedPanel<Pair<EncapsulatedAssertio
     protected void doUpdateModel() {
         if (!fileTextField.getText().isEmpty()) {
             final File file = new File(fileTextField.getText());
-            if (file.length() > CUSTOM_ICON_MAX_SIZE){
+            if (file.length() > CUSTOM_ICON_MAX_SIZE) {
                 throw new IllegalArgumentException("Maximum file size is " + CUSTOM_ICON_MAX_SIZE + " bytes.");
+            }
+        }
+    }
+
+    private void createIconGallery() {
+        final java.util.List<String> imageNames = IconManager.getInstance().getImageNames();
+        Collections.sort(imageNames);
+        for (final String imageName : imageNames) {
+            final ImageIcon icon = ImageCache.getInstance().getIconAsIcon(MainWindow.RESOURCE_PATH + "/" + imageName);
+            if (icon != null &&
+                    icon.getIconHeight() <= ICON_MAX_SIZE && icon.getIconHeight() >= ICON_MIN_SIZE &&
+                    icon.getIconWidth() <= ICON_MAX_SIZE && icon.getIconWidth() >= ICON_MIN_SIZE) {
+                icon.setDescription(imageName);
+                final JLabel iconLabel = new JLabel(icon);
+                if (defaultSelect != null && defaultSelect.getDescription().equals(icon.getDescription())) {
+                    selectedLabel = iconLabel;
+                    iconLabel.setBorder(LINE_BORDER);
+                } else {
+                    iconLabel.setBorder(EMPTY_BORDER);
+                }
+                iconLabel.setToolTipText(icon.getDescription());
+                iconLabel.addMouseListener(new IconLabelMouseListener(iconLabel, icon.getDescription()));
+                galleryPanel.add(iconLabel);
             }
         }
     }
