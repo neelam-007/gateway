@@ -9,10 +9,13 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.util.comparator.NullSafeComparator;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,6 +61,7 @@ public class AssertionInfoDialog extends JDialog {
             final UsesVariables usesVariables = (UsesVariables) assertion;
             final String[] variablesUsed = usesVariables.getVariablesUsed();
             if (variablesUsed.length > 0) {
+                Arrays.sort(variablesUsed);
                 final Object[][] data = new Object[variablesUsed.length][1];
                 for (int i = 0; i < variablesUsed.length; i++) {
                     String var = variablesUsed[i];
@@ -79,6 +83,12 @@ public class AssertionInfoDialog extends JDialog {
                 final SetsVariables setsVariables = (SetsVariables) assertion;
                 final VariableMetadata[] variablesSet = setsVariables.getVariablesSet();
                 if (variablesSet.length > 0) {
+                    Arrays.sort(variablesSet, new NullSafeComparator<VariableMetadata>(new Comparator<VariableMetadata>() {
+                        @Override
+                        public int compare(@NotNull final VariableMetadata o1, @NotNull final VariableMetadata o2) {
+                            return new NullSafeComparator<String>(String.CASE_INSENSITIVE_ORDER, true).compare(o1.getName(), o2.getName());
+                        }
+                    }, true));
                     final Object[][] data = new Object[variablesSet.length][3];
                     for (int i = 0; i < variablesSet.length; i++) {
                         final VariableMetadata var = variablesSet[i];
