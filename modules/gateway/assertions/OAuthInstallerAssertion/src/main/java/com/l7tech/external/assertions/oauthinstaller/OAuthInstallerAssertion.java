@@ -17,6 +17,7 @@ public class OAuthInstallerAssertion extends Assertion  {
     protected static final Logger logger = Logger.getLogger(OAuthInstallerAssertion.class.getName());
 
     private static final String META_INITIALIZED = OAuthInstallerAssertion.class.getName() + ".metadataInitialized";
+    public static final String SECURE_ZONE_STORAGE_COMP_ID = "b082274b-f00e-4fbf-bbb7-395a95ca2a35";
 
     @Override
     public AssertionMetadata meta() {
@@ -48,6 +49,8 @@ public class OAuthInstallerAssertion extends Assertion  {
                 return Collections.<ExtensionInterfaceBinding>singletonList(binding);
             }
         });
+
+        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAdminImpl");
 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 

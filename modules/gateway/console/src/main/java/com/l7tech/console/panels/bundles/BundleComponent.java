@@ -24,6 +24,7 @@ public class BundleComponent extends JPanel{
     private JLabel policyJdbcConnLabel;
     private JComboBox<String> availableJdbcConnsComboBox;
     private JButton manageJDBCConnectionsButton;
+    private JPanel extraPanel;
 
     public BundleComponent(BundleInfo bundleInfo) {
         this(bundleInfo.getName(), bundleInfo.getDescription(), bundleInfo.getVersion(), bundleInfo.getJdbcConnectionReferences());
@@ -73,6 +74,15 @@ public class BundleComponent extends JPanel{
 
     public JPanel getBundlePanel() {
         return bundlePanel;
+    }
+
+    /**
+     * Get the panel that allows clients to extra custom components which will show up within the
+     * UI area of this bundle.
+     * @return JPanel, never null.
+     */
+    public JPanel getExtraPanel() {
+        return extraPanel;
     }
 
     public JCheckBox getInstallCheckBox() {

@@ -30,6 +30,9 @@ import static com.l7tech.external.assertions.policybundleinstaller.InstallerUtil
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.*;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
 
+import static com.l7tech.server.policy.bundle.PolicyUtils.findJdbcReferences;
+import static com.l7tech.server.policy.bundle.PolicyUtils.updatePolicyIncludes;
+import static com.l7tech.util.DomUtils.findExactlyOneChildElementByName;
 import static com.l7tech.util.Functions.Nullary;
 
 public class PolicyBundleInstaller {
@@ -233,15 +236,7 @@ public class PolicyBundleInstaller {
                 continue;
             }
 
-            final Element serviceDetail;
-            try {
-                serviceDetail = XmlUtil.findExactlyOneChildElementByName(serviceElmWritable, BundleUtils.L7_NS_GW_MGMT, "ServiceDetail");
-            } catch (TooManyChildElementsException e) {
-                throw new BundleResolver.InvalidBundleException("Invalid Service XML found. Expected a single ServiceDetail element for service with id #{" + id + "}");
-            } catch (MissingRequiredElementException e) {
-                throw new BundleResolver.InvalidBundleException("Invalid Service XML found. No ServiceDetail element found for service with id #{" + id + "}");
-            }
-
+            final Element serviceDetail = getServiceDetailElement(serviceElmWritable);
             final String bundleFolderId = serviceDetail.getAttribute("folderId");
 
             if (!oldToNewFolderIds.containsKey(Long.valueOf(bundleFolderId))) {
@@ -285,7 +280,8 @@ public class PolicyBundleInstaller {
 
             // if this service has any includes we need to update them
             final Document policyDocumentFromResource = getPolicyDocumentFromResource(policyResourceElmWritable, "Service", id);
-            updatePolicyDoc("Service", contextOldPolicyGuidsToNewGuids, id, policyResourceElmWritable, policyDocumentFromResource);
+            final Element serviceDetailElmReadOnly = getServiceDetailElement(serviceElm);
+            updatePolicyDoc(serviceDetailElmReadOnly, "Service", contextOldPolicyGuidsToNewGuids, id, policyResourceElmWritable, policyDocumentFromResource);
 
             final String serviceXmlTemplate = XmlUtil.nodeToStringQuiet(serviceElmWritable);
             final String createServiceXml = MessageFormat.format(CREATE_ENTITY_XML, getUuid(), SERVICES_MGMT_NS, serviceXmlTemplate);
@@ -482,7 +478,7 @@ public class PolicyBundleInstaller {
 
     /**
      *
-     * @param enumPolicyElmReadOnly
+     * @param enumPolicyElmReadOnly read only access to the Policy Gateay Mgmt element
      * @param oldGuidsToNewGuids    map of the policy's guid from the gateway mgmt enumeration document to it's actual
      *                              guid once published. This avoids attempting to publish the same policy more than once.
      * @param oldToNewFolderIds
@@ -542,9 +538,10 @@ public class PolicyBundleInstaller {
 
         checkInterrupted();
 
+        final Element policyDetailElmReadOnly = getPolicyDetailElement(enumPolicyElmReadOnly);
         // get or create
         // Create a new document and modify it
-        updatePolicyDoc("Policy", oldGuidsToNewGuids, policyGuid, policyResourceElmWritable, policyDocWriteEl, policyIncludes);
+        updatePolicyDoc(policyDetailElmReadOnly, "Policy", oldGuidsToNewGuids, policyGuid, policyResourceElmWritable, policyDocWriteEl, policyIncludes);
 
         final Element policyDetailWritable = getPolicyDetailElement(enumPolicyElmWritable);
         final String folderId = policyDetailWritable.getAttribute("folderId");
@@ -607,7 +604,8 @@ public class PolicyBundleInstaller {
         }
     }
 
-    private void updatePolicyDoc(String entityType,
+    private void updatePolicyDoc(Element serviceDetailElmReadOnly,
+                                 String entityType,
                                  Map<String, String> oldGuidsToNewGuids,
                                  String identifier,
                                  Element policyResourceElmWritable,
@@ -615,32 +613,34 @@ public class PolicyBundleInstaller {
             throws BundleResolver.InvalidBundleException, PreBundleSavePolicyCallback.PolicyUpdateException {
 
         final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(policyDocumentFromResource);
-        updatePolicyDoc(entityType, oldGuidsToNewGuids, identifier, policyResourceElmWritable, policyDocumentFromResource, policyIncludes);
+        updatePolicyDoc(serviceDetailElmReadOnly, entityType, oldGuidsToNewGuids, identifier, policyResourceElmWritable, policyDocumentFromResource, policyIncludes);
     }
 
     /**
      *
+     * @param entityDetailElmReadOnly either a PolicyDetail or a ServiceDetail element which is read only
      * @param policyIncludesFromPolicyDocument These elements must come from policyDocumentFromResource's Document
      * @throws BundleResolver.InvalidBundleException
      * @throws PreBundleSavePolicyCallback.PolicyUpdateException
      */
-    private void updatePolicyDoc(String entityType,
+    private void updatePolicyDoc(Element entityDetailElmReadOnly,
+                                 String entityType,
                                  Map<String, String> oldGuidsToNewGuids,
                                  String identifier,
                                  Element policyResourceElmWritable,
                                  Document policyDocumentFromResource,
                                  @NotNull List<Element> policyIncludesFromPolicyDocument)
             throws BundleResolver.InvalidBundleException, PreBundleSavePolicyCallback.PolicyUpdateException {
-        PolicyUtils.updatePolicyIncludes(oldGuidsToNewGuids, identifier, entityType, policyIncludesFromPolicyDocument);
+        updatePolicyIncludes(oldGuidsToNewGuids, identifier, entityType, policyIncludesFromPolicyDocument);
 
         final BundleMapping bundleMapping = context.getBundleMapping();
         if (bundleMapping != null) {
             final Map<String, String> mappedJdbcReferences = bundleMapping.getJdbcMappings();
             if (!mappedJdbcReferences.isEmpty()) {
-                final List<Element> jdbcReferencesElms = PolicyUtils.findJdbcReferences(policyDocumentFromResource.getDocumentElement());
+                final List<Element> jdbcReferencesElms = findJdbcReferences(policyDocumentFromResource.getDocumentElement());
                 for (Element jdbcRefElm : jdbcReferencesElms) {
                     try {
-                        final Element connNameElm = XmlUtil.findExactlyOneChildElementByName(jdbcRefElm, BundleUtils.L7_NS_POLICY, "ConnectionName");
+                        final Element connNameElm = findExactlyOneChildElementByName(jdbcRefElm, BundleUtils.L7_NS_POLICY, "ConnectionName");
                         final String policyConnName = connNameElm.getAttribute("stringValue").trim();
                         if (mappedJdbcReferences.containsKey(policyConnName)) {
                             connNameElm.setAttribute("stringValue", mappedJdbcReferences.get(policyConnName));
@@ -656,7 +656,7 @@ public class PolicyBundleInstaller {
         }
 
         if (savePolicyCallback != null) {
-            savePolicyCallback.prePublishCallback(context.getBundleInfo(), "Policy", policyDocumentFromResource);
+            savePolicyCallback.prePublishCallback(context.getBundleInfo(), entityDetailElmReadOnly, policyDocumentFromResource);
         }
 
         //write changes back to the resource document

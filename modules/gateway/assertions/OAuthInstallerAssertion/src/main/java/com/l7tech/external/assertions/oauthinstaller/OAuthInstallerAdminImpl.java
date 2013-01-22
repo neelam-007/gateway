@@ -10,6 +10,7 @@ import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.event.admin.DetailedAdminEvent;
@@ -22,9 +23,11 @@ import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.policy.bundle.*;
 import com.l7tech.util.*;
+import com.l7tech.xml.xpath.XpathUtil;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -48,13 +51,24 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
+import static com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAssertion.SECURE_ZONE_STORAGE_COMP_ID;
 import static com.l7tech.server.event.AdminInfo.find;
 import static com.l7tech.policy.bundle.PolicyBundleDryRunResult.DryRunItem;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getEntityName;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getNamespaceMap;
 
 public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OAuthInstallerAdmin {
 
     public static final String NS_INSTALLER_VERSION = "http://ns.l7tech.com/2012/11/oauth-toolkit-bundle";
+    public static final String LOOKUP_API_KEY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:LookupApiKey>\n" +
+            "            <L7p:ApiKey stringValue=\"apikey\"/>\n" +
+            "        </L7p:LookupApiKey>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>\n";
 
     public OAuthInstallerAdminImpl(final String bundleBaseName, ApplicationEventPublisher appEventPublisher) throws OAuthToolkitInstallationException {
         this.appEventPublisher = appEventPublisher;
@@ -119,7 +133,8 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     @Override
     public JobId<PolicyBundleDryRunResult> dryRunOtkInstall(@NotNull final Collection<String> otkComponentId,
                                                             @NotNull final Map<String, BundleMapping> bundleMappings,
-                                                            @Nullable final String installationPrefix) {
+                                                            @Nullable final String installationPrefix,
+                                                            final boolean integrateApiPortal) {
 
         final String taskIdentifier = UUID.randomUUID().toString();
         final JobContext jobContext = new JobContext(taskIdentifier);
@@ -129,7 +144,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
             @Override
             public PolicyBundleDryRunResult call() throws Exception {
                 try {
-                    return doDryRunOtkInstall(taskIdentifier, otkComponentId, bundleMappings, installationPrefix);
+                    return doDryRunOtkInstall(taskIdentifier, otkComponentId, bundleMappings, installationPrefix, integrateApiPortal);
                 } catch (OAuthToolkitInstallationException e) {
                     final OtkInstallationAuditEvent problemEvent = new OtkInstallationAuditEvent(this, "Problem during pre installation check of the OAuth Toolkit", Level.WARNING);
                     problemEvent.setAuditDetails(Arrays.asList(
@@ -157,6 +172,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
      *                           install dependency order.
      * @param folderOid          oid of the folder to install into.
      * @param installationPrefix prefix to version the installation with
+     * @param integrateApiPortal true if API portal should be integrated. See interface javadoc.
      * @return Job ID, which will report on which bundles were installed.
      * @throws IOException for any problem installing. Installation is cancelled on the first error.
      */
@@ -165,7 +181,8 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     public JobId<ArrayList> installOAuthToolkit(@NotNull final Collection<String> otkComponentId,
                                                 final long folderOid,
                                                 @NotNull final Map<String, BundleMapping> bundleMappings,
-                                                @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
+                                                @Nullable final String installationPrefix,
+                                                final boolean integrateApiPortal) throws OAuthToolkitInstallationException {
 
         final String prefixToUse = (installationPrefix != null && !installationPrefix.isEmpty()) ? installationPrefix : null;
         if (prefixToUse != null) {
@@ -183,7 +200,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
             @Override
             public ArrayList call() throws Exception {
                 try {
-                    return new ArrayList<String>(doInstallOAuthToolkit(taskIdentifier, otkComponentId, folderOid, bundleMappings, prefixToUse));
+                    return new ArrayList<String>(doInstallOAuthToolkit(taskIdentifier, otkComponentId, folderOid, bundleMappings, prefixToUse, integrateApiPortal));
                 } catch(OAuthToolkitInstallationException e) {
                     final OtkInstallationAuditEvent problemEvent = new OtkInstallationAuditEvent(this, "Problem during installation of the OAuth Toolkit", Level.WARNING);
                     problemEvent.setAuditDetails(Arrays.asList(
@@ -454,7 +471,8 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     protected PolicyBundleDryRunResult doDryRunOtkInstall(@NotNull final String taskIdentifier,
                                                           @NotNull final Collection<String> otkComponentIds,
                                                           @NotNull final Map<String, BundleMapping> bundleMappings,
-                                                          @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
+                                                          @Nullable final String installationPrefix,
+                                                          final boolean integrateApiPortal) throws OAuthToolkitInstallationException {
         final OtkInstallationAuditEvent startedEvent = new OtkInstallationAuditEvent(this, MessageFormat.format(preInstallationMessage, "started"), Level.INFO);
         appEventPublisher.publishEvent(startedEvent);
 
@@ -524,10 +542,21 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                         jdbcConnsThatDontExist.toString()));
                     }
 
+                    final List<String> missingModularAssertions = new ArrayList<String>();
+                    if (SECURE_ZONE_STORAGE_COMP_ID.equals(bundleId) && integrateApiPortal) {
+                        //check if API Portal integration is possible if it was requested.
+                        final boolean isLookUpApiAvailable = isLookupApiKeyAssertionAvailable();
+                        if (!isLookUpApiAvailable) {
+                            missingModularAssertions.add("Look Up API Key");
+                        }
+                    }
+
                     final Map<DryRunItem, List<String>> itemToConflicts = new HashMap<DryRunItem, List<String>>();
                     itemToConflicts.put(DryRunItem.SERVICES, urlPatternWithConflict);
                     itemToConflicts.put(DryRunItem.POLICIES, policyWithNameConflict);
                     itemToConflicts.put(DryRunItem.JDBC_CONNECTIONS, jdbcConnsThatDontExist);
+                    itemToConflicts.put(DryRunItem.MODULAR_ASSERTION, missingModularAssertions);
+
 
                     bundleToConflicts.put(bundleId, itemToConflicts);
 
@@ -574,7 +603,8 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                                  @NotNull final Collection<String> otkComponentIds,
                                                  final long folderOid,
                                                  @NotNull Map<String, BundleMapping> bundleMappings,
-                                                 @Nullable final String installationPrefix) throws OAuthToolkitInstallationException {
+                                                 @Nullable final String installationPrefix,
+                                                 final boolean integrateApiPortal) throws OAuthToolkitInstallationException {
 
         final List<String> installedBundles = new ArrayList<String>();
         final OAuthToolkitBundleResolver bundleResolver = new OAuthToolkitBundleResolver(bundleInfosFromJar);
@@ -608,7 +638,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                             final InstallPolicyBundleEvent installEvent =
                                     new InstallPolicyBundleEvent(this,
                                             context,
-                                            getSavePolicyCallback(prefixToUse));
+                                            getSavePolicyCallback(prefixToUse, integrateApiPortal));
                             jobContext.currentEvent = installEvent;
 
                             appEventPublisher.publishEvent(installEvent);
@@ -698,6 +728,20 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         }
     }
 
+    /**
+     * Wired via OAuthInstallerAssertion meta data.
+     *
+     * @param context spring application context
+     */
+    public static synchronized void onModuleLoaded(final ApplicationContext context) {
+
+        if (spring != null) {
+            logger.log(Level.WARNING, "OAuth Installer module is already initialized");
+        } else {
+            spring = context;
+        }
+    }
+
     // - PACKAGE
 
     static class OtkInstallationAuditEvent extends DetailedAdminEvent {
@@ -727,6 +771,12 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     @SuppressWarnings("SpringJavaAutowiringInspection")
     @Inject
     private JdbcConnectionManager jdbcConnectionManager;
+
+    /**
+     * Needed to get wspReader, cannot inject wspReader as it is in creation when assertions are loaded causing a
+     * circular dependency.
+     */
+    private static ApplicationContext spring;
 
     /**
      * Associates a JobId, WSManagementRequestEvent and Cancelled status with a task identifier.
@@ -828,10 +878,11 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     }
 
     @NotNull
-    private PreBundleSavePolicyCallback getSavePolicyCallback(final String installationPrefix) {
+    private PreBundleSavePolicyCallback getSavePolicyCallback(final String installationPrefix,
+                                                              final boolean integrateApiPortal) {
         return new PreBundleSavePolicyCallback() {
             @Override
-            public void prePublishCallback(BundleInfo bundleInfo, String resourceType, Document writeablePolicyDoc) throws PolicyUpdateException {
+            public void prePublishCallback(@NotNull BundleInfo bundleInfo, @NotNull Element entityDetailElmReadOnly, @NotNull Document writeablePolicyDoc) throws PolicyUpdateException {
 
                 // add in the version comment for every policy saved, whether it's a policy fragment or a service policy.
                 final String version = bundleInfo.getVersion();
@@ -886,7 +937,64 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                         }
                     }
                 }
+
+                // Is the API portal being integrated? If not then we need to remove assertions from the policy
+                if (SECURE_ZONE_STORAGE_COMP_ID.equals(bundleInfo.getId()) && !integrateApiPortal) {
+                    // check the service being published
+                    final String entityName = getEntityName(entityDetailElmReadOnly);
+                    if ("oauth/clients".equals(entityName)) {
+                        // we do not need to check for modular assertion dependencies, like any other
+                        // if the user wants the API Portal integrated, then we will do that, it can be fixed manually later.
+                        removeApiPortalIntegration(writeablePolicyDoc);
+                    }
+                }
             }
         };
+    }
+
+    private boolean isLookupApiKeyAssertionAvailable() {
+        if (spring == null) {
+            throw new IllegalStateException("OAuth Installer is not configured. ApplicationContext is missing");
+        }
+
+        final WspReader wspReader = spring.getBean("wspReader", WspReader.class);
+        try {
+            wspReader.parseStrictly(LOOKUP_API_KEY_XML, WspReader.Visibility.omitDisabled);
+        } catch (IOException e) {
+            // Lookup API Key assertion is not installed
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * The SecureZone storage document is pre configured with the API Portal. If this integration is not needed then
+     * it needs to be removed from the policy before publishing.
+     *
+     * The policy includes 'PORTAL_INTEGRATION' on each assertion (composite or non composite) specific to the API Portal.
+     *
+     * The policy has been written so that these items can be removed with no consequence on the remaining logic of the policy.
+     * Note: This will remove 'branches' of policy in addition to individual assertions.
+     *
+     * @param writeableDoc pre save writeable layer 7 policy document
+     */
+    private void removeApiPortalIntegration(Document writeableDoc) {
+        // find all portal assertions:
+        final List<Element> foundComments = XpathUtil.findElements(writeableDoc.getDocumentElement(), ".//L7p:value[@stringValue='PORTAL_INTEGRATION']", getNamespaceMap());
+        for (Element foundComment : foundComments) {
+            // verify it's a left comment
+            final Element entryParent = (Element) foundComment.getParentNode();
+            final Node keyElm = DomUtils.findFirstChildElement(entryParent);
+
+            final Node stringValue = keyElm.getAttributes().getNamedItem("stringValue");
+            if (! "LEFT.COMMENT".equals(stringValue.getNodeValue())) {
+                continue;
+            }
+
+            // get the assertion element
+            final Element assertionElm = (Element) entryParent.getParentNode().getParentNode().getParentNode();
+            final Node assertionParentElm = assertionElm.getParentNode();
+            assertionParentElm.removeChild(assertionElm);
+        }
     }
 }

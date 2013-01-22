@@ -8,7 +8,7 @@ import java.util.List;
  */
 public interface PolicyBundleDryRunResult extends Serializable {
 
-    enum DryRunItem { SERVICES, POLICIES, JDBC_CONNECTIONS }
+    enum DryRunItem { SERVICES, POLICIES, JDBC_CONNECTIONS, MODULAR_ASSERTION }
 
     /**
      * Does the bundle with bundleId contain any conflicts?

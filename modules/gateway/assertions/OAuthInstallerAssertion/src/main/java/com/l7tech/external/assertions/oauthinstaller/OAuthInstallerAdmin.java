@@ -85,13 +85,16 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
      * @param installationPrefix installation prefix. If not null and not empty this value will be prepended to the names
      *                           of all installed policies and the routing URIs of all installed services before checking
      *                           for conflicts of those values.
+     * @param integrateApiPortal true if the API portal should be integrated during installation. Only relevant when the
+     *                           Secure Zone Storage bundle is being installed.
      * @return Map of component id to a map which is keyed on service, policy, jdbc and assertion, whose values are
      *         the list of items which have conflicts.
      */
     @NotNull
     JobId<PolicyBundleDryRunResult> dryRunOtkInstall(@NotNull Collection<String> otkComponentId,
                                                      @NotNull Map<String, BundleMapping> bundleMappings,
-                                                     @Nullable String installationPrefix);
+                                                     @Nullable String installationPrefix,
+                                                     boolean integrateApiPortal);
     /**
      * Install the bundle identified by the supplied name
      *
@@ -101,6 +104,8 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
      * @param bundleMappings     Mapping of bundleId to mappings for that bundle. Required.
      * @param installationPrefix installation prefix. If not null and not empty this value will be prepended to the names
      *                           of all installed policies and the routing URIs of all installed services.
+     * @param integrateApiPortal true if the API portal should be integrated during installation. Only relevant when the
+     *                           Secure Zone Storage bundle is being installed.
      * @return the name of each bundle installed. If successful this will be each bundle requested.
      */
     @Secured(stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 1)
@@ -108,7 +113,8 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
     AsyncAdminMethods.JobId<ArrayList> installOAuthToolkit(@NotNull Collection<String> otkComponentId,
                                                            long folderOid,
                                                            @NotNull Map<String, BundleMapping> bundleMappings,
-                                                           @Nullable String installationPrefix) throws OAuthToolkitInstallationException;
+                                                           @Nullable String installationPrefix,
+                                                           boolean integrateApiPortal) throws OAuthToolkitInstallationException;
 
     public static class OAuthToolkitInstallationException extends Exception{
         public OAuthToolkitInstallationException(String message) {

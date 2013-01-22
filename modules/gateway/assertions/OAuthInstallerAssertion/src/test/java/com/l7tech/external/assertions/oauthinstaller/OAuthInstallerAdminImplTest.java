@@ -13,19 +13,23 @@ import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.*;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.xml.xpath.XpathUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
+import static com.l7tech.util.Functions.toMap;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
@@ -69,7 +73,7 @@ public class OAuthInstallerAdminImplTest {
         });
 
         final AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = admin.dryRunOtkInstall(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
-                "ba525763-6e55-4748-9376-76055247c8b1"), new HashMap<String, BundleMapping>(), null);
+                "ba525763-6e55-4748-9376-76055247c8b1"), new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);
@@ -120,7 +124,7 @@ public class OAuthInstallerAdminImplTest {
         });
 
         final AsyncAdminMethods.JobId<ArrayList> jobId = admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
-                "ba525763-6e55-4748-9376-76055247c8b1"), -5002, new HashMap<String, BundleMapping>(), null);
+                "ba525763-6e55-4748-9376-76055247c8b1"), -5002, new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);
@@ -147,7 +151,10 @@ public class OAuthInstallerAdminImplTest {
 
     /**
      * Test that all expected bundles are found and contain the correct values.
-     * This will need to be updated as version numbers change and / or bundles get added..
+     * This will need to be updated as version numbers change and / or bundles get added.
+     *
+     * Update - also verifies that the Secure Zone Storage bundle has the correct component id (as it does for others)
+     * but this cannot change due to implementation of OAuth_Toolkit_Goatfish_Enhancements#API_Portal_Integration
      *
      * @throws Exception
      */
@@ -361,7 +368,7 @@ public class OAuthInstallerAdminImplTest {
         });
 
         final AsyncAdminMethods.JobId<ArrayList> jobId = admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1")
-                , -5002, new HashMap<String, BundleMapping>(), null);
+                , -5002, new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);
@@ -532,9 +539,9 @@ public class OAuthInstallerAdminImplTest {
 
                                 final Element policyResourceElmWritable = getPolicyResourceElement(policyElement, "Policy", "not used");
                                 final Document policyResource = getPolicyDocumentFromResource(policyResourceElmWritable, "Policy", "not used");
+                                final Element policyDetailElement = getPolicyDetailElement(policyElement);
 
-
-                                savePolicyCallback.prePublishCallback(bundleInfo, "not important", policyResource);
+                                savePolicyCallback.prePublishCallback(bundleInfo, policyDetailElement, policyResource);
 
                                 verifyCommentAdded(policyResource, bundleVersion, otkToolkitVersion[0]);
                                 numPolicyCommentsFound[0]++;
@@ -544,13 +551,13 @@ public class OAuthInstallerAdminImplTest {
                         {
                             final Document serviceEnum = installEvent.getContext().getBundleResolver().getBundleItem(bundleInfo.getId(), BundleResolver.BundleItem.SERVICE, false);
                             final List<Element> gatewayMgmtPolicyElments = getEntityElements(serviceEnum.getDocumentElement(), "Service");
-                            for (Element policyElement : gatewayMgmtPolicyElments) {
+                            for (Element serviceElement : gatewayMgmtPolicyElments) {
 
-                                final Element policyResourceElmWritable = getPolicyResourceElement(policyElement, "Service", "not used");
+                                final Element policyResourceElmWritable = getPolicyResourceElement(serviceElement, "Service", "not used");
                                 final Document policyResource = getPolicyDocumentFromResource(policyResourceElmWritable, "Service", "not used");
+                                final Element serviceDetailElement = getServiceDetailElement(serviceElement);
 
-
-                                savePolicyCallback.prePublishCallback(bundleInfo, "not important", policyResource);
+                                savePolicyCallback.prePublishCallback(bundleInfo, serviceDetailElement, policyResource);
                                 verifyCommentAdded(policyResource, bundleVersion, otkToolkitVersion[0]);
                                 numServiceCommentsFound[0]++;
                             }
@@ -563,14 +570,13 @@ public class OAuthInstallerAdminImplTest {
 
                     installEvent.setProcessed(true);
                 }
-
             }
         });
 
         otkToolkitVersion[0] = admin.getOAuthToolkitVersion();
 
         final AsyncAdminMethods.JobId<ArrayList> jobId =
-                admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1"), -5002, new HashMap<String, BundleMapping>(), null);
+                admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1"), -5002, new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);
@@ -595,6 +601,166 @@ public class OAuthInstallerAdminImplTest {
         System.out.println(dbSchema);
         assertNotNull(dbSchema);
         assertFalse(dbSchema.trim().isEmpty());
+    }
+
+    /**
+     * API Portal integration requires storing the policy with the API Portal integrated. At install time this option
+     * is off by default and if not chosen the sections of policy with deal with API Portal integration must be removed.
+     *
+     * This test is hardcoded with a list of folder assertions and individual comments with the left comment
+     * 'PORTAL_INTEGRATION'.
+     *
+     * If this test fails then update only when it's confirmed that the Secure Zone Storage clientstore service's policy
+     * was updated for API Portal integration.
+     *
+     * A future version of the API Portal may require a more complicated policy. The current version can support both
+     * versions 2.1 and 2.2 but future versions may not be backwards compatible, in which case the logic to remove
+     * support for the API Portal may be more complicated.
+     *
+     */
+    @Test
+    public void testVerifyExpectedPortalIntegrationCommentsExist() throws Exception {
+        // Set up
+
+        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
+        final OAuthToolkitBundleResolver resolver = new OAuthToolkitBundleResolver(bundleInfos);
+
+        final Map<String, BundleInfo> bundleMap = toMap(resolver.getResultList(), new Functions.Unary<Pair<String, BundleInfo>, BundleInfo>() {
+            @Override
+            public Pair<String, BundleInfo> call(BundleInfo bundleInfo) {
+                return new Pair<String, BundleInfo>(bundleInfo.getId(), bundleInfo);
+            }
+        });
+
+        final BundleInfo secureZoneBundle = bundleMap.get(OAuthInstallerAssertion.SECURE_ZONE_STORAGE_COMP_ID);
+        assertNotNull(secureZoneBundle);
+
+        // Find the clientstore service's policy
+        final Document serviceDocMgmtEnum = resolver.getBundleItem(secureZoneBundle.getId(), BundleResolver.BundleItem.SERVICE, false);
+        final List<Element> serviceElms = GatewayManagementDocumentUtilities.getEntityElements(serviceDocMgmtEnum.getDocumentElement(), "Service");
+        final Map<String, Document> serviceNameToPolicyMap = getServicesAndPolicyDocuments(serviceElms);
+        final Document clientStorePolicyDoc = serviceNameToPolicyMap.get("oauth/clients");
+        assertNotNull(clientStorePolicyDoc);
+
+        // Set up finished
+        // validate contents of policy
+        final Element policyElm = clientStorePolicyDoc.getDocumentElement();
+//        System.out.println(XmlUtil.nodeToFormattedString(policyElm));
+        validatePortalIntegrationComments(policyElm, 5, 1, 2, 2);
+    }
+
+    /**
+     * If the API Portal integration is not required, then the SecureZone clientstore policy needs to be updated
+     * to remove all assertions added for API Portal integration.
+     *
+     */
+    @Test
+    public void testApiPortalIntegrationNotRequested() throws Exception {
+        final boolean[] testPass = new boolean[1];
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
+            @Override
+            public void publishEvent(ApplicationEvent applicationEvent) {
+
+                if (applicationEvent instanceof InstallPolicyBundleEvent) {
+                    InstallPolicyBundleEvent installEvent = (InstallPolicyBundleEvent) applicationEvent;
+                    final PreBundleSavePolicyCallback savePolicyCallback = installEvent.getPreBundleSavePolicyCallback();
+                    if (savePolicyCallback == null) {
+                        fail("Policy call back should be configured.");
+                    }
+                    final BundleInfo bundleInfo = installEvent.getContext().getBundleInfo();
+                    try {
+
+                        final Document serviceEnum = installEvent.getContext().getBundleResolver().getBundleItem(bundleInfo.getId(), BundleResolver.BundleItem.SERVICE, false);
+                        final List<Element> gatewayMgmtPolicyElments = getEntityElements(serviceEnum.getDocumentElement(), "Service");
+                        for (Element serviceEnumElm : gatewayMgmtPolicyElments) {
+                            final Element policyResourceElmWritable = getPolicyResourceElement(serviceEnumElm, "Service", "not used");
+                            final Document policyDocWriteable = getPolicyDocumentFromResource(policyResourceElmWritable, "Service", "not used");
+                            final Element serviceDetailElement = getServiceDetailElement(serviceEnumElm);
+                            savePolicyCallback.prePublishCallback(bundleInfo, serviceDetailElement, policyDocWriteable);
+                            // Verify elements removed
+                            final String entityName = getEntityName(serviceDetailElement);
+                            if ("oauth/clients".equals(entityName)) {
+                                validatePortalIntegrationComments(policyDocWriteable.getDocumentElement(), 0, 0, 0, 0);
+                                testPass[0] = true;
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        fail("Unexpected exception: " + e.getMessage());
+                    }
+
+                    installEvent.setProcessed(true);
+                }
+            }
+        });
+
+        // Secure Zone Storage
+        // false to not integrate the API Portal
+        final AsyncAdminMethods.JobId<ArrayList> jobId =
+                admin.installOAuthToolkit(Arrays.asList("b082274b-f00e-4fbf-bbb7-395a95ca2a35"), -5002, new HashMap<String, BundleMapping>(), null, false);
+
+        while (!admin.getJobStatus(jobId).startsWith("inactive")) {
+            Thread.sleep(10L);
+        }
+
+        assertTrue(testPass[0]);
+    }
+
+    /**
+     * Comments are required on all portal integration assertions. The presence of the specific comment
+     * implies the assertion, all all it's childern if it's an All, are for portal integration only.
+     */
+    private void validatePortalIntegrationComments(Element policyElm,
+                                                   final int totalCommentsExpected,
+                                                   final int setVariableFoundExpected,
+                                                   final int comparisonFoundExpected,
+                                                   final int allFoundExpected) {
+        final List<Element> foundComments = XpathUtil.findElements(policyElm, ".//L7p:value[@stringValue='PORTAL_INTEGRATION']", getNamespaceMap());
+        assertEquals("Wrong number of PORTAL_INTEGRATION comments found", totalCommentsExpected, foundComments.size());
+
+        // verify they are all left comments
+        int setVariableFound = 0;
+        int comparionsFound = 0;
+        int allFound = 0;
+        for (Element foundComment : foundComments) {
+            final Element parentNode = (Element) foundComment.getParentNode();
+            final List<Element> elements = XpathUtil.findElements(parentNode, ".//L7p:key[@stringValue='LEFT.COMMENT']", getNamespaceMap());
+            assertNotNull(elements);
+            assertEquals(1, elements.size());
+            final Node assertionNode = parentNode.getParentNode().getParentNode().getParentNode();
+            final String assertionName = assertionNode.getLocalName();
+            System.out.println(assertionName);
+            if ("SetVariable".equals(assertionName)) {
+                setVariableFound++;
+            } else if ("ComparisonAssertion".equals(assertionName)) {
+                comparionsFound++;
+            } else if ("All".equals(assertionName)) {
+                allFound++;
+            }
+        }
+
+        // 3 assertions and 2 all folders
+        assertEquals(setVariableFoundExpected, setVariableFound);
+        assertEquals(comparisonFoundExpected, comparionsFound);
+        assertEquals(allFoundExpected, allFound);
+    }
+
+    private Map<String, Document> getServicesAndPolicyDocuments(List<Element> serviceMgmtElements) {
+        return toMap(serviceMgmtElements, new Functions.Unary<Pair<String, Document>, Element>() {
+            @Override
+            public Pair<String, Document> call(Element serviceElement) {
+                try {
+                    final Element serviceDetailElement = getServiceDetailElement(serviceElement);
+                    final String serviceName = getEntityName(serviceDetailElement);
+                    final Element resourceElement = getPolicyResourceElement(serviceElement, "Service", "Not Used");
+                    assertNotNull(resourceElement);
+                    final Document layer7Policy = getPolicyDocumentFromResource(resourceElement, "Policy", "Not Used");
+                    return new Pair<String, Document>(serviceName, layer7Policy);
+                } catch (BundleResolver.InvalidBundleException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 
     private void verifyCommentAdded(Document policyResource, String bundleVersion, String otkToolkitVersion) {

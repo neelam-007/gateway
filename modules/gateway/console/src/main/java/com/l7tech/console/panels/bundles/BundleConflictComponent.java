@@ -15,6 +15,7 @@ public class BundleConflictComponent extends JPanel {
     private JList<String> urlConflictList;
     private JList<String> policyNameConflictList;
     private JList<String> missingJdbcConnList;
+    private JList<String> missingModAssList;
     private JPanel mainPanel;
     private JScrollPane urlScrollPane;
     private JScrollPane policyScrollPane;
@@ -22,6 +23,8 @@ public class BundleConflictComponent extends JPanel {
     private JPanel urlConflictsPanel;
     private JPanel policyNameConflictsPanel;
     private JPanel jdbcPanel;
+    private JPanel modAssPanel;
+    private JScrollPane modAssScrollPane;
     private final PolicyBundleDryRunResult dryRunResult;
 
     public BundleConflictComponent(final String bundleId, final PolicyBundleDryRunResult dryRunResult) throws PolicyBundleDryRunResult.UnknownBundleIdException {
@@ -34,6 +37,8 @@ public class BundleConflictComponent extends JPanel {
         buildJList(policyNameConflictList, policyNameConflictsPanel, conflictPolicyNames);
         final List<String> missingJdbcConns = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.JDBC_CONNECTIONS);
         buildJList(missingJdbcConnList, jdbcPanel, missingJdbcConns);
+        final List<String> missingModAsses = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.MODULAR_ASSERTION);
+        buildJList(missingModAssList, modAssPanel, missingModAsses);
 
     }
 

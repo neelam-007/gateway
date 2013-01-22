@@ -8,6 +8,7 @@ import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SquigglyFieldUtils;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAssertion;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.bundle.BundleInfo;
@@ -52,6 +53,16 @@ public class OAuthInstallerTaskDialog extends JDialog {
     private final Map<String, Pair<BundleComponent, BundleInfo>> availableBundles = new HashMap<String, Pair<BundleComponent, BundleInfo>>();
     private static final Logger logger = Logger.getLogger(OAuthInstallerTaskDialog.class.getName());
     private String folderPath;
+    private boolean integrateApiPortal = false;
+    private final ActionListener integrateApiListener = new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            final JCheckBox source = (JCheckBox) e.getSource();
+            // record users current selection for easy access if installation is chosen
+            integrateApiPortal = source.isSelected();
+        }
+    };
+
 
     public OAuthInstallerTaskDialog(Frame owner) {
         super(owner, OAUTH_FOLDER + " Toolkit Installer", true);
@@ -155,6 +166,15 @@ public class OAuthInstallerTaskDialog extends JDialog {
                 // create panel
                 BundleComponent bundleComp = new BundleComponent(bundleInfo);
                 componentsToInstallPanel.add(bundleComp.getBundlePanel());
+                if (OAuthInstallerAssertion.SECURE_ZONE_STORAGE_COMP_ID.equals(bundleInfo.getId())) {
+                    // Secure Zone Storage - add in API Portal Integration
+                    final JPanel extraPanel = bundleComp.getExtraPanel();
+                    extraPanel.setLayout(new BoxLayout(extraPanel, BoxLayout.X_AXIS));
+                    JCheckBox integrateCheckBox = new JCheckBox("Integrate with API Portal version 2.1 or 2.2");
+                    integrateCheckBox.addActionListener(integrateApiListener);
+                    extraPanel.add(integrateCheckBox);
+                    extraPanel.add(Box.createHorizontalGlue());
+                }
                 componentsToInstallPanel.add(Box.createRigidArea(new Dimension(10, 10)));
                 final Pair<BundleComponent, BundleInfo> checkBoxBundleInfoPair =
                         new Pair<BundleComponent, BundleInfo>(bundleComp, bundleInfo);
@@ -254,6 +274,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
         final List<String> bundlesToInstall = new ArrayList<String>();
         final List<BundleInfo> bundlesSelected = new ArrayList<BundleInfo>();
         final Map<String, BundleMapping> bundleMappings = new HashMap<String, BundleMapping>();
+        boolean doApiIntegration = false;
         for (Map.Entry<String, Pair<BundleComponent, BundleInfo>> entry : availableBundles.entrySet()) {
             final BundleComponent bundleComponent = entry.getValue().left;
             if (bundleComponent.getInstallCheckBox().isSelected()) {
@@ -267,6 +288,9 @@ public class OAuthInstallerTaskDialog extends JDialog {
                     bundleMapping.addMapping(JDBC_CONNECTION, mappedEntry.getKey(), mappedEntry.getValue());
                 }
                 bundleMappings.put(componentId, bundleMapping);
+                if (OAuthInstallerAssertion.SECURE_ZONE_STORAGE_COMP_ID.equals(componentId)) {
+                    doApiIntegration = integrateApiPortal;
+                }
             }
         }
 
@@ -301,7 +325,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
                     OAuthInstallerTaskDialog.this,
                     "OAuth Toolkit Pre Installation Check",
                     "The gateway is being checked for conflicts for the selected components",
-                    admin.dryRunOtkInstall(bundlesToInstall, bundleMappings, prefix));
+                    admin.dryRunOtkInstall(bundlesToInstall, bundleMappings, prefix, doApiIntegration));
 
             if (dryRunEither.isRight()) {
                 boolean areConflicts = false;
@@ -324,12 +348,13 @@ public class OAuthInstallerTaskDialog extends JDialog {
                     final ConflictDisplayerDialog conflictDialog = new ConflictDisplayerDialog(this, bundlesSelected, dryRunResult);
                     conflictDialog.pack();
                     Utilities.centerOnParentWindow(conflictDialog);
+                    final boolean doApiIntegrationFinal = doApiIntegration;
                     DialogDisplayer.display(conflictDialog, new Runnable() {
                         @Override
                         public void run() {
                             if (conflictDialog.wasOKed()) {
                                 try {
-                                    doInstall(bundlesToInstall, bundleMappings, admin, prefix);
+                                    doInstall(bundlesToInstall, bundleMappings, admin, prefix, doApiIntegrationFinal);
                                 } catch (Exception e) {
                                     // this may execute after the code below completes as it's a callback
                                     handleException(e);
@@ -338,7 +363,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
                         }
                     });
                 } else {
-                    doInstall(bundlesToInstall, bundleMappings, admin, prefix);
+                    doInstall(bundlesToInstall, bundleMappings, admin, prefix, doApiIntegration);
                 }
             } else {
                 // error occurred
@@ -378,7 +403,12 @@ public class OAuthInstallerTaskDialog extends JDialog {
         }
     }
 
-    private void doInstall(List<String> bundlesToInstall, Map<String, BundleMapping> bundleMappings, OAuthInstallerAdmin admin, String prefixToUse) throws InterruptedException, InvocationTargetException, OAuthInstallerAdmin.OAuthToolkitInstallationException {
+    private void doInstall(final List<String> bundlesToInstall,
+                           final Map<String, BundleMapping> bundleMappings,
+                           final OAuthInstallerAdmin admin,
+                           final String prefixToUse,
+                           final boolean doApiIntegration)
+            throws InterruptedException, InvocationTargetException, OAuthInstallerAdmin.OAuthToolkitInstallationException {
         final Either<String, ArrayList> resultEither = doAsyncAdmin(
                 admin,
                 OAuthInstallerTaskDialog.this,
@@ -388,7 +418,8 @@ public class OAuthInstallerTaskDialog extends JDialog {
                         bundlesToInstall,
                         selectedFolderOid,
                         bundleMappings,
-                        prefixToUse));
+                        prefixToUse,
+                        doApiIntegration));
 
         if (resultEither.isRight()) {
             final ArrayList right = resultEither.right();
