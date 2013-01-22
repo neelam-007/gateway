@@ -6,7 +6,7 @@ import com.l7tech.policy.variable.Syntax;
 import java.util.logging.Logger;
 
 /**
- * Variable selector that supports audit search criteria of the current audit lookup policy.
+ * Variable selector for JdbcConnector
  */
 public class JdbcConnectionSelector implements ExpandVariables.Selector<JdbcConnection> {
 
@@ -14,11 +14,16 @@ public class JdbcConnectionSelector implements ExpandVariables.Selector<JdbcConn
 
     @Override
     public Selection select(String contextName, JdbcConnection connection, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
-        if(name.equals("user")){
+        if(name.equals("name")){
+            return new Selection( connection.getName());
+        } else if(name.equals("user")){
             return new Selection( connection.getUserName());
-        }
-        else if(name.equals("url")){
+        } else if(name.equals("enabled")){
+            return new Selection( connection.isEnabled()?"Yes":"No");
+        } else if(name.equals("url")){
             return new Selection( connection.getJdbcUrl());
+        } else if(name.equals("driverclass")){
+            return new Selection( connection.getDriverClass());
         }
         return null;
 

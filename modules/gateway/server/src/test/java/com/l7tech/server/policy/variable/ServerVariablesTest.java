@@ -48,6 +48,7 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.server.transport.SsgConnectionManagerStub;
 import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
+import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import org.junit.AfterClass;
@@ -1065,14 +1066,39 @@ public class ServerVariablesTest {
     }
 
     @Test
-    public void testListenPortVariables() throws Exception {
+    public void testSsgConnectorVariables() throws Exception {
         final PolicyEnforcementContext context = context();
-        final SsgConnector connector = new SsgConnector(1, "foo bar", 8080, "http", false, "MESSAGE_INPUT", CLIENT_AUTH_NEVER, null, null);
-        ServerVariables.setSsgConnectorManager(new SsgConnectionManagerStub(connector));
-        expandAndCheck(context, "${listenports.length}", "1");
-        expandAndCheck(context, "${listenports.1.port}", Integer.toString(connector.getPort()));
-        expandAndCheck(context, "${listenports.1.protocol}", connector.getScheme());
+        final SsgConnector connector = new SsgConnector(1, "foo bar", 8080, SsgConnector.SCHEME_HTTP , false, "MESSAGE_INPUT", CLIENT_AUTH_NEVER, null, null);
+        final SsgConnectorManager manager = new SsgConnectionManagerStub();
+        ServerVariables.setSsgConnectorManager(manager);
+        manager.save(connector);
+        expandAndCheck(context, "${listenports.1}", connector.toString());
+
+        context.setVariable("port.current",connector);
+        expandAndCheck(context, "${port.current.port}", Integer.toString(connector.getPort()));
+        expandAndCheck(context, "${port.current.protocol}", connector.getScheme());
+        expandAndCheck(context, "${port.current.enabled}", connector.isEnabled()?"Yes":"No");
+        expandAndCheck(context, "${port.current.name}", connector.getName());
+        String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+        expandAndCheck(context, "${port.current.interfaces}", bindAddress == null ? "(ALL)" : bindAddress);
+
+        final SsgConnector rule = new SsgConnector(1, "rule1", 8080, SsgConnector.SCHEME_NA, false, "MESSAGE_INPUT", CLIENT_AUTH_NEVER, null, null);
+        manager.save(rule);
+        expandAndCheck(context, "${firewallrules.1}", rule.toString());
+
+        context.setVariable("rule.current",rule);
+        expandAndCheck(context, "${rule.current.port}", Integer.toString(rule.getPort()));
+        expandAndCheck(context, "${rule.current.protocol}", "N/A");
+        expandAndCheck(context, "${rule.current.enabled}", rule.isEnabled()?"Yes":"No");
+        expandAndCheck(context, "${rule.current.name}", rule.getName());
+        bindAddress = rule.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+        expandAndCheck(context, "${rule.current.interfaces}", bindAddress == null ? "(ALL)" : bindAddress);
+
+        //  clean up
+        manager.delete(connector);
+        manager.delete(rule);
     }
+
 
     @Test
     public void testJdbcVariables() throws Exception {
@@ -1084,6 +1110,15 @@ public class ServerVariablesTest {
         ServerVariables.setJdbcConnectionManager(new JdbcConnectionManagerStub(connection));
         expandAndCheck(context, "${jdbcconnection."+connection.getName()+".url}", connection.getJdbcUrl());
         expandAndCheck(context, "${jdbcconnection." + connection.getName() + ".user}", connection.getUserName());
+
+        expandAndCheck(context, "${jdbcallconnections.1}", connection.toString());
+
+        context.setVariable("jdbc.current",connection);
+        expandAndCheck(context, "${jdbc.current.url}", connection.getJdbcUrl());
+        expandAndCheck(context, "${jdbc.current.user}", connection.getUserName());
+        expandAndCheck(context, "${jdbc.current.enabled}", connection.isEnabled()?"Yes":"No");
+        expandAndCheck(context, "${jdbc.current.name}", connection.getName());
+        expandAndCheck(context, "${jdbc.current.driverclass}", connection.getDriverClass());
     }
 
 

@@ -546,7 +546,13 @@ public class ServerVariables {
             new Variable(BuiltinVariables.PREFIX_LISTENPORTS, new Getter() {
                 @Override
                 Object get(String name, PolicyEnforcementContext context) {
-                    return getListenPorts(name,context);
+                    return getListenPorts();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_FIREWALL_RULES, new Getter() {
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    return getFirewallRules();
                 }
             }),
             new Variable(BuiltinVariables.PREFIX_JDBC_CONNECTION, new Getter() {
@@ -555,6 +561,13 @@ public class ServerVariables {
                     return getJdbcConnection(name, context);
                 }
             }),
+            new Variable(BuiltinVariables.PREFIX_JDBC_ALL_CONNECTION, new Getter() {
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    return getJdbcAllConnections();
+                }
+            }),
+
             new Variable(BuiltinVariables.SSGNODE_ID, new Getter() {
                 @Override
                 Object get(String name, PolicyEnforcementContext context) {
@@ -718,6 +731,15 @@ public class ServerVariables {
             }),
     };
 
+    private static Object getJdbcAllConnections() {
+        try {
+            Collection<JdbcConnection> connections = jdbcConnectionManager.findAll();
+            return  connections.toArray();
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Jdbc connections not found", ExceptionUtils.getDebugException(e));
+        }
+        return null;
+    }
 
     private static Object getJdbcConnection(String name, PolicyEnforcementContext context) {
         name = name.substring(BuiltinVariables.PREFIX_JDBC_CONNECTION.length() + 1);
@@ -736,15 +758,34 @@ public class ServerVariables {
     }
 
 
-    private static Object getListenPorts(String name, PolicyEnforcementContext context) {
+    private static Object getListenPorts() {
         try {
             Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
-            List<SsgConnector> connectorList = CollectionUtils.toList(connectors);
+            List<SsgConnector> listenPorts = new ArrayList<SsgConnector>();
 
-            if (connectorList != null) {
-                SelectingGetter getter = SelectingGetter.selectingGetter(BuiltinVariables.PREFIX_LISTENPORTS, connectorList);
-                return getter.get(name, context);
+            for(SsgConnector port: connectors){
+                if(!SsgConnector.SCHEME_NA.equals(port.getScheme())){
+                    listenPorts.add(port);
+                }
             }
+            return listenPorts.toArray();
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Listen ports not found",ExceptionUtils.getDebugException(e));
+        }
+        return null;
+    }
+
+    private static Object getFirewallRules() {
+        try {
+            Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
+            List<SsgConnector> firewallRules = new ArrayList<SsgConnector>();
+
+            for(SsgConnector port: connectors){
+                if(SsgConnector.SCHEME_NA.equals(port.getScheme())){
+                    firewallRules.add(port);
+                }
+            }
+            return firewallRules.toArray();
         } catch (FindException e) {
             logger.log(Level.WARNING, "Listen ports not found",ExceptionUtils.getDebugException(e));
         }
