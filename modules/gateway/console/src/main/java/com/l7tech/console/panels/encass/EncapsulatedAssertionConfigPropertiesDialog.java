@@ -430,13 +430,15 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         editInputButton.setEnabled(!readOnly && haveInput);
         deleteInputButton.setEnabled(!readOnly && haveInput);
         cloneInputButton.setEnabled(!readOnly && haveInput);
+        moveInputUpButton.setEnabled(!readOnly && haveInput && inputsTable.getSelectedRow() > 0);
+        moveInputDownButton.setEnabled(!readOnly && haveInput && !inputsTable.getSelectionModel().isSelectedIndex(inputsTable.getRowCount() - 1));
 
         boolean haveOutput = getSelectedOutput() != null;
         editOutputButton.setEnabled(!readOnly && haveOutput);
         deleteOutputButton.setEnabled(!readOnly && haveOutput);
         cloneOutputButton.setEnabled(!readOnly && haveOutput);
 
-        setEnabled(!readOnly, addInputButton, addOutputButton, changePolicyButton, selectIconButton, paletteFolderComboBox, nameField, moveInputDownButton, moveInputUpButton);
+        setEnabled(!readOnly, addInputButton, addOutputButton, changePolicyButton, selectIconButton, paletteFolderComboBox, nameField);
     }
 
     private void setEnabled(boolean enabled, JComponent... components) {

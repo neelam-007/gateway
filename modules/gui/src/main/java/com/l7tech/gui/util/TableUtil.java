@@ -3,6 +3,7 @@ package com.l7tech.gui.util;
 import com.l7tech.gui.SimpleColumn;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.util.Functions;
+import org.apache.commons.lang.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -12,7 +13,7 @@ import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Arrays;
+import java.util.*;
 
 /**
  * Handy utility routines for dealing with tables.
@@ -123,7 +124,7 @@ public final class TableUtil {
     }
 
     /**
-     * Create an action that will cause the currently-selected row in the specified table, if any, to swap positions
+     * Create an action that will cause the currently-selected row(s) in the specified table, if any, to swap positions
      * with the previous row (if possible).
 
      * @param table table to alter.  Must use a SimpleTableModel.
@@ -134,13 +135,13 @@ public final class TableUtil {
         return new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                swapSelectedRowWithOffset(table, tableModel, -1);
+                swapSelectedRowsWithOffset(table, tableModel, -1);
             }
         };
     }
 
     /**
-     * Create an action that will cause the currently-selected row in the specified table, if any, to swap positions
+     * Create an action that will cause the currently-selected row(s) in the specified table, if any, to swap positions
      * with the next row (if possible).
 
      * @param table table to alter.  Must use a SimpleTableModel.
@@ -151,16 +152,27 @@ public final class TableUtil {
         return new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                swapSelectedRowWithOffset(table, tableModel, 1);
+                swapSelectedRowsWithOffset(table, tableModel, 1);
             }
         };
     }
 
-    private static void swapSelectedRowWithOffset(JTable table, SimpleTableModel<?> tableModel, int offset) {
-        int row = table.getSelectedRow();
-        final int r2 = row + offset;
-        if (tableModel.swapRows(row, r2))
-            table.getSelectionModel().setSelectionInterval(r2, r2);
+    private static void swapSelectedRowsWithOffset(JTable table, SimpleTableModel<?> tableModel, int offset) {
+        final int[] selectedRows = table.getSelectedRows();
+        if (selectedRows.length > 0) {
+            if (offset > 0) {
+                // moving rows downwards
+                // process in reverse order so they do not collide
+                ArrayUtils.reverse(selectedRows);
+            }
+            table.clearSelection();
+            for (int i = 0; i < selectedRows.length; i++) {
+                int row = selectedRows[i];
+                final int r2 = row + offset;
+                if (tableModel.swapRows(row, r2))
+                    table.getSelectionModel().addSelectionInterval(r2, r2);
+            }
+        }
     }
 
     /**
