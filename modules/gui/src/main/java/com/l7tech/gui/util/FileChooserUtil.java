@@ -2,6 +2,8 @@ package com.l7tech.gui.util;
 
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.ResourceUtils;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -9,6 +11,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.AccessController;
@@ -123,6 +126,61 @@ public class FileChooserUtil {
                 return description;
             }
         };
+    }
+
+    /**
+     * Display a file selector that will open a single file, with a single optional FileFilter type.
+     * The selector dialog will be displayed
+     * immediately and this method will not return until either the file has been opened, the user has canceled the
+     * operation, or an error message has been shown to the user.
+     *
+     * @param parent  parent component for dialogs.  Required.
+     * @param dialogTitle  title of dialog, eg "Open .DOC File".  Required.
+     * @param fileFilter   FileFilter.  Optional.  See {@link #buildFilter(String, String)}.
+     * @param defaultExtension  extension to add if user does not provide one, eg ".doc".  Optional.
+     * @param loader  a UnaryThrows that will consume the contents of the file.  Required.
+     * @return true if the file was saved successfully; false if the operation was canceled by the user or if there was a problem saving the file
+     * (in which case an error message dialog has already been shown to the user)
+     */
+    public static boolean loadSingleFile(final Component parent, final String dialogTitle, final FileFilter fileFilter, final String defaultExtension, final Functions.UnaryThrows<Boolean, FileInputStream, IOException> loader) {
+        final boolean[] loaded = { false };
+        doWithJFileChooser(new FileChooserUser() {
+            @Override
+            public void useFileChooser(JFileChooser fc) {
+                fc.setDialogTitle(dialogTitle);
+                fc.setDialogType(JFileChooser.OPEN_DIALOG);
+                fc.setMultiSelectionEnabled(false);
+                if (fileFilter != null)
+                    fc.setFileFilter(fileFilter);
+
+                int result = fc.showOpenDialog(parent);
+                if (JFileChooser.APPROVE_OPTION != result)
+                    return;
+
+                File file = fc.getSelectedFile();
+                if (file == null)
+                    return;
+
+                if (defaultExtension != null && !file.getName().endsWith(defaultExtension)){
+                    file = new File(file.toString() + defaultExtension);
+                } else {
+                    file = new File(file.getParent(), file.getName());
+                }
+
+                FileInputStream fis = null;
+                try {
+                    fis = new FileInputStream(file);
+                    loaded[0] = loader.call(fis);
+                } catch (IOException e) {
+                    final String msg = "Unable to open file: " + ExceptionUtils.getMessage(e);
+                    logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                    DialogDisplayer.showMessageDialog(parent, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
+                } finally {
+                    ResourceUtils.closeQuietly(fis);
+                }
+            }
+        });
+        return loaded[0];
     }
 
     /**

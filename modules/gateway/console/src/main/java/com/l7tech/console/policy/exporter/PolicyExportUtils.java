@@ -127,7 +127,7 @@ public class PolicyExportUtils {
 
     private static final Logger logger = Logger.getLogger( PolicyExportUtils.class.getName() );
 
-    private static void addPoliciesToPolicyReferenceAssertions( final @Nullable Assertion rootAssertion,
+    public static void addPoliciesToPolicyReferenceAssertions( final @Nullable Assertion rootAssertion,
                                                                final HashMap<String, Policy> fragments ) throws IOException {
         if(rootAssertion instanceof CompositeAssertion ) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
@@ -148,7 +148,7 @@ public class PolicyExportUtils {
         }
     }
     
-    private static Set<ExternalReferenceFactory> getExternalReferenceFactories() {
+    public static Set<ExternalReferenceFactory> getExternalReferenceFactories() {
         Registry registry = Registry.getDefault();
         if (! registry.isAdminContextPresent()) {
             logger.warning("Cannot get Policy Exporter and Importer Admin due to no Admin Context present.");

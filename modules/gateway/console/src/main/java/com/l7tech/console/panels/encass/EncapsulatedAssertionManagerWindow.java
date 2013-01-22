@@ -1,10 +1,13 @@
 package com.l7tech.console.panels.encass;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.CreateEncapsulatedAssertionAction;
 import com.l7tech.console.action.EditEncapsulatedAssertionAction;
 import com.l7tech.console.action.ViewEncapsulatedAssertionAction;
 import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
+import com.l7tech.console.policy.exporter.ConsoleExternalReferenceFinder;
+import com.l7tech.console.policy.exporter.PolicyExportUtils;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
@@ -15,6 +18,7 @@ import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
@@ -22,22 +26,35 @@ import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.policy.Policy;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
+import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.exporter.PolicyExporter;
+import com.l7tech.policy.exporter.PolicyImportCancelledException;
+import com.l7tech.policy.exporter.PolicyImporter;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.*;
 import java.util.*;
 
 import static com.l7tech.gui.util.TableUtil.column;
 import static com.l7tech.util.Functions.propertyTransform;
 
 public class EncapsulatedAssertionManagerWindow extends JDialog {
+    private static final FileFilter ENCASS_FILE_FILTER = FileChooserUtil.buildFilter(".xml", "Encapsulated Assertion (*.xml)");
+
     private JPanel contentPane;
     private JButton closeButton;
     private JTable eacTable;
@@ -45,6 +62,8 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     private JButton propertiesButton;
     private JButton removeButton;
     private JButton cloneButton;
+    private JButton importButton;
+    private JButton exportButton;
 
     private SimpleTableModel<EncapsulatedAssertionConfig> eacTableModel;
     private Map<String, ImageIcon> iconCache = new HashMap<String, ImageIcon>();
@@ -123,6 +142,22 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
             }
         });
 
+        exportButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final EncapsulatedAssertionConfig config = getSelectedConfig();
+                if (config != null)
+                    doExport(config);
+            }
+        });
+
+        importButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doImport();
+            }
+        });
+
         eacTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -133,6 +168,96 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         Utilities.setRowSorter(eacTable, eacTableModel);
         loadEncapsulatedAssertionConfigs(false);
         enableOrDisable();
+    }
+
+    private void doImport() {
+        FileChooserUtil.loadSingleFile(this, "Import Encapsulated Assertion", ENCASS_FILE_FILTER, ".xml", new Functions.UnaryThrows<Boolean, FileInputStream, IOException>() {
+            @Override
+            public Boolean call(FileInputStream fis) throws IOException {
+                try {
+                    Document doc = XmlUtil.parse(fis);
+
+                    Element encassElement = XmlUtil.findFirstChildElementByName(doc.getDocumentElement(), "http://www.layer7tech.com/ws/policy/export", "EncapsulatedAssertionConfig");
+                    if (encassElement == null)
+                        throw new IOException("Export document does not contain an EncapsulatedAssertionConfig element");
+                    String encassB64 = XmlUtil.getTextValue(encassElement);
+                    EncapsulatedAssertionConfig config = deserialize(encassB64);
+
+                    Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "Imported Encass Policy", null, false);
+
+                    final WspReader wspReader = TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
+                    final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
+                    final PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, doc, PolicyExportUtils.getExternalReferenceFactories(), wspReader, finder, finder, finder, finder );
+                    final Assertion newRoot = (result != null) ? result.assertion : null;
+                    if (newRoot == null)
+                        throw new IOException("Export document contains an invalid or empty policy fragment");
+
+                    final String newPolicyXml = WspWriter.getPolicyXml(newRoot);
+                    policy.setXml(newPolicyXml);
+                    PolicyExportUtils.addPoliciesToPolicyReferenceAssertions(policy.getAssertion(), result.policyFragments);
+
+                    Pair<Long, String> savedPolicyInfo = Registry.getDefault().getPolicyAdmin().savePolicy(policy);
+                    policy.setOid(savedPolicyInfo.left);
+                    policy.setGuid(savedPolicyInfo.right);
+
+                    config.setPolicy(policy);
+                    long oid = Registry.getDefault().getEncapsulatedAssertionAdmin().saveEncapsulatedAssertionConfig(config);
+                    loadEncapsulatedAssertionConfigs(true);
+                    selectConfigByOid(oid);
+
+                    return true;
+                } catch (PolicyImportCancelledException e) {
+                    return false;
+                } catch (Exception e) {
+                    throw new IOException(e);
+                }
+            }
+        });
+    }
+
+    private void doExport(final EncapsulatedAssertionConfig config) {
+        FileChooserUtil.saveSingleFileWithOverwriteConfirmation(this, "Export Encapsulated Assertion", ENCASS_FILE_FILTER, ".xml", new FileUtils.Saver() {
+            @Override
+            public void doSave(FileOutputStream fos) throws IOException {
+                try {
+                    Assertion assertion = config.getPolicy().getAssertion();
+                    final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
+                    PolicyExporter exporter = new PolicyExporter(finder, finder);
+                    Document doc = exporter.exportToDocument(assertion, PolicyExportUtils.getExternalReferenceFactories());
+
+                    final Element ecEl = doc.createElementNS("http://www.layer7tech.com/ws/policy/export", "exp:EncapsulatedAssertionConfig");
+                    doc.getDocumentElement().appendChild(ecEl);
+                    EncapsulatedAssertionConfig copyWithoutPolicy = config.getCopy();
+                    copyWithoutPolicy.setPolicy(null);
+                    String serialized = serialize(copyWithoutPolicy);
+                    ecEl.appendChild(doc.createTextNode(serialized));
+
+                    XmlUtil.nodeToFormattedOutputStream(doc, fos);
+                } catch (SAXException e) {
+                    throw new IOException(e);
+                }
+            }
+        });
+    }
+
+    private String serialize(Serializable obj) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(obj);
+        oos.close();
+        return HexUtils.encodeBase64(baos.toByteArray(), true);
+    }
+
+    private EncapsulatedAssertionConfig deserialize(String b64) throws IOException {
+        try {
+            Object got = new ObjectInputStream(new ByteArrayInputStream(HexUtils.decodeBase64(b64))).readObject();
+            if (got instanceof EncapsulatedAssertionConfig) {
+                return (EncapsulatedAssertionConfig) got;
+            }
+            throw new IOException("Export document did not contain a serialized EncapsulatedAssertionConfig");
+        } catch (ClassNotFoundException e) {
+            throw new IOException(e);
+        }
     }
 
     /**
