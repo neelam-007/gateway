@@ -555,7 +555,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         @Override
         public void actionPerformed(ActionEvent e) {
             final Pair<EncapsulatedAssertionConsoleUtil.IconType, ImageIcon> currentIcon = EncapsulatedAssertionConsoleUtil.findIcon(iconResourceFilename, iconBase64);
-            final OkCancelDialog<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>> okCancelDialog = new OkCancelDialog<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>>(TopComponents.getInstance().getTopParent(),
+            final OkCancelDialog<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>> okCancelDialog = new OkCancelDialog<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>>(EncapsulatedAssertionConfigPropertiesDialog.this,
                     SELECT_ICON, true, new IconSelectorDialog(currentIcon.left.equals(EncapsulatedAssertionConsoleUtil.IconType.CUSTOM_IMAGE) ? null : currentIcon.right));
             okCancelDialog.pack();
             Utilities.centerOnParentWindow(okCancelDialog);
