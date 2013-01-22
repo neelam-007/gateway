@@ -11,8 +11,9 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.ExceptionUtils;
@@ -36,7 +37,7 @@ import java.util.concurrent.Callable;
 /**
  * @author alex
  */
-public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCredentialSource> {
+public class ServerXpathCredentialSource extends AbstractMessageTargetableServerAssertion<XpathCredentialSource> {
     private static final FunctionContext XPATH_FUNCTIONS = new XPathFunctionContext(false);
     private final DOMXPath loginXpath, passwordXpath;
     private final boolean requiresTargetDocument;
@@ -101,7 +102,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                     new Callable<AssertionStatus>() {
                         @Override
                         public AssertionStatus call() throws Exception {
-                            return doCheckRequest(context);
+                            return checkTargetRequest(context);
                         }
                     });
         } catch (IOException e) {
@@ -115,11 +116,17 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
         }
     }
 
-    private AssertionStatus doCheckRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        final Message targetMessage = context.getRequest();
+    protected AssertionStatus checkTargetRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        return super.checkRequest(context);
+    }
 
-        Document requestDoc = getTargetDocument(targetMessage);
+    @Override
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message message,
+                                              final String messageDesc,
+                                              final AuthenticationContext authContext )throws IOException, PolicyAssertionException {
 
+        Document requestDoc = getTargetDocument(message);
         String login;
         try {
             login = find(requestDoc,
@@ -159,7 +166,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                         pass.toCharArray()),
                 XpathCredentialSource.class);
 
-        context.getAuthenticationContext(targetMessage).addCredentials( creds );
+        context.getAuthenticationContext(message).addCredentials( creds );
 
         return AssertionStatus.NONE;
     }

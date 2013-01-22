@@ -1,10 +1,8 @@
 package com.l7tech.policy.assertion.credential;
 
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.AssertionNodeNameFactory;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
@@ -19,11 +17,19 @@ import java.util.*;
  *
  * @author alex
  */
-@ProcessesRequest
-public class XpathCredentialSource extends XpathBasedAssertion {
+public class XpathCredentialSource extends XpathBasedAssertion implements MessageTargetable{
     private boolean removeLoginElement;
     private boolean removePasswordElement;
     private XpathExpression passwordExpression;
+    private final MessageTargetableSupport messageTargetableSupport;
+
+    public XpathCredentialSource() {
+        this( TargetMessageType.REQUEST );
+    }
+
+    protected XpathCredentialSource(TargetMessageType defaultTargetMessageType) {
+        this.messageTargetableSupport = new MessageTargetableSupport(defaultTargetMessageType, false);
+    }
 
     public boolean isCredentialSource() {
         return true;
@@ -51,6 +57,41 @@ public class XpathCredentialSource extends XpathBasedAssertion {
 
     public void setRemovePasswordElement(boolean removePasswordElement) {
         this.removePasswordElement = removePasswordElement;
+    }
+
+    @Override
+    public boolean isTargetModifiedByGateway() {
+        return removeLoginElement || removePasswordElement;
+    }
+
+    @Override
+    public final VariableMetadata[] getVariablesSet() {
+        return new VariableMetadata[0];
+    }
+
+    @Override
+    public TargetMessageType getTarget() {
+        return messageTargetableSupport.getTarget();
+    }
+
+    @Override
+    public void setTarget(TargetMessageType target) {
+        messageTargetableSupport.setTarget(target);
+    }
+
+    @Override
+    public String getOtherTargetMessageVariable() {
+        return messageTargetableSupport.getOtherTargetMessageVariable();
+    }
+
+    @Override
+    public void setOtherTargetMessageVariable(String otherMessageVariable) {
+        messageTargetableSupport.setOtherTargetMessageVariable(otherMessageVariable);
+    }
+
+    @Override
+    public String getTargetName() {
+        return messageTargetableSupport.getTargetName();
     }
 
     @Override
@@ -90,8 +131,10 @@ public class XpathCredentialSource extends XpathBasedAssertion {
                 used.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath(passexpr, passwordExpression.getXpathVersion()) );
             }
         }
+        used.add(messageTargetableSupport.getMessageTargetVariablesUsed());
         return used;
     }
+
 
     final static String baseName = "Require XPath Credentials";
 
@@ -99,8 +142,11 @@ public class XpathCredentialSource extends XpathBasedAssertion {
         @Override
         public String getAssertionName( final XpathCredentialSource assertion, final boolean decorate) {
             if(!decorate) return baseName;
-            return baseName + ": login = '" + assertion.getXpathExpression().getExpression() +
+
+            String name  = baseName + ": login = '" + assertion.getXpathExpression().getExpression() +
                            "', password = '" + assertion.getPasswordExpression().getExpression() + "'";
+
+            return AssertionUtils.decorateName(assertion, name);
         }
     };
 
