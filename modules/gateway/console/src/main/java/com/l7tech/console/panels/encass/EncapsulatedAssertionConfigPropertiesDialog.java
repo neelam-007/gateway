@@ -4,7 +4,6 @@ import com.l7tech.console.panels.IconSelectorDialog;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
-import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.SimpleTableModel;
@@ -73,8 +72,6 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JButton moveInputUpButton;
     private JButton moveInputDownButton;
     private JTextArea descriptionTextArea;
-    private JButton cloneInputButton;
-    private JButton cloneOutputButton;
 
     private SimpleTableModel<EncapsulatedAssertionArgumentDescriptor> inputsTableModel;
     private SimpleTableModel<EncapsulatedAssertionResultDescriptor> outputsTableModel;
@@ -227,30 +224,6 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         moveInputUpButton.addActionListener(TableUtil.createMoveUpAction(inputsTable, inputsTableModel));
         moveInputDownButton.addActionListener(TableUtil.createMoveDownAction(inputsTable, inputsTableModel));
 
-        cloneInputButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                final EncapsulatedAssertionArgumentDescriptor selected = getSelectedInput();
-                if (selected != null) {
-                    final EncapsulatedAssertionArgumentDescriptor clone = selected.getCopy(selected.getEncapsulatedAssertionConfig(), false);
-                    clone.setArgumentName(EntityUtils.getNameForCopy(selected.getArgumentName()).replaceAll(" ", "_"));
-                    doInputProperties(clone, true);
-                }
-            }
-        });
-        cloneOutputButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                final EncapsulatedAssertionResultDescriptor selected = getSelectedOutput();
-                if (selected != null) {
-                    final EncapsulatedAssertionResultDescriptor clone = selected.getCopy(selected.getEncapsulatedAssertionConfig(), false);
-                    clone.setResultName(EntityUtils.getNameForCopy(selected.getResultName()).replaceAll(" ", "_"));
-                    doOutputProperties(clone, true);
-                }
-            }
-        });
-
-        Utilities.setDoubleClickAction(inputsTable, editInputButton);
         Utilities.setDoubleClickAction(outputsTable, editOutputButton);
 
         okButton.setEnabled(!readOnly);
@@ -429,14 +402,12 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         boolean haveInput = getSelectedInput() != null;
         editInputButton.setEnabled(!readOnly && haveInput);
         deleteInputButton.setEnabled(!readOnly && haveInput);
-        cloneInputButton.setEnabled(!readOnly && haveInput);
         moveInputUpButton.setEnabled(!readOnly && haveInput && inputsTable.getSelectedRow() > 0);
         moveInputDownButton.setEnabled(!readOnly && haveInput && !inputsTable.getSelectionModel().isSelectedIndex(inputsTable.getRowCount() - 1));
 
         boolean haveOutput = getSelectedOutput() != null;
         editOutputButton.setEnabled(!readOnly && haveOutput);
         deleteOutputButton.setEnabled(!readOnly && haveOutput);
-        cloneOutputButton.setEnabled(!readOnly && haveOutput);
 
         setEnabled(!readOnly, addInputButton, addOutputButton, changePolicyButton, selectIconButton, paletteFolderComboBox, nameField);
     }
@@ -640,7 +611,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                     }
 
                     setPolicyAndPolicyNameLabel(newPolicy);
-                    promptForAutoPopulation(TopComponents.getInstance().getTopParent(), new DialogDisplayer.OptionListener() {
+                    promptForAutoPopulation(EncapsulatedAssertionConfigPropertiesDialog.this, new DialogDisplayer.OptionListener() {
                         @Override
                         public void reportResult(final int option) {
                             if (option == JOptionPane.YES_OPTION) {
