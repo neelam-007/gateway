@@ -303,8 +303,10 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                     return;
 
                 output.setEncapsulatedAssertionConfig(config);
-                if (needsInsert)
+                if (needsInsert) {
                     outputsTableModel.addRow(output);
+                }
+                sortOutputsTableModel();
                 int index = outputsTableModel.getRowIndex(output);
                 if (index >= 0) {
                     outputsTableModel.fireTableRowsUpdated(index, index);
@@ -312,6 +314,15 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                 }
             }
         });
+    }
+
+    private void sortOutputsTableModel() {
+        outputsTableModel.setRows(Functions.sort(outputsTableModel.getRows(), new Comparator<EncapsulatedAssertionResultDescriptor>() {
+            @Override
+            public int compare(EncapsulatedAssertionResultDescriptor a, EncapsulatedAssertionResultDescriptor b) {
+                return String.CASE_INSENSITIVE_ORDER.compare(a.getResultName(), b.getResultName());
+            }
+        }));
     }
 
     private <RT> ActionListener makeDeleteRowListener(final JTable table, final SimpleTableModel<RT> tableModel) {
@@ -350,6 +361,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
 
         inputsTableModel.setRows(config.sortedArguments());
         outputsTableModel.setRows(new ArrayList<EncapsulatedAssertionResultDescriptor>(config.getResultDescriptors()));
+        sortOutputsTableModel();
 
         if (config.getGuid() == null && config.getPolicy() != null) {
             // this is a new config which hasn't been saved yet but has been assigned a policy
