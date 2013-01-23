@@ -428,7 +428,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
 
     private void loadPaletteFolders(String currentName) {
         final PaletteFolderRegistry paletteFolderRegistry = TopComponents.getInstance().getPaletteFolderRegistry();
-        List<String> folderNames = new ArrayList<String>(paletteFolderRegistry.getPaletteFolderIds());
+        List<String> folderNames = new ArrayList<String>(paletteFolderRegistry.getAssertionPaletteFolderIds());
 
         if (currentName != null && currentName.trim().length() > 0 && !folderNames.contains(currentName))
             folderNames.add(currentName);

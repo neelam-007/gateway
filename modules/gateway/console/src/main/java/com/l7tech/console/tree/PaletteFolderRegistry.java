@@ -25,6 +25,19 @@ public class PaletteFolderRegistry {
     }
 
     /**
+     * @return a list of available palette folder IDs that can contain assertions.
+     */
+    public List<String> getAssertionPaletteFolderIds() {
+        final List<String> assertionFolderIds = new ArrayList<String>();
+        for (final Map.Entry<String, AbstractPaletteFolderNode> entry : foldersById.entrySet()) {
+            if (entry.getValue() instanceof DefaultAssertionPaletteFolderNode) {
+                assertionFolderIds.add(entry.getKey());
+            }
+        }
+        return assertionFolderIds;
+    }
+
+    /**
      * Look up a palette folder display name from its ID.
      *
      * @param id id to look up, eg "xmlSecurity".
