@@ -201,11 +201,11 @@ public class SsgConnectorManagerWindow extends JDialog {
             ta.deleteSsgConnector(connector.getOid());
             loadConnectors();
         } catch (DeleteException e) {
-            showErrorMessage("Remove Failed", "Failed to remove listen port: " + ExceptionUtils.getMessage(e), e);
+            showErrorMessage("Remove Failed", "Failed to remove " + type + ": " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
-            showErrorMessage("Remove Failed", "Failed to remove listen port: " + ExceptionUtils.getMessage(e), e);
+            showErrorMessage("Remove Failed", "Failed to remove " + type + ": " + ExceptionUtils.getMessage(e), e);
         } catch (TransportAdmin.CurrentAdminConnectionException e) {
-            showErrorMessage("Remove Failed", "Unable to remove the listen port for the current admin connection.", null);
+            showErrorMessage("Remove Failed", "Unable to remove the " + type + " for the current admin connection.", null);
         }
     }
 
@@ -272,7 +272,7 @@ public class SsgConnectorManagerWindow extends JDialog {
                         reedit.run();
                         return;
                     }
-
+                    String type = connector.getScheme().equals(SsgConnector.SCHEME_NA) ? "firewall rule" : "listen port";
                     try {
                         long oid = getTransportAdmin().saveSsgConnector(connector);
                         if (oid != connector.getOid()) connector.setOid(oid);
@@ -280,11 +280,11 @@ public class SsgConnectorManagerWindow extends JDialog {
                         loadConnectors();
                         connectorTable.setSelectedConnector(connector);
                     } catch (SaveException e) {
-                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), reedit);
+                        showErrorMessage("Save Failed", "Failed to save " + type + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), reedit);
                     } catch (UpdateException e) {
-                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), reedit);
+                        showErrorMessage("Save Failed", "Failed to save " + type + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), reedit);
                     } catch (TransportAdmin.CurrentAdminConnectionException e) {
-                        showErrorMessage("Save Failed", "Unable to modify the listen port for the current admin connection.", null,
+                        showErrorMessage("Save Failed", "Unable to modify the " + type + " for the current admin connection.", null,
                             new Runnable() {
                                 @Override
                                 public void run() {
