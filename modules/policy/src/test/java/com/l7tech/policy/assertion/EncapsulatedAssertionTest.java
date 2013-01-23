@@ -252,11 +252,11 @@ public class EncapsulatedAssertionTest {
         assertEquals(2, variablesSet.length);
         assertEquals("out1", variablesSet[0].getName());
         assertEquals(DataType.STRING, variablesSet[0].getType());
-        assertFalse(variablesSet[0].isMultivalued());
+        assertTrue(variablesSet[0].isMultivalued());
         assertFalse(variablesSet[0].isPrefixed());
         assertEquals("out2", variablesSet[1].getName());
         assertEquals(DataType.MESSAGE, variablesSet[1].getType());
-        assertFalse(variablesSet[1].isMultivalued());
+        assertTrue(variablesSet[1].isMultivalued());
         assertFalse(variablesSet[1].isPrefixed());
     }
 

@@ -313,7 +313,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
         List<VariableMetadata> ret = new ArrayList<VariableMetadata>();
         Set<EncapsulatedAssertionResultDescriptor> outputs = config.getResultDescriptors();
         for (EncapsulatedAssertionResultDescriptor output : outputs) {
-            ret.add(new VariableMetadata(output.getResultName(), false, false, output.getResultName(), true, DataType.forName(output.getResultType())));
+            ret.add(new VariableMetadata(output.getResultName(), false, true, output.getResultName(), true, DataType.forName(output.getResultType())));
         }
         return ret.toArray(new VariableMetadata[ret.size()]);
     }
