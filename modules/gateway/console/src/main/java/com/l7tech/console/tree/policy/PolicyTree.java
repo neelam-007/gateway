@@ -738,6 +738,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         sa instanceof AssertionMoveUpAction ||
                         sa instanceof DisableAssertionAction ||
                         sa instanceof EnableAssertionAction ||
+                        sa instanceof EnableAllAssertionsAction ||
                         sa instanceof AddIdentityAssertionAction) {
                         actionList.remove(sa);
                     }
