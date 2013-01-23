@@ -185,8 +185,9 @@ public class SsgConnectorManagerWindow extends JDialog {
         } else {
             featureWarning = "";
         }
+        String type = connector.getScheme().equals(SsgConnector.SCHEME_NA) ? "firewall rule" : "listen port";
         int result = JOptionPane.showConfirmDialog(this,
-                                                   "Are you sure you want to remove the listen port \"" + connector.getName() + "\"?" + featureWarning,
+                                                   "Are you sure you want to remove the " + type + "\"" + connector.getName() + "\"?" + featureWarning,
                                                    "Confirm Removal",
                                                    JOptionPane.YES_NO_CANCEL_OPTION,
                                                    JOptionPane.QUESTION_MESSAGE);
