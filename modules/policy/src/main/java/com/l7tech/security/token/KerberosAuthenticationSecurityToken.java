@@ -19,16 +19,16 @@ public class KerberosAuthenticationSecurityToken implements KerberosSecurityToke
 
     @Override
     public KerberosGSSAPReqTicket getTicket() {
-        return kerberosServiceTicket.getGSSAPReqTicket();  //To change body of implemented methods use File | Settings | File Templates.
+        return kerberosServiceTicket.getGSSAPReqTicket();
     }
 
     @Override
     public KerberosServiceTicket getServiceTicket() {
-        return kerberosServiceTicket;  //To change body of implemented methods use File | Settings | File Templates.
+        return kerberosServiceTicket;
     }
 
     @Override
     public SecurityTokenType getType() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 }

@@ -16,7 +16,9 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.token.KerberosSecurityToken;
 import com.l7tech.security.token.SecurityToken;
+import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.token.http.HttpNegotiateToken;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -66,24 +68,60 @@ public class ServerKerberosAuthenticationAssertionTest {
 
     @Test
     public void testProtocolTransitionWithLastAuthenticatedUser_success() throws Exception {
-        assertion.setRealm("DOMAIN.COM");
-        assertion.setLastAuthenticatedUser(true);
-        assertion.setServicePrincipalName("http/service@DOMAIN.COM");
-        assertion.setS4U2Self(true);
-        assertion.setKrbUseGatewayKeytab(true);
-        LdapUser user = new LdapUser();
-        user.setLogin("user");
-
         SecurityToken token = new HttpBasicToken("user","password".toCharArray());
-        AuthenticationResult authResult = new AuthenticationResult(user, token);
-        when(mockAuthenticationContext.getLastAuthenticationResult()).thenReturn(authResult);
 
-        LoginCredentials pc = LoginCredentials.makeLoginCredentials(token, Assertion.class);
-        List<LoginCredentials> credentialsList = Arrays.asList(new LoginCredentials[]{pc});
-        when(mockAuthenticationContext.getCredentials()).thenReturn(credentialsList);
+        setUpProtocolTransition(token);
 
-        KerberosServiceTicket testTicket = new KerberosServiceTicket("http/client@DOMAIN.COM","http/service@DOMAIN.COM", null, 0, new KerberosGSSAPReqTicket(TEST_BYTES));
-        when(mockDelegateClient.getKerberosProxyServiceTicket(assertion.getServicePrincipalName(), fixture.getServicePrincipal("http", assertion.getRealm()), user.getLogin())).thenReturn(testTicket);
+        assertEquals(AssertionStatus.NONE, fixture.doCheckRequest(mockAuthenticationContext, mockDelegateClient, new HashMap<String, Object>()));
+        verify(mockAuthenticationContext, times(1)).addCredentials(any(LoginCredentials.class));
+    }
+
+    @Test
+    public void testProtocolTransitionWithLastAuthenticatedUser_kerberosToken() throws Exception {
+        final KerberosServiceTicket testTicket = new KerberosServiceTicket("http/client@DOMAIN.COM","http/service@DOMAIN.COM", null, 0, new KerberosGSSAPReqTicket(TEST_BYTES));
+        SecurityToken token = new KerberosSecurityToken() {
+            @Override
+            public KerberosGSSAPReqTicket getTicket() {
+                return new KerberosGSSAPReqTicket(TEST_BYTES);
+            }
+
+            @Override
+            public KerberosServiceTicket getServiceTicket() {
+                return testTicket;
+            }
+
+            @Override
+            public SecurityTokenType getType() {
+                return SecurityTokenType.HTTP_KERBEROS;
+            }
+        };
+
+        setUpProtocolTransition(token);
+
+        assertEquals(AssertionStatus.NONE, fixture.doCheckRequest(mockAuthenticationContext, mockDelegateClient, new HashMap<String, Object>()));
+        verify(mockAuthenticationContext, times(1)).addCredentials(any(LoginCredentials.class));
+    }
+
+    public void testProtocolTransitionNoAuthenticatedUser_kerberosToken() throws Exception {
+        final KerberosServiceTicket testTicket = new KerberosServiceTicket("http/client@DOMAIN.COM","http/service@DOMAIN.COM", null, 0, new KerberosGSSAPReqTicket(TEST_BYTES));
+        SecurityToken token = new KerberosSecurityToken() {
+            @Override
+            public KerberosGSSAPReqTicket getTicket() {
+                return new KerberosGSSAPReqTicket(TEST_BYTES);
+            }
+
+            @Override
+            public KerberosServiceTicket getServiceTicket() {
+                return testTicket;
+            }
+
+            @Override
+            public SecurityTokenType getType() {
+                return SecurityTokenType.HTTP_KERBEROS;
+            }
+        };
+
+        setUpProtocolTransition(token);
 
         assertEquals(AssertionStatus.NONE, fixture.doCheckRequest(mockAuthenticationContext, mockDelegateClient, new HashMap<String, Object>()));
         verify(mockAuthenticationContext, times(1)).addCredentials(any(LoginCredentials.class));
@@ -217,6 +255,27 @@ public class ServerKerberosAuthenticationAssertionTest {
         assertEquals("http", fixture.getServiceFromServicePrincipalName("http/service@DOMAIN.COM"));
         assertEquals("www", fixture.getServiceFromServicePrincipalName("www/service.mydomain.com@MYDOMAIN.DOMAIN.LOCAL"));
         assertNull(fixture.getServiceFromServicePrincipalName("svr.mydomain.com@mydomain.com"));
+    }
+
+
+    private void setUpProtocolTransition(SecurityToken token) throws Exception {
+        assertion.setRealm("DOMAIN.COM");
+        assertion.setLastAuthenticatedUser(true);
+        assertion.setServicePrincipalName("http/service@DOMAIN.COM");
+        assertion.setS4U2Self(true);
+        assertion.setKrbUseGatewayKeytab(true);
+        LdapUser user = new LdapUser();
+        user.setLogin("user");
+
+        AuthenticationResult authResult = new AuthenticationResult(user, token);
+        when(mockAuthenticationContext.getLastAuthenticationResult()).thenReturn(authResult);
+
+        LoginCredentials pc = LoginCredentials.makeLoginCredentials(token, Assertion.class);
+        List<LoginCredentials> credentialsList = Arrays.asList(new LoginCredentials[]{pc});
+        when(mockAuthenticationContext.getCredentials()).thenReturn(credentialsList);
+
+        KerberosServiceTicket testTicket = new KerberosServiceTicket("http/client@DOMAIN.COM","http/service@DOMAIN.COM", null, 0, new KerberosGSSAPReqTicket(TEST_BYTES));
+        when(mockDelegateClient.getKerberosProxyServiceTicket(assertion.getServicePrincipalName(), fixture.getServicePrincipal("http", assertion.getRealm()), user.getLogin())).thenReturn(testTicket);
     }
 
     private static class TestServerKerberosAuthenticationAssertion extends ServerKerberosAuthenticationAssertion {

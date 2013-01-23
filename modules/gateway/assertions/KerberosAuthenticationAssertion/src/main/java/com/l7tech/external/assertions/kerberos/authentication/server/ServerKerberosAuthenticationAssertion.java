@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Server side implementation of the KerberosAuthenticationAssertion.
@@ -135,25 +134,13 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                     return AssertionStatus.FALSIFIED;
                 }
 
-
-                if (pc.getFormat() == CredentialFormat.KERBEROSTICKET) {
-                    if(logger.isLoggable(Level.FINE)) {
-                        logger.log(Level.WARNING, "Kerberos ticket cannot be used with Protocol Transition (S4U2Self) option.");
-                    }
-                    logAndAudit(AssertionMessages.KA_OPTION_NOT_SUPPORTED, "Protocol Transition", "kerberos credentials");
-
-                    return AssertionStatus.FALSIFIED;
-
-                }
-                else {
-                    if (assertion.isKrbUseGatewayKeytab()) {
-                        svcPrincipal = getServicePrincipal(serviceType, realm);
-                        kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), svcPrincipal, authenticatedUserAccount);
-                    } else {
-                        PrincipalName userPrincipal = new PrincipalName(krbServiceAccount, realm);
-                        String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), assertion.getKrbSecurePasswordReference());
-                        kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, authenticatedUserAccount);
-                    }
+                if (assertion.isKrbUseGatewayKeytab()) {
+                    svcPrincipal = getServicePrincipal(serviceType, realm);
+                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), svcPrincipal, authenticatedUserAccount);
+                } else {
+                    PrincipalName userPrincipal = new PrincipalName(krbServiceAccount, realm);
+                    String plaintextPassword = ServerVariables.getSecurePasswordByOid(new LoggingAudit(logger), assertion.getKrbSecurePasswordReference());
+                    kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), userPrincipal.getName(), plaintextPassword, authenticatedUserAccount);
                 }
             }
             else if(assertion.isS4U2Proxy()) {
