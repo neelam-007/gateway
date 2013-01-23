@@ -475,7 +475,10 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             }
 
             final PolicyHeader[] options = policyHeaders.toArray(new PolicyHeader[policyHeaders.size()]);
-            DialogDisplayer.showInputDialog(this, "Select implementation policy:", "Set Implementation Policy", JOptionPane.QUESTION_MESSAGE, null, options, initialValue, new PolicyInputListener(initialValue));
+            final PolicySelectorDialog policySelector = new PolicySelectorDialog(this, options, initialValue);
+            policySelector.pack();
+            Utilities.centerOnParentWindow(policySelector);
+            DialogDisplayer.display(policySelector, new PolicyInputListener(initialValue, policySelector));
         } catch (FindException e) {
             showError("Unable to load list of available policy include fragments", e);
         }
@@ -497,6 +500,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
      * Add rows to the inputs table corresponding to the variables used by the currently-selected policy fragment.
      * <p/>
      * Skips variables which already exist in the table.
+     * <p/>
+     * Does not delete variables which already exist but are not found in the currently-selected policy fragment.
      */
     private void prePopulateInputsTable() {
         Assertion root = getFragmentRootAssertion();
@@ -521,6 +526,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
      * Add rows to the outputs table corresponding to the variables set by the currently-selected policy fragment.
      * <p/>
      * Skips variables which already exist in the table.
+     * <p/>
+     * Does not delete variables which already exist but are not found in the currently-selected policy fragment.
      */
     private void prePopulateOutputsTable() {
         Assertion root = getFragmentRootAssertion();
@@ -589,54 +596,39 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     /**
      * Listener for handling policy fragment selection.
      */
-    private class PolicyInputListener implements DialogDisplayer.InputListener {
+    private class PolicyInputListener implements Runnable {
         private final PolicyHeader initialValue;
+        private final PolicySelectorDialog policySelector;
 
-        private PolicyInputListener(@Nullable final PolicyHeader initialValue) {
+        private PolicyInputListener(@Nullable final PolicyHeader initialValue, @NotNull final PolicySelectorDialog policySelector) {
             this.initialValue = initialValue;
+            this.policySelector = policySelector;
         }
 
         @Override
-        public void reportResult(final Object option) {
-            if (option == null)
-                return;
-            final PolicyHeader policyHeader = (PolicyHeader) option;
-            if (!policyHeader.equals(initialValue)) {
-                // Load the selected policy
-                try {
-                    final Policy newPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyHeader.getOid());
-                    if (newPolicy == null) {
-                        showError("Policy not found", null);
-                        return;
-                    }
-
-                    setPolicyAndPolicyNameLabel(newPolicy);
-                    promptForAutoPopulation(EncapsulatedAssertionConfigPropertiesDialog.this, new DialogDisplayer.OptionListener() {
-                        @Override
-                        public void reportResult(final int option) {
-                            if (option == JOptionPane.YES_OPTION) {
-                                prePopulateInputsTable();
-                                prePopulateOutputsTable();
-                            }
+        public void run() {
+            if (policySelector.isConfirmed()) {
+                final PolicyHeader selected = (PolicyHeader) policySelector.getSelected();
+                if (!selected.equals(initialValue) || policySelector.isAutoPopulate()) {
+                    // selected policy has changed or they want to refresh the inputs and outputs
+                    try {
+                        final Policy newPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(selected.getOid());
+                        if (newPolicy == null) {
+                            showError("Policy not found", null);
+                            return;
                         }
-                    });
-                } catch (FindException e) {
-                    showError("Unable to load policy", e);
+
+                        setPolicyAndPolicyNameLabel(newPolicy);
+                        if (policySelector.isAutoPopulate()) {
+                            prePopulateInputsTable();
+                            prePopulateOutputsTable();
+                        }
+                    } catch (FindException e) {
+                        showError("Unable to load policy", e);
+                    }
                 }
             }
         }
-    }
-
-    /**
-     * Displays a confirmation dialog asking the user if they want to auto-populate input and output params.
-     * @param parent the parent Component for the dialog.
-     * @param optionListener OptionListener to handle the confirmation result.
-     */
-    public static void promptForAutoPopulation(@NotNull final Component parent, @NotNull final DialogDisplayer.OptionListener optionListener) {
-        DialogDisplayer.showConfirmDialog(parent, "Auto-populate inputs and outputs for the encapsulated assertion?",
-                "Confirm Auto-Population of Inputs and Outputs",
-                JOptionPane.YES_NO_OPTION,
-                optionListener);
     }
 
     private static final Functions.Unary<Boolean, EncapsulatedAssertionArgumentDescriptor> argumentGuiPromptExtractor = Functions.<Boolean, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiPrompt");

@@ -1,6 +1,5 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.encass.EncapsulatedAssertionConfigPropertiesDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -34,7 +33,9 @@ public class CreateEncapsulatedAssertionAction extends AbstractEncapsulatedAsser
     @Override
     protected void performAction() {
         if (config.getPolicy() != null && promptForAutoPopulate) {
-            EncapsulatedAssertionConfigPropertiesDialog.promptForAutoPopulation(TopComponents.getInstance().getTopParent(),
+            DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(), "Auto-populate inputs and outputs for the encapsulated assertion?",
+                    "Confirm Auto-Population of Inputs and Outputs",
+                    JOptionPane.YES_NO_OPTION,
                     new DialogDisplayer.OptionListener() {
                         @Override
                         public void reportResult(final int option) {
