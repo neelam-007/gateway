@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -207,6 +208,118 @@ public final class PolicyVariableUtils {
             vars.put(name, meta);
         }
     }
+
+    /**
+     * Find variables that are used by the specified policy without previously being set by the policy.
+     *
+     * @param root root assertion.  If null, this method returns an empty array.
+     * @param assertionTranslator  Assertion translator for processing Include assertions.  Optional.
+     * @return a list of all variables that are used by this policy without being earlier set by it.
+     */
+    public static String[] getVariablesUsedByPolicyButNotPreviouslySet(@Nullable Assertion root, @Nullable AssertionTranslator assertionTranslator) {
+        final Map<String, VariableMetadata> varsSet = new TreeMap<String, VariableMetadata>(String.CASE_INSENSITIVE_ORDER);
+        return getVariablesUsedButNotSet(varsSet, root, assertionTranslator);
+    }
+
+    private static String[] getVariablesUsedButNotSet(Map<String, VariableMetadata> varsSet, @Nullable Assertion root, @Nullable AssertionTranslator assertionTranslator) {
+        if (root == null)
+            return new String[0];
+
+        Set<String> ret = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+
+        for (Iterator<Assertion> i = root.preorderIterator(); i.hasNext();) {
+            Assertion ass = i.next();
+
+            if (!ass.isEnabled())
+                continue;
+
+            // If the assertion both uses and sets the same variable, we will assume that it uses the variable
+            // before it sets it.
+            if (ass instanceof UsesVariables) {
+                String[] varsUsed = getVariablesUsedNoThrow((UsesVariables) ass);
+                for (String varName : varsUsed) {
+                    if (!isVariableSet(varName, varsSet))
+                        ret.add(varName);
+                }
+            }
+
+            if (ass instanceof SetsVariables) {
+                collectVariables((SetsVariables)ass, varsSet);
+            }
+
+            if (ass instanceof Include && assertionTranslator != null) {
+                try {
+                    Assertion translated = assertionTranslator.translate(ass);
+                    if (ass != translated) {
+                        ret.addAll(Arrays.asList(getVariablesUsedButNotSet(varsSet, translated, assertionTranslator)));
+                    }
+                } catch (PolicyAssertionException e) {
+                    if (logger.isLoggable(Level.FINE))
+                        logger.log(Level.FINE, "Error translating assertion: " + ExceptionUtils.getMessage(e), e);
+                } finally {
+                    assertionTranslator.translationFinished(ass);
+                }
+            }
+        }
+
+        return ret.toArray(new String[ret.size()]);
+    }
+
+    private static boolean isVariableSet(String varName, Map<String, VariableMetadata> varsSet) {
+        // TODO check for prefix match with VariableMetadata where prefixed=true
+        return varsSet.containsKey(varName);
+    }
+
+
+    /**
+     * Find variables that are set by the specified policy without subsequently being used by the policy.
+     *
+     * @param root root assertion.  Required.
+     * @param assertionTranslator Assertion translator for processing Include assertions.  Optional.
+     * @return metadata for all variables that are set by this policy without subsequently being used by it.
+     */
+    public static Map<String, VariableMetadata> getVariablesSetByPolicyButNotSubsequentlyUsed(Assertion root, AssertionTranslator assertionTranslator) {
+        final Map<String, VariableMetadata> varsSet = new TreeMap<String, VariableMetadata>(String.CASE_INSENSITIVE_ORDER);
+
+        if (root == null)
+            return varsSet;
+
+        for (Iterator<Assertion> i = root.preorderIterator(); i.hasNext();) {
+            Assertion ass = i.next();
+
+            if (!ass.isEnabled())
+                continue;
+
+            if (ass instanceof UsesVariables) {
+                String[] varsUsed = getVariablesUsedNoThrow((UsesVariables) ass);
+                for (String varName : varsUsed) {
+                    // Omit variables earlier set that are now being used
+                    varsSet.remove(varName);
+                }
+            }
+
+            if (ass instanceof SetsVariables) {
+                collectVariables((SetsVariables)ass, varsSet);
+            }
+
+            if (ass instanceof Include && assertionTranslator != null) {
+                try {
+                    Assertion translated = assertionTranslator.translate(ass);
+                    if (ass != translated) {
+                        varsSet.putAll(getVariablesSetByPolicyButNotSubsequentlyUsed(translated, assertionTranslator));
+                    }
+                } catch (PolicyAssertionException e) {
+                    if (logger.isLoggable(Level.FINE))
+                        logger.log(Level.FINE, "Error translating assertion: " + ExceptionUtils.getMessage(e), e);
+                } finally {
+                    assertionTranslator.translationFinished(ass);
+                }
+            }
+        }
+
+        return varsSet;
+    }
+
 
     /**
      * Get the variables that are known to be used by successor assertions.

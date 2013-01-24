@@ -520,7 +520,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         if (null == root)
             return;
 
-        final String[] vars = PolicyVariableUtils.getVariablesUsedByDescendantsAndSelf(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
+        final String[] vars = PolicyVariableUtils.getVariablesUsedByPolicyButNotPreviouslySet(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
         final Set<String> existingNames = findUsedNames(inputsTableModel, argumentNameExtractor, null);
         for (String var : vars) {
             if (!existingNames.contains(var)) {
@@ -546,7 +546,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         if (null == root)
             return;
 
-        final Map<String, VariableMetadata> vars = PolicyVariableUtils.getVariablesSetByDescendantsAndSelf(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
+        final Map<String, VariableMetadata> vars = PolicyVariableUtils.getVariablesSetByPolicyButNotSubsequentlyUsed(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
         final Set<String> existingNames = findUsedNames(outputsTableModel, resultNameExtractor, null);
         for (final VariableMetadata vm : vars.values()) {
             if (!existingNames.contains(vm.getName())) {

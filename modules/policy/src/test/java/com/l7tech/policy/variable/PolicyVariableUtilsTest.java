@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -128,5 +129,27 @@ public class PolicyVariableUtilsTest {
         assertFalse(PolicyVariableUtils.usesAnyVariable(root, "assertion.latency.ns"));
         assertTrue(PolicyVariableUtils.usesAnyVariable(root, "assertion.latency.ns", "assertion.latency.ms"));
         assertFalse(PolicyVariableUtils.usesAnyVariable(root, null));
+    }
+
+    @Test
+    public void testGetVariablesUsedByPolicyButNotPreviouslySet() throws Exception {
+        Set<String> varsUsed = new HashSet<String>(Arrays.asList(PolicyVariableUtils.getVariablesUsedByPolicyButNotPreviouslySet(root, null)));
+
+        assertTrue(varsUsed.contains("neverset"));
+        assertTrue(varsUsed.contains("accum"));
+        assertEquals(2, varsUsed.size());
+    }
+
+    @Test
+    public void testGetVariablesSetByPolicyButNotSubsequentlyUsed() throws Exception {
+        Map<String, VariableMetadata> varsSet = PolicyVariableUtils.getVariablesSetByPolicyButNotSubsequentlyUsed(root, null);
+
+        assertTrue(varsSet.containsKey("accum"));
+        assertTrue(varsSet.containsKey("asdf"));
+        assertTrue(varsSet.containsKey("i.exceededlimit"));
+        assertTrue(varsSet.containsKey("i.iterations"));
+        assertTrue(varsSet.containsKey("neverused"));
+        assertTrue(varsSet.containsKey("qwer"));
+        assertEquals(6, varsSet.size());
     }
 }
