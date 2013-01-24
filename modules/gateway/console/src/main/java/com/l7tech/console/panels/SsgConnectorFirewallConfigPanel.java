@@ -216,6 +216,26 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
         inputValidator.addRule(new InvertablePortValidator(tcpSrcPort));
         inputValidator.addRule(new InvertableIpAddressValidator(source));
         inputValidator.addRule(new InvertableIpAddressValidator(destination));
+
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(source) {
+            @Override
+            public String getValidationError() {
+                String src = source.getText().trim();
+                if(!src.isEmpty()){
+                    String dst = destination.getText().trim();
+                    if(!dst.isEmpty()){
+                        if(InetAddressUtil.isValidIpv4Address(src) && InetAddressUtil.isValidIpv4Address(dst)){
+                            return null;
+                        }
+                        if(InetAddressUtil.isValidIpv6Address(src) && InetAddressUtil.isValidIpv6Address(dst)){
+                            return null;
+                        }
+                        return "A rule can not contain both IPv4 and IPv6 addresses.";
+                    }
+                }
+                return null;
+            }
+        });
         inputValidator.addRule(inputValidator.constrainTextFieldToBeNonEmpty("ICMP Type", icmpType, null));
 
         inputValidator.validateWhenDocumentChanges(udpSrcPort);

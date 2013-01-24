@@ -218,11 +218,22 @@ public class FirewallRules {
         final String destination = getIpAddressFromConnector(connector, "destination");
         //if we are using ipv4 and we got ipv6 address in the source or destination, don't write it to the ip6tables
         //and vice-versa
-        if((ipProtocol.equals(IpProtocol.IPv4) && (InetAddressUtil.isValidIpv6Address(source) || InetAddressUtil.isValidIpv4Address(destination))) ||
-                (ipProtocol.equals(IpProtocol.IPv6) && (InetAddressUtil.isValidIpv4Address(source) || InetAddressUtil.isValidIpv4Address(destination)))){
-            return null;
+        if(ipProtocol.equals(IpProtocol.IPv4)){
+            if(source != null && !source.isEmpty() && !InetAddressUtil.isValidIpv4Address(source)){
+                return null;
+            }
+            if(destination != null && !destination.isEmpty() && !InetAddressUtil.isValidIpv4Address(destination)){
+                return null;
+            }
         }
-
+        else if(ipProtocol.equals(IpProtocol.IPv6)){
+            if(source != null && !source.isEmpty() && !InetAddressUtil.isValidIpv6Address(source)){
+                return null;
+            }
+            if(destination != null && !destination.isEmpty() && !InetAddressUtil.isValidIpv6Address(destination)){
+                return null;
+            }
+        }
         return builder.toString();
     }
 
