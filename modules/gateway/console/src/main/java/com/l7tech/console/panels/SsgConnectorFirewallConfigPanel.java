@@ -18,10 +18,7 @@ import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,6 +55,18 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
 
     private TargetOptionsPanel targetOptions;
 
+    private static final Set<String> AVAILABLE_TCP_FLAGS;
+    static {
+        AVAILABLE_TCP_FLAGS = new HashSet<>();
+        AVAILABLE_TCP_FLAGS.add("FIN");
+        AVAILABLE_TCP_FLAGS.add("SYN");
+        AVAILABLE_TCP_FLAGS.add("RST");
+        AVAILABLE_TCP_FLAGS.add("PSH");
+        AVAILABLE_TCP_FLAGS.add("ACK");
+        AVAILABLE_TCP_FLAGS.add("URG");
+        AVAILABLE_TCP_FLAGS.add("ALL");
+        AVAILABLE_TCP_FLAGS.add("NONE");
+    }
     private static final String[] AVAILABLE_TABLE = new String[]{"filter", "NAT"};
 
     private static final String[] BASE_TARGET = new String[]{"ACCEPT", "DROP"};
@@ -237,7 +246,56 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
             }
         });
         inputValidator.addRule(inputValidator.constrainTextFieldToBeNonEmpty("ICMP Type", icmpType, null));
-
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(tcpFlags) {
+            @Override
+            public String getValidationError() {
+                if(!tcpOptionsPanel.isVisible()) return null;
+                String flags = tcpFlags.getText().trim();
+                if(!flags.isEmpty()){
+                    if(flags.indexOf("!") > -1){
+                        flags = flags.substring(flags.indexOf("!") + 1).trim();
+                    }
+                    String[] fields = flags.split("\\s+");
+                    Set<String> set = new HashSet<>();
+                    for(String f : fields){
+                        String[] cs = f.split(",");
+                        for(String s : cs){
+                            set.add(s.trim());
+                        }
+                    }
+                    for(String s : set){
+                        if(!s.isEmpty() && !AVAILABLE_TCP_FLAGS.contains(s)){
+                            return s + " is not a supported TCP Flag";
+                        }
+                    }
+                }
+                return null;
+            }
+        });
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(tcpOptions) {
+            @Override
+            public String getValidationError() {
+                if(!tcpOptionsPanel.isVisible()) return null;
+                String options = tcpOptions.getText().trim();
+                if(!options.isEmpty()){
+                    if(options.indexOf("!") > -1){
+                        options = options.substring(options.indexOf("!") + 1).trim();
+                    }
+                    try{
+                        Integer num = Integer.parseInt(options);
+                        if(num.intValue() < 0 || num.intValue() > 255){
+                            return "TCP Option must be between 0 and 255";
+                        }
+                    }
+                    catch(NumberFormatException e){
+                        return "TCP Option must be a numeric number";
+                    }
+                }
+                return null;
+            }
+        });
+        inputValidator.validateWhenDocumentChanges(tcpFlags);
+        inputValidator.validateWhenDocumentChanges(tcpOptions);
         inputValidator.validateWhenDocumentChanges(udpSrcPort);
         inputValidator.validateWhenDocumentChanges(tcpSrcPort);
         inputValidator.validateWhenDocumentChanges(icmpType);
