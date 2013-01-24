@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
+import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.InputValidator;
@@ -457,25 +458,24 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         inputValidator.constrainTextFieldToBeNonEmpty("Name", nameField, null);
         inputValidator.validateWhenDocumentChanges(nameField);
-
+        portField.setDocument(new NumberField());
         inputValidator.constrainTextField(portField, new InputValidator.ComponentValidationRule(portField) {
             @Override
             public String getValidationError() {
                 int start = firewallRulesRadioButton.isSelected() ? 1 : 1025;
                 int port;
-                try{
+                try {
                     port = Integer.parseInt(portField.getText());
-                }
-                catch(NumberFormatException e){
+                } catch (NumberFormatException e) {
                     return "Port must be a number from " + start + " to 65535";
                 }
-                if(port < start || port > 65535){
+                if (port < start || port > 65535) {
                     return "Port must be a number from " + start + " to 65535";
                 }
                 return null;
             }
         });
-        inputValidator.constrainTextFieldToNumberRange("Port", portField, 1025L, 65535L);
+        //inputValidator.constrainTextFieldToNumberRange("Port", portField, 1025L, 65535L);
         inputValidator.validateWhenDocumentChanges(portField);
         inputValidator.constrainTextFieldToNumberRange("Port Range Start", portRangeStartField, 0L, 65535L );
         inputValidator.constrainTextFieldToNumberRange("Port Range Count", portRangeCountField, 1L, 65535L );

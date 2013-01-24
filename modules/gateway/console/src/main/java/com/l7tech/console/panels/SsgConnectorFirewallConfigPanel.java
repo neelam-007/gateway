@@ -47,9 +47,9 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
     private SquigglyTextField source;
     private SquigglyTextField destination;
     private SquigglyTextField udpSrcPort;
-    private SquigglyTextField udpDstPort;
+
     private SquigglyTextField tcpSrcPort;
-    private SquigglyTextField tcpDstPort;
+
     private SquigglyTextField tcpFlags;
     private SquigglyTextField tcpOptions;
     private JPanel icmpOptionsPanel;
@@ -97,11 +97,9 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
 
         if("udp".equals(protocol)){
             udpSrcPort.setText(advancedProperties.get("source-port"));
-            udpDstPort.setText(advancedProperties.get("destination-port"));
         }
         else if("tcp".equals(protocol)){
             tcpSrcPort.setText(advancedProperties.get("source-port"));
-            tcpDstPort.setText(advancedProperties.get("destination-port"));
         }
         else if("icmp".equals(protocol)){
             icmpType.setText(advancedProperties.get("icmp-type"));
@@ -129,20 +127,17 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
 
         final String protocol = ddProtocol.getSelectedItem().toString();
         String srcPort = "";
-        String dstPort = "";
+
         if("udp".equals(protocol)){
             srcPort = udpSrcPort.getText().trim();
-            dstPort = udpDstPort.getText().trim();
         } else if ("tcp".equals(protocol)){
             srcPort = tcpSrcPort.getText().trim();
-            dstPort = tcpDstPort.getText().trim();
         } else if ("icmp".equals(protocol)){
             final String icmp = icmpType.getText().trim();
             if(!icmp.trim().isEmpty()) values.put("icmp-type", icmp);
         }
 
         if(!srcPort.isEmpty()) values.put("source-port", srcPort);
-        if(!dstPort.isEmpty()) values.put("destination-port", dstPort);
 
         values.put("protocol", protocol);
         final String flags = tcpFlags.getText().trim();
@@ -218,17 +213,13 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
 
     private void addValidationRules(){
         inputValidator.addRule(new InvertablePortValidator(udpSrcPort));
-        inputValidator.addRule(new InvertablePortValidator(udpDstPort));
         inputValidator.addRule(new InvertablePortValidator(tcpSrcPort));
-        inputValidator.addRule(new InvertablePortValidator(tcpDstPort));
         inputValidator.addRule(new InvertableIpAddressValidator(source));
         inputValidator.addRule(new InvertableIpAddressValidator(destination));
         inputValidator.addRule(inputValidator.constrainTextFieldToBeNonEmpty("ICMP Type", icmpType, null));
 
         inputValidator.validateWhenDocumentChanges(udpSrcPort);
-        inputValidator.validateWhenDocumentChanges(udpDstPort);
         inputValidator.validateWhenDocumentChanges(tcpSrcPort);
-        inputValidator.validateWhenDocumentChanges(tcpDstPort);
         inputValidator.validateWhenDocumentChanges(icmpType);
         inputValidator.validateWhenDocumentChanges(source);
         inputValidator.validateWhenDocumentChanges(destination);
@@ -298,9 +289,8 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
         final String selected = ddProtocol.getSelectedItem().toString();
         implicitOptionsPanel.setBorder(new TitledBorder(selected.toUpperCase() + " Options"));
         final boolean isTcp = "tcp".equals(selected);
-        udpDstPort.setEnabled(!isTcp);
+
         udpSrcPort.setEnabled(!isTcp);
-        tcpDstPort.setEnabled(isTcp);
         tcpSrcPort.setEnabled(isTcp);
         tcpOptionsPanel.setVisible(isTcp);
         udpOptionsPanel.setVisible("udp".equals(selected));
