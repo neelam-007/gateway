@@ -12,7 +12,6 @@ import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.util.Background;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 import java.sql.*;
@@ -139,11 +138,16 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
                     return msg;
                 }
 
-                Connection conn = null;
                 try {
-                    conn = cpds.getConnection();
+                    Connection conn = cpds.getConnection();
                 } catch (SQLException e) {
-                    return "invalid connection properties setting. \n" + ExceptionUtils.getMessage(e);
+                    // try to get the actual connection error
+                    try{
+                        Throwable e1 = cpds.getLastAcquisitionFailure(cpds.getUser(),cpds.getPassword());
+                        return "invalid connection properties setting. \n" +   ExceptionUtils.getMessage(e1 != null ? e1: e) ;
+                    }catch (SQLException e1){
+                        return "invalid connection properties setting. \n" +  ExceptionUtils.getMessage(e);
+                    }
                 } catch (Throwable e) {
                     return "unexpected error, " + e.getClass().getSimpleName() + " thrown";
                 } finally {
