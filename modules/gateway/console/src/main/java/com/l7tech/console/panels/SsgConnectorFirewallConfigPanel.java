@@ -517,7 +517,6 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
                     final String end = matcher.group(2);
                     return validatePort(start, end);
                 }
-                c.requestFocus();
                 return "Invalid port entry.";
             }
             return null;
@@ -569,7 +568,6 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
                         }
                     }
                     else msg = "Invalid IP address.";
-                    c.requestFocus();
                     return msg;
                 }
             }
