@@ -52,6 +52,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String MAINPART_CONTENT_TYPE = "mainpart.contenttype";
     private static final String MAINPART_SIZE_NAME = "mainpart.size";
     private static final String BUFFER_STATUS = "buffer.status";
+    private static final String BUFFER_ALLOWED = "buffer.allowed";
 
     static enum BufferStatus {
         UNINITIALIZED("uninitialized"),
@@ -169,6 +170,8 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = mainPartSizeSelector;
         } else if (BUFFER_STATUS.equals(lname)) {
             selector = bufferStatusSelector;
+        } else if (BUFFER_ALLOWED.equals(lname)) {
+            selector = bufferAllowedSelector;
         } else if (lname.equals(CONTENT_TYPE)) {
             selector = contentTypeSelector;
         } else if (lname.equals(MAINPART_CONTENT_TYPE)) {
@@ -337,6 +340,21 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
                 if (strict) throw new IllegalArgumentException("Unable to determine first part length: " + msg);
                 return null;
             }
+        }
+    };
+
+    private static final MessageAttributeSelector bufferAllowedSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            return new Selection(getBufferAllowed(context));
+        }
+
+        private boolean getBufferAllowed(Message message) {
+            if (!message.isInitialized())
+                return true;
+
+            MimeKnob mimeKnob = message.getKnob(MimeKnob.class);
+            return mimeKnob == null || !mimeKnob.isBufferingDisallowed();
         }
     };
 

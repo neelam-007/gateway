@@ -23,22 +23,16 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.springframework.test.context.TestExecutionListeners;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 public class MessageSelectorTest {
@@ -301,4 +295,52 @@ public class MessageSelectorTest {
         assertEquals("2", ExpandVariables.process("${request.http.headerValues.h1.length.length}", vars, audit));
 
     }
+
+    @Test
+    public void testMessageBufferDisallowed() throws Exception {
+        final Message request = new Message();
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("request", request);
+        }};
+
+        assertEquals("uninitialized", ExpandVariables.process("${request.buffer.status}", vars, audit));
+        assertEquals("true", ExpandVariables.process("${request.buffer.allowed}", vars, audit));
+
+        request.initialize(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream("foo".getBytes()));
+
+        assertEquals("unread", ExpandVariables.process("${request.buffer.status}", vars, audit));
+        assertEquals("true", ExpandVariables.process("${request.buffer.allowed}", vars, audit));
+
+        request.getMimeKnob().setBufferingDisallowed(true);
+
+        assertEquals("unread", ExpandVariables.process("${request.buffer.status}", vars, audit));
+        assertEquals("false", ExpandVariables.process("${request.buffer.allowed}", vars, audit));
+
+        request.getMimeKnob().getEntireMessageBodyAsInputStream().close();
+
+        assertEquals("gone", ExpandVariables.process("${request.buffer.status}", vars, audit));
+        assertEquals("false", ExpandVariables.process("${request.buffer.allowed}", vars, audit));
+    }
+
+    @Test
+    public void testMessageBufferAllowed() throws Exception {
+        final Message request = new Message();
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("request", request);
+        }};
+
+        assertEquals("uninitialized", ExpandVariables.process("${request.buffer.status}", vars, audit));
+        assertEquals("true", ExpandVariables.process("${request.buffer.allowed}", vars, audit));
+
+        request.initialize(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream("foo".getBytes()));
+
+        assertEquals("unread", ExpandVariables.process("${request.buffer.status}", vars, audit));
+        assertEquals("true", ExpandVariables.process("${request.buffer.allowed}", vars, audit));
+
+        request.getMimeKnob().getEntireMessageBodyAsInputStream().close();
+
+        assertEquals("buffered", ExpandVariables.process("${request.buffer.status}", vars, audit));
+        assertEquals("true", ExpandVariables.process("${request.buffer.allowed}", vars, audit));
+    }
+
 }
