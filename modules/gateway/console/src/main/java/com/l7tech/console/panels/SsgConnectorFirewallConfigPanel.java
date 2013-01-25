@@ -57,7 +57,7 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
 
     private static final Set<String> AVAILABLE_TCP_FLAGS;
     static {
-        AVAILABLE_TCP_FLAGS = new HashSet<>();
+        AVAILABLE_TCP_FLAGS = new HashSet<String>();
         AVAILABLE_TCP_FLAGS.add("FIN");
         AVAILABLE_TCP_FLAGS.add("SYN");
         AVAILABLE_TCP_FLAGS.add("RST");
@@ -256,7 +256,7 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
                         flags = flags.substring(flags.indexOf("!") + 1).trim();
                     }
                     String[] fields = flags.split("\\s+");
-                    Set<String> set = new HashSet<>();
+                    Set<String> set = new HashSet<String>();
                     for(String f : fields){
                         String[] cs = f.split(",");
                         for(String s : cs){
