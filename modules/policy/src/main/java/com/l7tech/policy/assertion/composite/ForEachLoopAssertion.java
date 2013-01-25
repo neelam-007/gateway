@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.List;
@@ -70,9 +71,9 @@ public class ForEachLoopAssertion extends CompositeAssertion implements UsesVari
 
     public VariableMetadata[] getVariablesSet() {
         return variablePrefix == null ? new VariableMetadata[0] : new VariableMetadata[] {
-                new VariableMetadata(variablePrefix + ".current", false, false, null, true),
-                new VariableMetadata(variablePrefix + ".iterations", false, false, null, true),
-                new VariableMetadata(variablePrefix + ".exceededlimit", false, false, null, true),
+                new VariableMetadata(variablePrefix + ".current", false, false, null, true, DataType.UNKNOWN),
+                new VariableMetadata(variablePrefix + ".iterations", false, false, null, true, DataType.INTEGER),
+                new VariableMetadata(variablePrefix + ".exceededlimit", false, false, null, true, DataType.BOOLEAN),
         };
     }
 

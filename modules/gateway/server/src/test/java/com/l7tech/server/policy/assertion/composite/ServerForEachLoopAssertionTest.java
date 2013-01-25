@@ -9,7 +9,9 @@ import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -258,6 +260,23 @@ public class ServerForEachLoopAssertionTest {
         String[] varsUsed = ass.getVariablesUsed();
         assertEquals(1, varsUsed.length);
         assertEquals("blah", varsUsed[0]);
+    }
+
+    @Test
+    @BugNumber(13752)
+    public void testGetVariablesSet() throws Exception {
+        ass.setVariablePrefix("i");
+        ass.setLoopVariableName("things");
+        ass.setIterationLimit(100);
+
+        VariableMetadata[] varsSet = ass.getVariablesSet();
+        assertEquals(3, varsSet.length);
+        assertEquals("i.current", varsSet[0].getName());
+        assertEquals(DataType.UNKNOWN, varsSet[0].getType());
+        assertEquals("i.iterations", varsSet[1].getName());
+        assertEquals(DataType.INTEGER, varsSet[1].getType());
+        assertEquals("i.exceededlimit", varsSet[2].getName());
+        assertEquals(DataType.BOOLEAN, varsSet[2].getType());
     }
 
     private void assertNoSuchVariable(String var) {
