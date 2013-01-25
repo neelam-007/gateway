@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * Represents a declared input value for an encapsulated assertion.
@@ -28,6 +30,7 @@ import javax.persistence.*;
 @Proxy(lazy=false)
 @Table(name="encapsulated_assertion_argument")
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
+@XmlRootElement(name = "EncapsulatedAssertionArgument")
 public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp {
     private EncapsulatedAssertionConfig encapsulatedAssertionConfig;
     private int ordinal;
@@ -60,6 +63,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
      * variable or as an assertion bean property, depending on the setting of {@link #isGuiPrompt()}).
      */
     @Column(name="argument_name")
+    @XmlElement(name = "ArgumentName")
     public String getArgumentName() {
         return argumentName;
     }
@@ -73,6 +77,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
      * @return the data type of this argument, as a name of a value of {@link com.l7tech.policy.variable.DataType}.
      */
     @Column(name="argument_type")
+    @XmlElement(name = "ArgumentType")
     public String getArgumentType() {
         return argumentType;
     }
@@ -93,6 +98,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
      *         false if the value is expected to be delivered as a context variable already set in the parent policy enforcement context.
      */
     @Column(name="gui_prompt")
+    @XmlElement(name = "GuiPrompt")
     public boolean isGuiPrompt() {
         return guiPrompt;
     }
@@ -107,6 +113,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
      */
     @Nullable
     @Column(name="gui_label")
+    @XmlElement(name = "GuiLabel")
     public String getGuiLabel() {
         return guiLabel;
     }
@@ -120,6 +127,7 @@ public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp
      * @return a number used for ordering the arguments within the properties dialog.
      */
     @Column(name="ordinal")
+    @XmlElement(name = "Ordinal")
     public int getOrdinal() {
         return ordinal;
     }

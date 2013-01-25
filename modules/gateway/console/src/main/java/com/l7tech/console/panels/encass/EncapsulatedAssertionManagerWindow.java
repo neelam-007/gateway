@@ -7,6 +7,7 @@ import com.l7tech.console.action.ViewEncapsulatedAssertionAction;
 import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
 import com.l7tech.console.policy.exporter.ConsoleExternalReferenceFinder;
+import com.l7tech.console.policy.exporter.EncapsulatedAssertionConfigExportUtil;
 import com.l7tech.console.policy.exporter.PolicyExportUtils;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.PaletteFolderRegistry;
@@ -35,14 +36,14 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
+import javax.xml.transform.dom.DOMResult;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -177,11 +178,10 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                 try {
                     Document doc = XmlUtil.parse(fis);
 
-                    Element encassElement = XmlUtil.findFirstChildElementByName(doc.getDocumentElement(), "http://www.layer7tech.com/ws/policy/export", "EncapsulatedAssertionConfig");
+                    Element encassElement = XmlUtil.findFirstChildElementByName(doc.getDocumentElement(), "http://ns.l7tech.com/secureSpan/1.0/encass", "EncapsulatedAssertion");
                     if (encassElement == null)
                         throw new IOException("Export document does not contain an EncapsulatedAssertionConfig element");
-                    String encassB64 = XmlUtil.getTextValue(encassElement);
-                    EncapsulatedAssertionConfig config = deserialize(encassB64);
+                    EncapsulatedAssertionConfig config = EncapsulatedAssertionConfigExportUtil.getInstance().importFromNode(encassElement);
 
                     Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "Imported Encass Policy", null, false);
 
@@ -224,28 +224,15 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                     final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
                     PolicyExporter exporter = new PolicyExporter(finder, finder);
                     Document doc = exporter.exportToDocument(assertion, PolicyExportUtils.getExternalReferenceFactories());
-
-                    final Element ecEl = doc.createElementNS("http://www.layer7tech.com/ws/policy/export", "exp:EncapsulatedAssertionConfig");
-                    doc.getDocumentElement().appendChild(ecEl);
-                    EncapsulatedAssertionConfig copyWithoutPolicy = config.getCopy();
-                    copyWithoutPolicy.setPolicy(null);
-                    String serialized = serialize(copyWithoutPolicy);
-                    ecEl.appendChild(doc.createTextNode(serialized));
-
+                    final DocumentFragment fragment = doc.createDocumentFragment();
+                    EncapsulatedAssertionConfigExportUtil.getInstance().export(config, new DOMResult(fragment));
+                    doc.getDocumentElement().appendChild(fragment);
                     XmlUtil.nodeToFormattedOutputStream(doc, fos);
                 } catch (SAXException e) {
                     throw new IOException(e);
                 }
             }
         });
-    }
-
-    private String serialize(Serializable obj) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(obj);
-        oos.close();
-        return HexUtils.encodeBase64(baos.toByteArray(), true);
     }
 
     private EncapsulatedAssertionConfig deserialize(String b64) throws IOException {

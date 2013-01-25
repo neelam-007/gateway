@@ -4,6 +4,9 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * Represents a declared output value from an encapsulated assertion.
@@ -15,6 +18,7 @@ import javax.persistence.*;
 @Proxy(lazy=false)
 @Table(name="encapsulated_assertion_result")
 @Inheritance(strategy= InheritanceType.SINGLE_TABLE)
+@XmlRootElement(name = "EncapsulatedAssertionResult")
 public class EncapsulatedAssertionResultDescriptor extends PersistentEntityImp {
     private EncapsulatedAssertionConfig encapsulatedAssertionConfig;
     private String resultName;
@@ -22,6 +26,7 @@ public class EncapsulatedAssertionResultDescriptor extends PersistentEntityImp {
 
     @ManyToOne(optional=false)
     @JoinColumn(name="encapsulated_assertion_oid", nullable=false)
+    @XmlTransient
     public EncapsulatedAssertionConfig getEncapsulatedAssertionConfig() {
         return encapsulatedAssertionConfig;
     }
@@ -39,6 +44,7 @@ public class EncapsulatedAssertionResultDescriptor extends PersistentEntityImp {
     }
 
     @Column(name="result_name")
+    @XmlElement(name = "ResultName")
     public String getResultName() {
         return resultName;
     }
@@ -52,6 +58,7 @@ public class EncapsulatedAssertionResultDescriptor extends PersistentEntityImp {
      * @return the data type of this result, as a name of a value of {@link com.l7tech.policy.variable.DataType}.
      */
     @Column(name="result_type")
+    @XmlElement(name = "ResultType")
     public String getResultType() {
         return resultType;
     }

@@ -1,5 +1,6 @@
 package com.l7tech.objectmodel.encass;
 
+import com.l7tech.objectmodel.JaxbMapType;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -14,7 +15,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
 import javax.validation.Valid;
-import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
@@ -29,7 +31,8 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * and runtime that uses a nested (child) policy enforcement context.
  */
 @SuppressWarnings("Convert2Diamond")
-@XmlRootElement
+@XmlRootElement(name = "EncapsulatedAssertion")
+@XmlType(propOrder = {"argumentDescriptors", "resultDescriptors", "properties"})
 @Entity
 @Proxy(lazy=false)
 @Inheritance(strategy= InheritanceType.SINGLE_TABLE)
@@ -64,6 +67,7 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
      */
     @Nullable
     @Column(name="guid", nullable=false, length=255)
+    @XmlAttribute(name = "guid")
     public String getGuid() {
         return guid;
     }
@@ -103,6 +107,8 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
      */
     @Fetch(FetchMode.SUBSELECT)
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="encapsulatedAssertionConfig", orphanRemoval=true)
+    @XmlElementWrapper(name = "EncapsulatedAssertionArguments")
+    @XmlElement(name = "EncapsulatedAssertionArgument")
     public Set<EncapsulatedAssertionArgumentDescriptor> getArgumentDescriptors() {
         return argumentDescriptors;
     }
@@ -119,6 +125,8 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
      */
     @Fetch(FetchMode.SUBSELECT)
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="encapsulatedAssertionConfig", orphanRemoval=true)
+    @XmlElementWrapper(name = "EncapsulatedResults")
+    @XmlElement(name = "EncapsulatedResult")
     public Set<EncapsulatedAssertionResultDescriptor> getResultDescriptors() {
         return resultDescriptors;
     }
@@ -185,7 +193,9 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
         joinColumns=@JoinColumn(name="encapsulated_assertion_oid", referencedColumnName="objectid"))
     @MapKeyColumn(name="name",length=128)
     @Column(name="value", nullable=false, length=32672)
-    protected Map<String,String> getProperties() {
+    @XmlElement(name = "Properties")
+    @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)
+    public Map<String,String> getProperties() {
         return properties;
     }
 
@@ -196,7 +206,7 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
      *
      * @param properties the properties set to use
      */
-    protected void setProperties(Map<String,String> properties) {
+    public void setProperties(Map<String,String> properties) {
         checkLocked();
         this.properties = properties;
     }
