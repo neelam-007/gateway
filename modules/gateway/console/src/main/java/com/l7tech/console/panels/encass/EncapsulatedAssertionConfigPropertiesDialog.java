@@ -59,7 +59,6 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JButton changePolicyButton;
     private JLabel policyNameLabel;
     private JButton selectIconButton;
-    private JLabel iconLabel;
     private JTable outputsTable;
     private JTable inputsTable;
     private JButton addInputButton;
@@ -117,13 +116,14 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
         cancelButton.addActionListener(Utilities.createDisposeAction(this));
 
-        final AbstractButton[] buttons = {changePolicyButton, selectIconButton,
+        final AbstractButton[] buttons = {changePolicyButton,
                 addInputButton, editInputButton, deleteInputButton,
                 moveInputUpButton, moveInputDownButton,
                 addOutputButton, editOutputButton, deleteOutputButton,
                 okButton, cancelButton};
         Utilities.equalizeButtonSizes(buttons);
         Utilities.enableGrayOnDisabled(buttons);
+        Utilities.enableGrayOnDisabled(selectIconButton);
         Utilities.deuglifySplitPane(inputsOutputsSplitPane);
 
         inputValidator.constrainTextFieldToBeNonEmpty("name", nameField, null);
@@ -223,6 +223,11 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
 
         moveInputUpButton.addActionListener(TableUtil.createMoveUpAction(inputsTable, inputsTableModel));
         moveInputDownButton.addActionListener(TableUtil.createMoveDownAction(inputsTable, inputsTableModel));
+
+        selectIconButton.setText("");
+        selectIconButton.setMargin(new Insets(0, 0, 0, 0));
+        selectIconButton.setVerticalTextPosition(SwingConstants.BOTTOM);
+        selectIconButton.setHorizontalTextPosition(SwingConstants.CENTER);
 
         Utilities.setDoubleClickAction(outputsTable, editOutputButton);
 
@@ -357,7 +362,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
 
         iconResourceFilename = config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_RESOURCE_FILENAME);
         iconBase64 = config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64);
-        iconLabel.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(iconResourceFilename, iconBase64).right);
+        selectIconButton.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(iconResourceFilename, iconBase64).right);
 
         inputsTableModel.setRows(config.sortedArguments());
         outputsTableModel.setRows(new ArrayList<EncapsulatedAssertionResultDescriptor>(config.getResultDescriptors()));
@@ -598,7 +603,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                             iconResourceFilename = selected.right;
                             iconBase64 = null;
                         }
-                        iconLabel.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(iconResourceFilename, iconBase64).right);
+                        selectIconButton.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(iconResourceFilename, iconBase64).right);
                     }
                 }
             });
