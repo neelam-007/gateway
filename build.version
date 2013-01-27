@@ -8,6 +8,6 @@ build.version.subminor=0
 build.version.revision=1
 
 build.em.version.major=1
-build.em.version.minor=8
+build.em.version.minor=9
 build.em.version.subminor=0
 build.em.version.revision=1
