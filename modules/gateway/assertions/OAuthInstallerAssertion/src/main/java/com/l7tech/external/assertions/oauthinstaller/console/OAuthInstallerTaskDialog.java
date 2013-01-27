@@ -170,7 +170,7 @@ public class OAuthInstallerTaskDialog extends JDialog {
                     // Secure Zone Storage - add in API Portal Integration
                     final JPanel extraPanel = bundleComp.getExtraPanel();
                     extraPanel.setLayout(new BoxLayout(extraPanel, BoxLayout.X_AXIS));
-                    JCheckBox integrateCheckBox = new JCheckBox("Integrate with API Portal version 2.1 or 2.2");
+                    JCheckBox integrateCheckBox = new JCheckBox("Integrate with the Layer 7 API Portal");
                     integrateCheckBox.addActionListener(integrateApiListener);
                     extraPanel.add(integrateCheckBox);
                     extraPanel.add(Box.createHorizontalGlue());
