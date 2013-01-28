@@ -4,7 +4,6 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.ModelessFeedback;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.util.InetAddressUtil;
 import org.jetbrains.annotations.NotNull;
@@ -167,8 +166,13 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
         if(!targetOptionsPanel.isVisible()) return null;
         if(targetOptions != null){
             for(Component c : targetOptions.getComponents()){
-                if(c instanceof ModelessFeedback){
-                    String feedback = ((ModelessFeedback) c).getModelessFeedback();
+                if(c instanceof SquigglyTextField){
+                    String feedback = ((SquigglyTextField) c).getModelessFeedback();
+                    String text = ((SquigglyTextField) c).getText();
+                    if(text == null || text.trim().isEmpty()){
+                        c.requestFocusInWindow();
+                        return "Target option(s) is required";
+                    }
                     if(feedback != null && !feedback.isEmpty()){
                         c.requestFocusInWindow();
                         return feedback;
