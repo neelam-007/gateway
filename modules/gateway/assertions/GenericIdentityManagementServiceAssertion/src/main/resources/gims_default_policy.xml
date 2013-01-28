@@ -29,6 +29,14 @@ amVjdD4KPC9qYXZhPgo=</Props>
                         </L7p:CustomizeErrorResponse>
                         <L7p:FalseAssertion/>
                     </wsp:All>
+                    <L7p:assertionComment>
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="LEFT.COMMENT"/>
+                                <L7p:value stringValue="checkSSL()"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:assertionComment>
                 </wsp:OneOrMore>
                 <wsp:All wsp:Usage="Required">
                     <L7p:SetVariable>
@@ -110,16 +118,6 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     </L7p:item>
                                 </L7p:Predicates>
                             </L7p:ComparisonAssertion>
-                            <L7p:SetVariable>
-                                <L7p:Base64Expression stringValue="LyR7c3BsaXRVcmlbMV19LyR7c3BsaXRVcmlbMl19"/>
-                                <L7p:Enabled booleanValue="false"/>
-                                <L7p:VariableToSet stringValue="gims.resUri"/>
-                            </L7p:SetVariable>
-                            <L7p:SetVariable>
-                                <L7p:Base64Expression stringValue="JHtzcGxpdFVyaVszXX0="/>
-                                <L7p:Enabled booleanValue="false"/>
-                                <L7p:VariableToSet stringValue="gims.resId"/>
-                            </L7p:SetVariable>
                             <L7p:SetVariable>
                                 <L7p:Base64Expression stringValue="ZmFsc2U="/>
                                 <L7p:VariableToSet stringValue="failed"/>
@@ -306,6 +304,18 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     </L7p:Properties>
                                     </L7p:assertionComment>
                                     </wsp:All>
+                                    <L7p:assertionComment>
+                                    <L7p:Properties mapValue="included">
+                                    <L7p:entry>
+                                    <L7p:key stringValue="RIGHT.COMMENT"/>
+                                    <L7p:value stringValue="User credentials can be either login/password or security token"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="LEFT.COMMENT"/>
+                                    <L7p:value stringValue="User Credentials"/>
+                                    </L7p:entry>
+                                    </L7p:Properties>
+                                    </L7p:assertionComment>
                                     </wsp:OneOrMore>
                                     <wsp:OneOrMore wsp:Usage="Required">
                                     <wsp:All wsp:Usage="Required">
@@ -623,7 +633,7 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     </L7p:entry>
                                     <L7p:entry>
                                     <L7p:key stringValue="LEFT.COMMENT"/>
-                                    <L7p:value stringValue="Authenticate User"/>
+                                    <L7p:value stringValue="User Authentication"/>
                                     </L7p:entry>
                                 </L7p:Properties>
                             </L7p:assertionComment>
@@ -657,8 +667,7 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     </L7p:item>
                                     </L7p:Predicates>
                                 </L7p:ComparisonAssertion>
-                                <wsp:All wsp:Usage="Required">
-                                    <L7p:ComparisonAssertion>
+                                <L7p:ComparisonAssertion>
                                     <L7p:CaseSensitive booleanValue="false"/>
                                     <L7p:Expression1 stringValue="${splitUri[3]}"/>
                                     <L7p:Operator operatorNull="null"/>
@@ -671,30 +680,7 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     <L7p:RightValue stringValue="users"/>
                                     </L7p:item>
                                     </L7p:Predicates>
-                                    </L7p:ComparisonAssertion>
-                                    <wsp:OneOrMore wsp:Usage="Required">
-                                    <L7p:ComparisonAssertion>
-                                    <L7p:CaseSensitive booleanValue="false"/>
-                                    <L7p:Expression1 stringValue="${request.http.method}"/>
-                                    <L7p:Expression2 stringValue="GET"/>
-                                    <L7p:FailIfVariableNotFound booleanValue="false"/>
-                                    <L7p:Predicates predicates="included">
-                                    <L7p:item binary="included">
-                                    <L7p:CaseSensitive booleanValue="false"/>
-                                    <L7p:RightValue stringValue="GET"/>
-                                    </L7p:item>
-                                    </L7p:Predicates>
-                                    </L7p:ComparisonAssertion>
-                                    <wsp:All wsp:Usage="Required">
-                                    <L7p:HardcodedResponse>
-                                    <L7p:Base64ResponseBody stringValue="SW50ZXJuYWwgU2VydmVyIEVycm9y"/>
-                                    <L7p:ResponseContentType stringValue="plain/text; charset=UTF-8"/>
-                                    <L7p:ResponseStatus stringValue="500"/>
-                                    </L7p:HardcodedResponse>
-                                    <L7p:FalseAssertion/>
-                                    </wsp:All>
-                                    </wsp:OneOrMore>
-                                </wsp:All>
+                                </L7p:ComparisonAssertion>
                             </wsp:OneOrMore>
                             <wsp:OneOrMore wsp:Usage="Required">
                                 <wsp:All wsp:Usage="Required">
@@ -710,8 +696,92 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     </L7p:item>
                                     </L7p:Predicates>
                                     </L7p:ComparisonAssertion>
+                                    <wsp:OneOrMore wsp:Usage="Required">
+                                    <wsp:All wsp:Usage="Required">
+                                    <L7p:ComparisonAssertion>
+                                    <L7p:CaseSensitive booleanValue="false"/>
+                                    <L7p:Expression1 stringValue="${splitUri[3]}"/>
+                                    <L7p:Operator operatorNull="null"/>
+                                    <L7p:Predicates predicates="included">
+                                    <L7p:item dataType="included">
+                                    <L7p:Type variableDataType="string"/>
+                                    </L7p:item>
+                                    <L7p:item binary="included">
+
+                                    <L7p:CaseSensitive booleanValue="false"/>
+                                    <L7p:RightValue stringValue="user"/>
+                                    </L7p:item>
+                                    </L7p:Predicates>
+                                    </L7p:ComparisonAssertion>
                                     <L7p:HardcodedResponse>
                                     <L7p:Base64ResponseBody stringValue="VXNlciBNYW5hZ2VtZW50IG9wdGlvbiBpcyBub3QgYXZhaWxhYmxlIGZvciBpbnRlcm5hbCBpZGVudGl0eSBwcm92aWRlcg=="/>
+                                    <L7p:ResponseContentType stringValue="plain/text; charset=UTF-8"/>
+                                    <L7p:ResponseStatus stringValue="501"/>
+                                    </L7p:HardcodedResponse>
+                                    </wsp:All>
+                                    <wsp:All wsp:Usage="Required">
+                                    <L7p:ComparisonAssertion>
+                                    <L7p:CaseSensitive booleanValue="false"/>
+                                    <L7p:Expression1 stringValue="${splitUri[3]}"/>
+                                    <L7p:Operator operatorNull="null"/>
+                                    <L7p:Predicates predicates="included">
+                                    <L7p:item dataType="included">
+                                    <L7p:Type variableDataType="string"/>
+                                    </L7p:item>
+                                    <L7p:item binary="included">
+
+                                    <L7p:CaseSensitive booleanValue="false"/>
+                                    <L7p:RightValue stringValue="users"/>
+                                    </L7p:item>
+                                    </L7p:Predicates>
+                                    </L7p:ComparisonAssertion>
+                                    <wsp:OneOrMore wsp:Usage="Required">
+                                    <wsp:All wsp:Usage="Required">
+                                    <L7p:ComparisonAssertion>
+
+                                    <L7p:CaseSensitive booleanValue="false"/>
+                                    <L7p:Expression1 stringValue="${request.http.method}"/>
+                                    <L7p:Expression2 stringValue="GET"/>
+
+                                    <L7p:FailIfVariableNotFound booleanValue="false"/>
+                                    <L7p:Predicates predicates="included">
+                                    <L7p:item binary="included">
+
+                                    <L7p:CaseSensitive booleanValue="false"/>
+
+                                    <L7p:RightValue stringValue="GET"/>
+                                    </L7p:item>
+                                    </L7p:Predicates>
+                                    </L7p:ComparisonAssertion>
+                                    <L7p:HardcodedResponse>
+
+                                    <L7p:Base64ResponseBody stringValue="VXNlciBNYW5hZ2VtZW50IG9wdGlvbiBpcyBub3QgYXZhaWxhYmxlIGZvciBpbnRlcm5hbCBpZGVudGl0eSBwcm92aWRlcg=="/>
+
+                                    <L7p:ResponseContentType stringValue="plain/text; charset=UTF-8"/>
+
+                                    <L7p:ResponseStatus stringValue="501"/>
+                                    </L7p:HardcodedResponse>
+                                    </wsp:All>
+                                    <wsp:All wsp:Usage="Required">
+                                    <L7p:HardcodedResponse>
+
+                                    <L7p:Base64ResponseBody stringValue="SW50ZXJuYWwgU2VydmVyIEVycm9y"/>
+
+                                    <L7p:ResponseContentType stringValue="plain/text; charset=UTF-8"/>
+
+                                    <L7p:ResponseStatus stringValue="500"/>
+                                    </L7p:HardcodedResponse>
+                                    </wsp:All>
+                                    </wsp:OneOrMore>
+                                    </wsp:All>
+                                    </wsp:OneOrMore>
+                                </wsp:All>
+                                <wsp:All wsp:Usage="Required">
+                                    <L7p:CommentAssertion>
+                                    <L7p:Comment stringValue="Add Custom Identity Provider user management here"/>
+                                    </L7p:CommentAssertion>
+                                    <L7p:HardcodedResponse>
+                                    <L7p:Base64ResponseBody stringValue="VXNlciBNYW5hZ2VtZW50IG9wdGlvbiBpcyBub3QgYXZhaWxhYmxlIGZvciBjdXN0b20gaWRlbnRpdHkgcHJvdmlkZXI="/>
                                     <L7p:ResponseContentType stringValue="plain/text; charset=UTF-8"/>
                                     <L7p:ResponseStatus stringValue="501"/>
                                     </L7p:HardcodedResponse>
@@ -760,8 +830,7 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     </L7p:item>
                                     </L7p:Predicates>
                                 </L7p:ComparisonAssertion>
-                                <wsp:All wsp:Usage="Required">
-                                    <L7p:ComparisonAssertion>
+                                <L7p:ComparisonAssertion>
                                     <L7p:CaseSensitive booleanValue="false"/>
                                     <L7p:Expression1 stringValue="${splitUri[3]}"/>
                                     <L7p:Operator operatorNull="null"/>
@@ -774,30 +843,7 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     <L7p:RightValue stringValue="groups"/>
                                     </L7p:item>
                                     </L7p:Predicates>
-                                    </L7p:ComparisonAssertion>
-                                    <wsp:OneOrMore wsp:Usage="Required">
-                                    <L7p:ComparisonAssertion>
-                                    <L7p:CaseSensitive booleanValue="false"/>
-                                    <L7p:Expression1 stringValue="${request.http.method}"/>
-                                    <L7p:Expression2 stringValue="GET"/>
-                                    <L7p:FailIfVariableNotFound booleanValue="false"/>
-                                    <L7p:Predicates predicates="included">
-                                    <L7p:item binary="included">
-                                    <L7p:CaseSensitive booleanValue="false"/>
-                                    <L7p:RightValue stringValue="GET"/>
-                                    </L7p:item>
-                                    </L7p:Predicates>
-                                    </L7p:ComparisonAssertion>
-                                    <wsp:All wsp:Usage="Required">
-                                    <L7p:HardcodedResponse>
-                                    <L7p:Base64ResponseBody stringValue="SW50ZXJuYWwgU2VydmVyIEVycm9y"/>
-                                    <L7p:ResponseContentType stringValue="plain/text; charset=UTF-8"/>
-                                    <L7p:ResponseStatus stringValue="500"/>
-                                    </L7p:HardcodedResponse>
-                                    <L7p:FalseAssertion/>
-                                    </wsp:All>
-                                    </wsp:OneOrMore>
-                                </wsp:All>
+                                </L7p:ComparisonAssertion>
                             </wsp:OneOrMore>
                             <wsp:OneOrMore wsp:Usage="Required">
                                 <wsp:All wsp:Usage="Required">
@@ -813,8 +859,92 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     </L7p:item>
                                     </L7p:Predicates>
                                     </L7p:ComparisonAssertion>
+                                    <wsp:OneOrMore wsp:Usage="Required">
+                                    <wsp:All wsp:Usage="Required">
+                                    <L7p:ComparisonAssertion>
+                                    <L7p:CaseSensitive booleanValue="false"/>
+                                    <L7p:Expression1 stringValue="${splitUri[3]}"/>
+                                    <L7p:Operator operatorNull="null"/>
+                                    <L7p:Predicates predicates="included">
+                                    <L7p:item dataType="included">
+                                    <L7p:Type variableDataType="string"/>
+                                    </L7p:item>
+                                    <L7p:item binary="included">
+
+                                    <L7p:CaseSensitive booleanValue="false"/>
+                                    <L7p:RightValue stringValue="group"/>
+                                    </L7p:item>
+                                    </L7p:Predicates>
+                                    </L7p:ComparisonAssertion>
                                     <L7p:HardcodedResponse>
                                     <L7p:Base64ResponseBody stringValue="R3JvdXAgTWFuYWdlbWVudCBvcHRpb24gaXMgbm90IGF2YWlsYWJsZSBmb3IgaW50ZXJuYWwgaWRlbnRpdHkgcHJvdmlkZXI="/>
+                                    <L7p:ResponseContentType stringValue="plain/text; charset=UTF-8"/>
+                                    <L7p:ResponseStatus stringValue="501"/>
+                                    </L7p:HardcodedResponse>
+                                    </wsp:All>
+                                    <wsp:All wsp:Usage="Required">
+                                    <L7p:ComparisonAssertion>
+                                    <L7p:CaseSensitive booleanValue="false"/>
+                                    <L7p:Expression1 stringValue="${splitUri[3]}"/>
+                                    <L7p:Operator operatorNull="null"/>
+                                    <L7p:Predicates predicates="included">
+                                    <L7p:item dataType="included">
+                                    <L7p:Type variableDataType="string"/>
+                                    </L7p:item>
+                                    <L7p:item binary="included">
+
+                                    <L7p:CaseSensitive booleanValue="false"/>
+                                    <L7p:RightValue stringValue="groups"/>
+                                    </L7p:item>
+                                    </L7p:Predicates>
+                                    </L7p:ComparisonAssertion>
+                                    <wsp:OneOrMore wsp:Usage="Required">
+                                    <wsp:All wsp:Usage="Required">
+                                    <L7p:ComparisonAssertion>
+
+                                    <L7p:CaseSensitive booleanValue="false"/>
+                                    <L7p:Expression1 stringValue="${request.http.method}"/>
+                                    <L7p:Expression2 stringValue="GET"/>
+
+                                    <L7p:FailIfVariableNotFound booleanValue="false"/>
+                                    <L7p:Predicates predicates="included">
+                                    <L7p:item binary="included">
+
+                                    <L7p:CaseSensitive booleanValue="false"/>
+
+                                    <L7p:RightValue stringValue="GET"/>
+                                    </L7p:item>
+                                    </L7p:Predicates>
+                                    </L7p:ComparisonAssertion>
+                                    <L7p:HardcodedResponse>
+
+                                    <L7p:Base64ResponseBody stringValue="R3JvdXAgTWFuYWdlbWVudCBvcHRpb24gaXMgbm90IGF2YWlsYWJsZSBmb3IgaW50ZXJuYWwgaWRlbnRpdHkgcHJvdmlkZXI="/>
+
+                                    <L7p:ResponseContentType stringValue="plain/text; charset=UTF-8"/>
+
+                                    <L7p:ResponseStatus stringValue="501"/>
+                                    </L7p:HardcodedResponse>
+                                    </wsp:All>
+                                    <wsp:All wsp:Usage="Required">
+                                    <L7p:HardcodedResponse>
+
+                                    <L7p:Base64ResponseBody stringValue="SW50ZXJuYWwgU2VydmVyIEVycm9y"/>
+
+                                    <L7p:ResponseContentType stringValue="plain/text; charset=UTF-8"/>
+
+                                    <L7p:ResponseStatus stringValue="500"/>
+                                    </L7p:HardcodedResponse>
+                                    </wsp:All>
+                                    </wsp:OneOrMore>
+                                    </wsp:All>
+                                    </wsp:OneOrMore>
+                                </wsp:All>
+                                <wsp:All wsp:Usage="Required">
+                                    <L7p:CommentAssertion>
+                                    <L7p:Comment stringValue="Add Custom Identity Provider group management here"/>
+                                    </L7p:CommentAssertion>
+                                    <L7p:HardcodedResponse>
+                                    <L7p:Base64ResponseBody stringValue="R3JvdXAgTWFuYWdlbWVudCBvcHRpb24gaXMgbm90IGF2YWlsYWJsZSBmb3IgY3VzdG9tIGlkZW50aXR5IHByb3ZpZGVy"/>
                                     <L7p:ResponseContentType stringValue="plain/text; charset=UTF-8"/>
                                     <L7p:ResponseStatus stringValue="501"/>
                                     </L7p:HardcodedResponse>
@@ -844,6 +974,14 @@ amVjdD4KPC9qYXZhPgo=</Props>
                         </L7p:Properties>
                     </L7p:assertionComment>
                 </wsp:All>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="RIGHT.COMMENT"/>
+                            <L7p:value stringValue="gims/1/*"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
             </wsp:All>
         </wsp:All>
     </wsp:Policy>
