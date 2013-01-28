@@ -15,6 +15,7 @@ import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.SimpleTableModel;
@@ -30,12 +31,13 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.exporter.PolicyExporter;
-import com.l7tech.policy.exporter.PolicyImportCancelledException;
 import com.l7tech.policy.exporter.PolicyImporter;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -174,43 +176,65 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     private void doImport() {
         FileChooserUtil.loadSingleFile(this, "Import Encapsulated Assertion", ENCASS_FILE_FILTER, ".xml", new Functions.UnaryThrows<Boolean, FileInputStream, IOException>() {
             @Override
-            public Boolean call(FileInputStream fis) throws IOException {
+            public Boolean call(final FileInputStream fis) throws IOException {
+                // parse xml
+                final Document doc;
                 try {
-                    Document doc = XmlUtil.parse(fis);
+                    doc = XmlUtil.parse(fis);
+                } catch (final SAXException e) {
+                    showError("File contents are invalid", null);
+                    return false;
+                }
 
-                    Element encassElement = XmlUtil.findFirstChildElementByName(doc.getDocumentElement(), "http://ns.l7tech.com/secureSpan/1.0/encass", "EncapsulatedAssertion");
-                    if (encassElement == null)
-                        throw new IOException("Export document does not contain an EncapsulatedAssertionConfig element");
-                    EncapsulatedAssertionConfig config = EncapsulatedAssertionConfigExportUtil.getInstance().importFromNode(encassElement);
+                // read config
+                final Element encassElement = XmlUtil.findFirstChildElementByName(doc.getDocumentElement(), "http://ns.l7tech.com/secureSpan/1.0/encass", "EncapsulatedAssertion");
+                if (encassElement == null)
+                    throw new IOException("Export document does not contain an EncapsulatedAssertionConfig element");
+                final EncapsulatedAssertionConfig config = EncapsulatedAssertionConfigExportUtil.getInstance().importFromNode(encassElement);
+                config.setOid(EncapsulatedAssertionConfig.DEFAULT_OID);
 
-                    Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "Imported Encass Policy", null, false);
-
+                // save policy
+                final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, config.getPolicy().getName(), null, false);
+                try {
                     final WspReader wspReader = TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
                     final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
                     final PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, doc, PolicyExportUtils.getExternalReferenceFactories(), wspReader, finder, finder, finder, finder );
                     final Assertion newRoot = (result != null) ? result.assertion : null;
-                    if (newRoot == null)
+                    if (newRoot == null) {
                         throw new IOException("Export document contains an invalid or empty policy fragment");
-
+                    }
                     final String newPolicyXml = WspWriter.getPolicyXml(newRoot);
                     policy.setXml(newPolicyXml);
                     PolicyExportUtils.addPoliciesToPolicyReferenceAssertions(policy.getAssertion(), result.policyFragments);
+                    final PolicyAdmin.SavePolicyWithFragmentsResult savePolicyResult = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true, result.policyFragments);
+                    policy.setOid(savePolicyResult.policyCheckpointState.getPolicyOid());
+                    policy.setGuid(savePolicyResult.policyCheckpointState.getPolicyGuid());
+                } catch (final DuplicateObjectException e) {
+                    showError("A policy with name " + policy.getName() + " already exists.", null);
+                    return false;
+                } catch (final Exception e) {
+                    showError("Error saving backing policy", e);
+                    return false;
+                }
 
-                    Pair<Long, String> savedPolicyInfo = Registry.getDefault().getPolicyAdmin().savePolicy(policy);
-                    policy.setOid(savedPolicyInfo.left);
-                    policy.setGuid(savedPolicyInfo.right);
-
+                // save config
+                try {
                     config.setPolicy(policy);
                     long oid = Registry.getDefault().getEncapsulatedAssertionAdmin().saveEncapsulatedAssertionConfig(config);
                     loadEncapsulatedAssertionConfigs(true);
                     selectConfigByOid(oid);
-
-                    return true;
-                } catch (PolicyImportCancelledException e) {
+                } catch (final DuplicateObjectException e) {
+                    showError("An Encapsulated Assertion with name " + config.getName() + " already exists.", null);
                     return false;
-                } catch (Exception e) {
-                    throw new IOException(e);
+                } catch (final DataIntegrityViolationException e){
+                    showError("A duplicate Encapsulated Assertion was detected.", null);
+                    return false;
+                } catch (final Exception e) {
+                    showError("Error saving Encapsulated Assertion", e);
+                    return false;
                 }
+
+                return true;
             }
         });
     }
@@ -389,8 +413,12 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         }
     }
 
-    private void showError(String message, Throwable e) {
-        DialogDisplayer.showMessageDialog(this, message + ": " + ExceptionUtils.getMessage(e), "Error", JOptionPane.ERROR_MESSAGE, null);
+    private void showError(@NotNull final String message, @Nullable final Throwable e) {
+        String error = message;
+        if (e != null) {
+            error = error + ": " + ExceptionUtils.getMessage(e);
+        }
+        DialogDisplayer.showMessageDialog(this, error, "Error", JOptionPane.ERROR_MESSAGE, null);
     }
 
     /**

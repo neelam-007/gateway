@@ -66,11 +66,9 @@ public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmi
         long oid;
 
         if (config.getOid() == EncapsulatedAssertionConfig.DEFAULT_OID) {
-            if (config.getGuid() != null) {
-                // TODO it may end up being necessary to allow this case in order to import an encass created on a different cluster
-                throw new SaveException("New encapsulated assertion config already has a GUID assigned");
+            if (config.getGuid() == null) {
+                config.setGuid(UUID.randomUUID().toString());
             }
-            config.setGuid(UUID.randomUUID().toString());
             oid = encapsulatedAssertionConfigManager.save(config);
         } else {
             if (config.getGuid() == null)
