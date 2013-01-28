@@ -32,7 +32,7 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  */
 @SuppressWarnings("Convert2Diamond")
 @XmlRootElement(name = "EncapsulatedAssertion")
-@XmlType(propOrder = {"argumentDescriptors", "resultDescriptors", "properties"})
+@XmlType(propOrder = {"policy", "argumentDescriptors", "resultDescriptors", "properties"})
 @Entity
 @Proxy(lazy=false)
 @Inheritance(strategy= InheritanceType.SINGLE_TABLE)
@@ -91,6 +91,8 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.POLICY)
     @ManyToOne
     @JoinColumn(name = "policy_oid")
+    @XmlElement (name = "Policy")
+    @XmlJavaTypeAdapter(PolicyAdapter.class)
     public Policy getPolicy() {
         return policy;
     }
@@ -125,8 +127,8 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
      */
     @Fetch(FetchMode.SUBSELECT)
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="encapsulatedAssertionConfig", orphanRemoval=true)
-    @XmlElementWrapper(name = "EncapsulatedResults")
-    @XmlElement(name = "EncapsulatedResult")
+    @XmlElementWrapper(name = "EncapsulatedAssertionResults")
+    @XmlElement(name = "EncapsulatedAssertionResult")
     public Set<EncapsulatedAssertionResultDescriptor> getResultDescriptors() {
         return resultDescriptors;
     }

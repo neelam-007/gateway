@@ -11,6 +11,8 @@ import java.io.OutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 
+import static org.junit.Assert.assertNull;
+
 /**
  * @author jbufu
  */
@@ -47,5 +49,12 @@ public class JaxbMapTypeTest {
         JaxbMapType m = JAXB.unmarshal(new ByteArrayInputStream(out.toString().getBytes()), JaxbMapType.class);
 
         System.out.println(m.toMap().entrySet());
+    }
+
+    @Test
+    public void adapterHandlesNull() throws Exception {
+        final JaxbMapType.JaxbMapTypeAdapter adapter = new JaxbMapType.JaxbMapTypeAdapter();
+        assertNull(adapter.marshal(null));
+        assertNull(adapter.unmarshal(null));
     }
 }

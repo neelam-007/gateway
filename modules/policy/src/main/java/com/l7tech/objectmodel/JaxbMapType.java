@@ -73,12 +73,20 @@ public class JaxbMapType {
 
         @Override
         public Map unmarshal(JaxbMapType mapType) throws Exception {
-            return mapType.toMap();
+            Map result = null;
+            if (mapType != null) {
+                result = mapType.toMap();
+            }
+            return result;
         }
 
         @Override
         public JaxbMapType marshal(Map map) throws Exception {
-            return new JaxbMapType(map);
+            JaxbMapType result = null;
+            if (map != null) {
+                result = new JaxbMapType(map);
+            }
+            return result;
         }
     }
 
