@@ -172,8 +172,12 @@ public class FirewallRules {
         List<String> redirect = new ArrayList<String>();
         redirect.add("to-ports");
 
+        List<String> dnat = new ArrayList<String>();
+        dnat.add("to-destination");
+
         Map<String, List<String>> m = new HashMap<String, List<String>>();
         m.put("REDIRECT", redirect);
+        m.put("DNAT", dnat);
         m.put("ACCEPT", new ArrayList<String>());
         JUMP_TARGET = Collections.unmodifiableMap(m);
 
