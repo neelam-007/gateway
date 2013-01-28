@@ -125,9 +125,10 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
     @Override
     public Map<String, String> getData() {
         final Map<String, String> values = new HashMap<String, String>();
+        String selectedTarget = ddTarget.getSelectedItem().toString();
         values.put("table", ddTable.getSelectedItem().toString());
         values.put("chain", ddChain.getSelectedItem().toString());
-        values.put("jump", ddTarget.getSelectedItem().toString());
+        values.put("jump", selectedTarget);
 
         final String src = source.getText().trim();
         if(!src.isEmpty()) values.put("source", src);
@@ -155,7 +156,7 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
         if(!option.isEmpty()) values.put("tcp-option", option);
 
         //retrieve data from view
-        if(targetOptions != null){
+        if(targetOptions != null && TARGET_OPTIONS.containsKey(selectedTarget)){
             values.putAll(targetOptions.getFormValues());
         }
         return values;
