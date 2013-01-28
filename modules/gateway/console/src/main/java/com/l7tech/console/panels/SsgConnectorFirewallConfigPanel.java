@@ -164,6 +164,7 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
 
     @Override
     public String getValidationError() {
+        if(!targetOptionsPanel.isVisible()) return null;
         if(targetOptions != null){
             for(Component c : targetOptions.getComponents()){
                 if(c instanceof ModelessFeedback){
