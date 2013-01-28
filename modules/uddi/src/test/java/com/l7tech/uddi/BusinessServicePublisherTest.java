@@ -1,6 +1,7 @@
 package com.l7tech.uddi;
 
 import com.l7tech.common.uddi.guddiv3.*;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
@@ -259,6 +260,7 @@ public class BusinessServicePublisherTest {
     }
 
     @BugNumber(8426)
+    @BugId("FR-233")
     @Test
     public void testFirstPublishOfGifEndPoint() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/artistregistry.wsdl"));
@@ -344,6 +346,7 @@ public class BusinessServicePublisherTest {
     }
 
     @BugNumber(8426)
+    @BugId("FR-233")
     @Test
     public void testFirstPublishOfGifEndPoint_WithMetaData() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/artistregistry.wsdl"));
@@ -473,6 +476,7 @@ public class BusinessServicePublisherTest {
     }
 
     @BugNumber(8426)
+    @BugId("FR-233")
     @Test
     public void testDeleteOfGifEndpoint() throws Exception{
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/artistregistry.wsdl"));
@@ -542,6 +546,7 @@ public class BusinessServicePublisherTest {
      * @throws Exception
      */
     @BugNumber(8426)
+    @BugId("FR-233")
     @Test
     public void testUpdatePublishOfGifEndPoint() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/artistregistry.wsdl"));
@@ -644,6 +649,7 @@ public class BusinessServicePublisherTest {
      * @throws Exception
      */
     @BugNumber(8426)
+    @BugId("FR-233")
     @Test
     public void testUpdatePublishOfGifEndPoint_WithMeta() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/artistregistry.wsdl"));
@@ -712,6 +718,7 @@ public class BusinessServicePublisherTest {
      * @throws Exception
      */
     @BugNumber(9462)
+    @BugId("SSM-3031")
     @Test
     public void testUpdatePublishOfGifEndPoint_WithMetaUserKeyNameChange() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/artistregistry.wsdl"));
@@ -782,6 +789,7 @@ public class BusinessServicePublisherTest {
      * @throws Exception
      */
     @BugNumber(9462)
+    @BugId("SSM-3031")
     @Test
     public void testUpdatePublishOfGifEndPoint_NullUddiValue() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/artistregistry.wsdl"));
@@ -851,6 +859,7 @@ public class BusinessServicePublisherTest {
      * @throws Exception
      */
     @BugNumber(9400)
+    @BugId("SSG-4270")
     @Test
     public void testUpdatePublishOfEndpoint_WithExternalMeta() throws Exception{
 
@@ -909,6 +918,7 @@ public class BusinessServicePublisherTest {
      * @throws Exception
      */
     @BugNumber(8426)
+    @BugId("FR-233")
     @Test
     public void testUpdatePublishOfGifEndPoint_FunctionalReferencesWereRemoved() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/artistregistry.wsdl"));
@@ -973,6 +983,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     @BugNumber(7980)
+    @BugId("SSG-3593")
     public void testRegistrySpecificMetaData() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/Warehouse.wsdl"));
 
@@ -1061,6 +1072,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     @BugNumber(8147)
+    @BugId("SSG-3671")
     public void testDeleteBindingTemplateOnUpgrade() throws Exception{
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/Warehouse.wsdl"));
 
@@ -1096,6 +1108,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     @BugNumber(8147)
+    @BugId("SSG-3671")
     public void testUpdateOfBusinessService() throws Exception{
 
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
@@ -1152,6 +1165,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     @BugNumber(8147)
+    @BugId("SSG-3671")
     public void testPublishAndUpdateOfBusinessService() throws Exception{
 
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats_new_endpoint.wsdl"));
@@ -1210,6 +1224,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     @BugNumber(8147)
+    @BugId("SSG-3671")
     public void testEndpointRemovedUpdateOfBusinessService() throws Exception{
 
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
@@ -1270,6 +1285,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     @BugNumber(8147)
+    @BugId("SSG-3671")
     public void testUpdateOfOverwrittenBusinessService() throws Exception{
 
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
@@ -1336,6 +1352,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     @BugNumber(8147)
+    @BugId("SSG-3671")
     public void testFirstPublishOfEndpoint() throws Exception{
 
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
@@ -1402,6 +1419,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     @BugNumber(8147)
+    @BugId("SSG-3671")
     public void testUpdatePublishOfEndpoint() throws Exception{
 
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
@@ -1484,6 +1502,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     @BugNumber(8147)
+    @BugId("SSG-3671")
     public void testUpdatePublishOfEndpointWithBindingKeys() throws Exception{
 
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
@@ -1564,6 +1583,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     @BugNumber(8147)
+    @BugId("SSG-3671")
     public void testBindingTemplateListenerRemoved() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
 
@@ -1650,6 +1670,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     @BugNumber(9180)
+    @BugId("SSG-3671")
     public void testBusinessServiceMetaDataPreservedOnRepublish() throws Exception{
         InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStats_Bug9180.xml");
         final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
@@ -1772,6 +1793,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     @BugNumber(9180)
+    @BugId("SSG-4166")
     public void testBindingMetaDataPreservedOnRepublish() throws Exception{
         Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
 
