@@ -524,7 +524,7 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
 
                     //port is allowed on 1 ip only, either the first or second but not both
                     if(startFirstPort != null && endFirstPort != null){
-                        input.setModelessFeedback("Port can only be applied to the start ip or end ip but not both.");
+                        input.setModelessFeedback("Port can only be applied to the start IP or end IP but not both.");
                         return;
                     }
                     feedback = validatePort(startFirstPort, startSecondPort);
