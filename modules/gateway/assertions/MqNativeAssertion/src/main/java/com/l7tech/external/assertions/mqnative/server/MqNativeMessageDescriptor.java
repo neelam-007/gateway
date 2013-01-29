@@ -3,12 +3,11 @@ package com.l7tech.external.assertions.mqnative.server;
 import com.ibm.mq.MQException;
 import com.ibm.mq.MQMD;
 import com.ibm.mq.MQMessage;
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.HexUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.GregorianCalendar;
 import java.util.Map;
 
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
@@ -92,107 +91,17 @@ public class MqNativeMessageDescriptor extends MQMD {
     }
 
     /**
-     * Apply given descriptors.
-     * @param descriptors descriptors to apply
-     * @throws MqNativeConfigException
-     */
-    public void applyDescriptors(@Nullable final Map<String, String> descriptors,
-                                 @Nullable final Map<String, Object> contextVariableMap,
-                                 @Nullable final Audit audit) throws MqNativeConfigException {
-        if (descriptors != null) {
-            for( final Map.Entry<String,String> propertyEntry : descriptors.entrySet() ) {
-                String name;
-                String value;
-                if (contextVariableMap != null && audit != null) {
-                    name = ExpandVariables.process(propertyEntry.getKey(), contextVariableMap, audit);
-                    value = ExpandVariables.process(propertyEntry.getValue(), contextVariableMap, audit);
-                } else {
-                    name = propertyEntry.getKey();
-                    value = propertyEntry.getValue();
-                }
-
-                if( MQ_PROPERTY_APPDATA.equals( name ) ) {
-                    applicationIdData = value;
-                } else if( MQ_PROPERTY_APPORIGIN.equals( name ) ) {
-                    applicationOriginData = value;
-                } else if( MQ_PROPERTY_CHARSET.equals( name ) ) {
-                    characterSet = asInt( name, value );
-                } else if( MQ_PROPERTY_ENCODING.equals( name ) ){
-                    encoding = asInt( name, value );
-                } else if( MQ_PROPERTY_EXPIRY.equals( name ) ) {
-                    expiry = asInt( name, value );
-                } else if( MQ_PROPERTY_FEEDBACK.equals( name ) ) {
-                    feedback = asInt( name, value );
-                } else if( MQ_PROPERTY_FORMAT.equals( name ) ) {
-                    format = value;
-                } else if( MQ_PROPERTY_GROUPID.equals( name ) ) {
-                    groupId = asBytes( value );
-                } else if( MQ_PROPERTY_MSG_FLAGS.equals( name ) ) {
-                    messageFlags = asInt( name, value );
-                } else if( MQ_PROPERTY_MSG_SEQNUM.equals( name ) ){
-                    messageSequenceNumber = asInt( name, value );
-                } else if( MQ_PROPERTY_MSG_TYPE.equals( name ) ){
-                    messageType = asInt( name, value );
-                } else if( MQ_PROPERTY_OFFSET.equals( name ) ) {
-                    offset = asInt( name, value );
-                } else if( MQ_PROPERTY_PERSISTENCE.equals( name ) ) {
-                    persistence = asInt( name, value );
-                } else if( MQ_PROPERTY_PRIORITY.equals( name ) ){
-                    priority = asInt( name, value );
-                } else if( MQ_PROPERTY_APPNAME.equals( name ) ){
-                    putApplicationName = value;
-                } else if( MQ_PROPERTY_APPTYPE.equals( name ) ) {
-                    putApplicationType = asInt( name, value );
-                } else if( MQ_PROPERTY_REPORT.equals( name ) ){
-                    report = asInt( name, value );
-                } else if( MQ_PROPERTY_USERID.equals( name ) ) {
-                    userId = value;
-                } else if( MQ_PROPERTY_BACKOUT_COUNT.equals( name ) ) {
-                    backoutCount = asInt( name, value );
-                } else if( MQ_PROPERTY_REPLY_TO_QUEUE_NAME.equals( name ) ) {
-                    replyToQueueName = value;
-                } else if( MQ_PROPERTY_REPLY_TO_QUEUE_MGR_NAME.equals( name ) ) {
-                    replyToQueueManagerName = value;
-                } else if( MQ_PROPERTY_ORIGINAL_LENGTH.equals( name ) ) {
-                    originalLength = asInt(name, value);
-                } else if( MQ_PROPERTY_VERSION.equals( name ) ) {
-                    try {
-                        setVersion( asInt( name, value ) );
-                    } catch (MQException e) {
-                        throw new MqNativeConfigException("Error setting version: ", e);
-                    }
-                } else if( MQ_PROPERTY_MSG_ID.equals( name ) ) {
-                    messageId = asBytes( value );
-                } else if( MQ_PROPERTY_CORRELATION_ID.equals( name ) ) {
-                    correlationId = asBytes( value );
-                } else if( MQ_PROPERTY_ACCOUNTING_TOKEN.equals( name ) ) {
-                    accountingToken = asBytes( value );
-                } // else not a message property
-            }
-        }
-    }
-
-    /**
-     * Apply given descriptors to the MQMessage.
-     * @param descriptors descriptors to apply
+     * Apply given properties to the MQMessage.
+     * @param properties properties to apply
      * @param mqMessage The MQ message (destination)
      * @throws MqNativeConfigException
      */
-    public static void applyDescriptorsToMessage(@Nullable final Map<String, String> descriptors,
-                                                 @NotNull final MQMessage mqMessage,
-                                                 @Nullable final Map<String, Object> contextVariableMap,
-                                                 @Nullable final Audit audit) throws MqNativeConfigException {
-        if (descriptors != null) {
-            for( final Map.Entry<String,String> propertyEntry : descriptors.entrySet() ) {
-                String name;
-                String value;
-                if (contextVariableMap != null && audit != null) {
-                    name = ExpandVariables.process(propertyEntry.getKey(), contextVariableMap, audit);
-                    value = ExpandVariables.process(propertyEntry.getValue(), contextVariableMap, audit);
-                } else {
-                    name = propertyEntry.getKey();
-                    value = propertyEntry.getValue();
-                }
+    public static void applyPropertiesToMessage(@Nullable final Map<String,String> properties,
+                                                @NotNull final MQMessage mqMessage ) throws MqNativeConfigException {
+        if (properties != null) {
+            for( final Map.Entry<String,String> propertyEntry : properties.entrySet() ) {
+                final String name = propertyEntry.getKey();
+                final String value = propertyEntry.getValue();
 
                 if( MQ_PROPERTY_APPDATA.equals( name ) ) {
                     mqMessage.applicationIdData = value;
@@ -230,26 +139,6 @@ public class MqNativeMessageDescriptor extends MQMD {
                     mqMessage.report = asInt( name, value );
                 } else if( MQ_PROPERTY_USERID.equals( name ) ) {
                     mqMessage.userId = value;
-                } else if( MQ_PROPERTY_BACKOUT_COUNT.equals( name ) ) {
-                    mqMessage.backoutCount = asInt( name, value );
-                } else if( MQ_PROPERTY_REPLY_TO_QUEUE_NAME.equals( name ) ) {
-                    mqMessage.replyToQueueName = value;
-                } else if( MQ_PROPERTY_REPLY_TO_QUEUE_MGR_NAME.equals( name ) ) {
-                    mqMessage.replyToQueueManagerName = value;
-                } else if( MQ_PROPERTY_ORIGINAL_LENGTH.equals( name ) ) {
-                    mqMessage.originalLength = asInt( name, value );
-                } else if( MQ_PROPERTY_VERSION.equals( name ) ) {
-                    try {
-                        mqMessage.setVersion(asInt(name, value));
-                    } catch (MQException e) {
-                        throw new MqNativeConfigException("Error setting version: ", e);
-                    }
-                } else if( MQ_PROPERTY_MSG_ID.equals( name ) ) {
-                    mqMessage.messageId = asBytes( value );
-                } else if( MQ_PROPERTY_CORRELATION_ID.equals( name ) ) {
-                    mqMessage.correlationId = asBytes( value );
-                } else if( MQ_PROPERTY_ACCOUNTING_TOKEN.equals( name ) ) {
-                    mqMessage.accountingToken = asBytes( value );
                 } // else not a message property
             }
         }

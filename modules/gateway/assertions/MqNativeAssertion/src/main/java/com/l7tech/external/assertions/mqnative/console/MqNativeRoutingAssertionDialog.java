@@ -5,7 +5,10 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.ByteLimitPanel;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
-import com.l7tech.external.assertions.mqnative.*;
+import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
+import com.l7tech.external.assertions.mqnative.MqNativeDynamicProperties;
+import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
+import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -16,8 +19,13 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.util.Functions.*;
+import com.l7tech.util.MutablePair;
+import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -28,8 +36,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.console.panels.RoutingDialogUtils.*;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_MESSAGE_DESCRIPTORS;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_MESSAGE_PROPERTIES;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
@@ -103,17 +109,19 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
     private JComboBox messageSourceComboBox;
     private JComboBox messageTargetComboBox;
     private JPanel targetMessageVariableHolderPanel;
+    private JCheckBox sourcePassThroughHeadersCheckBox;
+    private JCheckBox targetPassThroughHeadersCheckBox;
+    private JButton requestAddButton;
+    private JButton requestEditButton;
+    private JButton requestRemoveButton;
+    private JTable requestAdvancedPropertiesTable;
+    private JTable responseAdvancedPropertiesTable;
+    private JButton responseAddButton;
+    private JButton responseEditButton;
+    private JButton responseRemoveButton;
     private JTabbedPane tabbedPane;
-    private MqNativeAdvancedPropertiesPanel requestMessageDescriptorHeaderPanel;
-    private MqNativeAdvancedPropertiesPanel requestMessagePropertiesPanel;
-    private MqNativeAdvancedPropertiesPanel responseMessageDescriptorHeaderPanel;
-    private MqNativeAdvancedPropertiesPanel responseMessagePropertiesPanel;
-    private JComboBox overrideRequestMqHeaderTypeComboBox;
-    private JComboBox overrideResponseMqHeaderTypeComboBox;
-    private JCheckBox passThroughRequestMessageHeaderCheckBox;
-    private JCheckBox passThroughResponseMessageHeaderCheckBox;
-    private JLabel overrideResponseAdditionalHeaderLabel;
-    private JLabel overrideRequestAdditionalHeaderLabel;
+    private AdvancedPropertyTableModel requestAdvancedTableModel;
+    private AdvancedPropertyTableModel responseAdvancedTableModel;
     private TargetVariablePanel targetMessageVariablePanel;
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
@@ -126,21 +134,6 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
             enableOrDisableComponents();
         }
     };
-
-    /**
-     * Called by IDEA's UI initialization when "Custom Create" is checked for custom palette item.
-     */
-    private void createUIComponents() {
-        requestMessageDescriptorHeaderPanel = new MqNativeAdvancedPropertiesPanel(MqNativeRoutingAssertionDialog.this, MQ_MESSAGE_DESCRIPTORS);
-        requestMessageDescriptorHeaderPanel.setTitleAndLabels("MQ Message Descriptors", "Pass through all message descriptors", "Customize message descriptors:");
-        requestMessagePropertiesPanel = new MqNativeAdvancedPropertiesPanel(MqNativeRoutingAssertionDialog.this, MQ_MESSAGE_PROPERTIES);
-        requestMessagePropertiesPanel.setTitleAndLabels("MQ Message Properties", "Pass through all message properties", "Customize message properties:");
-
-        responseMessageDescriptorHeaderPanel = new MqNativeAdvancedPropertiesPanel(MqNativeRoutingAssertionDialog.this, MQ_MESSAGE_DESCRIPTORS);
-        responseMessageDescriptorHeaderPanel.setTitleAndLabels("MQ Message Descriptors", "Pass through all message descriptors", "Customize message descriptors:");
-        responseMessagePropertiesPanel = new MqNativeAdvancedPropertiesPanel(MqNativeRoutingAssertionDialog.this, MQ_MESSAGE_PROPERTIES);
-        responseMessagePropertiesPanel.setTitleAndLabels("MQ Message Properties", "Pass through all message properties", "Customize message properties:");
-    }
 
     /**
      * This method is called from within the static factory to
@@ -214,23 +207,15 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
 
         tagSecurityHeaderHandlingButtons( secHdrButtons );
 
-        // Message direction
+        // Message Properties
         putToQueueRadioButton.addActionListener(enableDisableListener);
         getFromQueueRadioButton.addActionListener(enableDisableListener);
 
-        // Request tab
         messageSourceComboBox.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", null), null, true ) );
         messageSourceComboBox.addActionListener( enableDisableListener );
-        passThroughRequestMessageHeaderCheckBox.addActionListener(enableDisableListener);
-        DefaultComboBoxModel mqHeaderTypesComboBoxModel = new DefaultComboBoxModel(MqNativeMessageHeaderType.values());
-        mqHeaderTypesComboBoxModel.removeElement(MqNativeMessageHeaderType.UNSUPPORTED);
-        overrideRequestMqHeaderTypeComboBox.setModel(mqHeaderTypesComboBoxModel);
-
-        // Response tab
         messageTargetComboBox.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", "Message Variable"), null, true ) );
-        messageTargetComboBox.addActionListener(enableDisableListener);
-        passThroughResponseMessageHeaderCheckBox.addActionListener(enableDisableListener);
-        overrideResponseMqHeaderTypeComboBox.setModel(mqHeaderTypesComboBoxModel);
+        messageTargetComboBox.addActionListener( enableDisableListener );
+
         targetMessageVariablePanel = new TargetVariablePanel();
         targetMessageVariableHolderPanel.setLayout(new BorderLayout());
         targetMessageVariableHolderPanel.add(targetMessageVariablePanel, BorderLayout.CENTER);
@@ -240,6 +225,59 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
                 return targetMessageVariablePanel.getErrorMessage();
             }
         });
+
+        inputValidator.attachToButton( getOkButton(), super.createOkAction() );
+
+        requestAdvancedPropertiesTable.setModel( getAdvancedRequestPropertyTableModel() );
+        requestAdvancedPropertiesTable.getSelectionModel().addListSelectionListener( enableDisableListener );
+        requestAdvancedPropertiesTable.getTableHeader().setReorderingAllowed( false );
+
+        responseAdvancedPropertiesTable.setModel( getAdvancedResponsePropertyTableModel() );
+        responseAdvancedPropertiesTable.getSelectionModel().addListSelectionListener( enableDisableListener );
+        responseAdvancedPropertiesTable.getTableHeader().setReorderingAllowed( false );
+
+        requestAddButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                addAdvProp(requestAdvancedPropertiesTable, requestAdvancedTableModel);
+            }
+        });
+        requestEditButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                editAdvProp(requestAdvancedPropertiesTable, requestAdvancedTableModel);
+            }
+        });
+        requestEditButton.setEnabled(false);
+        requestRemoveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                removeAdvProp(requestAdvancedPropertiesTable, requestAdvancedTableModel);
+            }
+        });
+        requestRemoveButton.setEnabled(false);
+
+        responseAddButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                addAdvProp(responseAdvancedPropertiesTable, responseAdvancedTableModel);
+            }
+        });
+        responseEditButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                editAdvProp(responseAdvancedPropertiesTable, responseAdvancedTableModel);
+            }
+        });
+        responseEditButton.setEnabled(false);
+        responseRemoveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                removeAdvProp(responseAdvancedPropertiesTable, responseAdvancedTableModel);
+            }
+        });
+        responseRemoveButton.setEnabled(false);
+
+        Utilities.setDoubleClickAction(requestAdvancedPropertiesTable, requestEditButton);
+        Utilities.setDoubleClickAction(responseAdvancedPropertiesTable, responseEditButton);
 
         // Override message size
         responseByteLimitPanel = new ByteLimitPanel();
@@ -254,8 +292,8 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         responseByteLimitHolderPanel.setLayout(new BorderLayout());
         responseByteLimitHolderPanel.add(responseByteLimitPanel, BorderLayout.CENTER);
 
-        inputValidator.attachToButton( getOkButton(), super.createOkAction() );
         getOkButton().setEnabled( !readOnly );
+
         getCancelButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
@@ -266,20 +304,27 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         enableOrDisableComponents();
     }
 
-
     private void enableOrDisableComponents() {
         final boolean isPutToQueue = putToQueueRadioButton.isSelected();
         tabbedPane.setEnabledAt( 1, isPutToQueue );
-        messageSourceComboBox.setEnabled(isPutToQueue);
+        messageSourceComboBox.setEnabled( isPutToQueue );
+        sourcePassThroughHeadersCheckBox.setEnabled( isPutToQueue );
+
         targetMessageVariablePanel.setEnabled(
             (messageTargetComboBox.isEnabled() &&  messageTargetComboBox.getSelectedItem() != null && ((MessageTargetable)messageTargetComboBox.getSelectedItem()).getTarget() == TargetMessageType.OTHER)
         );
-        overrideRequestAdditionalHeaderLabel.setEnabled(!passThroughRequestMessageHeaderCheckBox.isSelected());
-        overrideRequestMqHeaderTypeComboBox.setEnabled(!passThroughRequestMessageHeaderCheckBox.isSelected());
-        overrideResponseAdditionalHeaderLabel.setEnabled(!passThroughResponseMessageHeaderCheckBox.isSelected());
-        overrideResponseMqHeaderTypeComboBox.setEnabled(!passThroughResponseMessageHeaderCheckBox.isSelected());
-        final boolean valid = responseByteLimitPanel.validateFields() == null;
 
+        final boolean enableRequestAdvancedPropertyContextualControls = isPutToQueue && requestAdvancedPropertiesTable.getSelectedRow() >= 0;
+        requestAdvancedPropertiesTable.setEnabled( isPutToQueue );
+        requestAddButton.setEnabled( isPutToQueue );
+        requestEditButton.setEnabled( enableRequestAdvancedPropertyContextualControls );
+        requestRemoveButton.setEnabled( enableRequestAdvancedPropertyContextualControls );
+
+        final boolean enableResponseAdvancedPropertyContextualControls = responseAdvancedPropertiesTable.getSelectedRow() >= 0;
+        responseEditButton.setEnabled( enableResponseAdvancedPropertyContextualControls );
+        responseRemoveButton.setEnabled( enableResponseAdvancedPropertyContextualControls );
+
+        final boolean valid = responseByteLimitPanel.validateFields() == null;
         getOkButton().setEnabled(valid);
     }
 
@@ -401,10 +446,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         assertion.setPutToQueue(putToQueueRadioButton.isSelected());
         final MessageTargetableSupport sourceMessageTargetable = new MessageTargetableSupport((MessageTargetable) messageSourceComboBox.getSelectedItem());
         assertion.setRequestTarget(sourceMessageTargetable);
-        MqNativeMessagePropertyRuleSet requestRuleSet = assertion.getRequestMqNativeMessagePropertyRuleSet();
-        requestRuleSet.setPassThroughMqMessageDescriptors(requestMessageDescriptorHeaderPanel.isPassThrough());
-        requestRuleSet.setPassThroughMqMessageHeaders(passThroughRequestMessageHeaderCheckBox.isSelected());
-        requestRuleSet.setPassThroughMqMessageProperties(requestMessagePropertiesPanel.isPassThrough());
+        assertion.getRequestMqNativeMessagePropertyRuleSet().setPassThroughHeaders(sourcePassThroughHeadersCheckBox.isSelected());
 
         final MessageTargetableSupport targetMessageTargetable = new MessageTargetableSupport((MessageTargetable) messageTargetComboBox.getSelectedItem());
         if (targetMessageTargetable.getTarget() == TargetMessageType.OTHER) {
@@ -415,22 +457,12 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
             targetMessageTargetable.setTargetModifiedByGateway( true );
         }
         assertion.setResponseTarget(targetMessageTargetable);
-        MqNativeMessagePropertyRuleSet responseRuleSet = assertion.getResponseMqNativeMessagePropertyRuleSet();
-        responseRuleSet.setPassThroughMqMessageDescriptors(responseMessageDescriptorHeaderPanel.isPassThrough());
-        responseRuleSet.setPassThroughMqMessageHeaders(passThroughResponseMessageHeaderCheckBox.isSelected());
-        responseRuleSet.setPassThroughMqMessageProperties(responseMessagePropertiesPanel.isPassThrough());
+        assertion.getResponseMqNativeMessagePropertyRuleSet().setPassThroughHeaders(targetPassThroughHeadersCheckBox.isSelected());
 
-        assertion.setRequestMqHeaderType((MqNativeMessageHeaderType) overrideRequestMqHeaderTypeComboBox.getSelectedItem());
-        final Map<String,String> requestDescriptors = requestMessageDescriptorHeaderPanel.getAdvancedPropertiesTableModelAsMap();
-        assertion.setRequestMessageDescriptorOverrides(requestDescriptors.isEmpty() || !putToQueueRadioButton.isSelected() ? null : requestDescriptors);
-        final Map<String,String> requestProperties = requestMessagePropertiesPanel.getAdvancedPropertiesTableModelAsMap();
-        assertion.setRequestMessagePropertyOverrides(requestProperties.isEmpty() || !putToQueueRadioButton.isSelected() ? null : requestProperties);
-
-        assertion.setResponseMqHeaderType((MqNativeMessageHeaderType) overrideResponseMqHeaderTypeComboBox.getSelectedItem());
-        final Map<String,String> responseDescriptor = responseMessageDescriptorHeaderPanel.getAdvancedPropertiesTableModelAsMap();
-        assertion.setResponseMessageDescriptorOverrides(responseDescriptor.isEmpty() ? null : responseDescriptor);
-        final Map<String,String> responseProperties = responseMessagePropertiesPanel.getAdvancedPropertiesTableModelAsMap();
-        assertion.setResponseMessagePropertyOverrides(responseProperties.isEmpty() ? null : responseProperties);
+        final Map<String,String> requestProperties = requestAdvancedTableModel.toMap();
+        assertion.setRequestMessageAdvancedProperties( requestProperties.isEmpty() || !putToQueueRadioButton.isSelected() ? null : requestProperties );
+        final Map<String,String> responseProperties = responseAdvancedTableModel.toMap();
+        assertion.setResponseMessageAdvancedProperties(responseProperties.isEmpty() ? null : responseProperties);
 
         String responseTimeoutOverride = mqResponseTimeout.getText();
         if (responseTimeoutOverride != null && ! responseTimeoutOverride.isEmpty()) {
@@ -464,29 +496,19 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         messageSourceComboBox.setModel(buildMessageSourceComboBoxModel(assertion));
         final MessageTargetableSupport sourceTargetable = new MessageTargetableSupport(assertion.getRequestTarget());
         messageSourceComboBox.setSelectedItem(sourceTargetable);
-        MqNativeMessagePropertyRuleSet requestRuleSet = assertion.getRequestMqNativeMessagePropertyRuleSet();
-        requestMessageDescriptorHeaderPanel.setPassThrough(requestRuleSet.isPassThroughMqMessageDescriptors());
-        passThroughRequestMessageHeaderCheckBox.setSelected(requestRuleSet.isPassThroughMqMessageHeaders());
-        requestMessagePropertiesPanel.setPassThrough(requestRuleSet.isPassThroughMqMessageProperties());
+        sourcePassThroughHeadersCheckBox.setSelected(assertion.getRequestMqNativeMessagePropertyRuleSet().isPassThroughHeaders());
 
         messageTargetComboBox.setModel(buildMessageTargetComboBoxModel(false));
         final MessageTargetableSupport targetTargetable = new MessageTargetableSupport(assertion.getResponseTarget());
         messageTargetComboBox.setSelectedItem(new MessageTargetableSupport( targetTargetable.getTarget()) );
-        MqNativeMessagePropertyRuleSet responseRuleSet = assertion.getResponseMqNativeMessagePropertyRuleSet();
-        responseMessageDescriptorHeaderPanel.setPassThrough(responseRuleSet.isPassThroughMqMessageDescriptors());
-        passThroughResponseMessageHeaderCheckBox.setSelected(responseRuleSet.isPassThroughMqMessageHeaders());
-        responseMessagePropertiesPanel.setPassThrough(responseRuleSet.isPassThroughMqMessageProperties());
+        targetPassThroughHeadersCheckBox.setSelected( assertion.getResponseMqNativeMessagePropertyRuleSet().isPassThroughHeaders() );
         targetMessageVariablePanel.setVariable(
             targetTargetable.getTarget() == TargetMessageType.OTHER ? targetTargetable.getOtherTargetMessageVariable() : ""
         );
         targetMessageVariablePanel.setAssertion(assertion, getPreviousAssertion());
 
-        overrideRequestMqHeaderTypeComboBox.setSelectedItem(assertion.getRequestMqHeaderType());
-        requestMessageDescriptorHeaderPanel.setAdvancedPropertiesTableModel(assertion.getRequestMessageDescriptorOverrides());
-        requestMessagePropertiesPanel.setAdvancedPropertiesTableModel(assertion.getRequestMessagePropertyOverrides());
-        overrideResponseMqHeaderTypeComboBox.setSelectedItem(assertion.getResponseMqHeaderType());
-        responseMessageDescriptorHeaderPanel.setAdvancedPropertiesTableModel(assertion.getResponseMessageDescriptorOverrides());
-        responseMessagePropertiesPanel.setAdvancedPropertiesTableModel(assertion.getResponseMessagePropertyOverrides());
+        requestAdvancedTableModel.fromMap(assertion.getRequestMessageAdvancedProperties());
+        responseAdvancedTableModel.fromMap(assertion.getResponseMessageAdvancedProperties());
 
         mqResponseTimeout.setText(assertion.getResponseTimeout()==null ? "":assertion.getResponseTimeout());
 
@@ -523,5 +545,143 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
                 return info( ssgActiveConnector );
             }
         };
+    }
+
+    private void addAdvProp(final JTable advancedPropertiesTable, final AdvancedPropertyTableModel advancedTableModel) {
+        final MqNativeAdvancedPropertiesDialog dialog = new MqNativeAdvancedPropertiesDialog(this, null, advancedTableModel.toMap());
+        dialog.setTitle("Advanced Property");
+        dialog.pack();
+        Utilities.centerOnParentWindow( dialog );
+        DialogDisplayer.display(dialog, new Runnable() {
+            @Override
+            public void run() {
+                if (!dialog.isCanceled()) {
+                    updatePropertiesList(advancedPropertiesTable, advancedTableModel, dialog.getTheProperty(), false);
+                    dialog.dispose();
+                }
+            }
+        });
+    }
+
+    private void editAdvProp(final JTable advancedPropertiesTable, final AdvancedPropertyTableModel advancedTableModel) {
+        int viewRow = advancedPropertiesTable.getSelectedRow();
+        if (viewRow < 0) return;
+
+        final String name = (String) advancedTableModel.getValueAt(viewRow, 0);
+        final String value = (String) advancedTableModel.getValueAt(viewRow, 1);
+
+        final MqNativeAdvancedPropertiesDialog dialog = new MqNativeAdvancedPropertiesDialog(this, new MutablePair<String, String>(name, value), advancedTableModel.toMap());
+        dialog.setTitle( "Advanced Property" );
+        dialog.pack();
+        Utilities.centerOnParentWindow( dialog );
+        DialogDisplayer.display( dialog, new Runnable() {
+            @Override
+            public void run() {
+                if ( !dialog.isCanceled() ) {
+                    updatePropertiesList(advancedPropertiesTable, advancedTableModel, dialog.getTheProperty(), false);
+                    dialog.dispose();
+                }
+            }
+        } );
+    }
+
+    private void removeAdvProp(JTable advancedPropertiesTable, AdvancedPropertyTableModel advancedTableModel) {
+        int viewRow = advancedPropertiesTable.getSelectedRow();
+        if (viewRow < 0) return;
+
+        String name = (String) advancedTableModel.getValueAt(viewRow, 0);
+        String value = (String) advancedTableModel.getValueAt(viewRow, 1);
+        updatePropertiesList(advancedPropertiesTable, advancedTableModel, new Pair<String, String>(name, value), true);
+    }
+
+    private AdvancedPropertyTableModel getAdvancedRequestPropertyTableModel() {
+        if (requestAdvancedTableModel == null) {
+            requestAdvancedTableModel = new AdvancedPropertyTableModel();
+        }
+        return requestAdvancedTableModel;
+    }
+
+    private AdvancedPropertyTableModel getAdvancedResponsePropertyTableModel() {
+        if (responseAdvancedTableModel == null) {
+            responseAdvancedTableModel = new AdvancedPropertyTableModel();
+        }
+        return responseAdvancedTableModel;
+    }
+
+    private void updatePropertiesList(JTable advancedPropertiesTable, AdvancedPropertyTableModel advancedTableModel,
+                                      final Pair<String, String> selectedProperty, boolean deleted) {
+        ArrayList<String> keyset = new ArrayList<String>();
+        int currentRow;
+
+        if (deleted) {
+            keyset.addAll(advancedTableModel.advancedPropertiesMap.keySet());
+            currentRow = keyset.indexOf(selectedProperty.left);
+            advancedTableModel.advancedPropertiesMap.remove(selectedProperty.left);
+        } else {
+            advancedTableModel.advancedPropertiesMap.put(selectedProperty.left, selectedProperty.right);
+            keyset.addAll(advancedTableModel.advancedPropertiesMap.keySet());
+            currentRow = keyset.indexOf(selectedProperty.left);
+        }
+
+        // Refresh the table
+        advancedTableModel.fireTableDataChanged();
+
+        // Refresh the selection highlight
+        if (currentRow == advancedTableModel.advancedPropertiesMap.size()) currentRow--; // If the previous deleted row was the last row
+        if (currentRow >= 0) advancedPropertiesTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
+    }
+
+    private static class AdvancedPropertyTableModel extends AbstractTableModel {
+        private static final int MAX_TABLE_COLUMN_NUM = 2;
+        private Map<String, String> advancedPropertiesMap = new TreeMap<String,String>();
+
+        @Override
+        public int getColumnCount() {
+            return MAX_TABLE_COLUMN_NUM;
+        }
+
+        @Override
+        public int getRowCount() {
+            return advancedPropertiesMap.size();
+        }
+
+        @Override
+        public String getColumnName(int col) {
+            switch (col) {
+                case 0:
+                    return "Name";
+                case 1:
+                    return "Value";
+                default:
+                    throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
+            }
+        }
+
+        @Override
+        public Object getValueAt(int row, int col) {
+            String name = (String) advancedPropertiesMap.keySet().toArray()[row];
+
+            switch (col) {
+                case 0:
+                    return name;
+                case 1:
+                    return advancedPropertiesMap.get(name);
+                default:
+                    throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
+            }
+        }
+
+        @NotNull
+        private Map<String,String> toMap() {
+            return new HashMap<String,String>( advancedPropertiesMap );
+        }
+
+        private void fromMap( @Nullable final Map<String,String> properties ) {
+            advancedPropertiesMap = new TreeMap<String, String>();
+
+            if( properties != null ) {
+                advancedPropertiesMap.putAll( properties );
+            }
+        }
     }
 }

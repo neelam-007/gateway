@@ -6,41 +6,22 @@ import java.io.Serializable;
  * Rules for propagating MQ message headers.
  */
 public class MqNativeMessagePropertyRuleSet implements Serializable {
-    private boolean passThroughMqMessageDescriptors;
-    private boolean passThroughMqMessageHeaders;
-    private boolean passThroughMqMessageProperties;
+    private boolean passThroughHeaders;
 
     public MqNativeMessagePropertyRuleSet() {
     }
 
     public MqNativeMessagePropertyRuleSet( MqNativeMessagePropertyRuleSet ruleSet ) {
         if ( ruleSet != null ) {
-            this.passThroughMqMessageDescriptors = ruleSet.passThroughMqMessageDescriptors;
-            this.passThroughMqMessageProperties = ruleSet.passThroughMqMessageProperties;
+            this.passThroughHeaders = ruleSet.passThroughHeaders;
         }
     }
 
-    public boolean isPassThroughMqMessageDescriptors() {
-        return passThroughMqMessageDescriptors;
+    public boolean isPassThroughHeaders() {
+        return passThroughHeaders;
     }
 
-    public void setPassThroughMqMessageDescriptors(boolean passThroughMqMessageDescriptors) {
-        this.passThroughMqMessageDescriptors = passThroughMqMessageDescriptors;
-    }
-
-    public boolean isPassThroughMqMessageProperties() {
-        return passThroughMqMessageProperties;
-    }
-
-    public void setPassThroughMqMessageProperties(boolean passThroughMqMessageProperties) {
-        this.passThroughMqMessageProperties = passThroughMqMessageProperties;
-    }
-
-    public boolean isPassThroughMqMessageHeaders() {
-        return passThroughMqMessageHeaders;
-    }
-
-    public void setPassThroughMqMessageHeaders(boolean passThroughMqMessageHeaders) {
-        this.passThroughMqMessageHeaders = passThroughMqMessageHeaders;
+    public void setPassThroughHeaders( final boolean passThroughHeaders ) {
+        this.passThroughHeaders = passThroughHeaders;
     }
 }

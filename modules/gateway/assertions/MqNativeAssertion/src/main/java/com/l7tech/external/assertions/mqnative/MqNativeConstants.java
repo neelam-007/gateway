@@ -57,7 +57,8 @@ public interface MqNativeConstants {
     String MQ_CONNECTION_CACHE_MAX_SIZE_UI_PROPERTY = "io.mqConnectionCacheSize";
     String MQ_CONNECTION_CACHE_MAX_SIZE_DESC = "The number of MQ Native connections to cache, this is not a hard limit, 0 for no caching (Integer)";
 
-    // configurable MQ message descriptor fields
+    // configurable MQ properties (from Queue config UI)
+    // these map to MQ message descriptor properties
     String MQ_PROPERTY_APPDATA = "applicationIdData";
     String MQ_PROPERTY_APPORIGIN = "applicationOriginData";
     String MQ_PROPERTY_CHARSET = "characterSet";
@@ -76,17 +77,11 @@ public interface MqNativeConstants {
     String MQ_PROPERTY_APPTYPE = "putApplicationType";
     String MQ_PROPERTY_REPORT = "report";
     String MQ_PROPERTY_USERID = "userId";
-    String MQ_PROPERTY_BACKOUT_COUNT = "backoutCount";
-    String MQ_PROPERTY_REPLY_TO_QUEUE_NAME = "replyToQueueName";
-    String MQ_PROPERTY_REPLY_TO_QUEUE_MGR_NAME = "replyToQueueManagerName";
-    String MQ_PROPERTY_ORIGINAL_LENGTH = "originalLength";
-    String MQ_PROPERTY_VERSION = "version";
-    String MQ_PROPERTY_MSG_ID = "messageId";
-    String MQ_PROPERTY_CORRELATION_ID = "correlationId";
-    String MQ_PROPERTY_ACCOUNTING_TOKEN = "accountingToken";
 
-    // message descriptors exposed as options in the UI
-    List<String> MQ_MESSAGE_DESCRIPTORS = list(
+    /**
+     * Properties to expose as options in the UI
+     */
+    List<String> MQ_PROPERTIES = list(
             MQ_PROPERTY_CHARSET,
             MQ_PROPERTY_ENCODING,
             MQ_PROPERTY_EXPIRY,
@@ -94,21 +89,7 @@ public interface MqNativeConstants {
             MQ_PROPERTY_FORMAT,
             MQ_PROPERTY_MSG_FLAGS,
             MQ_PROPERTY_PERSISTENCE,
-            MQ_PROPERTY_PRIORITY,
-            MQ_PROPERTY_REPLY_TO_QUEUE_NAME,
-            MQ_PROPERTY_REPLY_TO_QUEUE_MGR_NAME );
-
-    List<String> MQ_MESSAGE_PROPERTIES = list(
-            MQ_JMS_CORRELATION_ID,
-            MQ_JMS_DELIVERY_MODE,
-            MQ_JMS_DESTINATION,
-            MQ_JMS_EXPIRATION,
-            MQ_JMSX_GROUP_ID,
-            MQ_JMS_PRIORITY,
-            MQ_JMS_REPLY_TO,
-            MQ_JMSX_GROUP_SEQ,
-            MQ_JMS_TIME_STAMP
-    );
+            MQ_PROPERTY_PRIORITY );
 
     // queue open options
     int QUEUE_OPEN_OPTIONS_INBOUND = MQOO_INPUT_AS_Q_DEF | MQOO_INQUIRE;

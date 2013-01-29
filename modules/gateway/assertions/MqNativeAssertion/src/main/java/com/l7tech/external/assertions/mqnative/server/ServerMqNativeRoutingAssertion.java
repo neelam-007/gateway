@@ -5,11 +5,11 @@ import com.ibm.mq.headers.MQDataException;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.external.assertions.mqnative.*;
+import com.l7tech.external.assertions.mqnative.MqNativeDynamicProperties;
+import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
+import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
 import com.l7tech.external.assertions.mqnative.server.MqNativeResourceManager.MqTaskCallback;
-import com.l7tech.external.assertions.mqnative.server.header.MqNativeHeaderHandler;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.Message;
@@ -44,7 +44,6 @@ import org.xml.sax.SAXException;
 import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,7 +54,7 @@ import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeMessageDescriptor.applyDescriptorsToMessage;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeMessageDescriptor.applyPropertiesToMessage;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.*;
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE;
@@ -176,8 +175,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                             //10 failed attempts made to make a connection, fail!
                             if ( mqre.getCause() instanceof MQException ) {
                                 MQException mqException = (MQException) mqre.getCause();
-                                logger.log(Level.WARNING, format("At least 10 connections failed trying to connect to MQ.  MQ server is not available.  " +
-                                        "Falsifying assertion and returning completion code {0}.",mqException.getReason()) , getDebugExceptionForExpectedReasonCode(mqException));
+                                logger.log(Level.WARNING, format("At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion and returning completion code {0}.",mqException.getReason()) , getDebugExceptionForExpectedReasonCode(mqException));
                             }  else {
                                 logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion.", mqre);
                             }
@@ -380,80 +378,14 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 gatewayResponseMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(mqResponseHeaderPayload.right));
                 logAndAudit(MQ_ROUTING_GOT_RESPONSE);
 
-                // obtain context variable map
-                Map<String, String> responseMessageDescriptorOverrides = assertion.getResponseMessageDescriptorOverrides();
-                final StringBuilder sb = new StringBuilder();
-                for (Map.Entry<String, String> override : responseMessageDescriptorOverrides.entrySet()) {
-                    sb.append(override.getKey());
-                    sb.append(override.getValue());
-                }
-                Map<String, String> responseMessagePropertyOverrides = assertion.getResponseMessagePropertyOverrides();
-                for (Map.Entry<String, String> override : responseMessagePropertyOverrides.entrySet()) {
-                    sb.append(override.getKey());
-                    sb.append(override.getValue());
-                }
-                final String[] variablesUsed = Syntax.getReferencedNames(sb.toString());
-                final Audit audit = getAudit();
-                final Map<String, Object> contextVariableMap = context.getVariableMap(variablesUsed, audit);
-
-                // determine contents of the response knob
-                // message descriptors
-                MqNativeMessageDescriptor mqmd;
-                MqNativeMessagePropertyRuleSet ruleSet = assertion.getResponseMqNativeMessagePropertyRuleSet();
-                if (ruleSet.isPassThroughMqMessageDescriptors()) {
-                    mqmd = new MqNativeMessageDescriptor(mqResponseMessage);
-                    mqmd.applyDescriptors(responseMessageDescriptorOverrides, contextVariableMap, audit);
+                MqNativeKnob mqNativeResponseKnob;
+                if (assertion.getResponseMqNativeMessagePropertyRuleSet().isPassThroughHeaders()) {
+                    mqNativeResponseKnob = buildMqNativeKnob( mqResponseHeaderPayload.left,
+                            new MqNativeMessageDescriptor(mqResponseMessage), assertion.getResponseMessageAdvancedProperties() );
                 } else {
-                    mqmd = new MqNativeMessageDescriptor(new MQMessage());
-                    mqmd.applyDescriptors(responseMessageDescriptorOverrides, contextVariableMap, audit);
+                    mqNativeResponseKnob = buildMqNativeKnob( new byte[0], null, assertion.getResponseMessageAdvancedProperties() );
                 }
-                // message headers
-                byte[] mqHeaderByteArray;
-                MqNativeHeaderHandler mqHeaderHandler = new MqNativeHeaderHandler(mqResponseMessage);
-                Map<String, Object> responsePrimaryMessageHeaderValues = mqHeaderHandler.parsePrimaryHeaderValues();
-                MqNativeMessageHeaderType mqPrimaryMessageHeaderType = mqHeaderHandler.getMqNativeMessageHeaderType();
-                Map<String, Object> headerTypeConversionMessageProperties = new HashMap<String, Object>(0);
-                if (ruleSet.isPassThroughMqMessageHeaders()) {
-                    mqHeaderByteArray = mqResponseHeaderPayload.left;
-                } else {
-                    // convert primary header
-                    mqHeaderByteArray = mqHeaderHandler.parsePrimaryHeaderAsBytes();
-                    if (assertion.getResponseMqHeaderType() != MqNativeMessageHeaderType.ORIGINAL) {
-                        mqPrimaryMessageHeaderType = assertion.getResponseMqHeaderType();
-                        MqNativeHeaderHandler converter = new MqNativeHeaderHandler(mqPrimaryMessageHeaderType, new MQMessage());
-                        mqmd.format = converter.getMessageHeaderFormat();
-
-                        // copy any original properties into new message headers
-                        responsePrimaryMessageHeaderValues.putAll(mqHeaderHandler.parseProperties());
-                        converter.applyHeaderValuesToMessage(responsePrimaryMessageHeaderValues);
-                        mqHeaderByteArray = converter.parsePrimaryHeaderAsBytes();
-
-                        // copy any original headers into new message properties
-                        headerTypeConversionMessageProperties = converter.parseProperties();
-                    }
-                }
-                // message properties
-                Map<String, Object> responseMessageProperties = new HashMap<String, Object>(0);
-                if (ruleSet.isPassThroughMqMessageProperties()) {
-                    responseMessageProperties = mqHeaderHandler.parseProperties();
-                }
-                if (headerTypeConversionMessageProperties != null) {
-                    responseMessageProperties.putAll(headerTypeConversionMessageProperties);
-                }
-                if (responseMessagePropertyOverrides != null) {
-                    for (Map.Entry<String, String> propertiesEntry :responseMessagePropertyOverrides.entrySet()) {
-                        String name = ExpandVariables.process(propertiesEntry.getKey(), contextVariableMap, audit);
-                        String value = ExpandVariables.process(propertiesEntry.getValue(), contextVariableMap, audit);
-                        responseMessageProperties.put(name, value);
-                    }
-                }
-
-                // attach mq knob to response
-                MqNativeKnob mqNativeResponseKnob = buildMqNativeKnob(mqHeaderByteArray, mqPrimaryMessageHeaderType, mqmd,
-                        responsePrimaryMessageHeaderValues, responseMessageProperties);
                 gatewayResponseMessage.attachKnob(mqNativeResponseKnob, MqNativeKnob.class);
-
-                mqHeaderHandler.exposeContextVariables(context, mqNativeResponseKnob);
 
                 context.setRoutingStatus( RoutingStatus.ROUTED );
 
@@ -738,36 +670,11 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         final MQMessage mqRequestMessage = new MQMessage();
 
         // determine whether to copy over any header from the request knob
-        MqNativeKnob mqNativeRequestKnob = gatewayRequestMessage.getKnob(MqNativeKnob.class);
-        MqNativeMessageHeaderType setAsMqHeaderType = assertion.getRequestMqHeaderType();
-        MqNativeMessagePropertyRuleSet requestRuleSet = assertion.getRequestMqNativeMessagePropertyRuleSet();
-        if (requestRuleSet.isPassThroughMqMessageHeaders() || setAsMqHeaderType == MqNativeMessageHeaderType.ORIGINAL) {
-            setAsMqHeaderType = mqNativeRequestKnob.getPrimaryMessageHeaderType();
-        }
-        MqNativeHeaderHandler mqHeaderHandler = new MqNativeHeaderHandler(setAsMqHeaderType, mqRequestMessage);
-        mqHeaderHandler.applyMqNativeKnobToMessage(requestRuleSet, mqNativeRequestKnob);
+        applyMqNativeKnobToMessage(assertion.getRequestMqNativeMessagePropertyRuleSet().isPassThroughHeaders(),
+                gatewayRequestMessage.getKnob(MqNativeKnob.class), mqRequestMessage);
 
-        // obtain context variable map
-        Map<String, String> requestMessageDescriptorOverrides = assertion.getRequestMessageDescriptorOverrides();
-        final StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> override : requestMessageDescriptorOverrides.entrySet()) {
-            sb.append(override.getKey());
-            sb.append(override.getValue());
-        }
-        Map<String, String> requestMessagePropertyOverrides = assertion.getRequestMessagePropertyOverrides();
-        for (Map.Entry<String, String> override : requestMessagePropertyOverrides.entrySet()) {
-            sb.append(override.getKey());
-            sb.append(override.getValue());
-        }
-        final String[] variablesUsed = Syntax.getReferencedNames(sb.toString());
-        final Audit audit = getAudit();
-        final Map<String, Object> contextVariableMap = context.getVariableMap(variablesUsed, audit);
-
-        // apply any request descriptor overrides
-        applyDescriptorsToMessage(requestMessageDescriptorOverrides, mqRequestMessage, contextVariableMap, audit);
-
-        // apply any request property overrides
-        mqHeaderHandler.applyPropertiesToMessage(requestMessagePropertyOverrides, contextVariableMap, audit);
+        // apply any request properties override
+        applyPropertiesToMessage(assertion.getRequestMessageAdvancedProperties(), mqRequestMessage);
 
         // write the payload of the message
         mqRequestMessage.write(outboundRequestBytes);

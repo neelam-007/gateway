@@ -333,6 +333,87 @@ public class ServerVariables {
                 }
             }),
 
+            new Variable("request.mq.property", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final MqNativeKnob mqNativeKnob = context.getRequest().getKnob(MqNativeKnob.class);
+                    if (mqNativeKnob == null) return null;
+                    final String prefix = "request.mq.property.";
+                    if (!name.startsWith(prefix)) {
+                        logger.warning("Context variable for request MQ Native message property does not start with the correct prefix (" + prefix + "): " + name);
+                        return null;
+                    }
+                    final String propName = name.substring(prefix.length());
+                    return mqNativeKnob.getMessagePropertyMap().get(propName);
+                }
+            }),
+            new Variable("response.mq.property", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final MqNativeKnob mqNativeKnob = context.getResponse().getKnob(MqNativeKnob.class);
+                    if (mqNativeKnob == null) return null;
+                    final String prefix = "response.mq.property.";
+                    if (!name.startsWith(prefix)) {
+                        logger.warning("Context variable for response MQ Native message property does not start with the correct prefix (" + prefix + "): " + name);
+                        return null;
+                    }
+                    final String propName = name.substring(prefix.length());
+                    return mqNativeKnob.getMessagePropertyMap().get(propName);
+                }
+            }),
+            new Variable("request.mq.propertynames", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final MqNativeKnob mqNativeKnob = context.getRequest().getKnob(MqNativeKnob.class);
+                    if (mqNativeKnob == null) return null;
+                    final String prefix = "request.mq.propertynames";
+                    if (!name.startsWith(prefix)) {
+                        logger.warning("Context variable for request MQ Native message property does not start with the correct prefix (" + prefix + "): " + name);
+                        return null;
+                    }
+                    return mqNativeKnob.getMessagePropertyMap().keySet().toArray();
+                }
+            }),
+            new Variable("response.mq.propertynames", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final MqNativeKnob mqNativeKnob = context.getResponse().getKnob(MqNativeKnob.class);
+                    if (mqNativeKnob == null) return null;
+                    final String prefix = "response.mq.propertynames";
+                    if (!name.startsWith(prefix)) {
+                        logger.warning("Context variable for response JMS message property does not start with the correct prefix (" + prefix + "): " + name);
+                        return null;
+                    }
+                    return mqNativeKnob.getMessagePropertyMap().keySet().toArray();
+                }
+            }),
+            new Variable("request.mq.allpropertyvalues", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final MqNativeKnob mqNativeKnob = context.getRequest().getKnob(MqNativeKnob.class);
+                    if (mqNativeKnob == null) return null;
+                    ArrayList<String> values = new ArrayList<String>();
+                    final char delimiter = ':';
+                    for (String key : mqNativeKnob.getMessagePropertyMap().keySet()) {
+                        values.add(key + delimiter + mqNativeKnob.getMessagePropertyMap().get(key).toString());
+                    }
+                    return values.toArray();
+                }
+            }),
+            new Variable("response.mq.allpropertyvalues", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final MqNativeKnob mqNativeKnob = context.getResponse().getKnob(MqNativeKnob.class);
+                    if (mqNativeKnob == null) return null;
+                    ArrayList<String> values = new ArrayList<String>();
+                    final char delimiter = ':';
+                    for (String key : mqNativeKnob.getMessagePropertyMap().keySet()) {
+                        values.add(key + delimiter + mqNativeKnob.getMessagePropertyMap().get(key).toString());
+                    }
+                    return values.toArray();
+                }
+            }),
+
             new Variable(BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP, new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {

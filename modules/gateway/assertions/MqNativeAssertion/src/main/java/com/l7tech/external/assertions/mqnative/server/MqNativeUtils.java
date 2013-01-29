@@ -2,9 +2,7 @@ package com.l7tech.external.assertions.mqnative.server;
 
 import com.ibm.mq.*;
 import com.ibm.mq.headers.*;
-import com.ibm.mq.headers.internal.Header;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
-import com.l7tech.external.assertions.mqnative.MqNativeMessageHeaderType;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.FindException;
@@ -23,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.SSLSocketFactory;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Hashtable;
@@ -31,6 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.ibm.mq.constants.MQConstants.*;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeMessageDescriptor.applyPropertiesToMessage;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.some;
@@ -40,10 +41,10 @@ import static com.l7tech.util.ValidationUtils.getMinMaxPredicate;
 /**
  * MQ Native connector helper class.
  */
-public class MqNativeUtils {
+class MqNativeUtils {
     private static final Logger logger = Logger.getLogger(MqNativeUtils.class.getName());
 
-    public static Pair<byte[], byte[]> parseHeaderPayload(@NotNull final MQMessage msg) throws IOException, MQDataException {
+    static Pair<byte[], byte[]> parseHeaderPayload(@NotNull MQMessage msg) throws IOException, MQDataException {
         byte[] headerBytes;
         byte[] payloadBytes;
 
@@ -72,16 +73,6 @@ public class MqNativeUtils {
         msg.readFully(payloadBytes);
 
         return new Pair<byte[], byte[]>(headerBytes, payloadBytes);
-    }
-
-    public static Header parsePrimaryAdditionalHeader(@NotNull final MQMessage msg) throws IOException, MQDataException {
-        msg.seek(0);
-        MQHeaderList headerList = new MQHeaderList(msg);
-        if (headerList != null && headerList.size() > 0) {
-            return (Header) headerList.get(0);
-        } else {
-            return null;
-        }
     }
 
     static Option<String> getQueuePassword( final SsgActiveConnector connector,
@@ -171,23 +162,27 @@ public class MqNativeUtils {
     /*
      * Create an MqNativeKnob.
      */
-    public static MqNativeKnob buildMqNativeKnob(@Nullable final byte[] mqHeaderBytes,
-                                                 @NotNull final MqNativeMessageHeaderType mqPrimaryHeaderType,
-                                                 @Nullable final MqNativeMessageDescriptor mqmd,
-                                                 @Nullable final Map<String, Object> primaryMessageHeaderValues,
-                                                 @Nullable final Map<String, Object> messageProperties) {
-        return buildMqNativeKnob( null, mqHeaderBytes, mqPrimaryHeaderType, mqmd, primaryMessageHeaderValues, messageProperties );
+    static MqNativeKnob buildMqNativeKnob(@Nullable final byte[] mqHeader,
+                                          @Nullable final MqNativeMessageDescriptor mqmd,
+                                          @Nullable final Map<String, String> mqmdOverride) {
+        return buildMqNativeKnob( null, mqHeader, mqmd, mqmdOverride );
+    }
+    /*
+     * Create an MqNativeKnob.
+     */
+    static MqNativeKnob buildMqNativeKnob( @Nullable final String soapAction,
+                                           @Nullable final byte[] mqHeader,
+                                           @Nullable final MqNativeMessageDescriptor mqmd) {
+        return buildMqNativeKnob( soapAction, mqHeader, mqmd, null );
     }
 
     /*
      * Create an MqNativeKnob.
      */
     static MqNativeKnob buildMqNativeKnob( @Nullable final String soapAction,
-                                           @Nullable final byte[] mqHeaderBytes,
-                                           @NotNull final MqNativeMessageHeaderType mqPrimaryHeaderType,
+                                           @Nullable final byte[] mqHeader,
                                            @Nullable final MqNativeMessageDescriptor mqmd,
-                                           @Nullable final Map<String, Object> primaryMessageHeaderValues,
-                                           @Nullable final Map<String, Object> messageProperties) {
+                                           @Nullable final Map<String, String> mqmdOverride) {
         return new MqNativeKnob() {
             @Override
             public String getSoapAction() {
@@ -198,26 +193,49 @@ public class MqNativeUtils {
                 return -1L;
             }
             @Override
-            public byte[] getAllMessageHeaderBytes() {
-                return mqHeaderBytes != null ? mqHeaderBytes : new byte[0];
+            public byte[] getMessageHeaderBytes() {
+                return mqHeader != null ? mqHeader : new byte[0];
             }
             @Override
-            public MqNativeMessageHeaderType getPrimaryMessageHeaderType() {
-                return mqPrimaryHeaderType;
+            public int getMessageHeaderLength() {
+                return mqHeader != null ? mqHeader.length : 0;
             }
             @Override
             public MqNativeMessageDescriptor getMessageDescriptor() {
                 return mqmd;
             }
             @Override
-            public Map<String, Object> getPrimaryMessageHeaderValueMap() {
-                return primaryMessageHeaderValues;
-            }
-            @Override
-            public Map<String, Object> getMessagePropertyMap() {
-                return messageProperties;
+            public Map<String, String> getMessageDescriptorOverride() {
+                return mqmdOverride;
             }
         };
+    }
+
+    static void applyMqNativeKnobToMessage(final boolean isPassThroughHeaders,
+                                           @Nullable final MqNativeKnob mqNativeKnob,
+                                           @NotNull final MQMessage mqMessage) throws IOException, MQDataException, MQException, MqNativeConfigException {
+        if (mqNativeKnob != null) {
+            if (isPassThroughHeaders) {
+                // apply message descriptor
+                MqNativeMessageDescriptor mqmd = mqNativeKnob.getMessageDescriptor();
+                if (mqmd != null) {
+                    mqmd.copyTo(mqMessage);
+                }
+
+                // apply header bytes
+                if (mqNativeKnob.getMessageHeaderLength() > 0) {
+                    if (MQFMT_RF_HEADER_2.equals(mqMessage.format)) {
+                        MQRFH2 rfh2 = new MQRFH2(new DataInputStream(new ByteArrayInputStream(mqNativeKnob.getMessageHeaderBytes())));
+                        rfh2.write(mqMessage);
+                    } else {
+                        mqMessage.write(mqNativeKnob.getMessageHeaderBytes());
+                    }
+                }
+            }
+
+            // always apply override
+            applyPropertiesToMessage(mqNativeKnob.getMessageDescriptorOverride(), mqMessage);
+        }
     }
 
     static boolean isTransactional(SsgActiveConnector connector) {

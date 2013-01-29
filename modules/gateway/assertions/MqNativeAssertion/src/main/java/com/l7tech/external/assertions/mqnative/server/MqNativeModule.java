@@ -5,7 +5,6 @@ import com.ibm.mq.headers.MQDataException;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
-import com.l7tech.external.assertions.mqnative.server.header.MqNativeHeaderHandler;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.*;
@@ -50,8 +49,6 @@ import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_LISTE
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.QUEUE_OPEN_OPTIONS_INBOUND_FAILURE_QUEUE;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.*;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.buildMqNativeKnob;
-import static com.l7tech.external.assertions.mqnative.server.header.MqNativeHeaderHandler.parsePrimaryHeaderType;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_MQNATIVE_MESSAGE_INPUT;
 import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
@@ -343,7 +340,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                                            @NotNull final MQMessage mqRequestMessage) throws MqNativeException, MqNativeConfigException {
         final ContentTypeHeader ctype;
         final Pair<byte[], byte[]> mqRequestHeaderPayload;
-        final byte[] mqRequestHeaderBytes;
+        final byte[] mqRequestHeader;
         final long requestSizeLimit;
         boolean messageTooLarge = false;
         boolean responseSuccess = false;
@@ -358,7 +355,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
             // parse the headers and payload from request mq message
             mqRequestHeaderPayload = parseHeaderPayload(mqRequestMessage); // message payload in memory
-            mqRequestHeaderBytes = mqRequestHeaderPayload.left;
+            mqRequestHeader = mqRequestHeaderPayload.left;
 
             // enforce size restriction
             final int size = mqRequestHeaderPayload.right.length;
@@ -394,10 +391,8 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 // get SOAP action from custom MQ property -- TBD
             }
 
-            MqNativeHeaderHandler mqHeaderHandler = new MqNativeHeaderHandler(mqRequestMessage);
-            MqNativeKnob mqNativeKnob = buildMqNativeKnob(soapActionValue, mqRequestHeaderBytes, parsePrimaryHeaderType(mqRequestMessage),
-                    new MqNativeMessageDescriptor(mqRequestMessage), mqHeaderHandler.parsePrimaryHeaderValues(), mqHeaderHandler.parseProperties());
-            gatewayRequestMessage.attachKnob(MqNativeKnob.class, mqNativeKnob);
+            gatewayRequestMessage.attachKnob(MqNativeKnob.class, buildMqNativeKnob(soapActionValue, mqRequestHeader,
+                    new MqNativeMessageDescriptor(mqRequestMessage)));
 
             final Long hardwiredServiceOid = connector.getHardwiredServiceOid();
             if ( hardwiredServiceOid != null ) {
@@ -407,9 +402,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             final boolean replyExpected = MqNativeReplyType.REPLY_NONE !=
                     connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class );
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(gatewayRequestMessage, null, replyExpected);
-
-            mqHeaderHandler.exposeContextVariables(context, mqNativeKnob);
-
             boolean stealthMode = false;
             InputStream responseStream = null;
             if ( !messageTooLarge ) {
@@ -489,6 +481,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 }
 
                 final MQMessage mqResponseMessage = new MQMessage();
+                applyMqNativeKnobToMessage(true, context.getResponse().getKnob(MqNativeKnob.class), mqResponseMessage);
                 if (responsePayload != null && responsePayload.length > 0) {
                     mqResponseMessage.write(responsePayload);
                 }
