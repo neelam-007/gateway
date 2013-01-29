@@ -20,8 +20,8 @@ import java.util.List;
 
 public class CreateRoutingStrategyRoutingPropertiesDialog extends JDialog {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.createroutingstrategy.console.resources.CreateRoutingStrategyResources");
-    private static final String NAME = "strategy.configure.name";
-    private static final String VALUE = "strategy.configure.value";
+    private static final String NAME = "failover.configure.name";
+    private static final String VALUE = "failover.configure.value";
     private final ImageIcon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
     private final ImageIcon OK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Check16.png"));
     private final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
