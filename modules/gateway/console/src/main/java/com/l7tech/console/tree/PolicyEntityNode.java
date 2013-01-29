@@ -101,25 +101,27 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         actions.add(new MarkEntityToAliasAction(this));
         actions.add(new CreateEntityLogSinkAction(getEntityHeader()));
         actions.add(new PolicyRevisionsAction(this));
-        try {
-            EncapsulatedAssertionConfig config;
-            final Collection<EncapsulatedAssertionConfig> found = Registry.getDefault().getEncapsulatedAssertionAdmin().findByPolicyOid(getPolicy().getOid());
-            if (found.isEmpty()) {
-                // policy not yet associated with an EncapsulatedAssertionConfig
-                config = new EncapsulatedAssertionConfig();
-                config.setPolicy(getPolicy());
-                actions.add(new CreateEncapsulatedAssertionAction(config, null, true));
-            } else {
-                // policy is already associated with at least one EncapsulatedAssertionConfig
-                final EditEncapsulatedAssertionAction editAction = new EditEncapsulatedAssertionAction(found, null);
-                if (editAction.isAuthorized()) {
-                    actions.add(editAction);
+        if (getEntityHeader().getPolicyType().equals(PolicyType.INCLUDE_FRAGMENT)) {
+            try {
+                EncapsulatedAssertionConfig config;
+                final Collection<EncapsulatedAssertionConfig> found = Registry.getDefault().getEncapsulatedAssertionAdmin().findByPolicyOid(getEntityHeader().getOid());
+                if (found.isEmpty()) {
+                    // policy not yet associated with an EncapsulatedAssertionConfig
+                    config = new EncapsulatedAssertionConfig();
+                    config.setPolicy(getPolicy());
+                    actions.add(new CreateEncapsulatedAssertionAction(config, null, true));
                 } else {
-                    actions.add(new ViewEncapsulatedAssertionAction(found, null));
+                    // policy is already associated with at least one EncapsulatedAssertionConfig
+                    final EditEncapsulatedAssertionAction editAction = new EditEncapsulatedAssertionAction(found, null);
+                    if (editAction.isAuthorized()) {
+                        actions.add(editAction);
+                    } else {
+                        actions.add(new ViewEncapsulatedAssertionAction(found, null));
+                    }
                 }
+            } catch (final FindException e) {
+                logger.log(Level.WARNING, "Cannot add EncapsulatedConfig action because Unable to retrieve policy", ExceptionUtils.getDebugException(e));
             }
-        } catch (final FindException e) {
-            logger.log(Level.WARNING, "Cannot add EncapsulatedConfig action because Unable to retrieve policy", ExceptionUtils.getDebugException(e));
         }
         actions.add(new RefreshTreeNodeAction(this));
 
