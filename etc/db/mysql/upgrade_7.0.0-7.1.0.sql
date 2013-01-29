@@ -72,6 +72,8 @@ ALTER TABLE cluster_properties ADD COLUMN properties MEDIUMTEXT NULL AFTER propv
 
 ALTER TABLE published_service MODIFY COLUMN wsdl_url VARCHAR(4096);
 
+update rbac_role set name = 'Manage Ports', description = 'Users assigned to the {0} role have the ability to read, create, update and delete Gateway listen ports (HTTP(S) and FTP(S)) as well as firewall ports and to list published services.' where objectid = -750 and name = 'Manage Listen Ports';
+
 --
 -- Reenable FK at very end of script
 --
