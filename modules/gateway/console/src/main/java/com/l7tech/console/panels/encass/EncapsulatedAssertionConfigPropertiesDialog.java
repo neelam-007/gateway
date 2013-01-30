@@ -229,6 +229,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         selectIconButton.setVerticalTextPosition(SwingConstants.BOTTOM);
         selectIconButton.setHorizontalTextPosition(SwingConstants.CENTER);
 
+        Utilities.setDoubleClickAction(inputsTable, editInputButton);
         Utilities.setDoubleClickAction(outputsTable, editOutputButton);
 
         okButton.setEnabled(!readOnly);

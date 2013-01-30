@@ -50,6 +50,7 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
 
         inputValidator.addRule(new ContextVariableTextComponentValidationRule("Name", nameField, false, false));
         inputValidator.constrainTextFieldToMaxChars("Name", nameField, MAX_CHARS_FOR_NAME, null);
+        inputValidator.constrainTextFieldToMaxChars("Label", guiLabelField, MAX_CHARS_FOR_NAME, null);
         inputValidator.addRule(new InputValidator.ComponentValidationRule(nameField) {
             @Override
             public String getValidationError() {
@@ -92,7 +93,9 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
         bean.setGuiPrompt(guiPromptCheckBox.isSelected());
         DataType type = (DataType) typeComboBox.getSelectedItem();
         bean.setArgumentType(type == null ? DataType.UNKNOWN.getShortName() : type.getShortName());
-        bean.setGuiLabel(guiLabelField.getText());
+        if (guiLabelField.isEnabled()) {
+            bean.setGuiLabel(guiLabelField.getText());
+        }
         return bean;
     }
 
