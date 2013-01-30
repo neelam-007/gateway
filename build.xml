@@ -3574,7 +3574,7 @@
 
         <echo level="info">Running svn switch for build.number (to trunk/HEAD)</echo>
         <svn>
-            <switch path="build.number" recurse="false" url="svn+ssh://sarek/home/svnuser/UneasyRooster/trunk/build.number"/>
+            <switch path="build.number" recurse="false" url="https://thesource.l7tech.com/thesource/UneasyRooster/trunk/build.number"/>
         </svn>
 
         <buildnumber/>
