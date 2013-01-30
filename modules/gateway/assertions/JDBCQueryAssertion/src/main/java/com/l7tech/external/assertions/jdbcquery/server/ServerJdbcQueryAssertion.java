@@ -55,6 +55,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         final List<Object> preparedStmtParams = new ArrayList<Object>();
         try {
             final String plainQuery = JdbcQueryUtils.getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), preparedStmtParams, context, assertion.getVariablesUsed(), assertion.isAllowMultiValuedVariables(),assertion.getResolveAsObjectList(), getAudit());
+            applyNullValue(assertion.getNullPattern(),preparedStmtParams);
 
             final String connName = ExpandVariables.process(assertion.getConnectionName(), context.getVariableMap(variablesUsed, getAudit()), getAudit());
             // Get result by querying.  The result could be a ResultSet object, an integer (updated rows), or a string (a warning message).
@@ -123,6 +124,17 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             context.setVariable(getVariablePrefix(context) + assertion.VARIABLE_XML_RESULT, xmlResult.toString());
         }
         return AssertionStatus.NONE;
+    }
+
+    static protected void applyNullValue(final String nullPattern, List<Object> preparedStmtParams) {
+        if(nullPattern == null)
+            return;
+
+        for (int i = 0; i < preparedStmtParams.size(); i++) {
+            Object o = preparedStmtParams.get(i);
+            if(o.equals(nullPattern))
+                preparedStmtParams.set(i,null);
+        }
     }
 
     /**

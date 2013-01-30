@@ -58,6 +58,8 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JTextField queryNameTextField;
     private JCheckBox allowMutiValuedVariablesCheckBox;
     private JCheckBox generateResultsAsXMLCheckBox;
+    private JCheckBox enableNullValuesCheckBox;
+    private JTextField nullPatternTextBox;
 
     private NamingTableModel namingTableModel;
     private Map<String, String> namingMap;
@@ -94,6 +96,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         enableOrDisableOkButton();
         enableOrDisableTableButtons();
         enableOrDisableJdbcConnList();
+        enableOrDisableQueryButtons();
     }
 
     private void initialize() {
@@ -121,6 +124,17 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         connectionComboBox.addItemListener(changeListener);
         sqlQueryTextArea.getDocument().addDocumentListener(changeListener);
         variablePrefixTextField.addChangeListener(changeListener);
+        nullPatternTextBox.getDocument().addDocumentListener(changeListener);
+
+
+        final RunOnChangeListener queryPanelChangeListener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                enableOrDisableQueryButtons();
+                enableOrDisableOkButton();
+            }
+        });
+        enableNullValuesCheckBox.addChangeListener(queryPanelChangeListener);
 
         initNamingTable();
 
@@ -187,7 +201,9 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         generateResultsAsXMLCheckBox.setSelected(assertion.isGenerateXmlResult());
         queryNameTextField.setText(assertion.getQueryName());
         allowMutiValuedVariablesCheckBox.setSelected(assertion.isAllowMultiValuedVariables());
-        
+        enableNullValuesCheckBox.setSelected(assertion.isUseNullPattern());
+        nullPatternTextBox.setText(assertion.isUseNullPattern()?assertion.getNullPattern():"null");
+
     }
 
     private void viewToModel(final JdbcQueryAssertion assertion) {
@@ -200,6 +216,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         assertion.setGenerateXmlResult(generateResultsAsXMLCheckBox.isSelected());
         assertion.setQueryName(queryNameTextField.getText());
         assertion.setAllowMultiValuedVariables(allowMutiValuedVariablesCheckBox.isSelected());
+        assertion.setNullPattern(enableNullValuesCheckBox.isSelected()?nullPatternTextBox.getText():null);
     }
 
     private void populateConnectionCombobox() {
@@ -293,6 +310,10 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         }
     }
 
+    private void enableOrDisableQueryButtons(){
+        nullPatternTextBox.setEnabled(enableNullValuesCheckBox.isSelected());
+    }
+
     private void enableOrDisableTableButtons() {
         int selectedRow = namingTable.getSelectedRow();
 
@@ -309,7 +330,8 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         boolean enabled = !isReadOnly() &&
             isNonEmptyRequiredTextField(((JTextField)connectionComboBox.getEditor().getEditorComponent()).getText()) &&
             isNonEmptyRequiredTextField(sqlQueryTextArea.getText()) &&
-            variablePrefixTextField.isEntryValid();
+            variablePrefixTextField.isEntryValid() &&
+            (!nullPatternTextBox.isEnabled() || !nullPatternTextBox.getText().isEmpty());
 
         okButton.setEnabled(enabled);
     }
