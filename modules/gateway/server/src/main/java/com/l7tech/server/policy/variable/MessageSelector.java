@@ -53,6 +53,8 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String MAINPART_SIZE_NAME = "mainpart.size";
     private static final String BUFFER_STATUS = "buffer.status";
     private static final String BUFFER_ALLOWED = "buffer.allowed";
+    private static final String COMMAND_TYPE_NAME = "command.type";
+    private static final String COMMAND_PARAMETER_PREFIX = "command.parameter.";
 
     static enum BufferStatus {
         UNINITIALIZED("uninitialized"),
@@ -221,6 +223,10 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = jmsHeaderNamesSelector;
         } else if (lname.startsWith(JMS_ALLHEADERVALUES)) {
             selector = jmsAllHeaderValuesSelector;
+        } else if (lname.startsWith(COMMAND_PARAMETER_PREFIX)) {
+            selector = commandParameterSelector;
+        } else if (lname.startsWith(COMMAND_TYPE_NAME)) {
+            selector = commandTypeSelector;
         } else {
             final Functions.Unary<Object,TcpKnob> tcpFieldGetter = TCP_FIELDS.get(lname);
             if (tcpFieldGetter != null) {
@@ -245,6 +251,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
         return new String[]{
                 "http",
                 "jms",
+                "command",
                 "mainpart",
                 "parts",
                 "originalmainpart",
@@ -300,6 +307,33 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     private static interface MessageAttributeSelector {
         Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict);
     }
+
+    private static final MessageAttributeSelector commandTypeSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            CommandKnob commandKnob = context.getKnob(CommandKnob.class);
+            if (commandKnob == null) {
+                String msg = handler.handleBadVariable(name);
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+            return new Selection(commandKnob.getCommandType());
+        }
+    };
+
+    private static final MessageAttributeSelector commandParameterSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            final String paramName = name.substring(COMMAND_PARAMETER_PREFIX.length());
+            CommandKnob commandKnob = context.getKnob(CommandKnob.class);
+            if (commandKnob == null) {
+                String msg = handler.handleBadVariable(name);
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+            return new Selection(commandKnob.getParameter(paramName));
+        }
+    };
 
     private static final MessageAttributeSelector sizeSelector = new MessageAttributeSelector() {
         @Override

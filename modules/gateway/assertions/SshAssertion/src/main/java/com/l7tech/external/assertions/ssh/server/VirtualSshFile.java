@@ -1,118 +1,235 @@
 package com.l7tech.external.assertions.ssh.server;
 
-import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
 import org.apache.sshd.server.SshFile;
-import org.apache.sshd.server.filesystem.NameEqualsFileFilter;
+import org.apache.sshd.server.filesystem.NativeSshFile;
+import org.hibernate.validator.constraints.NotBlank;
 
-import java.io.*;
-import java.util.Arrays;
+import javax.validation.constraints.NotNull;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
-import java.util.StringTokenizer;
-import java.util.concurrent.Future;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Represents a virtual file or directory.
  */
 public class VirtualSshFile implements SshFile {
-    private static final long date = System.currentTimeMillis();
+    //default the last modified time to the current time. This was existing behaviour, it may solve catching issues.
+    private long lastModified = System.currentTimeMillis();
     private String fileName;
+    //This is used to keep track of if this is a file or a directory.
     private boolean file;
-    private PipedOutputStream pipedOutputStream;
+    private long size;
 
-    private Future<AssertionStatus> messageProcessStatus;
+    //The file output stream. Writing to this stream will write to the input stream of the request message
+    private OutputStream outputStream;
+    //The file input stream. Data in this stream will come from the response message stream.
+    private InputStream inputStream;
 
     private int permission = -1;
     private long accessTime = System.currentTimeMillis();
 
+    //This holds message processing status information.
+    private MessageProcessingSshUtil.MessageProcessingStatus messageProcessingStatus = new MessageProcessingSshUtil.MessageProcessingStatus();
 
     /**
-     * Constructor, internal do not use directly.
+     * This is the list of files that are children of this file, if this file is a folder.
      */
-    protected VirtualSshFile(final String fileName, final boolean file) {
-        this.fileName = fileName;
-        this.file = file;
+    private List<SshFile> sshFiles;
+
+    /**
+     * This is an object used to notify when the file handle is closed by the sftpclient
+     */
+    private CountDownLatch fileOpenLatch = new CountDownLatch(1);
+    private boolean exists = true;
+    //This is the next expected read or write offset of the file.
+    private long nextExpectedOffset = 0;
+    private Functions.NullaryThrows<InputStream, IOException> inputStreamGetter;
+
+    /**
+     * Create a new virtualSshFile.             `
+     *
+     * @param fileName The full file name of the file. This must not be null or blank, and it must start with a /
+     * @param file     True if this is a file, false if it is a directory
+     */
+    protected VirtualSshFile(@NotNull @NotBlank final String fileName, final boolean file) {
+        setName(fileName);
+        setFile(file);
     }
 
     /**
-     * Get full name.
+     * Get full name. This is the full file path
+     *
+     * @return The absolute file path
      */
     @Override
     public String getAbsolutePath() {
-        return fileName;
+        // strip the last '/' if necessary
+        String fullName = fileName;
+        int filelen = fullName.length();
+        if ((filelen != 1) && (fullName.charAt(filelen - 1) == '/')) {
+            fullName = fullName.substring(0, filelen - 1);
+        }
+
+        return fullName;
     }
 
     /**
-     * Get short name.
+     * The path to the file without the file name.
+     *
+     * @return The path to the file without the file name.
+     */
+    public String getPath(){
+        String path = getAbsolutePath();
+        int pathLastIndex = path.lastIndexOf('/');
+        if (pathLastIndex > 0) {
+            path = path.substring(0, pathLastIndex);
+        } else if (pathLastIndex == 0) {
+            path = "/";
+        }
+        return path;
+    }
+
+    /**
+     * Get short name. The file name after the last /
+     *
+     * @return The file name
      */
     @Override
     public String getName() {
-        String name = fileName;
-
-        if (name.indexOf('/') > -1) {
-            name = name.substring(name.lastIndexOf('/') + 1);
+        // root - the short name will be '/'
+        if (fileName.equals("/")) {
+            return "/";
         }
 
-        return name;
+        // strip the last '/'
+        String shortName = fileName;
+        int filelen = fileName.length();
+        if (shortName.charAt(filelen - 1) == '/') {
+            shortName = shortName.substring(0, filelen - 1);
+        }
+
+        // return from the last '/'
+        int slashIndex = shortName.lastIndexOf('/');
+        if (slashIndex != -1) {
+            shortName = shortName.substring(slashIndex + 1);
+        }
+        return shortName;
     }
 
+    /**
+     * Sets the file name. This cannot be null or blank. It must start with a /
+     * @param fileName The name of the file.
+     */
+    public void setName(@NotNull @NotBlank String fileName) {
+        //Validating that the file name is proper.
+        if (fileName == null) {
+            throw new IllegalArgumentException("fileName can not be null");
+        }
+        if (fileName.length() == 0) {
+            throw new IllegalArgumentException("fileName can not be empty");
+        } else if (fileName.charAt(0) != '/') {
+            throw new IllegalArgumentException("fileName must be an absolute path");
+        }
+        this.fileName = fileName;
+    }
+
+    /**
+     * Return's the file owner. Currently this always returns the empty String.
+     *
+     * @return The file owner.
+     */
     @Override
     public String getOwner() {
         return "";
     }
 
     /**
-     * Is it a directory?
+     * Returns true if this is a directory. This is equivalent to !isFile()
+     *
+     * @return True if this is a directory, false otherwise
      */
     @Override
     public boolean isDirectory() {
         // Always return true to allow removal of directories
-        return true;
+        return !isFile();
     }
 
     /**
-     * Is it a file?
+     * Returns true if this is a file (not a directory)
+     *
+     * @return True if this is a file, false otherwise
      */
     @Override
     public boolean isFile() {
-        return file && doesExist();
+        return file;
+    }
+
+    /**
+     * Sets if this is a file or directory
+     *
+     * @param file true if this is a file. false if it is a directory
+     */
+    public void setFile(boolean file) {
+        this.file = file;
     }
 
     /**
      * Does this file exists?
+     *
+     * @return true if the file exists.
      */
     @Override
     public boolean doesExist() {
-        return !file;
+        return exists;
     }
 
     /**
-     * Get file size.
+     * Returns the file size in bytes
+     *
+     * @return The file size in bytes
      */
     @Override
     public long getSize() {
-        return file ? 0L : 4096L;
+        return size;
     }
 
     /**
-     * Get last modified time.
+     * Set the file size in bytes.
+     *
+     * @param size The files size in bytes
+     */
+    public void setSize(long size) {
+        this.size = size;
+    }
+
+    /**
+     * Get the last modified time
+     *
+     * @return The timestamp of the last modified time for the {@link SshFile}
      */
     @Override
     public long getLastModified() {
-        return date;
+        return lastModified;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean setLastModified(long time) {
+    public boolean setLastModified(long lastModified) {
+        this.lastModified = lastModified;
         return true;
     }
 
     /**
-     * Check read permission.
+     * Check read permission. Virtual ssh files are always readable
+     *
+     * @return true if the file is readable
      */
     @Override
     public boolean isReadable() {
@@ -120,7 +237,9 @@ public class VirtualSshFile implements SshFile {
     }
 
     /**
-     * Check file write permission.
+     * Check file write permission. Virtual ssh files are always writable
+     *
+     * @return true if the file is writable
      */
     @Override
     public boolean isWritable() {
@@ -128,7 +247,9 @@ public class VirtualSshFile implements SshFile {
     }
 
     /**
-     * Check file exec permission.
+     * Check file exec permission. Virtual ssh files are never executable
+     *
+     * @return true if the file is executable
      */
     @Override
     public boolean isExecutable() {
@@ -136,13 +257,18 @@ public class VirtualSshFile implements SshFile {
     }
 
     /**
-     * Has delete permission.
+     * Has delete permission. Virtual ssh files are never deletable
+     *
+     * @return true is the file is deletable
      */
     @Override
     public boolean isRemovable() {
-        return true;
+        return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SshFile getParentFile() {
         int indexOfSlash = getAbsolutePath().lastIndexOf('/');
@@ -153,61 +279,80 @@ public class VirtualSshFile implements SshFile {
             parentFullName = getAbsolutePath().substring(0, indexOfSlash);
         }
 
-        // we check if the parent FileObject is writable.
         return new VirtualSshFile(parentFullName, false);
     }
 
     /**
-     * Delete file.
+     * Delete file. Virtual ssh files can never be deleted. Always returns false
+     *
+     * @return true if the operation was successful
      */
     @Override
     public boolean delete() {
-        return true;
-    }
-
-    /**
-     * Create a new file
-     */
-    @Override
-    public boolean create() throws IOException {
-        return true;
-    }
-
-    /**
-     * Truncate file to length 0.
-     */
-    @Override
-    public void truncate() throws IOException{
-        // do nothing for virtual file
-    }
-
-    /**
-     * Move file object.
-     */
-    @Override
-    public boolean move(final SshFile dest) {
         return false;
     }
 
     /**
-     * Create directory.
+     * Create a new file. Can never create a new virtual ssh file.
+     *
+     * @return true if the file has been created and false if it already exist
+     */
+    @Override
+    public boolean create() {
+        return false;
+    }
+
+    /**
+     * Truncate file to length 0. Virtual files are not actually truncated, this method does nothing.
+     */
+    @Override
+    public void truncate() {
+        // do nothing for virtual file
+    }
+
+    /**
+     * Move file object. Cannot move virtual ssh files
+     *
+     * @param destination The target {@link SshFile} to move the current {@link SshFile} to
+     * @return true if the operation was successful
+     */
+    @Override
+    public boolean move(final SshFile destination) {
+        return false;
+    }
+
+    /**
+     * Create directory. Can never make a virtual ssh directory
+     *
+     * @return true if the operation was successful
      */
     @Override
     public boolean mkdir() {
-        return true;
+        return false;
     }
 
     /**
-     * List files. If not a directory or does not exist, null will be returned.
+     * {@inheritDoc}
      */
     @Override
     public List<SshFile> listSshFiles() {
-        SshFile[] virtualFiles = new SshFile[0];
-        return Collections.unmodifiableList(Arrays.asList(virtualFiles));
+        return sshFiles == null ? null : Collections.unmodifiableList(sshFiles);
     }
 
     /**
-     * Create output stream for writing.
+     * Set the child files of this directory. A @IllegalStateException will be thrown if this is not a directory.
+     *
+     * @param sshFiles The children of this directory.
+     */
+    public void setSshFiles(List<SshFile> sshFiles) {
+        if (!isDirectory()) {
+            throw new IllegalStateException("Cannot set child files on a file that is not a directory");
+        }
+        this.sshFiles = sshFiles;
+    }
+
+    /**
+     * Create output stream for writing. Virtual SSH files will always throw an exception if this is called.
      */
     @Override
     public OutputStream createOutputStream(final long offset) throws IOException {
@@ -215,141 +360,33 @@ public class VirtualSshFile implements SshFile {
     }
 
     /**
-     * Create input stream for reading.
+     * Create input stream for reading. Virtual SSH files will always throw an exception if this is called.
      */
     @Override
     public InputStream createInputStream(final long offset) throws IOException {
         throw new IOException();
     }
 
+    /**
+     * Handle post-handle-close functionality.
+     */
     @Override
     public void handleClose() {
-        ResourceUtils.flushQuietly(pipedOutputStream);
-        ResourceUtils.closeQuietly(pipedOutputStream);
+        //flush and close the output stream.
+        ResourceUtils.flushQuietly(outputStream);
+        ResourceUtils.closeQuietly(outputStream);
+        //Close the input stream
+        ResourceUtils.closeQuietly(inputStream);
+        //countdown the file open latch to notify that the file handle has been closed.
+        fileOpenLatch.countDown();
     }
 
     /**
-     * Normalize separate character. Separate character should be '/' always.
-     */
-    public static String normalizeSeparateChar(final String pathName) {
-        String normalizedPathName = pathName.replace(File.separatorChar, '/');
-        normalizedPathName = normalizedPathName.replace('\\', '/');
-        return normalizedPathName;
-    }
-
-    /**
-     * Get the physical canonical file name. It works like
-     * File.getCanonicalPath().
+     * two virtual ssh files are considered equal if the absolute paths match.
      *
-     * @param rootDir
-     *            The root directory.
-     * @param currDir
-     *            The current directory. It will always be with respect to the
-     *            root directory.
-     * @param fileName
-     *            The input file name.
-     * @return The return string will always begin with the root directory. It
-     *         will never be null.
+     * @param obj The object to compare this virtual ssh file to.
+     * @return True if the virtual ssh files are equal
      */
-    public static String getPhysicalName(final String rootDir, final String currDir, final String fileName) {
-        return getPhysicalName(rootDir, currDir, fileName, false);
-    }
-
-    public static String getPhysicalName(final String rootDir,
-            final String currDir, final String fileName,
-            final boolean caseInsensitive) {
-
-        // get the starting directory
-        String normalizedRootDir = normalizeSeparateChar(rootDir);
-        if (normalizedRootDir.charAt(normalizedRootDir.length() - 1) != '/') {
-            normalizedRootDir += '/';
-        }
-
-        String normalizedFileName = normalizeSeparateChar(fileName);
-        String resArg;
-        String normalizedCurrDir = currDir;
-        if (normalizedFileName.charAt(0) != '/') {
-            if (normalizedCurrDir == null) {
-                normalizedCurrDir = "/";
-            }
-            if (normalizedCurrDir.length() == 0) {
-                normalizedCurrDir = "/";
-            }
-
-            normalizedCurrDir = normalizeSeparateChar(normalizedCurrDir);
-
-            if (normalizedCurrDir.charAt(0) != '/') {
-                normalizedCurrDir = '/' + normalizedCurrDir;
-            }
-            if (normalizedCurrDir.charAt(normalizedCurrDir.length() - 1) != '/') {
-                normalizedCurrDir += '/';
-            }
-
-            resArg = normalizedRootDir + normalizedCurrDir.substring(1);
-        } else {
-            resArg = normalizedRootDir;
-        }
-
-        // strip last '/'
-        if (resArg.charAt(resArg.length() - 1) == '/') {
-            resArg = resArg.substring(0, resArg.length() - 1);
-        }
-
-        // replace ., ~ and ..
-        // in this loop resArg will never end with '/'
-        StringTokenizer st = new StringTokenizer(normalizedFileName, "/");
-        while (st.hasMoreTokens()) {
-            String tok = st.nextToken();
-
-            // . => current directory
-            if (tok.equals(".")) {
-                continue;
-            }
-
-            // .. => parent directory (if not root)
-            if (tok.equals("..")) {
-                if (resArg.startsWith(normalizedRootDir)) {
-                    int slashIndex = resArg.lastIndexOf('/');
-                    if (slashIndex != -1) {
-                        resArg = resArg.substring(0, slashIndex);
-                    }
-                }
-                continue;
-            }
-
-            // ~ => home directory (in this case the root directory)
-            if (tok.equals("~")) {
-                resArg = normalizedRootDir.substring(0, normalizedRootDir
-                        .length() - 1);
-                continue;
-            }
-
-            if (caseInsensitive) {
-                File[] matches = new File(resArg)
-                        .listFiles(new NameEqualsFileFilter(tok, true));
-
-                if (matches != null && matches.length > 0) {
-                    tok = matches[0].getName();
-                }
-            }
-
-            resArg = resArg + '/' + tok;
-        }
-
-        // add last slash if necessary
-        if ((resArg.length()) + 1 == normalizedRootDir.length()) {
-            resArg += '/';
-        }
-
-        // final check
-        if (!resArg.regionMatches(0, normalizedRootDir, 0, normalizedRootDir
-                .length())) {
-            resArg = normalizedRootDir;
-        }
-
-        return resArg;
-    }
-
     @Override
     public boolean equals(Object obj) {
         if (obj != null && obj instanceof VirtualSshFile) {
@@ -358,34 +395,139 @@ public class VirtualSshFile implements SshFile {
         return false;
     }
 
-    public PipedOutputStream getPipedOutputStream() {
-        return pipedOutputStream;
-    }
-    public void setPipedOutputStream(PipedOutputStream pipedOutputStream) {
-        this.pipedOutputStream = pipedOutputStream;
-    }
-
-    public Future<AssertionStatus> getMessageProcessStatus() {
-        return messageProcessStatus;
-    }
-    public void setMessageProcessStatus(Future<AssertionStatus> messageProcessStatus) {
-        this.messageProcessStatus = messageProcessStatus;
+    /**
+     * Gets the output stream for this file. Data written to the output stream will get piped to the policy processing this file.
+     *
+     * @return The virtual file output stream
+     */
+    public OutputStream getOutputStream() {
+        return outputStream;
     }
 
+    /**
+     * Sets the output steam of this virtual ssh file. This stream must be piped to the policy processing this file. This throws an @IllegalStateException if the output stream has already been set.
+     *
+     * @param outputStream The virtual file output stream.
+     */
+    public void setOutputStream(OutputStream outputStream) {
+        if (this.outputStream != null) {
+            throw new IllegalStateException("The output stream for this virtual ssh file has already been set.");
+        }
+        this.outputStream = outputStream;
+    }
+
+    /**
+     * Gets the input stream for this file. Data read from the input stream will come from the policy processing this request.
+     *
+     * @return The virtual file input stream
+     */
+    public InputStream getInputStream() throws IOException {
+        if(inputStream == null){
+            inputStream = inputStreamGetter.call();
+        }
+        return inputStream;
+    }
+
+    /**
+     * Sets the input steam of this virtual ssh file. This stream must be piped to the policy processing this file. This throws an @IllegalStateException if the input stream has already been set.
+     *
+     * @param inputStream The virtual file input stream.
+     */
+    public void setInputStreamGetter(Functions.NullaryThrows<InputStream, IOException> inputStream) {
+        if (this.inputStreamGetter != null) {
+            throw new IllegalStateException("The input stream for this virtual ssh file has already been set.");
+        }
+        this.inputStreamGetter = inputStream;
+    }
+
+    /**
+     * Returns the file permissions for this file.
+     *
+     * @return The file permissions
+     */
     public int getPermission() {
         return permission;
     }
 
+    /**
+     * Sets the file permissions.
+     *
+     * @param permission The file permissions
+     */
     public void setPermission(final int permission) {
         this.permission = permission;
     }
 
+    /**
+     * Returns the last access time for the file
+     *
+     * @return The last access time.
+     */
     public long getAccessTime() {
         return accessTime;
     }
 
+    /**
+     * Sets the last access time for the file.
+     *
+     * @param accessTime The last access time
+     */
     public void setAccessTime(final long accessTime) {
         this.accessTime = accessTime;
     }
 
+    /**
+     * Blocks this thread till the file handle has been closed.
+     *
+     * @throws InterruptedException
+     */
+    public void waitForHandleClosed() throws InterruptedException {
+        fileOpenLatch.await();
+    }
+
+    /**
+     * Gets the physical name of the file. This delegates to NativeSshFile to do the processing.
+     *
+     * @param rootDir         The root directory.
+     * @param currDir         The current directory. It will always be with respect to the root directory.
+     * @param fileName        The input file name.
+     * @param caseInsensitive Is the file case insensitive
+     * @return The return string will always begin with the root directory. It will never be null.
+     */
+    public static String getPhysicalName(final String rootDir, final String currDir, final String fileName, final boolean caseInsensitive) {
+        return NativeSshFile.getPhysicalName(rootDir, currDir, fileName, caseInsensitive);
+    }
+
+    /**
+     * Gets the message processing status object.
+     *
+     * @return The message processing status.
+     */
+    public MessageProcessingSshUtil.MessageProcessingStatus getMessageProcessingStatus() {
+        return messageProcessingStatus;
+    }
+
+    public void setExists(boolean exists) {
+        this.exists = exists;
+    }
+
+    public long getNextExpectedOffset() {
+        return nextExpectedOffset;
+    }
+
+    public void setNextExpectedOffset(long nextExpectedOffset) {
+        this.nextExpectedOffset = nextExpectedOffset;
+    }
+
+    /**
+     * Resets the file, leaving only its name and basic stats.
+     */
+    public void reset() {
+        outputStream = null;
+        inputStream = null;
+        messageProcessingStatus = new MessageProcessingSshUtil.MessageProcessingStatus();
+        fileOpenLatch = new CountDownLatch(1);
+        nextExpectedOffset = 0;
+        inputStreamGetter = null;
+    }
 }

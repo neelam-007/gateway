@@ -112,6 +112,10 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     static final String LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS = "l7.ssh.messageProcessorThreadWaitSeconds";
     static final String LISTEN_PROP_ACCEPT_BACLKOG = "l7.ssh.acceptBacklog";
     static final String LISTEN_PROP_MAX_CHANNELS = "l7.ssh.maxChannels";
+    static final String LISTEN_PROP_SFTP_MAX_READ_BUFFER_SIZE = "l7.ssh.sftp.maxReadBufferSize";
+    static final String LISTEN_PROP_SFTP_MAX_WRITE_BUFFER_SIZE = "l7.ssh.sftp.maxWriteBufferSize";
+    static final String LISTEN_PROP_SFTP_MAX_WRITE_TIME_MILLIS = "l7.ssh.sftp.maxWriteTime";
+    static final String LISTEN_PROP_SFTP_MAX_READ_TIME_MILLIS = "l7.ssh.sftp.maxReadTime";
 
     // Session properties
     static final AttributeKey<Option<String>> MINA_SESSION_ATTR_CRED_USERNAME = new AttributeKey<Option<String>>();

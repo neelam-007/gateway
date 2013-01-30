@@ -35,11 +35,13 @@ public class VirtualFileSystemView implements FileSystemView {
         // strip the root directory
         String physicalName = VirtualSshFile.getPhysicalName("/", currDir, file, caseInsensitive);
         String userFileName = physicalName.substring("/".length() - 1);
-        return new VirtualSshFile(userFileName, false);
+        return new VirtualSshFile(userFileName, file.endsWith("/") ? false : true);
     }
 
     @Override
     public SshFile getFile(SshFile baseDir, String file) {
-        return new VirtualSshFile(baseDir.getAbsolutePath() + file, false);
+        String physicalName = VirtualSshFile.getPhysicalName("/", baseDir.getAbsolutePath(), file, caseInsensitive);
+        String userFileName = physicalName.substring("/".length() - 1);
+        return new VirtualSshFile(userFileName, true);
     }
 }

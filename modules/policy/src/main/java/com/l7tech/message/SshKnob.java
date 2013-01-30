@@ -5,7 +5,7 @@ import java.net.PasswordAuthentication;
 /**
  * Information about a message over SSH.
  */
-public interface SshKnob extends TcpKnob, UriKnob {
+public interface SshKnob extends TcpKnob, UriKnob, CommandKnob {
 
     /**
      * This class is a data holder that is used by SshKnob.

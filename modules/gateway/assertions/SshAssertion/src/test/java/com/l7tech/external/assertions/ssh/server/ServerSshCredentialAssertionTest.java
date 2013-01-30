@@ -108,6 +108,16 @@ public class ServerSshCredentialAssertionTest {
                     FileMetadata metadata = new FileMetadata(System.currentTimeMillis(), System.currentTimeMillis(), 644);
                     return metadata;
                 }
+
+                @Override
+                public CommandType getCommandType() {
+                    return CommandType.PUT;
+                }
+
+                @Override
+                public String getParameter(String name) {
+                    return null;
+                }
             });
         }
 

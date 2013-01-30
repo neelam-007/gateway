@@ -33,6 +33,7 @@ import org.xml.sax.SAXException;
 import javax.inject.Inject;
 import java.io.*;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -261,7 +262,7 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
                                                                      file.getModificationTime() * 1000,
                                                                      file.getPermissions().intValue());
             request.attachKnob(MessageProcessingSshUtil.buildSshKnob( null, 0, null,
-                    0, processingFileName, directory, null, null, metadata ), SshKnob.class, UriKnob.class); // Avoid advertising TcpKnob since we don't have actual transport-level data for it
+                    0, processingFileName, directory, CommandKnob.CommandType.PUT, null, null, metadata, Collections.<String, String>emptyMap()), SshKnob.class, UriKnob.class); // Avoid advertising TcpKnob since we don't have actual transport-level data for it
 
             final Long hardwiredServiceOid = connector.getHardwiredServiceOid();
             if ( hardwiredServiceOid != null ) {

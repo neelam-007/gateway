@@ -16,7 +16,21 @@ public class SshCredentialAssertion extends Assertion {
     protected static final Logger logger = Logger.getLogger(SshCredentialAssertion.class.getName());
 
     public static final String LISTEN_PROP_ENABLE_SCP = "l7.ssh.enableScp";
+    public static final String LISTEN_PROP_ENABLE_SCP_PUT = "l7.ssh.enableScp.put";
+    public static final String LISTEN_PROP_ENABLE_SCP_GET = "l7.ssh.enableScp.get";
     public static final String LISTEN_PROP_ENABLE_SFTP = "l7.ssh.enableSftp";
+    public static final String LISTEN_PROP_ENABLE_SFTP_PUT = "l7.ssh.enableSftp.put";
+    public static final String LISTEN_PROP_ENABLE_SFTP_GET = "l7.ssh.enableSftp.get";
+    public static final String LISTEN_PROP_ENABLE_SFTP_LIST = "l7.ssh.enableSftp.list";
+    public static final String LISTEN_PROP_ENABLE_SFTP_STAT = "l7.ssh.enableSftp.stat";
+    public static final String LISTEN_PROP_ENABLE_SFTP_DELETE = "l7.ssh.enableSftp.delete";
+    public static final String LISTEN_PROP_ENABLE_SFTP_MOVE = "l7.ssh.enableSftp.move";
+    public static final String LISTEN_PROP_ENABLE_SFTP_MKDIR = "l7.ssh.enableSftp.mkdir";
+    public static final String LISTEN_PROP_ENABLE_SFTP_RMDIR = "l7.ssh.enableSftp.rmdir";
+    public static final String LISTEN_PROP_ENABLE_SFTP_PARTIAL_UPLOADS = "l7.ssh.enableSftpPartialUpload";
+    public static final String LISTEN_PROP_ENABLE_SFTP_PARTIAL_DOWNLOADS = "l7.ssh.enableSftpPartialDownload";
+    public static final String LISTEN_PROP_SIZE_CONTEXT_VARIABLE_NAME = "l7.ssh.enableSizeContextVariableName";
+    public static final String LISTEN_PROP_ENABLE_SCP_RETRIEVE_FILE_SIZE_FROM_VARIABLE = "l7.ssh.enableSizeFromContextVariable";
     public static final String LISTEN_PROP_HOST_PRIVATE_KEY = "l7.ssh.hostPrivateKey";
     public static final String LISTEN_PROP_IDLE_TIMEOUT_MINUTES = "l7.ssh.idleTimeoutMinutes";
     public static final String LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER = "l7.ssh.maxConcurrentSessionsPerUser";
