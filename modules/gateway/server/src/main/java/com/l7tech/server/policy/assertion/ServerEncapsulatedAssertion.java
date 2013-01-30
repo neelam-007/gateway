@@ -74,25 +74,32 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
 
     private void initListener() {
         final Either<String, EncapsulatedAssertionConfig> configOrError = configOrErrorRef.get();
-        if (configOrError.isRight()) {
-            final long ourConfigId = configOrError.right().getOid();
-            updateListener = new ApplicationListener() {
-                @Override
-                public void onApplicationEvent(ApplicationEvent event) {
-                    if (event instanceof EntityInvalidationEvent) {
-                        EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
-                        for (long id : eie.getEntityIds()) {
-                            if (id == ourConfigId) {
-                                logger.log(Level.FINE, "Reloading encapsulated assertion config for OID " + ourConfigId);
-                                updateConfig(loadConfig());
-                                break;
+        updateListener = new ApplicationListener() {
+            @Override
+            public void onApplicationEvent(ApplicationEvent event) {
+                if (event instanceof EntityInvalidationEvent) {
+                    final EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
+                    if (eie.getEntityClass().equals(EncapsulatedAssertionConfig.class)) {
+                        if (configOrError.isLeft()) {
+                            // error may have been fixed through an import, so try to reload the config
+                            logger.log(Level.FINE, "Attempting to load encapsulated assertion config");
+                            updateConfig(loadConfig());
+                        } else {
+                            // check that relevant config has changed before reloading
+                            final long ourConfigId = configOrError.right().getOid();
+                            for (long id : eie.getEntityIds()) {
+                                if (id == ourConfigId) {
+                                    logger.log(Level.FINE, "Reloading encapsulated assertion config for OID " + ourConfigId);
+                                    updateConfig(loadConfig());
+                                    break;
+                                }
                             }
                         }
                     }
                 }
-            };
-            applicationEventProxy.addApplicationListener(updateListener);
-        }
+            }
+        };
+        applicationEventProxy.addApplicationListener(updateListener);
     }
 
     private void updateConfig(Either<String, EncapsulatedAssertionConfig> newVal) {

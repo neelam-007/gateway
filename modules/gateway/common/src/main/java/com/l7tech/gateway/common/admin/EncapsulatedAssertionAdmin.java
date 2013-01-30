@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
@@ -68,6 +69,18 @@ public interface EncapsulatedAssertionAdmin {
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITIES)
     Collection<EncapsulatedAssertionConfig> findByPolicyOid(long policyOid) throws FindException;
+
+    /**
+     * Find an EncapsulatedAssertionConfig by name.
+     *
+     * @param name the name of the EncapsulatedAssertionConfig to find.
+     * @return the EncapsulatedAssertionConfig with the given name or null if none found.
+     * @throws FindException if an error occurs accessing the database.
+     */
+    @Nullable
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITY)
+    EncapsulatedAssertionConfig findByUniqueName(@NotNull final String name) throws FindException;
 
     /**
      * Saves a new or existing encapsulated assertion templates.

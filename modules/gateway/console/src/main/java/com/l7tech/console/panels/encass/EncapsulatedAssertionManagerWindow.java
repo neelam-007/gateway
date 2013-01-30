@@ -11,6 +11,7 @@ import com.l7tech.console.policy.exporter.EncapsulatedAssertionConfigExportUtil;
 import com.l7tech.console.policy.exporter.PolicyExportUtils;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.PaletteFolderRegistry;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
@@ -182,61 +183,132 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                 try {
                     doc = XmlUtil.parse(fis);
                 } catch (final SAXException e) {
+                    // fail early if file isn't valid xml
                     showError("File contents are invalid", null);
                     return false;
                 }
 
                 // read config
                 final Element encassElement = XmlUtil.findFirstChildElementByName(doc.getDocumentElement(), "http://ns.l7tech.com/secureSpan/1.0/encass", "EncapsulatedAssertion");
-                if (encassElement == null)
+                if (encassElement == null) {
                     throw new IOException("Export document does not contain an EncapsulatedAssertionConfig element");
+                }
                 final EncapsulatedAssertionConfig config = EncapsulatedAssertionConfigExportUtil.getInstance().importFromNode(encassElement);
                 config.setOid(EncapsulatedAssertionConfig.DEFAULT_OID);
 
-                // save policy
-                final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, config.getPolicy().getName(), null, false);
+                // resolve conflicts
+                Policy conflictingPolicy = null;
                 try {
-                    final WspReader wspReader = TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
-                    final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
-                    final PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, doc, PolicyExportUtils.getExternalReferenceFactories(), wspReader, finder, finder, finder, finder );
-                    final Assertion newRoot = (result != null) ? result.assertion : null;
-                    if (newRoot == null) {
-                        throw new IOException("Export document contains an invalid or empty policy fragment");
-                    }
-                    final String newPolicyXml = WspWriter.getPolicyXml(newRoot);
-                    policy.setXml(newPolicyXml);
-                    PolicyExportUtils.addPoliciesToPolicyReferenceAssertions(policy.getAssertion(), result.policyFragments);
-                    final PolicyAdmin.SavePolicyWithFragmentsResult savePolicyResult = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true, result.policyFragments);
-                    policy.setOid(savePolicyResult.policyCheckpointState.getPolicyOid());
-                    policy.setGuid(savePolicyResult.policyCheckpointState.getPolicyGuid());
-                } catch (final DuplicateObjectException e) {
-                    showError("A policy with name " + policy.getName() + " already exists.", null);
-                    return false;
-                } catch (final Exception e) {
-                    showError("Error saving backing policy", e);
+                    conflictingPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByUniqueName(config.getPolicy().getName());
+                } catch (final FindException e) {
+                    showError("Error importing Encapsulated Assertion", null);
                     return false;
                 }
 
-                // save config
+                EncapsulatedAssertionConfig conflictingConfig = null;
                 try {
-                    config.setPolicy(policy);
-                    long oid = Registry.getDefault().getEncapsulatedAssertionAdmin().saveEncapsulatedAssertionConfig(config);
-                    loadEncapsulatedAssertionConfigs(true);
-                    selectConfigByOid(oid);
-                } catch (final DuplicateObjectException e) {
-                    showError("An Encapsulated Assertion with name " + config.getName() + " already exists.", null);
-                    return false;
-                } catch (final DataIntegrityViolationException e){
-                    showError("A duplicate Encapsulated Assertion was detected.", null);
-                    return false;
-                } catch (final Exception e) {
-                    showError("Error saving Encapsulated Assertion", e);
-                    return false;
+                    // check guid
+                    conflictingConfig = Registry.getDefault().getEncapsulatedAssertionAdmin().findByGuid(config.getGuid());
+                } catch (final FindException e) {
+                    // no guid conflict
+                    // check config and policy names
+                    try {
+                        conflictingConfig = Registry.getDefault().getEncapsulatedAssertionAdmin().findByUniqueName(config.getName());
+                    } catch (final FindException fe) {
+                        showError("Error importing Encapsulated Assertion", null);
+                        return false;
+                    }
+                }
+
+                if (conflictingConfig != null || conflictingPolicy != null) {
+                    final EncapsulatedAssertionConfigConflictDialog conflictDialog = new EncapsulatedAssertionConfigConflictDialog(EncapsulatedAssertionManagerWindow.this, config, conflictingConfig, conflictingPolicy);
+                    conflictDialog.pack();
+                    Utilities.centerOnParentWindow(conflictDialog);
+                    DialogDisplayer.display(conflictDialog, new ConflictCallback(config, conflictingConfig, conflictDialog, doc));
+                } else {
+                    savePolicyAndConfig(doc, config);
                 }
 
                 return true;
             }
         });
+    }
+
+    /**
+     * Callback which handles the conflict resolution input from the user.
+     */
+    private class ConflictCallback implements Runnable {
+        /**
+         * EncapsulatedAssertionConfig that is being imported.
+         */
+        private final EncapsulatedAssertionConfig toImport;
+        /**
+         * EncapsulatedAssertionConfig which conflicts with the imported one. Can be null.
+         */
+        private final EncapsulatedAssertionConfig conflictingConfig;
+        /**
+         * EncapsulatedAssertionConfigConflictDialog which contains the results of the user input.
+         */
+        private final EncapsulatedAssertionConfigConflictDialog conflictDialog;
+        /**
+         * Backing policy xml document for the imported EncapsulatedAssertionConfig.
+         */
+        private final Document policyDocument;
+
+        private ConflictCallback(@NotNull final EncapsulatedAssertionConfig toImport, @Nullable final EncapsulatedAssertionConfig conflictingConfig,
+                                 @NotNull final EncapsulatedAssertionConfigConflictDialog conflictDialog, @NotNull final Document policyDocument) {
+            this.toImport = toImport;
+            this.conflictingConfig = conflictingConfig;
+            this.conflictDialog = conflictDialog;
+            this.policyDocument = policyDocument;
+        }
+
+        @Override
+        public void run() {
+            if (conflictDialog.isConfirmed()) {
+                if (conflictingConfig != null && conflictingConfig.getGuid().equals(toImport.getGuid()) && conflictDialog.isOverwrite()) {
+                    // update
+                    toImport.setOid(conflictingConfig.getOid());
+                    toImport.setVersion(conflictingConfig.getVersion());
+                } else if (conflictingConfig != null && conflictingConfig.getGuid().equals(toImport.getGuid()) && !conflictDialog.isOverwrite()) {
+                    // create new
+                    toImport.setGuid(null);
+                }
+                toImport.setName(conflictDialog.getEncassName());
+                toImport.getPolicy().setName(conflictDialog.getPolicyName());
+                savePolicyAndConfig(policyDocument, toImport);
+            }
+        }
+    }
+
+    private void savePolicyAndConfig(@NotNull final Document doc, @NotNull final EncapsulatedAssertionConfig config) {
+        try {
+            // create policy
+            final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, config.getPolicy().getName(), null, false);
+            final WspReader wspReader = TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
+            final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
+            final PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, doc, PolicyExportUtils.getExternalReferenceFactories(), wspReader, finder, finder, finder, finder );
+            final Assertion newRoot = (result != null) ? result.assertion : null;
+            if (newRoot == null) {
+                throw new IOException("Export document contains an invalid or empty policy fragment");
+            }
+            final String newPolicyXml = WspWriter.getPolicyXml(newRoot);
+            policy.setXml(newPolicyXml);
+            PolicyExportUtils.addPoliciesToPolicyReferenceAssertions(policy.getAssertion(), result.policyFragments);
+            final PolicyAdmin.SavePolicyWithFragmentsResult savePolicyResult = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true, result.policyFragments);
+            policy.setOid(savePolicyResult.policyCheckpointState.getPolicyOid());
+            policy.setGuid(savePolicyResult.policyCheckpointState.getPolicyGuid());
+            final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+            tree.refresh();
+
+            // update/create config
+            config.setPolicy(policy);
+            long oid = Registry.getDefault().getEncapsulatedAssertionAdmin().saveEncapsulatedAssertionConfig(config);
+            loadEncapsulatedAssertionConfigs(true);
+            selectConfigByOid(oid);
+        } catch (final Exception e) {
+            showError("Error saving Encapsulated Assertion", e);
+        }
     }
 
     private void doExport(final EncapsulatedAssertionConfig config) {
@@ -314,17 +386,12 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
 
     private void enableOrDisable() {
         boolean haveConfig = getSelectedConfig() != null;
-        removeButton.setEnabled(haveConfig);
+        removeButton.setEnabled(flags.canDeleteSome() && haveConfig);
         propertiesButton.setEnabled(haveConfig);
-        cloneButton.setEnabled(haveConfig);
-
-        if (!flags.canCreateSome()) {
-            createButton.setEnabled(false);
-        }
-
-        if (!flags.canDeleteSome()) {
-            removeButton.setEnabled(false);
-        }
+        cloneButton.setEnabled(flags.canCreateSome() && haveConfig);
+        exportButton.setEnabled(haveConfig);
+        importButton.setEnabled(flags.canCreateSome());
+        createButton.setEnabled(flags.canCreateSome());
     }
 
     private Functions.Unary<Icon, EncapsulatedAssertionConfig> iconFinder() {

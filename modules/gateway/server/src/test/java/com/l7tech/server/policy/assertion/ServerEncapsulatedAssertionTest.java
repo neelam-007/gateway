@@ -141,6 +141,25 @@ public class ServerEncapsulatedAssertionTest {
     }
 
     @Test
+    public void entityInvalidationEventReloadsConfigWithError() throws Exception {
+        // config it references does not yet exist
+        assertion.setEncapsulatedAssertionConfigGuid("doesNotExistYet");
+        serverAssertion = new ServerEncapsulatedAssertion(assertion);
+        serverAssertion.setEncapsulatedAssertionConfigManager(configManager);
+        serverAssertion.setApplicationEventProxy(applicationEventProxy);
+        serverAssertion.afterPropertiesSet();
+        assertTrue(serverAssertion.getConfigOrErrorRef().get().isLeft());
+
+        // simulate import of config
+        when(configManager.findByGuid("doesNotExistYet")).thenReturn(config);
+        applicationEventProxy.publishEvent(new EntityInvalidationEvent("source", EncapsulatedAssertionConfig.class,
+            new long[]{CONFIG_ID}, new char[]{EntityInvalidationEvent.UPDATE}));
+
+        // config should now be loaded
+        assertEquals(ENCAPSULATED_ASSERTION_NAME, serverAssertion.getConfigOrErrorRef().get().right().getName());
+    }
+
+    @Test
     public void applicationEventNotEntityInvalidationEvent() throws Exception {
         final EncapsulatedAssertionConfig beforeUpdate = serverAssertion.getConfigOrErrorRef().get().right();
         assertEquals(ENCAPSULATED_ASSERTION_NAME, beforeUpdate.getName());

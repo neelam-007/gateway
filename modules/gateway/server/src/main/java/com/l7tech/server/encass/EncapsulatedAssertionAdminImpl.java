@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -58,6 +59,12 @@ public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmi
             ret = Collections.emptySet();
         }
         return ret;
+    }
+
+    @Nullable
+    @Override
+    public EncapsulatedAssertionConfig findByUniqueName(@NotNull final String name) throws FindException {
+        return encapsulatedAssertionConfigManager.findByUniqueName(name);
     }
 
     @Override
