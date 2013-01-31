@@ -56,6 +56,16 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
     private final AtomicReference<String[]> varsUsed = new AtomicReference<String[]>(new String[0]);
     private ApplicationListener updateListener;
 
+    /**
+     * Flag for keeping track of whether this server assertion is executing on the current thread (detect circular dependency).
+     */
+    private final ThreadLocal<Boolean> runningOnThread = new ThreadLocal<Boolean>() {
+        @Override
+        protected Boolean initialValue() {
+            return false;
+        }
+    };
+
     public ServerEncapsulatedAssertion(final @NotNull EncapsulatedAssertion assertion) {
         super(assertion);
         updateConfig(loadInitialConfig(assertion));
@@ -157,24 +167,34 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
             getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Invalid Encapsulated Assertion Config: " + configOrError.left());
             return AssertionStatus.SERVER_ERROR;
         }
+        final EncapsulatedAssertionConfig config = configOrError.right();
 
-        EncapsulatedAssertionConfig config = configOrError.right();
-        String[] varsUsed = this.varsUsed.get();
-        Map<String, Object> variableMap = context.getVariableMap(varsUsed, getAudit());
-        final Policy policy = config.getPolicy();
+        if (runningOnThread.get()) {
+            final String msg = "Encapsulated assertion " + config.getName() + " is calling itself (directly or indirectly).";
+            getAudit().logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, msg);
+            throw new PolicyAssertionException(assertion, msg);
+        }
 
-        PolicyEnforcementContext childContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(context);
-        ShadowsParentVariables spv = (ShadowsParentVariables) childContext;
+        runningOnThread.set(true);
+        try {
+            String[] varsUsed = this.varsUsed.get();
+            Map<String, Object> variableMap = context.getVariableMap(varsUsed, getAudit());
+            final Policy policy = config.getPolicy();
 
-        populateInputVariables(config, variableMap, context, childContext, spv);
+            PolicyEnforcementContext childContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(context);
+            ShadowsParentVariables spv = (ShadowsParentVariables) childContext;
 
-        // TODO cache policy handle in instance field until policy change is detected, instead of looking up a new one for every request
-        AssertionStatus result = lookupAndExecutePolicy(policy.getOid(), childContext);
+            populateInputVariables(config, variableMap, context, childContext, spv);
 
-        populateOutputVariables(context, config, childContext);
+            // TODO cache policy handle in instance field until policy change is detected, instead of looking up a new one for every request
+            AssertionStatus result = lookupAndExecutePolicy(policy.getOid(), childContext);
 
-        return result;
+            populateOutputVariables(context, config, childContext);
 
+            return result;
+        } finally {
+            runningOnThread.set(false);
+        }
     }
 
     private AssertionStatus lookupAndExecutePolicy(final long policyOid, PolicyEnforcementContext childContext) throws PolicyAssertionException, IOException {
