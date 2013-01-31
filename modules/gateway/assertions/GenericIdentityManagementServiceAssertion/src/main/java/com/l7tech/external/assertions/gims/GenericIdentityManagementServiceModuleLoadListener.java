@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gims;
 
+import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.service.ServiceType;
 import com.l7tech.server.event.system.LicenseEvent;
@@ -34,13 +35,16 @@ public class GenericIdentityManagementServiceModuleLoadListener implements Appli
     private final ServiceTemplateManager serviceTemplateManager;
     private final ServiceTemplate serviceTemplate;
     private final ApplicationEventProxy applicationEventProxy;
+    private final LicenseManager licenseManager;
 
 
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
         if (_instance != null) {
             logger.log(Level.WARNING, "GenericIdentityManagementServiceModuleLoadListener is already initialized");
         } else {
-            _instance = new GenericIdentityManagementServiceModuleLoadListener(context);
+            GenericIdentityManagementServiceModuleLoadListener moduleLoadListener = new GenericIdentityManagementServiceModuleLoadListener(context);
+            moduleLoadListener.registerServiceTemplate();
+            _instance = moduleLoadListener;
         }
     }
 
@@ -64,27 +68,26 @@ public class GenericIdentityManagementServiceModuleLoadListener implements Appli
         serviceTemplateManager = getBean(applicationContext, "serviceTemplateManager", ServiceTemplateManager.class);
         applicationEventProxy = getBean(applicationContext, "applicationEventProxy", ApplicationEventProxy.class);
         applicationEventProxy.addApplicationListener(this);
+        licenseManager = getBean(applicationContext, "licenseManager", LicenseManager.class);
         serviceTemplate = createServiceTemplate(DEFAULT_POLICY_FILE, SERVICE_TEMPLATE_NAME, DEFAULT_URI_PREFIX);
     }
 
     @Override
     public void onApplicationEvent(final ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof LicenseEvent) {
-            registerServiceTemplates();
+            registerServiceTemplate();
         }
     }
 
-    private void unregisterServiceTemplates() {
+    private void registerServiceTemplate() {
         if ( serviceTemplate != null ) {
-            logger.info("Unregistering the '" + serviceTemplate.getName() + "' service with the gateway (Routing URI = " + serviceTemplate.getDefaultUriPrefix() + ")");
-            serviceTemplateManager.unregister(serviceTemplate);
-        }
-    }
-
-    private void registerServiceTemplates() {
-        if ( serviceTemplate != null ) {
-            logger.info("Registering the '" + serviceTemplate.getName() + "' service with the gateway (Routing URI = " + serviceTemplate.getDefaultUriPrefix() + ")");
-            serviceTemplateManager.register(serviceTemplate);
+            if(licenseManager.isFeatureEnabled(new GenericIdentityManagementServiceAssertion().getFeatureSetName())) {
+                logger.info("Registering the '" + serviceTemplate.getName() + "' service with the gateway (Routing URI = " + serviceTemplate.getDefaultUriPrefix() + ")");
+                serviceTemplateManager.register(serviceTemplate);
+            }
+            else {
+                logger.warning("The Generic Identity Management Service assertion module is not licensed. The Generic Identity Management Service will not be available.");
+            }
         }
     }
 
@@ -104,6 +107,12 @@ public class GenericIdentityManagementServiceModuleLoadListener implements Appli
         return template;
     }
 
+    /**
+     * Helper method that reads policy file from the resource
+     * @param policyResourceFile  - policy file name
+     * @return  String containing template policy
+     * @throws IOException
+     */
     private String readPolicyFile(final String policyResourceFile) throws IOException {
         final InputStream resourceAsStream = GenericIdentityManagementServiceModuleLoadListener.class.getClassLoader().getResourceAsStream(DEFAULT_POLICY_FILE);
         if (resourceAsStream == null) {
@@ -114,13 +123,27 @@ public class GenericIdentityManagementServiceModuleLoadListener implements Appli
         return new String(fileBytes);
     }
 
-    private void destroy() throws Exception{
+    /**
+     * Removes application listener and unregister service template
+     * @throws Exception
+     */
+    private void destroy() throws Exception {
         applicationEventProxy.removeApplicationListener(this);
-        unregisterServiceTemplates();
+        if ( serviceTemplate != null ) {
+            logger.info("Unregistering the '" + serviceTemplate.getName() + "' service with the gateway (Routing URI = " + serviceTemplate.getDefaultUriPrefix() + ")");
+            serviceTemplateManager.unregister(serviceTemplate);
+        }
     }
 
 
-
+    /**
+     * Helper template method to instantiate a proper bean object from a class
+     * @param beanFactory
+     * @param beanName
+     * @param beanClass
+     * @param <T> type returned
+     * @return
+     */
     private static <T> T getBean(final BeanFactory beanFactory, final String beanName, final Class<T> beanClass) {
         final T got = beanFactory.getBean(beanName, beanClass);
         if (got != null && beanClass.isAssignableFrom(got.getClass())) {

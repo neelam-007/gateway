@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gims;
 
+import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.service.ServiceTemplateManager;
@@ -32,6 +33,8 @@ public class GenericIdentityManagementServiceModuleLoadListenerTest {
     ServiceTemplateManager mockServiceTemplateManager;
     @Mock
     ApplicationEventProxy mockEventProxy;
+    @Mock
+    LicenseManager mockLicenseManager;
 
     GenericIdentityManagementServiceModuleLoadListener fixture;
 
@@ -39,6 +42,7 @@ public class GenericIdentityManagementServiceModuleLoadListenerTest {
     public void setUp() throws Exception {
         when(mockContext.getBean("serviceTemplateManager", ServiceTemplateManager.class)).thenReturn(mockServiceTemplateManager);
         when(mockContext.getBean("applicationEventProxy", ApplicationEventProxy.class)).thenReturn(mockEventProxy);
+        when(mockContext.getBean("licenseManager", LicenseManager.class)).thenReturn(mockLicenseManager);
 
         fixture = new GenericIdentityManagementServiceModuleLoadListener(mockContext);
     }
@@ -48,21 +52,30 @@ public class GenericIdentityManagementServiceModuleLoadListenerTest {
 
     }
 
-
     @Test
-    public void testOnModuleUnloaded() throws Exception {
-
+    public void testOnModuleLoadedUnloaded() throws Exception {
+        when(mockLicenseManager.isFeatureEnabled(new GenericIdentityManagementServiceAssertion().getFeatureSetName())).thenReturn(true);
         GenericIdentityManagementServiceModuleLoadListener.onModuleLoaded(mockContext);
+        verify(mockServiceTemplateManager, times(1)).register(argThat(new ServiceTemplateArgMatcher(GenericIdentityManagementServiceModuleLoadListener.SERVICE_TEMPLATE_NAME, GenericIdentityManagementServiceModuleLoadListener.DEFAULT_URI_PREFIX)));
         GenericIdentityManagementServiceModuleLoadListener.onModuleUnloaded();
-
         verify(mockServiceTemplateManager, times(1)).unregister(argThat(new ServiceTemplateArgMatcher(GenericIdentityManagementServiceModuleLoadListener.SERVICE_TEMPLATE_NAME, GenericIdentityManagementServiceModuleLoadListener.DEFAULT_URI_PREFIX)));
     }
 
     @Test
     public void testOnApplicationEvent() throws Exception {
+        when(mockLicenseManager.isFeatureEnabled(new GenericIdentityManagementServiceAssertion().getFeatureSetName())).thenReturn(true);
         ApplicationEvent event = new LicenseEvent("", Level.INFO, "", "");
         fixture.onApplicationEvent(event);
-        verify(mockServiceTemplateManager).register(argThat(new ServiceTemplateArgMatcher(GenericIdentityManagementServiceModuleLoadListener.SERVICE_TEMPLATE_NAME, GenericIdentityManagementServiceModuleLoadListener.DEFAULT_URI_PREFIX)));
+        verify(mockServiceTemplateManager, times(1)).register(argThat(new ServiceTemplateArgMatcher(GenericIdentityManagementServiceModuleLoadListener.SERVICE_TEMPLATE_NAME, GenericIdentityManagementServiceModuleLoadListener.DEFAULT_URI_PREFIX)));
+
+    }
+
+    @Test
+    public void shouldFailOnLicenseEventWhenFeatureNotEnabled() throws Exception {
+        when(mockLicenseManager.isFeatureEnabled(new GenericIdentityManagementServiceAssertion().getFeatureSetName())).thenReturn(false);
+        ApplicationEvent event = new LicenseEvent("", Level.INFO, "", "");
+        fixture.onApplicationEvent(event);
+        verify(mockServiceTemplateManager, never()).register(argThat(new ServiceTemplateArgMatcher(GenericIdentityManagementServiceModuleLoadListener.SERVICE_TEMPLATE_NAME, GenericIdentityManagementServiceModuleLoadListener.DEFAULT_URI_PREFIX)));
 
     }
 
