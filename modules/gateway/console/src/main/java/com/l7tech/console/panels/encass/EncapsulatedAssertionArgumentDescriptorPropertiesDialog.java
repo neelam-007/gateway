@@ -4,6 +4,7 @@ import com.l7tech.console.util.ContextVariableTextComponentValidationRule;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
+import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.DataType;
 import org.jetbrains.annotations.NotNull;
 
@@ -54,9 +55,13 @@ public class EncapsulatedAssertionArgumentDescriptorPropertiesDialog extends JDi
         inputValidator.addRule(new InputValidator.ComponentValidationRule(nameField) {
             @Override
             public String getValidationError() {
-                if (usedVariableNames.contains(nameField.getText()))
-                    return "The specified variable name is already used by a different argument.";
-                return null;
+                String error = null;
+                if (usedVariableNames.contains(nameField.getText())){
+                    error = "The specified variable name is already used by a different argument.";
+                } else if (BuiltinVariables.isSupported(nameField.getText())) {
+                    error = "The specified variable is already available and does not need to be listed as an input.";
+                }
+                return error;
             }
         });
 

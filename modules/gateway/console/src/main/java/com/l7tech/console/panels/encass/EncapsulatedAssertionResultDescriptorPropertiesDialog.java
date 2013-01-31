@@ -4,6 +4,7 @@ import com.l7tech.console.util.ContextVariableTextComponentValidationRule;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
+import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.DataType;
 import org.jetbrains.annotations.NotNull;
 
@@ -50,9 +51,13 @@ public class EncapsulatedAssertionResultDescriptorPropertiesDialog extends JDial
         inputValidator.addRule(new InputValidator.ComponentValidationRule(nameField) {
             @Override
             public String getValidationError() {
-                if (usedVariableNames.contains(nameField.getText()))
-                    return "The specified variable name is already used by a different result.";
-                return null;
+                String error = null;
+                if (usedVariableNames.contains(nameField.getText())) {
+                    error = "The specified variable name is already used by a different result.";
+                } else if (BuiltinVariables.isSupported(nameField.getText())) {
+                    error = "The specified variable is already available and does not need to be listed as an output.";
+                }
+                return error;
             }
         });
 

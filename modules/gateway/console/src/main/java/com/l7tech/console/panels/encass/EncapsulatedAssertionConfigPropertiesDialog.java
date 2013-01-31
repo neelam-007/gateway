@@ -17,6 +17,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -529,7 +530,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         final String[] vars = PolicyVariableUtils.getVariablesUsedByPolicyButNotPreviouslySet(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
         final Set<String> existingNames = findUsedNames(inputsTableModel, argumentNameExtractor, null);
         for (String var : vars) {
-            if (!existingNames.contains(var)) {
+            if (!existingNames.contains(var) && !BuiltinVariables.isSupported(var)) {
                 final EncapsulatedAssertionArgumentDescriptor arg = new EncapsulatedAssertionArgumentDescriptor();
                 arg.setEncapsulatedAssertionConfig(config);
                 arg.setArgumentType(DataType.STRING.getShortName());
@@ -555,7 +556,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         final Map<String, VariableMetadata> vars = PolicyVariableUtils.getVariablesSetByPolicyButNotSubsequentlyUsed(root, SsmPolicyVariableUtils.getSsmAssertionTranslator());
         final Set<String> existingNames = findUsedNames(outputsTableModel, resultNameExtractor, null);
         for (final VariableMetadata vm : vars.values()) {
-            if (!existingNames.contains(vm.getName())) {
+            if (!existingNames.contains(vm.getName()) && !BuiltinVariables.isSupported(vm.getName())) {
                 final EncapsulatedAssertionResultDescriptor ret = new EncapsulatedAssertionResultDescriptor();
                 ret.setEncapsulatedAssertionConfig(config);
                 ret.setResultName(vm.getName());
