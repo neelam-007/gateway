@@ -251,14 +251,14 @@ public final class Message implements Closeable {
      */
     public void initialize(ContentTypeHeader contentType, byte[] bodyBytes, long firstPartMaxBytes) throws IOException {
         try {
-            HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
-            HttpResponseKnob respKnob = getKnob(HttpResponseKnob.class);
+            List<PreservableFacet> preservables = getPreservableFacets();
             if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
             rootFacet = null;
             rootFacet = new MimeFacet(this, new ByteArrayStashManager(), contentType, new ByteArrayInputStream(bodyBytes),firstPartMaxBytes);
             invalidateCachedKnobs();
-            if (reqKnob != null) attachHttpRequestKnob(reqKnob);
-            if (respKnob != null) attachHttpResponseKnob(respKnob);
+            for (PreservableFacet preservable : preservables) {
+                rootFacet = preservable.reattach(this, rootFacet);
+            }
             initialized = true;
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen, it's a byte array input stream
@@ -709,6 +709,8 @@ public final class Message implements Closeable {
     
     /**
      * Attach the specified knob to this message if and only if it does not already provide that knob.
+     * <p/>
+     * If the attached knob implements {@link Closeable}, it will be closed when the message is closed or reinitialized.
      *
      * @param knobClass the class of the interface provided by this knob implementation.
      * @param knob the knob to attach.  It will be attached in a new facet.  Must not be null.
@@ -728,6 +730,8 @@ public final class Message implements Closeable {
     /**
      * Attach a knob to this message that responds to the specified knob classes, if and only if
      * the message does not already provide any of these knob classes.
+     * <p/>
+     * If the attached knob implements {@link Closeable}, it will be closed when the message is closed or reinitialized.
      *
      * @param knob the knob to attach.  It will be attached in a new facet.  Must not be null.
      * @param knobClasses the classes of the interface provided by this knob implementation.  Must be non-null and non-empty.
@@ -742,6 +746,13 @@ public final class Message implements Closeable {
      * Attach a knob to this message that responds to the specified knob classes, if and only if
      * the message does not already provide any of these knob classes.  The attached knob will optionally be preserved
      * when this message is next reinitialized.
+     * <p/>
+     * If the attached knob implements {@link Closeable}, it will be closed when the message is closed or reinitialized.
+     * <p/>
+     * <b>NOTE:</b> the knob will currently be closed if the message is reinitialized, even if it is preservable (and so gets reattached
+     * after closing).  A preservable knob must currently be able to continue functioning after it is closed.  Preservable knobs
+     * should not rely on being closed in order to detect when their owning message is reinitialized, because this behavior
+     * may be fixed in the future.
      *
      * @param knob the knob to attach.  It will be attached in a new facet.  Must not be null.
      * @param preserveKnobOnInitialize if true, the attached knob will be preserved next time this message is initialized.

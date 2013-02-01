@@ -393,6 +393,49 @@ public class KnobblyMessageTest {
         mess.initialize(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream("otherblah".getBytes(Charsets.UTF8)));
 
         preservableKnob = mess.getKnob(MyPreservableKnob.class);
+        assertNotNull(preservableKnob);
+        assertTrue(preservableKnob == origPreservableKnob);
+        assertEquals("payload of knob", preservableKnob.getPayload());
+
+        nonPreservableKnob = mess.getKnob(MyNonPreservableKnob.class);
+        assertNull(nonPreservableKnob);
+    }
+
+    @Test
+    public void testPreservableKnobsArePreservedAfterInit_ctype_bytes_int() throws Exception {
+
+        // Initiailize and attach facets
+
+        Message mess = new Message(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("blah blah".getBytes(Charsets.UTF8)));
+
+        // Attach preservable
+        final MyPreservableKnob origPreservableKnob = new MyPreservableKnob() {
+            @Override
+            public String getPayload() {
+                return "payload of knob";
+            }
+        };
+        mess.attachKnob(origPreservableKnob, true, MyPreservableKnob.class);
+
+        // Attach non-preservable
+        final MyNonPreservableKnob origNonPreservableKnob = new MyNonPreservableKnob() {};
+        mess.attachKnob(origNonPreservableKnob, MyNonPreservableKnob.class);
+
+        // Ensure expected knobs are present
+
+        MyPreservableKnob preservableKnob = mess.getKnob(MyPreservableKnob.class);
+        assertTrue(preservableKnob == origPreservableKnob);
+        assertEquals("payload of knob", preservableKnob.getPayload());
+
+        MyNonPreservableKnob nonPreservableKnob = mess.getKnob(MyNonPreservableKnob.class);
+        assertTrue(nonPreservableKnob == origNonPreservableKnob);
+
+        // Reinitialize message, ensure only preservable knob is preserved
+
+        mess.initialize(ContentTypeHeader.OCTET_STREAM_DEFAULT, "otherblah".getBytes(Charsets.UTF8), 0);
+
+        preservableKnob = mess.getKnob(MyPreservableKnob.class);
+        assertNotNull(preservableKnob);
         assertTrue(preservableKnob == origPreservableKnob);
         assertEquals("payload of knob", preservableKnob.getPayload());
 
