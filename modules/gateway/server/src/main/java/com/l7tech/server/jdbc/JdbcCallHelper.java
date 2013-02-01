@@ -80,6 +80,7 @@ public class JdbcCallHelper {
         List<String> queryParameters = getParametersFromQuery(query);
         List<String> queryParametersRaw = getParametersFromQuery(query, false);
         List<String> parametersNames = getInParametersName(procName);
+
         if ((parametersNames.size() != queryParameters.size())) {
             throw new BadSqlGrammarException("", query, new SQLException("Incorrect number of arguments for " + procName + "; expected " + parametersNames.size() + ", got " + queryParameters.size() + "; query generated was " + query));
         }
@@ -87,18 +88,31 @@ public class JdbcCallHelper {
             int paramIndex = 0;
             int varArgIndex = 0;//index of the parameter values from context
             for (final String paramName : parametersNames) {//get all IN parameter names of the procedure
+                boolean definedPossibleNull=false;
                 Object paramValue = null;
-                if (paramIndex < queryParameters.size())
+                if (paramIndex < queryParameters.size()){
                     paramValue = queryParameters.get(paramIndex++);
+                    definedPossibleNull = true;
+                }
                 if (paramValue != null && paramValue.toString().equals("?") && !queryParametersRaw.get(paramIndex-1).equals("'?'") && !queryParametersRaw.get(paramIndex-1).equals("\"?\"")) {
                     if (varArgIndex >= args.length || args.length==0) {
                         throw new BadSqlGrammarException("", query, new SQLException("invalid/bad query : @" + (varArgIndex + 1) + " - " + query));//Bug 12575 - user explicitly trying to use ? w/c is really an invalid query
                     }
                     paramValue = args[varArgIndex++];
-                } else if (paramValue != null && ((String) paramValue).startsWith("@"))//special case if we want to verbose define INOUT param in MS SQL, see known issue
-                    paramValue = "";
-                if (paramValue != null)
+                } else if (paramValue != null && ((String) paramValue).startsWith("@")){//special case if we want to verbose define INOUT param in MS SQL, see known issue
+                    paramValue = null;
+                } else if (paramValue != null && queryParametersRaw.get(paramIndex-1).equalsIgnoreCase("null") && queryParameters.get(paramIndex-1).equals(queryParametersRaw.get(paramIndex-1))){  // if null query parameter is not a string (no ' )
+                    paramValue = null;
+                    definedPossibleNull = true;
+                }
+
+
+                if (paramValue != null){
                     inParameters.addValue(paramName, paramValue);
+                }  else if(definedPossibleNull){
+                    inParameters.addValue(paramName, null, Types.NULL);
+                }
+
                 //there's an issue in MS SQL where OUT param behaves as an INOUT and therefore has the same columnType code
                 //therefore those parameters will be included in the result
                 //workaround in MS SQL is to make sure all IN parameters are declared first before any OUT parameter or introduce a @param or re-use a variable(dummy)
