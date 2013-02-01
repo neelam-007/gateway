@@ -34,10 +34,10 @@ public class BuiltinVariables {
     public static final String PREFIX_SERVICE = "service";
     public static final String PREFIX_POLICY = "policy";
     public static final String PREFIX_ASSERTION = "assertion";
-    public static final String PREFIX_LISTENPORTS = "listenports";
-    public static final String PREFIX_FIREWALL_RULES = "firewallrules";
-    public static final String PREFIX_JDBC_CONNECTION = "jdbcconnection";
-    public static final String PREFIX_JDBC_ALL_CONNECTION = "jdbcallconnections";
+    public static final String PREFIX_LISTENPORTS = "gateway.listenports";
+    public static final String PREFIX_FIREWALL_RULES = "gateway.firewallrules";
+    public static final String PREFIX_JDBC_CONNECTION = "gateway.jdbcconnection";
+    public static final String PREFIX_JDBC_ALL_CONNECTION = "gateway.jdbcallconnections";
 
     public static final String PREFIX_REQUEST_URL = "request.url";
     public static final String PREFIX_CLUSTER_PROPERTY = "gateway"; // value of a variable in the cluster property table

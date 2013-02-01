@@ -1072,7 +1072,7 @@ public class ServerVariablesTest {
         final SsgConnectorManager manager = new SsgConnectionManagerStub();
         ServerVariables.setSsgConnectorManager(manager);
         manager.save(connector);
-        expandAndCheck(context, "${listenports.1}", connector.toString());
+        expandAndCheck(context, "${gateway.listenports.1}", connector.toString());
 
         context.setVariable("port.current",connector);
         expandAndCheck(context, "${port.current.port}", Integer.toString(connector.getPort()));
@@ -1084,7 +1084,7 @@ public class ServerVariablesTest {
 
         final SsgConnector rule = new SsgConnector(1, "rule1", 8080, SsgConnector.SCHEME_NA, false, "MESSAGE_INPUT", CLIENT_AUTH_NEVER, null, null);
         manager.save(rule);
-        expandAndCheck(context, "${firewallrules.1}", rule.toString());
+        expandAndCheck(context, "${gateway.firewallrules.1}", rule.toString());
 
         context.setVariable("rule.current",rule);
         expandAndCheck(context, "${rule.current.port}", Integer.toString(rule.getPort()));
@@ -1108,10 +1108,10 @@ public class ServerVariablesTest {
         connection.setJdbcUrl("jdbc://url.l7tech.com:1234");
         connection.setUserName("me");
         ServerVariables.setJdbcConnectionManager(new JdbcConnectionManagerStub(connection));
-        expandAndCheck(context, "${jdbcconnection."+connection.getName()+".url}", connection.getJdbcUrl());
-        expandAndCheck(context, "${jdbcconnection." + connection.getName() + ".user}", connection.getUserName());
+        expandAndCheck(context, "${gateway.jdbcconnection."+connection.getName()+".url}", connection.getJdbcUrl());
+        expandAndCheck(context, "${gateway.jdbcconnection." + connection.getName() + ".user}", connection.getUserName());
 
-        expandAndCheck(context, "${jdbcallconnections.1}", connection.toString());
+        expandAndCheck(context, "${gateway.jdbcallconnections.1}", connection.toString());
 
         context.setVariable("jdbc.current",connection);
         expandAndCheck(context, "${jdbc.current.url}", connection.getJdbcUrl());
