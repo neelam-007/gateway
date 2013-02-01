@@ -57,7 +57,7 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
                                   final PolicyManager policyManager,
                                   final PolicyHelper policyHelper,
                                   final FolderResourceFactory folderResourceFactory ) {
-        super( false, true, services, securityFilter, transactionManager, policyManager );
+        super( false, true, true, services, securityFilter, transactionManager, policyManager );
         this.policyManager = policyManager;
         this.policyHelper = policyHelper;
         this.folderResourceFactory = folderResourceFactory;

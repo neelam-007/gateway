@@ -1,0 +1,54 @@
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+              xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management"
+              xmlns:mdo="http://schemas.wiseman.dev.java.net/metadata/messagetypes"
+              xmlns:mex="http://schemas.xmlsoap.org/ws/2004/09/mex"
+              xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+              xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing"
+              xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration"
+              xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"
+              xmlns:wsmeta="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"
+              xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <env:Header>
+        <wsa:Action env:mustUnderstand="true" xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+            http://schemas.xmlsoap.org/ws/2004/09/transfer/GetResponse
+        </wsa:Action>
+        <wsa:MessageID env:mustUnderstand="true">uuid:f489c3bf-2a0b-461c-b8c2-ecb2eb7a386e</wsa:MessageID>
+        <wsa:RelatesTo>uuid:37ad824e-dfdd-4707-9c42-9c5647b2dbd5</wsa:RelatesTo>
+        <wsa:To env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+    </env:Header>
+    <env:Body>
+        <l7:Policy guid="a6d0de8b-3c96-4fca-867e-c673a5083341"
+                   id="215121921" version="0">
+            <l7:PolicyDetail folderId="-5002"
+                             guid="a6d0de8b-3c96-4fca-867e-c673a5083341"
+                             id="215121921" version="0">
+                <l7:Name>Create Policy Test</l7:Name>
+                <l7:PolicyType>Include</l7:PolicyType>
+                <l7:Properties>
+                    <l7:Property key="revision">
+                        <l7:LongValue>1</l7:LongValue>
+                    </l7:Property>
+                    <l7:Property key="soap">
+                        <l7:BooleanValue>false</l7:BooleanValue>
+                    </l7:Property>
+                </l7:Properties>
+            </l7:PolicyDetail>
+            <l7:Resources>
+                <l7:ResourceSet tag="policy">
+                    <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                        &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                        xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                        &lt;wsp:All wsp:Usage="Required"&gt;
+                        &lt;L7p:SslAssertion/&gt;
+                        &lt;L7p:HttpBasic/&gt;
+                        &lt;L7p:Authentication&gt;
+                        &lt;L7p:IdentityProviderOid longValue="-2"/&gt;
+                        &lt;/L7p:Authentication&gt;
+                        &lt;L7p:GatewayManagement/&gt;
+                        &lt;/wsp:All&gt;
+                        &lt;/wsp:Policy&gt;</l7:Resource>
+                </l7:ResourceSet>
+            </l7:Resources>
+        </l7:Policy>
+    </env:Body>
+</env:Envelope>

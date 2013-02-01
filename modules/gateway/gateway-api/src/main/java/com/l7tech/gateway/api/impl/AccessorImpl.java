@@ -273,6 +273,7 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
     }
 
     private Map<String,String> asSelectorMap( final Map<String, Object> propertyMap ) throws AccessorException {
+        //TODO document where this size restriction came from and if it exists as a real limit downstream
         if ( propertyMap.size() > 10 ) throw new AccessorException("Too many properties");
         final Map<String,String> selectorMap = new HashMap<String,String>();
 

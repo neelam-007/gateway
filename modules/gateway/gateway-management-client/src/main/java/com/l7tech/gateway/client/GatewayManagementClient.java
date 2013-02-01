@@ -530,8 +530,12 @@ public class GatewayManagementClient {
                 selectors.put( "name", arguments.name.trim() );
             }
 
+            if ( arguments.guid != null && !arguments.guid.trim().isEmpty() ) {
+                selectors.put( "guid", arguments.guid.trim() );
+            }
+
             if ( selectors.isEmpty() ) {
-                throw new CommandException("Invalid options: name or id is required.");
+                throw new CommandException("Invalid options: name, id or guid is required.");
             }
 
             return selectors;
@@ -1241,6 +1245,9 @@ public class GatewayManagementClient {
 
         @Cli.Arg(name="-name", description="The name for the target item", required=false)
         private String name;
+
+        @Cli.Arg(name="-guid", description="The guid for the target item", required=false)
+        private String guid;
 
         @Cli.Arg(name="-in", description="The input item", required=false)
         private String in;

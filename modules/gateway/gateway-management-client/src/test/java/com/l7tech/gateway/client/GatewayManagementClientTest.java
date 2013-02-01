@@ -1,6 +1,7 @@
 package com.l7tech.gateway.client;
 
 import com.l7tech.gateway.api.impl.TransportFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ResourceUtils;
 import com.sun.ws.management.Management;
@@ -318,6 +319,40 @@ public class GatewayManagementClientTest {
         String output = out.toString();
         assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected cluster property:\n" + output , output.contains("ClusterProperty>") && output.contains( "secure_span" ));
+    }
+
+    @BugId("SSG-5551")
+    @Test
+    public void testGet_Guid_Supported() throws Exception {
+        setResponse( "Policy_Get_Response.xml" );
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final GatewayManagementClient gmc = new GatewayManagementClient(
+                new String[]{ "gateway", "get", "-type", "policy", "-guid", "a6d0de8b-3c96-4fca-867e-c673a5083341" },
+                System.in,
+                out,
+                out );
+        int exitCode = gmc.run();
+        String output = out.toString();
+        System.out.println(output);
+        assertEquals( "Exit code", 0L, (long) exitCode );
+        assertTrue( "Expected policy :\n" + output , output.contains("Policy>") && output.contains( "Create Policy Test" ));
+    }
+
+    @BugId("SSG-5551")
+    @Test
+    public void testGet_Guid_NotSupported() throws Exception {
+        setResponse( "InvalidSelectorsResponse.xml" );
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final GatewayManagementClient gmc = new GatewayManagementClient(
+                new String[]{ "gateway", "get", "-type", "service", "-guid", "a6d0de8b-3c96-4fca-867e-c673a5083341" },
+                System.in,
+                out,
+                out );
+        int exitCode = gmc.run();
+        String output = out.toString();
+        System.out.println(output);
+        assertEquals( "Exit code", 1L, (long) exitCode );
+        assertTrue( "Expected invalid selectors. Service does not support -guid:\n" + output , output.contains("The Selectors for the resource were not valid"));
     }
 
     @Test

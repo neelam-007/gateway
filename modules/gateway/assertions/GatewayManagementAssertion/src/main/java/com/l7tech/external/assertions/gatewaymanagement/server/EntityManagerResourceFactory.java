@@ -2,14 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.NamedEntity;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.objectmodel.RoleAwareEntityManager;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.Either;
@@ -21,12 +14,15 @@ import static com.l7tech.util.Eithers.right2;
 import static com.l7tech.util.Either.right;
 import static com.l7tech.util.Eithers.left2_1;
 import static com.l7tech.util.Eithers.left2_2;
+
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.optional;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -61,11 +57,15 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
 
     @Override
     public Set<String> getSelectors() {
-        if ( !allowNameSelection ) {
-            return Collections.unmodifiableSet(new HashSet<String>(Arrays.asList( IDENTITY_SELECTOR, VERSION_SELECTOR )));
-        } else {
-            return Collections.unmodifiableSet(new HashSet<String>(Arrays.asList( IDENTITY_SELECTOR, NAME_SELECTOR, VERSION_SELECTOR )));
+        final HashSet<String> baseSelectors = new HashSet<String>(Arrays.asList(IDENTITY_SELECTOR, VERSION_SELECTOR));
+        if ( allowNameSelection ) {
+            baseSelectors.add(NAME_SELECTOR);
         }
+        if ( allowGuidSelection ) {
+            baseSelectors.add(GUID_SELECTOR);
+        }
+
+        return Collections.unmodifiableSet(baseSelectors);
     }
 
     @Override
@@ -392,8 +392,9 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
         final String id = selectorMap.get( IDENTITY_SELECTOR );
         final String name = selectorMap.get( NAME_SELECTOR );
         final String version = selectorMap.get( VERSION_SELECTOR );
+        final String guid = selectorMap.get( GUID_SELECTOR );
 
-        if ( id == null && name == null ) {
+        if ( id == null && name == null && guid == null ) {
             throw new InvalidResourceSelectors();
         }
 
@@ -413,6 +414,16 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
             }
         }
 
+        if ( entity == null && guid != null && manager instanceof GuidBasedEntityManager) {
+            @SuppressWarnings("unchecked")
+            GuidBasedEntityManager<E> guidManager = (GuidBasedEntityManager<E>) manager;
+            try {
+                entity = guidManager.findByGuid(guid);
+            } catch (FindException e) {
+                handleObjectModelException(e);
+            }
+        }
+
         // Verify all selectors match (selectors must be AND'd)
         if ( entity != null ) {
             if ( id != null && !id.equalsIgnoreCase(entity.getId())) {
@@ -421,6 +432,17 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
                 entity = null;
             } else if (version != null && !version.equals(Integer.toString(entity.getVersion())) ) {
                 entity = null;
+            } else if (guid != null) {
+                try {
+                    //TODO replace reflection when entity level interface for GUID support is added
+                    final Method getGuidMethod = entity.getClass().getDeclaredMethod("getGuid");
+                    final Object guidObj = getGuidMethod.invoke(entity);
+                    if ( !guid.equals( guidObj.toString()) ) {
+                        entity = null;
+                    }
+                } catch (ReflectiveOperationException e) {
+                    throw new ResourceAccessException(ExceptionUtils.getMessage(e), e);
+                }
             }
         }
 
@@ -726,6 +748,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     //- PACKAGE
 
     static final String IDENTITY_SELECTOR = "id";
+    static final String GUID_SELECTOR = "guid";
     static final String NAME_SELECTOR = "name";
     static final String VERSION_SELECTOR = "version";
 
@@ -735,9 +758,20 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
                                   final SecurityFilter securityFilter,
                                   final PlatformTransactionManager transactionManager,
                                   final EntityManager<E,EH> manager ) {
+        this(readOnly, allowNameSelection, false, rbacServices, securityFilter, transactionManager, manager);
+    }
+
+    EntityManagerResourceFactory( final boolean readOnly,
+                                  final boolean allowNameSelection,
+                                  final boolean allowGuidSelection,
+                                  final RbacServices rbacServices,
+                                  final SecurityFilter securityFilter,
+                                  final PlatformTransactionManager transactionManager,
+                                  final EntityManager<E,EH> manager ) {
         super( rbacServices, securityFilter, transactionManager );
         this.readOnly = readOnly;
         this.allowNameSelection = allowNameSelection;
+        this.allowGuidSelection = allowGuidSelection;
         this.manager = manager;
     }
 
@@ -749,6 +783,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
 
     private final boolean readOnly;
     private final boolean allowNameSelection;
+    private final boolean allowGuidSelection;
     private final EntityManager<E,EH> manager;
 
     private void checkReadOnly() {

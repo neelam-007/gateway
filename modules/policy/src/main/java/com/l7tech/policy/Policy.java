@@ -169,6 +169,7 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
         this.assertion = null;
     }
 
+    //TODO: move guid property into an interface identifies entities with GUIDS as is done for the entity managers
     @NotNull
     @Size(min=36,max=36)
     public String getGuid() {

@@ -1,0 +1,32 @@
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+    xmlns:mdo="http://schemas.wiseman.dev.java.net/metadata/messagetypes"
+    xmlns:mex="http://schemas.xmlsoap.org/ws/2004/09/mex"
+    xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+    xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing"
+    xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration"
+    xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"
+    xmlns:wsmeta="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"
+    xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <env:Header>
+        <wsa:Action env:mustUnderstand="true" xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">http://schemas.dmtf.org/wbem/wsman/1/wsman/fault</wsa:Action>
+        <wsa:MessageID env:mustUnderstand="true" xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">uuid:1dd8df56-f2bc-4d2a-abad-48d409c291d3</wsa:MessageID>
+        <wsa:RelatesTo xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">uuid:a9bdd024-0fb8-4e8e-880d-d1fee45b8aa8</wsa:RelatesTo>
+        <wsa:To env:mustUnderstand="true" xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+    </env:Header>
+    <env:Body>
+        <env:Fault xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+            <env:Code>
+                <env:Value>env:Sender</env:Value>
+                <env:Subcode>
+                    <env:Value>wsman:InvalidSelectors</env:Value>
+                </env:Subcode>
+            </env:Code>
+            <env:Reason>
+                <env:Text xml:lang="en-US">The Selectors for the resource were not valid.</env:Text>
+            </env:Reason>
+            <env:Detail>
+                <wsman:FaultDetail>http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/InsufficientSelectors</wsman:FaultDetail>
+            </env:Detail>
+        </env:Fault>
+    </env:Body>
+</env:Envelope>
