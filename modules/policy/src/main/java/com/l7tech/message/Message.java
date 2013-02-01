@@ -720,7 +720,7 @@ public final class Message implements Closeable {
             throw new IllegalStateException("An implementation of the knob " + knobClass + " is already attached to this Message.");
         if (!knobClass.isAssignableFrom(knob.getClass()))
             throw new IllegalArgumentException("knob was not an implementation of knobClass " + knobClass);
-        rootFacet = new KnobHolderFacet(this, rootFacet, knobClass, knob);
+        rootFacet = new KnobHolderFacet(this, rootFacet, knob, false, knobClass);
         if (getKnob(knobClass) == null)
             throw new IllegalArgumentException("knob failed to provide an implementation of knobClass" + knobClass); // can't happen
     }
@@ -735,6 +735,21 @@ public final class Message implements Closeable {
      * @throws IllegalArgumentException if knob is not an instance of knobClass
      */
     public void attachKnob(@NotNull MessageKnob knob, @NotNull Class... knobClasses) {
+        attachKnob(knob, false, knobClasses);
+    }
+
+    /**
+     * Attach a knob to this message that responds to the specified knob classes, if and only if
+     * the message does not already provide any of these knob classes.  The attached knob will optionally be preserved
+     * when this message is next reinitialized.
+     *
+     * @param knob the knob to attach.  It will be attached in a new facet.  Must not be null.
+     * @param preserveKnobOnInitialize if true, the attached knob will be preserved next time this message is initialized.
+     * @param knobClasses the classes of the interface provided by this knob implementation.  Must be non-null and non-empty.
+     * @throws IllegalStateException if this message already offers an implementation of the specified knobClass
+     * @throws IllegalArgumentException if knob is not an instance of knobClass
+     */
+    public void attachKnob(@NotNull MessageKnob knob, boolean preserveKnobOnInitialize, @NotNull Class... knobClasses) {
         for (Class knobClass : knobClasses) {
             if (!knobClass.isAssignableFrom(knob.getClass()))
                 throw new IllegalArgumentException("knob was not an implementation of knobClass " + knobClass);
@@ -742,9 +757,8 @@ public final class Message implements Closeable {
             if (getKnob(knobClass) != null)
                 throw new IllegalStateException("An implementation of the knob " + knobClass + " is already attached to this Message.");
         }
-        rootFacet = new KnobHolderFacet(this, rootFacet, knob, knobClasses);
+        rootFacet = new KnobHolderFacet(this, rootFacet, knob, preserveKnobOnInitialize, knobClasses);
     }
-
 
     /**
      * Get the specified knob, which must already be provided.
@@ -863,8 +877,12 @@ public final class Message implements Closeable {
         return rootFacet.visitFacets(new Functions.Binary<List<PreservableFacet>, MessageFacet, List<PreservableFacet>>() {
             @Override
             public List<PreservableFacet> call(MessageFacet messageFacet, List<PreservableFacet> preservables) {
-                if (messageFacet instanceof PreservableFacet)
-                    preservables.add((PreservableFacet) messageFacet);
+                if (messageFacet instanceof PreservableFacet) {
+                    final PreservableFacet pf = (PreservableFacet) messageFacet;
+                    if (pf.isPreservable()) {
+                        preservables.add(pf);
+                    }
+                }
                 return preservables;
             }
         }, preservables);

@@ -9,30 +9,20 @@ import java.io.Closeable;
 /**
  * A MessageFacet that holds a provided pre-existing knob.
  */
-public class KnobHolderFacet extends MessageFacet {
+class KnobHolderFacet extends PreservableFacet {
     private final @NotNull Class[] knobClasses;
     private final @NotNull MessageKnob knob;
+    private final boolean preservable;
 
-    public KnobHolderFacet(@NotNull Message message, @Nullable MessageFacet delegate, @NotNull Class knobClass, @NotNull MessageKnob knob) {
+    KnobHolderFacet(@NotNull Message message, @Nullable MessageFacet delegate, @NotNull MessageKnob knob, boolean preserveOnReinit, @NotNull Class... knobClasses) {
         super(message, delegate);
-        if (knob == null || knobClass == null)
-            throw new NullPointerException();
-        if (!MessageKnob.class.isAssignableFrom(knobClass))
-            throw new ClassCastException("knobClass must be derived from MessageKnob");
-        this.knob = knob;
-        this.knobClasses = new Class[] { knobClass };
-    }
-
-    public KnobHolderFacet(@NotNull Message message, @Nullable MessageFacet delegate, @NotNull MessageKnob knob, @NotNull Class... knobClasses) {
-        super(message, delegate);
-        if (knob == null || knobClasses == null)
-            throw new NullPointerException();
         for (Class knobClass : knobClasses) {
             if (!MessageKnob.class.isAssignableFrom(knobClass))
                 throw new ClassCastException("Every knobClass must be derived from MessageKnob");
         }
         this.knob = knob;
         this.knobClasses = knobClasses;
+        this.preservable = preserveOnReinit;
     }
 
     public MessageKnob getKnob(Class c) {
@@ -51,5 +41,15 @@ public class KnobHolderFacet extends MessageFacet {
         } finally {
             super.close();
         }
+    }
+
+    @Override
+    boolean isPreservable() {
+        return preservable;
+    }
+
+    @Override
+    MessageFacet reattach(Message message, MessageFacet delegate) {
+        return new KnobHolderFacet(message, delegate, knob, preservable, knobClasses);
     }
 }

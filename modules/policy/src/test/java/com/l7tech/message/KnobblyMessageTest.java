@@ -7,6 +7,7 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.xml.MessageNotSoapException;
@@ -19,9 +20,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import java.beans.EventHandler;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -327,6 +331,73 @@ public class KnobblyMessageTest {
         logger.info(soapKnob.getPayloadNames()[0].getNamespaceURI());
         assertNotNull(msg.getXmlKnob());
         assertNotNull(msg.getMimeKnob());
+    }
+
+    @Test
+    public void testHttpKnobsArePreserved() throws Exception {
+        Message mess = new Message(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("blah blah".getBytes(Charsets.UTF8)));
+
+        InvocationHandler fakeIh = new EventHandler(new Object(), "blah", null, null);
+        HttpRequestKnob requestKnob = (HttpRequestKnob) Proxy.newProxyInstance(HttpRequestFacet.class.getClassLoader(), new Class[]{HttpRequestKnob.class}, fakeIh);
+        HttpResponseKnob responseKnob = (HttpResponseKnob) Proxy.newProxyInstance(HttpRequestFacet.class.getClassLoader(), new Class[]{HttpResponseKnob.class}, fakeIh);
+
+        mess.attachHttpRequestKnob(requestKnob);
+        mess.attachHttpResponseKnob(responseKnob);
+
+        // Reinitialize message, ensure knobs are preserved
+
+        mess.initialize(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream("otherblah".getBytes(Charsets.UTF8)));
+
+        assertTrue(requestKnob == mess.getKnob(HttpRequestKnob.class));
+        assertTrue(responseKnob == mess.getKnob(HttpResponseKnob.class));
+    }
+
+    public interface MyNonPreservableKnob extends MessageKnob {
+    }
+
+    public interface MyPreservableKnob extends MessageKnob {
+        String getPayload();
+    }
+
+    @Test
+    public void testOnlyPreservableKnobsArePreserved() throws Exception {
+
+        // Initiailize and attach facets
+
+        Message mess = new Message(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("blah blah".getBytes(Charsets.UTF8)));
+
+        // Attach preservable
+        final MyPreservableKnob origPreservableKnob = new MyPreservableKnob() {
+            @Override
+            public String getPayload() {
+                return "payload of knob";
+            }
+        };
+        mess.attachKnob(origPreservableKnob, true, MyPreservableKnob.class);
+
+        // Attach non-preservable
+        final MyNonPreservableKnob origNonPreservableKnob = new MyNonPreservableKnob() {};
+        mess.attachKnob(origNonPreservableKnob, MyNonPreservableKnob.class);
+
+        // Ensure expected knobs are present
+
+        MyPreservableKnob preservableKnob = mess.getKnob(MyPreservableKnob.class);
+        assertTrue(preservableKnob == origPreservableKnob);
+        assertEquals("payload of knob", preservableKnob.getPayload());
+
+        MyNonPreservableKnob nonPreservableKnob = mess.getKnob(MyNonPreservableKnob.class);
+        assertTrue(nonPreservableKnob == origNonPreservableKnob);
+
+        // Reinitialize message, ensure only preservable knob is preserved
+
+        mess.initialize(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream("otherblah".getBytes(Charsets.UTF8)));
+
+        preservableKnob = mess.getKnob(MyPreservableKnob.class);
+        assertTrue(preservableKnob == origPreservableKnob);
+        assertEquals("payload of knob", preservableKnob.getPayload());
+
+        nonPreservableKnob = mess.getKnob(MyNonPreservableKnob.class);
+        assertNull(nonPreservableKnob);
     }
 
     @Test
