@@ -77,7 +77,7 @@ public class MqNativeUtilsTest {
         MqNativeMessageDescriptor mqmd = new MqNativeMessageDescriptor(new MQMessage());
         mqmd.messageType = 8;
         mqmd.format = MQFMT_RF_HEADER;
-        mqmd.messageId = "AMQ coreDevQueuerÁÏO14".getBytes();
+        mqmd.messageId = HexUtils.decodeBase64("QU1RIGNvcmVEZXZRdWV1ZXLDgcOPTzE0");
 
         final Map<String,String> properties = new HashMap<String, String>(3);
         properties.put(MQ_PROPERTY_PRIORITY, "4");
