@@ -6,6 +6,7 @@ import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.mime.*;
 import com.l7tech.util.CausedIllegalStateException;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Functions;
 import com.l7tech.xml.MessageNotSoapException;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
@@ -15,7 +16,9 @@ import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -109,7 +112,7 @@ public final class Message implements Closeable {
     /**
      * Initialize, or re-initialize, a Message with a MIME facet attached to the specified InputStream.
      * <p>
-     * With the exception of {@link HttpRequestKnob} and {@link HttpResponseKnob}s, which will be preserved in new facets,
+     * With the exception of {@link PreservableFacet}s (such as those implementing {@link HttpRequestKnob} and {@link HttpResponseKnob}), which will be preserved in new facets,
      * any previously existing facets of this Message will be lost and replaced with a single MIME facet.
      *
      * @param sm  the StashManager to use for stashing MIME parts temporarily.  Must not be null.
@@ -126,14 +129,14 @@ public final class Message implements Closeable {
                             final long firstPartMaxBytes)
             throws IOException
     {
-        HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
-        HttpResponseKnob respKnob = getKnob(HttpResponseKnob.class);
+        List<PreservableFacet> preservables = getPreservableFacets();
         if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
         rootFacet = null; // null it first just in case MimeFacet c'tor throws
         invalidateCachedKnobs();
         rootFacet = new MimeFacet(this, sm, outerContentType, body,firstPartMaxBytes);
-        if (reqKnob != null) rootFacet = new HttpRequestFacet(this, rootFacet, reqKnob);
-        if (respKnob != null) rootFacet = new HttpResponseFacet(this, rootFacet, respKnob);
+        for (PreservableFacet preservable : preservables) {
+            rootFacet = preservable.reattach(this, rootFacet);
+        }
         invalidateCachedKnobs();
         initialized = true;
     }
@@ -142,7 +145,7 @@ public final class Message implements Closeable {
     /**
      * Initialize, or re-initialize, a Message with a MIME facet attached to the specified InputStream.
      * <p>
-     * With the exception of {@link HttpRequestKnob} and {@link HttpResponseKnob}s, which will be preserved in new facets,
+     * With the exception of {@link PreservableFacet}s (such as those implementing {@link HttpRequestKnob} and {@link HttpResponseKnob}), which will be preserved in new facets,
      * any previously existing facets of this Message will be lost and replaced with a single MIME facet.
      *
      * @param sm  the StashManager to use for stashing MIME parts temporarily.  Must not be null.
@@ -164,7 +167,7 @@ public final class Message implements Closeable {
      * Initialize, or re-initialize, a Message with a memory-based MIME facet and an XML facet initialized with
      * the specified Document.
      * <p>
-     * With the exception of {@link HttpRequestKnob} and {@link HttpResponseKnob}s, which will be preserved in new facets,
+     * With the exception of {@link PreservableFacet}s (such as those implementing {@link HttpRequestKnob} and {@link HttpResponseKnob}), which will be preserved in new facets,
      * any previously existing facets of this Message will be lost and replaced with a single MIME facet.
      *
      * @param body the Document to replace this Message's current content
@@ -179,7 +182,7 @@ public final class Message implements Closeable {
      * Initialize, or re-initialize, a Message with a memory-based MIME facet and an XML facet initialized with
      * the specified Document.
      * <p>
-     * With the exception of {@link HttpRequestKnob} and {@link HttpResponseKnob}s, which will be preserved in new facets,
+     * With the exception of {@link PreservableFacet}s (such as {@link HttpRequestKnob} and {@link HttpResponseKnob}), which will be preserved in new facets,
      * any previously existing facets of this Message will be lost and replaced with a single MIME facet.
      *
      * @param body the Document to replace this Message's current content
@@ -194,7 +197,7 @@ public final class Message implements Closeable {
      * Initialize, or re-initialize, a Message with a memory-based MIME facet and an XML facet initialized with
      * the specified Document.
      * <p>
-     * With the exception of {@link HttpRequestKnob} and {@link HttpResponseKnob}s, which will be preserved in new facets,
+     * With the exception of {@link PreservableFacet}s (such as {@link HttpRequestKnob} and {@link HttpResponseKnob}), which will be preserved in new facets,
      * any previously existing facets of this Message will be lost and replaced with a single MIME facet.
      *
      * @param body the Document to replace this Message's current content
@@ -204,15 +207,15 @@ public final class Message implements Closeable {
     public void initialize(Document body, ContentTypeHeader contentTypeHeader, long firstPartMaxBytes)
     {
         try {
-            HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
-            HttpResponseKnob respKnob = getKnob(HttpResponseKnob.class);
+            List<PreservableFacet> preservables = getPreservableFacets();
             if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
             rootFacet = null;
             rootFacet = new MimeFacet(this, new ByteArrayStashManager(), contentTypeHeader, new EmptyInputStream(),firstPartMaxBytes);
             rootFacet = new XmlFacet(this, rootFacet);
             invalidateCachedKnobs();
-            if (reqKnob != null) attachHttpRequestKnob(reqKnob);
-            if (respKnob != null) attachHttpResponseKnob(respKnob);
+            for (PreservableFacet preservable : preservables) {
+                rootFacet = preservable.reattach(this, rootFacet);
+            }
             getXmlKnob().setDocument(body);
             initialized = true;
         } catch (IOException e) {
@@ -226,7 +229,7 @@ public final class Message implements Closeable {
      * Initialize, or re-initialize, a Message with a memory-based MIME facet and an XML facet initialized with
      * the specified Document.
      * <p>
-     * With the exception of {@link HttpRequestKnob} and {@link HttpResponseKnob}s, which will be preserved in new facets,
+     * With the exception of {@link PreservableFacet}s (such as those implementing {@link HttpRequestKnob} and {@link HttpResponseKnob}), which will be preserved in new facets,
      * any previously existing facets of this Message will be lost and replaced with a single MIME facet.
      *
      * @param body the Document to replace this Message's current content
@@ -845,5 +848,25 @@ public final class Message implements Closeable {
         if (tk != null) tk.close();
         SoapKnob sk = getKnob(SoapKnob.class);
         if (sk != null) sk.invalidate();
+    }
+
+    /**
+     * Get an ordered list of all current message facets that extend PreservableFacet.
+     *
+     * @return an order list of PreservableFacet instances.  May be empty but never null.
+     */
+    @NotNull
+    List<PreservableFacet> getPreservableFacets() {
+        List<PreservableFacet> preservables = new ArrayList<PreservableFacet>();
+        if (rootFacet == null)
+            return preservables;
+        return rootFacet.visitFacets(new Functions.Binary<List<PreservableFacet>, MessageFacet, List<PreservableFacet>>() {
+            @Override
+            public List<PreservableFacet> call(MessageFacet messageFacet, List<PreservableFacet> preservables) {
+                if (messageFacet instanceof PreservableFacet)
+                    preservables.add((PreservableFacet) messageFacet);
+                return preservables;
+            }
+        }, preservables);
     }
 }

@@ -9,7 +9,7 @@ package com.l7tech.message;
 /**
  * Provides an HttpRequestKnob for a Message.
  */
-public class HttpRequestFacet extends MessageFacet {
+public class HttpRequestFacet extends PreservableFacet {
     private final HttpRequestKnob httpRequestKnob;
 
     /**
@@ -31,5 +31,10 @@ public class HttpRequestFacet extends MessageFacet {
         if (c == HttpServletRequestKnob.class && httpRequestKnob instanceof HttpServletRequestKnob)
             return httpRequestKnob;
         return super.getKnob(c);
+    }
+
+    @Override
+    public MessageFacet reattach(Message message, MessageFacet delegate) {
+        return new HttpRequestFacet(message, delegate, httpRequestKnob);
     }
 }
