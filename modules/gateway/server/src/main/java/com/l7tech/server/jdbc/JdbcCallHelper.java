@@ -100,8 +100,9 @@ public class JdbcCallHelper {
                     }
                     paramValue = args[varArgIndex++];
                 } else if (paramValue != null && ((String) paramValue).startsWith("@")){//special case if we want to verbose define INOUT param in MS SQL, see known issue
-                    paramValue = null;
+                    paramValue = "";
                 } else if (paramValue != null && queryParametersRaw.get(paramIndex-1).equalsIgnoreCase("null") && queryParameters.get(paramIndex-1).equals(queryParametersRaw.get(paramIndex-1))){  // if null query parameter is not a string (no ' )
+                    // handle literal null - e.g. not from a variable value
                     paramValue = null;
                     definedPossibleNull = true;
                 }
