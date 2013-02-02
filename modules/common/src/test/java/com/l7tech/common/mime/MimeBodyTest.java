@@ -4,6 +4,7 @@ import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.NullOutputStream;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import static com.l7tech.util.CollectionUtils.list;
@@ -35,6 +36,84 @@ public class MimeBodyTest {
         long len = mm.getEntireMessageBodyLength(); // force entire body to be read
         assertEquals( 0L, len);
         assertEquals( 0L, mm.getFirstPart().getContentLength()); // size now known
+    }
+
+    /**
+     * If start does not match Content-ID simply because Content-ID is surrounded by &lt; and &gt;, then they should match
+     * because technically Content-ID should always be surrounded by these brackets (see rfc 822 and rfc2045) and start
+     * defined in rfc 2387 has no such rule.
+     *
+     */
+    @BugId("SSG-6388")
+    @Test
+    public void testSupportStartNoMatchContentIdBecauseOfBrackets() throws Exception {
+
+        // Content-ID here has surrounding brackets
+        String mess = "PREAMBLE GARBAGE\r\nBLAH BLAH BLAH\r\n------=Part_-763936460.407197826076299\r\n" +
+                    "Content-Transfer-Encoding: 8bit\r\n" +
+                    "Content-Type: text/xml; charset=utf-8\r\n" +
+                    "Content-ID: <-76394136.15558>\r\n" +
+                    "\r\n" +
+                    SOAP +
+                    "\r\n" +
+                    "------=Part_-763936460.407197826076299\r\n" +
+                    "Content-Transfer-Encoding: 8bit\r\n" +
+                    "Content-Type: application/octet-stream\r\n" +
+                    "Content-ID: -76392836.15558\r\n" +
+                    "\r\n" +
+                     RUBY +
+                    "\r\n" +
+                    "------=Part_-763936460.407197826076299--\r\n";
+
+        String boundary = "----=Part_-763936460.407197826076299";
+
+        {
+            // Start has no surrounding brackets
+            String contentType = "multipart/related; type=\"text/xml\"; boundary=\"" + boundary + "\"; start=\"-76394136.15558\"";
+            MimeBody mm = makeMessage(mess, contentType,FIRST_PART_MAX_BYTE);
+            assertNotNull(mm);
+        }
+
+        {
+            // Now if start IS surrounded by brackets, then we must continue to support that
+            String contentType = "multipart/related; type=\"text/xml\"; boundary=\"" + boundary + "\"; start=\"<-76394136.15558>\"";
+            MimeBody mm = makeMessage(mess, contentType,FIRST_PART_MAX_BYTE);
+            assertNotNull(mm);
+        }
+
+    }
+
+    /**
+     * Comparing start to Content-ID should only ever allow stripping of angle brackets from Content-ID and never from
+     * the start parameter.
+     *
+     */
+    @BugId("SSG-6388")
+    @Test(expected = IOException.class)
+    public void testNeverModifyStartParameterForComparison() throws Exception {
+
+        // Content-ID here has surrounding brackets
+        String mess = "PREAMBLE GARBAGE\r\nBLAH BLAH BLAH\r\n------=Part_-763936460.407197826076299\r\n" +
+                    "Content-Transfer-Encoding: 8bit\r\n" +
+                    "Content-Type: text/xml; charset=utf-8\r\n" +
+                    "Content-ID: <-76394136.15558>\r\n" +
+                    "\r\n" +
+                    SOAP +
+                    "\r\n" +
+                    "------=Part_-763936460.407197826076299\r\n" +
+                    "Content-Transfer-Encoding: 8bit\r\n" +
+                    "Content-Type: application/octet-stream\r\n" +
+                    "Content-ID: -76392836.15558\r\n" +
+                    "\r\n" +
+                     RUBY +
+                    "\r\n" +
+                    "------=Part_-763936460.407197826076299--\r\n";
+
+        String boundary = "----=Part_-763936460.407197826076299";
+
+        // start has two surround angle brackets
+        String contentType = "multipart/related; type=\"text/xml\"; boundary=\"" + boundary + "\"; start=\"<<-76394136.15558>>\"";
+        makeMessage(mess, contentType,FIRST_PART_MAX_BYTE);
     }
 
     @Test

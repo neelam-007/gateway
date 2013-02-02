@@ -107,8 +107,10 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                 readInitialBoundary();
                 readNextPartHeaders();
                 firstPart = (PartInfoImpl)partInfos.get(0);
-                if (start != null && !(start.equals(firstPart.getContentId(false))))
+                if (start != null && !( start.equals(firstPart.getContentId(false)) || start.equals(firstPart.getContentId(true)) )) {
                     throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");
+                }
+
                 if (firstPartMaxBytes > 0)
                     this.mainInputStream.setSizeLimitNonFlagging(firstPartMaxBytes + this.mainInputStream.getBytesRead());
             } else {
