@@ -497,8 +497,34 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             final PolicySelectorDialog policySelector = new PolicySelectorDialog(this, options, initialValue);
             policySelector.pack();
             Utilities.centerOnParentWindow(policySelector);
-            DialogDisplayer.display(policySelector, new PolicyInputListener(initialValue, policySelector));
-        } catch (FindException e) {
+            DialogDisplayer.display(policySelector, new Runnable() {
+                @Override
+                public void run() {
+                    final PolicyHeader selected = policySelector.getSelected();
+                    if (policySelector.isConfirmed() && selected != null) {
+                        final boolean autoPopulate = policySelector.isAutoPopulate();
+                        if (policySelector.isSelectionChanged() || autoPopulate) {
+                            // reload the policy
+                            try {
+                                final Policy newPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(selected.getOid());
+                                if (newPolicy == null) {
+                                    showError("Policy not found", null);
+                                    return;
+                                }
+
+                                setPolicyAndPolicyNameLabel(newPolicy);
+                                if (autoPopulate) {
+                                    prePopulateInputsTable();
+                                    prePopulateOutputsTable();
+                                }
+                            } catch (final FindException e) {
+                                showError("Unable to load policy", e);
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (final FindException e) {
             showError("Unable to load list of available policy include fragments", e);
         }
     }
@@ -609,44 +635,6 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                     }
                 }
             });
-        }
-    }
-
-    /**
-     * Listener for handling policy fragment selection.
-     */
-    private class PolicyInputListener implements Runnable {
-        private final PolicyHeader initialValue;
-        private final PolicySelectorDialog policySelector;
-
-        private PolicyInputListener(@Nullable final PolicyHeader initialValue, @NotNull final PolicySelectorDialog policySelector) {
-            this.initialValue = initialValue;
-            this.policySelector = policySelector;
-        }
-
-        @Override
-        public void run() {
-            if (policySelector.isConfirmed()) {
-                final PolicyHeader selected = (PolicyHeader) policySelector.getSelected();
-                if (!selected.equals(initialValue) || policySelector.isAutoPopulate()) {
-                    // selected policy has changed or they want to refresh the inputs and outputs
-                    try {
-                        final Policy newPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(selected.getOid());
-                        if (newPolicy == null) {
-                            showError("Policy not found", null);
-                            return;
-                        }
-
-                        setPolicyAndPolicyNameLabel(newPolicy);
-                        if (policySelector.isAutoPopulate()) {
-                            prePopulateInputsTable();
-                            prePopulateOutputsTable();
-                        }
-                    } catch (FindException e) {
-                        showError("Unable to load policy", e);
-                    }
-                }
-            }
         }
     }
 

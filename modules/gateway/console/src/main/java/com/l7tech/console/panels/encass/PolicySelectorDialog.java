@@ -13,7 +13,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 /**
- * Dialog which allows the user to select a PolicyHeader.
+ * Dialog which allows the user to select a PolicyHeader and indicate if they want to auto-populate Encapsulated Assertion
+ * inputs and outputs based on the selected policy.
  */
 public class PolicySelectorDialog extends JDialog {
     private JButton okButton;
@@ -25,10 +26,11 @@ public class PolicySelectorDialog extends JDialog {
     private InputValidator inputValidator;
     private PolicyHeader selected;
     private boolean autoPopulate;
+    private boolean selectionChanged;
 
     /**
-     * @param owner the Window which owns this Dialog.
-     * @param options the PolicyHeaders to display as selectable options. Must contain at least one PolicyHeader.
+     * @param owner        the Window which owns this Dialog.
+     * @param options      the PolicyHeaders to display as selectable options. Must contain at least one PolicyHeader.
      * @param initialValue the optional initial PolicyHeader to show as selected.
      */
     public PolicySelectorDialog(@NotNull Window owner, @NotNull final PolicyHeader[] options, @Nullable final PolicyHeader initialValue) {
@@ -48,6 +50,7 @@ public class PolicySelectorDialog extends JDialog {
             public void actionPerformed(final ActionEvent e) {
                 confirmed = true;
                 selected = (PolicyHeader) policyComboBox.getSelectedItem();
+                selectionChanged = initialValue == null || !selected.equals(initialValue);
                 autoPopulate = autoPopulateCheckBox.isSelected();
                 dispose();
             }
@@ -70,10 +73,17 @@ public class PolicySelectorDialog extends JDialog {
     }
 
     /**
-     * @return the selected PolicyHeader.
+     * @return the selected PolicyHeader. Can be null if dialog as not OKed and there was no initial value.
      */
     @Nullable
     public PolicyHeader getSelected() {
         return selected;
+    }
+
+    /**
+     * @return whether the selection has changed from the initial value.
+     */
+    public boolean isSelectionChanged() {
+        return selectionChanged;
     }
 }
