@@ -76,6 +76,13 @@ public interface CounterManager {
      */
     public void decrement(boolean synchronous, String counterName);
 
+    /**
+     * Reset the counter synchronously.
+     *
+     * @param counterName the name of the counter used for counter lookup
+     */
+    public void reset(String counterName);
+
     public class LimitAlreadyReachedException extends Exception {
         public LimitAlreadyReachedException(String msg) {
             super(msg);

@@ -74,11 +74,21 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
                 return doIncrementOnSuccess(context,quota);
             case ThroughputQuota.DECREMENT:
                 return doDecrement(context);
+            case ThroughputQuota.RESET:
+                return doReset(context);
         }
 
         // not supposed to happen
         throw new PolicyAssertionException(assertion, "This assertion is not configured properly. " +
                                            "Unsupported counterStrategy: " + assertion.getCounterStrategy());
+    }
+
+    private AssertionStatus doReset(PolicyEnforcementContext context) throws IOException {
+        final CounterManager counterManager = applicationContext.getBean("counterManager", CounterManager.class);
+        counterManager.reset(getCounterName(context));
+        setValue(context, 0);
+
+        return AssertionStatus.NONE;
     }
 
     private AssertionStatus doIncrementOnSuccess( final PolicyEnforcementContext context,

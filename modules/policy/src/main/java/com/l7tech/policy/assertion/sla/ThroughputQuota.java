@@ -78,6 +78,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     public static final int ALWAYS_INCREMENT = 1;
     public static final int INCREMENT_ON_SUCCESS = 2;
     public static final int DECREMENT = 3;
+    public static final int RESET = 4;
     private int counterStrategy = INCREMENT_ON_SUCCESS;
     private boolean logOnly = false;
 
@@ -308,6 +309,8 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
             final String readableCounterName = getReadableCounterName(assertion.getCounterName());
             if (assertion.getCounterStrategy() == ThroughputQuota.DECREMENT) {
                 buffer.append(": Decrement counter ").append(readableCounterName);
+            } if (assertion.getCounterStrategy() == ThroughputQuota.RESET) {
+                buffer.append(": Reset counter ").append(readableCounterName);
             } else {
                 buffer.append(": ").append(readableCounterName).append(": ").append(assertion.getQuota()).append(" per ").append(timeUnitStr(assertion.getTimeUnit()));
             }

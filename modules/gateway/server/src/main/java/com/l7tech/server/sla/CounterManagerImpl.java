@@ -262,6 +262,42 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
         }
     }
 
+    @Override
+    public void reset(final String counterName) {
+        TransactionTemplate tt = new TransactionTemplate(transactionManager);
+        tt.setReadOnly(false);
+        tt.execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                getHibernateTemplate().execute(new HibernateCallback<Void>() {
+                    @Override
+                    public Void doInHibernate(Session session) throws HibernateException, SQLException {
+                        session.doWork(new Work() {
+                            @Override
+                            public void execute(Connection connection) throws SQLException {
+                                Counter dbcnt = loadCounter(connection, counterName, true);
+                                if (dbcnt == null) {
+                                    //Do nothing
+                                    return;
+                                }
+                                dbcnt.setCurrentSecondCounter(0);
+                                dbcnt.setCurrentMinuteCounter(0);
+                                dbcnt.setCurrentHourCounter(0);
+                                dbcnt.setCurrentDayCounter(0);
+                                dbcnt.setCurrentMonthCounter(0);
+                                dbcnt.setLastUpdate(Calendar.getInstance().getTime().getTime());
+
+                                // put new value in database
+                                recordNewCounterValue(connection, counterName, dbcnt);
+                            }
+                        });
+                        return null;
+                    }
+                });
+            }
+        });
+    }
+
     private void synchronousDecrement(final String counterName) {
         TransactionTemplate tt = new TransactionTemplate(transactionManager);
         tt.setReadOnly(false);

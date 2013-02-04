@@ -6,7 +6,9 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
 
@@ -29,6 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
@@ -191,6 +194,22 @@ public class ServerThroughputQuotaTest {
         if (expectFail && !failed) {
             fail("Assertion should throw due to invalid max quota");
         }
+    }
+
+    @Test
+    public void testReset() throws IOException, PolicyAssertionException, NoSuchVariableException {
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.RESET);
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        configureServerAssertion(serverAssertion, null);
+        //limit has been met
+        counterManager.setCounterValue(5);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(0, counterManager.getCounterValue());
+        assertEquals("0", String.valueOf(context.getVariable("counter.value")));
     }
 
     private void configureServerAssertion(ServerThroughputQuota serverAssertion, @Nullable Map<String, String> props) {

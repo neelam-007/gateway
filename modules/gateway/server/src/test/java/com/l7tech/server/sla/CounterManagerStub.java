@@ -60,4 +60,9 @@ public class CounterManagerStub implements CounterManager{
     @Override
     public void decrement(boolean sync, String counterName) {
     }
+
+    @Override
+    public void reset(String counterName) {
+        counterValue = 0;
+    }
 }
