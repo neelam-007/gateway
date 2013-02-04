@@ -98,7 +98,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
      */
     public EncapsulatedAssertionConfigPropertiesDialog(@NotNull final Window parent, @NotNull final EncapsulatedAssertionConfig config,
                                                        boolean readOnly, @NotNull final Set<String> usedConfigNames, final boolean autoPopulateParams) {
-        super(parent, "Encapsulated Assertion Configuration", ModalityType.APPLICATION_MODAL);
+        super(parent, "Encapsulated Assertion Configuration Properties", ModalityType.APPLICATION_MODAL);
         this.config = config;
         this.readOnly = readOnly;
         this.usedConfigNames = usedConfigNames;
