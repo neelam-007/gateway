@@ -23,7 +23,6 @@ import java.util.logging.Logger;
  */
 public class EncapsulatedAssertionConfigConflictDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(EncapsulatedAssertionConfigConflictDialog.class.getName());
-    private JCheckBox overwriteCheckBox;
     private JTextField encassNameTextField;
     private JTextField policyNameTextField;
     private JButton okButton;
@@ -32,11 +31,9 @@ public class EncapsulatedAssertionConfigConflictDialog extends JDialog {
     private JLabel encassLabel;
     private JLabel policyLabel;
     private boolean confirmed;
-    private boolean overwrite;
     private String encassName;
     private String policyName;
     private InputValidator inputValidator;
-    private EncapsulatedAssertionConfig toImport;
     private EncapsulatedAssertionConfig conflictingConfig;
     private Policy conflictingPolicy;
 
@@ -57,7 +54,6 @@ public class EncapsulatedAssertionConfigConflictDialog extends JDialog {
         setContentPane(contentPanel);
         setModal(true);
         getRootPane().setDefaultButton(okButton);
-        this.toImport = toImport;
         this.conflictingConfig = conflictingConfig;
         this.conflictingPolicy = conflictingPolicy;
         encassName = toImport.getName();
@@ -81,8 +77,7 @@ public class EncapsulatedAssertionConfigConflictDialog extends JDialog {
                     try {
                         final String encassName = encassNameTextField.getText().trim();
                         final EncapsulatedAssertionConfig sameEncassName = Registry.getDefault().getEncapsulatedAssertionAdmin().findByUniqueName(encassName);
-                        // cannot overwrite unless the conflicting config has the same guid
-                        if (sameEncassName != null && (!overwriteCheckBox.isSelected() || !sameEncassName.getGuid().equals(toImport.getGuid()))) {
+                        if (sameEncassName != null) {
                             error = "Encapsulated Assertion name " + encassName + " is already in use.";
                         }
                     } catch (final FindException e) {
@@ -116,7 +111,6 @@ public class EncapsulatedAssertionConfigConflictDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 confirmed = true;
-                overwrite = overwriteCheckBox.isSelected();
                 encassName = encassNameTextField.getText().trim();
                 policyName = policyNameTextField.getText().trim();
                 dispose();
@@ -128,8 +122,6 @@ public class EncapsulatedAssertionConfigConflictDialog extends JDialog {
      * Only displays fields that are relevant to the conflicting entities.
      */
     private void enableOrDisable() {
-        overwriteCheckBox.setEnabled(conflictingConfig != null && toImport.getGuid().equals(conflictingConfig.getGuid()));
-        overwriteCheckBox.setVisible(conflictingConfig != null && toImport.getGuid().equals(conflictingConfig.getGuid()));
         encassLabel.setEnabled(conflictingConfig != null);
         encassLabel.setVisible(conflictingConfig != null);
         encassNameTextField.setEnabled(conflictingConfig != null);
@@ -145,14 +137,6 @@ public class EncapsulatedAssertionConfigConflictDialog extends JDialog {
      */
     public boolean isConfirmed() {
         return confirmed;
-    }
-
-    /**
-     * @return true if the imported EncapsulatedAssertionConfig should be overwrite (update) the existing conflicting EncapsulatedAssertionConfig or
-     *         false if a new EncapsulatedAssertionConfig should be created.
-     */
-    public boolean isOverwrite() {
-        return overwrite;
     }
 
     /**

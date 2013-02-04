@@ -102,9 +102,25 @@ public class EncapsulatedAssertionConfigExportUtilTest {
         assertTrue(imported.getProperties().isEmpty());
     }
 
+    @Test
+    public void importFromNodeResetOidsAndVersions() throws Exception {
+        final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlFromConfig(config)), true);
+        assertEquals(EncapsulatedAssertionConfig.DEFAULT_OID, imported.getOid());
+        assertEquals(0, imported.getVersion());
+        for (final EncapsulatedAssertionArgumentDescriptor in : imported.getArgumentDescriptors()) {
+            assertEquals(EncapsulatedAssertionArgumentDescriptor.DEFAULT_OID, in.getOid());
+            assertEquals(0, in.getVersion());
+        }
+        for (final EncapsulatedAssertionResultDescriptor out : imported.getResultDescriptors()) {
+            assertEquals(EncapsulatedAssertionResultDescriptor.DEFAULT_OID, out.getOid());
+            assertEquals(0, out.getVersion());
+        }
+    }
+
     private void testExport() throws IOException, TransformerException, SAXException {
         util.export(config, result);
         final String xml = XmlUtil.nodeToFormattedString(result.getNode());
+        System.out.println(xml);
         assertEquals(xmlFromConfig(config), xml);
     }
 

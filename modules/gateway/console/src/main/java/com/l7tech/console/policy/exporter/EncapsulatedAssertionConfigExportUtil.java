@@ -25,7 +25,7 @@ public class EncapsulatedAssertionConfigExportUtil {
      * @param result the Result which will hold the exported EncapsulatedAssertionConfig xml.
      * @throws IOException if unable to export the EncapsulatedAssertionConfig.
      */
-    public void export(@NotNull EncapsulatedAssertionConfig config, @NotNull final Result result) throws IOException {
+    public void export(@NotNull final EncapsulatedAssertionConfig config, @NotNull final Result result) throws IOException {
         final Marshaller marshaller;
         try {
             marshaller = createMarshaller();
@@ -42,7 +42,19 @@ public class EncapsulatedAssertionConfigExportUtil {
      * @return the imported EncapsulatedAssertionConfig.
      * @throws IOException if unable to import an EncapsulatedAssertionConfig.
      */
-    public EncapsulatedAssertionConfig importFromNode(@NotNull Node node) throws IOException {
+    public EncapsulatedAssertionConfig importFromNode(@NotNull final Node node) throws IOException {
+        return importFromNode(node, false);
+    }
+
+    /**
+     * Imports an EncapsulatedAssertionConfig from a Node.
+     *
+     * @param node                 the Node which contains the EncapsulatedAssertionConfig xml.
+     * @param resetOidsAndVersions true if the oids and versions of the entities should be reset to default values.
+     * @return the imported EncapsulatedAssertionConfig.
+     * @throws IOException if unable to import an EncapsulatedAssertionConfig.
+     */
+    public EncapsulatedAssertionConfig importFromNode(@NotNull final Node node, final boolean resetOidsAndVersions) throws IOException {
         try {
             final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             final Object unmarshalled = unmarshaller.unmarshal(node);
@@ -52,9 +64,21 @@ public class EncapsulatedAssertionConfigExportUtil {
             final EncapsulatedAssertionConfig config = (EncapsulatedAssertionConfig) unmarshalled;
             for (final EncapsulatedAssertionArgumentDescriptor arg : config.getArgumentDescriptors()) {
                 arg.setEncapsulatedAssertionConfig(config);
+                if (resetOidsAndVersions) {
+                    arg.setOid(EncapsulatedAssertionArgumentDescriptor.DEFAULT_OID);
+                    arg.setVersion(0);
+                }
             }
             for (final EncapsulatedAssertionResultDescriptor result : config.getResultDescriptors()) {
                 result.setEncapsulatedAssertionConfig(config);
+                if (resetOidsAndVersions) {
+                    result.setOid(EncapsulatedAssertionResultDescriptor.DEFAULT_OID);
+                    result.setVersion(0);
+                }
+            }
+            if (resetOidsAndVersions) {
+                config.setOid(EncapsulatedAssertionConfig.DEFAULT_OID);
+                config.setVersion(0);
             }
             return config;
         } catch (final JAXBException e) {
