@@ -38,6 +38,15 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     private static final long PREAMBLE_MAX_SIZE = ConfigFactory.getLongProperty( "com.l7tech.common.mime.preambleMaxSize", 1024 * 32 );
     private static final long HEADERS_MAX_SIZE = ConfigFactory.getLongProperty( "com.l7tech.common.mime.headersMaxSize", 1024 * 32 );
     private static final boolean RAW_PARTS = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.rawParts", false );
+    private static boolean ALLOW_LAX_START_PARAM_MATCH = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxStartParamMatch", false );
+
+    /**
+     * Allow system loaded lax start param match variable to be reloaded, used initially in test coverage
+     */
+    static void loadLaxStartParam(){
+        ALLOW_LAX_START_PARAM_MATCH = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxStartParamMatch", false );
+    }
+
 
     private final FlaggingByteLimitInputStream mainInputStream; // always pointed at current part's body, or just past end of message
     private final int pushbackSize;
@@ -107,7 +116,10 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                 readInitialBoundary();
                 readNextPartHeaders();
                 firstPart = (PartInfoImpl)partInfos.get(0);
-                if (start != null && !( start.equals(firstPart.getContentId(false)) || start.equals(firstPart.getContentId(true)) )) {
+                if (start != null && !(
+                                start.equals(firstPart.getContentId(false)) ||
+                                (ALLOW_LAX_START_PARAM_MATCH && start.equals(firstPart.getContentId(true))) )
+                        ) {
                     throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");
                 }
 

@@ -6,11 +6,10 @@ import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.Charsets;
+import com.l7tech.util.*;
+
 import static com.l7tech.util.CollectionUtils.list;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
+
 import org.junit.Test;
 
 import java.io.*;
@@ -39,9 +38,45 @@ public class MimeBodyTest {
     }
 
     /**
-     * If start does not match Content-ID simply because Content-ID is surrounded by &lt; and &gt;, then they should match
-     * because technically Content-ID should always be surrounded by these brackets (see rfc 822 and rfc2045) and start
-     * defined in rfc 2387 has no such rule.
+     * We strictly match the start parameter to the Content-ID by default. This can be turned off but only via a system
+     * property. This test ensures that the default case is still valid e.g. do not match
+     */
+    @Test
+    public void testStartDoesNotMatchIfNoSurroundingBrackets() throws Exception {
+        // Content-ID here has surrounding brackets
+        String mess = "PREAMBLE GARBAGE\r\nBLAH BLAH BLAH\r\n------=Part_-763936460.407197826076299\r\n" +
+                    "Content-Transfer-Encoding: 8bit\r\n" +
+                    "Content-Type: text/xml; charset=utf-8\r\n" +
+                    "Content-ID: <-76394136.15558>\r\n" +
+                    "\r\n" +
+                    SOAP +
+                    "\r\n" +
+                    "------=Part_-763936460.407197826076299\r\n" +
+                    "Content-Transfer-Encoding: 8bit\r\n" +
+                    "Content-Type: application/octet-stream\r\n" +
+                    "Content-ID: -76392836.15558\r\n" +
+                    "\r\n" +
+                     RUBY +
+                    "\r\n" +
+                    "------=Part_-763936460.407197826076299--\r\n";
+
+        String boundary = "----=Part_-763936460.407197826076299";
+        // Start has no surrounding brackets
+        String contentType = "multipart/related; type=\"text/xml\"; boundary=\"" + boundary + "\"; start=\"-76394136.15558\"";
+        // this should throw an IOException due to the mis match
+        try {
+            makeMessage(mess, contentType,FIRST_PART_MAX_BYTE);
+            fail("Method should have thrown due to start not matching Content-ID");
+        } catch (Exception e) {
+            assertTrue(e instanceof IOException);
+            assertEquals("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.", e.getMessage());
+        }
+    }
+
+    /**
+     * If start does not match Content-ID simply because Content-ID is surrounded by &lt; and &gt;, then allow them to
+     * match in a lax mode where start will match Content-ID if the surrounding brackets required on Content-ID are ignored.
+     * (see rfc 822 and rfc2045) and start defined in rfc 2387 has no such rule.
      *
      */
     @BugId("SSG-6388")
@@ -67,25 +102,35 @@ public class MimeBodyTest {
 
         String boundary = "----=Part_-763936460.407197826076299";
 
-        {
-            // Start has no surrounding brackets
-            String contentType = "multipart/related; type=\"text/xml\"; boundary=\"" + boundary + "\"; start=\"-76394136.15558\"";
-            MimeBody mm = makeMessage(mess, contentType,FIRST_PART_MAX_BYTE);
-            assertNotNull(mm);
-        }
+        try {
+            // MimeBody may already be loaded so we need to reset it internally to allow new value to be picked up.
+            System.setProperty("com.l7tech.common.mime.allowLaxStartParamMatch", "true");
+            ConfigFactory.clearCachedConfig();
+            MimeBody.loadLaxStartParam();
+            {
+                // Start has no surrounding brackets
+                String contentType = "multipart/related; type=\"text/xml\"; boundary=\"" + boundary + "\"; start=\"-76394136.15558\"";
+                MimeBody mm = makeMessage(mess, contentType,FIRST_PART_MAX_BYTE);
+                assertNotNull(mm);
+            }
 
-        {
-            // Now if start IS surrounded by brackets, then we must continue to support that
-            String contentType = "multipart/related; type=\"text/xml\"; boundary=\"" + boundary + "\"; start=\"<-76394136.15558>\"";
-            MimeBody mm = makeMessage(mess, contentType,FIRST_PART_MAX_BYTE);
-            assertNotNull(mm);
+            {
+                // Now if start IS surrounded by brackets, then we must continue to support that
+                String contentType = "multipart/related; type=\"text/xml\"; boundary=\"" + boundary + "\"; start=\"<-76394136.15558>\"";
+                MimeBody mm = makeMessage(mess, contentType,FIRST_PART_MAX_BYTE);
+                assertNotNull(mm);
+            }
+        } finally {
+            // full clean up of internal state of MimeBody
+            System.clearProperty("com.l7tech.common.mime.allowLaxStartParamMatch");
+            ConfigFactory.clearCachedConfig();
+            MimeBody.loadLaxStartParam();
         }
 
     }
 
     /**
-     * Comparing start to Content-ID should only ever allow stripping of angle brackets from Content-ID and never from
-     * the start parameter.
+     * Comparing start to Content-ID should never allow stripping of angle brackets from the start parameter.
      *
      */
     @BugId("SSG-6388")
