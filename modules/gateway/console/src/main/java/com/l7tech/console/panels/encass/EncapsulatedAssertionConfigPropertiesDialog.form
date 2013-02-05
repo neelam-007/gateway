@@ -360,6 +360,7 @@
                 </constraints>
                 <properties>
                   <text value="Icon"/>
+                  <toolTipText value="Change Icon"/>
                 </properties>
               </component>
             </children>
