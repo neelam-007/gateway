@@ -100,7 +100,12 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
             case RESPONSE:
                 return getResponse();
             default:
-                return context.getOrCreateTargetMessage( targetable, allowNonMessagevar );
+                final String varName = targetable.getOtherTargetMessageVariable();
+                if (varName != null && isParentVariable(varName)) {
+                    return super.getOrCreateTargetMessage(targetable, allowNonMessagevar);
+                } else {
+                    return context.getOrCreateTargetMessage( targetable, allowNonMessagevar );
+                }
         }
     }
 
