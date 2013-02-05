@@ -210,6 +210,7 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 if (respondFromErroredMessageProcessingStatus(id, sshFile)) {
                     sendStatus(id, SSH_FX_OK, "");
                 }
+                break;
             }
             //From Docs: New directories can be created using the SSH_FXP_MKDIR request.
             case SSH_FXP_MKDIR: {
@@ -234,6 +235,7 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 if (respondFromErroredMessageProcessingStatus(id, sshFile)) {
                     sendStatus(id, SSH_FX_OK, "");
                 }
+                break;
             }
             // From Docs: Directories can be removed using the SSH_FXP_RMDIR request
             case SSH_FXP_RMDIR: {
@@ -258,12 +260,13 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 if (respondFromErroredMessageProcessingStatus(id, sshFile)) {
                     sendStatus(id, SSH_FX_OK, "");
                 }
+                break;
             }
             /*
             From Docs:
                 Files (and directories) can be renamed using the SSH_FXP_RENAME message.
              */
-            case SSH_FXP_RENAME:
+            case SSH_FXP_RENAME: {
                 if (!connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_MOVE)) {
                     logger.log(Level.INFO, "An sftp client attempted to rename a file but this is not enabled in this connector.");
                     sendStatus(id, SSH_FX_FAILURE, "This SFTP server does not support renaming files.");
@@ -291,6 +294,8 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 if (respondFromErroredMessageProcessingStatus(id, sshFile)) {
                     sendStatus(id, SSH_FX_OK, "");
                 }
+                break;
+            }
             default:
                 logger.log(Level.INFO, "Received unsupported type: {0}", type);
                 sendStatus(id, SSH_FX_OP_UNSUPPORTED, "Command " + type + " is unsupported on the Gateway");
