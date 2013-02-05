@@ -54,7 +54,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64Expression stringValue="ZmFsc2U="/&gt;
+                    &lt;L7p:Base64Expression stringValue="dHJ1ZQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="usePortal"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
