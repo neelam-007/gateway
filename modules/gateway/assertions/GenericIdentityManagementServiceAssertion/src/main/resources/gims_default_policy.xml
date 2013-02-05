@@ -247,7 +247,7 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     <L7p:entry>
                                     <L7p:key stringValue="RIGHT.COMMENT"/>
 
-                                    <L7p:value stringValue="client sent username/password credentials"/>
+                                    <L7p:value stringValue="//client sent username/password credentials"/>
                                     </L7p:entry>
                                     <L7p:entry>
                                     <L7p:key stringValue="LEFT.COMMENT"/>
@@ -294,7 +294,7 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     <L7p:entry>
                                     <L7p:key stringValue="RIGHT.COMMENT"/>
 
-                                    <L7p:value stringValue="client sent user token"/>
+                                    <L7p:value stringValue="//client sent user token"/>
                                     </L7p:entry>
                                     <L7p:entry>
                                     <L7p:key stringValue="LEFT.COMMENT"/>
@@ -308,7 +308,7 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     <L7p:Properties mapValue="included">
                                     <L7p:entry>
                                     <L7p:key stringValue="RIGHT.COMMENT"/>
-                                    <L7p:value stringValue="User credentials can be either login/password or security token"/>
+                                    <L7p:value stringValue="//user credentials can be either login/password or security token"/>
                                     </L7p:entry>
                                     <L7p:entry>
                                     <L7p:key stringValue="LEFT.COMMENT"/>
@@ -319,10 +319,64 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     </wsp:OneOrMore>
                                     <wsp:OneOrMore wsp:Usage="Required">
                                     <wsp:All wsp:Usage="Required">
+                                    <L7p:ThroughputQuota>
+
+                                    <L7p:AssertionComment assertionComment="included">
+
+                                    <L7p:Properties mapValue="included">
+                                    <L7p:entry>
+
+                                    <L7p:key stringValue="RIGHT.COMMENT"/>
+
+                                    <L7p:value stringValue="//count number of login attempts and lock up the user if it exceeds predefined value "/>
+                                    </L7p:entry>
+                                    </L7p:Properties>
+                                    </L7p:AssertionComment>
+                                    <L7p:CounterName stringValue="${username}"/>
+                                    <L7p:Global booleanValue="true"/>
+                                    <L7p:Quota stringValue="10"/>
+                                    <L7p:TimeUnit intValue="3"/>
+                                    </L7p:ThroughputQuota>
+                                    <wsp:OneOrMore wsp:Usage="Required">
+                                    <wsp:All wsp:Usage="Required">
                                     <L7p:Authentication>
 
                                     <L7p:IdentityProviderOid longValue="-2"/>
                                     </L7p:Authentication>
+                                    <L7p:ThroughputQuota>
+
+                                    <L7p:AssertionComment assertionComment="included">
+
+                                    <L7p:Properties mapValue="included">
+                                    <L7p:entry>
+
+                                    <L7p:key stringValue="RIGHT.COMMENT"/>
+
+                                    <L7p:value stringValue="//reset login attempts counter after successful attempt"/>
+                                    </L7p:entry>
+                                    </L7p:Properties>
+                                    </L7p:AssertionComment>
+
+                                    <L7p:CounterName stringValue="${username}"/>
+
+                                    <L7p:CounterStrategy intValue="4"/>
+
+                                    <L7p:Global booleanValue="true"/>
+
+                                    <L7p:Quota stringValue="10"/>
+
+                                    <L7p:Synchronous booleanValue="false"/>
+
+                                    <L7p:TimeUnit intValue="2"/>
+                                    </L7p:ThroughputQuota>
+                                    </wsp:All>
+                                    <L7p:SetVariable>
+
+                                    <L7p:Base64Expression stringValue="dHJ1ZQ=="/>
+
+                                    <L7p:VariableToSet stringValue="failed"/>
+                                    </L7p:SetVariable>
+                                    </wsp:OneOrMore>
                                     <L7p:ComparisonAssertion>
                                     <L7p:Expression1 stringValue="${failed}"/>
                                     <L7p:Expression2 stringValue="false"/>
@@ -336,6 +390,24 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     </L7p:Predicates>
                                     </L7p:ComparisonAssertion>
                                     <L7p:IdentityAttributes>
+
+                                    <L7p:AssertionComment assertionComment="included">
+
+                                    <L7p:Properties mapValue="included">
+                                    <L7p:entry>
+
+                                    <L7p:key stringValue="RIGHT.COMMENT"/>
+
+                                    <L7p:value stringValue="//get authorization attributes"/>
+                                    </L7p:entry>
+                                    <L7p:entry>
+
+                                    <L7p:key stringValue="LEFT.COMMENT"/>
+
+                                    <L7p:value stringValue="retrieveAuthorizationInfo()"/>
+                                    </L7p:entry>
+                                    </L7p:Properties>
+                                    </L7p:AssertionComment>
 
                                     <L7p:IdentityProviderOid longValue="-2"/>
 
@@ -523,6 +595,18 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     </L7p:SetVariable>
                                     <L7p:JsonTransformation>
 
+                                    <L7p:AssertionComment assertionComment="included">
+
+                                    <L7p:Properties mapValue="included">
+                                    <L7p:entry>
+
+                                    <L7p:key stringValue="RIGHT.COMMENT"/>
+
+                                    <L7p:value stringValue="//convert XML response message to JSON"/>
+                                    </L7p:entry>
+                                    </L7p:Properties>
+                                    </L7p:AssertionComment>
+
                                     <L7p:Convention convention="JSONML"/>
 
                                     <L7p:OtherTargetMessageVariable stringValue="msg"/>
@@ -531,18 +615,6 @@ amVjdD4KPC9qYXZhPgo=</Props>
 
                                     <L7p:Target target="OTHER"/>
                                     </L7p:JsonTransformation>
-                                    <L7p:SetVariable>
-
-                                    <L7p:Base64Expression stringValue="JHtvdXRwdXR9"/>
-
-                                    <L7p:ContentType stringValue="text/xml; charset=utf-8"/>
-
-                                    <L7p:DataType variableDataType="message"/>
-
-                                    <L7p:Enabled booleanValue="false"/>
-
-                                    <L7p:VariableToSet stringValue="msg"/>
-                                    </L7p:SetVariable>
                                     </wsp:All>
                                     <wsp:All wsp:Usage="Required">
                                     <L7p:HardcodedResponse>
@@ -551,6 +623,17 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     </L7p:HardcodedResponse>
                                     </wsp:All>
                                     </wsp:OneOrMore>
+                                    <L7p:assertionComment>
+
+                                    <L7p:Properties mapValue="included">
+                                    <L7p:entry>
+
+                                    <L7p:key stringValue="RIGHT.COMMENT"/>
+
+                                    <L7p:value stringValue="//create response message"/>
+                                    </L7p:entry>
+                                    </L7p:Properties>
+                                    </L7p:assertionComment>
                                     </wsp:All>
                                     </wsp:OneOrMore>
                                     <L7p:assertionComment>
@@ -558,7 +641,7 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     <L7p:entry>
                                     <L7p:key stringValue="RIGHT.COMMENT"/>
 
-                                    <L7p:value stringValue="perform user authentication and return the authorization info"/>
+                                    <L7p:value stringValue="//perform user authentication and return the authorization info"/>
                                     </L7p:entry>
                                     <L7p:entry>
                                     <L7p:key stringValue="LEFT.COMMENT"/>
