@@ -204,36 +204,37 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                     // check guid
                     final EncapsulatedAssertionConfig sameGuid = Registry.getDefault().getEncapsulatedAssertionAdmin().findByGuid(config.getGuid());
                     // found guid conflict
-                    DialogDisplayer.showConfirmDialog(EncapsulatedAssertionManagerWindow.this,
-                            "Found a conflicting Encapsulated Assertion. Update the existing Encapsulated Assertion?",
-                            "Import Encapsualted Assertion Conflict", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
-                            new DialogDisplayer.OptionListener() {
-                                @Override
-                                public void reportResult(int option) {
-                                    if (JOptionPane.YES_OPTION == option) {
-                                        // update existing config
-                                        config.setOid(sameGuid.getOid());
-                                        config.setVersion(sameGuid.getVersion());
-                                        // update existing policy
-                                        final Policy existingPolicy = sameGuid.getPolicy();
-                                        try {
-                                            final Pair<Policy, HashMap<String, Policy>> fragmentResult = createPolicyFragment(existingPolicy.getName(), policyDoc);
-                                            existingPolicy.setXml(fragmentResult.getKey().getXml());
-                                            savePolicyAndConfig(existingPolicy, fragmentResult.getValue(), config);
-                                        } catch (final PolicyImportCancelledException e) {
-                                            logger.log(Level.FINE, "Policy import cancelled.", ExceptionUtils.getDebugException(e));
-                                        } catch (final Exception e) {
-                                            logger.log(Level.WARNING, "Error saving Encapsulated Assertion.", ExceptionUtils.getDebugException(e));
-                                            showError("Error saving Encapsulated Assertion.", null);
-                                        }
-                                    } else if (JOptionPane.NO_OPTION == option) {
-                                        // create new config and policy
-                                        config.setGuid(null);
-                                        resolveConflictsAndSave(policyDoc, config);
-                                    } else {
-                                        logger.log(Level.FINE, "Policy import cancelled.");
-                                    }
+                    DialogDisplayer.showOptionDialog(EncapsulatedAssertionManagerWindow.this,
+                            "Found an existing Encapsulated Assertion with name " + sameGuid.getName() + ".",
+                            "Import Encapsulated Assertion", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null,
+                            new Object[]{ "Overwrite", "Create New", "Cancel"}, "Update", new DialogDisplayer.OptionListener() {
+                        @Override
+                        public void reportResult(int option) {
+                            System.out.println(option);
+                            if (option == 0) {
+                                // update existing config
+                                config.setOid(sameGuid.getOid());
+                                config.setVersion(sameGuid.getVersion());
+                                // update existing policy
+                                final Policy existingPolicy = sameGuid.getPolicy();
+                                try {
+                                    final Pair<Policy, HashMap<String, Policy>> fragmentResult = createPolicyFragment(existingPolicy.getName(), policyDoc);
+                                    existingPolicy.setXml(fragmentResult.getKey().getXml());
+                                    savePolicyAndConfig(existingPolicy, fragmentResult.getValue(), config);
+                                } catch (final PolicyImportCancelledException e) {
+                                    logger.log(Level.FINE, "Policy import cancelled.", ExceptionUtils.getDebugException(e));
+                                } catch (final Exception e) {
+                                    logger.log(Level.WARNING, "Error saving Encapsulated Assertion.", ExceptionUtils.getDebugException(e));
+                                    showError("Error saving Encapsulated Assertion.", null);
                                 }
+                            } else if (option == 1) {
+                                // create new config and policy
+                                config.setGuid(null);
+                                resolveConflictsAndSave(policyDoc, config);
+                            } else {
+                                logger.log(Level.FINE, "Policy import cancelled.");
+                            }
+                        }
                     });
                 } catch (final FindException e) {
                     // no guid conflict

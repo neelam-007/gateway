@@ -48,7 +48,7 @@ public class EncapsulatedAssertionConfigConflictDialog extends JDialog {
     public EncapsulatedAssertionConfigConflictDialog(@NotNull Window owner, @NotNull final EncapsulatedAssertionConfig toImport,
                                                      @Nullable final EncapsulatedAssertionConfig conflictingConfig,
                                                      @Nullable final Policy conflictingPolicy) {
-        super(owner, "Encapsulated Assertion Conflict", ModalityType.APPLICATION_MODAL);
+        super(owner, "Create Encapsulated Assertion", ModalityType.APPLICATION_MODAL);
         Validate.isTrue(conflictingConfig != null || conflictingPolicy != null, "Must have a conflicting config or policy or both.");
         Utilities.setEscKeyStrokeDisposes(this);
         setContentPane(contentPanel);
