@@ -24,16 +24,11 @@ import java.util.logging.Logger;
  */
 public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssertionTreeNode<AT> {
     private static final Logger logger = Logger.getLogger(DefaultAssertionPolicyNode.class.getName());
-    private final Action propertiesAction;
+    private Action propertiesAction;
 
     public DefaultAssertionPolicyNode(AT assertion) {
         super(assertion);
-        
-        //noinspection unchecked
-        Functions.Unary< Action, AssertionTreeNode<AT> > factory =
-                (Functions.Unary<Action, AssertionTreeNode<AT>>)
-                        assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_FACTORY);
-        propertiesAction = factory == null ? null : factory.call(this);
+        reloadPropertiesAction();
     }
 
     @Override
@@ -181,6 +176,17 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
     @Override
     public  Action getPreferredAction() {
         return propertiesAction;
+    }
+
+    /**
+     * Reload the Action used to display the properties dialog for the assertion.
+     */
+    public void reloadPropertiesAction() {
+        //noinspection unchecked
+        Functions.Unary< Action, AssertionTreeNode<AT> > factory =
+                (Functions.Unary<Action, AssertionTreeNode<AT>>)
+                        assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_FACTORY);
+        propertiesAction = factory == null ? null : factory.call(this);
     }
 
     // - PRIVATE

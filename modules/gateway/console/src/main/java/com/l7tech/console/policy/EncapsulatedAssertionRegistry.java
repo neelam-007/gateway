@@ -3,6 +3,7 @@ package com.l7tech.console.policy;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -110,10 +111,15 @@ public class EncapsulatedAssertionRegistry {
                         if (config != null) {
                             encass.config(config);
                         }
+                        if (assertionTreeNode instanceof DefaultAssertionPolicyNode) {
+                            final DefaultAssertionPolicyNode policyNode = (DefaultAssertionPolicyNode) assertionTreeNode;
+                            policyNode.reloadPropertiesAction();
+                        }
                         final JTree policyTree = TopComponents.getInstance().getPolicyTree();
                         if (policyTree != null && policyTree.getModel() instanceof PolicyTreeModel) {
                             ((PolicyTreeModel)(policyTree.getModel())).assertionTreeNodeChanged(assertionTreeNode);
                         }
+
                     }
                 }
             });
