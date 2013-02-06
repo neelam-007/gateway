@@ -3,7 +3,6 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -12,7 +11,6 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpClientCert;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
 public class ServerSslAssertion extends AbstractServerAssertion<SslAssertion> {
@@ -20,7 +18,7 @@ public class ServerSslAssertion extends AbstractServerAssertion<SslAssertion> {
 
     public ServerSslAssertion(SslAssertion data) {
         super(data);
-        serverHttpClientCert = new ServerHttpClientCert(new HttpClientCert());
+        serverHttpClientCert = new ServerHttpClientCert(new HttpClientCert(assertion.isCheckCertValidity()));
     }
 
     @Override
@@ -30,15 +28,14 @@ public class ServerSslAssertion extends AbstractServerAssertion<SslAssertion> {
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
-        final HttpServletRequestKnob hsRequestKnob = context.getRequest().getKnob(HttpServletRequestKnob.class);
-        final HttpServletRequest httpServletRequest = hsRequestKnob == null ? null : hsRequestKnob.getHttpServletRequest();
+        final HttpRequestKnob hsRequestKnob = context.getRequest().getKnob(HttpRequestKnob.class);
         final FtpRequestKnob ftpRequestKnob = hsRequestKnob != null ? null : context.getRequest().getKnob(FtpRequestKnob.class);
-        if (httpServletRequest == null && ftpRequestKnob == null) {
+        if (hsRequestKnob == null && ftpRequestKnob == null) {
             logger.info("Request not received over FTP or HTTP; don't know how to check for SSL");
             context.setRequestPolicyViolated();
             return AssertionStatus.BAD_REQUEST;
         }
-        boolean ssl = httpServletRequest!=null ? httpServletRequest.isSecure() : ftpRequestKnob.isSecure();
+        boolean ssl = hsRequestKnob != null ? hsRequestKnob.isSecure() : ftpRequestKnob.isSecure();
         AssertionStatus status;
 
         SslAssertion.Option option = assertion.getOption();
@@ -48,7 +45,7 @@ public class ServerSslAssertion extends AbstractServerAssertion<SslAssertion> {
             if (ssl) {
                 status = AssertionStatus.NONE;
                 logAndAudit(AssertionMessages.SSL_REQUIRED_PRESENT);
-                if (iscred && httpServletRequest!=null) {
+                if (iscred && hsRequestKnob != null) {
                     status = processAsCredentialSourceAssertion(context);
                 } else if (iscred) {
                     status = AssertionStatus.FALSIFIED;

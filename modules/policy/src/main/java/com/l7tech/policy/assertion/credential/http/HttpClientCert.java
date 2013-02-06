@@ -13,6 +13,23 @@ import com.l7tech.policy.assertion.DefaultAssertionMetadata;
  * @author alex
  */
 public class HttpClientCert extends HttpCredentialSourceAssertion {
+    private boolean checkCertValidity = true;
+
+    public HttpClientCert() {
+    }
+
+    public HttpClientCert(boolean checkCertValidity) {
+        this.checkCertValidity = checkCertValidity;
+    }
+
+    public boolean isCheckCertValidity() {
+        return checkCertValidity;
+    }
+
+    public void setCheckCertValidity(boolean checkCertValidity) {
+        this.checkCertValidity = checkCertValidity;
+    }
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();

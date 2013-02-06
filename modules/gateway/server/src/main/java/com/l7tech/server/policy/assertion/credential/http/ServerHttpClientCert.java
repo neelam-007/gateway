@@ -8,9 +8,9 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
-import com.l7tech.security.token.http.HttpClientCertToken;
 
 import java.io.IOException;
 import java.security.cert.CertificateExpiredException;
@@ -56,7 +56,8 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion<HttpCl
         if (clientCert == null) throw new CredentialFinderException("Null cert in chain");
 
         try {
-            clientCert.checkValidity();
+            if (assertion.isCheckCertValidity())
+                clientCert.checkValidity();
         } catch (CertificateExpiredException cee) {
             throw new CredentialFinderException( "Client Certificate has expired", cee, AssertionStatus.AUTH_FAILED );
         } catch (CertificateNotYetValidException cnyve ) {

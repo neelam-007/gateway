@@ -1,14 +1,14 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.SslAssertion;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.logging.Logger;
 
 /**
@@ -27,6 +27,7 @@ public class EditSslAssertionPropertiesDialog extends LegacyAssertionPropertyDia
     private JRadioButton sslOptionalRadioButton;
     private JRadioButton sslForbiddenRadioButton;
     private JPanel mainPanel;
+    private JCheckBox certValidityCheckBox;
 
     /**
      * Create a new Ssl Editor Dialog
@@ -51,11 +52,14 @@ public class EditSslAssertionPropertiesDialog extends LegacyAssertionPropertyDia
         group.add(sslForbiddenRadioButton);
         group.add(sslOptionalRadioButton);
         group.add(sslRequiredRadioButton);
-        sslRequiredRadioButton.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                requireClientCertificateCheckBox.setEnabled(sslRequiredRadioButton.isSelected());
+        final ChangeListener enableOrDisableListener = new RunOnChangeListener() {
+            @Override
+            public void run() {
+                enableOrDisable();
             }
-        });
+        };
+        sslRequiredRadioButton.addChangeListener(enableOrDisableListener);
+        requireClientCertificateCheckBox.addChangeListener(enableOrDisableListener);
 
         final SslAssertion.Option sslOption = sslAssertion.getOption();
 
@@ -63,6 +67,8 @@ public class EditSslAssertionPropertiesDialog extends LegacyAssertionPropertyDia
                                           okButton,
                                           cancelButton
                                         });
+
+        Utilities.enableGrayOnDisabled(certValidityCheckBox);
 
         if (sslOption.equals(SslAssertion.REQUIRED)) {
               sslRequiredRadioButton.setSelected(true);
@@ -88,17 +94,27 @@ public class EditSslAssertionPropertiesDialog extends LegacyAssertionPropertyDia
                     sslAssertion.setOption(SslAssertion.REQUIRED);
                     if (requireClientCertificateCheckBox.isSelected()) {
                         sslAssertion.setRequireClientAuthentication(true);
+                        sslAssertion.setCheckCertValidity(certValidityCheckBox.isSelected());
                     }
                 } else if (sslOptionalRadioButton.isSelected()) {
                     sslAssertion.setOption(SslAssertion.OPTIONAL);
                     sslAssertion.setRequireClientAuthentication(false);
+                    sslAssertion.setCheckCertValidity(true);
                 } else if (sslForbiddenRadioButton.isSelected()) {
                     sslAssertion.setOption(SslAssertion.FORBIDDEN);
                     sslAssertion.setRequireClientAuthentication(false);
+                    sslAssertion.setCheckCertValidity(true);
                 }
                 dispose();
             }
         });
         requireClientCertificateCheckBox.setEnabled(sslRequiredRadioButton.isSelected());
+
+        enableOrDisable();
+    }
+
+    private void enableOrDisable() {
+        requireClientCertificateCheckBox.setEnabled(sslRequiredRadioButton.isSelected());
+        certValidityCheckBox.setEnabled(requireClientCertificateCheckBox.isEnabled() && requireClientCertificateCheckBox.isSelected());
     }
 }

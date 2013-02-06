@@ -183,6 +183,28 @@ public class SslAssertion extends ConfidentialityAssertion {
         }
     }
 
+    public boolean isCheckCertValidity() {
+        return checkCertValidity;
+    }
+
+    /**
+     * Set whether the client certificate validity period (eg expiry date) should be checked before
+     * allowing the certificate to be gathered as a credential.
+     * <p/>
+     * If this is true, and the certificate is not within its validity period, the assertion will fail
+     * without gathering credentials.
+     * <p/>
+     * This defaults to true for security and for backward compatibility with the behavior of previous
+     * serialized policies.
+     * <p/>
+     * Set this to false to allow expired client certificates to be gathered as credentials.
+     *
+     * @param checkCertValidity true to check cert validity; false to ignore cert validity
+     */
+    public void setCheckCertValidity(boolean checkCertValidity) {
+        this.checkCertValidity = checkCertValidity;
+    }
+
     @Override
     public String toString() {
         return super.toString() + " clientCert=" + isRequireClientAuthentication() + " option=" + getOption();
@@ -258,4 +280,5 @@ public class SslAssertion extends ConfidentialityAssertion {
     protected Option _option = REQUIRED;
 
     private boolean requireClientAuthentication = false;
+    private boolean checkCertValidity = true;
 }

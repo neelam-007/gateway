@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.TopComponents;
@@ -8,6 +7,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.security.cert.TrustedCert;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -80,8 +80,7 @@ class NonFederatedUserCertPanel extends UserCertPanel {
     }
 
     protected boolean isCertOk(TrustedCert tc) throws IOException, CertificateException {
-        tc.getCertificate().checkValidity();
-        // TODO is this correct?
+        // No need to check validity here
         return true;
     }
 }
