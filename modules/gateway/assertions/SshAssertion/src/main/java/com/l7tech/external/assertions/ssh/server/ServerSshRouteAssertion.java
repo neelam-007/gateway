@@ -384,7 +384,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                                 List<XmlSshFile> fileList = new ArrayList<>();
                                 while (listing.hasMoreElements()) {
                                     SftpFile file = listing.nextElement();
-                                    fileList.add(new XmlSshFile(file.getFilename(), !file.isDirectory(), file.getFilesize(), file.getModificationTime()));
+                                    fileList.add(new XmlSshFile(file.getFilename(), !file.isDirectory(), file.getFilesize(), file.getModificationTime() * 1000));
                                 }
                                 XmlVirtualFileList xmlFileList = new XmlVirtualFileList(fileList);
                                 //exceptions thrown here will be handled by the below catch
