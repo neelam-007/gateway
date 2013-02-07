@@ -419,6 +419,13 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                             @Override
                             public void call() throws IOException {
                                 SftpFile sftpFile = sftpClient.getFileAttributes(directory, fileName);
+                                //Save the file size to a context variable.
+                                if (assertion.isSetFileSizeToContextVariable()) {
+                                    if (sftpFile != null) {
+                                        context.setVariable(assertion.getSaveFileSizeContextVariable(), sftpFile.getFilesize());
+                                    }
+                                }
+                                //create the xml virtual file list.
                                 XmlVirtualFileList xmlFileList = sftpFile != null ?
                                         new XmlVirtualFileList(Arrays.asList(new XmlSshFile(sftpFile.getFilename(), !sftpFile.isDirectory(), sftpFile.getFilesize(), sftpFile.getModificationTime()))) :
                                         new XmlVirtualFileList();
