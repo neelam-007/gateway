@@ -41,6 +41,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     private List<String> resolveAsObjectList = new ArrayList<String>();
     private boolean generateXmlResult = false;
     private String nullPattern = null;
+    private String schema = null;
 
     private boolean allowMultiValuedVariables = false;
 
@@ -59,6 +60,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         copy.setQueryName(queryName);
         copy.setNamingMap(copyMap(namingMap));
         copy.setNullPattern(nullPattern);
+        copy.setSchema(schema);
 
         return copy;
     }
@@ -73,6 +75,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         setNamingMap(copyMap(source.getNamingMap()));
         setEnabled(source.isEnabled());
         setNullPattern(source.getNullPattern());
+        setSchema(source.getSchema());
     }
 
     @Override
@@ -158,6 +161,15 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     // Null if null patter not used, not support context variable
     public void setNullPattern(String nullPattern) {
         this.nullPattern = nullPattern;
+    }
+
+    public String getSchema() {
+        return schema;
+    }
+
+    // only used for oracle databases ( ie: driver class contains "oracle")
+    public void setSchema(String schema) {
+        this.schema = schema;
     }
 
     public boolean isUseNullPattern(){

@@ -22,7 +22,8 @@ public class JdbcQueryUtils {
         List<Object> preparedStmtParams = new ArrayList<Object>();
         try {
             String plainQuery = context == null? query : JdbcQueryUtils.getQueryStatementWithoutContextVariables(query, preparedStmtParams, context, vars, false ,resolveAsObjectList,audit);
-            return jdbcQueryingManager.performJdbcQuery(connectionName,plainQuery, 1, preparedStmtParams);
+            // todo add support for schema name
+            return jdbcQueryingManager.performJdbcQuery(connectionName, plainQuery, null, 1, preparedStmtParams);
         } catch (VariableNameSyntaxException e) {
             return e.getMessage();
         }

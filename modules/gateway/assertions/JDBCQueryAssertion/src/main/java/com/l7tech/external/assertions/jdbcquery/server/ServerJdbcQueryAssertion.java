@@ -59,7 +59,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
             final String connName = ExpandVariables.process(assertion.getConnectionName(), context.getVariableMap(variablesUsed, getAudit()), getAudit());
             // Get result by querying.  The result could be a ResultSet object, an integer (updated rows), or a string (a warning message).
-            final Object result = jdbcQueryingManager.performJdbcQuery(connName, plainQuery, assertion.getMaxRecords(), preparedStmtParams);
+            final Object result = jdbcQueryingManager.performJdbcQuery(connName, plainQuery, assertion.getSchema(),assertion.getMaxRecords(), preparedStmtParams);
 
             // Analyze the result type and perform a corresponding action.
             if (result instanceof String) {

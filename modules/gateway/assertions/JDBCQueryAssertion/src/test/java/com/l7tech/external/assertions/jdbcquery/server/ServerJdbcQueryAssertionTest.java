@@ -371,7 +371,7 @@ public class ServerJdbcQueryAssertionTest {
         final AssertionRegistry assertionRegistry = new AssertionRegistry();
         assertionRegistry.afterPropertiesSet();
         serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
-        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockResults());
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockResults());
         GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
@@ -398,7 +398,7 @@ public class ServerJdbcQueryAssertionTest {
         assertEquals("value1", valueObj[0]);
 
         //test/touch SELECT query related code, with special character result
-        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockSpecialResults());
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockSpecialResults());
         applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
@@ -422,7 +422,7 @@ public class ServerJdbcQueryAssertionTest {
         //test/touch Stored Procedure related code
         assertion.setSqlQuery("CALL mockStoredProcedure()");
         assertion.setMaxRecords(12);
-        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockSqlRowResults());
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockSqlRowResults());
         applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
@@ -538,7 +538,7 @@ public class ServerJdbcQueryAssertionTest {
         final AssertionRegistry assertionRegistry = new AssertionRegistry();
         assertionRegistry.afterPropertiesSet();
         serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
-        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockResults());
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockResults());
         GenericApplicationContext applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);
@@ -551,7 +551,7 @@ public class ServerJdbcQueryAssertionTest {
         assertion.setConnectionName("mockDb");
 
         //test/touch SELECT query related code, with null result
-        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockWithNullResults());
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyList())).thenReturn(getMockWithNullResults());
         applicationContext = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("assertionRegistry", assertionRegistry);
             put("policyFactory", serverPolicyFactory);

@@ -1,5 +1,6 @@
 package com.l7tech.server.jdbc;
 
+import com.l7tech.gateway.common.jdbc.JdbcUtil;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.BadSqlGrammarException;
@@ -28,10 +29,6 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
 
     private JdbcConnectionPoolManager jdbcConnectionPoolManager;
 
-    private final static String CALL = "call"; //standard stored procedure call for MySQL & Oracle
-    private final static String EXEC = "exec"; //exec/execute - stored procedure call for MS SQL & T-SQL
-    private final static String FUNC = "func"; //keyword to indicate that we are calling a function instead of a stored procedure
-
     public JdbcQueryingManagerImpl(JdbcConnectionPoolManager jdbcConnectionPoolManager) {
         this.jdbcConnectionPoolManager = jdbcConnectionPoolManager;
     }
@@ -41,13 +38,14 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
      *
      * @param connectionName:     the name of a JdbcConnection entity to retrieve a dataSource (i.e., a connection pool)
      * @param query:              the SQL query
+     * @param schema:         the schema to query for, empty for default
      * @param maxRecords:         the maximum number of records allowed to return.
      * @param preparedStmtParams: the parameters of a prepared statement.
      * @return an object, which may be a string (an error message), an integer (the number of records updated), or
      *         a SqlRowSet representing disconnected java.sql.ResultSet data (the result of a select statement).
      */
     @Override
-    public Object performJdbcQuery(String connectionName, final String query, final int maxRecords, final List<Object> preparedStmtParams) {
+    public Object performJdbcQuery(String connectionName, final String query, String schema, final int maxRecords, final List<Object> preparedStmtParams) {
         if (connectionName == null || connectionName.isEmpty()) {
             logger.warning("Failed to perform querying since the JDBC connection name is not specified.");
             return "JDBC Connection Name is not specified.";
@@ -61,11 +59,11 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
             logger.warning("Failed to perform querying since " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e)));
             return "Cannot retrieve a C3P0 DataSource.";
         }
-        return performJdbcQuery(dataSource, query, maxRecords, preparedStmtParams);
+        return performJdbcQuery(dataSource, query, schema, maxRecords, preparedStmtParams);
     }
 
     @Override
-    public Object performJdbcQuery(DataSource dataSource, String query, int maxRecords, List<Object> preparedStmtParams)
+    public Object performJdbcQuery(DataSource dataSource, String query, String schema, int maxRecords, List<Object> preparedStmtParams)
     {
         if (query == null || query.isEmpty()) {
             logger.warning("Failed to perform querying since the SQL query is not specified.");
@@ -76,17 +74,15 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.setMaxRows(maxRecords);
 
-        return performJdbcQuery(jdbcTemplate, query, preparedStmtParams);
+        return performJdbcQuery(jdbcTemplate, query, schema,preparedStmtParams);
     }
 
-    protected Object performJdbcQuery(JdbcTemplate jdbcTemplate, String query, List<Object> preparedStmtParams)
+    protected Object performJdbcQuery(JdbcTemplate jdbcTemplate, String query, String schemaName, List<Object> preparedStmtParams)
     {
         // Query or update and return querying results.
         try {
             boolean isSelectQuery = query.toLowerCase().startsWith("select");
-            boolean isStoredProcedureQuery = query.toLowerCase().startsWith(CALL)
-                    || query.toLowerCase().startsWith(EXEC)
-                    || query.toLowerCase().startsWith(FUNC);
+            boolean isStoredProcedureQuery = JdbcUtil.isStoredProcedure(query);
             if (isSelectQuery) {
                 // Return a map of column names and arrays of values.
                 return jdbcTemplate.query(query, preparedStmtParams.toArray(new Object[preparedStmtParams.size()]),new QueryingManagerResultSetExtractor());
@@ -94,7 +90,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
                 // Return a List of SqlRowSet representing disconnected java.sql.ResultSet (s) and OUT parameters.
                 final SimpleJdbcCall simpleJdbcCall = new SimpleJdbcCall(jdbcTemplate);
                 final JdbcCallHelper jdbcCallUtil = new JdbcCallHelper(simpleJdbcCall);
-                return jdbcCallUtil.queryForRowSet(query, preparedStmtParams.toArray(new Object[preparedStmtParams.size()]));
+                return jdbcCallUtil.queryForRowSet(query, schemaName, preparedStmtParams.toArray(new Object[preparedStmtParams.size()]));
             } else {
                 // Return an integer representing the number of rows updated.
                 return jdbcTemplate.update(query, preparedStmtParams.toArray(new Object[preparedStmtParams.size()]));

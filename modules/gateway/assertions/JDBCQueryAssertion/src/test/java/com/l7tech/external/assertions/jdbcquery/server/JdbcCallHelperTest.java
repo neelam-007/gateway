@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.jdbcquery.server;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
+import com.l7tech.gateway.common.jdbc.JdbcUtil;
 import com.l7tech.message.Message;
 import com.l7tech.server.jdbc.JdbcCallHelper;
 import com.l7tech.server.jdbc.JdbcQueryingManagerStub;
@@ -118,7 +119,7 @@ public class JdbcCallHelperTest {
     @Test
     public void testHelper() throws Exception {
         String query = "CALL GetSamples";
-        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
+        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query,null, new Object[0]);
         SqlRowSet rowSet = results.get(0);
         rowSet.next();//results sets
         Object obj = rowSet.getObject("out1");
@@ -136,7 +137,7 @@ public class JdbcCallHelperTest {
         assertNull(obj);
 
         query = "FUNC sampleFunc";
-        results = jdbcHelper.queryForRowSet(query, new Object[0]);
+        results = jdbcHelper.queryForRowSet(query, null,new Object[0]);
         rowSet = results.get(0);
         rowSet.next();
         obj = rowSet.getObject("result");
@@ -145,7 +146,7 @@ public class JdbcCallHelperTest {
 
         when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyOutParameterResults());
         query = "CALL GetSampleOut    ()";
-        results = jdbcHelper.queryForRowSet(query, new Object[0]);
+        results = jdbcHelper.queryForRowSet(query,null, new Object[0]);
         rowSet = results.get(0);
         rowSet.next();//out parameter result
         obj = rowSet.getObject("outparam");
@@ -154,7 +155,7 @@ public class JdbcCallHelperTest {
 
         when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyEmptyResult());
         query = "CALL GetSamples3()";//no results
-        results = jdbcHelper.queryForRowSet(query, new Object[0]);
+        results = jdbcHelper.queryForRowSet(query,null, new Object[0]);
         assertEquals(0, results.size());
     }
 
@@ -228,7 +229,7 @@ public class JdbcCallHelperTest {
     public void testContextVariables() throws Exception {
         PolicyEnforcementContext peCtx = makeContext("<myrequest/>", "<myresponse/>");
         String query = "CALL GetSamples ()";
-        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
+        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, null,new Object[0]);
         JdbcQueryingManagerStub jdbcQueryingManager = (JdbcQueryingManagerStub) appCtx.getBean("jdbcQueryingManager");
         jdbcQueryingManager.setMockResults(results);
 
@@ -250,7 +251,7 @@ public class JdbcCallHelperTest {
 
         //test single result set
         when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyOutParameterResults());
-        results = jdbcHelper.queryForRowSet(query, new Object[0]);
+        results = jdbcHelper.queryForRowSet(query, null,new Object[0]);
         jdbcQueryingManager.setMockResults(results);
         peCtx = makeContext("<myrequest/>", "<myresponse/>");
         fixture = new ServerJdbcQueryAssertion(assertion, appCtx);
@@ -270,7 +271,7 @@ public class JdbcCallHelperTest {
             //expecting a parameter, but passed empty argument
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples (?)";
-            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
+            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query,null, new Object[0]);
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -279,7 +280,7 @@ public class JdbcCallHelperTest {
             //not expecting a parameter, but an argument was passed
             String query = "CALL GetSamples ";
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
-            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[]{"value1"});
+            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query,null, new Object[]{"value1"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -288,7 +289,7 @@ public class JdbcCallHelperTest {
             //parameter vs argument passed does not match, expected 1 vs 2
             String query = "CALL GetSamples (?,?)";
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
-            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[]{"value1", "value2"});
+            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query,null, new Object[]{"value1", "value2"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -297,7 +298,7 @@ public class JdbcCallHelperTest {
             //parameter vs argument passed does not match, expected 2 vs 1
             String query = "CALL GetSamples (?)";
             when(resultSet2.next()).thenReturn(true).thenReturn(true).thenReturn(false);//this will mock a 2 required parameter
-            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[]{"value1"});
+            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query,null, new Object[]{"value1"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -314,7 +315,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples (?)";
-            jdbcHelper.queryForRowSet(query, new Object[]{});
+            jdbcHelper.queryForRowSet(query,null, new Object[]{});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -324,7 +325,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples '?";
-            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -333,7 +334,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples ?'";
-            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -342,7 +343,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples \"?";
-            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -351,7 +352,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples ?\"";
-            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -361,7 +362,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples \"?\"";
-            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
         } catch (Exception e) {
             fail("should not fail");
         }
@@ -369,7 +370,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples '?'";
-            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, null,new Object[]{"?"});
         } catch (Exception e) {
             fail("should not fail");
         }
@@ -379,7 +380,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSample ('value1','value2',99,?,?";
-            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, null,new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -388,7 +389,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSample 'value1','value2',99,?,?)";
-            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -397,7 +398,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSample ('value1',('value2',99,?,?)";
-            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -406,7 +407,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSample ('value1','value2',99,?),?)";
-            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -416,7 +417,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSample 'value1','value2',99,?,?,";
-            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -426,7 +427,7 @@ public class JdbcCallHelperTest {
         try {
             when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSample 'value1','value2',,99,?,?";
-            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -438,19 +439,19 @@ public class JdbcCallHelperTest {
      */
     @Test
     public void testGetQueryName(){
-        String name = jdbcHelper.getName("CALL GetSamples1 (?)");
+        String name = JdbcUtil.getName("CALL GetSamples1 (?)");
         assertEquals("GetSamples1",name);
-        name = jdbcHelper.getName("CALL GetSamples2");
+        name = JdbcUtil.getName("CALL GetSamples2");
         assertEquals("GetSamples2",name);
-        name = jdbcHelper.getName("CALL GetSamples3     ?");
+        name = JdbcUtil.getName("CALL GetSamples3     ?");
         assertEquals("GetSamples3",name);
-        name = jdbcHelper.getName("CALL GetSamples4");
+        name = JdbcUtil.getName("CALL GetSamples4");
         assertEquals("GetSamples4",name);
-        name = jdbcHelper.getName("CALL GetSamples5()");
+        name = JdbcUtil.getName("CALL GetSamples5()");
         assertEquals("GetSamples5",name);
-        name = jdbcHelper.getName("CALL GetSamples6(        )");
+        name = JdbcUtil.getName("CALL GetSamples6(        )");
         assertEquals("GetSamples6",name);
-        name = jdbcHelper.getName("CALL GetSamples7           (        )");
+        name = JdbcUtil.getName("CALL GetSamples7           (        )");
         assertEquals("GetSamples7",name);
     }
 
@@ -463,7 +464,7 @@ public class JdbcCallHelperTest {
     @Test
     public void testOracleDB2Result() throws Exception {
         String query = "CALL GetSamples";
-        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
+        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query,null, new Object[0]);
         SqlRowSet rowSet = results.get(0);
         rowSet.next();//results sets
         Object obj = rowSet.getObject("Out1");//Out1 should also match out1

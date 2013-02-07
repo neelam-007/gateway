@@ -13,6 +13,7 @@ import com.l7tech.util.Background;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
 import java.util.*;
@@ -175,12 +176,12 @@ public class JdbcAdminImpl extends AsyncAdminMethodsImpl implements JdbcAdmin {
      * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
      */
     @Override
-    public AsyncAdminMethods.JobId<String> testJdbcQuery(final String connectionName, final String query) {
+    public AsyncAdminMethods.JobId<String> testJdbcQuery(final String connectionName, final String query, @Nullable final String schemaName) {
         final FutureTask<String> queryTask = new FutureTask<String>(find(false).wrapCallable(new Callable<String>() {
             @Override
             public String call() throws Exception {
 
-                Object result = jdbcQueryingManager.performJdbcQuery(connectionName, query, 1, new ArrayList<Object>());
+                Object result = jdbcQueryingManager.performJdbcQuery(connectionName, query, schemaName ,1, new ArrayList<Object>());
                 return (result instanceof String) ? (String) result : null;
             }
         }));

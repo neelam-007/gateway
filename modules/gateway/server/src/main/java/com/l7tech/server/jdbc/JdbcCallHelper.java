@@ -1,7 +1,9 @@
 package com.l7tech.server.jdbc;
 
+import com.l7tech.gateway.common.jdbc.JdbcUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.InvalidResultSetAccessException;
@@ -60,13 +62,14 @@ public class JdbcCallHelper {
      *
      * @param query
      * @param args
+     * @param schemaName explicit name of the schema. Applies only to Oracle
      * @return
      * @throws DataAccessException
      */
-    public List<SqlRowSet> queryForRowSet(final String query, Object... args) throws DataAccessException {
+    public List<SqlRowSet> queryForRowSet(final String query, @Nullable final String schemaName ,Object... args) throws DataAccessException {
         Assert.notNull(query, "query must not be null");
         final List<SqlRowSet> results = new ArrayList<SqlRowSet>();
-        final String procName = getName(query);
+        final String procName = JdbcUtil.getName(query);
         if (query.toLowerCase().startsWith(SQL_FUNCTION)) {
             simpleJdbcCall.setProcedureName(procName);
             simpleJdbcCall.setFunction(true);
@@ -75,11 +78,16 @@ public class JdbcCallHelper {
             simpleJdbcCall.setFunction(false);
         }
 
+        final boolean hasSchemaName = schemaName != null & !schemaName.trim().isEmpty();
+        if(hasSchemaName){
+            simpleJdbcCall.setSchemaName(schemaName);
+        }
+
         //SimpleJdbcCall will require a list of named parameters, let's build it dynamically
         final MapSqlParameterSource inParameters = new MapSqlParameterSource();
         List<String> queryParameters = getParametersFromQuery(query);
         List<String> queryParametersRaw = getParametersFromQuery(query, false);
-        List<String> parametersNames = getInParametersName(procName);
+        List<String> parametersNames = getInParametersName(procName, hasSchemaName ? schemaName : null);
 
         if ((parametersNames.size() != queryParameters.size())) {
             throw new BadSqlGrammarException("", query, new SQLException("Incorrect number of arguments for " + procName + "; expected " + parametersNames.size() + ", got " + queryParameters.size() + "; query generated was " + query));
@@ -163,9 +171,12 @@ public class JdbcCallHelper {
      * @param procName
      * @return
      */
-    private List<String> getInParametersName(final String procName) {
+    private List<String> getInParametersName(final String procName, @Nullable final String schemaName) {
         final CallMetaDataContext callMetaDataContext = new CallMetaDataContext();
         callMetaDataContext.setProcedureName(procName);
+        if(schemaName!=null){
+            callMetaDataContext.setSchemaName(schemaName);
+        }
         final CallMetaDataProvider metaProvider = CallMetaDataProviderFactory.createMetaDataProvider(simpleJdbcCall.getJdbcTemplate().getDataSource(), callMetaDataContext);
         List<CallParameterMetaData> parameterMetaData = metaProvider.getCallParameterMetaData();
         List<String> parameterNames = new ArrayList<String>();
@@ -176,29 +187,6 @@ public class JdbcCallHelper {
             }
         }
         return parameterNames;
-    }
-
-    /**
-     * Extract the procedure or function name from the query string
-     *
-     * @param query
-     * @return
-     */
-    public String getName(final String query) {
-        StringBuffer sb = new StringBuffer();
-        boolean keyword=false;
-        for(char c : query.toCharArray()){
-            if(c!=' ' && c!='(' && c!='\"' && c!='\''){
-                if(keyword)
-                    sb.append(c);
-            } else {
-                if(keyword)
-                    break;
-                else
-                    keyword=true;
-            }
-        }
-        return sb.toString().trim();
     }
 
     /**
@@ -219,7 +207,7 @@ public class JdbcCallHelper {
      */
     public List<String> getParametersFromQuery(final String query, boolean stripQuote) {
         List<String> values = new ArrayList<String>();
-        final String name = getName(query);
+        final String name = JdbcUtil.getName(query);
         int marker = query.indexOf(name, 1) + name.length();
         //if (marker < query.length()) marker++;
         String query2 = query.substring(marker).trim();

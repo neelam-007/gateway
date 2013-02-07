@@ -284,7 +284,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                         @Override
                         public String doInTransaction(TransactionStatus transactionStatus) {
                             String query = "CREATE DATABASE IF NOT EXISTS " + otkDbName + " CHARACTER SET utf8";
-                            Object result = jdbcQueryingManager.performJdbcQuery(dataSource, query, 100, Collections.emptyList());
+                            Object result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null,100, Collections.emptyList());
                             if (result instanceof String) {
                                 transactionStatus.setRollbackOnly();
                                 return (String) result;
@@ -297,7 +297,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                             }
 
                             //use database
-                            jdbcQueryingManager.performJdbcQuery(dataSource, "use " + otkDbName, 100, Collections.emptyList());
+                            jdbcQueryingManager.performJdbcQuery(dataSource, "use " + otkDbName, null, 100, Collections.emptyList());
 
                             // create tables
                             int index = 0;
@@ -308,7 +308,7 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
 
                                 query = otkSchema.substring(oldIndex - 1, index);
                                 index++;
-                                result = jdbcQueryingManager.performJdbcQuery(dataSource, query, 2, Collections.emptyList());
+                                result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 2, Collections.emptyList());
                                 if (result instanceof String) {
                                     transactionStatus.setRollbackOnly();
                                     return (String) result;
@@ -329,21 +329,21 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
 
                             // grant access to db
                             query = "GRANT ALL ON " + otkDbName + ".* TO '" + otkDbUsername + "'@'%' IDENTIFIED BY '" + otkUserPassword + "'";
-                            result = jdbcQueryingManager.performJdbcQuery(dataSource, query, 100, Collections.emptyList());
+                            result = jdbcQueryingManager.performJdbcQuery(dataSource, query,  null,100, Collections.emptyList());
                             if (result instanceof String) {
                                 transactionStatus.setRollbackOnly();
                                 return (String) result;
                             }
 
                             query = "GRANT ALL ON " + otkDbName + ".* TO '" + otkDbUsername + "'@'localhost' IDENTIFIED BY '" + otkUserPassword + "'";
-                            result = jdbcQueryingManager.performJdbcQuery(dataSource, query, 100, Collections.emptyList());
+                            result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 100, Collections.emptyList());
                             if (result instanceof String) {
                                 transactionStatus.setRollbackOnly();
                                 return (String) result;
                             }
 
                             query = "GRANT ALL ON " + otkDbName + ".* TO '" + otkDbUsername + "'@'localhost.localdomain' IDENTIFIED BY '" + otkUserPassword + "'";
-                            result = jdbcQueryingManager.performJdbcQuery(dataSource, query, 100, Collections.emptyList());
+                            result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 100, Collections.emptyList());
                             if (result instanceof String) {
                                 transactionStatus.setRollbackOnly();
                                 return (String) result;

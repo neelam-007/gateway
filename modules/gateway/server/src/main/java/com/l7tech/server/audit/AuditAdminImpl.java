@@ -853,7 +853,7 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
 
                         String query = schema.substring(oldIndex-1,index);
                         index++;
-                        Object result = jdbcQueryingManager.performJdbcQuery(ds,query,2,Collections.emptyList());
+                        Object result = jdbcQueryingManager.performJdbcQuery(ds,query,null,2,Collections.emptyList());
                         if(result instanceof String){
                             transactionStatus.setRollbackOnly();
                             return (String)result;

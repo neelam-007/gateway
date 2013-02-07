@@ -63,7 +63,7 @@ public class JdbcQueryingManagerImplTest {
         when(mockMetaData.getColumnLabel(1)).thenReturn("identifier");
         when(mockMetaData.getColumnLabel(2)).thenReturn("name");
 
-        Map<String,List<Object>> results = (Map<String,List<Object>>)fixture.performJdbcQuery(jdbct, "SELECT id AS identifier from table", new ArrayList<Object>());
+        Map<String,List<Object>> results = (Map<String,List<Object>>)fixture.performJdbcQuery(jdbct, "SELECT id AS identifier from table", null,new ArrayList<Object>());
 
         assertTrue(results.get("identifier") != null);
         assertEquals(expectedId, results.get("identifier"));
@@ -77,7 +77,7 @@ public class JdbcQueryingManagerImplTest {
         when(mockMetaData.getColumnLabel(1)).thenReturn("id");
         when(mockMetaData.getColumnLabel(2)).thenReturn("label");
 
-        Map<String,List<Object>> results = (Map<String,List<Object>>)fixture.performJdbcQuery(jdbct, "SELECT id from table", new ArrayList<Object>());
+        Map<String,List<Object>> results = (Map<String,List<Object>>)fixture.performJdbcQuery(jdbct, "SELECT id from table",null, new ArrayList<Object>());
 
         assertTrue(results.get("id") != null);
         assertEquals(expectedId, results.get("id"));

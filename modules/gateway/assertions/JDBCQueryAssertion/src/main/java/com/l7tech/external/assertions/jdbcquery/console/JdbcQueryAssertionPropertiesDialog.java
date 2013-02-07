@@ -7,11 +7,10 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.jdbc.JdbcUtil;
 import com.l7tech.gui.MaxLengthDocument;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.variable.Syntax;
@@ -21,6 +20,7 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -42,7 +42,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.jdbcquery.console.resources.JdbcQueryAssertionPropertiesDialog");
 
     private JPanel mainPanel;
-    private JComboBox connectionComboBox;
+    private JComboBox<ConnectionProperty> connectionComboBox;
     private JTextArea sqlQueryTextArea;
     private JTable namingTable;
     private JPanel variablePrefixTextPanel;
@@ -60,6 +60,8 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JCheckBox generateResultsAsXMLCheckBox;
     private JCheckBox enableNullValuesCheckBox;
     private JTextField nullPatternTextBox;
+    private JTextField schemaTextField;
+    private JCheckBox specifySchemaCheckBox;
 
     private NamingTableModel namingTableModel;
     private Map<String, String> namingMap;
@@ -115,14 +117,44 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         sqlQueryTextArea.setDocument(new MaxLengthDocument(JdbcAdmin.MAX_QUERY_LENGTH));
         queryNameTextField.setDocument(new MaxLengthDocument(128));
 
+        final RunOnChangeListener connectionListener = new RunOnChangeListener(new Runnable() {
+            public void run() {
+                enableOrDisableSchemaControls();
+                enableOrDisableOkButton();
+            }
+        });
+        ((JTextField)connectionComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(connectionListener);
+        connectionComboBox.addItemListener(connectionListener);
+
+        specifySchemaCheckBox.addChangeListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                schemaTextField.setEnabled(specifySchemaCheckBox.isEnabled() && specifySchemaCheckBox.isSelected());
+            }
+        }));
+
+
         final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
             public void run() {
                 enableOrDisableOkButton();
             }
         });
-        ((JTextField)connectionComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(changeListener);
-        connectionComboBox.addItemListener(changeListener);
         sqlQueryTextArea.getDocument().addDocumentListener(changeListener);
+        TextComponentPauseListenerManager.registerPauseListener(
+                sqlQueryTextArea,
+                new PauseListener() {
+                    @Override
+                    public void textEntryPaused(JTextComponent component, long msecs) {
+                        enableOrDisableSchemaControls();
+                    }
+
+                    @Override
+                    public void textEntryResumed(JTextComponent component) {
+                        enableOrDisableSchemaControls();
+                    }
+                },
+                300);
+
         variablePrefixTextField.addChangeListener(changeListener);
         nullPatternTextBox.getDocument().addDocumentListener(changeListener);
 
@@ -203,11 +235,14 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         allowMutiValuedVariablesCheckBox.setSelected(assertion.isAllowMultiValuedVariables());
         enableNullValuesCheckBox.setSelected(assertion.isUseNullPattern());
         nullPatternTextBox.setText(assertion.isUseNullPattern()?assertion.getNullPattern():"null");
+        schemaTextField.setText(assertion.getSchema());
+
+        enableOrDisableSchemaControls();
 
     }
 
     private void viewToModel(final JdbcQueryAssertion assertion) {
-        assertion.setConnectionName(((String) connectionComboBox.getSelectedItem()));
+        assertion.setConnectionName(( connectionComboBox.getSelectedItem()).toString());
         assertion.setSqlQuery(sqlQueryTextArea.getText());
         assertion.setNamingMap(namingMap);
         assertion.setVariablePrefix(variablePrefixTextField.getVariable());
@@ -217,16 +252,25 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         assertion.setQueryName(queryNameTextField.getText());
         assertion.setAllowMultiValuedVariables(allowMutiValuedVariablesCheckBox.isSelected());
         assertion.setNullPattern(enableNullValuesCheckBox.isSelected()?nullPatternTextBox.getText():null);
+        String schemaValue = schemaTextField.getText();
+        schemaValue = (schemaValue==null || schemaValue.trim().isEmpty()) ? null: schemaValue;
+        assertion.setSchema(schemaTextField.isEnabled() ? schemaValue : null);
+    }
+
+    private void enableOrDisableSchemaControls() {
+        ConnectionProperty prop = (ConnectionProperty)connectionComboBox.getSelectedItem();
+        final boolean isOracle = prop!=null && prop.isOracle();
+        specifySchemaCheckBox.setEnabled(isOracle && JdbcUtil.isStoredProcedure(sqlQueryTextArea.getText().toLowerCase()));
     }
 
     private void populateConnectionCombobox() {
-        java.util.List<String> connNameList;
+        java.util.List<JdbcConnection> connectionList;
         JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin == null) {
             return;
         } else {
             try {
-                connNameList = admin.getAllJdbcConnectionNames();
+                connectionList = admin.getAllJdbcConnections();
             } catch (FindException e) {
                 logger.warning("Error getting JDBC connection names");
                 return;
@@ -234,17 +278,46 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         }
 
         // Sort all default driver classes
-        Collections.sort(connNameList);
+        Collections.sort(connectionList);
+
+        connectionComboBox.removeAllItems();
+
         // Add an empty driver class at the first position of the list
-        connNameList.add(0, "");
+        connectionComboBox.addItem(new ConnectionProperty("", ""));
+
 
         // Add all items into the combox box.
-        connectionComboBox.removeAllItems();
-        for (String driverClass: connNameList) {
-            connectionComboBox.addItem(driverClass);
+        ConnectionProperty selectedItem = null;
+        String selConnectionName = assertion.getConnectionName();
+        for (JdbcConnection conn: connectionList) {
+            ConnectionProperty prop = new ConnectionProperty(conn.getName(),conn.getDriverClass());
+            connectionComboBox.addItem(prop);
+            if(selConnectionName.equals(conn.getName())){
+                selectedItem = prop;
+            }
         }
 
-        connectionComboBox.setSelectedItem(assertion.getConnectionName());
+        if(selectedItem!=null)
+            connectionComboBox.setSelectedItem(selectedItem);
+    }
+
+    private class ConnectionProperty {
+        private String connectionName;
+        private String driverClass;
+
+        private ConnectionProperty(String connectionName, String driverClass) {
+            this.connectionName = connectionName;
+            this.driverClass = driverClass;
+        }
+
+        @Override
+        public String toString() {
+            return connectionName;
+        }
+
+        public boolean isOracle(){
+            return driverClass.toLowerCase().contains("oracle");
+        }
     }
 
     private void initNamingTable() {
@@ -348,7 +421,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         final String[] warningMsg = new String[1];
         DialogDisplayer.showSafeConfirmDialog(
             TopComponents.getInstance().getTopParent(),
-            MessageFormat.format(resources.getString("confirmation.test.query"), connectionComboBox.getSelectedItem()),
+            MessageFormat.format(resources.getString("confirmation.test.query"), connectionComboBox.getSelectedItem().toString()),
             resources.getString("dialog.title.test.query"),
             JOptionPane.OK_CANCEL_OPTION,
             JOptionPane.WARNING_MESSAGE,
@@ -360,7 +433,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                         return;
                     }
 
-                    final String connName = (String) connectionComboBox.getSelectedItem();
+                    final String connName = connectionComboBox.getSelectedItem().toString();
                     if (Syntax.getReferencedNames(connName).length > 0) {
                         displayQueryTestingResult("Cannot process testing due to JDBC Connection name containing context variable(s).");
                         return;
@@ -373,15 +446,17 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                         return;
                     }
 
+                    final String schemaName = specifySchemaCheckBox.isEnabled() && specifySchemaCheckBox.isSelected()? schemaTextField.getText().trim():"";
+
                     JdbcAdmin admin = getJdbcConnectionAdmin();
                     try {
                         displayQueryTestingResult(admin == null ?
-                            "Cannot process testing due to JDBC Conneciton Admin unavailable." : doAsyncAdmin(
-                            admin,
-                            JdbcQueryAssertionPropertiesDialog.this,
-                            resources.getString("dialog.title.test.query"),
-                            resources.getString("dialog.title.test.query"),
-                            admin.testJdbcQuery(connName, query)).right());
+                                "Cannot process testing due to JDBC Conneciton Admin unavailable." : doAsyncAdmin(
+                                admin,
+                                JdbcQueryAssertionPropertiesDialog.this,
+                                resources.getString("dialog.title.test.query"),
+                                resources.getString("dialog.title.test.query"),
+                                admin.testJdbcQuery(connName, query, schemaName.isEmpty() ? null : schemaName)).right());
                     } catch (InterruptedException e) {
                         // operation cancelled by user, do nothing
                     } catch (InvocationTargetException e) {
@@ -516,9 +591,27 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     }
 
     private void doOk() {
-        getData(assertion);
-        confirmed = true;
-        JdbcQueryAssertionPropertiesDialog.this.dispose();
+
+        // check for schema in query for oracle calls ( '.' appears twice)
+        boolean validQuery = true;
+        ConnectionProperty conn = (ConnectionProperty)connectionComboBox.getSelectedItem();
+
+        String query = sqlQueryTextArea.getText().trim();
+        if(conn.isOracle()&& JdbcUtil.isStoredProcedure(query)){
+            String procedureName = JdbcUtil.getName(query);
+            if(!procedureName.isEmpty()){
+                validQuery = procedureName.indexOf('.') == procedureName.lastIndexOf('.') ;
+            }
+        }
+
+        if(validQuery){
+            getData(assertion);
+            confirmed = true;
+            JdbcQueryAssertionPropertiesDialog.this.dispose();
+        } else{
+            DialogDisplayer.showMessageDialog(this,"Query cannot reference schema from query, use schema field instead",null);
+        }
+
     }
 
     private void doCancel() {
