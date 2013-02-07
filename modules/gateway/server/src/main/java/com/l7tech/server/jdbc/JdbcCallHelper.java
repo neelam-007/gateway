@@ -78,7 +78,7 @@ public class JdbcCallHelper {
             simpleJdbcCall.setFunction(false);
         }
 
-        final boolean hasSchemaName = schemaName != null & !schemaName.trim().isEmpty();
+        final boolean hasSchemaName = schemaName != null && !schemaName.trim().isEmpty();
         if(hasSchemaName){
             simpleJdbcCall.setSchemaName(schemaName);
         }
