@@ -45,6 +45,7 @@ public class MessageBufferingAssertion extends MessageTargetableAssertion {
 
         meta.put(PALETTE_FOLDERS, new String[]{"misc"});
         meta.put(DESCRIPTION, "Change message buffering status.");
+        meta.put(SHORT_NAME, "Configure Message Buffering");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/MessageBuffering-16x16.gif");
         meta.put(POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<MessageBufferingAssertion>() {
             @Override
