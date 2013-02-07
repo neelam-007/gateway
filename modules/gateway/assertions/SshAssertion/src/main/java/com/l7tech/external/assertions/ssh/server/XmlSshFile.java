@@ -24,8 +24,8 @@ public class XmlSshFile {
         this.file = file;
     }
 
-    public XmlSshFile(String name, long size, long lastModified) {
-        this.name = name;
+    public XmlSshFile(String name, Boolean file, long size, long lastModified) {
+        this(name, file);
         this.size = size;
         this.lastModified = lastModified;
     }

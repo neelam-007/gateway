@@ -20,6 +20,7 @@ import javax.inject.Named;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -94,9 +95,11 @@ class MessageProcessingScpCommand extends ScpCommand implements SessionAware {
         final InputStream fileInput = length <= 0L ?
                 new EmptyInputStream() :
                 new TruncatingInputStream(in, length);
+        Map<String, String> parameters = CollectionUtils.MapBuilder.<String, String>builder().
+                put("length", String.valueOf(length)).unmodifiableMap();
         ack();
         try {
-            submitMessageProcessingTask(sshFile, CommandKnob.CommandType.PUT);
+            submitMessageProcessingTask(sshFile, CommandKnob.CommandType.PUT, parameters);
         } catch (MessageProcessingException e) {
             sshFile.handleClose();
             throw new CausedIOException("Message processing failed writing a file via SCP", e);
@@ -198,8 +201,19 @@ class MessageProcessingScpCommand extends ScpCommand implements SessionAware {
      * @param commandType The Type on ssh command being sent.
      */
     private void submitMessageProcessingTask(final VirtualSshFile file, final CommandKnob.CommandType commandType) throws MessageProcessingException {
+        submitMessageProcessingTask(file, commandType, Collections.<String, String>emptyMap());
+    }
+
+    /**
+     * Submit a virtual file for message processing. This will start policy processing. The output stream will be closed if this is a GET, LIST, STAT, DELETE, MKDIR, RMDIR, or MOVE command.
+     *
+     * @param file        The file to process
+     * @param commandType The Type on ssh command being sent.
+     * @param parameters  The parameters associated with this command.
+     */
+    private void submitMessageProcessingTask(final VirtualSshFile file, final CommandKnob.CommandType commandType, final Map<String, String> parameters) throws MessageProcessingException {
         try {
-            MessageProcessingSshUtil.submitMessageProcessingTask(connector, file, commandType, Collections.<String, String>emptyMap(), session, stashManagerFactory, threadPool, messageProcessor, soapFaultManager, messageProcessingEventChannel);
+            MessageProcessingSshUtil.submitMessageProcessingTask(connector, file, commandType, parameters, session, stashManagerFactory, threadPool, messageProcessor, soapFaultManager, messageProcessingEventChannel);
         } catch (ThreadPool.ThreadPoolShutDownException e) {
             logger.log(Level.WARNING, "Thread pool shutdown: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             throw new MessageProcessingException("Error processing " + commandType.name() + " command for: " + file.getAbsolutePath(), e);

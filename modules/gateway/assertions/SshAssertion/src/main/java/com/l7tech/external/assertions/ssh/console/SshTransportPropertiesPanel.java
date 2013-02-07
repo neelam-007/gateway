@@ -45,6 +45,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
     private JCheckBox sftpRMDIRCheckBox;
     private JCheckBox scpPUTCheckBox;
     private JCheckBox scpGETCheckBox;
+    private JCheckBox deleteFileOnTruncateCheckBox;
 
     private InputValidator validator;
 
@@ -113,6 +114,8 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
                 ConfigFactory.getBooleanProperty("com.l7tech.external.assertions.ssh.enableSftpPartialUpload", false)));
         sftpPartialDownloadsCheckBox.setSelected(getBooleanProp(props, SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_PARTIAL_DOWNLOADS,
                 ConfigFactory.getBooleanProperty("com.l7tech.external.assertions.ssh.enableSftpPartialDownload", false)));
+        deleteFileOnTruncateCheckBox.setSelected(getBooleanProp(props, SshCredentialAssertion.LISTEN_PROP_DELETE_FILE_ON_TRUNCATE_REQUEST,
+                ConfigFactory.getBooleanProperty("com.l7tech.external.assertions.ssh.deleteFileOnTruncateRequest", false)));
         fileSizeVariablePanel.setVariable(getStringProp(props, SshCredentialAssertion.LISTEN_PROP_SIZE_CONTEXT_VARIABLE_NAME,
                 ConfigFactory.getProperty("com.l7tech.external.assertions.ssh.enableSizeContextVariableName", "")));
         idleTimeoutMinsField.setText(getStringProp(props, SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES,
@@ -144,6 +147,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         data.put(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_RMDIR, String.valueOf(sftpRMDIRCheckBox.isSelected()));
         data.put(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_PARTIAL_UPLOADS, String.valueOf(sftpPartialUploadsCheckBox.isSelected()));
         data.put(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_PARTIAL_DOWNLOADS, String.valueOf(sftpPartialDownloadsCheckBox.isSelected()));
+        data.put(SshCredentialAssertion.LISTEN_PROP_DELETE_FILE_ON_TRUNCATE_REQUEST, String.valueOf(deleteFileOnTruncateCheckBox.isSelected()));
         data.put(SshCredentialAssertion.LISTEN_PROP_SIZE_CONTEXT_VARIABLE_NAME, fileSizeVariablePanel.getVariable());
         data.put(SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES, nullIfEmpty( idleTimeoutMinsField.getText() ));
         data.put(SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER, nullIfEmpty( maxConcurrentSessionsPerUserField.getText() ));
@@ -213,6 +217,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
             SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_RMDIR,
             SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_PARTIAL_UPLOADS,
             SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_PARTIAL_DOWNLOADS,
+            SshCredentialAssertion.LISTEN_PROP_DELETE_FILE_ON_TRUNCATE_REQUEST,
             SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES,
             SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER,
             SshCredentialAssertion.LISTEN_PROP_MAX_SESSIONS,
@@ -283,6 +288,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         sftpRMDIRCheckBox.setEnabled(sftpCheckBox.isSelected());
         sftpPartialUploadsCheckBox.setEnabled(sftpCheckBox.isSelected() && sftpPUTCheckBox.isSelected());
         sftpPartialDownloadsCheckBox.setEnabled(sftpCheckBox.isSelected() && sftpGETCheckBox.isSelected());
+        deleteFileOnTruncateCheckBox.setEnabled(sftpCheckBox.isSelected() && sftpDELETECheckBox.isSelected());
 
         scpPUTCheckBox.setEnabled(scpCheckBox.isSelected());
         scpGETCheckBox.setEnabled(scpCheckBox.isSelected());

@@ -197,15 +197,13 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 // Given file name
                 // Respond with SSH_FXP_STATUS
                 String path = buffer.getString();
-                VirtualSshFile sshFile = (VirtualSshFile) resolveFile(path);
+                VirtualSshFile sshFile;
                 try {
-                    processCommand(sshFile, CommandKnob.CommandType.DELETE, Collections.<String, String>emptyMap());
+                    sshFile = removeFile(path);
                 } catch (MessageProcessingException e) {
                     logger.log(Level.WARNING, "There was an error attempting to process an SFTP Delete command.");
                     sendStatus(id, SSH_FX_FAILURE, e.getMessage());
                     break;
-                } finally {
-                    sshFile.handleClose();
                 }
                 if (respondFromErroredMessageProcessingStatus(id, sshFile)) {
                     sendStatus(id, SSH_FX_OK, "");
@@ -370,8 +368,25 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
             }
         }
         if ((flags & SSH_FXF_TRUNC) != 0) {
-            //truncating is attempted first when overriding files. so just do nothing here. In our implementation files are automatically replaced.
-            //TODO: will need to investigate truncate with partial reads and writes when using SshRouteAssertion
+            if(file.doesExist() &&
+                    connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP_DELETE) &&
+                    connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_DELETE_FILE_ON_TRUNCATE_REQUEST) ) {
+                VirtualSshFile removedFile;
+                try {
+                    removedFile = removeFile(path);
+                } catch (MessageProcessingException e) {
+                    logger.log(Level.WARNING, "There was an error attempting to truncate file: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    sendStatus(id, SSH_FX_FAILURE, "Error attempting to truncate file: " + e.getMessage());
+                    return;
+                }
+                //Get the message processing status and validate that if completed successfully.
+                AssertionStatus status = removedFile.getMessageProcessingStatus().getMessageProcessStatus();
+                if (status != AssertionStatus.NONE) {
+                    logger.log(Level.WARNING, "There was an error attempting to truncate file: Message processing failed: " + ((status == null) ? "null status" : status.getMessage()));
+                    sendStatus(id, SSH_FX_FAILURE, "Error attempting to truncate file: " + ((status == null) ? "null status" : status.getMessage()));
+                    return;
+                }
+            }
             //does nothing
             file.truncate();
         }
@@ -449,7 +464,11 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 } else {
                     //If the message processing has not been started yet, then start message processing.
                     if (!sshFile.getMessageProcessingStatus().isProcessingStarted()) {
-                        processCommand(sshFile, CommandKnob.CommandType.GET, Collections.<String, String>emptyMap());
+                        //add the length and offset parameters.
+                        Map<String, String> parameters = CollectionUtils.MapBuilder.<String, String>builder().
+                                put("length", sshFile.getSize() > 0 ? String.valueOf(sshFile.getSize()) : "-1").
+                                put("offset", "0").unmodifiableMap();
+                        processCommand(sshFile, CommandKnob.CommandType.GET, parameters);
                     }
                 }
             } catch (MessageProcessingException e) {
@@ -469,7 +488,7 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
             final byte[] readBytes = new byte[Math.min(requestedLength, maxReadBufferSize)];
             final int lengthRead;
             final InputStream fileInputStream;
-            try{
+            try {
                 fileInputStream = sshFile.getInputStream();
             } catch (IOException e) {
                 sshFile.handleClose();
@@ -580,7 +599,11 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 } else {
                     //If the message processing has not been started yet, then start message processing.
                     if (!sshFile.getMessageProcessingStatus().isProcessingStarted()) {
-                        submitMessageProcessingTask(sshFile, CommandKnob.CommandType.PUT, Collections.<String, String>emptyMap());
+                        //add the length and offset parameters.
+                        Map<String, String> parameters = CollectionUtils.MapBuilder.<String, String>builder().
+                                put("length", sshFile.getSize() > 0 ? String.valueOf(sshFile.getSize()) : "-1").
+                                put("offset", "0").unmodifiableMap();
+                        submitMessageProcessingTask(sshFile, CommandKnob.CommandType.PUT, parameters);
                     }
                 }
             } catch (MessageProcessingException e) {
@@ -703,7 +726,7 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
                     currentPath += "/";
                 }
                 //convert the xml file list to virtualSshFile list
-                files = new ArrayList<SshFile>(xmlVirtualFileList.getFileList().size());
+                files = new ArrayList<>(xmlVirtualFileList.getFileList().size());
                 for (XmlSshFile parsedFile : xmlVirtualFileList.getFileList()) {
                     VirtualSshFile virtualSshFile = new VirtualSshFile(currentPath + parsedFile.getName(), parsedFile.isFile());
                     if (parsedFile.getSize() != null) virtualSshFile.setSize(parsedFile.getSize());
@@ -916,6 +939,22 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
     }
 
     /**
+     * This will call message processing to delete the file specified by the given path.
+     *
+     * @param path The path of the file to delete
+     * @throws MessageProcessingException
+     */
+    private VirtualSshFile removeFile(String path) throws MessageProcessingException {
+        VirtualSshFile sshFile = (VirtualSshFile) resolveFile(path);
+        try {
+            processCommand(sshFile, CommandKnob.CommandType.DELETE, Collections.<String, String>emptyMap());
+        } finally {
+            sshFile.handleClose();
+        }
+        return sshFile;
+    }
+
+    /**
      * This calls the message processor to retrieve a file stats or directory listing for the given file.
      * It returns a XmlVirtualFileList containing either 0 or more elements. If it contains 0 elements that means
      * not such file was found or the directory is empty.
@@ -982,7 +1021,7 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
         submitMessageProcessingTask(file, commandType, parameters);
         try {
             // wait for the message processor to finish
-            if(!file.getMessageProcessingStatus().waitForMessageProcessingFinished(connector.getLongProperty(SshServerModule.LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS, DEFAULT_MAX_MESSAGE_PROCESSING_WAIT_TIME), TimeUnit.SECONDS)){
+            if (!file.getMessageProcessingStatus().waitForMessageProcessingFinished(connector.getLongProperty(SshServerModule.LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS, DEFAULT_MAX_MESSAGE_PROCESSING_WAIT_TIME), TimeUnit.SECONDS)) {
                 //this means that message processing failed to finish before the time ran out.
                 logger.log(Level.WARNING, "Message processing failed to finish in the allowed amount of time.");
                 throw new MessageProcessingException("Error processing " + commandType.name() + " command for: " + file.getAbsolutePath());

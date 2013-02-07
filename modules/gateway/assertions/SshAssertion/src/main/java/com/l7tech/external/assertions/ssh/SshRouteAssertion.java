@@ -3,11 +3,13 @@ package com.l7tech.external.assertions.ssh;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
+import com.l7tech.message.CommandKnob;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
@@ -30,6 +32,9 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     public static final int DEFAULT_CONNECT_TIMEOUT = 10;  // Timeout (in seconds) when opening SSH Connection.
     public static final int DEFAULT_READ_TIMEOUT = 60;   // Timeout (in seconds) when reading a remote file.
     public static final int DEFAULT_SSH_PORT = 22;   // Default port for SSH
+    public static final long DEFAULT_FILE_OFFSET = 0;   // Default file offset. Read/write to the begining of the file.
+    public static final int DEFAULT_FILE_LENGTH = -1;   // Default file length. Read/write to the end of the stream by default.
+    public static final CommandKnob.CommandType DEFAULT_COMMAND_TYPE = CommandKnob.CommandType.PUT; //The default command type to select
 
     private static final String baseName = "Route via SSH2";
     private static final String META_INITIALIZED = SshRouteAssertion.class.getName() + ".metadataInitialized";
@@ -42,6 +47,9 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     private String port = Integer.toString(DEFAULT_SSH_PORT);   // Port number. Can contain context variables.
     private String directory;   // Destination directory. Can contain context variables.
     private String fileName;   // Destination file name. Can contain context variables.
+    private String fileOffset = Long.toString(DEFAULT_FILE_OFFSET); // The file offset to read from or write to.
+    private String fileLength = Integer.toString(DEFAULT_FILE_LENGTH); // The file length to read up to.
+    private String newFileName; // The new file name to move the file to.
     private String sshPublicKey;   // SSH Public Key. Can contain context variables.
     private boolean usePrivateKey = false;
     private boolean usePublicKey = false;
@@ -50,7 +58,14 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     private String downloadContentType;
     private boolean isScpProtocol;   // SCP? if not, assume SFTP
     private boolean isCredentialsSourceSpecified;   // login credentials specified?  if not, assume pass through
-    private boolean isDownloadCopyMethod;   // download copy method?  if not, assume upload
+    private CommandKnob.CommandType commandType = DEFAULT_COMMAND_TYPE; // The command type to execute.
+    private boolean retrieveCommandTypeFromVariable = false; //should the command type to execute come from a context variable?
+    private String commandTypeVariableName; //The command type context variable.
+    private boolean failIfFileExists = false; //valid for PUT commands only. If true the assertion will fail if the file already exists.
+    private boolean truncateExistingFile = true; //valid for PUT commands only. If true the file will be truncated before the data is uploaded.
+    private boolean setFileSizeToContextVariable = false;
+    private String saveFileSizeContextVariable="";
+
     private String responseByteLimit;
 
     private boolean isPreserveFileMetadata;
@@ -81,7 +96,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.ssh.SshRouteAssertionAdvice");
 
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/server16.gif");
@@ -92,7 +107,11 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
             public String getAssertionName(final SshRouteAssertion assertion, final boolean decorate) {
                 if(!decorate) return baseName;
 
-                final StringBuilder sb = new StringBuilder("Route via SSH2 to Server ");
+                final StringBuilder sb = new StringBuilder();
+                sb.append(assertion.isRetrieveCommandTypeFromVariable()?"Route":assertion.getCommandType());
+                sb.append(" via ");
+                sb.append(assertion.isScpProtocol()?"SCP":"SFTP");
+                sb.append(" to Server ");
                 sb.append(assertion.getHost());
                 return AssertionUtils.decorateName(assertion, sb.toString());
             }
@@ -106,7 +125,8 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new WspEnumTypeMapping(FtpSecurity.class, "security"),
             new WspEnumTypeMapping(FtpFileNameSource.class, "fileNameSource"),
-            new WspEnumTypeMapping(FtpCredentialsSource.class, "credentialsSource")
+            new WspEnumTypeMapping(FtpCredentialsSource.class, "credentialsSource"),
+            new Java5EnumTypeMapping(CommandKnob.CommandType.class, "commandType")
         )));
 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
@@ -117,7 +137,11 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return requestTarget.getMessageTargetVariablesSet().with( responseTarget.getMessageTargetVariablesSet() ).asArray();
+        MessageTargetableSupport.VariablesSet variables = requestTarget.getMessageTargetVariablesSet().with(responseTarget.getMessageTargetVariablesSet());
+        if(setFileSizeToContextVariable){
+            variables.withVariables(new VariableMetadata(saveFileSizeContextVariable));
+        }
+        return variables.asArray();
     }
 
      public String getPropertiesDialogTitle() {
@@ -257,11 +281,9 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         isCredentialsSourceSpecified = credentialsSourceSpecified;
     }
 
-    public boolean isDownloadCopyMethod() {
-        return isDownloadCopyMethod;
-    }
+    @Deprecated
     public void setDownloadCopyMethod(boolean downloadCopyMethod) {
-        isDownloadCopyMethod = downloadCopyMethod;
+        commandType = downloadCopyMethod ? CommandKnob.CommandType.GET : CommandKnob.CommandType.PUT;
     }
 
     @Override
@@ -276,7 +298,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
 
     @Override
     public boolean initializesResponse() {
-        return isDownloadCopyMethod() && TargetMessageType.RESPONSE == responseTarget.getTarget();
+        return (CommandKnob.CommandType.GET.equals(commandType) || CommandKnob.CommandType.LIST.equals(commandType) || CommandKnob.CommandType.STAT.equals(commandType)) && TargetMessageType.RESPONSE == responseTarget.getTarget();
     }
 
     @Override
@@ -296,8 +318,11 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
             username,
             fileName,
             sshPublicKey,
-            responseByteLimit
-        ).asArray();
+            responseByteLimit,
+            fileOffset,
+            fileLength,
+            newFileName
+        ).withVariables(commandTypeVariableName).asArray();
     }
 
     public String getResponseByteLimit() {
@@ -314,5 +339,85 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
 
     public void setPreserveFileMetadata(final boolean preserveFileMetadata) {
         isPreserveFileMetadata = preserveFileMetadata;
+    }
+
+    public CommandKnob.CommandType getCommandType() {
+        return commandType;
+    }
+
+    public void setCommandType(CommandKnob.CommandType commandType) {
+        this.commandType = commandType;
+    }
+
+    public boolean isRetrieveCommandTypeFromVariable() {
+        return retrieveCommandTypeFromVariable;
+    }
+
+    public void setRetrieveCommandTypeFromVariable(boolean retrieveCommandTypeFromVariable) {
+        this.retrieveCommandTypeFromVariable = retrieveCommandTypeFromVariable;
+    }
+
+    public String getCommandTypeVariableName() {
+        return commandTypeVariableName;
+    }
+
+    public void setCommandTypeVariableName(String commandTypeVariableName) {
+        this.commandTypeVariableName = commandTypeVariableName;
+    }
+
+    public boolean isFailIfFileExists() {
+        return failIfFileExists;
+    }
+
+    public void setFailIfFileExists(boolean failIfFileExists) {
+        this.failIfFileExists = failIfFileExists;
+    }
+
+    public boolean isTruncateExistingFile() {
+        return truncateExistingFile;
+    }
+
+    public void setTruncateExistingFile(boolean truncateExistingFile) {
+        this.truncateExistingFile = truncateExistingFile;
+    }
+
+    public String getFileOffset() {
+        return fileOffset;
+    }
+
+    public void setFileOffset(String fileOffset) {
+        this.fileOffset = fileOffset;
+    }
+
+    public String getFileLength() {
+        return fileLength;
+    }
+
+    public void setFileLength(String fileLength) {
+        this.fileLength = fileLength;
+    }
+
+    public String getNewFileName() {
+        return newFileName;
+    }
+
+    public void setNewFileName(String newFileName) {
+        this.newFileName = newFileName;
+    }
+
+    public void setSetFileSizeToContextVariable(boolean setFileSizeToContextVariable) {
+        this.setFileSizeToContextVariable = setFileSizeToContextVariable;
+    }
+
+    public void setSaveFileSizeContextVariable(String saveFileSizeContextVariable) {
+        this.saveFileSizeContextVariable = saveFileSizeContextVariable;
+    }
+
+    public boolean isSetFileSizeToContextVariable() {
+        return setFileSizeToContextVariable;
+    }
+
+    public String getSaveFileSizeContextVariable() {
+        return saveFileSizeContextVariable;
     }
 }

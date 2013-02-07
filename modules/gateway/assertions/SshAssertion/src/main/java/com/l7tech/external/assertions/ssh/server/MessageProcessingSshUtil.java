@@ -395,7 +395,12 @@ public class MessageProcessingSshUtil {
                                 public Long call() {
                                     try {
                                         if (connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SCP_RETRIEVE_FILE_SIZE_FROM_VARIABLE)) {
-                                            return Long.parseLong(context.getVariable(connector.getProperty(SshCredentialAssertion.LISTEN_PROP_SIZE_CONTEXT_VARIABLE_NAME)).toString());
+                                            try {
+                                                return Long.parseLong(context.getVariable(connector.getProperty(SshCredentialAssertion.LISTEN_PROP_SIZE_CONTEXT_VARIABLE_NAME)).toString());
+                                            } catch(Throwable e){
+                                                logger.log(Level.WARNING, "Error parsing file size from context variable. " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                                return context.getResponse().getMimeKnob().getContentLength();
+                                            }
                                         } else {
                                             return context.getResponse().getMimeKnob().getContentLength();
                                         }

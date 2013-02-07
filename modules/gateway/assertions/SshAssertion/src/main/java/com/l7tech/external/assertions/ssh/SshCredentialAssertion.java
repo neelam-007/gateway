@@ -31,6 +31,7 @@ public class SshCredentialAssertion extends Assertion {
     public static final String LISTEN_PROP_ENABLE_SFTP_PARTIAL_DOWNLOADS = "l7.ssh.enableSftpPartialDownload";
     public static final String LISTEN_PROP_SIZE_CONTEXT_VARIABLE_NAME = "l7.ssh.enableSizeContextVariableName";
     public static final String LISTEN_PROP_ENABLE_SCP_RETRIEVE_FILE_SIZE_FROM_VARIABLE = "l7.ssh.enableSizeFromContextVariable";
+    public static final String LISTEN_PROP_DELETE_FILE_ON_TRUNCATE_REQUEST = "l7.ssh.deleteFileOnTruncateRequest";
     public static final String LISTEN_PROP_HOST_PRIVATE_KEY = "l7.ssh.hostPrivateKey";
     public static final String LISTEN_PROP_IDLE_TIMEOUT_MINUTES = "l7.ssh.idleTimeoutMinutes";
     public static final String LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER = "l7.ssh.maxConcurrentSessionsPerUser";

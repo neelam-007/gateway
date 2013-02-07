@@ -2,8 +2,6 @@ package com.l7tech.external.assertions.ssh.server.client;
 
 import com.jscape.inet.scp.Scp;
 import com.jscape.inet.scp.ScpException;
-import com.jscape.inet.sftp.SftpException;
-import com.l7tech.message.SshKnob.FileMetadata;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,27 +18,47 @@ public class ScpClient implements SshClient {
         this.scpClient = scpClient;
     }
 
-    public void connect() throws ScpException, SftpException {
+    @Override
+    public void connect() throws ScpException {
         scpClient.connect();
     }
 
+    @Override
     public boolean isConnected() {
         return scpClient.isConnected();
     }
 
+    @Override
     public void disconnect() {
         scpClient.disconnect();
     }
 
-    public void upload(InputStream in, String remoteDir, String remoteFile) throws IOException {
-        scpClient.upload(in, normalizeAndAppendDirectorySeparator(remoteDir), remoteFile);
+    /**
+     * Uploads the input stream to the scpServer.
+     *
+     * @param in The input stream to upload
+     * @param remoteDir The remote directory the file is located in
+     * @param remoteFile The Name of the remote file
+     * @param fileLength The file length. If this is -1 the entire stream will be uploaded until EOF
+     * @throws IOException This is thrown if there was an exception writing to the file.
+     */
+    public void upload(InputStream in, String remoteDir, String remoteFile, long fileLength) throws IOException {
+        if(fileLength == -1){
+            //This will upload in.available() bits of data.
+            scpClient.upload(in, normalizeAndAppendDirectorySeparator(remoteDir), remoteFile);
+        } else {
+            scpClient.upload(in, fileLength, normalizeAndAppendDirectorySeparator(remoteDir), remoteFile);
+        }
     }
 
-    @Override
-    public void upload(final InputStream in, final String remoteDir, final String remoteFile, final FileMetadata fileMetadata) throws IOException {
-        throw new UnsupportedOperationException("this method is not supported");
-    }
-
+    /**
+     * This will write data to the output stream given for the specified file.
+     *
+     * @param out The output stream to write file data to.
+     * @param remoteDir The remote directory the file is located in
+     * @param remoteFile The Name of the remote file
+     * @throws IOException This is thrown if there was an exception reading the file.
+     */
     public void download(OutputStream out, String remoteDir, String remoteFile) throws IOException {
         scpClient.download(out, normalizeAndAppendDirectorySeparator(remoteDir), remoteFile);
     }
