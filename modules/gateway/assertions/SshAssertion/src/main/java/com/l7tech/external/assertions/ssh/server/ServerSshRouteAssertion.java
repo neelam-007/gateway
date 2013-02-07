@@ -327,10 +327,10 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                                 } catch (Exception e) {
                                     //sate the exception thrown trying to retreive the file input stream
                                     gettingStreamException.set(e);
+                                    sftpClient.disconnect();
                                     throw e;
                                 } finally {
                                     gotStream.countDown();
-                                    sftpClient.disconnect();
                                 }
                                 try {
                                     //write the data from the file to the response output stream.
