@@ -26,6 +26,9 @@ import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.*;
 import com.l7tech.security.cert.TrustedCert;
@@ -34,6 +37,7 @@ import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.MockClusterPropertyManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.encass.EncapsulatedAssertionConfigManagerStub;
 import com.l7tech.server.export.PolicyExporterImporterManagerStub;
 import com.l7tech.server.folder.FolderManagerStub;
 import com.l7tech.server.globalresources.ResourceEntryManagerStub;
@@ -60,9 +64,8 @@ import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.UnaryVoidThrows;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -396,6 +399,54 @@ public class ServerGatewayManagementAssertionTest {
         final Element value = XmlUtil.findExactlyOneChildElementByName(subcode, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Value");
 
         assertEquals("SOAP Fault value", "wsman:SchemaValidationError", XmlUtil.getTextValue(value));
+    }
+
+    @Test
+    public void testCreateEncapsulatedAssertion() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions";
+        String payload =
+            "<l7:EncapsulatedAssertion xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+            "    <l7:Name>Test</l7:Name>\n" +
+            "    <l7:PolicyReference id=\"2\" resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/policies\"/>\n" +
+            "    <l7:EncapsulatedArguments>\n" +
+            "        <l7:EncapsulatedAssertionArgument>\n" +
+            "            <l7:Ordinal>1</l7:Ordinal>\n" +
+            "            <l7:ArgumentName>input1</l7:ArgumentName>\n" +
+            "            <l7:ArgumentType>decimal</l7:ArgumentType>\n" +
+            "            <l7:GuiLabel>Input1 Label</l7:GuiLabel>\n" +
+            "            <l7:GuiPrompt>true</l7:GuiPrompt>\n" +
+            "        </l7:EncapsulatedAssertionArgument>\n" +
+            "        <l7:EncapsulatedAssertionArgument>\n" +
+            "            <l7:Ordinal>2</l7:Ordinal>\n" +
+            "            <l7:ArgumentName>input2</l7:ArgumentName>\n" +
+            "            <l7:ArgumentType>string</l7:ArgumentType>\n" +
+            "            <l7:GuiLabel>Input2 Label</l7:GuiLabel>\n" +
+            "            <l7:GuiPrompt>false</l7:GuiPrompt>\n" +
+            "        </l7:EncapsulatedAssertionArgument>\n" +
+            "    </l7:EncapsulatedArguments>\n" +
+            "    <l7:EncapsulatedResults>\n" +
+            "        <l7:EncapsulatedAssertionResult>\n" +
+            "            <l7:ResultName>result1</l7:ResultName>\n" +
+            "            <l7:ResultType>boolean</l7:ResultType>\n" +
+            "        </l7:EncapsulatedAssertionResult>\n" +
+            "        <l7:EncapsulatedAssertionResult>\n" +
+            "            <l7:ResultName>result2</l7:ResultName>\n" +
+            "            <l7:ResultType>string</l7:ResultType>\n" +
+            "        </l7:EncapsulatedAssertionResult>\n" +
+            "        <l7:EncapsulatedAssertionResult>\n" +
+            "            <l7:ResultName>result3</l7:ResultName>\n" +
+            "            <l7:ResultType>message</l7:ResultType>\n" +
+            "        </l7:EncapsulatedAssertionResult>\n" +
+            "    </l7:EncapsulatedResults>\n" +
+            "    <l7:Properties>\n" +
+            "        <l7:Property key=\"a\">\n" +
+            "            <l7:StringValue>b</l7:StringValue>\n" +
+            "        </l7:Property>\n" +
+            "    </l7:Properties>\n" +
+            "</l7:EncapsulatedAssertion>";
+
+        String expectedId = "2";
+        doCreate( resourceUri, payload, expectedId );
     }
 
     @Test
@@ -880,6 +931,95 @@ public class ServerGatewayManagementAssertionTest {
                 "    </Properties>\n" +
                 "</StoredPassword>";
         doCreate( resourceUri, payload, "2", "3" );
+    }
+
+    @Test
+    public void testPutEncapsulatedAssertion() throws Exception {
+        // Try basic successful update of existing encass config
+        putAndVerify(makeEncassPutMess("id=\"1\"", "version=\"0\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"1\"", 1), verifyEncassUpdate(1, null), false );
+
+        // Try omitting OID and ver (can't just pass "true" for removeVersionAndId arg because it kills the policy OID in the crossfire and we need it)
+        putAndVerify(makeEncassPutMess("", "", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"1\"", 2), verifyEncassUpdate(2, null), false );
+
+        // Try leaving out the GUID (should fail)
+        putAndVerify(makeEncassPutMess("id=\"1\"", "version=\"2\"", "", "id=\"1\"", 3), verifyEncassUpdate(3, "unable to change GUID of existing encapsulated assertion config"), false );
+
+        // Try changing the encass GUID (should fail)
+        putAndVerify(makeEncassPutMess("id=\"1\"", "version=\"2\"", "<l7:Guid>ABCD-EXTRA-0001</l7:Guid>", "id=\"1\"", 4), verifyEncassUpdate(4, "unable to change GUID of existing encapsulated assertion config"), false );
+
+        // Try leaving out the backing policy OID (should work OK)
+        putAndVerify(makeEncassPutMess("id=\"1\"", "version=\"2\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"1\"", 5), verifyEncassUpdate(5, null), false );
+
+        // Try changing the backing policy OID (should fail)
+        putAndVerify(makeEncassPutMess("id=\"1\"", "version=\"2\"", "<l7:Guid>ABCD-0001</l7:Guid>", "id=\"2\"", 6), verifyEncassUpdate(6, "unable to change backing policy of an existing encapsulated assertion config"), false );
+    }
+
+    private UnaryVoidThrows<Document, Exception> verifyEncassUpdate(final int updateNum, @Nullable final String expectedFaultSubstring) {
+        return new UnaryVoidThrows<Document,Exception>(){
+                @Override
+                public void call( final Document result ) throws Exception {
+
+                    if (expectedFaultSubstring == null) {
+                        // Verify successful update (check updated encass config name)
+                        final Element soapBody = SoapUtil.getBodyElement(result);
+                        final Element encapsulatedAssertion = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "EncapsulatedAssertion");
+                        final Element name = XmlUtil.findExactlyOneChildElementByName(encapsulatedAssertion, NS_GATEWAY_MANAGEMENT, "Name");
+                        assertEquals("Encapsulated assertion name", "Test Encass Config 1 (updated #" + updateNum + ")", XmlUtil.getTextValue(name));
+                    } else {
+                        // Verify fault is as expected
+                        String str = XmlUtil.nodeToString(result);
+
+                        assertTrue("Should be a fault", str.contains("FaultDetail>http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail"));
+                        assertTrue("Should contain expected fault substring", str.contains(expectedFaultSubstring));
+                    }
+
+                }
+            };
+    }
+
+    private static String makeEncassPutMess(String oidStr, String versionStr, String guidStr, String policyOidStr, int updateNum) {
+        return "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To>\n" +
+            "<wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>\n" +
+            "<l7:EncapsulatedAssertion xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" " + oidStr + " " + versionStr + ">\n" +
+            "    <l7:Name>Test Encass Config 1 (updated #" + updateNum + ")</l7:Name>\n" +
+            "    " + guidStr + "\n" +
+            "    <l7:PolicyReference " + policyOidStr + " resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/policies\"/>\n" +
+            "    <l7:EncapsulatedArguments>\n" +
+            "        <l7:EncapsulatedAssertionArgument>\n" +
+            "            <l7:Ordinal>1</l7:Ordinal>\n" +
+            "            <l7:ArgumentName>input1</l7:ArgumentName>\n" +
+            "            <l7:ArgumentType>decimal</l7:ArgumentType>\n" +
+            "            <l7:GuiLabel>Input1 Label</l7:GuiLabel>\n" +
+            "            <l7:GuiPrompt>true</l7:GuiPrompt>\n" +
+            "        </l7:EncapsulatedAssertionArgument>\n" +
+            "        <l7:EncapsulatedAssertionArgument>\n" +
+            "            <l7:Ordinal>2</l7:Ordinal>\n" +
+            "            <l7:ArgumentName>input2</l7:ArgumentName>\n" +
+            "            <l7:ArgumentType>string</l7:ArgumentType>\n" +
+            "            <l7:GuiLabel>Input2 Label</l7:GuiLabel>\n" +
+            "            <l7:GuiPrompt>false</l7:GuiPrompt>\n" +
+            "        </l7:EncapsulatedAssertionArgument>\n" +
+            "    </l7:EncapsulatedArguments>\n" +
+            "    <l7:EncapsulatedResults>\n" +
+            "        <l7:EncapsulatedAssertionResult>\n" +
+            "            <l7:ResultName>result1</l7:ResultName>\n" +
+            "            <l7:ResultType>boolean</l7:ResultType>\n" +
+            "        </l7:EncapsulatedAssertionResult>\n" +
+            "        <l7:EncapsulatedAssertionResult>\n" +
+            "            <l7:ResultName>result2</l7:ResultName>\n" +
+            "            <l7:ResultType>string</l7:ResultType>\n" +
+            "        </l7:EncapsulatedAssertionResult>\n" +
+            "    </l7:EncapsulatedResults>\n" +
+            "    <l7:Properties>\n" +
+            "        <l7:Property key=\"c\">\n" +
+            "            <l7:StringValue>d</l7:StringValue>\n" +
+            "        </l7:Property>\n" +
+            "        <l7:Property key=\"e\">\n" +
+            "            <l7:StringValue>f</l7:StringValue>\n" +
+            "        </l7:Property>\n" +
+            "    </l7:Properties>\n" +
+            "</l7:EncapsulatedAssertion>\n" +
+    "</s:Body></s:Envelope>";
     }
 
     @Test
@@ -2197,7 +2337,8 @@ public class ServerGatewayManagementAssertionTest {
         "http://ns.l7tech.com/2010/04/gateway-management/resources",
         "http://ns.l7tech.com/2010/04/gateway-management/services",
         "http://ns.l7tech.com/2010/04/gateway-management/storedPasswords",
-        "http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates"
+        "http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates",
+        "http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions"
     };
 
     @Before
@@ -2238,8 +2379,9 @@ public class ServerGatewayManagementAssertionTest {
                 connection( 2L, "Test Connection") ) );
         beanFactory.addBean( "ssgActiveConnectorManager", new SsgActiveConnectorManagerStub() );
         beanFactory.addBean( "policyExporterImporterManager", new PolicyExporterImporterManagerStub() );
+        final Policy testPolicy1 = policy(1L, PolicyType.INCLUDE_FRAGMENT, "Test Policy", true, POLICY);
         beanFactory.addBean( "policyManager",  new PolicyManagerStub(
-                policy( 1L, PolicyType.INCLUDE_FRAGMENT, "Test Policy", true, POLICY),
+                testPolicy1,
                 policy( 2L, PolicyType.INCLUDE_FRAGMENT, "Test Policy For Move", true, POLICY) ));
         beanFactory.addBean( "ssgKeyStoreManager", new SsgKeyStoreManagerStub( new SsgKeyFinderStub( Arrays.asList(
                 key( 0L, "bob", TestDocuments.getWssInteropBobCert(), TestDocuments.getWssInteropBobKey()) ) )) );
@@ -2258,6 +2400,9 @@ public class ServerGatewayManagementAssertionTest {
         } );
         beanFactory.addBean( "securePasswordManager", new SecurePasswordManagerStub(
                 securePassword( 1L, "test", "password", true, SecurePassword.SecurePasswordType.PASSWORD )
+        ) );
+        beanFactory.addBean( "encapsulatedAssertionConfigManager", new EncapsulatedAssertionConfigManagerStub(
+                encapsulatedAssertion( 1L, "Test Encass Config 1", "ABCD-0001", testPolicy1, null, null, null)
         ) );
 
         final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
@@ -2411,6 +2556,25 @@ public class ServerGatewayManagementAssertionTest {
         }
         service.setWsdlXml( wsdlXml );
         return service;
+    }
+
+    private static EncapsulatedAssertionConfig encapsulatedAssertion(final long oid, final String name, final String guid, final Policy policy,
+                                                                     final Set<EncapsulatedAssertionArgumentDescriptor> args,
+                                                                     final Set<EncapsulatedAssertionResultDescriptor> results,
+                                                                     final Map<String, String> properties)
+    {
+        final EncapsulatedAssertionConfig config = new EncapsulatedAssertionConfig();
+        config.setOid( oid );
+        config.setName( name );
+        config.setGuid( guid );
+        config.setPolicy( policy );
+        if ( args != null )
+            config.setArgumentDescriptors( args );
+        if ( results != null )
+            config.setResultDescriptors( results );
+        if ( properties != null )
+            config.setProperties( properties );
+        return config;
     }
 
     private static SecurePassword securePassword( final long oid, final String name, final String password, final boolean fromVariable, final SecurePassword.SecurePasswordType type) {

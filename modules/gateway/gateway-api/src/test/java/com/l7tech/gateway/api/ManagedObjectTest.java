@@ -1,23 +1,8 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.PolicyImportContext;
-import com.l7tech.gateway.api.impl.PolicyValidationContext;
-import com.l7tech.gateway.api.impl.PrivateKeyExportContext;
-import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
-import com.l7tech.gateway.api.impl.PrivateKeyGenerateCsrContext;
-import com.l7tech.gateway.api.impl.PrivateKeyGenerateCsrResult;
-import com.l7tech.gateway.api.impl.PrivateKeyImportContext;
-import com.l7tech.gateway.api.impl.PrivateKeySpecialPurposeContext;
+import com.l7tech.gateway.api.impl.*;
 import com.l7tech.gateway.api.impl.ValidationUtils;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.ClassUtils;
-import static com.l7tech.util.CollectionUtils.list;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
-import static org.junit.Assert.assertArrayEquals;
+import com.l7tech.util.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -35,14 +20,7 @@ import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.StringReader;
-import java.io.StringWriter;
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -51,15 +29,9 @@ import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import static com.l7tech.util.CollectionUtils.list;
 import static org.junit.Assert.*;
 
 /**
@@ -887,6 +859,64 @@ public class ManagedObjectTest {
         assertEquals("messages[1] details[0] position", 4L, (long) policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().get( 0 ).getPosition() );
         assertEquals("messages[1] details[1] description", "An assertion", policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().get( 1 ).getDescription());
         assertEquals("messages[1] details[1] position", 0L, (long) policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().get( 1 ).getPosition() );
+    }
+
+    @Test
+    public void testEncapsulatedAssertionSerialization() throws Exception {
+        final EncapsulatedAssertionMO encapsulatedAssertionMO = ManagedObjectFactory.createEncapsulatedAssertion();
+        encapsulatedAssertionMO.setId( "3" );
+        encapsulatedAssertionMO.setVersion( 77 );
+        encapsulatedAssertionMO.setName( "Test" );
+        encapsulatedAssertionMO.setGuid( "ddc3c2d8-fba6-4a86-9707-4e0c08bd0e60" );
+        encapsulatedAssertionMO.setProperties( Collections.<String,String>singletonMap( "a", "b" ));
+        encapsulatedAssertionMO.setPolicyReference( new ManagedObjectReference(PolicyMO.class, "1011") );
+
+        final EncapsulatedAssertionMO.EncapsulatedArgument arg = new EncapsulatedAssertionMO.EncapsulatedArgument();
+        arg.setOrdinal( 1 );
+        arg.setArgumentName("input1");
+        arg.setArgumentType("decimal");
+        arg.setGuiPrompt(true);
+        arg.setGuiLabel("Input1 Label");
+        final EncapsulatedAssertionMO.EncapsulatedArgument arg2 = new EncapsulatedAssertionMO.EncapsulatedArgument();
+        arg2.setOrdinal( 2 );
+        arg2.setArgumentName("input2");
+        arg2.setArgumentType("string");
+        arg2.setGuiPrompt(false);
+        arg2.setGuiLabel("Input2 Label");
+        encapsulatedAssertionMO.setEncapsulatedArguments( list(arg, arg2) );
+
+        final EncapsulatedAssertionMO.EncapsulatedResult result = new EncapsulatedAssertionMO.EncapsulatedResult();
+        result.setResultName("result1");
+        result.setResultType( "boolean" );
+        final EncapsulatedAssertionMO.EncapsulatedResult result2 = new EncapsulatedAssertionMO.EncapsulatedResult();
+        result2.setResultName("result2");
+        result2.setResultType( "string" );
+        final EncapsulatedAssertionMO.EncapsulatedResult result3 = new EncapsulatedAssertionMO.EncapsulatedResult();
+        result3.setResultName("result3");
+        result3.setResultType( "message" );
+        encapsulatedAssertionMO.setEncapsulatedResults( list(result, result2, result3) );
+
+        final EncapsulatedAssertionMO roundTripped = roundTrip( encapsulatedAssertionMO );
+
+        assertEquals( "id", "3", roundTripped.getId() );
+        assertEquals( "version", Integer.valueOf( 77 ), roundTripped.getVersion() );
+        assertEquals( "name", "Test", roundTripped.getName() );
+        assertEquals( "guid", "ddc3c2d8-fba6-4a86-9707-4e0c08bd0e60", roundTripped.getGuid() );
+        assertEquals( "properties", Collections.<String,String>singletonMap( "a", "b" ), roundTripped.getProperties() );
+        assertEquals( "policy reference resource uri", AccessorSupport.getResourceUri(PolicyMO.class), roundTripped.getPolicyReference().getResourceUri() );
+        assertEquals( "policy reference id", "1011", roundTripped.getPolicyReference().getId() );
+
+        assertEquals( "property name", "a", roundTripped.getProperties().keySet().iterator().next() );
+        assertEquals( "property value", "b", roundTripped.getProperties().values().iterator().next() );
+
+        assertEquals( "arg ordinal", 1, roundTripped.getEncapsulatedArguments().iterator().next().getOrdinal() );
+        assertEquals( "arg name", "input1", roundTripped.getEncapsulatedArguments().iterator().next().getArgumentName() );
+        assertEquals( "arg type", "decimal", roundTripped.getEncapsulatedArguments().iterator().next().getArgumentType() );
+        assertEquals( "arg gui prompt", true, roundTripped.getEncapsulatedArguments().iterator().next().isGuiPrompt() );
+        assertEquals( "arg gui label", "Input1 Label", roundTripped.getEncapsulatedArguments().iterator().next().getGuiLabel() );
+
+        assertEquals( "result name", "result1", roundTripped.getEncapsulatedResults().iterator().next().getResultName() );
+        assertEquals( "result type", "boolean", roundTripped.getEncapsulatedResults().iterator().next().getResultType() );
     }
 
     @Test

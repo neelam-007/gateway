@@ -369,6 +369,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new EncapsulatedAssertionMO instance.
+     *
+     * @return THe new instance.
+     */
+    public static EncapsulatedAssertionMO createEncapsulatedAssertion() {
+        return new EncapsulatedAssertionMO();
+    }
+
+    /**
      * Read a managed object from the given data.
      *
      * @param in The input data.

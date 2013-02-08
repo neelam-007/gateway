@@ -148,6 +148,10 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.SecurePasswordResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="securePasswordManager"/>
                 </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.EncapsulatedAssertionResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="encapsulatedAssertionConfigManager"/>
+                    <constructor-arg index="4" ref="policyManager"/>
+                </bean>
             </list>
         </constructor-arg>
     </bean>
