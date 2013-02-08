@@ -101,7 +101,7 @@ public class JdbcCallHelperTest {
     @Test
     public void testHelper() throws Exception {
         String query = "CALL GetSamples";
-        final ArrayList<String> inParameterNames = new ArrayList<>();
+        final ArrayList<String> inParameterNames = new ArrayList<String>();
         final JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
 
         List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
@@ -151,7 +151,7 @@ public class JdbcCallHelperTest {
     public void testParameters() {
         //by the time the helper class was called, all context variables has been replaced by ?
         String query = "CALL GetSample ('value1','value2',99,?,?)";
-        final ArrayList<String> inParameterNames = new ArrayList<>();
+        final ArrayList<String> inParameterNames = new ArrayList<String>();
         final JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
 
         List<String> parameter = jdbcHelper.getParametersFromQuery(query);
@@ -217,7 +217,7 @@ public class JdbcCallHelperTest {
     public void testContextVariables() throws Exception {
         PolicyEnforcementContext peCtx = makeContext("<myrequest/>", "<myresponse/>");
         String query = "CALL GetSamples ()";
-        final ArrayList<String> inParameterNames = new ArrayList<>();
+        final ArrayList<String> inParameterNames = new ArrayList<String>();
         final JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
 
         List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
@@ -254,7 +254,7 @@ public class JdbcCallHelperTest {
     @BugNumber(12255)
     @Test
     public void testParameterCount() throws Exception {
-        ArrayList<String> inParameterNames = new ArrayList<>(Arrays.asList("inparam"));
+        ArrayList<String> inParameterNames = new ArrayList<String>(Arrays.asList("inparam"));
         JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
 
         try {
@@ -284,7 +284,7 @@ public class JdbcCallHelperTest {
         try {
             // Note this test covers the condition when the assertion's configuration does not match the database's
             // configuration for the proc / function e.g. the db was updated.
-            inParameterNames = new ArrayList<>(Arrays.asList("inparam", "inparam"));
+            inParameterNames = new ArrayList<String>(Arrays.asList("inparam", "inparam"));
             jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
 
             //parameter vs argument passed does not match, expected 2 vs 1
@@ -299,7 +299,7 @@ public class JdbcCallHelperTest {
     @BugNumber(12575)
     @Test
     public void testInvalidCharacter() throws Exception {
-        ArrayList<String> inParameterNames = new ArrayList<>(Arrays.asList("inparam"));
+        ArrayList<String> inParameterNames = new ArrayList<String>(Arrays.asList("inparam"));
         JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
 
         try {
@@ -441,7 +441,7 @@ public class JdbcCallHelperTest {
     @Test
     public void testOracleDB2Result() throws Exception {
         String query = "CALL GetSamples";
-        final ArrayList<String> inParameterNames = new ArrayList<>();
+        final ArrayList<String> inParameterNames = new ArrayList<String>();
         final JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
 
         List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);

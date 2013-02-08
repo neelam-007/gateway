@@ -48,7 +48,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, Application
      * The cache key is generated from the JDBC Connection name (which is unique on a gateway and is linked to a user
      * account) and a procedure name.
      */
-    private final static Map<String, Pair<SimpleJdbcCall, List<String>>> simpleJdbcCallCache = new ConcurrentHashMap<>();
+    private final static Map<String, Pair<SimpleJdbcCall, List<String>>> simpleJdbcCallCache = new ConcurrentHashMap<String, Pair<SimpleJdbcCall, List<String>>>();
 
     public JdbcQueryingManagerImpl(final JdbcConnectionPoolManager jdbcConnectionPoolManager,
                                    final Config config) {
