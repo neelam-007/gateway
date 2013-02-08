@@ -1,17 +1,26 @@
 package com.l7tech.console.policy.exporter;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.exporter.PolicyExporter;
+import com.l7tech.util.HexUtils;
 import com.sun.xml.bind.marshaller.NamespacePrefixMapper;
+import org.apache.commons.lang.Validate;
 import org.jetbrains.annotations.NotNull;
+import org.w3c.dom.Document;
+import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.Result;
+import javax.xml.transform.dom.DOMResult;
 import java.io.IOException;
 
 /**
@@ -19,24 +28,44 @@ import java.io.IOException;
  */
 public class EncapsulatedAssertionConfigExportUtil {
     /**
-     * Export an EncapsulatedAssertionConfig to a Result.
+     * Exports an EncapsulatedAssertionConfig and its backing Policy to a Document.
      *
-     * @param config the EncapsulatedAssertionConfig to export.
-     * @param result the Result which will hold the exported EncapsulatedAssertionConfig xml.
-     * @throws IOException if unable to export the EncapsulatedAssertionConfig.
+     * If the EncapsulatedAssertionConfig has an EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION it could be replaced with a new value.
+     *
+     * @param config the EncapsulatedAssertionConfig to export which contains a backing Policy.
+     * @return a Document representing the exported EncapsulatedAssertionConfig and its backing Policy.
+     * @throws IOException
+     * @throws SAXException
      */
-    public void export(@NotNull final EncapsulatedAssertionConfig config, @NotNull final Result result) throws IOException {
-        final Marshaller marshaller;
-        try {
-            marshaller = createMarshaller();
-            marshaller.marshal(config, result);
-        } catch (final JAXBException e) {
-            throw new IOException(e);
-        }
+    public Document exportConfigAndPolicy(@NotNull final EncapsulatedAssertionConfig config) throws IOException, SAXException {
+        Validate.notNull(config.getPolicy(), "EncapsulatedAssertionConfig is missing its backing policy.");
+
+        // build backing policy xml
+        final Assertion assertion = config.getPolicy().getAssertion();
+        final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
+        final PolicyExporter exporter = new PolicyExporter(finder, finder);
+        final Document doc = exporter.exportToDocument(assertion, PolicyExportUtils.getExternalReferenceFactories());
+
+        // append encass xml without artifact version
+        final DocumentFragment withoutArtifactVersion = doc.createDocumentFragment();
+        config.removeProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION);
+        exportConfig(config, new DOMResult(withoutArtifactVersion));
+        doc.getDocumentElement().appendChild(withoutArtifactVersion);
+
+        // generate artifact version from backing policy (and its references) and encass config xml
+        final String artifactVersion = generateArtifactVersion(doc);
+
+        // rebuild xml with artifact version
+        config.putProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION, artifactVersion);
+        final DocumentFragment withArtifactVersion = doc.createDocumentFragment();
+        exportConfig(config, new DOMResult(withArtifactVersion));
+        XmlUtil.removeChildElementsByName(doc.getDocumentElement(), ENCASS_NS, "EncapsulatedAssertion");
+        doc.getDocumentElement().appendChild(withArtifactVersion);
+        return doc;
     }
 
     /**
-     * Imports an EncapsulatedAssertionConfig from a Node.
+     * Imports an EncapsulatedAssertionConfig with a simplified backing Policy from a Node.
      *
      * @param node the Node which contains the EncapsulatedAssertionConfig xml.
      * @return the imported EncapsulatedAssertionConfig.
@@ -47,7 +76,7 @@ public class EncapsulatedAssertionConfigExportUtil {
     }
 
     /**
-     * Imports an EncapsulatedAssertionConfig from a Node.
+     * Imports an EncapsulatedAssertionConfig with a simplified backing Policy from a Node.
      *
      * @param node                 the Node which contains the EncapsulatedAssertionConfig xml.
      * @param resetOidsAndVersions true if the oids and versions of the entities should be reset to default values.
@@ -93,6 +122,36 @@ public class EncapsulatedAssertionConfigExportUtil {
         return instance;
     }
 
+    /**
+     * Generates an artifact version from an xml Document which represents an EncapsulatedAssertionConfig and backing Policy.
+     *
+     * @param exportDocument the Document which contains the EncapsulatedAssertionConfig and its backing Policy xml.
+     * @return an artifact version for the exportDocument.
+     * @throws IOException
+     */
+    String generateArtifactVersion(@NotNull final Document exportDocument) throws IOException {
+        final String xml = XmlUtil.nodeToFormattedString(exportDocument.getDocumentElement());
+        final byte[] sha1Digest = HexUtils.getSha1Digest(xml.getBytes());
+        return HexUtils.hexDump(sha1Digest);
+    }
+
+    /**
+     * Export an EncapsulatedAssertionConfig with a simplified backing Policy to a Result.
+     *
+     * @param config the EncapsulatedAssertionConfig to export.
+     * @param result the Result which will hold the exported EncapsulatedAssertionConfig xml.
+     * @throws IOException if unable to export the EncapsulatedAssertionConfig.
+     */
+    void exportConfig(@NotNull final EncapsulatedAssertionConfig config, @NotNull final Result result) throws IOException {
+        final Marshaller marshaller;
+        try {
+            marshaller = createMarshaller();
+            marshaller.marshal(config, result);
+        } catch (final JAXBException e) {
+            throw new IOException(e);
+        }
+    }
+
     EncapsulatedAssertionConfigExportUtil() throws IOException {
         try {
             jaxbContext = JAXBContext.newInstance("com.l7tech.objectmodel.encass");
@@ -105,40 +164,12 @@ public class EncapsulatedAssertionConfigExportUtil {
     private static EncapsulatedAssertionConfigExportUtil instance;
     private static final String JAXB_FORMATTED_OUTPUT = "jaxb.formatted.output";
     private static final String JAXB_FRAGMENT = "jaxb.fragment";
-    private static final String COM_SUN_XML_BIND_NAMESPACE_PREFIX_MAPPER = "com.sun.xml.bind.namespacePrefixMapper";
+    private static final String ENCASS_NS = "http://ns.l7tech.com/secureSpan/1.0/encass";
 
     private Marshaller createMarshaller() throws JAXBException {
         final Marshaller marshaller = jaxbContext.createMarshaller();
         marshaller.setProperty(JAXB_FORMATTED_OUTPUT, true);
         marshaller.setProperty(JAXB_FRAGMENT, true);
-        marshaller.setProperty(COM_SUN_XML_BIND_NAMESPACE_PREFIX_MAPPER, new EncapsulatedAssertionConfigNamespacePrefixMapper());
         return marshaller;
-    }
-
-    private class EncapsulatedAssertionConfigNamespacePrefixMapper extends NamespacePrefixMapper {
-
-        private static final String L7_NS = "http://ns.l7tech.com/secureSpan/1.0/core";
-        private static final String XSI_NS = "http://www.w3.org/2001/XMLSchema-instance";
-        private static final String XS_NS = "http://www.w3.org/2001/XMLSchema";
-        private static final String ENCASS_NS = "http://ns.l7tech.com/secureSpan/1.0/encass";
-        private static final String L7 = "L7";
-        private static final String XSI = "xsi";
-        private static final String XS = "xs";
-        private static final String ENC = "enc";
-
-        @Override
-        public String getPreferredPrefix(final String namespaceUri, final String suggestion, boolean requirePrefix) {
-            String prefix = null;
-            if (L7_NS.equals(namespaceUri)) {
-                prefix = L7;
-            } else if (XSI_NS.equals(namespaceUri)) {
-                prefix = XSI;
-            } else if (XS_NS.equals(namespaceUri)) {
-                prefix = XS;
-            } else if (ENCASS_NS.endsWith(namespaceUri)) {
-                prefix = ENC;
-            }
-            return prefix;
-        }
     }
 }

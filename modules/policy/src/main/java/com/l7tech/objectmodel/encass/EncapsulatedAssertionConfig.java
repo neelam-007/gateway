@@ -47,6 +47,9 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
     /** Base64-encoded image in a supported format (gif, png, or jpg).  Should be 16x16 pixels, for the time being. */
     public static final String PROP_ICON_BASE64 = "paletteIconBase64";
 
+    /** Hash representing the configuration of the encapsulated assertion and its backing policy (used for import and export). */
+    public static final String PROP_ARTIFACT_VERSION = "artifactVersion";
+
     /** Base resource path in which icon file resource names are searched for. */
     public static final String ICON_RESOURCE_DIRECTORY = "com/l7tech/console/resources/";
 

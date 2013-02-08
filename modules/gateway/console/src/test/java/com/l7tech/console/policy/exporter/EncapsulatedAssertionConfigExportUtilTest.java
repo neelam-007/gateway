@@ -20,9 +20,16 @@ import java.util.*;
 import static org.junit.Assert.*;
 
 public class EncapsulatedAssertionConfigExportUtilTest {
+    // very simple policy with no references
+    private static final String POLICY_XML = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" " +
+            "xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:TrueAssertion/>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
     private EncapsulatedAssertionConfigExportUtil util;
     private EncapsulatedAssertionConfig config = new EncapsulatedAssertionConfig();
-    private Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "myPolicy", "policyXml", false);
+    private Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "myPolicy", POLICY_XML, false);
     private Set<EncapsulatedAssertionArgumentDescriptor> ins = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
     private Set<EncapsulatedAssertionResultDescriptor> outs = new HashSet<EncapsulatedAssertionResultDescriptor>();
     private Map<String, String> properties = new HashMap<String, String>();
@@ -39,32 +46,76 @@ public class EncapsulatedAssertionConfigExportUtilTest {
     }
 
     @Test
-    public void export() throws Exception {
-        testExport();
+    public void exportConfig() throws Exception {
+        testExportConfig();
     }
 
     @Test
-    public void exportNullFields() throws Exception {
+    public void exportConfigNullFields() throws Exception {
         config.setGuid(null);
         config.setName(null);
         config.setPolicy(null);
         config.setArgumentDescriptors(null);
         config.setResultDescriptors(null);
         config.setProperties(null);
-        testExport();
+        testExportConfig();
     }
 
     @Test
-    public void exportEmptyCollections() throws Exception {
+    public void exportConfigEmptyCollections() throws Exception {
         config.setArgumentDescriptors(Collections.<EncapsulatedAssertionArgumentDescriptor>emptySet());
         config.setResultDescriptors(Collections.<EncapsulatedAssertionResultDescriptor>emptySet());
         config.setProperties(Collections.<String, String>emptyMap());
-        testExport();
+        testExportConfig();
+    }
+
+    @Test
+    public void exportConfigAndPolicy() throws Exception {
+        // ensure there is no existing artifact version
+        config.removeProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION);
+        final Document document = util.exportConfigAndPolicy(config);
+        final String xml = XmlUtil.nodeToFormattedString(document);
+        assertEquals(xmlFromConfig(config, true), xml);
+        // ensure there is now an artifact version
+        assertTrue(xml.contains(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION));
+        assertNotNull(config.getProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION));
+    }
+
+    @Test
+    public void exportConfigAndPolicyExistingArtifactVersion() throws Exception {
+        final String existingArtifactVersion = "shouldBeReplaced";
+        config.putProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION, existingArtifactVersion);
+        final Document document = util.exportConfigAndPolicy(config);
+        final String xml = XmlUtil.nodeToFormattedString(document);
+        assertEquals(xmlFromConfig(config, true), xml);
+        assertTrue(xml.contains(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION));
+        assertFalse(config.getProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION).equals(existingArtifactVersion));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void exportConfigAndPolicyNullPolicy() throws Exception {
+        config.setPolicy(null);
+        util.exportConfigAndPolicy(config);
+    }
+
+    @Test
+    public void generateArtifactVersion() throws Exception {
+        final String xml = "<xml>someXml</xml>";
+        final String artifactVersion = util.generateArtifactVersion(XmlUtil.parse(xml));
+        assertFalse(artifactVersion.isEmpty());
+
+        // if xml has not changed, artifact version should be the same
+        final String noChange = util.generateArtifactVersion(XmlUtil.parse(xml));
+        assertEquals(artifactVersion, noChange);
+
+        // if xml has changed, artifact version should also have changed
+        final String changed = util.generateArtifactVersion(XmlUtil.parse("<xml>xmlHasChanged</xml>"));
+        assertFalse(artifactVersion.equals(changed));
     }
 
     @Test
     public void importFromNode() throws Exception {
-        final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlFromConfig(config)));
+        final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlFromConfig(config, false)));
         assertEquals(config.getName(), imported.getName());
         assertEquals(config.getProperties(), imported.getProperties());
         assertEquals(config.getResultDescriptors(), imported.getResultDescriptors());
@@ -92,7 +143,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
         config.setArgumentDescriptors(null);
         config.setResultDescriptors(null);
         config.setProperties(null);
-        final String xmlWithMissingFields = xmlFromConfig(config);
+        final String xmlWithMissingFields = xmlFromConfig(config, false);
         final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlWithMissingFields));
         assertNull(imported.getGuid());
         assertNull(imported.getName());
@@ -104,7 +155,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
 
     @Test
     public void importFromNodeResetOidsAndVersions() throws Exception {
-        final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlFromConfig(config)), true);
+        final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlFromConfig(config, false)), true);
         assertEquals(EncapsulatedAssertionConfig.DEFAULT_OID, imported.getOid());
         assertEquals(0, imported.getVersion());
         for (final EncapsulatedAssertionArgumentDescriptor in : imported.getArgumentDescriptors()) {
@@ -117,11 +168,10 @@ public class EncapsulatedAssertionConfigExportUtilTest {
         }
     }
 
-    private void testExport() throws IOException, TransformerException, SAXException {
-        util.export(config, result);
+    private void testExportConfig() throws IOException, TransformerException, SAXException {
+        util.exportConfig(config, result);
         final String xml = XmlUtil.nodeToFormattedString(result.getNode());
-        System.out.println(xml);
-        assertEquals(xmlFromConfig(config), xml);
+        assertEquals(xmlFromConfig(config, false), xml);
     }
 
     private void setupConfig() {
@@ -161,16 +211,24 @@ public class EncapsulatedAssertionConfigExportUtilTest {
     /**
      * Manually build expected xml from a EncapsulatedAssertionConfig.
      */
-    private String xmlFromConfig(final EncapsulatedAssertionConfig config) throws TransformerException, SAXException, IOException {
+    private String xmlFromConfig(final EncapsulatedAssertionConfig config, final boolean includePolicy) throws TransformerException, SAXException, IOException {
         final StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        if (includePolicy) {
+            sb.append("<exp:Export Version=\"3.0\"\n" +
+                    "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                    "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">");
+            sb.append("<exp:References/>");
+            sb.append(POLICY_XML);
+        }
         sb.append("<enc:EncapsulatedAssertion");
         if (config.getGuid() != null) {
             sb.append(" guid=\"").append(config.getGuid()).append("\"");
         }
         sb.append(" id=\"").append(config.getId());
         sb.append("\" version=\"").append(config.getVersion()).append("\"\n");
-        sb.append("xmlns:L7=\"http://ns.l7tech.com/secureSpan/1.0/core\" xmlns:enc=\"http://ns.l7tech.com/secureSpan/1.0/encass\">");
+        sb.append("xmlns:L7=\"http://ns.l7tech.com/secureSpan/1.0/core\" xmlns:enc=\"http://ns.l7tech.com/secureSpan/1.0/encass\" " +
+                "xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">");
         if (config.getName() != null) {
             sb.append("<L7:name>").append(config.getName()).append("</L7:name>");
         }
@@ -204,13 +262,16 @@ public class EncapsulatedAssertionConfigExportUtilTest {
             sb.append("<enc:Properties>");
             for (final Map.Entry<String, String> entry : config.getProperties().entrySet()) {
                 sb.append("<entry>");
-                sb.append("<key xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"xs:string\">").append(entry.getKey()).append("</key>");
-                sb.append("<value xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"xs:string\">").append(entry.getValue()).append("</value>");
+                sb.append("<key xsi:type=\"xs:string\">").append(entry.getKey()).append("</key>");
+                sb.append("<value xsi:type=\"xs:string\">").append(entry.getValue()).append("</value>");
                 sb.append("</entry>");
             }
             sb.append("</enc:Properties>");
         }
         sb.append("</enc:EncapsulatedAssertion>");
+        if (includePolicy) {
+            sb.append("</exp:Export>");
+        }
         final Document doc = XmlUtil.parse(sb.toString());
         // format white space
         // also converts empty elements to use a self-closing tag

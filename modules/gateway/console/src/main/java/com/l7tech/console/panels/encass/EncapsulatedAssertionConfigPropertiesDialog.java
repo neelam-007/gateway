@@ -72,6 +72,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JButton moveInputUpButton;
     private JButton moveInputDownButton;
     private JTextArea descriptionTextArea;
+    private JLabel artifactVersionDisplayLabel;
+    private JLabel artifactVersionLabel;
 
     private SimpleTableModel<EncapsulatedAssertionArgumentDescriptor> inputsTableModel;
     private SimpleTableModel<EncapsulatedAssertionResultDescriptor> outputsTableModel;
@@ -378,6 +380,11 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                 prePopulateOutputsTable();
             }
         }
+
+        final String artifactVersion = config.getProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION);
+        if (artifactVersion != null) {
+            artifactVersionDisplayLabel.setText(artifactVersion);
+        }
     }
 
     private void setPolicyAndPolicyNameLabel(Policy policy) {
@@ -427,6 +434,12 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         boolean haveOutput = getSelectedOutput() != null;
         editOutputButton.setEnabled(!readOnly && haveOutput);
         deleteOutputButton.setEnabled(!readOnly && haveOutput);
+
+        final String artifactVersion = config.getProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION);
+        artifactVersionLabel.setEnabled(artifactVersion != null);
+        artifactVersionLabel.setVisible(artifactVersion != null);
+        artifactVersionDisplayLabel.setEnabled(artifactVersion != null);
+        artifactVersionDisplayLabel.setVisible(artifactVersion != null);
 
         setEnabled(!readOnly, addInputButton, addOutputButton, changePolicyButton, selectIconButton, paletteFolderComboBox, nameField);
     }

@@ -30,17 +30,16 @@ import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.exporter.PolicyExporter;
 import com.l7tech.policy.exporter.PolicyImportCancelledException;
 import com.l7tech.policy.exporter.PolicyImporter;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -210,7 +209,6 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                             new Object[]{ "Overwrite", "Create New", "Cancel"}, "Update", new DialogDisplayer.OptionListener() {
                         @Override
                         public void reportResult(int option) {
-                            System.out.println(option);
                             if (option == 0) {
                                 // update existing config
                                 config.setOid(sameGuid.getOid());
@@ -322,9 +320,21 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
 
     private void savePolicyAndConfig(@NotNull final Policy policy, @Nullable HashMap<String, Policy> policyFragments, @NotNull final EncapsulatedAssertionConfig config)
             throws PolicyAssertionException, ObjectModelException, VersionException {
-        final PolicyAdmin.SavePolicyWithFragmentsResult savePolicyResult = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true, policyFragments);
-        policy.setOid(savePolicyResult.policyCheckpointState.getPolicyOid());
+        final PolicyAdmin policyAdmin = Registry.getDefault().getPolicyAdmin();
+        final PolicyAdmin.SavePolicyWithFragmentsResult savePolicyResult = policyAdmin.savePolicy(policy, true, policyFragments);
+        final long policyOid = savePolicyResult.policyCheckpointState.getPolicyOid();
+        policy.setOid(policyOid);
         policy.setGuid(savePolicyResult.policyCheckpointState.getPolicyGuid());
+        final PolicyVersion version = policyAdmin.findLatestRevisionForPolicy(policyOid);
+        if (version != null) {
+            String artifactVersion = config.getProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION);
+            if (StringUtils.isBlank(artifactVersion)) {
+                artifactVersion = "(unknown)";
+            }
+            policyAdmin.setPolicyVersionComment(policyOid, version.getOid(), "Imported Encapsulated Assertion with Artifact Version " + artifactVersion);
+        } else {
+            logger.log(Level.WARNING, "Unable to set policy version comment for imported encapsulated assertion");
+        }
         final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
         tree.refresh();
 
@@ -340,15 +350,9 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
             @Override
             public void doSave(FileOutputStream fos) throws IOException {
                 try {
-                    Assertion assertion = config.getPolicy().getAssertion();
-                    final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
-                    PolicyExporter exporter = new PolicyExporter(finder, finder);
-                    Document doc = exporter.exportToDocument(assertion, PolicyExportUtils.getExternalReferenceFactories());
-                    final DocumentFragment fragment = doc.createDocumentFragment();
-                    EncapsulatedAssertionConfigExportUtil.getInstance().export(config, new DOMResult(fragment));
-                    doc.getDocumentElement().appendChild(fragment);
-                    XmlUtil.nodeToFormattedOutputStream(doc, fos);
-                } catch (SAXException e) {
+                    final Document exportDoc = EncapsulatedAssertionConfigExportUtil.getInstance().exportConfigAndPolicy(config);
+                    XmlUtil.nodeToFormattedOutputStream(exportDoc, fos);
+                } catch (final SAXException e) {
                     throw new IOException(e);
                 }
             }
