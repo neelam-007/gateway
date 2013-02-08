@@ -1847,6 +1847,7 @@
 
     <bean id="jdbcQueryingManager" class="com.l7tech.server.jdbc.JdbcQueryingManagerImpl">
         <constructor-arg ref="jdbcConnectionPoolManager"/>
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <bean id="jdbcConnectionManager" class="com.l7tech.server.jdbc.JdbcConnectionManagerImpl" parent="hibernateBean"/>

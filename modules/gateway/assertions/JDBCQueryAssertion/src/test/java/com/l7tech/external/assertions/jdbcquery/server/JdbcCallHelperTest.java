@@ -26,16 +26,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
@@ -47,15 +42,10 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(locations = "/com/l7tech/server/resources/testApplicationContext.xml")
 public class JdbcCallHelperTest {
 
-    private JdbcCallHelper jdbcHelper;
     @Mock
     private AbstractDataSource dataSource;
     @Mock
     private Connection conn;
-    @Mock
-    private ResultSet resultSet1;
-    @Mock
-    private ResultSet resultSet2;
     @Mock
     private DatabaseMetaData databaseMetaData;
     @Mock
@@ -66,7 +56,6 @@ public class JdbcCallHelperTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        jdbcHelper = new JdbcCallHelper(simpleJdbcCall);
         myMocks();
     }
 
@@ -75,13 +64,6 @@ public class JdbcCallHelperTest {
         when(conn.getMetaData()).thenReturn(databaseMetaData);
         when(databaseMetaData.getDatabaseProductName()).thenReturn("MySQL");//pretend we are using a MySQL database
 
-        when(resultSet1.getString("PROCEDURE_CAT")).thenReturn("test");
-        when(resultSet1.getString("PROCEDURE_SCHEM")).thenReturn("test");
-        when(resultSet1.getString("PROCEDURE_NAME")).thenReturn("getsamples");
-        when(resultSet1.next()).thenReturn(true).thenReturn(false);
-
-        when(databaseMetaData.getProcedures(anyString(), anyString(), anyString())).thenReturn(resultSet1);
-        when(databaseMetaData.getProcedureColumns(anyString(), anyString(), anyString(), anyString())).thenReturn(resultSet1);
         when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyResults());
         when(simpleJdbcCall.getJdbcTemplate()).thenReturn(new JdbcTemplate(dataSource));
     }
@@ -119,7 +101,10 @@ public class JdbcCallHelperTest {
     @Test
     public void testHelper() throws Exception {
         String query = "CALL GetSamples";
-        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query,null, new Object[0]);
+        final ArrayList<String> inParameterNames = new ArrayList<>();
+        final JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
+
+        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
         SqlRowSet rowSet = results.get(0);
         rowSet.next();//results sets
         Object obj = rowSet.getObject("out1");
@@ -137,7 +122,7 @@ public class JdbcCallHelperTest {
         assertNull(obj);
 
         query = "FUNC sampleFunc";
-        results = jdbcHelper.queryForRowSet(query, null,new Object[0]);
+        results = jdbcHelper.queryForRowSet(query, new Object[0]);
         rowSet = results.get(0);
         rowSet.next();
         obj = rowSet.getObject("result");
@@ -146,7 +131,7 @@ public class JdbcCallHelperTest {
 
         when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyOutParameterResults());
         query = "CALL GetSampleOut    ()";
-        results = jdbcHelper.queryForRowSet(query,null, new Object[0]);
+        results = jdbcHelper.queryForRowSet(query, new Object[0]);
         rowSet = results.get(0);
         rowSet.next();//out parameter result
         obj = rowSet.getObject("outparam");
@@ -155,7 +140,7 @@ public class JdbcCallHelperTest {
 
         when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyEmptyResult());
         query = "CALL GetSamples3()";//no results
-        results = jdbcHelper.queryForRowSet(query,null, new Object[0]);
+        results = jdbcHelper.queryForRowSet(query, new Object[0]);
         assertEquals(0, results.size());
     }
 
@@ -166,6 +151,9 @@ public class JdbcCallHelperTest {
     public void testParameters() {
         //by the time the helper class was called, all context variables has been replaced by ?
         String query = "CALL GetSample ('value1','value2',99,?,?)";
+        final ArrayList<String> inParameterNames = new ArrayList<>();
+        final JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
+
         List<String> parameter = jdbcHelper.getParametersFromQuery(query);
         assertEquals(parameter.size(), 5);
         assertEquals(parameter.get(0), "value1");
@@ -229,7 +217,10 @@ public class JdbcCallHelperTest {
     public void testContextVariables() throws Exception {
         PolicyEnforcementContext peCtx = makeContext("<myrequest/>", "<myresponse/>");
         String query = "CALL GetSamples ()";
-        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, null,new Object[0]);
+        final ArrayList<String> inParameterNames = new ArrayList<>();
+        final JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
+
+        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
         JdbcQueryingManagerStub jdbcQueryingManager = (JdbcQueryingManagerStub) appCtx.getBean("jdbcQueryingManager");
         jdbcQueryingManager.setMockResults(results);
 
@@ -251,7 +242,7 @@ public class JdbcCallHelperTest {
 
         //test single result set
         when(simpleJdbcCall.execute(any(SqlParameterSource.class))).thenReturn(getDummyOutParameterResults());
-        results = jdbcHelper.queryForRowSet(query, null,new Object[0]);
+        results = jdbcHelper.queryForRowSet(query, new Object[0]);
         jdbcQueryingManager.setMockResults(results);
         peCtx = makeContext("<myrequest/>", "<myresponse/>");
         fixture = new ServerJdbcQueryAssertion(assertion, appCtx);
@@ -263,15 +254,13 @@ public class JdbcCallHelperTest {
     @BugNumber(12255)
     @Test
     public void testParameterCount() throws Exception {
-        when(resultSet2.getString("COLUMN_NAME")).thenReturn("inparam");
-        when(resultSet2.getInt("COLUMN_TYPE")).thenReturn(1);
-        when(resultSet2.next()).thenReturn(true).thenReturn(false);
-        when(databaseMetaData.getProcedureColumns(anyString(), anyString(), anyString(), anyString())).thenReturn(resultSet2);
+        ArrayList<String> inParameterNames = new ArrayList<>(Arrays.asList("inparam"));
+        JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
+
         try {
             //expecting a parameter, but passed empty argument
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples (?)";
-            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query,null, new Object[0]);
+            jdbcHelper.queryForRowSet(query, new Object[0]);
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -279,8 +268,7 @@ public class JdbcCallHelperTest {
         try {
             //not expecting a parameter, but an argument was passed
             String query = "CALL GetSamples ";
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
-            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query,null, new Object[]{"value1"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"value1"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -288,17 +276,20 @@ public class JdbcCallHelperTest {
         try {
             //parameter vs argument passed does not match, expected 1 vs 2
             String query = "CALL GetSamples (?,?)";
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
-            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query,null, new Object[]{"value1", "value2"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"value1", "value2"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
         }
         try {
+            // Note this test covers the condition when the assertion's configuration does not match the database's
+            // configuration for the proc / function e.g. the db was updated.
+            inParameterNames = new ArrayList<>(Arrays.asList("inparam", "inparam"));
+            jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
+
             //parameter vs argument passed does not match, expected 2 vs 1
             String query = "CALL GetSamples (?)";
-            when(resultSet2.next()).thenReturn(true).thenReturn(true).thenReturn(false);//this will mock a 2 required parameter
-            List<SqlRowSet> results = jdbcHelper.queryForRowSet(query,null, new Object[]{"value1"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"value1"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -308,14 +299,12 @@ public class JdbcCallHelperTest {
     @BugNumber(12575)
     @Test
     public void testInvalidCharacter() throws Exception {
-        when(resultSet2.getString("COLUMN_NAME")).thenReturn("inparam");
-        when(resultSet2.getInt("COLUMN_TYPE")).thenReturn(1);
-        when(resultSet2.next()).thenReturn(true).thenReturn(false);
-        when(databaseMetaData.getProcedureColumns(anyString(), anyString(), anyString(), anyString())).thenReturn(resultSet2);
+        ArrayList<String> inParameterNames = new ArrayList<>(Arrays.asList("inparam"));
+        JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
+
         try {
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples (?)";
-            jdbcHelper.queryForRowSet(query,null, new Object[]{});
+            jdbcHelper.queryForRowSet(query, new Object[]{});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -323,36 +312,32 @@ public class JdbcCallHelperTest {
 
         //additional check for invalid quotes
         try {
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples '?";
-            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
         }
 
         try {
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples ?'";
-            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
         }
 
         try {
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples \"?";
-            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
         }
 
         try {
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples ?\"";
-            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -360,17 +345,15 @@ public class JdbcCallHelperTest {
 
         //with proper closing quotes
         try {
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples \"?\"";
-            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
         } catch (Exception e) {
             fail("should not fail");
         }
 
         try {
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSamples '?'";
-            jdbcHelper.queryForRowSet(query, null,new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
         } catch (Exception e) {
             fail("should not fail");
         }
@@ -378,36 +361,32 @@ public class JdbcCallHelperTest {
         //not properly closed )
 
         try {
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSample ('value1','value2',99,?,?";
-            jdbcHelper.queryForRowSet(query, null,new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
         }
 
         try {
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSample 'value1','value2',99,?,?)";
-            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
         }
 
         try {
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSample ('value1',('value2',99,?,?)";
-            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
         }
 
         try {
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSample ('value1','value2',99,?),?)";
-            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -415,9 +394,8 @@ public class JdbcCallHelperTest {
 
         //empty param in between commas or commas at the end of the query
         try {
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSample 'value1','value2',99,?,?,";
-            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -425,9 +403,8 @@ public class JdbcCallHelperTest {
 
         //empty param ,
         try {
-            when(resultSet2.next()).thenReturn(true).thenReturn(false);
             String query = "CALL GetSample 'value1','value2',,99,?,?";
-            jdbcHelper.queryForRowSet(query,null, new Object[]{"?"});
+            jdbcHelper.queryForRowSet(query, new Object[]{"?"});
             fail("should have failed");
         } catch (Exception e) {
             //exception expected
@@ -464,7 +441,10 @@ public class JdbcCallHelperTest {
     @Test
     public void testOracleDB2Result() throws Exception {
         String query = "CALL GetSamples";
-        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query,null, new Object[0]);
+        final ArrayList<String> inParameterNames = new ArrayList<>();
+        final JdbcCallHelper jdbcHelper = new JdbcCallHelper(simpleJdbcCall, inParameterNames);
+
+        List<SqlRowSet> results = jdbcHelper.queryForRowSet(query, new Object[0]);
         SqlRowSet rowSet = results.get(0);
         rowSet.next();//results sets
         Object obj = rowSet.getObject("Out1");//Out1 should also match out1

@@ -1,5 +1,6 @@
 package com.l7tech.server.jdbc;
 
+import com.l7tech.util.Config;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,6 +42,9 @@ public class JdbcQueryingManagerImplTest {
     @Mock
     ResultSetMetaData mockMetaData;
 
+    @Mock
+    Config config;
+
     ResultSet mockResultSet;
 
     int step;
@@ -54,7 +58,7 @@ public class JdbcQueryingManagerImplTest {
         mockResultSet = spy(new MockResultSet(mockMetaData));
     }
 
-    JdbcQueryingManagerImpl fixture = new JdbcQueryingManagerImpl(mockPoolManager);
+    JdbcQueryingManagerImpl fixture = new JdbcQueryingManagerImpl(mockPoolManager, config);
 
     @Test
     public void shouldReturnResultWhenLabelUsed() throws Exception {
@@ -63,7 +67,7 @@ public class JdbcQueryingManagerImplTest {
         when(mockMetaData.getColumnLabel(1)).thenReturn("identifier");
         when(mockMetaData.getColumnLabel(2)).thenReturn("name");
 
-        Map<String,List<Object>> results = (Map<String,List<Object>>)fixture.performJdbcQuery(jdbct, "SELECT id AS identifier from table", null,new ArrayList<Object>());
+        Map<String, List<Object>> results = (Map<String, List<Object>>) fixture.performJdbcQuery(null, jdbct, "SELECT id AS identifier from table", null, new ArrayList<Object>());
 
         assertTrue(results.get("identifier") != null);
         assertEquals(expectedId, results.get("identifier"));
@@ -77,7 +81,7 @@ public class JdbcQueryingManagerImplTest {
         when(mockMetaData.getColumnLabel(1)).thenReturn("id");
         when(mockMetaData.getColumnLabel(2)).thenReturn("label");
 
-        Map<String,List<Object>> results = (Map<String,List<Object>>)fixture.performJdbcQuery(jdbct, "SELECT id from table",null, new ArrayList<Object>());
+        Map<String, List<Object>> results = (Map<String, List<Object>>) fixture.performJdbcQuery(null, jdbct, "SELECT id from table", null, new ArrayList<Object>());
 
         assertTrue(results.get("id") != null);
         assertEquals(expectedId, results.get("id"));

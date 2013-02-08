@@ -64,7 +64,7 @@ public class ApplicationContextTest  {
         EntityType.ESM_NOTIFICATION_RULE,
         EntityType.ESM_LOG,
         EntityType.VALUE_REFERENCE);
-    private static final Set<String> IGNORED_APPLICATION_LISTENER_BEANS = set( "adminAuditListener", "applicationEventProxy", "cryptoInit", "gatewayState", "keystoreMutatorSwitch", "messageProcessingAuditListener", "systemAuditListener" );
+    private static final Set<String> IGNORED_APPLICATION_LISTENER_BEANS = set( "adminAuditListener", "applicationEventProxy", "cryptoInit", "gatewayState", "keystoreMutatorSwitch", "messageProcessingAuditListener", "systemAuditListener", "jdbcQueryingManager" );
 
     /**
      * Loading the definitions in this way will check the syntax and that all the

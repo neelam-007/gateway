@@ -22,6 +22,7 @@ import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.Config;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,6 +58,8 @@ public class ServerJdbcQueryAssertionTest {
     
     private JdbcConnectionManager connectionManager;
 
+    private Config config;
+
     @Before
     public void setUp() throws Exception {
         // Get the policy enforcement context
@@ -69,6 +72,7 @@ public class ServerJdbcQueryAssertionTest {
         connection.setDriverClass("com.mysql.jdbc.Driver");
 
         connectionManager = new JdbcConnectionManagerStub(connection);
+        config = (Config) appCtx.getBean("serverConfig");
     }
 
     /**
@@ -312,7 +316,7 @@ public class ServerJdbcQueryAssertionTest {
         final JdbcConnectionManager cm = new JdbcConnectionManagerStub(connection);
         JdbcConnectionPoolManager cpm = new JdbcConnectionPoolManager(cm);
         cpm.afterPropertiesSet();
-        final JdbcQueryingManager qm = new JdbcQueryingManagerImpl(cpm);
+        final JdbcQueryingManager qm = new JdbcQueryingManagerImpl(cpm, config);
 
         final AssertionRegistry assertionRegistry = new AssertionRegistry();
         assertionRegistry.afterPropertiesSet();
@@ -326,6 +330,7 @@ public class ServerJdbcQueryAssertionTest {
         serverPolicyFactory.setApplicationContext(applicationContext);
 
         assertion.setConnectionName(connectionName);
+        assertion.setSqlQuery("select * from mytable");
         ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
         AssertionStatus result = sass.checkRequest(peCtx);
         assertEquals(AssertionStatus.FAILED, result);
@@ -344,7 +349,7 @@ public class ServerJdbcQueryAssertionTest {
         final JdbcConnectionManager cm = new JdbcConnectionManagerStub();
         JdbcConnectionPoolManager cpm = new JdbcConnectionPoolManager(cm);
         cpm.afterPropertiesSet();
-        final JdbcQueryingManager qm = new JdbcQueryingManagerImpl(cpm);
+        final JdbcQueryingManager qm = new JdbcQueryingManagerImpl(cpm, config);
 
         final AssertionRegistry assertionRegistry = new AssertionRegistry();
         assertionRegistry.afterPropertiesSet();
@@ -358,6 +363,7 @@ public class ServerJdbcQueryAssertionTest {
         serverPolicyFactory.setApplicationContext(applicationContext);
 
         assertion.setConnectionName(connectionName);
+        assertion.setSqlQuery("select * from mytable");
         ServerJdbcQueryAssertion sass = (ServerJdbcQueryAssertion) serverPolicyFactory.compilePolicy(assertion, false);
         AssertionStatus result = sass.checkRequest(peCtx);
         assertEquals(AssertionStatus.FAILED, result);

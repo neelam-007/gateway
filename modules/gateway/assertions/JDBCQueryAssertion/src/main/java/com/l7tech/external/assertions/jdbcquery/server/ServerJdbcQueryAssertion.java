@@ -45,6 +45,10 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         variablesUsed = assertion.getVariablesUsed();
         jdbcQueryingManager = context.getBean("jdbcQueryingManager", JdbcQueryingManager.class);
+        // every time the server bean is recreated e.g. the policy was edited, remove any cached meta data in case
+        // the procedure / function changed. We don't support overloaded procs / functions, but the backend dba
+        // may have been updated and this may have been updated in policy by way of modifying input params etc.
+        jdbcQueryingManager.clearMetaDataCache(assertion.getConnectionName(), assertion.getSqlQuery());
     }
 
     @Override

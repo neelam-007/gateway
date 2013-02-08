@@ -3,14 +3,10 @@ package com.l7tech.server.jdbc;
 import com.l7tech.gateway.common.jdbc.JdbcUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.InvalidResultSetAccessException;
-import org.springframework.jdbc.core.metadata.CallMetaDataContext;
-import org.springframework.jdbc.core.metadata.CallMetaDataProvider;
-import org.springframework.jdbc.core.metadata.CallMetaDataProviderFactory;
-import org.springframework.jdbc.core.metadata.CallParameterMetaData;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.jdbc.support.rowset.ResultSetWrappingSqlRowSetMetaData;
@@ -36,14 +32,15 @@ public class JdbcCallHelper {
     private static final String RETURN_RESULT_SET_PREFIX = "#result-set-";
     private static final String RETURN_UPDATE_COUNT_PREFIX = "#update-count-";
 
-    private static final String SQL_FUNCTION = "func";//keyword to indicate that we are calling a function instead of a stored procedure
+    static final String SQL_FUNCTION = "func";//keyword to indicate that we are calling a function instead of a stored procedure
 
     private final SimpleJdbcCall simpleJdbcCall;//made simpleJdbcCall a class variable so we can mock it out during test
+    final List<String> inParameterNames;
 
     protected final Log logger = LogFactory.getLog(getClass());
 
     //using pattern instead of naked split, for splitting comma delimited parameters
-    private final Pattern p = Pattern.compile(
+    private static final Pattern p = Pattern.compile(
             "(?x)          # enable comments                                      \n" +
                     "(\"[^\"]*\")  # quoted data, and store in group #1                   \n" +
                     "|             # OR                                                   \n" +
@@ -53,8 +50,18 @@ public class JdbcCallHelper {
     );
 
 
-    public JdbcCallHelper(SimpleJdbcCall simpleJdbcCall1) {
-        this.simpleJdbcCall = simpleJdbcCall1;
+    /**
+     * JdbcCallHelper will use the SimpleJdbcCall and in parameters to construct a call to the procedure / function.
+     *
+     * This class will never look explicitly look up meta data. The SimpleJdbcCall will on first invocation.
+     *
+     * @param simpleJdbcCall SimpleJdbcCall to use, may be a template e.g. can be reused amount instances of JdbcCallHelper
+     * @param inParameterNames may be empty but not null. The in parameters. This class never looks up meta data.
+     */
+    public JdbcCallHelper(final SimpleJdbcCall simpleJdbcCall,
+                          @NotNull final List<String> inParameterNames) {
+        this.simpleJdbcCall = simpleJdbcCall;
+        this.inParameterNames = inParameterNames;
     }
 
     /**
@@ -62,40 +69,26 @@ public class JdbcCallHelper {
      *
      * @param query
      * @param args
-     * @param schemaName explicit name of the schema. Applies only to Oracle
      * @return
      * @throws DataAccessException
      */
-    public List<SqlRowSet> queryForRowSet(final String query, @Nullable final String schemaName ,Object... args) throws DataAccessException {
+    public List<SqlRowSet> queryForRowSet(final String query, Object [] args) throws DataAccessException {
         Assert.notNull(query, "query must not be null");
         final List<SqlRowSet> results = new ArrayList<SqlRowSet>();
         final String procName = JdbcUtil.getName(query);
-        if (query.toLowerCase().startsWith(SQL_FUNCTION)) {
-            simpleJdbcCall.setProcedureName(procName);
-            simpleJdbcCall.setFunction(true);
-        } else {
-            simpleJdbcCall.setProcedureName(procName);
-            simpleJdbcCall.setFunction(false);
-        }
-
-        final boolean hasSchemaName = schemaName != null && !schemaName.trim().isEmpty();
-        if(hasSchemaName){
-            simpleJdbcCall.setSchemaName(schemaName);
-        }
 
         //SimpleJdbcCall will require a list of named parameters, let's build it dynamically
         final MapSqlParameterSource inParameters = new MapSqlParameterSource();
         List<String> queryParameters = getParametersFromQuery(query);
         List<String> queryParametersRaw = getParametersFromQuery(query, false);
-        List<String> parametersNames = getInParametersName(procName, hasSchemaName ? schemaName : null);
 
-        if ((parametersNames.size() != queryParameters.size())) {
-            throw new BadSqlGrammarException("", query, new SQLException("Incorrect number of arguments for " + procName + "; expected " + parametersNames.size() + ", got " + queryParameters.size() + "; query generated was " + query));
+        if ((inParameterNames.size() != queryParameters.size())) {
+            throw new BadSqlGrammarException("", query, new SQLException("Incorrect number of arguments for " + procName + "; expected " + inParameterNames.size() + ", got " + queryParameters.size() + "; query generated was " + query));
         }
-        if (parametersNames.size() > 0) {//input parameters needed
+        if (inParameterNames.size() > 0) {//input parameters needed
             int paramIndex = 0;
             int varArgIndex = 0;//index of the parameter values from context
-            for (final String paramName : parametersNames) {//get all IN parameter names of the procedure
+            for (final String paramName : inParameterNames) {//get all IN parameter names of the procedure
                 boolean definedPossibleNull=false;
                 Object paramValue = null;
                 if (paramIndex < queryParameters.size()){
@@ -163,30 +156,6 @@ public class JdbcCallHelper {
             results.add(new OutParameterResult(new OutParametersMetaData(null, outParameterNames.toArray(new String[outParameterNames.size()])), data));
         }
         return results;//this will return a List<SqlRowSet>
-    }
-
-    /**
-     * Get the input parameter names of the procedure
-     *
-     * @param procName
-     * @return
-     */
-    private List<String> getInParametersName(final String procName, @Nullable final String schemaName) {
-        final CallMetaDataContext callMetaDataContext = new CallMetaDataContext();
-        callMetaDataContext.setProcedureName(procName);
-        if(schemaName!=null){
-            callMetaDataContext.setSchemaName(schemaName);
-        }
-        final CallMetaDataProvider metaProvider = CallMetaDataProviderFactory.createMetaDataProvider(simpleJdbcCall.getJdbcTemplate().getDataSource(), callMetaDataContext);
-        List<CallParameterMetaData> parameterMetaData = metaProvider.getCallParameterMetaData();
-        List<String> parameterNames = new ArrayList<String>();
-        for (final CallParameterMetaData meta : parameterMetaData) {                        // 1=procedureColumnIn, 2=procedureColumnInOut, 4=procedureColumnOut
-            if (meta.getParameterType() == DatabaseMetaData.procedureColumnIn               // 1-IN parameter, 2-INOUT param in Mysql & Oracle , 4-OUT param in Mysql & Oracle,
-                    || meta.getParameterType() == DatabaseMetaData.procedureColumnInOut) {  // but 2 is OUT param in MS SQL as well since it behaves as IN & OUT
-                parameterNames.add(meta.getParameterName().replaceAll("@", ""));
-            }
-        }
-        return parameterNames;
     }
 
     /**

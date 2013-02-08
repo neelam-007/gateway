@@ -1,5 +1,6 @@
 package com.l7tech.server.jdbc;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 
@@ -30,7 +31,7 @@ public interface JdbcQueryingManager {
      *              List: for stored procedure calls a list of sql result sets
      */
 
-    Object performJdbcQuery(String connectionName, String query, @Nullable String schema, int maxRecords, List<Object> preparedStmtParams);
+    Object performJdbcQuery(@NotNull String connectionName, @NotNull String query, @Nullable String schema, int maxRecords, List<Object> preparedStmtParams);
 
     /**
      * Perform a JDBC query that could be a select statement or a non-select statement.
@@ -48,7 +49,15 @@ public interface JdbcQueryingManager {
      *                   column names are all lower case
      *              List: for stored procedure calls a list of sql result sets
      */
-    Object performJdbcQuery(DataSource dataSource, String query, String schema, int maxRecords, List<Object> preparedStmtParams);
+    Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, List<Object> preparedStmtParams);
+
+    /**
+    * See {@link #performJdbcQuery(javax.sql.DataSource, String, String, int, java.util.List)}, this adds a connection name
+    * so we can track the JDBCConnection entity the DataSource is associated with.
+    *
+    * @param connectionName the unique JDBCConnection entity name
+    */
+    Object performJdbcQuery(@Nullable String connectionName, @NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, List<Object> preparedStmtParams);
 
     /**
      * Get a result set (SqlRowSet object) from the mock JDBC database.
@@ -56,4 +65,13 @@ public interface JdbcQueryingManager {
      * @return a SqlRowSet object containing mock data.
      */
     SqlRowSet getMockSqlRowSet();
+
+    /**
+     * Clear any cached meta used to invoke procedures or functions for the given unique JDBC Connection name and
+     * for a particular query.
+     *
+     * @param connectionName unique JDBC Connection name
+     * @param query query that may be a function / procedure call.
+     */
+    void clearMetaDataCache(String connectionName, String query);
 }
