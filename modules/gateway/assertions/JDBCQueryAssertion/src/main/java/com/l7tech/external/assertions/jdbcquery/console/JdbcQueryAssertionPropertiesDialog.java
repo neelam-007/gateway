@@ -15,6 +15,8 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.MutablePair;
+import com.l7tech.util.SyspropUtil;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -61,7 +63,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JCheckBox enableNullValuesCheckBox;
     private JTextField nullPatternTextBox;
     private JTextField schemaTextField;
-    private JCheckBox specifySchemaCheckBox;
+    private JCheckBox schemaCheckBox;
 
     private NamingTableModel namingTableModel;
     private Map<String, String> namingMap;
@@ -126,15 +128,16 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         ((JTextField)connectionComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(connectionListener);
         connectionComboBox.addItemListener(connectionListener);
 
-        specifySchemaCheckBox.addChangeListener(new RunOnChangeListener(new Runnable() {
+        schemaCheckBox.addChangeListener(new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
-                schemaTextField.setEnabled(specifySchemaCheckBox.isEnabled() && specifySchemaCheckBox.isSelected());
+                schemaTextField.setEnabled(schemaCheckBox.isEnabled() && schemaCheckBox.isSelected());
             }
         }));
 
 
         final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
+            @Override
             public void run() {
                 enableOrDisableOkButton();
             }
@@ -176,18 +179,21 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxRecordsSpinner, resources.getString("short.lable.max.records")));
 
         testButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doTest();
             }
         });
 
         addButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doAdd();
             }
         });
 
         editButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doEdit();
             }
@@ -196,18 +202,21 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         Utilities.setDoubleClickAction(namingTable, editButton);
 
         removeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doRemove();
             }
         });
 
         inputValidator.attachToButton(okButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doOk();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doCancel();
             }
@@ -235,7 +244,17 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         allowMutiValuedVariablesCheckBox.setSelected(assertion.isAllowMultiValuedVariables());
         enableNullValuesCheckBox.setSelected(assertion.isUseNullPattern());
         nullPatternTextBox.setText(assertion.isUseNullPattern()?assertion.getNullPattern():"null");
-        schemaTextField.setText(assertion.getSchema());
+
+        final ConnectionProperty selectedConnection = (ConnectionProperty) connectionComboBox.getSelectedItem();
+        if (!selectedConnection.isBlank() && selectedConnection.isOracle()) {
+            final String schema = assertion.getSchema();
+            final boolean hasSchema = schema != null && !schema.trim().isEmpty();
+            if (hasSchema) {
+                schemaTextField.setText(schema);
+                schemaCheckBox.setSelected(true);
+            }
+        }
+
 
         enableOrDisableSchemaControls();
 
@@ -252,15 +271,14 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         assertion.setQueryName(queryNameTextField.getText());
         assertion.setAllowMultiValuedVariables(allowMutiValuedVariablesCheckBox.isSelected());
         assertion.setNullPattern(enableNullValuesCheckBox.isSelected()?nullPatternTextBox.getText():null);
-        String schemaValue = schemaTextField.getText();
-        schemaValue = (schemaValue==null || schemaValue.trim().isEmpty()) ? null: schemaValue;
-        assertion.setSchema(schemaTextField.isEnabled() ? schemaValue : null);
+        final String schemaValue = schemaTextField.getText().trim();
+        assertion.setSchema((schemaTextField.isEnabled() && !schemaValue.isEmpty())? schemaValue: null);
     }
 
     private void enableOrDisableSchemaControls() {
-        ConnectionProperty prop = (ConnectionProperty)connectionComboBox.getSelectedItem();
-        final boolean isOracle = prop!=null && prop.isOracle();
-        specifySchemaCheckBox.setEnabled(isOracle && JdbcUtil.isStoredProcedure(sqlQueryTextArea.getText().toLowerCase()));
+        final ConnectionProperty prop = (ConnectionProperty)connectionComboBox.getSelectedItem();
+        final boolean isOracle = prop != null && prop.isOracle();
+        schemaCheckBox.setEnabled(isOracle && JdbcUtil.isStoredProcedure(sqlQueryTextArea.getText().toLowerCase()));
     }
 
     private void populateConnectionCombobox() {
@@ -285,31 +303,39 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         // Add an empty driver class at the first position of the list
         connectionComboBox.addItem(new ConnectionProperty("", ""));
 
-
         // Add all items into the combox box.
         ConnectionProperty selectedItem = null;
-        String selConnectionName = assertion.getConnectionName();
+        final String existingDriverSelection = assertion.getConnectionName();
         for (JdbcConnection conn: connectionList) {
             ConnectionProperty prop = new ConnectionProperty(conn.getName(),conn.getDriverClass());
             connectionComboBox.addItem(prop);
-            if(selConnectionName.equals(conn.getName())){
+            if (existingDriverSelection != null && existingDriverSelection.equals(conn.getName())) {
                 selectedItem = prop;
             }
         }
 
-        if(selectedItem!=null)
+        if (selectedItem != null) {
             connectionComboBox.setSelectedItem(selectedItem);
+        }
     }
 
-    private class ConnectionProperty {
-        private String connectionName;
-        private String driverClass;
+    private static class ConnectionProperty {
+        private final String connectionName;
+        private final String driverClass;
 
-        private ConnectionProperty(String connectionName, String driverClass) {
+        /**
+         * The values supplied may never be null, however they may be the empty string. This is not ideal but
+         * it supports 'no selection', there has been and continues to be a blank item in the drop down list of connections.
+         * @see {@link #isBlank()}
+         */
+        private ConnectionProperty(@NotNull String connectionName, @NotNull String driverClass) {
             this.connectionName = connectionName;
             this.driverClass = driverClass;
         }
 
+        public boolean isBlank() {
+            return "".equals(connectionName) && "".equals(driverClass);
+        }
         @Override
         public String toString() {
             return connectionName;
@@ -326,6 +352,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         namingTable.setModel(namingTableModel);
         namingTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         namingTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableOrDisableTableButtons();
             }
@@ -418,7 +445,6 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     }
 
     private void doTest() {
-        final String[] warningMsg = new String[1];
         DialogDisplayer.showSafeConfirmDialog(
             TopComponents.getInstance().getTopParent(),
             MessageFormat.format(resources.getString("confirmation.test.query"), connectionComboBox.getSelectedItem().toString()),
@@ -434,6 +460,11 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                     }
 
                     final String connName = connectionComboBox.getSelectedItem().toString();
+                    if ("".equals(connName)) {
+                        displayQueryTestingResult("Please select a JDBC Connection to test against.");
+                        return;
+                    }
+
                     if (Syntax.getReferencedNames(connName).length > 0) {
                         displayQueryTestingResult("Cannot process testing due to JDBC Connection name containing context variable(s).");
                         return;
@@ -446,12 +477,12 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                         return;
                     }
 
-                    final String schemaName = specifySchemaCheckBox.isEnabled() && specifySchemaCheckBox.isSelected()? schemaTextField.getText().trim():"";
+                    final String schemaName = schemaCheckBox.isEnabled() && schemaCheckBox.isSelected() ? schemaTextField.getText().trim() : "";
 
-                    JdbcAdmin admin = getJdbcConnectionAdmin();
+                    final JdbcAdmin admin = getJdbcConnectionAdmin();
                     try {
                         displayQueryTestingResult(admin == null ?
-                                "Cannot process testing due to JDBC Conneciton Admin unavailable." : doAsyncAdmin(
+                                "Cannot process testing due to JDBC Connection Admin unavailable." : doAsyncAdmin(
                                 admin,
                                 JdbcQueryAssertionPropertiesDialog.this,
                                 resources.getString("dialog.title.test.query"),
@@ -592,19 +623,29 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
 
     private void doOk() {
 
-        // check for schema in query for oracle calls ( '.' appears twice)
-        boolean validQuery = true;
-        ConnectionProperty conn = (ConnectionProperty)connectionComboBox.getSelectedItem();
+        // validate an oracle query does not try and reference a schema name. This is a heuristic as it cannot be
+        // validated for sure without knowing the list of valid package names.
+        boolean isValidQuery = true;
+        final ConnectionProperty conn = (ConnectionProperty)connectionComboBox.getSelectedItem();
 
-        String query = sqlQueryTextArea.getText().trim();
+        final String query = sqlQueryTextArea.getText().trim();
         if(conn.isOracle()&& JdbcUtil.isStoredProcedure(query)){
             String procedureName = JdbcUtil.getName(query);
             if(!procedureName.isEmpty()){
-                validQuery = procedureName.indexOf('.') == procedureName.lastIndexOf('.') ;
+                // if there are no dots e.g. -1 or a single dot, then query is valid. If there are 2 dots then it's invalid.
+                // 2 dots means the user is trying to do schema.package.name and this is not the name of a literal object
+                // in oracle so this will never work.
+                final boolean enableOracleSchemaCheck = SyspropUtil.getBoolean(
+                        "com.l7tech.external.assertions.jdbcquery.console.enableOracleNoSchemaInQuery",
+                        true);
+
+                if (enableOracleSchemaCheck) {
+                    isValidQuery = procedureName.indexOf('.') == procedureName.lastIndexOf('.') ;
+                }
             }
         }
 
-        if(validQuery){
+        if(isValidQuery){
             getData(assertion);
             confirmed = true;
             JdbcQueryAssertionPropertiesDialog.this.dispose();
