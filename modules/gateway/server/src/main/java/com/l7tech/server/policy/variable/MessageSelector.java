@@ -454,11 +454,17 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
                     return null;
                 }
             } catch (ByteLimitInputStream.DataSizeLimitExceededException e){
-                throw new IllegalArgumentException("Unable to get message text: " + e.getMessage());
+                String msg = handler.handleBadVariable("Unable to get message text: " + e.getMessage());
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
             } catch (IOException e) {
-                throw new RuntimeException(e); // Can't happen
+                String msg = handler.handleBadVariable("IOException while retrieving main part");
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
             } catch (NoSuchPartException e) {
-                throw new RuntimeException(e); // Can't happen
+                String msg = handler.handleBadVariable("NoSuchPartException while retrieving main part");
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
             }
         }
     };
@@ -522,7 +528,9 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
             try {
                 return new Selection(mk.getFirstPart().getContentType().getFullValue());
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                String msg = handler.handleBadVariable("IOException while retrieving main part content type");
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
             }
         }
     };
