@@ -75,7 +75,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
         config.removeProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION);
         final Document document = util.exportConfigAndPolicy(config);
         final String xml = XmlUtil.nodeToFormattedString(document);
-        assertEquals(xmlFromConfig(config, true), xml);
+        assertEquals(xmlFromConfig(config, true, false), xml);
         // ensure there is now an artifact version
         assertTrue(xml.contains(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION));
         assertNotNull(config.getProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION));
@@ -87,7 +87,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
         config.putProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION, existingArtifactVersion);
         final Document document = util.exportConfigAndPolicy(config);
         final String xml = XmlUtil.nodeToFormattedString(document);
-        assertEquals(xmlFromConfig(config, true), xml);
+        assertEquals(xmlFromConfig(config, true, false), xml);
         assertTrue(xml.contains(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION));
         assertFalse(config.getProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION).equals(existingArtifactVersion));
     }
@@ -115,7 +115,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
 
     @Test
     public void importFromNode() throws Exception {
-        final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlFromConfig(config, false)));
+        final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlFromConfig(config, false, true)));
         assertEquals(config.getName(), imported.getName());
         assertEquals(config.getProperties(), imported.getProperties());
         assertEquals(config.getResultDescriptors(), imported.getResultDescriptors());
@@ -143,7 +143,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
         config.setArgumentDescriptors(null);
         config.setResultDescriptors(null);
         config.setProperties(null);
-        final String xmlWithMissingFields = xmlFromConfig(config, false);
+        final String xmlWithMissingFields = xmlFromConfig(config, false, true);
         final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlWithMissingFields));
         assertNull(imported.getGuid());
         assertNull(imported.getName());
@@ -155,7 +155,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
 
     @Test
     public void importFromNodeResetOidsAndVersions() throws Exception {
-        final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlFromConfig(config, false)), true);
+        final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlFromConfig(config, false, true)), true);
         assertEquals(EncapsulatedAssertionConfig.DEFAULT_OID, imported.getOid());
         assertEquals(0, imported.getVersion());
         for (final EncapsulatedAssertionArgumentDescriptor in : imported.getArgumentDescriptors()) {
@@ -171,7 +171,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
     private void testExportConfig() throws IOException, TransformerException, SAXException {
         util.exportConfig(config, result);
         final String xml = XmlUtil.nodeToFormattedString(result.getNode());
-        assertEquals(xmlFromConfig(config, false), xml);
+        assertEquals(xmlFromConfig(config, false, false), xml);
     }
 
     private void setupConfig() {
@@ -210,8 +210,12 @@ public class EncapsulatedAssertionConfigExportUtilTest {
 
     /**
      * Manually build expected xml from a EncapsulatedAssertionConfig.
+     *
+     * @param config              the EncapsulatedAssertionConfig from which the xml will be built.
+     * @param includePolicy       whether to include the backing policy.
+     * @param includeIdAndVersion whether to include the EncapsulatedAssertionConfig id and version.
      */
-    private String xmlFromConfig(final EncapsulatedAssertionConfig config, final boolean includePolicy) throws TransformerException, SAXException, IOException {
+    private String xmlFromConfig(final EncapsulatedAssertionConfig config, final boolean includePolicy, final boolean includeIdAndVersion) throws TransformerException, SAXException, IOException {
         final StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
         if (includePolicy) {
@@ -225,9 +229,11 @@ public class EncapsulatedAssertionConfigExportUtilTest {
         if (config.getGuid() != null) {
             sb.append(" guid=\"").append(config.getGuid()).append("\"");
         }
-        sb.append(" id=\"").append(config.getId());
-        sb.append("\" version=\"").append(config.getVersion()).append("\"\n");
-        sb.append("xmlns:L7=\"http://ns.l7tech.com/secureSpan/1.0/core\" xmlns:enc=\"http://ns.l7tech.com/secureSpan/1.0/encass\" " +
+        if (includeIdAndVersion) {
+            sb.append(" id=\"").append(config.getId());
+            sb.append("\" version=\"").append(config.getVersion()).append("\"");
+        }
+        sb.append(" xmlns:L7=\"http://ns.l7tech.com/secureSpan/1.0/core\" xmlns:enc=\"http://ns.l7tech.com/secureSpan/1.0/encass\" " +
                 "xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">");
         if (config.getName() != null) {
             sb.append("<L7:name>").append(config.getName()).append("</L7:name>");

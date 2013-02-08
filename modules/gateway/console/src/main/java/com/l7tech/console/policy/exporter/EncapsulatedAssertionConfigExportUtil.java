@@ -7,11 +7,11 @@ import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.exporter.PolicyExporter;
 import com.l7tech.util.HexUtils;
-import com.sun.xml.bind.marshaller.NamespacePrefixMapper;
 import org.apache.commons.lang.Validate;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
@@ -19,7 +19,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.Result;
 import javax.xml.transform.dom.DOMResult;
 import java.io.IOException;
 
@@ -29,7 +28,7 @@ import java.io.IOException;
 public class EncapsulatedAssertionConfigExportUtil {
     /**
      * Exports an EncapsulatedAssertionConfig and its backing Policy to a Document.
-     *
+     * <p/>
      * If the EncapsulatedAssertionConfig has an EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION it could be replaced with a new value.
      *
      * @param config the EncapsulatedAssertionConfig to export which contains a backing Policy.
@@ -66,6 +65,8 @@ public class EncapsulatedAssertionConfigExportUtil {
 
     /**
      * Imports an EncapsulatedAssertionConfig with a simplified backing Policy from a Node.
+     * <p/>
+     * The EncapsulatedAssertionConfig id and version will be default values regardless of the id and version found in the Node.
      *
      * @param node the Node which contains the EncapsulatedAssertionConfig xml.
      * @return the imported EncapsulatedAssertionConfig.
@@ -137,16 +138,27 @@ public class EncapsulatedAssertionConfigExportUtil {
 
     /**
      * Export an EncapsulatedAssertionConfig with a simplified backing Policy to a Result.
+     * <p/>
+     * Also removes id and version of the EncapsulatedAssertionConfig.
      *
      * @param config the EncapsulatedAssertionConfig to export.
      * @param result the Result which will hold the exported EncapsulatedAssertionConfig xml.
      * @throws IOException if unable to export the EncapsulatedAssertionConfig.
      */
-    void exportConfig(@NotNull final EncapsulatedAssertionConfig config, @NotNull final Result result) throws IOException {
+    void exportConfig(@NotNull final EncapsulatedAssertionConfig config, @NotNull final DOMResult result) throws IOException {
         final Marshaller marshaller;
         try {
             marshaller = createMarshaller();
             marshaller.marshal(config, result);
+            // manually remove id and version
+            // this is because we cannot override jaxb annotations for id and version on the child class without modifying
+            // the parent class (by adding @XmlTransient annotation to the parent at a class level) which is dangerous
+            // as PersistentEntityImp is heavily used.
+            final Element encassElement = XmlUtil.findFirstChildElementByName(result.getNode(), ENCASS_NS, ENCAPSULATED_ASSERTION);
+            if (encassElement != null) {
+                encassElement.removeAttribute("id");
+                encassElement.removeAttribute("version");
+            }
         } catch (final JAXBException e) {
             throw new IOException(e);
         }
@@ -165,6 +177,7 @@ public class EncapsulatedAssertionConfigExportUtil {
     private static final String JAXB_FORMATTED_OUTPUT = "jaxb.formatted.output";
     private static final String JAXB_FRAGMENT = "jaxb.fragment";
     private static final String ENCASS_NS = "http://ns.l7tech.com/secureSpan/1.0/encass";
+    private static final String ENCAPSULATED_ASSERTION = "EncapsulatedAssertion";
 
     private Marshaller createMarshaller() throws JAXBException {
         final Marshaller marshaller = jaxbContext.createMarshaller();
