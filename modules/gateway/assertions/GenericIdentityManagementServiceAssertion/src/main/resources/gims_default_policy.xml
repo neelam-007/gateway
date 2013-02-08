@@ -663,7 +663,7 @@ amVjdD4KPC9qYXZhPgo=</Props>
 
                                     <L7p:Base64ResponseBody stringValue="QXV0aGVudGljYXRpb24gUmVxdWlyZWQ="/>
 
-                                    <L7p:ResponseContentType stringValue="text/html; charset=UTF-8"/>
+                                    <L7p:ResponseContentType stringValue="plain/text; charset=UTF-8"/>
 
                                     <L7p:ResponseStatus stringValue="401"/>
                                     </L7p:HardcodedResponse>
@@ -703,7 +703,7 @@ amVjdD4KPC9qYXZhPgo=</Props>
                                     </L7p:CommentAssertion>
                                     <L7p:HardcodedResponse>
                                     <L7p:Base64ResponseBody stringValue="QXV0aGVudGljYXRpb24gUmVxdWlyZWQ="/>
-                                    <L7p:ResponseContentType stringValue="plain/text charset=UTF-8"/>
+                                    <L7p:ResponseContentType stringValue="plain/text; charset=UTF-8"/>
                                     <L7p:ResponseStatus stringValue="401"/>
                                     </L7p:HardcodedResponse>
                                 </wsp:All>
