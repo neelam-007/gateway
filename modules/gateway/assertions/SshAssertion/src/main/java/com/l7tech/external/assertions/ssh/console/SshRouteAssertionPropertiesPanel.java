@@ -62,7 +62,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private JPanel responseLimitHolderPanel;
     private JCheckBox preserveFileMetadataCheckBox;
     private JRadioButton SFTPRadioButton;
-    private JCheckBox fromVariableCheckBox;
     private JCheckBox failIfFileExistsCheckBox;
     private JCheckBox truncateExistingFileCheckBox;
     private JTextField fileOffsetTextField;
@@ -151,7 +150,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         });
 
         commandTypeComboBox.addActionListener(enableDisableListener);
-        fromVariableCheckBox.addActionListener(enableDisableListener);
         setFileSizeToCheckBox.addActionListener(enableDisableListener);
         commandVariableNameTargetVariablePanel.setValueWillBeWritten(false);
 
@@ -244,11 +242,11 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         });
 
         // validate the commandtype variable name is correct
-        validators.addRule(new InputValidator.ComponentValidationRule(fromVariableCheckBox) {
+        validators.addRule(new InputValidator.ComponentValidationRule(commandTypeComboBox) {
             @Override
             public String getValidationError() {
 
-                if(fromVariableCheckBox.isSelected()) {
+                if(isCommandTypeFromVariable()) {
                     if (!commandVariableNameTargetVariablePanel.isEntryValid())
                     {
                         return getResourceString("commandVariableNameError");
@@ -263,7 +261,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             @Override
             public String getValidationError() {
 
-                if(CommandKnob.CommandType.PUT.equals(getSelectedCommandType()) || CommandKnob.CommandType.GET.equals(getSelectedCommandType()) || fromVariableCheckBox.isSelected()) {
+                if(CommandKnob.CommandType.PUT.equals(getSelectedCommandType()) || CommandKnob.CommandType.GET.equals(getSelectedCommandType()) || isCommandTypeFromVariable()) {
                     if (fileOffsetTextField.getText() == null || fileOffsetTextField.getText().isEmpty())
                     {
                         return getResourceString("fileOffsetError");
@@ -278,7 +276,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             @Override
             public String getValidationError() {
 
-                if(CommandKnob.CommandType.GET.equals(getSelectedCommandType()) || fromVariableCheckBox.isSelected()) {
+                if(CommandKnob.CommandType.GET.equals(getSelectedCommandType()) || isCommandTypeFromVariable()) {
                     if (fileLengthTextField.getText() == null || fileLengthTextField.getText().isEmpty())
                     {
                         return getResourceString("fileLengthError");
@@ -293,7 +291,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             @Override
             public String getValidationError() {
 
-                if(CommandKnob.CommandType.MOVE.equals(getSelectedCommandType()) || fromVariableCheckBox.isSelected()) {
+                if(CommandKnob.CommandType.MOVE.equals(getSelectedCommandType()) || isCommandTypeFromVariable()) {
                     if (newFileNameTextField.getText() == null || newFileNameTextField.getText().isEmpty())
                     {
                         return getResourceString("newFileNameError");
@@ -342,28 +340,25 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
 
     private void enableDisableFields() {
         // connection tab
-        commandTypeComboBox.setEnabled(!fromVariableCheckBox.isSelected());
-        if (!fromVariableCheckBox.isSelected()) {
-            populateCommandComboBox();
-        }
-        commandVariableNameTargetVariablePanel.setEnabled(fromVariableCheckBox.isSelected());
+        populateCommandComboBox();
+        commandVariableNameTargetVariablePanel.setEnabled(isCommandTypeFromVariable());
         CommandKnob.CommandType selectedCommandType = getSelectedCommandType();
 
         manageHostKeyButton.setEnabled(validateServerSHostCheckBox.isSelected());
-        contentTypeComboBox.setEnabled(CommandKnob.CommandType.GET.equals(selectedCommandType) ||  fromVariableCheckBox.isSelected());
-        messageSource.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) ||  fromVariableCheckBox.isSelected());
-        messageTarget.setEnabled( CommandKnob.CommandType.GET.equals(selectedCommandType) || (SFTPRadioButton.isSelected() && (CommandKnob.CommandType.LIST.equals(selectedCommandType) || CommandKnob.CommandType.STAT.equals(selectedCommandType) || fromVariableCheckBox.isSelected())) );
+        contentTypeComboBox.setEnabled(CommandKnob.CommandType.GET.equals(selectedCommandType) ||  isCommandTypeFromVariable());
+        messageSource.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) ||  isCommandTypeFromVariable());
+        messageTarget.setEnabled( CommandKnob.CommandType.GET.equals(selectedCommandType) || (SFTPRadioButton.isSelected() && (CommandKnob.CommandType.LIST.equals(selectedCommandType) || CommandKnob.CommandType.STAT.equals(selectedCommandType) || isCommandTypeFromVariable())) );
         messageTargetVariablePanel.setEnabled(
                 messageTarget.isEnabled() &&
                 messageTarget.getSelectedItem()!=null &&
                 ((MessageTargetable)messageTarget.getSelectedItem()).getTarget()== TargetMessageType.OTHER );
         if(SFTPRadioButton.isSelected()){
-            preserveFileMetadataCheckBox.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || fromVariableCheckBox.isSelected());
-            fileOffsetTextField.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || CommandKnob.CommandType.GET.equals(selectedCommandType) || fromVariableCheckBox.isSelected());
-            fileLengthTextField.setEnabled(CommandKnob.CommandType.GET.equals(selectedCommandType) || fromVariableCheckBox.isSelected());
-            newFileNameTextField.setEnabled(CommandKnob.CommandType.MOVE.equals(selectedCommandType) || fromVariableCheckBox.isSelected());
-            failIfFileExistsCheckBox.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || fromVariableCheckBox.isSelected());
-            truncateExistingFileCheckBox.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || fromVariableCheckBox.isSelected());
+            preserveFileMetadataCheckBox.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || isCommandTypeFromVariable());
+            fileOffsetTextField.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || CommandKnob.CommandType.GET.equals(selectedCommandType) || isCommandTypeFromVariable());
+            fileLengthTextField.setEnabled(CommandKnob.CommandType.GET.equals(selectedCommandType) || isCommandTypeFromVariable());
+            newFileNameTextField.setEnabled(CommandKnob.CommandType.MOVE.equals(selectedCommandType) || isCommandTypeFromVariable());
+            failIfFileExistsCheckBox.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || isCommandTypeFromVariable());
+            truncateExistingFileCheckBox.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || isCommandTypeFromVariable());
         } else {
             preserveFileMetadataCheckBox.setEnabled(false);
             fileOffsetTextField.setEnabled(false);
@@ -374,12 +369,12 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         }
 
         //Advanced Tab
-        setFileSizeToCheckBox.setEnabled(SFTPRadioButton.isSelected() && (CommandKnob.CommandType.GET.equals(selectedCommandType) ||  CommandKnob.CommandType.STAT.equals(selectedCommandType) ||fromVariableCheckBox.isSelected()));
+        setFileSizeToCheckBox.setEnabled(SFTPRadioButton.isSelected() && (CommandKnob.CommandType.GET.equals(selectedCommandType) ||  CommandKnob.CommandType.STAT.equals(selectedCommandType) || isCommandTypeFromVariable()));
         saveFileSizeContextVariable.setEnabled(setFileSizeToCheckBox.isEnabled() && setFileSizeToCheckBox.isSelected());
-        responseLimitPanel.setEnabled(CommandKnob.CommandType.GET.equals(selectedCommandType) || fromVariableCheckBox.isSelected());
-        wssIgnoreButton.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || fromVariableCheckBox.isSelected());
-        wssCleanupButton.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || fromVariableCheckBox.isSelected());
-        wssRemoveButton.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || fromVariableCheckBox.isSelected());
+        responseLimitPanel.setEnabled(CommandKnob.CommandType.GET.equals(selectedCommandType) || isCommandTypeFromVariable());
+        wssIgnoreButton.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || isCommandTypeFromVariable());
+        wssCleanupButton.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || isCommandTypeFromVariable());
+        wssRemoveButton.setEnabled(CommandKnob.CommandType.PUT.equals(selectedCommandType) || isCommandTypeFromVariable());
 
         // authentication tab
         boolean isSpecifyUserCredentials = specifyUserCredentialsRadioButton.isSelected();
@@ -398,6 +393,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         commandTypeComboBox.removeActionListener(enableDisableListener);
         int selectedIndex = commandTypeComboBox.getSelectedIndex();
         commandTypeComboBox.removeAllItems();
+        commandTypeComboBox.addItem(getResourceString("commandTypeFromVariable"));
         commandTypeComboBox.addItem(getResourceString("commandTypePut"));
         commandTypeComboBox.addItem(getResourceString("commandTypeGet"));
         if(SFTPRadioButton.isSelected()){
@@ -408,8 +404,12 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             commandTypeComboBox.addItem(getResourceString("commandTypeMKDIR"));
             commandTypeComboBox.addItem(getResourceString("commandTypeRMDIR"));
         }
+
         if(selectedIndex < commandTypeComboBox.getItemCount()){
             commandTypeComboBox.setSelectedIndex(selectedIndex);
+        } else {
+            //Select Put by default
+            commandTypeComboBox.setSelectedIndex(1);
         }
         commandTypeComboBox.addActionListener(enableDisableListener);
     }
@@ -434,17 +434,20 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
 
         SCPRadioButton.setSelected(assertion.isScpProtocol());
-        switch (assertion.getCommandType()) {
-            case PUT: commandTypeComboBox.setSelectedIndex(0); break;
-            case GET: commandTypeComboBox.setSelectedIndex(1); break;
-            case LIST: commandTypeComboBox.setSelectedIndex(2); break;
-            case STAT: commandTypeComboBox.setSelectedIndex(3); break;
-            case DELETE: commandTypeComboBox.setSelectedIndex(4); break;
-            case MOVE: commandTypeComboBox.setSelectedIndex(5); break;
-            case MKDIR: commandTypeComboBox.setSelectedIndex(6); break;
-            case RMDIR: commandTypeComboBox.setSelectedIndex(7); break;
+        if(assertion.isRetrieveCommandTypeFromVariable()){
+            commandTypeComboBox.setSelectedIndex(0);
+        } else {
+            switch (assertion.getCommandType()) {
+                case PUT: commandTypeComboBox.setSelectedIndex(1); break;
+                case GET: commandTypeComboBox.setSelectedIndex(2); break;
+                case LIST: commandTypeComboBox.setSelectedIndex(3); break;
+                case STAT: commandTypeComboBox.setSelectedIndex(4); break;
+                case DELETE: commandTypeComboBox.setSelectedIndex(5); break;
+                case MOVE: commandTypeComboBox.setSelectedIndex(6); break;
+                case MKDIR: commandTypeComboBox.setSelectedIndex(7); break;
+                case RMDIR: commandTypeComboBox.setSelectedIndex(8); break;
+            }
         }
-        fromVariableCheckBox.setSelected(assertion.isRetrieveCommandTypeFromVariable());
 
         commandVariableNameTargetVariablePanel.setVariable(assertion.getCommandTypeVariableName());
         failIfFileExistsCheckBox.setSelected(assertion.isFailIfFileExists());
@@ -534,12 +537,12 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         assertion.setConnectTimeout(Integer.parseInt(connectTimeoutTextField.getText()));
 
         assertion.setScpProtocol(SCPRadioButton.isSelected());
-        if(!fromVariableCheckBox.isSelected()){
+        if(!isCommandTypeFromVariable()){
             assertion.setCommandType(getSelectedCommandType());
         } else {
             assertion.setCommandType(SshRouteAssertion.DEFAULT_COMMAND_TYPE);
         }
-        assertion.setRetrieveCommandTypeFromVariable(fromVariableCheckBox.isSelected());
+        assertion.setRetrieveCommandTypeFromVariable(isCommandTypeFromVariable());
 
         assertion.setCommandTypeVariableName(commandVariableNameTargetVariablePanel.getVariable());
         assertion.setFailIfFileExists(failIfFileExistsCheckBox.isSelected());
@@ -638,15 +641,20 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private CommandKnob.CommandType getSelectedCommandType(){
         switch (commandTypeComboBox.getSelectedIndex()){
             case -1: return SshRouteAssertion.DEFAULT_COMMAND_TYPE;
-            case 0: return CommandKnob.CommandType.PUT;
-            case 1: return CommandKnob.CommandType.GET;
-            case 2: return CommandKnob.CommandType.LIST;
-            case 3: return CommandKnob.CommandType.STAT;
-            case 4: return CommandKnob.CommandType.DELETE;
-            case 5: return CommandKnob.CommandType.MOVE;
-            case 6: return CommandKnob.CommandType.MKDIR;
-            case 7: return CommandKnob.CommandType.RMDIR;
+            case 0: return null;
+            case 1: return CommandKnob.CommandType.PUT;
+            case 2: return CommandKnob.CommandType.GET;
+            case 3: return CommandKnob.CommandType.LIST;
+            case 4: return CommandKnob.CommandType.STAT;
+            case 5: return CommandKnob.CommandType.DELETE;
+            case 6: return CommandKnob.CommandType.MOVE;
+            case 7: return CommandKnob.CommandType.MKDIR;
+            case 8: return CommandKnob.CommandType.RMDIR;
             default: throw new IllegalStateException("This should never occur!!!");
         }
+    }
+
+    private boolean isCommandTypeFromVariable() {
+        return commandTypeComboBox.getSelectedIndex()==0;
     }
 }
