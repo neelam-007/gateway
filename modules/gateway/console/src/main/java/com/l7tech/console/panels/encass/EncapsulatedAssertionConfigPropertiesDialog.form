@@ -379,18 +379,27 @@
               <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
+              <labelFor value="cccce"/>
               <text value="Artifact Version:"/>
               <toolTipText value="Artifact Version identifies an imported Encapsulated Assertion."/>
             </properties>
           </component>
-          <component id="a193b" class="javax.swing.JLabel" binding="artifactVersionDisplayLabel">
+          <scrollpane id="cccce" binding="artifactVersionScrollPane">
             <constraints>
-              <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value=""/>
+              <horizontalScrollBarPolicy value="31"/>
+              <verticalScrollBarPolicy value="21"/>
             </properties>
-          </component>
+            <border type="empty"/>
+            <children>
+              <component id="973c6" class="com.l7tech.gui.widgets.WrappingLabel" binding="artifactVersionDisplayLabel" custom-create="true">
+                <constraints/>
+                <properties/>
+              </component>
+            </children>
+          </scrollpane>
         </children>
       </grid>
     </children>

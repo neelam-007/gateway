@@ -884,6 +884,14 @@ public class Utilities {
         return (T)result;
     }
 
+    /**
+     * Makes a split pane an invisible control, to reduce UI clutter.
+     * <p/>
+     * This reduces discoverability of the control, but users sufficiently annoyed by the desire to move something
+     * out of the way may try scrubbing the mouse at it anyway and discover that it can be moved.
+     *
+     * @param pane the split pane to deuglify.  Required.
+     */
     public static void deuglifySplitPane(JSplitPane pane) {
         pane.setUI(new BasicSplitPaneUI() {
             public BasicSplitPaneDivider createDefaultDivider() {

@@ -80,4 +80,8 @@ public class WrappingLabel extends ContextMenuTextArea {
         this.setLines = lines;
         initWrappingTextPreferredSize();
     }
+
+    public int getLines() {
+        return setLines;
+    }
 }

@@ -9,6 +9,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.OkCancelDialog;
+import com.l7tech.gui.widgets.WrappingLabel;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -72,8 +73,9 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JButton moveInputUpButton;
     private JButton moveInputDownButton;
     private JTextArea descriptionTextArea;
-    private JLabel artifactVersionDisplayLabel;
+    private WrappingLabel artifactVersionDisplayLabel;
     private JLabel artifactVersionLabel;
+    private JScrollPane artifactVersionScrollPane;
 
     private SimpleTableModel<EncapsulatedAssertionArgumentDescriptor> inputsTableModel;
     private SimpleTableModel<EncapsulatedAssertionResultDescriptor> outputsTableModel;
@@ -231,6 +233,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         selectIconButton.setMargin(new Insets(0, 0, 0, 0));
         selectIconButton.setVerticalTextPosition(SwingConstants.BOTTOM);
         selectIconButton.setHorizontalTextPosition(SwingConstants.CENTER);
+
+        Utilities.enableDefaultFocusTraversal(descriptionTextArea);
 
         Utilities.setDoubleClickAction(inputsTable, editInputButton);
         Utilities.setDoubleClickAction(outputsTable, editOutputButton);
@@ -436,10 +440,13 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         deleteOutputButton.setEnabled(!readOnly && haveOutput);
 
         final String artifactVersion = config.getProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION);
-        artifactVersionLabel.setEnabled(artifactVersion != null);
-        artifactVersionLabel.setVisible(artifactVersion != null);
-        artifactVersionDisplayLabel.setEnabled(artifactVersion != null);
-        artifactVersionDisplayLabel.setVisible(artifactVersion != null);
+        final boolean arty = artifactVersion != null;
+        artifactVersionLabel.setEnabled(arty);
+        artifactVersionLabel.setVisible(arty);
+        artifactVersionDisplayLabel.setEnabled(arty);
+        artifactVersionDisplayLabel.setVisible(arty);
+        artifactVersionScrollPane.setEnabled(arty);
+        artifactVersionScrollPane.setVisible(arty);
 
         setEnabled(!readOnly, addInputButton, addOutputButton, changePolicyButton, selectIconButton, paletteFolderComboBox, nameField);
     }
@@ -611,6 +618,11 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         if (e == null) suffix = "";
         else suffix = ": " + ExceptionUtils.getMessage(e);
         DialogDisplayer.showMessageDialog(this, message + suffix, "Error", JOptionPane.ERROR_MESSAGE, null);
+    }
+
+    private void createUIComponents() {
+        artifactVersionDisplayLabel = new WrappingLabel("", 1);
+        artifactVersionDisplayLabel.setContextMenuEnabled(true);
     }
 
     /**
