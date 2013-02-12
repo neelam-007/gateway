@@ -14,6 +14,9 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -27,10 +30,7 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import java.beans.PropertyDescriptor;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -375,6 +375,37 @@ public class EntityValidationTest {
 
         // test serial
         checkNull( trustedCert, "serial", true );
+    }
+
+    @Test
+    public void testEncapsulatedAssertionConfig() throws Exception {
+        final EncapsulatedAssertionConfig eac = new EncapsulatedAssertionConfig();
+        eac.setName( "encassconfig1" );
+        eac.setGuid( "abcd-0001" );
+
+        EncapsulatedAssertionArgumentDescriptor arg1 = new EncapsulatedAssertionArgumentDescriptor();
+        arg1.setOrdinal( 1 );
+        arg1.setArgumentName( "arg1" );
+        arg1.setArgumentType( "boolean" );
+        arg1.setGuiLabel( "Arg One" );
+        arg1.setGuiPrompt( true );
+        arg1.setEncapsulatedAssertionConfig( eac );
+        eac.setArgumentDescriptors( new LinkedHashSet<EncapsulatedAssertionArgumentDescriptor>( Arrays.asList( arg1 ) ) );
+
+        EncapsulatedAssertionResultDescriptor ret1 = new EncapsulatedAssertionResultDescriptor();
+        ret1.setResultName( "ret1" );
+        ret1.setResultType( "string" );
+        ret1.setEncapsulatedAssertionConfig( eac );
+        eac.setResultDescriptors( new LinkedHashSet<EncapsulatedAssertionResultDescriptor>( Arrays.asList( ret1 ) ) );
+
+        eac.setProperties( Collections.singletonMap( "a", "b" ) );
+
+        // TODO override getName() and test name, confirm it doesn't break import/export via SSM
+        //checkNull( eac, "name", false );
+        //checkSize( eac, "name", 1, 128 );
+
+        // TODO add additional validation and additional validation tests
+
     }
 
     @Test

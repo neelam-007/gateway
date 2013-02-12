@@ -32,7 +32,7 @@ public class EncapsulatedAssertionResourceFactory extends EntityManagerResourceF
                                                  final PlatformTransactionManager transactionManager,
                                                  final EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager,
                                                  final PolicyManager policyManager) {
-        super(false, false, services, securityFilter, transactionManager, encapsulatedAssertionConfigManager );
+        super(false, false, true, services, securityFilter, transactionManager, encapsulatedAssertionConfigManager );
         this.policyManager = policyManager;
     }
 
@@ -132,7 +132,10 @@ public class EncapsulatedAssertionResourceFactory extends EntityManagerResourceF
     //- PRIVATE
 
     private Set<EncapsulatedAssertionArgumentDescriptor> getArgumentDescriptorSet(EncapsulatedAssertionMO encassResource, EncapsulatedAssertionConfig entity) {
-        Set<EncapsulatedAssertionArgumentDescriptor> ret = new LinkedHashSet<EncapsulatedAssertionArgumentDescriptor>();
+        Set<EncapsulatedAssertionArgumentDescriptor> ret = entity.getArgumentDescriptors();
+        if (ret == null)
+            ret = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
+        ret.clear();
 
         List<EncapsulatedAssertionMO.EncapsulatedArgument> args = encassResource.getEncapsulatedArguments();
         if (args != null) {
@@ -152,7 +155,10 @@ public class EncapsulatedAssertionResourceFactory extends EntityManagerResourceF
     }
 
     private Set<EncapsulatedAssertionResultDescriptor> getResultDescriptorSet(EncapsulatedAssertionMO encassResource, EncapsulatedAssertionConfig entity) {
-        Set<EncapsulatedAssertionResultDescriptor> ret = new LinkedHashSet<EncapsulatedAssertionResultDescriptor>();
+        Set<EncapsulatedAssertionResultDescriptor> ret = entity.getResultDescriptors();
+        if (ret == null)
+            ret = new HashSet<EncapsulatedAssertionResultDescriptor>();
+        ret.clear();
 
         List<EncapsulatedAssertionMO.EncapsulatedResult> results = encassResource.getEncapsulatedResults();
         if (results != null) {
@@ -204,7 +210,10 @@ public class EncapsulatedAssertionResourceFactory extends EntityManagerResourceF
     }
 
     private Set<EncapsulatedAssertionArgumentDescriptor> copyArgumentDescriptors(EncapsulatedAssertionConfig source, EncapsulatedAssertionConfig dest) {
-        Set<EncapsulatedAssertionArgumentDescriptor> ret = new LinkedHashSet<EncapsulatedAssertionArgumentDescriptor>();
+        Set<EncapsulatedAssertionArgumentDescriptor> ret = dest.getArgumentDescriptors();
+        if (ret == null)
+            ret = new LinkedHashSet<EncapsulatedAssertionArgumentDescriptor>();
+        ret.clear();
 
         Set<EncapsulatedAssertionArgumentDescriptor> args = source.getArgumentDescriptors();
         if (args != null) {
@@ -217,7 +226,10 @@ public class EncapsulatedAssertionResourceFactory extends EntityManagerResourceF
     }
 
     private Set<EncapsulatedAssertionResultDescriptor> copyResultDescriptors(EncapsulatedAssertionConfig source, EncapsulatedAssertionConfig dest) {
-        Set<EncapsulatedAssertionResultDescriptor> ret = new LinkedHashSet<EncapsulatedAssertionResultDescriptor>();
+        Set<EncapsulatedAssertionResultDescriptor> ret = dest.getResultDescriptors();
+        if (ret == null)
+            ret = new LinkedHashSet<EncapsulatedAssertionResultDescriptor>();
+        ret.clear();
 
         Set<EncapsulatedAssertionResultDescriptor> results = source.getResultDescriptors();
         if (results != null) {

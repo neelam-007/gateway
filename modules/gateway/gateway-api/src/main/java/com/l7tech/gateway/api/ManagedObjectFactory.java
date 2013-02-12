@@ -370,6 +370,8 @@ public class ManagedObjectFactory {
 
     /**
      * Create a new EncapsulatedAssertionMO instance.
+     * <p/>
+     * The new instance will have the default (not-yet-saved) OID, no name, no GUID, and no backing policy.
      *
      * @return THe new instance.
      */
