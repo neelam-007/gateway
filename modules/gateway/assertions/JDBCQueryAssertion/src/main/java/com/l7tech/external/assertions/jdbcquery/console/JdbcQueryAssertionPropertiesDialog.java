@@ -16,7 +16,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.MutablePair;
 import com.l7tech.util.SyspropUtil;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -44,7 +43,10 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.jdbcquery.console.resources.JdbcQueryAssertionPropertiesDialog");
 
     private JPanel mainPanel;
-    private JComboBox<ConnectionProperty> connectionComboBox;
+    /**
+     * Should never have a null selection as a default is always set in @{link #modelToView}
+     */
+    private JComboBox<String> connectionComboBox;
     private JTextArea sqlQueryTextArea;
     private JTable namingTable;
     private JPanel variablePrefixTextPanel;
@@ -70,6 +72,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JdbcQueryAssertion assertion;
     private boolean confirmed;
     private PermissionFlags jdbcConnPermFlags;
+    private final Map<String,String> connToDriverMap = new HashMap<String, String>();
 
     public JdbcQueryAssertionPropertiesDialog(Window owner, JdbcQueryAssertion assertion) {
         super(owner, assertion);
@@ -245,19 +248,36 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         enableNullValuesCheckBox.setSelected(assertion.isUseNullPattern());
         nullPatternTextBox.setText(assertion.isUseNullPattern()?assertion.getNullPattern():"null");
 
-        final ConnectionProperty selectedConnection = (ConnectionProperty) connectionComboBox.getSelectedItem();
-        if (!selectedConnection.isBlank() && selectedConnection.isOracle()) {
-            final String schema = assertion.getSchema();
-            final boolean hasSchema = schema != null && !schema.trim().isEmpty();
-            if (hasSchema) {
-                schemaTextField.setText(schema);
-                schemaCheckBox.setSelected(true);
-            }
-        }
+        final String connName = assertion.getConnectionName();
+        if (connName != null) {
+            connectionComboBox.setSelectedItem(connName);
 
+            // oracle specific behaviour
+            if (isMaybeOracle(connName)) {
+                final String schema = assertion.getSchema();
+                final boolean hasSchema = schema != null && !schema.trim().isEmpty();
+                if (hasSchema) {
+                    schemaTextField.setText(schema);
+                    schemaCheckBox.setSelected(true);
+                }
+            }
+        } else {
+            // default selection is no selection
+            connectionComboBox.setSelectedItem("");
+        }
 
         enableOrDisableSchemaControls();
 
+    }
+
+    private boolean isMaybeOracle(final String connName) {
+        if (connToDriverMap.containsKey(connName)) {
+            final String driverClass = connToDriverMap.get(connName);
+            return driverClass.contains("oracle");
+        }
+
+        // if we don't know about the connection and a variable is entered, then we need to allow it
+        return Syntax.isAnyVariableReferenced(connName);
     }
 
     private void viewToModel(final JdbcQueryAssertion assertion) {
@@ -276,8 +296,8 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     }
 
     private void enableOrDisableSchemaControls() {
-        final ConnectionProperty prop = (ConnectionProperty)connectionComboBox.getSelectedItem();
-        final boolean isOracle = prop != null && prop.isOracle();
+        final String connName = connectionComboBox.getSelectedItem().toString();
+        final boolean isOracle = isMaybeOracle(connName);
         schemaCheckBox.setEnabled(isOracle && JdbcUtil.isStoredProcedure(sqlQueryTextArea.getText().toLowerCase()));
     }
 
@@ -301,49 +321,14 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         connectionComboBox.removeAllItems();
 
         // Add an empty driver class at the first position of the list
-        connectionComboBox.addItem(new ConnectionProperty("", ""));
+        connectionComboBox.addItem("");
 
-        // Add all items into the combox box.
-        ConnectionProperty selectedItem = null;
-        final String existingDriverSelection = assertion.getConnectionName();
         for (JdbcConnection conn: connectionList) {
-            ConnectionProperty prop = new ConnectionProperty(conn.getName(),conn.getDriverClass());
-            connectionComboBox.addItem(prop);
-            if (existingDriverSelection != null && existingDriverSelection.equals(conn.getName())) {
-                selectedItem = prop;
-            }
+            final String connName = conn.getName();
+            connToDriverMap.put(connName, conn.getDriverClass());
+            connectionComboBox.addItem(connName);
         }
 
-        if (selectedItem != null) {
-            connectionComboBox.setSelectedItem(selectedItem);
-        }
-    }
-
-    private static class ConnectionProperty {
-        private final String connectionName;
-        private final String driverClass;
-
-        /**
-         * The values supplied may never be null, however they may be the empty string. This is not ideal but
-         * it supports 'no selection', there has been and continues to be a blank item in the drop down list of connections.
-         * @see {@link #isBlank()}
-         */
-        private ConnectionProperty(@NotNull String connectionName, @NotNull String driverClass) {
-            this.connectionName = connectionName;
-            this.driverClass = driverClass;
-        }
-
-        public boolean isBlank() {
-            return "".equals(connectionName) && "".equals(driverClass);
-        }
-        @Override
-        public String toString() {
-            return connectionName;
-        }
-
-        public boolean isOracle(){
-            return driverClass.toLowerCase().contains("oracle");
-        }
     }
 
     private void initNamingTable() {
@@ -626,12 +611,12 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         // validate an oracle query does not try and reference a schema name. This is a heuristic as it cannot be
         // validated for sure without knowing the list of valid package names.
         boolean isValidQuery = true;
-        final ConnectionProperty conn = (ConnectionProperty)connectionComboBox.getSelectedItem();
-
+        final String connName = connectionComboBox.getSelectedItem().toString();
         final String query = sqlQueryTextArea.getText().trim();
-        if(conn.isOracle()&& JdbcUtil.isStoredProcedure(query)){
+
+        if (isMaybeOracle(connName) && JdbcUtil.isStoredProcedure(query)) {
             String procedureName = JdbcUtil.getName(query);
-            if(!procedureName.isEmpty()){
+            if (!procedureName.isEmpty()) {
                 // if there are no dots e.g. -1 or a single dot, then query is valid. If there are 2 dots then it's invalid.
                 // 2 dots means the user is trying to do schema.package.name and this is not the name of a literal object
                 // in oracle so this will never work.
@@ -640,7 +625,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                         true);
 
                 if (enableOracleSchemaCheck) {
-                    isValidQuery = procedureName.indexOf('.') == procedureName.lastIndexOf('.') ;
+                    isValidQuery = procedureName.indexOf('.') == procedureName.lastIndexOf('.');
                 }
             }
         }
@@ -652,7 +637,6 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         } else{
             DialogDisplayer.showMessageDialog(this,"Query cannot reference schema from query, use schema field instead",null);
         }
-
     }
 
     private void doCancel() {
