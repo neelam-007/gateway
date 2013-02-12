@@ -5,7 +5,6 @@ import com.l7tech.common.io.csv.CSVReader;
 import com.l7tech.internal.license.LicenseGenerator;
 import com.l7tech.internal.license.LicenseGeneratorFeatureSets;
 import com.l7tech.internal.license.LicenseSpec;
-import com.l7tech.server.GatewayFeatureSets;
 import org.w3c.dom.Document;
 
 import java.io.BufferedReader;
@@ -319,8 +318,14 @@ public class BatchLicenseGenerator {
             int value = Integer.parseInt(m.group(1));
 
             switch (m.group(2).charAt(0)) {
-                case 'd': expiry.add(Calendar.DATE, value);
-                case 'y': expiry.add(Calendar.YEAR, value);
+                case 'd':
+                    expiry.add(Calendar.DATE, value);
+                    break;
+                case 'y':
+                    expiry.add(Calendar.YEAR, value);
+                    break;
+                default:
+                    return null;
             }
 
             return expiry;
