@@ -19,6 +19,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,7 +49,7 @@ public class PolicyExportUtils {
      * @return True if the policy was imported.
      */
     public static boolean importPolicyFromFile( final Policy policy,
-                                                final File exportFile ) {
+                                                final File exportFile) {
         boolean imported = false;
 
         try {
@@ -62,6 +64,31 @@ public class PolicyExportUtils {
                 ResourceUtils.closeQuietly(in);
             }
 
+            final List<Element> encassElements = XmlUtil.findChildElementsByName(readDoc.getDocumentElement(),
+                    EncapsulatedAssertionConfigExportUtil.ENCASS_NS,
+                    EncapsulatedAssertionConfigExportUtil.ENCAPSULATED_ASSERTION);
+            if (encassElements.size() > 0) {
+                // found an exported encass
+                final int result = JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
+                        FOUND_ENCASS_MSG, "Found Encapsulated Assertion", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (result == JOptionPane.OK_OPTION) {
+                    imported = doImport(exportFile, policy, readDoc);
+                } else {
+                    logger.log(Level.FINER, "Policy import was cancelled.");
+                }
+            } else {
+                imported = doImport(exportFile, policy, readDoc);
+            }
+
+        } catch (IOException e) {
+            handleIOException(exportFile, e);
+        }
+        return imported;
+    }
+
+    private static boolean doImport(final File exportFile, final Policy policy, final Document readDoc) {
+        boolean imported = false;
+        try {
             final WspReader wspReader = TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
             final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
             final PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, readDoc, getExternalReferenceFactories(), wspReader, finder, finder, finder, finder );
@@ -94,16 +121,19 @@ public class PolicyExportUtils {
 
             logger.log( Level.WARNING, "Could not import the policy from " + exportFile.getPath() + "\n" + errorMessage, e);
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Could not localize or read policy from " + exportFile.getPath(), e);
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                          "Could not find policy export in the selected file or the imported policy contains errors",
-                                          "Policy Not Found/Not Valid",
-                                          JOptionPane.WARNING_MESSAGE, null);
+            handleIOException(exportFile, e);
         } catch ( PolicyImportCancelledException e) {
             logger.log( Level.FINE, "Import from file \"" + exportFile.getPath() + "\" was cancelled", e);
         }
-
         return imported;
+    }
+
+    private static void handleIOException(final File exportFile, final IOException e) {
+        logger.log(Level.WARNING, "Could not localize or read policy from " + exportFile.getPath(), e);
+        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                "Could not find policy export in the selected file or the imported policy contains errors",
+                "Policy Not Found/Not Valid",
+                JOptionPane.WARNING_MESSAGE, null);
     }
 
     /**
@@ -126,6 +156,8 @@ public class PolicyExportUtils {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( PolicyExportUtils.class.getName() );
+    private static String FOUND_ENCASS_MSG = "<html>This file contains an encapsulated assertion configuration. <br/>" +
+                "If you proceed then the backing policy will be imported but the encapsulated assertion information within this file will be ignored.</html>";
 
     public static void addPoliciesToPolicyReferenceAssertions( final @Nullable Assertion rootAssertion,
                                                                final HashMap<String, Policy> fragments ) throws IOException {

@@ -26,6 +26,9 @@ import java.io.IOException;
  * Utility for importing and exporting an EncapsulatedAssertionConfig.
  */
 public class EncapsulatedAssertionConfigExportUtil {
+    public static final String ENCASS_NS = "http://ns.l7tech.com/secureSpan/1.0/encass";
+    public static final String ENCAPSULATED_ASSERTION = "EncapsulatedAssertion";
+
     /**
      * Exports an EncapsulatedAssertionConfig and its backing Policy to a Document.
      * <p/>
@@ -176,8 +179,6 @@ public class EncapsulatedAssertionConfigExportUtil {
     private static EncapsulatedAssertionConfigExportUtil instance;
     private static final String JAXB_FORMATTED_OUTPUT = "jaxb.formatted.output";
     private static final String JAXB_FRAGMENT = "jaxb.fragment";
-    private static final String ENCASS_NS = "http://ns.l7tech.com/secureSpan/1.0/encass";
-    private static final String ENCAPSULATED_ASSERTION = "EncapsulatedAssertion";
 
     private Marshaller createMarshaller() throws JAXBException {
         final Marshaller marshaller = jaxbContext.createMarshaller();
