@@ -1,6 +1,6 @@
 package com.l7tech.console.panels.encass;
 
-import com.l7tech.console.panels.IconSelectorDialog;
+import com.l7tech.console.panels.IconSelectorPanel;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
@@ -633,7 +633,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         public void actionPerformed(ActionEvent e) {
             final Pair<EncapsulatedAssertionConsoleUtil.IconType, ImageIcon> currentIcon = EncapsulatedAssertionConsoleUtil.findIcon(iconResourceFilename, iconBase64);
             final OkCancelDialog<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>> okCancelDialog = new OkCancelDialog<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>>(EncapsulatedAssertionConfigPropertiesDialog.this,
-                    SELECT_ICON, true, new IconSelectorDialog(currentIcon.left.equals(EncapsulatedAssertionConsoleUtil.IconType.CUSTOM_IMAGE) ? null : currentIcon.right));
+                    SELECT_ICON, true, new IconSelectorPanel(currentIcon.left.equals(EncapsulatedAssertionConsoleUtil.IconType.CUSTOM_IMAGE) ? null : currentIcon.right));
             okCancelDialog.pack();
             Utilities.centerOnParentWindow(okCancelDialog);
             DialogDisplayer.display(okCancelDialog, new Runnable() {

@@ -47,7 +47,6 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
-import javax.xml.transform.dom.DOMResult;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -144,7 +143,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                         @Override
                         public void reportResult(int option) {
                             if (option == JOptionPane.YES_OPTION)
-                                doDeleteEnapsulatedAssertionConfig(config);
+                                doDeleteEncapsulatedAssertionConfig(config);
                         }
                     });
             }
@@ -483,7 +482,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         }
     }
 
-    private void doDeleteEnapsulatedAssertionConfig(EncapsulatedAssertionConfig config) {
+    private void doDeleteEncapsulatedAssertionConfig(EncapsulatedAssertionConfig config) {
         try {
             Registry.getDefault().getEncapsulatedAssertionAdmin().deleteEncapsulatedAssertionConfig(config.getOid());
             loadEncapsulatedAssertionConfigs(true);

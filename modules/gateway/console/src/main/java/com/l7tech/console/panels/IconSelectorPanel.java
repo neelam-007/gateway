@@ -8,9 +8,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.widgets.ValidatedPanel;
-import com.l7tech.util.FileUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +17,9 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 import static com.l7tech.console.util.EncapsulatedAssertionConsoleUtil.IconType;
@@ -27,12 +27,13 @@ import static com.l7tech.console.util.EncapsulatedAssertionConsoleUtil.IconType;
 /**
  * A dialog which allows the user to select an icon from an image gallery or browse for an image file.
  */
-public class IconSelectorDialog extends ValidatedPanel<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>> {
+public class IconSelectorPanel extends ValidatedPanel<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>> {
     private static final int ICON_MAX_SIZE = SyspropUtil.getInteger("com.l7tech.icon.resource.max.size", 16);
     private static final int ICON_MIN_SIZE = SyspropUtil.getInteger("com.l7tech.icon.resource.min.size", 16);
     private static final Border LINE_BORDER = BorderFactory.createLineBorder(Color.BLACK, 3);
     private static final Border EMPTY_BORDER = BorderFactory.createEmptyBorder(3, 3, 3, 3);
-    private static final int CUSTOM_ICON_MAX_SIZE = SyspropUtil.getInteger("com.l7tech.icon.custom.max.size", 32768);
+    private static final int CUSTOM_ICON_MAX_BYTES = SyspropUtil.getInteger("com.l7tech.icon.custom.max.bytes", 32768);
+    private static final int CUSTOM_ICON_MAX_PIXELS = SyspropUtil.getInteger("com.l7tech.icon.custom.max.pixels", 32);
     private static final int COLS = 15;
     private static final int PADDING = 3;
     private static final String ICON = "icon";
@@ -47,7 +48,7 @@ public class IconSelectorDialog extends ValidatedPanel<Pair<EncapsulatedAssertio
     /**
      * @param defaultSelect the ImageIcon to select by default (can be null).
      */
-    public IconSelectorDialog(@Nullable final ImageIcon defaultSelect) {
+    public IconSelectorPanel(@Nullable final ImageIcon defaultSelect) {
         super(ICON);
         if (defaultSelect != null) {
             this.defaultSelect = defaultSelect;
@@ -103,9 +104,21 @@ public class IconSelectorDialog extends ValidatedPanel<Pair<EncapsulatedAssertio
     protected void doUpdateModel() {
         if (!fileTextField.getText().isEmpty()) {
             final File file = new File(fileTextField.getText());
-            if (file.length() > CUSTOM_ICON_MAX_SIZE) {
-                throw new IllegalArgumentException("Maximum file size is " + CUSTOM_ICON_MAX_SIZE + " bytes.");
+            if (file.length() > CUSTOM_ICON_MAX_BYTES) {
+                throw new IllegalArgumentException("Maximum file size is " + CUSTOM_ICON_MAX_BYTES + " bytes.");
             }
+            if (fileContainsOversizedIcon(file)) {
+                throw new IllegalArgumentException("Icon may not be larger than " + ICON_MAX_SIZE + " pixels wide or tall.");
+            }
+        }
+    }
+
+    private boolean fileContainsOversizedIcon(File file) {
+        try {
+            BufferedImage image = ImageCache.getInstance().createUncachedBufferedImage(IOUtils.slurpFile(file), Transparency.OPAQUE);
+            return image.getHeight() > CUSTOM_ICON_MAX_PIXELS || image.getWidth() > CUSTOM_ICON_MAX_PIXELS;
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Unable to read icon file: " + ExceptionUtils.getMessage(e));
         }
     }
 
