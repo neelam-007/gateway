@@ -11,11 +11,9 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.*;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.Functions;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import com.l7tech.xml.xpath.XpathUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -704,6 +702,119 @@ public class OAuthInstallerAdminImplTest {
         }
 
         assertTrue(testPass[0]);
+    }
+
+    /**
+     * The 'Manage Clients' button is not available when the API Portal is integrated with the OTK.
+     *
+     * This test is a heuristic, it looks for the presence of the variables and template responses needed and if it finds
+     * them it assumes that the policies contain the correct logic. It is possible that the policy logic is broken and
+     * this test will pass. The intent of this test is to avoid someone changing the error message or removing the
+     * required values entirely.
+     *
+     * This test validates the connection between the manager and clientstore endpoints.
+     */
+    @BugId("SSG-6456")
+    @Test
+    public void testManageClientsNotAvailableWhenPortalIntegrated() throws Exception {
+
+        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
+        final OAuthToolkitBundleResolver resolver = new OAuthToolkitBundleResolver(bundleInfos);
+
+        final Map<String, BundleInfo> bundleMap = Functions.toMap(resolver.getResultList(), new Functions.Unary<Pair<String, BundleInfo>, BundleInfo>() {
+            @Override
+            public Pair<String, BundleInfo> call(BundleInfo bundleInfo) {
+                return new Pair<String, BundleInfo>(bundleInfo.getId(), bundleInfo);
+            }
+        });
+
+        final String expectedValue = "API Portal Integration is configured";
+        {
+            final BundleInfo clientStoreBundle = bundleMap.get("b082274b-f00e-4fbf-bbb7-395a95ca2a35");
+            assertNotNull(clientStoreBundle);
+
+            final Document serviceDocument = resolver.getBundleItem(clientStoreBundle.getId(), BundleResolver.BundleItem.SERVICE, false);
+            final List<Element> enumServiceElms = getEntityElements(serviceDocument.getDocumentElement(), "Service");
+            // find the client store policy
+
+            boolean foundVariable = false;
+            boolean foundTemplateResponse = false;
+            for (Element serviceElm : enumServiceElms) {
+                final Element serviceDetailElement = getServiceDetailElement(serviceElm);
+                final String entityName = getEntityName(serviceDetailElement);
+                if (!"oauth/clients".equals(entityName)) {
+                    continue;
+                }
+
+                final Element policyResourceElement = getPolicyResourceElement(serviceElm, "Service", "Not used");
+                final Document layer7Policy = getPolicyDocumentFromResource(policyResourceElement, "Service", "Not used");
+                final List<Element> contextVariables = PolicyUtils.findContextVariables(layer7Policy.getDocumentElement());
+                // find customError
+                for (Element contextVariable : contextVariables) {
+                    final Element variableToSet = DomUtils.findExactlyOneChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "VariableToSet");
+                    final String varName = variableToSet.getAttribute("stringValue");
+                    if ("customError".equals(varName)) {
+                        final Element base64Expression = DomUtils.findExactlyOneChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "Base64Expression");
+                        final byte[] value = HexUtils.decodeBase64(base64Expression.getAttribute("stringValue"));
+                        final String varValue = new String(value, Charsets.UTF8);
+
+                        if (varValue.contains(expectedValue)) {
+                            foundVariable = true;
+                        }
+                    }
+                }
+
+                final List<Element> templateResponses = PolicyUtils.findTemplateResponses(layer7Policy.getDocumentElement());
+                for (Element templateResponse : templateResponses) {
+                    final Element base64ResponseBody = DomUtils.findExactlyOneChildElementByName(templateResponse, "http://www.layer7tech.com/ws/policy", "Base64ResponseBody");
+                    final byte[] value = HexUtils.decodeBase64(base64ResponseBody.getAttribute("stringValue"));
+                    final String varValue = new String(value, Charsets.UTF8);
+                    if (varValue.contains("${customError}")) {
+                        foundTemplateResponse = true;
+                    }
+                }
+            }
+
+            assertTrue("Did not find customError variable with the correct value", foundVariable);
+            assertTrue("Did not find a template response which references ${customError}", foundTemplateResponse);
+        }
+
+        // client store has passed, now test the manager policy
+
+        {
+            final BundleInfo managerBundle = bundleMap.get("a07924c0-0265-42ea-90f1-2428e31ae5ae");
+            assertNotNull(managerBundle);
+
+            final Document serviceDocument = resolver.getBundleItem(managerBundle.getId(), BundleResolver.BundleItem.SERVICE, false);
+            final List<Element> enumServiceElms = getEntityElements(serviceDocument.getDocumentElement(), "Service");
+
+            boolean foundCorrectComparison = false;
+            for (Element serviceElm : enumServiceElms) {
+                final Element serviceDetailElement = getServiceDetailElement(serviceElm);
+                final String entityName = getEntityName(serviceDetailElement);
+                if (!"oauth/manager".equals(entityName)) {
+                    continue;
+                }
+
+                final Element policyResourceElement = getPolicyResourceElement(serviceElm, "Service", "Not used");
+                final Document layer7Policy = getPolicyDocumentFromResource(policyResourceElement, "Service", "Not used");
+                final List<Element> comparisonAssertions = PolicyUtils.findComparisonAssertions(layer7Policy.getDocumentElement());
+                for (Element comparisonAssertion : comparisonAssertions) {
+                    final Element expression2 = DomUtils.findExactlyOneChildElementByName(comparisonAssertion, "http://www.layer7tech.com/ws/policy", "Expression2");
+                    final String expression2Value = expression2.getAttribute("stringValue");
+
+                    final Element rightValueElm = DomUtils.findFirstDescendantElement(comparisonAssertion, "http://www.layer7tech.com/ws/policy", "RightValue");
+                    final String rightValue = rightValueElm.getAttribute("stringValue");
+
+                    if (expectedValue.equals(expression2Value) && expectedValue.equals(rightValue)) {
+                        foundCorrectComparison = true;
+                    }
+                }
+            }
+
+            assertTrue("Did not find check for correct error message", foundCorrectComparison);
+        }
+
     }
 
     /**

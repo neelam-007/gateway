@@ -53,4 +53,11 @@ public class PolicyUtils {
         return XpathUtil.findElements(policyDocument.getDocumentElement(), "//L7p:Include/L7p:PolicyGuid", getNamespaceMap());
     }
 
+    public static List<Element> findTemplateResponses(final Element layer7PolicyDoc) {
+        return XpathUtil.findElements(layer7PolicyDoc, "//L7p:HardcodedResponse", getNamespaceMap());
+    }
+
+    public static List<Element> findComparisonAssertions(final Element layer7PolicyDoc) {
+        return XpathUtil.findElements(layer7PolicyDoc, "//L7p:ComparisonAssertion", getNamespaceMap());
+    }
 }
