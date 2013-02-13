@@ -50,6 +50,9 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
     /** Hash representing the configuration of the encapsulated assertion and its backing policy (used for import and export). */
     public static final String PROP_ARTIFACT_VERSION = "artifactVersion";
 
+    /** The backing Policy guid (can be used to retrieve the backing Policy if it is detached) **/
+    public static final String PROP_POLICY_GUID = "policyGuid";
+
     /** Base resource path in which icon file resource names are searched for. */
     public static final String ICON_RESOURCE_DIRECTORY = "com/l7tech/console/resources/";
 
@@ -96,13 +99,29 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
     @JoinColumn(name = "policy_oid")
     @XmlElement (name = "Policy")
     @XmlJavaTypeAdapter(PolicyAdapter.class)
+    @Nullable
     public Policy getPolicy() {
         return policy;
     }
 
+    /**
+     * Sets the policy and the policyOid property.
+     */
     public void setPolicy(Policy policy) {
         checkLocked();
         this.policy = policy;
+        if (policy != null && policy.getGuid() != null) {
+            putProperty(PROP_POLICY_GUID, policy.getGuid());
+        } else {
+            removeProperty(PROP_POLICY_GUID);
+        }
+    }
+
+    /**
+     * Nulls the policy without removing the policy oid property.
+     */
+    public void detachPolicy() {
+        this.policy = null;
     }
 
     /**

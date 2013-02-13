@@ -3,6 +3,7 @@ package com.l7tech.console.tree;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.*;
 import com.l7tech.console.tree.servicesAndPolicies.PolicyNodeFilter;
+import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.EntityType;
@@ -105,6 +106,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
             try {
                 EncapsulatedAssertionConfig config;
                 final Collection<EncapsulatedAssertionConfig> found = Registry.getDefault().getEncapsulatedAssertionAdmin().findByPolicyOid(getEntityHeader().getOid());
+                EncapsulatedAssertionConsoleUtil.attachPolicies(found);
                 if (found.isEmpty()) {
                     // policy not yet associated with an EncapsulatedAssertionConfig
                     config = new EncapsulatedAssertionConfig();

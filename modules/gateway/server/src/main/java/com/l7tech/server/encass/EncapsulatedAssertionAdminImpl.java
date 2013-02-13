@@ -18,6 +18,11 @@ import java.util.UUID;
 
 /**
  * Implementation of {@link EncapsulatedAssertionAdmin}.
+ * <p/>
+ * Any EncapsulatedAssertionConfig retrieved should have its backing Policy detached.
+ * <p/>
+ * Clients are required to retrieve the EncapsulatedAssertionConfig backing Policy separately
+ * (its backing Policy oid is stored as a property) in order to ensure RBAC is followed.
  */
 public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmin {
     @Inject
@@ -26,31 +31,49 @@ public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmi
     @Inject
     private LicenseManager licenseManager;
 
+    /**
+     * Returned EncapsulatedAssertionConfigs will have detached policies.
+     */
     @NotNull
     @Override
     public Collection<EncapsulatedAssertionConfig> findAllEncapsulatedAssertionConfigs() throws FindException {
         Collection<EncapsulatedAssertionConfig> ret = encapsulatedAssertionConfigManager.findAll();
-        return ret != null ? ret : Collections.<EncapsulatedAssertionConfig>emptyList();
+        if (ret == null) {
+            ret = Collections.<EncapsulatedAssertionConfig>emptyList();
+        }
+        detachPolicies(ret);
+        return ret;
     }
 
+    /**
+     * Returned EncapsulatedAssertionConfig will have its policy detached.
+     */
     @NotNull
     @Override
     public EncapsulatedAssertionConfig findByPrimaryKey(long oid) throws FindException {
         EncapsulatedAssertionConfig ret = encapsulatedAssertionConfigManager.findByPrimaryKey(oid);
         if (ret == null)
             throw new FindException("No encapsulated assertion config found with oid " + oid);
+        ret.detachPolicy();
         return ret;
     }
 
+    /**
+     * Returned EncapsulatedAssertionConfig will have its policy detached.
+     */
     @NotNull
     @Override
     public EncapsulatedAssertionConfig findByGuid(@NotNull String guid) throws FindException {
         EncapsulatedAssertionConfig ret = encapsulatedAssertionConfigManager.findByGuid(guid);
         if (ret == null)
             throw new FindException("No encapsulated assertion config found with GUID  " + guid);
+        ret.detachPolicy();
         return ret;
     }
 
+    /**
+     * Returned EncapsulatedAssertionConfig will have its policy detached.
+     */
     @NotNull
     @Override
     public Collection<EncapsulatedAssertionConfig> findByPolicyOid(long policyOid) throws FindException {
@@ -58,13 +81,21 @@ public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmi
         if (ret == null) {
             ret = Collections.emptySet();
         }
+        detachPolicies(ret);
         return ret;
     }
 
+    /**
+     * Returned EncapsulatedAssertionConfig will have its policy detached.
+     */
     @Nullable
     @Override
     public EncapsulatedAssertionConfig findByUniqueName(@NotNull final String name) throws FindException {
-        return encapsulatedAssertionConfigManager.findByUniqueName(name);
+        final EncapsulatedAssertionConfig ret = encapsulatedAssertionConfigManager.findByUniqueName(name);
+        if (ret != null) {
+            ret.detachPolicy();
+        }
+        return ret;
     }
 
     @Override
@@ -92,6 +123,15 @@ public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmi
         encapsulatedAssertionConfigManager.delete(oid);
     }
 
+    void setEncapsulatedAssertionConfigManager(@NotNull final EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager) {
+        this.encapsulatedAssertionConfigManager = encapsulatedAssertionConfigManager;
+    }
+
+    private void detachPolicies(@NotNull final Collection<EncapsulatedAssertionConfig> configs) {
+        for (final EncapsulatedAssertionConfig config : configs) {
+            config.detachPolicy();
+        }
+    }
 
     private void checkLicenseEncAss() {
         try {

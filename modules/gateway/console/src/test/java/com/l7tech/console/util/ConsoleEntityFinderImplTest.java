@@ -2,6 +2,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.console.util.registry.RegistryStub;
 import com.l7tech.gateway.common.admin.EncapsulatedAssertionAdmin;
+import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import org.jetbrains.annotations.NotNull;
@@ -81,6 +82,11 @@ public class ConsoleEntityFinderImplTest {
         @Override
         Registry registry() throws FindException {
             return registry;
+        }
+
+        @Override
+        void attachPolicies(@NotNull EncapsulatedAssertionConfig found) throws FindException {
+            // no action required for this test
         }
     }
 

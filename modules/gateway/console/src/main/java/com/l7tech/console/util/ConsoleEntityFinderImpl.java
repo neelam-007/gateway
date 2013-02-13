@@ -1,7 +1,10 @@
 package com.l7tech.console.util;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Collections;
 
 /**
  * A utility that provides read-only lookup services for entities, backed by the actual admin APIs for the
@@ -14,7 +17,9 @@ public class ConsoleEntityFinderImpl implements HeaderBasedEntityFinder {
         Registry registry = registry();
         switch (type) {
             case ENCAPSULATED_ASSERTION:
-                return registry.getEncapsulatedAssertionAdmin().findByGuid(guid);
+                final EncapsulatedAssertionConfig found = registry.getEncapsulatedAssertionAdmin().findByGuid(guid);
+                attachPolicies(found);
+                return found;
 
             // add new entity types here as needed
             // case WHATEVER:
@@ -46,5 +51,12 @@ public class ConsoleEntityFinderImpl implements HeaderBasedEntityFinder {
         if (!registry.isAdminContextPresent())
             throw new FindException("Admin context not present");
         return registry;
+    }
+
+    /**
+     * Overridden in tests.
+     */
+    void attachPolicies(@NotNull final EncapsulatedAssertionConfig found) throws FindException {
+        EncapsulatedAssertionConsoleUtil.attachPolicies(Collections.singletonList(found));
     }
 }

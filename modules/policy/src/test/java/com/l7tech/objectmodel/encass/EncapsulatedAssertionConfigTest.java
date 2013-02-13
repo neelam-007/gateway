@@ -13,6 +13,7 @@ import static org.junit.Assert.*;
 public class EncapsulatedAssertionConfigTest {
     private static final String NAME = "testName";
     private static final long OID = 1234;
+    private static final String POLICY_GUID = "policyguid";
     private static final int VERSION = 1;
     private static final String GUID = "abc123";
     private EncapsulatedAssertionConfig config;
@@ -31,6 +32,7 @@ public class EncapsulatedAssertionConfigTest {
         ins = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
         ins.add(in);
         policy = new Policy(PolicyType.INCLUDE_FRAGMENT, NAME, "xml", false);
+        policy.setGuid(POLICY_GUID);
         properties = new HashMap<String, String>();
         properties.put("propKey", "propValue");
         out = new EncapsulatedAssertionResultDescriptor();
@@ -41,8 +43,8 @@ public class EncapsulatedAssertionConfigTest {
         config = new EncapsulatedAssertionConfig();
         config.setArgumentDescriptors(ins);
         config.setGuid(GUID);
-        config.setPolicy(policy);
         config.setProperties(properties);
+        config.setPolicy(policy);
         config.setResultDescriptors(outs);
         config.setName(NAME);
         config.setOid(OID);
@@ -107,6 +109,29 @@ public class EncapsulatedAssertionConfigTest {
     public void removePropertyLocked() {
         final EncapsulatedAssertionConfig locked = config.getReadOnlyCopy();
         locked.removeProperty("propKey");
+    }
+
+    @Test
+    public void setPolicySetsPolicyGuid() {
+        final String policyGuid = "abc";
+        final Policy p = new Policy(PolicyType.INCLUDE_FRAGMENT, "Test", "policyXml", false);
+        p.setGuid(policyGuid);
+        config.setPolicy(p);
+        assertEquals(policyGuid, config.getProperty(EncapsulatedAssertionConfig.PROP_POLICY_GUID));
+    }
+
+    @Test
+    public void setPolicyNull() {
+        config.setPolicy(null);
+        assertNull(config.getProperty(EncapsulatedAssertionConfig.PROP_POLICY_GUID));
+    }
+
+    @Test
+    public void detachPolicyDoesNotRemovePolicyOid() {
+        assertEquals(POLICY_GUID, config.getProperty(EncapsulatedAssertionConfig.PROP_POLICY_GUID));
+        config.detachPolicy();
+        assertNull(config.getPolicy());
+        assertEquals(POLICY_GUID, config.getProperty(EncapsulatedAssertionConfig.PROP_POLICY_GUID));
     }
 
     private void assertIsCopy(final EncapsulatedAssertionConfig copy) {

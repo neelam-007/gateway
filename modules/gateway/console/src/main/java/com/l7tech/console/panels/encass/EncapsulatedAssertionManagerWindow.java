@@ -19,6 +19,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
@@ -209,20 +210,25 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                         @Override
                         public void reportResult(int option) {
                             if (option == 0) {
-                                // update existing config
-                                config.setOid(sameGuid.getOid());
-                                config.setVersion(sameGuid.getVersion());
-                                // update existing policy
-                                final Policy existingPolicy = sameGuid.getPolicy();
                                 try {
-                                    final Pair<Policy, HashMap<String, Policy>> fragmentResult = createPolicyFragment(existingPolicy.getName(), policyDoc);
-                                    existingPolicy.setXml(fragmentResult.getKey().getXml());
-                                    savePolicyAndConfig(existingPolicy, fragmentResult.getValue(), config);
+                                    EncapsulatedAssertionConsoleUtil.attachPolicies(Collections.singletonList(sameGuid));
+                                    // update existing config
+                                    config.setOid(sameGuid.getOid());
+                                    config.setVersion(sameGuid.getVersion());
+                                    // update existing policy
+                                    final Policy existingPolicy = sameGuid.getPolicy();
+                                    if (existingPolicy != null) {
+                                        final Pair<Policy, HashMap<String, Policy>> fragmentResult = createPolicyFragment(existingPolicy.getName(), policyDoc);
+                                        existingPolicy.setXml(fragmentResult.getKey().getXml());
+                                        savePolicyAndConfig(existingPolicy, fragmentResult.getValue(), config);
+                                    } else {
+                                        // unable to attach backing policy
+                                        handlePermissionDeniedForImport(null);
+                                    }
                                 } catch (final PolicyImportCancelledException e) {
-                                    logger.log(Level.FINE, "Policy import cancelled.", ExceptionUtils.getDebugException(e));
+                                    handleImportCancelledException(e);
                                 } catch (final Exception e) {
-                                    logger.log(Level.WARNING, "Error saving Encapsulated Assertion.", ExceptionUtils.getDebugException(e));
-                                    showError("Error saving Encapsulated Assertion.", null);
+                                    handleGenericException(e);
                                 }
                             } else if (option == 1) {
                                 // create new config and policy
@@ -270,10 +276,11 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                                 final Pair<Policy, HashMap<String, Policy>> fragmentResult = createPolicyFragment(conflictDialog.getPolicyName(), policyDoc);
                                 savePolicyAndConfig(fragmentResult.getKey(), fragmentResult.getValue(), config);
                             } catch (final PolicyImportCancelledException e) {
-                                logger.log(Level.FINE, "Policy import cancelled.", ExceptionUtils.getDebugException(e));
-                            } catch (final Exception e) {
-                                logger.log(Level.WARNING, "Error saving Encapsulated Assertion.", ExceptionUtils.getDebugException(e));
-                                showError("Error saving Encapsulated Assertion.", null);
+                                handleImportCancelledException(e);
+                            } catch (final PermissionDeniedException e) {
+                                handlePermissionDeniedForImport(e);
+                            }catch (final Exception e) {
+                                handleGenericException(e);
                             }
                         }
                     }
@@ -283,10 +290,11 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                 savePolicyAndConfig(fragmentResult.getKey(), fragmentResult.getValue(), config);
             }
         } catch (final PolicyImportCancelledException e) {
-            logger.log(Level.FINE, "Policy import cancelled.", ExceptionUtils.getDebugException(e));
+            handleImportCancelledException(e);
+        } catch (final PermissionDeniedException e) {
+            handlePermissionDeniedForImport(e);
         } catch (final Exception e) {
-            logger.log(Level.WARNING, "Error saving Encapsulated Assertion.", ExceptionUtils.getDebugException(e));
-            showError("Error saving Encapsulated Assertion.", null);
+            handleGenericException(e);
         }
     }
 
@@ -345,17 +353,22 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     }
 
     private void doExport(final EncapsulatedAssertionConfig config) {
-        FileChooserUtil.saveSingleFileWithOverwriteConfirmation(this, "Export Encapsulated Assertion", ENCASS_FILE_FILTER, ".xml", new FileUtils.Saver() {
-            @Override
-            public void doSave(FileOutputStream fos) throws IOException {
-                try {
-                    final Document exportDoc = EncapsulatedAssertionConfigExportUtil.getInstance().exportConfigAndPolicy(config);
-                    XmlUtil.nodeToFormattedOutputStream(exportDoc, fos);
-                } catch (final SAXException e) {
-                    throw new IOException(e);
+        if (config.getPolicy() != null) {
+            FileChooserUtil.saveSingleFileWithOverwriteConfirmation(this, "Export Encapsulated Assertion", ENCASS_FILE_FILTER, ".xml", new FileUtils.Saver() {
+                @Override
+                public void doSave(FileOutputStream fos) throws IOException {
+                    try {
+                        final Document exportDoc = EncapsulatedAssertionConfigExportUtil.getInstance().exportConfigAndPolicy(config);
+                        XmlUtil.nodeToFormattedOutputStream(exportDoc, fos);
+                    } catch (final SAXException e) {
+                        throw new IOException(e);
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            // policy could not be attached
+            showError("Export is unavailable because you do not have permission to read the backing policy or it is missing.", null);
+        }
     }
 
     /**
@@ -471,6 +484,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     private void loadEncapsulatedAssertionConfigs(boolean updateLocalRegistry) {
         try {
             final Collection<EncapsulatedAssertionConfig> configs = Registry.getDefault().getEncapsulatedAssertionAdmin().findAllEncapsulatedAssertionConfigs();
+            EncapsulatedAssertionConsoleUtil.attachPolicies(configs);
             iconCache.clear();
             eacTableModel.setRows(new ArrayList<EncapsulatedAssertionConfig>(configs));
             if (updateLocalRegistry) {
@@ -495,12 +509,33 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         }
     }
 
+    /**
+     * Displays an error message to the user.
+     * @param message the error message to show the user.
+     * @param e the Throwable which caused the error or null if you do not want to show the exception to the user.
+     */
     private void showError(@NotNull final String message, @Nullable final Throwable e) {
         String error = message;
         if (e != null) {
             error = error + ": " + ExceptionUtils.getMessage(e);
         }
         DialogDisplayer.showMessageDialog(this, error, "Error", JOptionPane.ERROR_MESSAGE, null);
+    }
+
+    private void handlePermissionDeniedForImport(@Nullable final PermissionDeniedException e) {
+        if (e != null) {
+            logger.log(Level.WARNING, "Insufficient permissions for import: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+        }
+        showError("You do not have the correct permissions to import.", null);
+    }
+
+    private void handleImportCancelledException(final PolicyImportCancelledException e) {
+        logger.log(Level.FINE, "Policy import cancelled.", ExceptionUtils.getDebugException(e));
+    }
+
+    private void handleGenericException(final Exception e) {
+        logger.log(Level.WARNING, "Error saving Encapsulated Assertion.", ExceptionUtils.getDebugException(e));
+        showError("Error saving Encapsulated Assertion.", null);
     }
 
     /**

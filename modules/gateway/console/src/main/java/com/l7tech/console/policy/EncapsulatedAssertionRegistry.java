@@ -5,6 +5,7 @@ import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.util.EncapsulatedAssertionConsoleUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
@@ -62,6 +63,7 @@ public class EncapsulatedAssertionRegistry {
             throw new FindException("Unable to load encapsulated assertions -- not connected to Gateway");
         }
         Collection<EncapsulatedAssertionConfig> configs = registry.getEncapsulatedAssertionAdmin().findAllEncapsulatedAssertionConfigs();
+        EncapsulatedAssertionConsoleUtil.attachPolicies(configs);
         replaceAllRegisteredConfigs(configs);
     }
 
