@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.widgets.SquigglyTextField;
@@ -15,8 +16,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  * Time: 10:52 AM
  * To change this template use File | Settings | File Templates.
  */
-public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPanel {
+public class SsgFirewallPropertiesDialog extends JDialog {
 
     private JPanel contentPanel;
 
@@ -43,14 +43,18 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
     private SquigglyTextField source;
     private SquigglyTextField destination;
     private SquigglyTextField udpSrcPort;
-
+    private SquigglyTextField udpDstPort;
     private SquigglyTextField tcpSrcPort;
-
+    private SquigglyTextField tcpDstPort;
     private SquigglyTextField tcpFlags;
     private SquigglyTextField tcpOptions;
     private JPanel icmpOptionsPanel;
     private JTextField icmpType;
     private JPanel targetHolderPanel;
+    private SquigglyTextField rulename;
+    private JButton buttonCancel;
+    private JButton buttonOK;
+    private JCheckBox enableCheckBox;
 
     private TargetOptionsPanel targetOptions;
 
@@ -82,87 +86,103 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
     }
 
     private InputValidator inputValidator;
+    private boolean confirmed;
 
-    public SsgConnectorFirewallConfigPanel() {
-        setLayout(new BorderLayout());
+    private SsgFirewallRule rule;
+
+    public SsgFirewallPropertiesDialog(final Window owner, SsgFirewallRule rule) {
+        super(owner, "Firewall Rule Properties");
+        this.rule = rule;
+        setModal(true);
         add(contentPanel, BorderLayout.CENTER);
-        inputValidator = new InputValidator(this, "Firewall Settings");
         initialize();
     }
 
     private static final String[] ADVANCE_PROPERTIES = new String[]{"table", "chain", "jump", "protocol",
         "source", "destination", "source-port", "destination-port", "tcp-flags", "tcp-option", "to-ports", "to-destination", "icmp-type"};
 
-    @Override
-    public void setData(final Map<String, String> advancedProperties) {
-        ddTable.setSelectedItem(advancedProperties.get("table"));
-        ddChain.setSelectedItem(advancedProperties.get("chain"));
-        ddTarget.setSelectedItem(advancedProperties.get("jump"));
-        final String protocol = advancedProperties.get("protocol");
+
+    private void modelToView() {
+        rulename.setText(rule.getName());
+        enableCheckBox.setSelected(rule.isEnabled());
+        ddTable.setSelectedItem(rule.getProperty("table"));
+        ddChain.setSelectedItem(rule.getProperty("chain"));
+        ddTarget.setSelectedItem(rule.getProperty("jump"));
+        final String protocol = rule.getProperty("protocol");
         ddProtocol.setSelectedItem(protocol);
-        source.setText(advancedProperties.get("source"));
-        destination.setText(advancedProperties.get("destination"));
+        source.setText(rule.getProperty("source"));
+        destination.setText(rule.getProperty("destination"));
 
         if("udp".equals(protocol)){
-            udpSrcPort.setText(advancedProperties.get("source-port"));
+            udpSrcPort.setText(rule.getProperty("source-port"));
+            udpDstPort.setText(rule.getProperty("destination-port"));
         }
         else if("tcp".equals(protocol)){
-            tcpSrcPort.setText(advancedProperties.get("source-port"));
+            tcpSrcPort.setText(rule.getProperty("source-port"));
+            tcpDstPort.setText(rule.getProperty("destination-port"));
         }
         else if("icmp".equals(protocol)){
-            icmpType.setText(advancedProperties.get("icmp-type"));
+            icmpType.setText(rule.getProperty("icmp-type"));
         }
 
-        tcpFlags.setText(advancedProperties.get("tcp-flags"));
-        tcpOptions.setText(advancedProperties.get("tcp-option"));
+        tcpFlags.setText(rule.getProperty("tcp-flags"));
+        tcpOptions.setText(rule.getProperty("tcp-option"));
 
         if(targetOptions != null){
-            targetOptions.setFormValues(advancedProperties);
+            Map<String, String> form = new HashMap<String, String>();
+            for(String k : rule.getPropertyNames()){
+                form.put(k, rule.getProperty(k));
+            }
+            targetOptions.setFormValues(form);
         }
     }
 
-    @Override
-    public Map<String, String> getData() {
-        final Map<String, String> values = new HashMap<String, String>();
+
+    public void viewToModel() {
+        rule.setName(rulename.getText().trim());
+        rule.setEnabled(enableCheckBox.isSelected());
         String selectedTarget = ddTarget.getSelectedItem().toString();
-        values.put("table", ddTable.getSelectedItem().toString());
-        values.put("chain", ddChain.getSelectedItem().toString());
-        values.put("jump", selectedTarget);
+        rule.putProperty("table", ddTable.getSelectedItem().toString());
+        rule.putProperty("chain", ddChain.getSelectedItem().toString());
+        rule.putProperty("jump", selectedTarget);
 
         final String src = source.getText().trim();
-        if(!src.isEmpty()) values.put("source", src);
+        if(!src.isEmpty()) rule.putProperty("source", src);
         final String dst = destination.getText().trim();
-        if(!dst.isEmpty()) values.put("destination", dst);
+        if(!dst.isEmpty()) rule.putProperty("destination", dst);
 
         final String protocol = ddProtocol.getSelectedItem().toString();
         String srcPort = "";
-
+        String dstPort = "";
         if("udp".equals(protocol)){
             srcPort = udpSrcPort.getText().trim();
+            dstPort = udpDstPort.getText().trim();
         } else if ("tcp".equals(protocol)){
             srcPort = tcpSrcPort.getText().trim();
+            dstPort = tcpDstPort.getText().trim();
         } else if ("icmp".equals(protocol)){
             final String icmp = icmpType.getText().trim();
-            if(!icmp.trim().isEmpty()) values.put("icmp-type", icmp);
+            if(!icmp.trim().isEmpty()) rule.putProperty("icmp-type", icmp);
         }
 
-        if(!srcPort.isEmpty()) values.put("source-port", srcPort);
-
-        values.put("protocol", protocol);
+        if(!srcPort.isEmpty()) rule.putProperty("source-port", srcPort);
+        if(!dstPort.isEmpty()) rule.putProperty("destination-port", dstPort);
+        rule.putProperty("protocol", protocol);
         final String flags = tcpFlags.getText().trim();
-        if(!flags.isEmpty()) values.put("tcp-flags", flags);
+        if(!flags.isEmpty()) rule.putProperty("tcp-flags", flags);
         final String option = tcpOptions.getText().trim();
-        if(!option.isEmpty()) values.put("tcp-option", option);
+        if(!option.isEmpty()) rule.putProperty("tcp-option", option);
 
         //retrieve data from view
         if(targetOptions != null && TARGET_OPTIONS.containsKey(selectedTarget)){
-            values.putAll(targetOptions.getFormValues());
+            for(Map.Entry<String, String> ent : targetOptions.getFormValues().entrySet()){
+                rule.putProperty(ent.getKey(), ent.getValue());
+            }
         }
-        return values;
     }
 
-    @Override
-    public String getValidationError() {
+
+    private String validateExtraArguments() {
         if(!targetOptionsPanel.isVisible()) return null;
         if(targetOptions != null){
             for(Component c : targetOptions.getComponents()){
@@ -180,28 +200,52 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
                 }
             }
         }
-        final String validationMessage = inputValidator.validate();
-        if(validationMessage != null) return validationMessage;
         return null;
     }
 
-    @Override
-    public String[] getAdvancedPropertyNamesUsedByGui() {
-        return ADVANCE_PROPERTIES;
-    }
-
     private void initialize(){
-        icmpType.setEnabled(false);
-        fireActionSelectionChange();
-        ddTarget.addActionListener(new ActionListener() {
+        getRootPane().setDefaultButton(buttonOK);
+        inputValidator = new InputValidator(this, "Firewall Settings");
+        inputValidator.attachToButton(buttonOK, new ActionListener() {
             @Override
-            public void actionPerformed(final ActionEvent e) {
-                fireActionSelectionChange();
+            public void actionPerformed(ActionEvent e) {
+                String s = validateExtraArguments();
+                if(s == null){
+                    onOK();
+                }
+                else{
+                    DialogDisplayer.showMessageDialog(SsgFirewallPropertiesDialog.this, s, "Firewall Settings", JOptionPane.ERROR_MESSAGE, null);
+                }
             }
         });
 
+        buttonCancel.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onCancel();
+            }
+        });
+
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                onCancel();
+            }
+        });
+
+        contentPanel.registerKeyboardAction(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onCancel();
+            }
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
+
+        icmpType.setEnabled(false);
+
         ddTable.setModel(new DefaultComboBoxModel(AVAILABLE_TABLE));
-        fireTableSelectionChange();
+        ddProtocol.setModel(new DefaultComboBoxModel(AVAILABLE_PROTOCOL));
+        ddTarget.setModel(new DefaultComboBoxModel(BASE_TARGET));
+        ddChain.setModel(new DefaultComboBoxModel(CHAIN_FILTER.get("filter")));
+
         ddTable.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
@@ -209,26 +253,46 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
             }
         });
 
-        ddProtocol.setModel(new DefaultComboBoxModel(AVAILABLE_PROTOCOL));
-        fireProtocolSelectionChange();
-        ddProtocol.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                fireProtocolSelectionChange();
-            }
-        });
         ddChain.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 updateTarget();
             }
         });
+
+        ddProtocol.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                fireProtocolSelectionChange();
+            }
+        });
+
+        ddTarget.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                fireActionSelectionChange();
+            }
+        });
+        ddTable.setSelectedIndex(0);
+        ddProtocol.setSelectedIndex(0);
+        ddTarget.setSelectedIndex(0);
+        ddChain.setSelectedIndex(0);
+
+        enableCheckBox.setSelected(true);
+        if(rule != null){
+            modelToView();
+        }
+        else {
+            rule = new SsgFirewallRule();
+        }
         addValidationRules();
     }
 
     private void addValidationRules(){
         inputValidator.addRule(new InvertablePortValidator(udpSrcPort));
+        inputValidator.addRule(new InvertablePortValidator(udpDstPort));
         inputValidator.addRule(new InvertablePortValidator(tcpSrcPort));
+        inputValidator.addRule(new InvertablePortValidator(tcpDstPort));
         inputValidator.addRule(new InvertableIpAddressValidator(source));
         inputValidator.addRule(new InvertableIpAddressValidator(destination));
 
@@ -262,6 +326,9 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
                         flags = flags.substring(flags.indexOf("!") + 1).trim();
                     }
                     String[] fields = flags.split("\\s+");
+                    if(fields.length != 2){
+                        return "TCP Flags require two arguments.";
+                    }
                     Set<String> set = new HashSet<String>();
                     for(String f : fields){
                         String[] cs = f.split(",");
@@ -300,19 +367,20 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
                 return null;
             }
         });
+        inputValidator.addRule(inputValidator.constrainTextFieldToBeNonEmpty("Rule Name", rulename, null));
+        inputValidator.validateWhenDocumentChanges(rulename);
         inputValidator.validateWhenDocumentChanges(tcpFlags);
         inputValidator.validateWhenDocumentChanges(tcpOptions);
         inputValidator.validateWhenDocumentChanges(udpSrcPort);
+        inputValidator.validateWhenDocumentChanges(udpDstPort);
         inputValidator.validateWhenDocumentChanges(tcpSrcPort);
+        inputValidator.validateWhenDocumentChanges(tcpDstPort);
         inputValidator.validateWhenDocumentChanges(icmpType);
         inputValidator.validateWhenDocumentChanges(source);
         inputValidator.validateWhenDocumentChanges(destination);
     }
 
     private void updateTarget(){
-        //set the base target first
-        ddTarget.setModel(new DefaultComboBoxModel(BASE_TARGET));
-
         //add other rules
         final String table = ddTable.getSelectedItem().toString();
         final String chain = ddChain.getSelectedItem().toString();
@@ -352,12 +420,12 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
             targetOptionsPanel.add(targetOptions, BorderLayout.CENTER);
         }
         targetOptionsPanel.setVisible(hasOptions);
-        final JDialog parent = getSsgConnectorPropertiesDialog();
-        if(parent != null) DialogDisplayer.pack(parent);
+        DialogDisplayer.pack(this);
     }
 
     private void fireTableSelectionChange() {
-        final Object selected = ddTable.getSelectedItem();
+        Object selected = ddTable.getSelectedItem();
+        if(selected == null) selected = "filter";
         if(!"filter".equals(selected)){
             ddProtocol.removeItem("icmp");
         }
@@ -373,9 +441,10 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
         final String selected = ddProtocol.getSelectedItem().toString();
         implicitOptionsPanel.setBorder(new TitledBorder(selected.toUpperCase() + " Options"));
         final boolean isTcp = "tcp".equals(selected);
-
+        udpDstPort.setEnabled(!isTcp);
         udpSrcPort.setEnabled(!isTcp);
         tcpSrcPort.setEnabled(isTcp);
+        tcpDstPort.setEnabled(isTcp);
         tcpOptionsPanel.setVisible(isTcp);
         udpOptionsPanel.setVisible("udp".equals(selected));
 
@@ -383,6 +452,25 @@ public class SsgConnectorFirewallConfigPanel extends CustomTransportPropertiesPa
         icmpType.setEnabled(isIcmp);
         icmpOptionsPanel.setVisible(isIcmp);
         targetHolderPanel.setVisible(!isIcmp);
+    }
+
+    private void onOK() {
+        viewToModel();
+        confirmed = true;
+        dispose();
+    }
+
+    private void onCancel() {
+        confirmed = false;
+        dispose();
+    }
+
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+
+    public SsgFirewallRule getRule() {
+        return rule;
     }
 
     private class TargetOptionsPanel extends JPanel {

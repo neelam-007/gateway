@@ -2,8 +2,10 @@ package com.l7tech.server.transport;
 
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.message.Message;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.transport.firewall.SsgFirewallRulesManager;
 import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PortRanges;
@@ -45,9 +47,11 @@ public class TransportAdminImpl implements TransportAdmin {
     private final DefaultKey defaultKeystore;
     private final Config config;
     private ConcurrentMap<String, SSLContext> testSslContextByProviderName = new ConcurrentHashMap<String, SSLContext>();
+    private final SsgFirewallRulesManager firewallRuleManager;
 
     public TransportAdminImpl( final SsgActiveConnectorManager ssgActiveConnectorManager,
                                final SsgConnectorManager connectorManager,
+                               final SsgFirewallRulesManager firewallRuleManager,
                                final ResolutionConfigurationManager resolutionConfigurationManager,
                                final DefaultKey defaultKeystore,
                                final Config config ) {
@@ -56,6 +60,7 @@ public class TransportAdminImpl implements TransportAdmin {
         this.resolutionConfigurationManager = resolutionConfigurationManager;
         this.defaultKeystore = defaultKeystore;
         this.config = config;
+        this.firewallRuleManager = firewallRuleManager;
     }
 
     @Override
@@ -181,7 +186,7 @@ public class TransportAdminImpl implements TransportAdmin {
         // that can actually complete a handshake, given the widest possible variety of enabled TLS versions
         return ArrayUtils.union(
                 getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS12)).getDefaultSSLParameters().getCipherSuites(),
-                getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10)).getDefaultSSLParameters().getCipherSuites()                
+                getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10)).getDefaultSSLParameters().getCipherSuites()
         );
     }
 
@@ -220,7 +225,7 @@ public class TransportAdminImpl implements TransportAdmin {
 
     @Override
     public ResolutionConfiguration getResolutionConfigurationByName( final String name ) throws FindException {
-        return resolutionConfigurationManager.findByUniqueName( name );
+        return resolutionConfigurationManager.findByUniqueName(name);
     }
 
     @Override
@@ -247,5 +252,27 @@ public class TransportAdminImpl implements TransportAdmin {
     @Override
     public boolean isSnmpQueryEnabled() {
         return config.getBooleanProperty(ServerConfigParams.PARAM_SNMP_QUERY_SERVICE_ENABLED, true);
+    }
+
+    @Override
+    public Collection<SsgFirewallRule> findAllFirewallRules() throws FindException {
+        return firewallRuleManager.findAll();
+    }
+
+    @Override
+    public void deleteFirewallRule(final long oid) throws DeleteException, FindException, CurrentAdminConnectionException {
+        firewallRuleManager.delete(oid);
+    }
+
+    @Override
+    public long saveFirewallRule(final SsgFirewallRule firewallRule) throws SaveException, UpdateException, CurrentAdminConnectionException {
+        if (isCurrentAdminConnection(firewallRule.getOid()))
+            throw new CurrentAdminConnectionException("Unable to modify connector for current admin connection");
+        if (firewallRule.getOid() == SsgFirewallRule.DEFAULT_OID) {
+            return firewallRuleManager.save(firewallRule);
+        } else {
+            firewallRuleManager.update(firewallRule);
+            return firewallRule.getOid();
+        }
     }
 }

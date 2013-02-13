@@ -1641,6 +1641,7 @@
                 <ref bean="revocationCheckPolicyManager"/>
                 <ref bean="ssgActiveConnectorManager"/>
                 <ref bean="ssgConnectorManager"/>
+                <ref bean="ssgFirewallRuleManager"/>
                 <ref bean="sinkManager"/>
                 <ref bean="policyManager"/>
                 <ref bean="keystoreFileManager"/>
@@ -2170,6 +2171,7 @@
                 </bean>
                 <ref bean="sinkManager"/>
                 <ref bean="ssgActiveConnectorManager"/>
+                <ref bean="ssgFirewallRuleManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -2405,6 +2407,11 @@
     <bean id="failoverStrategyFactory" class="com.l7tech.common.io.failover.FailoverStrategyFactory"/>
 
     <bean id="ssgFirewallManager" class="com.l7tech.server.service.FirewallRulesManagerImpl" />
+
+    <bean id="ssgFirewallRuleManager" class="com.l7tech.server.transport.firewall.SsgFirewallRuleManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="applicationEventProxy"/>
+    </bean>
 
     <!-- export beans to JMX -->
     <context:mbean-export/>

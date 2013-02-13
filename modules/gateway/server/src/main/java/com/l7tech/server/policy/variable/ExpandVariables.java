@@ -196,7 +196,8 @@ public final class ExpandVariables {
         "com.l7tech.server.policy.variable.FeedbackSelector",
         "com.l7tech.server.policy.variable.ServiceSelector",
         "com.l7tech.server.policy.variable.JdbcConnectionSelector",
-        "com.l7tech.server.policy.variable.ConnectorSelector"
+        "com.l7tech.server.policy.variable.ConnectorSelector",
+        "com.l7tech.server.policy.variable.FirewallSelector"
     };
 
     private static final List<Selector<?>> selectors = Collections.unmodifiableList(new ArrayList<Selector<?>>() {{

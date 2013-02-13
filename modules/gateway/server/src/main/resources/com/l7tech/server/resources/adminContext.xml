@@ -406,6 +406,7 @@
     <bean id="transportAdmin" class="com.l7tech.server.transport.TransportAdminImpl">
         <constructor-arg ref="ssgActiveConnectorManager"/>
         <constructor-arg ref="ssgConnectorManager"/>
+        <constructor-arg ref="ssgFirewallRuleManager"/>
         <constructor-arg ref="resolutionConfigurationManager"/>
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="serverConfig"/>

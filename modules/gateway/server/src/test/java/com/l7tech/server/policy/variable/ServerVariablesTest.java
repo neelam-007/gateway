@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
@@ -49,6 +50,8 @@ import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.server.transport.SsgConnectionManagerStub;
 import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.server.transport.SsgConnectorManager;
+import com.l7tech.server.transport.firewall.SsgFirewallRulesManager;
+import com.l7tech.server.transport.firewall.SsgFirewallRulesManagerStub;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import org.junit.AfterClass;
@@ -1082,24 +1085,32 @@ public class ServerVariablesTest {
         String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
         expandAndCheck(context, "${port.current.interfaces}", bindAddress == null ? "(ALL)" : bindAddress);
 
-        final SsgConnector rule = new SsgConnector(1, "rule1", 8080, SsgConnector.SCHEME_NA, false, "MESSAGE_INPUT", CLIENT_AUTH_NEVER, null, null);
+        //  clean up
+        manager.delete(connector);
+    }
+
+    @Test
+    public void testSsgFirewallRuleVariables() throws Exception {
+        final PolicyEnforcementContext context = context();
+        final SsgFirewallRulesManager manager = new SsgFirewallRulesManagerStub();
+        ServerVariables.setSsgFirewallRulesManager(manager);
+
+        final SsgFirewallRule rule = new SsgFirewallRule(true, 1, "rule1");
+        rule.putProperty("protocol", "tcp");
+        rule.putProperty("destination-port", "7777");
         manager.save(rule);
         expandAndCheck(context, "${gateway.firewallrules.1}", rule.toString());
 
         context.setVariable("rule.current",rule);
-        expandAndCheck(context, "${rule.current.port}", Integer.toString(rule.getPort()));
-        expandAndCheck(context, "${rule.current.protocol}", "N/A");
+        expandAndCheck(context, "${rule.current.port}", rule.getPort());
+        expandAndCheck(context, "${rule.current.protocol}", "tcp");
         expandAndCheck(context, "${rule.current.enabled}", rule.isEnabled()?"Yes":"No");
         expandAndCheck(context, "${rule.current.name}", rule.getName());
-        bindAddress = rule.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+        String bindAddress = rule.getProperty("bindAddress");
         expandAndCheck(context, "${rule.current.interfaces}", bindAddress == null ? "(ALL)" : bindAddress);
 
-        //  clean up
-        manager.delete(connector);
         manager.delete(rule);
     }
-
-
     @Test
     public void testJdbcVariables() throws Exception {
         final PolicyEnforcementContext context = context();

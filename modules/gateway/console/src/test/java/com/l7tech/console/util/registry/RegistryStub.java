@@ -24,6 +24,7 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.transport.*;
 import com.l7tech.gateway.common.transport.email.*;
+import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdminStub;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
@@ -230,6 +231,8 @@ public class RegistryStub extends Registry {
                     null
             );
 
+            private final SsgFirewallRule stubFirewallRule = new SsgFirewallRule(true, 1, "stubbed firewall rule");
+
             @Override
             public Collection<SsgConnector> findAllSsgConnectors() throws FindException {
                 return Arrays.asList(stubAdminConnection);
@@ -330,6 +333,21 @@ public class RegistryStub extends Registry {
             @Override
             public boolean isSnmpQueryEnabled() {
                 return true;
+            }
+
+            @Override
+            public Collection<SsgFirewallRule> findAllFirewallRules() throws FindException {
+                return Arrays.asList(stubFirewallRule);
+            }
+
+            @Override
+            public void deleteFirewallRule(final long oid) throws DeleteException, FindException, CurrentAdminConnectionException {
+                throw new DeleteException("Unable to delete any firewall rules in stub mode");
+            }
+
+            @Override
+            public long saveFirewallRule(final SsgFirewallRule firewallRule) throws SaveException, UpdateException, CurrentAdminConnectionException {
+                throw new SaveException("Unable to save any firewall rules in stub mode");
             }
         };
     }

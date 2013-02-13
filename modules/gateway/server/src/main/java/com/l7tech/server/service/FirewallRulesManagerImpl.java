@@ -1,10 +1,10 @@
 package com.l7tech.server.service;
 
-import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.server.transport.SsgConnectorManager;
+import com.l7tech.server.transport.firewall.SsgFirewallRulesManager;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,26 +20,24 @@ public class FirewallRulesManagerImpl implements FirewallRulesManager {
     private static final Logger logger = Logger.getLogger(FirewallRulesManagerImpl.class.getName());
 
     @Inject
-    private SsgConnectorManager connectorManager;
+    private SsgFirewallRulesManager firewallRulesManager;
 
     @Override
     public void openPort(@NotNull final String ruleName, final int port) {
         if(ruleName == null || ruleName.trim().isEmpty()) throw new IllegalArgumentException("name is required");
         validatePort(port);
-        SsgConnector connector = new SsgConnector();
-        connector.setEnabled(true);
-        connector.setPort(port);
-        connector.setScheme(SsgConnector.SCHEME_NA);
-        connector.setName(ruleName);
-        connector.putProperty("destination-port", String.valueOf(port));
-        connector.putProperty("protocol", "tcp");
-        connector.putProperty("table", "filter");
-        connector.putProperty("jump", "ACCEPT");
-        connector.putProperty("chain", "INPUT");
+        SsgFirewallRule rule = new SsgFirewallRule();
+        rule.setEnabled(true);
+        rule.setName(ruleName);
+        rule.putProperty("destination-port", String.valueOf(port));
+        rule.putProperty("protocol", "tcp");
+        rule.putProperty("table", "filter");
+        rule.putProperty("jump", "ACCEPT");
+        rule.putProperty("chain", "INPUT");
         try {
-            SsgConnector c = connectorManager.findByUniqueName(ruleName);
+            SsgFirewallRule c = firewallRulesManager.findByUniqueName(ruleName);
             if(c == null){
-                connectorManager.save(connector);
+                firewallRulesManager.save(rule);
             }
         } catch (SaveException e) {
             logger.warning("Error saving firewall rule for port " + port + ": " + ExceptionUtils.getDebugException(e));
@@ -52,9 +50,9 @@ public class FirewallRulesManagerImpl implements FirewallRulesManager {
     public void removeRule(@NotNull final String ruleName) {
         if(ruleName == null || ruleName.trim().isEmpty()) throw new IllegalArgumentException("name is required");
         try {
-            SsgConnector c = connectorManager.findByUniqueName(ruleName);
+            SsgFirewallRule c = firewallRulesManager.findByUniqueName(ruleName);
             if(c != null){
-                connectorManager.delete(c);
+                firewallRulesManager.delete(c);
             }
         } catch (FindException e) {
             logger.warning("Error looking for existing firewall rule " + ExceptionUtils.getDebugException(e));
@@ -69,21 +67,19 @@ public class FirewallRulesManagerImpl implements FirewallRulesManager {
         validatePort(sourcePort);
         validatePort(destinationPort);
 
-        SsgConnector connector = new SsgConnector();
-        connector.setEnabled(true);
-        connector.setPort(sourcePort);
-        connector.setScheme(SsgConnector.SCHEME_NA);
-        connector.setName(ruleName);
-        connector.putProperty("destination-port", String.valueOf(sourcePort));
-        connector.putProperty("protocol", "tcp");
-        connector.putProperty("table", "NAT");
-        connector.putProperty("jump", "REDIRECT");
-        connector.putProperty("chain", "PREROUTING");
-        connector.putProperty("to-ports", String.valueOf(destinationPort));
+        SsgFirewallRule rule = new SsgFirewallRule();
+        rule.setEnabled(true);
+        rule.setName(ruleName);
+        rule.putProperty("destination-port", String.valueOf(sourcePort));
+        rule.putProperty("protocol", "tcp");
+        rule.putProperty("table", "NAT");
+        rule.putProperty("jump", "REDIRECT");
+        rule.putProperty("chain", "PREROUTING");
+        rule.putProperty("to-ports", String.valueOf(destinationPort));
         try {
-            SsgConnector c = connectorManager.findByUniqueName(ruleName);
+            SsgFirewallRule c = firewallRulesManager.findByUniqueName(ruleName);
             if(c == null){
-                connectorManager.save(connector);
+                firewallRulesManager.save(c);
             }
         } catch (SaveException e) {
             logger.warning("Error saving firewall rule: " + ExceptionUtils.getDebugException(e));

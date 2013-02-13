@@ -2,6 +2,7 @@ package com.l7tech.server.util;
 
 import com.l7tech.common.io.PortRange;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.InetAddressUtil;
@@ -38,7 +39,18 @@ public class FirewallRules {
         FileUtils.saveFileSafely(pathToWrite,  new FileUtils.Saver() {
             @Override
             public void doSave(FileOutputStream fos) throws IOException {
-                writeFirewallRules(fos, connectors, ipProtocol);
+                final Map<String, List<String>> mappedRules = createFirewallRuleForConnector(connectors, ipProtocol);
+                writeFirewallRules(fos, mappedRules, ipProtocol);
+            }
+        });
+    }
+
+    public static void writeFirewallDropfileForRules(String pathToWrite, final Collection<SsgFirewallRule> rules, final IpProtocol ipProtocol) throws IOException {
+        FileUtils.saveFileSafely(pathToWrite,  new FileUtils.Saver() {
+            @Override
+            public void doSave(FileOutputStream fos) throws IOException {
+                final Map<String, List<String>> mappedRules = createFirewallRules(rules, ipProtocol);
+                writeFirewallRules(fos, mappedRules, ipProtocol);
             }
         });
     }
@@ -46,22 +58,11 @@ public class FirewallRules {
     /**
      * [0:0] -A INPUT -i INTERFACE -p tcp -m tcp --dport 22:23 -j ACCEPT
      */
-    static void writeFirewallRules(OutputStream fos, Collection<SsgConnector> connectors, final IpProtocol ipProtocol) throws IOException
+    static void writeFirewallRules(OutputStream fos, Map<String, List<String>> mappedRules, final IpProtocol ipProtocol) throws IOException
     {
+        if(mappedRules == null || mappedRules.isEmpty()) return;
         PrintStream ps = new PrintStream(fos);
         try {
-            final ArrayList<SsgConnector> list = new ArrayList<SsgConnector>(connectors);
-            final Map<String, List<String>> mappedRules = new HashMap<String, List<String>>();
-            //create a rule for each connector and put it in the correct table
-            //if no table was specified default to 'filter'
-            for (SsgConnector connector : list) {
-                String table = connector.getProperty("table");
-                if(table == null || table.isEmpty()) table = "filter";
-                List<String> rules = mappedRules.get(table);
-                if(rules == null) rules = new ArrayList<String>();
-                rules.addAll(createFirewallRules(connector, ipProtocol));
-                mappedRules.put(table, rules);
-            }
             for(final Map.Entry<String, List<String>> e : mappedRules.entrySet()){
                 final List<String> rules = e.getValue();
                 if(rules == null || rules.isEmpty()) continue;
@@ -82,23 +83,24 @@ public class FirewallRules {
         }
     }
 
-    private static List<String> createFirewallRules(final SsgConnector connector, final IpProtocol ipProtocol){
-        final List<String> rules = new ArrayList<String>();
+    static Map<String, List<String>> createFirewallRuleForConnector(final Collection<SsgConnector> connectors, final IpProtocol ipProtocol){
+        Map<String, List<String>> iptables = new LinkedHashMap<String, List<String>>();
+        for (SsgConnector connector : connectors) {
+            String table = connector.getProperty("table");
+            if(table == null || table.isEmpty()) table = "filter";
+            List<String> rules = iptables.get(table);
+            if(rules == null) rules = new ArrayList<String>();
 
-        String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
-        String interfaceName = null;
-        if ( bindAddress != null && ipProtocol.validateAddress(bindAddress).isEmpty() ) {
-            interfaceName = getInterfaceForIP(bindAddress);
-            if ( interfaceName == null ) {
-                logger.log( Level.WARNING, "Could not determine interface for IP address ''{0}'', this connector will be inaccessible.", bindAddress);
-                return null;
+            String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+            String interfaceName = null;
+            if ( bindAddress != null && ipProtocol.validateAddress(bindAddress).isEmpty() ) {
+                interfaceName = getInterfaceForIP(bindAddress);
+                if ( interfaceName == null ) {
+                    logger.log( Level.WARNING, "Could not determine interface for IP address ''{0}'', this connector will be inaccessible.", bindAddress);
+                    continue;
+                }
             }
-        }
-        if(SsgConnector.SCHEME_NA.equals(connector.getScheme())){
-            final String rule = createFirewallRule(ipProtocol, connector, interfaceName);
-            if(rule != null) rules.add(rule);
-        }
-        else {
+
             List<PortRange> ranges = connector.getTcpPortsUsed();
             for (PortRange range : ranges) {
                 final StringBuilder builder = new StringBuilder();
@@ -118,9 +120,9 @@ public class FirewallRules {
                 builder.append(" -j ACCEPT");
                 rules.add(builder.toString());
             }
+            iptables.put(table, rules);
         }
-
-        return rules;
+        return iptables;
     }
 
     private static final List<String> MATCH_GENERIC;
@@ -188,63 +190,69 @@ public class FirewallRules {
         PROTOCOL_MATCH = Collections.unmodifiableMap(n);
     }
 
-    private static String createFirewallRule(@NotNull IpProtocol ipProtocol, @NotNull final SsgConnector connector, final String interfaceName){
-        final StringBuilder builder = new StringBuilder("[0:0] -A ").append(connector.getProperty("chain"));
+    static Map<String, List<String>> createFirewallRules(@NotNull final Collection<SsgFirewallRule> rules, @NotNull IpProtocol ipProtocol){
+        Map<String, List<String>> iptables = new LinkedHashMap<String, List<String>>();
+        for(SsgFirewallRule rule : rules){
+            String table = rule.getProperty("table");
+            if(table == null || table.trim().isEmpty()) table = "filter";
+            List<String> currentRules = iptables.get(table);
+            if(currentRules == null) currentRules = new ArrayList<String>();
 
-        //generic match
-        if ( interfaceName != null ) {
-            builder.append(" -i ").append(interfaceName);
-        }
-        final String generic = getOptions(connector, MATCH_GENERIC);
-        if(!generic.isEmpty()){
-            builder.append(" ").append(generic);
-        }
+            final StringBuilder builder = new StringBuilder("[0:0] -A ").append(rule.getProperty("chain"));
 
-        //implicit match - based on protocol
-        final String protocol = getProtocol(connector);
-        final String implicit = getOptions(connector, PROTOCOL_MATCH.get(protocol));
-        if(!implicit.isEmpty()){
-            builder.append(" ").append(implicit);
-        }
-        //explicit ?
+            //generic match
+            final String generic = getOptions(rule, MATCH_GENERIC);
+            if(!generic.isEmpty()){
+                builder.append(" ").append(generic);
+            }
 
-        //jump target
-        final String jump = connector.getProperty("jump");
-        if(jump != null && !jump.isEmpty()){
-            builder.append(" ").append("-j ").append(jump);
-            final String targetOptions = getOptions(connector, JUMP_TARGET.get(jump));
-            if(targetOptions != null && !targetOptions.isEmpty()){
-                builder.append(" ").append(targetOptions);
+            //implicit match - based on protocol
+            final String protocol = getProtocol(rule);
+            final String implicit = getOptions(rule, PROTOCOL_MATCH.get(protocol));
+            if(!implicit.isEmpty()){
+                builder.append(" ").append(implicit);
             }
-        }
+            //explicit ?
 
-        final String source = getIpAddressFromConnector(connector, "source");
-        final String destination = getIpAddressFromConnector(connector, "destination");
-        //if we are using ipv4 and we got ipv6 address in the source or destination, don't write it to the ip6tables
-        //and vice-versa
-        if(ipProtocol.equals(IpProtocol.IPv4)){
-            if(source != null && !source.isEmpty() && !InetAddressUtil.isValidIpv4Address(source)){
-                return null;
+            //jump target
+            final String jump = rule.getProperty("jump");
+            if(jump != null && !jump.isEmpty()){
+                builder.append(" ").append("-j ").append(jump);
+                final String targetOptions = getOptions(rule, JUMP_TARGET.get(jump));
+                if(targetOptions != null && !targetOptions.isEmpty()){
+                    builder.append(" ").append(targetOptions);
+                }
             }
-            if(destination != null && !destination.isEmpty() && !InetAddressUtil.isValidIpv4Address(destination)){
-                return null;
+            final String source = getIpAddress(rule, "source");
+            final String destination = getIpAddress(rule, "destination");
+            //if we are using ipv4 and we got ipv6 address in the source or destination, don't write it to the ip6tables
+            //and vice-versa
+            if(ipProtocol.equals(IpProtocol.IPv4)){
+                if(source != null && !source.isEmpty() && !InetAddressUtil.isValidIpv4Address(source)){
+                    continue;
+                }
+                if(destination != null && !destination.isEmpty() && !InetAddressUtil.isValidIpv4Address(destination)){
+                    continue;
+                }
             }
+            else if(ipProtocol.equals(IpProtocol.IPv6)){
+                if(source != null && !source.isEmpty() && !InetAddressUtil.isValidIpv6Address(source)){
+                    continue;
+                }
+                if(destination != null && !destination.isEmpty() && !InetAddressUtil.isValidIpv6Address(destination)){
+                    continue;
+                }
+            }
+            currentRules.add(builder.toString());
+            iptables.put(table, currentRules);
         }
-        else if(ipProtocol.equals(IpProtocol.IPv6)){
-            if(source != null && !source.isEmpty() && !InetAddressUtil.isValidIpv6Address(source)){
-                return null;
-            }
-            if(destination != null && !destination.isEmpty() && !InetAddressUtil.isValidIpv6Address(destination)){
-                return null;
-            }
-        }
-        return builder.toString();
+        return iptables;
     }
 
     private static final Pattern IP_ADDRESS = Pattern.compile("(?:!\\s+)?(.+?)(?:/(.+))?");
 
-    private static String getIpAddressFromConnector(@NotNull final SsgConnector connector, final String propertyName){
-        final String source = connector.getProperty(propertyName);
+    private static String getIpAddress(@NotNull final SsgFirewallRule rule, final String propertyName){
+        final String source = rule.getProperty(propertyName);
         if(source != null){
             final Matcher matcher = IP_ADDRESS.matcher(source);
             if(matcher.matches()){
@@ -254,12 +262,12 @@ public class FirewallRules {
         return null;
     }
 
-    private static String getOptions(@NotNull final SsgConnector connector, final List<String> matchers){
+    private static String getOptions(@NotNull final SsgFirewallRule rule, final List<String> matchers){
         final StringBuilder sb = new StringBuilder();
         if(matchers != null){
             for(String m : matchers){
                 final String dash = m.length() == 1 ? "-" : "--";
-                final String value = connector.getProperty(m);
+                final String value = rule.getProperty(m);
                 if(value != null && !value.trim().isEmpty()){
                     sb.append(dash).append(m).append(" ").append(value).append(" ");
                 }
@@ -268,10 +276,10 @@ public class FirewallRules {
         return sb.toString().trim();
     }
 
-    private static String getProtocol(@NotNull final SsgConnector connector){
-        String protocol = connector.getProperty("protocol");
+    private static String getProtocol(@NotNull final SsgFirewallRule rule){
+        String protocol = rule.getProperty("protocol");
         if(protocol == null){
-            protocol = connector.getProperty("p");
+            protocol = rule.getProperty("p");
         }
         return protocol;
     }

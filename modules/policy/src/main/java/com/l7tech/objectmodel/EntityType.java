@@ -86,7 +86,7 @@ public enum EntityType implements Comparable<EntityType> {
     PASSWORD_POLICY("Password Policy", true, true),
 
     GENERIC("Generic Entity", "Generic Entities", true, true),
-
+    FIREWALL_RULE("Firewall Rules Entity", "Firewall Rules Entities", true, false),
     ;
 
     private final String name;

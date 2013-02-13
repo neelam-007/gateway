@@ -82,4 +82,26 @@ ALTER TABLE cluster_properties ADD COLUMN properties clob(2147483647);
 
 ALTER TABLE published_service ALTER COLUMN wsdl_url SET DATA TYPE VARCHAR(4096);
 
-update rbac_role set name = 'Manage Ports', description = 'Users assigned to the {0} role have the ability to read, create, update and delete Gateway listen ports (HTTP(S) and FTP(S)) as well as firewall ports and to list published services.' where objectid = -750 and name = 'Manage Listen Ports';
+CREATE TABLE firewall_rule (
+  objectid bigint NOT NULL,
+  version integer NOT NULL,
+  ordinal integer NOT NULL,
+  name varchar(128) NOT NULL,
+  enabled tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (objectid)
+);
+
+DROP TABLE IF EXISTS firewall_rule_property;
+CREATE TABLE firewall_rule_property (
+  firewall_rule_oid bigint NOT NULL,
+  name varchar(128) NOT NULL,
+  value MEDIUMTEXT NOT NULL,
+  FOREIGN KEY (firewall_rule_oid) REFERENCES firewall_rule (objectid) ON DELETE CASCADE
+);
+
+-- create new RBAC role for Manage Firewall Rules --
+INSERT INTO rbac_role (objectid, version, name, entity_type, description, user_created) VALUES (-1400, 0, 'Manage Firewall Rules', 'FIREWALL_RULE', 'Users assigned to the {0} role have the ability to read, create, update and delete Firewall rules.', 0);
+INSERT INTO rbac_permission VALUES (-1275,0,-1400,'CREATE',NULL,'FIREWALL_RULE');
+INSERT INTO rbac_permission VALUES (-1276,0,-1400,'READ',NULL,'FIREWALL_RULE');
+INSERT INTO rbac_permission VALUES (-1277,0,-1400,'UPDATE',NULL,'FIREWALL_RULE');
+INSERT INTO rbac_permission VALUES (-1278,0,-1400,'DELETE',NULL,'FIREWALL_RULE');

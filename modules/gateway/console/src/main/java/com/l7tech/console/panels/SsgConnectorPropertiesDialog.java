@@ -10,7 +10,6 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
-import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.InputValidator;
@@ -44,13 +43,11 @@ import static com.l7tech.gateway.common.transport.SsgConnector.*;
 public class SsgConnectorPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SsgConnectorPropertiesDialog.class.getName());
     private static final boolean ENABLE_FTPS_TLS12 = ConfigFactory.getBooleanProperty( "com.l7tech.console.connector.allowFtpsTls12", false );
-    private static final String DIALOG_TITLE = "Port Properties";
+    private static final String DIALOG_TITLE = "Listen Port Properties";
     private static final int TAB_SSL = 1;
     private static final int TAB_HTTP = 2;
     private static final int TAB_FTP = 3;
     private static final int TAB_CUSTOM = 4;
-    private static final int TAB_ADVANCE = 5;
-    private static final int TAB_FIREWALL = 6;
     private static final int DEFAULT_POOL_SIZE = 20;
 
     private static class ClientAuthType {
@@ -130,10 +127,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JCheckBox snmpQueryCheckBox;
     private JPanel builtinServicesPanel;
     private ByteLimitPanel requestByteLimitPanel;
-    private JRadioButton listenPortRadioButton;
-    private JRadioButton firewallRulesRadioButton;
-    private JPanel enableFeatures;
-    private JPanel firewallSettingsPanel;
 
     private SsgConnector connector;
     private boolean confirmed = false;
@@ -163,8 +156,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
     private final boolean snmpQueryEnabled = Registry.getDefault().isAdminContextPresent() && Registry.getDefault().getTransportAdmin().isSnmpQueryEnabled();;
 
-    private CustomTransportPropertiesPanel firewallPanel = new SsgConnectorFirewallConfigPanel();
-
     public SsgConnectorPropertiesDialog(Window owner, SsgConnector connector, boolean isCluster) {
         super(owner, DIALOG_TITLE, ModalityType.DOCUMENT_MODAL);
         this.isCluster = isCluster;
@@ -176,18 +167,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         setContentPane(contentPane);
         getRootPane().setDefaultButton(okButton);
 
-        final ActionListener rbListener = new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                final boolean fwEnabled = firewallRulesRadioButton.isSelected();
-                protocolComboBox.setEnabled(!fwEnabled);
-                enableOrDisableComponents();
-
-                enableOrDisableBuiltinServiceEndpoints();
-            }
-        };
-        listenPortRadioButton.addActionListener(rbListener);
-        firewallRulesRadioButton.addActionListener(rbListener);
         InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
         inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
@@ -224,17 +203,10 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 enableOrDisableEndpoints();
             }
         };
-        privateKeyComboBox.setRenderer(TextListCellRenderer.<Object>basicComboBoxRenderer());
+        privateKeyComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
         privateKeyComboBox.addActionListener(enableOrDisableEndpointsListener);
 
         otherSettingsPanel.setLayout(new CardLayout(8, 8));
-
-        firewallSettingsPanel.setLayout(new CardLayout(8, 8));
-
-        firewallPanel.setSsgConnectorPropertiesDialog(SsgConnectorPropertiesDialog.this);
-
-        firewallSettingsPanel.add(firewallPanel, SsgConnector.SCHEME_NA);
-
         transportsByScheme.clear();
         Set<TransportDescriptor> protocols = new TreeSet<TransportDescriptor>(new ModularConnectorInfoComparator());
         TransportDescriptor[] ssgProtocols = Registry.getDefault().getTransportAdmin().getModularConnectorInfo();
@@ -458,24 +430,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         inputValidator.constrainTextFieldToBeNonEmpty("Name", nameField, null);
         inputValidator.validateWhenDocumentChanges(nameField);
-        portField.setDocument(new NumberField());
-        inputValidator.constrainTextField(portField, new InputValidator.ComponentValidationRule(portField) {
-            @Override
-            public String getValidationError() {
-                int start = firewallRulesRadioButton.isSelected() ? 1 : 1025;
-                int port;
-                try {
-                    port = Integer.parseInt(portField.getText());
-                } catch (NumberFormatException e) {
-                    return "Port must be a number from " + start + " to 65535";
-                }
-                if (port < start || port > 65535) {
-                    return "Port must be a number from " + start + " to 65535";
-                }
-                return null;
-            }
-        });
-        //inputValidator.constrainTextFieldToNumberRange("Port", portField, 1025L, 65535L);
+        inputValidator.constrainTextFieldToNumberRange("Port", portField, 1025L, 65535L );
         inputValidator.validateWhenDocumentChanges(portField);
         inputValidator.constrainTextFieldToNumberRange("Port Range Start", portRangeStartField, 0L, 65535L );
         inputValidator.constrainTextFieldToNumberRange("Port Range Count", portRangeCountField, 1L, 65535L );
@@ -531,7 +486,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             @Override
             public String getValidationError() {
                 boolean disabled = !enabledCheckBox.isSelected();
-                if (disabled || firewallRulesRadioButton.isSelected() ||
+                if (disabled ||
                     cbEnableBuiltinServices.isSelected() ||
                     policyDiscoveryCheckBox.isSelected() ||
                     pingServiceCheckBox.isSelected() ||
@@ -571,12 +526,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 }
             });
         }
-        inputValidator.addRule(new InputValidator.ComponentValidationRule(firewallPanel){
-            @Override
-            public String getValidationError() {
-                return firewallPanel.getValidationError();
-            }
-        });
         inputValidator.addRule(new InputValidator.ComponentValidationRule(serviceNameComboBox) {
             @Override
             public String getValidationError() {
@@ -769,7 +718,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private TransportDescriptor getSelectedProtocol() {
-        if(firewallRulesRadioButton.isSelected()) return null;
         return (TransportDescriptor)protocolComboBox.getSelectedItem();
     }
 
@@ -817,10 +765,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private void enableOrDisableTabs() {
-        final boolean fw = firewallRulesRadioButton.isSelected();
-        tabbedPane.setEnabledAt(TAB_FIREWALL, fw);
-        tabbedPane.setEnabledAt(TAB_ADVANCE, !fw);
-
         TransportDescriptor proto = getSelectedProtocol();
         boolean isSsl = isSslProto(proto);
         boolean isFtp = isFtpProto(proto);
@@ -1254,22 +1198,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
      * Configure the GUI control states with information gathered from the connector instance.
      */
     private void modelToView() {
-        String scheme = connector.getScheme();
-        if(SsgConnector.SCHEME_NA.equals(scheme)){
-            protocolComboBox.setEnabled(false);
-            firewallRulesRadioButton.setSelected(true);
-            enableOrDisableBuiltinServiceEndpoints();
-            final Map<String, String> props = new HashMap<String, String>();
-            for(final String p : firewallPanel.getAdvancedPropertyNamesUsedByGui()){
-                props.put(p, connector.getProperty(p));
-            }
-            firewallPanel.setData(props);
-        }
-        else {
-            listenPortRadioButton.setSelected(true);
-            protocolComboBox.setSelectedItem(transportsByScheme.get(connector.getScheme().trim()));
-        }
-
+        protocolComboBox.setSelectedItem(transportsByScheme.get(connector.getScheme().trim()));
         nameField.setText(connector.getName());
         portField.setText(String.valueOf(connector.getPort()));
         enabledCheckBox.setSelected(connector.isEnabled());
@@ -1391,32 +1320,13 @@ public class SsgConnectorPropertiesDialog extends JDialog {
      * Assumes caller has already checked view state against the inputValidator.
      */
     private void viewToModel() {
+        TransportDescriptor proto = (TransportDescriptor)protocolComboBox.getSelectedItem();
+        if (proto != null) connector.setScheme(proto.getScheme());
         connector.setName(nameField.getText());
         connector.setPort(Integer.parseInt(portField.getText()));
         connector.setEnabled(enabledCheckBox.isSelected());
         String bindAddress = (String)interfaceComboBox.getSelectedItem();
         connector.putProperty(SsgConnector.PROP_BIND_ADDRESS, INTERFACE_ANY.equals(bindAddress) ? null : bindAddress);
-
-        if(firewallRulesRadioButton.isSelected()){
-            //remove unused properties
-            connector.removeProperty(SsgConnector.PROP_TLS_CIPHERLIST);
-            connector.setScheme(SsgConnector.SCHEME_NA);
-            //remove old properties
-
-            for(final String s : firewallPanel.getAdvancedPropertyNamesUsedByGui()){
-                connector.removeProperty(s);
-            }
-            //re-add properties
-            for(final Map.Entry<String, String> e : firewallPanel.getData().entrySet()){
-                connector.putProperty(e.getKey(), e.getValue());
-            }
-            connector.putProperty("destination-port", String.valueOf(connector.getPort()));
-            return;
-        }
-
-        TransportDescriptor proto = (TransportDescriptor)protocolComboBox.getSelectedItem();
-        if (proto != null && !firewallRulesRadioButton.isSelected()) connector.setScheme(proto.getScheme());
-
         connector.setEndpoints(getEndpointList());
 
         // HTTP-specific properties

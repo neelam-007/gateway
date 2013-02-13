@@ -1,5 +1,6 @@
 package com.l7tech.server.util;
 
+import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IpProtocol;
 import com.l7tech.util.ExceptionUtils;
@@ -46,17 +47,37 @@ public class FirewallUtils {
      * @param connectors The connectors to permit
      */
     public static void openFirewallForConnectors( final File rulesDirectory, final Collection<SsgConnector> connectors ) {
+        String firewallRules = new File(rulesDirectory, "listen_ports").getPath();
+        String firewall6Rules = new File(rulesDirectory, "listen6_ports").getPath();
+
+        try {
+            FirewallRules.writeFirewallDropfile( firewallRules, connectors, IpProtocol.IPv4 );
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Unable to update port list dropfile " + "listen_ports" + ": " + ExceptionUtils.getMessage(e), e);
+        }
+
+        try {
+            FirewallRules.writeFirewallDropfile( firewall6Rules, connectors, IpProtocol.IPv6 );
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Unable to update port list dropfile " + "listen6_ports" + ": " + ExceptionUtils.getMessage(e), e);
+        }
+
+        runFirewallUpdater( firewallRules, IpProtocol.IPv4, true );
+        runFirewallUpdater( firewall6Rules, IpProtocol.IPv6, true );
+    }
+
+    public static void openFirewallForRules( final File rulesDirectory, final Collection<SsgFirewallRule> rules ) {
         String firewallRules = new File(rulesDirectory, FIREWALL_RULES_FILENAME).getPath();
         String firewall6Rules = new File(rulesDirectory, FIREWALL6_RULES_FILENAME).getPath();
 
         try {
-            FirewallRules.writeFirewallDropfile( firewallRules, connectors, IpProtocol.IPv4 );
+            FirewallRules.writeFirewallDropfileForRules( firewallRules, rules, IpProtocol.IPv4 );
         } catch (IOException e) {
             logger.log(Level.WARNING, "Unable to update port list dropfile " + FIREWALL_RULES_FILENAME + ": " + ExceptionUtils.getMessage(e), e);
         }
 
         try {
-            FirewallRules.writeFirewallDropfile( firewall6Rules, connectors, IpProtocol.IPv6 );
+            FirewallRules.writeFirewallDropfileForRules( firewall6Rules, rules, IpProtocol.IPv6 );
         } catch (IOException e) {
             logger.log(Level.WARNING, "Unable to update port list dropfile " + FIREWALL6_RULES_FILENAME + ": " + ExceptionUtils.getMessage(e), e);
         }

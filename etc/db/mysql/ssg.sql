@@ -1483,7 +1483,7 @@ INSERT INTO rbac_permission VALUES (-702,0,-700,'CREATE',NULL,'CLUSTER_PROPERTY'
 INSERT INTO rbac_permission VALUES (-703,0,-700,'UPDATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_permission VALUES (-704,0,-700,'DELETE',NULL,'CLUSTER_PROPERTY');
 
-INSERT INTO rbac_role VALUES (-750,0,'Manage Ports', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete Gateway listen ports (HTTP(S) and FTP(S)) as well as firewall ports and to list published services.',0);
+INSERT INTO rbac_role VALUES (-750,0,'Manage Listen Ports', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete Gateway listen ports (HTTP(S) and FTP(S)) as well as firewall ports and to list published services.',0);
 INSERT INTO rbac_permission VALUES (-751,0,-750,'READ',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-752,0,-750,'CREATE',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-753,0,-750,'UPDATE',NULL,'SSG_CONNECTOR');
@@ -1855,11 +1855,36 @@ CREATE TABLE encapsulated_assertion_result (
   PRIMARY KEY (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+-- Firewall Rules table structure --
+DROP TABLE IF EXISTS firewall_rule;
+CREATE TABLE firewall_rule (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  ordinal integer NOT NULL,
+  name varchar(128) NOT NULL,
+  enabled tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS firewall_rule_property;
+CREATE TABLE firewall_rule_property (
+  firewall_rule_oid bigint(20) NOT NULL,
+  name varchar(128) NOT NULL,
+  value MEDIUMTEXT NOT NULL,
+  FOREIGN KEY (firewall_rule_oid) REFERENCES firewall_rule (objectid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS ssg_version;
 CREATE TABLE ssg_version (
    current_version char(10) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+-- create new RBAC role for Manage Firewall Rules --
+INSERT INTO rbac_role (objectid, version, name, entity_type, description, user_created) VALUES (-1400, 0, 'Manage Firewall Rules', 'FIREWALL_RULE', 'Users assigned to the {0} role have the ability to read, create, update and delete Firewall rules.', 0);
+INSERT INTO rbac_permission VALUES (-1275,0,-1400,'CREATE',NULL,'FIREWALL_RULE');
+INSERT INTO rbac_permission VALUES (-1276,0,-1400,'READ',NULL,'FIREWALL_RULE');
+INSERT INTO rbac_permission VALUES (-1277,0,-1400,'UPDATE',NULL,'FIREWALL_RULE');
+INSERT INTO rbac_permission VALUES (-1278,0,-1400,'DELETE',NULL,'FIREWALL_RULE');
 
 INSERT INTO ssg_version (current_version) VALUES ('7.1.0');
 

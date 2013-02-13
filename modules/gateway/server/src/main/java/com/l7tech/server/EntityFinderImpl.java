@@ -48,6 +48,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     private PolicyManager policyManager;
     private SsgKeyStoreManager keyStoreManager;
     private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
+
     private static final int MAX_RESULTS = 100;
 
     public void setEncapsulatedAssertionConfigManager(EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager) {

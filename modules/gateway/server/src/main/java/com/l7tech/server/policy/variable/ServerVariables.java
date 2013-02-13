@@ -8,9 +8,9 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.identity.User;
 import com.l7tech.message.*;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
@@ -30,6 +30,7 @@ import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
 import com.l7tech.server.transport.SsgConnectorManager;
+import com.l7tech.server.transport.firewall.SsgFirewallRulesManager;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -68,6 +69,7 @@ public class ServerVariables {
     private static SecurePasswordManager securePasswordManager;
     private static ClusterInfoManager clusterInfoManager;
     private static SsgConnectorManager ssgConnectorManager;
+    private static SsgFirewallRulesManager ssgFirewallRulesManager;
     private static JdbcConnectionManager jdbcConnectionManager;
 
     private static final long SELF_NODE_INF_CACHE_INTERVAL = SyspropUtil.getLong("com.l7tech.server.policy.variable.ssgnode.cacheMillis", 30000L);
@@ -764,9 +766,7 @@ public class ServerVariables {
             List<SsgConnector> listenPorts = new ArrayList<SsgConnector>();
 
             for(SsgConnector port: connectors){
-                if(!SsgConnector.SCHEME_NA.equals(port.getScheme())){
-                    listenPorts.add(port);
-                }
+                listenPorts.add(port);
             }
             return listenPorts.toArray();
         } catch (FindException e) {
@@ -777,17 +777,15 @@ public class ServerVariables {
 
     private static Object getFirewallRules() {
         try {
-            Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
-            List<SsgConnector> firewallRules = new ArrayList<SsgConnector>();
+            Collection<SsgFirewallRule> rules = ssgFirewallRulesManager.findAll();
+            List<SsgFirewallRule> firewallRules = new ArrayList<SsgFirewallRule>();
 
-            for(SsgConnector port: connectors){
-                if(SsgConnector.SCHEME_NA.equals(port.getScheme())){
-                    firewallRules.add(port);
-                }
+            for(SsgFirewallRule port: rules){
+                firewallRules.add(port);
             }
             return firewallRules.toArray();
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Listen ports not found",ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Firewall rules not found",ExceptionUtils.getDebugException(e));
         }
         return null;
     }
@@ -901,6 +899,12 @@ public class ServerVariables {
     public static void setSsgConnectorManager(final SsgConnectorManager scm) {
         if (ssgConnectorManager == null) {
             ssgConnectorManager = scm;
+        }
+    }
+
+    public static void setSsgFirewallRulesManager(final SsgFirewallRulesManager sfrm){
+        if(ssgFirewallRulesManager == null){
+            ssgFirewallRulesManager = sfrm;
         }
     }
 

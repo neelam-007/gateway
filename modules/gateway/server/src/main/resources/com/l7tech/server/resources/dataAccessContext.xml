@@ -169,6 +169,9 @@
                 <!-- EMS Support -->
                 <value>com.l7tech.gateway.common.esmtrust.TrustedEsm</value>
                 <value>com.l7tech.gateway.common.esmtrust.TrustedEsmUser</value>
+
+                <!-- Firewall Rules Entity -->
+                <value>com.l7tech.gateway.common.transport.firewall.SsgFirewallRule</value>
             </list>
         </property>
         <property name="dataSource" ref="hibernateDataSource"/>

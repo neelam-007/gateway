@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.transport;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.objectmodel.*;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +21,7 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
  * @see EntityHeader
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-@Secured(types=SSG_CONNECTOR)
+@Secured(types={SSG_CONNECTOR})
 @Administrative
 public interface TransportAdmin {
 
@@ -225,4 +226,34 @@ public interface TransportAdmin {
      */
     @Transactional(readOnly=true)
     boolean isSnmpQueryEnabled();
+
+    /**
+     * Retrieve all the available firewall rules in the system.  This method require the user to have the {@link com.l7tech.gateway.common.security.rbac.MethodStereotype#FIND_ENTITIES} permission.
+     * @return a {@link Collection} of configured firewall rules.
+     * @throws FindException if it is unable to retrieve a list of configured firewall rules.
+     */
+    @Transactional(readOnly = true)
+    @Secured(types=FIREWALL_RULE, stereotype=FIND_ENTITIES)
+    Collection<SsgFirewallRule> findAllFirewallRules() throws FindException;
+
+    /**
+     * Remove a firewall rule from the system with the given oid.  This method require the user to have the {@link com.l7tech.gateway.common.security.rbac.MethodStereotype#DELETE_BY_ID} permission.
+     * @param oid the rule oid to delete
+     * @throws DeleteException if it is unable to delete the rule.
+     * @throws FindException if it is unable to locate the rule to be deleted.
+     * @throws CurrentAdminConnectionException if the specified {@link SsgFirewallRule} owns the current admin connection.
+     */
+    @Secured(types=FIREWALL_RULE, stereotype=DELETE_BY_ID)
+    void deleteFirewallRule(long oid) throws DeleteException, FindException, CurrentAdminConnectionException;
+
+    /**
+     * Save a firewall rule to the system.  This method require the user to have the {@link com.l7tech.gateway.common.security.rbac.MethodStereotype#SAVE_OR_UPDATE} permission.
+     * @param firewallRule the firewall rule to save.
+     * @return the oid of the newly saved firewall rule or the oid an existing rule that was updated.
+     * @throws SaveException if the rule can not be saved.
+     * @throws UpdateException if the rule can not be updated
+     * @throws CurrentAdminConnectionException if the specified {@link SsgFirewallRule} owns the current admin connection.
+     */
+    @Secured(types=FIREWALL_RULE, stereotype=SAVE_OR_UPDATE)
+    long saveFirewallRule(final SsgFirewallRule firewallRule) throws SaveException, UpdateException, CurrentAdminConnectionException;
 }

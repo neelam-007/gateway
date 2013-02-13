@@ -40,15 +40,16 @@ public class SsgConnectorManagerWindow extends JDialog {
     private JButton interfacesButton;
     private JButton serviceResolutionButton;
     private JButton cloneButton;
-    private JButton restoreFirewallDefaultButton;
     private ConnectorTable connectorTable;
+
+    private JButton manageFirewallRulesButton;
 
     private PermissionFlags flags;
     private PortRanges reservedPorts;
 
 
     public SsgConnectorManagerWindow(Window owner) {
-        super(owner, "Manage Ports");
+        super(owner, "Manage Listen Ports");
         initialize();
     }
 
@@ -131,42 +132,15 @@ public class SsgConnectorManagerWindow extends JDialog {
         reservedPorts = Registry.getDefault().getTransportAdmin().getReservedPorts();
 
         interfacesButton.setEnabled(InterfaceTagsDialog.canViewInterfaceTags());
-        restoreFirewallDefaultButton.setEnabled(flags.canDeleteSome() || flags.canDeleteAll());
-        restoreFirewallDefaultButton.addActionListener(new ActionListener() {
+
+        manageFirewallRulesButton.setEnabled(flags.canDeleteSome() || flags.canDeleteAll());
+        manageFirewallRulesButton.addActionListener(new ActionListener() {
             @Override
-            public void actionPerformed(final ActionEvent e) {
-                DialogDisplayer.showSafeConfirmDialog(
-                    contentPane,
-                    "<html><center><p>Warning: You are about to remove all existing firewall rules.</p>" +
-                            "<p>Do you wish to continue?</p></center></html>",
-                    "Confirm Firewall Deletion",
-                    JOptionPane.OK_CANCEL_OPTION,
-                    JOptionPane.WARNING_MESSAGE,
-                    new DialogDisplayer.OptionListener() {
-                        @Override
-                        public void reportResult(int option) {
-                            if (option == JOptionPane.CANCEL_OPTION) {
-                                return;
-                            }
-                            final TransportAdmin ta = getTransportAdmin();
-                            if(ta != null){
-                                try {
-                                    final Collection<SsgConnector> connectors = ta.findAllSsgConnectors();
-                                    for(final SsgConnector c : connectors){
-                                        if(SsgConnector.SCHEME_NA.equals(c.getScheme())){
-                                            ta.deleteSsgConnector(c.getOid());
-                                        }
-                                    }
-                                    loadConnectors();
-                                } catch (FindException e1) {
-                                    showErrorMessage("Deletion Failed", "Unable to find firewall port: " + ExceptionUtils.getMessage(e1), e1);
-                                } catch (Exception e1) {
-                                    showErrorMessage("Deletion Failed", "Unable to delete firewall port: " + ExceptionUtils.getMessage(e1), e1);
-                                }
-                            }
-                        }
-                    }
-                );
+            public void actionPerformed(ActionEvent e) {
+                SsgFirewallManagerDialog dlg = new SsgFirewallManagerDialog(SsgConnectorManagerWindow.this);
+                dlg.pack();
+                Utilities.centerOnScreen(dlg);
+                DialogDisplayer.display(dlg);
             }
         });
         loadConnectors();
@@ -185,9 +159,8 @@ public class SsgConnectorManagerWindow extends JDialog {
         } else {
             featureWarning = "";
         }
-        String type = connector.getScheme().equals(SsgConnector.SCHEME_NA) ? "firewall rule" : "listen port";
         int result = JOptionPane.showConfirmDialog(this,
-                                                   "Are you sure you want to remove the " + type + "\"" + connector.getName() + "\"?" + featureWarning,
+                                                   "Are you sure you want to remove the listen port \"" + connector.getName() + "\"?" + featureWarning,
                                                    "Confirm Removal",
                                                    JOptionPane.YES_NO_CANCEL_OPTION,
                                                    JOptionPane.QUESTION_MESSAGE);
@@ -201,11 +174,11 @@ public class SsgConnectorManagerWindow extends JDialog {
             ta.deleteSsgConnector(connector.getOid());
             loadConnectors();
         } catch (DeleteException e) {
-            showErrorMessage("Remove Failed", "Failed to remove " + type + ": " + ExceptionUtils.getMessage(e), e);
+            showErrorMessage("Remove Failed", "Failed to remove listen port: " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
-            showErrorMessage("Remove Failed", "Failed to remove " + type + ": " + ExceptionUtils.getMessage(e), e);
+            showErrorMessage("Remove Failed", "Failed to remove listen port: " + ExceptionUtils.getMessage(e), e);
         } catch (TransportAdmin.CurrentAdminConnectionException e) {
-            showErrorMessage("Remove Failed", "Unable to remove the " + type + " for the current admin connection.", null);
+            showErrorMessage("Remove Failed", "Unable to remove the listen port for the current admin connection.", null);
         }
     }
 
@@ -272,7 +245,7 @@ public class SsgConnectorManagerWindow extends JDialog {
                         reedit.run();
                         return;
                     }
-                    String type = connector.getScheme().equals(SsgConnector.SCHEME_NA) ? "firewall rule" : "listen port";
+
                     try {
                         long oid = getTransportAdmin().saveSsgConnector(connector);
                         if (oid != connector.getOid()) connector.setOid(oid);
@@ -280,11 +253,11 @@ public class SsgConnectorManagerWindow extends JDialog {
                         loadConnectors();
                         connectorTable.setSelectedConnector(connector);
                     } catch (SaveException e) {
-                        showErrorMessage("Save Failed", "Failed to save " + type + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), reedit);
+                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), reedit);
                     } catch (UpdateException e) {
-                        showErrorMessage("Save Failed", "Failed to save " + type + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), reedit);
+                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), reedit);
                     } catch (TransportAdmin.CurrentAdminConnectionException e) {
-                        showErrorMessage("Save Failed", "Unable to modify the " + type + " for the current admin connection.", null,
+                        showErrorMessage("Save Failed", "Unable to modify the listen port for the current admin connection.", null,
                             new Runnable() {
                                 @Override
                                 public void run() {
@@ -424,7 +397,7 @@ public class SsgConnectorManagerWindow extends JDialog {
             connectorTable.setData(rows);
 
         } catch (FindException e) {
-            showErrorMessage("Deletion Failed", "Unable to delete port: " + ExceptionUtils.getMessage(e), e);
+            showErrorMessage("Deletion Failed", "Unable to delete listen port: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -456,7 +429,7 @@ public class SsgConnectorManagerWindow extends JDialog {
             return connector.getName();
         }
 
-        public Object getScheme() {
+        public Object getProtocol() {
             return connector.getScheme();
         }
 
@@ -467,16 +440,6 @@ public class SsgConnectorManagerWindow extends JDialog {
 
         public Object getPort() {
             return connector.getPort();
-        }
-
-        public Object getPortType(){
-            final String row = connector.getScheme();
-            if(SsgConnector.SCHEME_NA.equals(row)){
-                final Object destPort = connector.getProperty("to-ports");
-                if(destPort != null && !"".equals(destPort)) return "Firewall: Redirect to port " + destPort;
-                return "Firewall";
-            }
-            return "Listen";
         }
     }
 
@@ -597,10 +560,10 @@ public class SsgConnectorManagerWindow extends JDialog {
                     }
                 },
 
-                new Col("Scheme", 3, 100, 999999, String.class) {
+                new Col("Protocol", 3, 100, 999999, String.class) {
                     @Override
                     Object getValueForRow(ConnectorTableRow row) {
-                        return row.getScheme();
+                        return row.getProtocol();
                     }
                 },
 
@@ -617,12 +580,6 @@ public class SsgConnectorManagerWindow extends JDialog {
                         return row.getPort();
                     }
                 },
-                new Col("Port Type", 3, 85, 999999, String.class) {
-                    @Override
-                    Object getValueForRow(ConnectorTableRow row) {
-                        return row.getPortType();
-                    }
-                }
         };
 
         private final ArrayList<ConnectorTableRow> rows = new ArrayList<ConnectorTableRow>();
@@ -708,7 +665,7 @@ public class SsgConnectorManagerWindow extends JDialog {
          * @return the range (or port) in the provided connector and the conflicting connector and port range, or null if there are no conflicts
          */
         private Pair<PortRange, Pair<SsgConnector,PortRange>> conflictChecking(SsgConnector connector, boolean onlyEnabled) {
-            if ( (!onlyEnabled || connector.isEnabled()) && !SsgConnector.SCHEME_NA.equals(connector.getScheme()) ) {
+            if ( !onlyEnabled || connector.isEnabled() ) {
                 for (ConnectorTableRow row: rows) {
                     if ( onlyEnabled && !row.getConnector().isEnabled() )
                         continue;

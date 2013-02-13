@@ -1,12 +1,14 @@
 package com.l7tech.server.util;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.util.IpProtocol;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -76,7 +78,8 @@ public class FirewallRulesTest {
         List<SsgConnector> lc = createTestConnectors();
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        FirewallRules.writeFirewallRules(os, lc, IpProtocol.IPv4);
+        Map<String, List<String>> iptables = FirewallRules.createFirewallRuleForConnector(lc, IpProtocol.IPv4);
+        FirewallRules.writeFirewallRules(os, iptables, IpProtocol.IPv4);
 
         String got = os.toString();
         got = got.replaceAll("\r\n", "\n");
@@ -98,32 +101,43 @@ public class FirewallRulesTest {
 
     @Test
     public void testGenerateFirewallRules() throws Exception {
-        List<SsgConnector> lc = new ArrayList<SsgConnector>();
+        List<SsgFirewallRule> lc = new ArrayList<SsgFirewallRule>();
 
-        SsgConnector r = new SsgConnector();
+        SsgFirewallRule r = new SsgFirewallRule();
         r.setName("Redirect port 80 to 8080");
-        r.setScheme(SsgConnector.SCHEME_NA);
+        r.setOrdinal(1);
         r.putProperty("protocol", "tcp");
-        r.putProperty("dport", "80");
+        r.putProperty("destination-port", "80");
         r.putProperty("table", "NAT");
         r.putProperty("chain", "PREROUTING");
         r.putProperty("jump", "REDIRECT");
         r.putProperty("to-ports", "8080");
         lc.add(r);
 
-        SsgConnector s = new SsgConnector();
+        SsgFirewallRule s = new SsgFirewallRule();
         s.setName("Open port 4547");
-        s.setScheme(SsgConnector.SCHEME_NA);
-        s.setPort(4547);
+        s.setOrdinal(2);
+        s.putProperty("destination-port", "4547");
         s.putProperty("protocol", "tcp");
         s.putProperty("chain", "INPUT");
         s.putProperty("jump", "ACCEPT");
-        s.putProperty("dport", String.valueOf(s.getPort()));
         s.setEnabled(true);
         lc.add(s);
 
+        SsgFirewallRule u = new SsgFirewallRule();
+        u.setName("ip6 with ip6 source");
+        u.setOrdinal(3);
+        u.putProperty("destination-port", "4547");
+        u.putProperty("protocol", "tcp");
+        u.putProperty("chain", "INPUT");
+        u.putProperty("jump", "ACCEPT");
+        u.putProperty("source", "fe80::20c:29ff:feb0:8692/64");
+        u.setEnabled(true);
+        lc.add(u);
+
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        FirewallRules.writeFirewallRules(os, lc, IpProtocol.IPv4);
+        Map<String, List<String>> iptables = FirewallRules.createFirewallRules(lc, IpProtocol.IPv4);
+        FirewallRules.writeFirewallRules(os, iptables, IpProtocol.IPv4);
 
         String got = os.toString();
         got = got.replaceAll("\r\n", "\n");
@@ -135,24 +149,24 @@ public class FirewallRulesTest {
 
     @Test
     public void testGenerateFirewall6Rules() throws Exception {
-        List<SsgConnector> lc = new ArrayList<SsgConnector>();
+        List<SsgFirewallRule> lc = new ArrayList<SsgFirewallRule>();
 
-        SsgConnector r = new SsgConnector();
+        SsgFirewallRule r = new SsgFirewallRule();
         r.setName("Redirect port 80 to 8080");
-        r.setScheme(SsgConnector.SCHEME_NA);
+        r.setOrdinal(1);
         r.putProperty("protocol", "tcp");
-        r.putProperty("dport", "80");
+        r.putProperty("destination-port", "80");
         r.putProperty("table", "NAT");
         r.putProperty("chain", "PREROUTING");
         r.putProperty("jump", "REDIRECT");
         r.putProperty("to-ports", "8080");
         lc.add(r);
 
-        SsgConnector redirect = new SsgConnector();
+        SsgFirewallRule redirect = new SsgFirewallRule();
         redirect.setName("Redirect port 80 to 8080");
-        redirect.setScheme(SsgConnector.SCHEME_NA);
+        redirect.setOrdinal(2);
         redirect.putProperty("protocol", "tcp");
-        redirect.putProperty("dport", "80");
+        redirect.putProperty("destination-port", "80");
         redirect.putProperty("table", "NAT");
         redirect.putProperty("chain", "PREROUTING");
         redirect.putProperty("jump", "REDIRECT");
@@ -162,45 +176,43 @@ public class FirewallRulesTest {
         redirect.setEnabled(true);
         lc.add(redirect);
 
-        SsgConnector s = new SsgConnector();
+        SsgFirewallRule s = new SsgFirewallRule();
         s.setName("Open port 4547");
-        s.setScheme(SsgConnector.SCHEME_NA);
-        s.setPort(4547);
+        s.setOrdinal(3);
+        s.putProperty("destination-port", "4547");
         s.putProperty("protocol", "tcp");
         s.putProperty("chain", "INPUT");
         s.putProperty("jump", "ACCEPT");
-        s.putProperty("dport", String.valueOf(s.getPort()));
         s.setEnabled(true);
         lc.add(s);
 
         //this should not be added
-        SsgConnector t = new SsgConnector();
+        SsgFirewallRule t = new SsgFirewallRule();
         t.setName("ip6 with ip4 source");
-        t.setScheme(SsgConnector.SCHEME_NA);
-        t.setPort(4547);
+        t.setOrdinal(4);
+        t.putProperty("destination-port", "4547");
         t.putProperty("protocol", "tcp");
         t.putProperty("chain", "INPUT");
         t.putProperty("jump", "ACCEPT");
-        t.putProperty("dport", String.valueOf(s.getPort()));
         t.putProperty("source", "! 192.168.1.1/24");
         t.setEnabled(true);
         lc.add(t);
 
         //this should be added
-        SsgConnector u = new SsgConnector();
+        SsgFirewallRule u = new SsgFirewallRule();
         u.setName("ip6 with ip6 source");
-        u.setScheme(SsgConnector.SCHEME_NA);
-        u.setPort(4547);
+        u.setOrdinal(5);
+        u.putProperty("destination-port", "4547");
         u.putProperty("protocol", "tcp");
         u.putProperty("chain", "INPUT");
         u.putProperty("jump", "ACCEPT");
-        u.putProperty("dport", String.valueOf(s.getPort()));
         u.putProperty("source", "fe80::20c:29ff:feb0:8692/64");
         u.setEnabled(true);
         lc.add(u);
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        FirewallRules.writeFirewallRules(os, lc, IpProtocol.IPv6);
+        Map<String, List<String>> iptables = FirewallRules.createFirewallRules(lc, IpProtocol.IPv6);
+        FirewallRules.writeFirewallRules(os, iptables, IpProtocol.IPv6);
 
         String got = os.toString();
         got = got.replaceAll("\r\n", "\n");
@@ -212,15 +224,15 @@ public class FirewallRulesTest {
 
     private static final String TEST_CONNECTOR_FIREWALL_RULES =
             "*nat\n" +
-            "[0:0] -A PREROUTING --protocol tcp --dport 80 -j REDIRECT --to-ports 8080\n" +
+            "[0:0] -A PREROUTING --protocol tcp --destination-port 80 -j REDIRECT --to-ports 8080\n" +
             "COMMIT\n\n" +
             "*filter\n" +
-            "[0:0] -A INPUT --protocol tcp --dport 4547 -j ACCEPT\n" +
+            "[0:0] -A INPUT --protocol tcp --destination-port 4547 -j ACCEPT\n" +
             "COMMIT\n\n";
 
     private static final String TEST_CONNECTOR_FIREWALL6_RULES =
                     "*filter\n" +
-                    "[0:0] -A INPUT --protocol tcp --dport 4547 -j ACCEPT\n" +
-                    "[0:0] -A INPUT --protocol tcp --source fe80::20c:29ff:feb0:8692/64 --dport 4547 -j ACCEPT\n" +
+                    "[0:0] -A INPUT --protocol tcp --destination-port 4547 -j ACCEPT\n" +
+                    "[0:0] -A INPUT --protocol tcp --source fe80::20c:29ff:feb0:8692/64 --destination-port 4547 -j ACCEPT\n" +
                     "COMMIT\n\n";
 }
