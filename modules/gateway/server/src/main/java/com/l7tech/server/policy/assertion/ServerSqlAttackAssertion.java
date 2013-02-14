@@ -8,6 +8,7 @@ import com.l7tech.message.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.TextUtils;
@@ -38,29 +39,24 @@ public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAss
             throws IOException, PolicyAssertionException {
 
         boolean routed = context.isPostRouting();
-        boolean scanBody = true;
+        boolean scanMessageBody = false;
 
-        if (isRequest() && routed) {
-            logAndAudit(AssertionMessages.SQLATTACK_ALREADY_ROUTED);
-            return AssertionStatus.FAILED;
-        }
-
-        if (isResponse() && !routed) {
-            logAndAudit(AssertionMessages.SQLATTACK_SKIP_RESPONSE_NOT_ROUTED);
-            return AssertionStatus.NONE;
-        }
+        AssertionStatus result = AssertionStatus.NONE;
 
         if (isRequest()) {
+            if (routed) {
+                logAndAudit(AssertionMessages.SQLATTACK_ALREADY_ROUTED);
+                return AssertionStatus.FAILED;
+            }
+
             final HttpServletRequestKnob httpServletRequestKnob = msg.getKnob(HttpServletRequestKnob.class);
             boolean isHttp = httpServletRequestKnob != null;
-
-            scanBody = assertion.isIncludeBody() && (!isHttp || putAndPost.contains(httpServletRequestKnob.getMethod()));
 
             if (assertion.isIncludeUrl()) {
                 if (!isHttp) {
                     logAndAudit(AssertionMessages.SQLATTACK_NOT_HTTP);
                 } else {
-                    AssertionStatus result = scanHttpRequestUrl(httpServletRequestKnob);
+                    result = scanHttpRequestUrl(httpServletRequestKnob);
 
                     if (result != AssertionStatus.NONE) {
                         logAndAudit(AssertionMessages.SQLATTACK_REJECTED, getAssertion().getTargetName());
@@ -68,15 +64,28 @@ public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAss
                     }
                 }
             }
+
+            if(assertion.isIncludeBody() && (!isHttp || putAndPost.contains(httpServletRequestKnob.getMethod()))) {
+                scanMessageBody = true;
+            }
+        } else if (isResponse()) {
+            if (!routed) {
+                logAndAudit(AssertionMessages.SQLATTACK_SKIP_RESPONSE_NOT_ROUTED);
+                return AssertionStatus.NONE;
+            }
+
+            scanMessageBody = true;
+        } else if (TargetMessageType.OTHER == assertion.getTarget()) {
+            scanMessageBody = true;
         }
 
-        if (scanBody) {
-            AssertionStatus result = scanBody(msg, targetName);
+        if (scanMessageBody) {
+            result = scanBody(msg, targetName);
+        }
 
-            if (result != AssertionStatus.NONE) {
-                logAndAudit(AssertionMessages.SQLATTACK_REJECTED, getAssertion().getTargetName());
-                return getBadMessageStatus();
-            }
+        if (result != AssertionStatus.NONE) {
+            logAndAudit(AssertionMessages.SQLATTACK_REJECTED, getAssertion().getTargetName());
+            return getBadMessageStatus();
         }
 
         return AssertionStatus.NONE;
@@ -100,11 +109,11 @@ public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAss
         return AssertionStatus.NONE;
     }
 
-    private AssertionStatus scanBody(final Message message, final String messageDesc) throws IOException {
-        logAndAudit(AssertionMessages.SQLATTACK_SCANNING_BODY_TEXT, messageDesc);
+    private AssertionStatus scanBody(final Message message, final String targetName) throws IOException {
+        logAndAudit(AssertionMessages.SQLATTACK_SCANNING_BODY_TEXT, targetName);
 
         final ContentTypeHeader contentType = message.getMimeKnob().getOuterContentType();
-        final String where = messageDesc + " message body";
+        final String where = targetName + " message body";
         final MimeKnob mimeKnob = message.getMimeKnob();
 
         try {
@@ -169,15 +178,13 @@ public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAss
             throw new PolicyAssertionException(assertion, "The assertion is misconfigured. URL cannot be checked for Response message.");
         }
 
-        if(assertion.getTarget() == TargetMessageType.OTHER && assertion.isIncludeUrl()) {
-            throw new PolicyAssertionException(assertion, "The assertion is misconfigured. URL cannot be checked for Context Variable.");
-        }
-    }
-
-    private void throwIfNullOrBlank(final SqlAttackAssertion assertion, final String toCheck,
-                                    final String errorMessage) throws PolicyAssertionException {
-        if (StringUtils.isBlank(toCheck)) {
-            throw new PolicyAssertionException(assertion, errorMessage);
+        if(assertion.getTarget() == TargetMessageType.OTHER) {
+            if(assertion.isIncludeUrl()) {
+                throw new PolicyAssertionException(assertion, "The assertion is misconfigured. URL cannot be checked for Context Variable.");
+            } else if (null == assertion.getOtherTargetMessageVariable() ||
+                    assertion.getOtherTargetMessageVariable().trim().isEmpty()) {
+                throw new PolicyAssertionException(assertion, "The assertion is misconfigured. No target Context Variable set.");
+            }
         }
     }
 

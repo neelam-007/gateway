@@ -229,6 +229,20 @@ public class ServerSqlAttackAssertionTest {
     }
 
     /**
+     * Double dash characters in CDATA section in context variable - should be caught by META protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_StandardDoubleDashInCDATAInContextVariableCaughtByMETATEXT_AssertionStatusBadRequest()
+            throws Exception {
+        final AssertionStatus status =
+                runTestWithResource(TargetMessageType.OTHER,
+                        STANDARD_SQL_CDATA_DOUBLE_DASH, META);
+        assertEquals(AssertionStatus.FALSIFIED, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+    }
+
+    /**
      * Double dash characters in CDATA section - should be caught by META protection.
      * @throws Exception
      */
@@ -914,9 +928,22 @@ public class ServerSqlAttackAssertionTest {
 
     private AssertionStatus runTestWithResource(TargetMessageType targetType, String resource, String... protections)
             throws IOException, PolicyAssertionException, SAXException {
+        String contextVariableName = "testMessage";
+        Message otherTargetMessage = null;
+
         SqlAttackAssertion assertion = createAssertion(targetType, false, true, protections);
+
+        if(TargetMessageType.OTHER == targetType) {
+            otherTargetMessage = createMessageFromXmlResource(resource);
+            assertion.setOtherTargetMessageVariable(contextVariableName);
+        }
+
         ServerSqlAttackAssertion serverAssertion = createServer(assertion);
         final PolicyEnforcementContext context = createPolicyEnforcementContext(targetType, resource);
+
+        if(TargetMessageType.OTHER == targetType) {
+            context.setVariable(contextVariableName, otherTargetMessage);
+        }
 
         return serverAssertion.checkRequest(context);
     }
@@ -960,7 +987,8 @@ public class ServerSqlAttackAssertionTest {
         return serverAssertion;
     }
 
-    private PolicyEnforcementContext createPolicyEnforcementContext(TargetMessageType targetType, @Nullable String resource) throws IOException, SAXException {
+    private PolicyEnforcementContext createPolicyEnforcementContext(TargetMessageType targetType,
+            @Nullable String resource) throws IOException, SAXException {
         Message request;
         Message response;
 
@@ -984,6 +1012,20 @@ public class ServerSqlAttackAssertionTest {
         }
 
         return context;
+    }
+
+    private AssertionStatus runTestOnContextVariable(String variableName, String variableValue, String... protections)
+            throws IOException, PolicyAssertionException, SAXException {
+        SqlAttackAssertion assertion = createAssertion(TargetMessageType.OTHER, false, true, protections);
+        assertion.setOtherTargetMessageVariable(variableName);
+
+        ServerSqlAttackAssertion serverAssertion = createServer(assertion);
+
+        final PolicyEnforcementContext context = createPolicyEnforcementContext(TargetMessageType.OTHER, null);
+
+
+
+        return serverAssertion.checkRequest(context);
     }
 
     private Message createMessageFromXmlResource(String resource) throws IOException, SAXException {
