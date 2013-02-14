@@ -325,7 +325,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                             ExceptionUtils.getMessage(e) + ": " + ExceptionUtils.getMessage(decoratorException),
                             ExceptionUtils.getDebugException(e));
                 }  else {
-                    logger.log(Level.SEVERE, ExceptionUtils.getMessage(e), e);
+                    logger.log(Level.SEVERE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 }
             } else if (e instanceof PolicyVersionException) {
                 logger.log(Level.INFO, "Request referred to an outdated version of policy");
