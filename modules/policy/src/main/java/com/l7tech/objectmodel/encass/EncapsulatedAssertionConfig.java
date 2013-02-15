@@ -118,9 +118,12 @@ public class EncapsulatedAssertionConfig extends NamedEntityImp {
     }
 
     /**
-     * Nulls the policy without removing the policy oid property.
+     * Nulls the policy after first updating the policy OID property.
      */
     public void detachPolicy() {
+        if (policy != null && policy.getGuid() != null) {
+            putProperty(PROP_POLICY_GUID, policy.getGuid());
+        }
         this.policy = null;
     }
 
