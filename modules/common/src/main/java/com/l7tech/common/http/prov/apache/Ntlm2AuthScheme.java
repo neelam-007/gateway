@@ -5,6 +5,7 @@ import com.l7tech.util.HexUtils;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.NTCredentials;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthChallengeParser;
 import org.apache.commons.httpclient.auth.AuthScheme;
 import org.apache.commons.httpclient.auth.AuthenticationException;
@@ -138,6 +139,10 @@ public class Ntlm2AuthScheme implements AuthScheme{
         if(credentials instanceof NTCredentials) {
             NTCredentials ntCredentials = (NTCredentials)credentials;
             return new NtlmCredential(ntCredentials.getHost(), ntCredentials.getDomain(), ntCredentials.getUserName(), ntCredentials.getPassword());
+        }
+        else if(credentials instanceof UsernamePasswordCredentials) {
+            UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials)credentials;
+            return new NtlmCredential(usernamePasswordCredentials.getUserName(), usernamePasswordCredentials.getPassword());
         }
         throw new AuthenticationException("Expected NTCredentials");
     }
