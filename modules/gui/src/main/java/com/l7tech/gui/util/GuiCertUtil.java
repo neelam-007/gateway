@@ -228,6 +228,7 @@ public class GuiCertUtil {
     private static final Logger logger = Logger.getLogger(GuiCertUtil.class.getName());
 
     private static final String SAVE_DIALOG_ERROR_TITLE = "Error saving certificate";
+    private static final String PASSWORD_NOT_PROVIDED_MSG = "Password not provided.";
 
     /**
      * NOTE: For backwards compatibility a maximumImportedItems size of 1 means there
@@ -339,7 +340,10 @@ public class GuiCertUtil {
                                                 PasswordCallback passwordCallback = new PasswordCallback("Keystore password", false);
                                                 Callback[] callbacks = new Callback[]{passwordCallback};
                                                 callbackHandler.handle(callbacks);
-                                                password = passwordCallback.getPassword(); // if null IOException thrown on next load
+                                                password = passwordCallback.getPassword();
+                                                if (password == null) {
+                                                    throw new CausedIOException(PASSWORD_NOT_PROVIDED_MSG);
+                                                }
                                             }
                                             else {
                                                 if (e instanceof IOException) {
@@ -428,9 +432,10 @@ public class GuiCertUtil {
                             done = true;
                         }
                         catch(IOException ioe) {
+                            final String msg = ioe.getMessage();
                             if (callbackHandler!=null &&
                                     ioe instanceof CausedIOException &&
-                                    "Invalid password for key entry.".equals(ioe.getMessage())) {
+                                    ("Invalid password for key entry.".equals(msg) || PASSWORD_NOT_PROVIDED_MSG.equals(msg))) {
                                 logger.log(Level.INFO, "No password supplied, open cancelled.");
                                 done = true;
                                 continue;
