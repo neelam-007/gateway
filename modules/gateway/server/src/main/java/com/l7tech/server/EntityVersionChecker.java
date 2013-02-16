@@ -40,6 +40,7 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
 
     public EntityVersionChecker() {
         eventListener = new ApplicationListener() {
+            @Override
             public void onApplicationEvent(final ApplicationEvent applicationEvent) {
                 handleApplicationEvent(applicationEvent);
             }

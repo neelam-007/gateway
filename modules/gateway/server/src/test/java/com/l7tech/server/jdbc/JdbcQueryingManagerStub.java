@@ -1,5 +1,6 @@
 package com.l7tech.server.jdbc;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 
@@ -33,22 +34,24 @@ public class JdbcQueryingManagerStub implements JdbcQueryingManager {
     }
 
     @Override
-    public Object performJdbcQuery(String connectionName, String query, String schema, int maxRecords, List<Object> preparedStmtParams) {
+    public Object performJdbcQuery(@Nullable String connectionName, @NotNull String query, String schema, int maxRecords, @NotNull List<Object> preparedStmtParams) {
         return mockResults;
     }
 
     @Override
-    public Object performJdbcQuery(DataSource dataSource, String query, String schema, int maxRecords, List<Object> preparedStmtParams) {
+    public Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, String schema, int maxRecords, @NotNull List<Object> preparedStmtParams) {
         return mockResults;
     }
 
     @Override
-    public Object performJdbcQuery(@Nullable String connectionName, DataSource dataSource, String query, String schema, int maxRecords, List<Object> preparedStmtParams) {
+    public Object performJdbcQuery(@Nullable String connectionName, @NotNull DataSource dataSource, @NotNull String query, String schema, int maxRecords, @NotNull List<Object> preparedStmtParams) {
         return mockResults;
     }
 
+
     @Override
-    public void clearMetaDataCache(String connectionName, String query) {
+    public void registerQueryForPossibleCaching(@NotNull String connectionName, @NotNull String query, @Nullable String schemaName) {
 
     }
+
 }

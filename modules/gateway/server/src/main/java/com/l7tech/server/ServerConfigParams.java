@@ -158,7 +158,10 @@ public interface ServerConfigParams {
     String PARAM_JDBC_CONNECTION_DEFAULT_DRIVERCLASS_LIST = "jdbcConnection.driverClass.defaultList";
     String PARAM_JDBC_CONNECTION_DRIVERCLASS_WHITE_LIST = "jdbcConnection.driverClass.whiteList";
     String PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT = "jdbcQuery.maxRecords.defaultValue";
-    String PARAM_JDBC_QUERY_CACHE_METADATA = "jdbcQuery.cacheMetaData";
+    String PARAM_JDBC_QUERY_CACHE_METADATA_ENABLED = "jdbcQuery.cacheMetaData.enable";
+    String PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED = "jdbcQuery.cacheMetaDataTask.enable";
+    String PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL= "jdbcQuery.cacheRefreshInterval";
+    String PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL= "jdbcQuery.cacheCleanUpInterval";
     String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MINPOOLSIZE = "jdbcConnection.pooling.minPoolSize.defaultValue";
     String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE = "jdbcConnection.pooling.maxPoolSize.defaultValue";
     String PARAM_SAML_VALIDATE_BEFORE_OFFSET_MINUTES = "samlValidateBeforeOffsetMinutes";

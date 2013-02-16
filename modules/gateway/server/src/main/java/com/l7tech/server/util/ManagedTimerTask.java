@@ -18,6 +18,7 @@ public abstract class ManagedTimerTask extends TimerTask {
 
     //- PUBLIC
 
+    @Override
     public final void run() {
         final ManagedTimer mt = manager;
         if (mt != null)

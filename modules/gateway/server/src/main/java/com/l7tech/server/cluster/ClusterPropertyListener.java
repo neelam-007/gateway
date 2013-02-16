@@ -3,7 +3,9 @@ package com.l7tech.server.cluster;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 
 /**
- * Listener interface for ClusterProperty changes. 
+ * Listener interface for ClusterProperty changes.
+ *
+ * FYI This is not a generic spring aware interface which can be used to listen to cluster property events from any bean.
  *
  * @author Steve Jones
  */

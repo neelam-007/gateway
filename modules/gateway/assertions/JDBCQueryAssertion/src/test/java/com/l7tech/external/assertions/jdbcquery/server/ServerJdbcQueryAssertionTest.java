@@ -23,6 +23,7 @@ import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Config;
+import com.l7tech.util.TimeSource;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,11 +65,16 @@ public class ServerJdbcQueryAssertionTest {
     public void setUp() throws Exception {
         // Get the policy enforcement context
         peCtx = makeContext("<myrequest/>", "<myresponse/>");
+        final String connectionName = "mockDb";
+
         //create assertion
         assertion = new JdbcQueryAssertion();
+        assertion.setConnectionName(connectionName);
+        //test can change this as needed. A sql query is always needed.
+        assertion.setSqlQuery("select * from mytable");
 
         final JdbcConnection connection = new JdbcConnection();
-        connection.setName("mockDb");
+        connection.setName(connectionName);
         connection.setDriverClass("com.mysql.jdbc.Driver");
 
         connectionManager = new JdbcConnectionManagerStub(connection);
@@ -316,7 +322,7 @@ public class ServerJdbcQueryAssertionTest {
         final JdbcConnectionManager cm = new JdbcConnectionManagerStub(connection);
         JdbcConnectionPoolManager cpm = new JdbcConnectionPoolManager(cm);
         cpm.afterPropertiesSet();
-        final JdbcQueryingManager qm = new JdbcQueryingManagerImpl(cpm, config);
+        final JdbcQueryingManager qm = new JdbcQueryingManagerImpl(cpm, cm, config, new TimeSource());
 
         final AssertionRegistry assertionRegistry = new AssertionRegistry();
         assertionRegistry.afterPropertiesSet();
@@ -349,7 +355,7 @@ public class ServerJdbcQueryAssertionTest {
         final JdbcConnectionManager cm = new JdbcConnectionManagerStub();
         JdbcConnectionPoolManager cpm = new JdbcConnectionPoolManager(cm);
         cpm.afterPropertiesSet();
-        final JdbcQueryingManager qm = new JdbcQueryingManagerImpl(cpm, config);
+        final JdbcQueryingManager qm = new JdbcQueryingManagerImpl(cpm, cm, config, new TimeSource());
 
         final AssertionRegistry assertionRegistry = new AssertionRegistry();
         assertionRegistry.afterPropertiesSet();

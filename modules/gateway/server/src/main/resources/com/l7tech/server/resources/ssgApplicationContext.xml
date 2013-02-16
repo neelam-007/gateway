@@ -532,6 +532,14 @@
                                 <value>audit.lookup.cache.messageSizeLimit</value>
                             </list>
                         </entry>
+                        <entry key="jdbcQueryingManager">
+                            <list>
+                                <value>jdbcQuery.cacheMetaData.enable</value>
+                                <value>jdbcQuery.cacheMetaDataTask.enable</value>
+                                <value>jdbcQuery.cacheRefreshInterval</value>
+                                <value>jdbcQuery.cacheCleanUpInterval</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -1854,11 +1862,16 @@
         <constructor-arg ref="managedBackgroundTimer"/>
     </bean>
 
-    <bean id="jdbcConnectionPoolManager" class="com.l7tech.server.jdbc.JdbcConnectionPoolManager"/>
+    <bean id="jdbcConnectionPoolManager" class="com.l7tech.server.jdbc.JdbcConnectionPoolManager">
+        <constructor-arg ref="jdbcConnectionManager" />
+    </bean>
 
-    <bean id="jdbcQueryingManager" class="com.l7tech.server.jdbc.JdbcQueryingManagerImpl">
+
+    <bean id="jdbcQueryingManager" class="com.l7tech.server.jdbc.JdbcQueryingManagerImpl" depends-on="serviceCache">
         <constructor-arg ref="jdbcConnectionPoolManager"/>
+        <constructor-arg ref="jdbcConnectionManager" />
         <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="timeSource" />
     </bean>
 
     <bean id="jdbcConnectionManager" class="com.l7tech.server.jdbc.JdbcConnectionManagerImpl" parent="hibernateBean"/>

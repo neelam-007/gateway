@@ -226,6 +226,7 @@ public class JdbcCallHelperTest {
 
         JdbcQueryAssertion assertion = new JdbcQueryAssertion();
         assertion.setConnectionName("MySQL");
+        assertion.setSqlQuery("select * from mytable");
         ServerJdbcQueryAssertion fixture = new ServerJdbcQueryAssertion(assertion, appCtx);
         fixture.checkRequest(peCtx);
 

@@ -1,6 +1,9 @@
 package com.l7tech.server.jdbc;
 
+import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.util.Config;
+import com.l7tech.util.Option;
+import com.l7tech.util.TimeSource;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,6 +40,12 @@ public class JdbcQueryingManagerImplTest {
     JdbcConnectionPoolManager mockPoolManager;
 
     @Mock
+    JdbcConnectionManager jdbcConnectionManager;
+
+    @Mock
+    LicenseManager licenseManager;
+
+    @Mock
     DataSource mockDataSource;
 
     @Mock
@@ -58,7 +67,7 @@ public class JdbcQueryingManagerImplTest {
         mockResultSet = spy(new MockResultSet(mockMetaData));
     }
 
-    JdbcQueryingManagerImpl fixture = new JdbcQueryingManagerImpl(mockPoolManager, config);
+    JdbcQueryingManagerImpl fixture = new JdbcQueryingManagerImpl(mockPoolManager, jdbcConnectionManager, config, new TimeSource());
 
     @Test
     public void shouldReturnResultWhenLabelUsed() throws Exception {
@@ -67,7 +76,7 @@ public class JdbcQueryingManagerImplTest {
         when(mockMetaData.getColumnLabel(1)).thenReturn("identifier");
         when(mockMetaData.getColumnLabel(2)).thenReturn("name");
 
-        Map<String, List<Object>> results = (Map<String, List<Object>>) fixture.performJdbcQuery(null, jdbct, "SELECT id AS identifier from table", null, new ArrayList<Object>());
+        Map<String, List<Object>> results = (Map<String, List<Object>>) fixture.performJdbcQuery(null, jdbct, "SELECT id AS identifier from table", Option.<String>optional(null), new ArrayList<Object>());
 
         assertTrue(results.get("identifier") != null);
         assertEquals(expectedId, results.get("identifier"));
@@ -81,7 +90,7 @@ public class JdbcQueryingManagerImplTest {
         when(mockMetaData.getColumnLabel(1)).thenReturn("id");
         when(mockMetaData.getColumnLabel(2)).thenReturn("label");
 
-        Map<String, List<Object>> results = (Map<String, List<Object>>) fixture.performJdbcQuery(null, jdbct, "SELECT id from table", null, new ArrayList<Object>());
+        Map<String, List<Object>> results = (Map<String, List<Object>>) fixture.performJdbcQuery(null, jdbct, "SELECT id from table", Option.<String>optional(null), new ArrayList<Object>());
 
         assertTrue(results.get("id") != null);
         assertEquals(expectedId, results.get("id"));

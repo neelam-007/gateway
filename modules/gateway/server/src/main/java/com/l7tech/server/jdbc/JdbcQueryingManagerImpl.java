@@ -1,12 +1,16 @@
 package com.l7tech.server.jdbc;
 
-import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.jdbc.JdbcUtil;
-import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.util.Config;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.*;
+import com.l7tech.server.event.system.ReadyForMessages;
+import com.l7tech.server.event.system.Stopped;
+import com.l7tech.server.util.ManagedTimer;
+import com.l7tech.server.util.ManagedTimerTask;
+import com.l7tech.util.*;
+import org.jboss.cache.util.concurrent.ConcurrentHashSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
@@ -23,10 +27,16 @@ import org.springframework.jdbc.core.metadata.CallParameterMetaData;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 
+import javax.naming.NamingException;
 import javax.sql.DataSource;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -35,39 +45,78 @@ import java.util.logging.Logger;
  * @author ghuang
  */
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-public class JdbcQueryingManagerImpl implements JdbcQueryingManager, ApplicationListener {
+public class JdbcQueryingManagerImpl implements JdbcQueryingManager, PropertyChangeListener, ApplicationListener {
     private static final Logger logger = Logger.getLogger(JdbcQueryingManagerImpl.class.getName());
 
     private final JdbcConnectionPoolManager jdbcConnectionPoolManager;
+    private final JdbcConnectionManager jdbcConnectionManager;
     private final Config config;
+    private final TimeSource timeSource;
+    private final ManagedTimer downloadMetaDataTimer = new ManagedTimer("JDBC Query Manager meta data cache timer");
+    private final ManagedTimer cleanUpTimer = new ManagedTimer("JDBC Query Manager meta data clean up timer");
+
+    private final AtomicReference<MetaDataCacheTask> currentCacheTask = new AtomicReference<MetaDataCacheTask>();
+    private final AtomicReference<MetaDataCleanUpExceptionsTask> currentCleanUpTask = new AtomicReference<MetaDataCleanUpExceptionsTask>();
+
+    private final Map<CachedMetaDataKey, CachedMetaDataValue> simpleJdbcCallCache = new ConcurrentHashMap<CachedMetaDataKey, CachedMetaDataValue>();
 
     /**
-     * A cache of SimpleJdbcCall objects which are both cacheable and thread safe. Internally they use a DataSource which
-     * means they do not hold onto java.sql.Connection objects are obtain them as needed from the DataSource.
-     *
-     * The cache key is generated from the JDBC Connection name (which is unique on a gateway and is linked to a user
-     * account) and a procedure name.
+     * Set of unique procedures / functions to manage meta data for.
      */
-    private final static Map<String, Pair<SimpleJdbcCall, List<String>>> simpleJdbcCallCache = new ConcurrentHashMap<String, Pair<SimpleJdbcCall, List<String>>>();
+    private final static Set<CachedMetaDataKey> dbObjectsToCacheMetaDataFor = new ConcurrentHashSet<CachedMetaDataKey>();
 
     public JdbcQueryingManagerImpl(final JdbcConnectionPoolManager jdbcConnectionPoolManager,
-                                   final Config config) {
+                                   final JdbcConnectionManager jdbcConnectionManager,
+                                   final Config config,
+                                   final TimeSource timeSource) {
         this.jdbcConnectionPoolManager = jdbcConnectionPoolManager;
+        this.jdbcConnectionManager = jdbcConnectionManager;
         this.config = config;
+        this.timeSource = timeSource;
     }
 
+    @Override
+    public void onApplicationEvent(ApplicationEvent applicationEvent) {
 
+        if (applicationEvent instanceof ReadyForMessages) {
+            doStart();
+        } else if (applicationEvent instanceof Stopped) {
+            doStop();
+        }
+    }
 
     @Override
-    public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof EntityInvalidationEvent) {
-            final EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) event;
-            if (JdbcConnection.class.equals(entityInvalidationEvent.getEntityClass())) {
-                // remove entire cache
-                // we cannot tell for sure the old and new name of an entity and if it was deleted we cannot get
-                // the old name.
+    public void propertyChange(PropertyChangeEvent evt) {
+        final boolean cachingAllowed = isCachingAllowed();
+        synchronized (currentCacheTask) {
+            final String propertyName = evt.getPropertyName();
+            final boolean enableCache = config.getBooleanProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, true) && cachingAllowed;
+            if (propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED) || propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_ENABLED)) {
+                if (enableCache) {
+                    createAndStartMetaDataTask();
+                } else {
+                    stopCurrentTaskIfRunning();
+                }
+            } else if (propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL)) {
+                if (enableCache) {
+                    // only reconfigure the task if the cache is actually enabled.
+                    createAndStartMetaDataTask();
+                }
+            }else if (propertyName.equals(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL)) {
+                createAndStartCleanUpTask();
+            }
+
+            if (!cachingAllowed) {
+                // clear the cache
                 simpleJdbcCallCache.clear();
             }
+        }
+    }
+
+    @Override
+    public void registerQueryForPossibleCaching(@NotNull String connectionName, @NotNull String query, @Nullable String schemaName) {
+        if (JdbcUtil.isStoredProcedure(query) && !Syntax.isAnyVariableReferenced(connectionName)) {
+            dbObjectsToCacheMetaDataFor.add(getCacheKey(connectionName, query, Option.optional(schemaName)));
         }
     }
 
@@ -83,7 +132,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, Application
      *         a SqlRowSet representing disconnected java.sql.ResultSet data (the result of a select statement).
      */
     @Override
-    public Object performJdbcQuery(@Nullable String connectionName, @NotNull final String query, @Nullable String schema, final int maxRecords, final List<Object> preparedStmtParams) {
+    public Object performJdbcQuery(@Nullable String connectionName, @NotNull final String query, @Nullable String schema, final int maxRecords, @NotNull final List<Object> preparedStmtParams) {
         if (connectionName == null || connectionName.isEmpty()) {
             logger.warning("Failed to perform querying since the JDBC connection name is not specified.");
             return "JDBC Connection Name is not specified.";
@@ -101,28 +150,22 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, Application
     }
 
     @Override
-    public Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, List<Object> preparedStmtParams)
+    public Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, @NotNull List<Object> preparedStmtParams)
     {
         return performJdbcQuery(null, dataSource, query, schema, maxRecords, preparedStmtParams);
     }
 
     @Override
-    public Object performJdbcQuery(@Nullable String connectionName, @NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, List<Object> preparedStmtParams) {
+    public Object performJdbcQuery(@Nullable String connectionName, @NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, @NotNull List<Object> preparedStmtParams) {
         // Create a JdbcTemplate and set the max rows.
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.setMaxRows(maxRecords);
 
-        return performJdbcQuery(connectionName, jdbcTemplate, query, schema,preparedStmtParams);
+        return performJdbcQuery(connectionName, jdbcTemplate, query, Option.optional(schema), preparedStmtParams);
     }
 
-    @Override
-    public void clearMetaDataCache(String connectionName, String query) {
-        final String cacheKey = getCacheKey(connectionName, JdbcUtil.getName(query));
-        simpleJdbcCallCache.remove(cacheKey);
-    }
-
-    protected Object performJdbcQuery(@Nullable String connectionName, JdbcTemplate jdbcTemplate, String query, @Nullable String schemaName, List<Object> preparedStmtParams)
-    {
+    protected Object performJdbcQuery(@Nullable String connectionName, JdbcTemplate jdbcTemplate, String query, @NotNull Option<String> schemaName, @NotNull List<Object> preparedStmtParams)
+            throws DataAccessException {
         // Query or update and return querying results.
         try {
             boolean isSelectQuery = query.toLowerCase().startsWith("select");
@@ -134,42 +177,19 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, Application
                 // Return a List of SqlRowSet representing disconnected java.sql.ResultSet (s) and OUT parameters.
                 // Create or reuse an existing SimpleJdbcCall object.
 
-                final boolean allowCaching = connectionName != null && config.getBooleanProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA, true);
+                final boolean allowCaching = connectionName != null && isCachingAllowed();
 
-                final String procName = JdbcUtil.getName(query);
-
-                // fyi two branches to make code more idiomatic
+                final JdbcCallHelper jdbcCallHelper;
                 if (allowCaching) {
-                    final String uniqueKey = getCacheKey(connectionName, procName);
-                    final JdbcCallHelper jdbcCallUtil;
-                    final SimpleJdbcCall simpleJdbcCall;
-                    if (simpleJdbcCallCache.containsKey(uniqueKey)) {
-                        final Pair<SimpleJdbcCall, List<String>> pair = simpleJdbcCallCache.get(uniqueKey);
-                        simpleJdbcCall = pair.left;
-                        jdbcCallUtil = new JdbcCallHelper(simpleJdbcCall, pair.right);
-                    } else {
-                        simpleJdbcCall = buildSimpleJdbcCall(jdbcTemplate, query, procName, schemaName);
-                        final List<String> inParameters = getInParameters(schemaName, procName, simpleJdbcCall);
-                        jdbcCallUtil = new JdbcCallHelper(simpleJdbcCall, inParameters);
-
-                        simpleJdbcCallCache.put(uniqueKey, new Pair<SimpleJdbcCall, List<String>>(simpleJdbcCall, Collections.unmodifiableList(inParameters)));
-                    }
-
-                    try {
-                        return jdbcCallUtil.queryForRowSet(query, preparedStmtParams.toArray(new Object[preparedStmtParams.size()]));
-                    } catch (DataAccessException e) {
-                        // remove cached simple jdbc call if call failed
-                        simpleJdbcCallCache.remove(uniqueKey);
-                        throw e;
-                    }
-
+                    jdbcCallHelper = getAndCacheIfNeededCallHelper(connectionName, jdbcTemplate, query, schemaName);
                 } else {
-                    final SimpleJdbcCall simpleJdbcCall = buildSimpleJdbcCall(jdbcTemplate, query, procName, schemaName);
+                    final String procName = JdbcUtil.getName(query);
+                    final SimpleJdbcCall simpleJdbcCall = buildSimpleJdbcCall(jdbcTemplate, query, schemaName);
                     final List<String> inParameters = getInParameters(schemaName, procName, simpleJdbcCall);
-                    final JdbcCallHelper jdbcCallUtil = new JdbcCallHelper(simpleJdbcCall, inParameters);
-                    return jdbcCallUtil.queryForRowSet(query, preparedStmtParams.toArray(new Object[preparedStmtParams.size()]));
+                    jdbcCallHelper = new JdbcCallHelper(simpleJdbcCall, inParameters);
                 }
 
+                return jdbcCallHelper.queryForRowSet(query, preparedStmtParams.toArray(new Object[preparedStmtParams.size()]));
             } else {
                 // Return an integer representing the number of rows updated.
                 return jdbcTemplate.update(query, preparedStmtParams.toArray(new Object[preparedStmtParams.size()]));
@@ -187,22 +207,117 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, Application
         }
     }
 
-    static List<String> getInParameters(@Nullable String schemaName, @NotNull String procName, @NotNull SimpleJdbcCall simpleJdbcCall) {
-        List<String> inParameters;
-        final boolean hasSchemaName = schemaName != null && !schemaName.trim().isEmpty();
-        inParameters = getInParametersName(procName, hasSchemaName ? schemaName : null, simpleJdbcCall);
-        return inParameters;
+    /**
+     * Try and get a cached JdbcCallHelper instance. If one is not available it will be created and added to the cache.
+     */
+    private JdbcCallHelper getAndCacheIfNeededCallHelper(String connectionName, JdbcTemplate jdbcTemplate, String query, Option<String> schemaName)
+            throws DataAccessException {
+
+        final JdbcCallHelper jdbcCallUtil;
+        final CachedMetaDataKey uniqueKey = getCacheKey(connectionName, query, schemaName);
+        final SimpleJdbcCall simpleJdbcCall;
+        if (simpleJdbcCallCache.containsKey(uniqueKey)) {
+            final CachedMetaDataValue cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
+            final Either<DataAccessException, SimpleJdbcCall> either = cachedMetaDataValue.cachedData;
+            if (either.isLeft()) {
+                throw either.left();
+            }
+            simpleJdbcCall = either.right();
+            jdbcCallUtil = new JdbcCallHelper(simpleJdbcCall, cachedMetaDataValue.inParameters.some());
+
+            // record time of cache hit - not used anywhere yet.
+            final AtomicLong accessTime = cachedMetaDataValue.lastUseTime;
+            accessTime.set(timeSource.currentTimeMillis());
+
+        } else {
+            // cache miss, most likely because the connection name references a context variable
+            synchronized (uniqueKey.toString().intern()) {
+                // Any concurrent requests for the same key must wait to avoid the database being bombarded for meta data.
+                // double check locking
+                if (!simpleJdbcCallCache.containsKey(uniqueKey)) {
+                    updateCache(connectionName, query, jdbcTemplate, schemaName);
+                    // record this key for maintenance by the background cache task
+                    registerQueryForPossibleCaching(connectionName, query, schemaName.isSome() ? schemaName.some() : null);
+                }
+            }
+            // There is now guaranteed to be a cache hit for the uniqueKey
+            final CachedMetaDataValue cachedMetaDataValue = simpleJdbcCallCache.get(uniqueKey);
+            final Either<DataAccessException, SimpleJdbcCall> either = cachedMetaDataValue.cachedData;
+            if (either.isLeft()) {
+                // now throw the exception.... and again and again until the cache is updated
+                throw either.left();
+            }
+
+            jdbcCallUtil = new JdbcCallHelper(either.right(), cachedMetaDataValue.inParameters.some());
+        }
+        return jdbcCallUtil;
     }
 
-    private SimpleJdbcCall buildSimpleJdbcCall(@NotNull JdbcTemplate jdbcTemplate, @NotNull String query, @NotNull String procName, @Nullable String schemaName) {
+    static List<String> getInParameters(@NotNull Option<String> schemaName, @NotNull String procName, @NotNull SimpleJdbcCall simpleJdbcCall) {
+        final boolean hasSchemaName = schemaName.isSome() && !schemaName.some().trim().isEmpty();
+        return getInParametersName(procName, hasSchemaName ? schemaName.some() : null, simpleJdbcCall);
+    }
+
+    /**
+     * Does not throw DataAccessException. Any exceptions are cached and are managed by a separate clean up task.
+     */
+    private void updateCache(@NotNull final String connectionName,
+                             @NotNull final String query,
+                             @NotNull final JdbcTemplate jdbcTemplate,
+                             @NotNull final Option<String> schemaName) {
+
+        final SimpleJdbcCall simpleJdbcCall = buildSimpleJdbcCall(jdbcTemplate, query, schemaName);
+        final List<String> inParameters;
+        final CachedMetaDataKey cacheKey = getCacheKey(connectionName, query, schemaName);
+        try {
+            //todo - compile and getInParameters will obtain the same meta data. - reduce to a single call.
+
+            // Compile the simple JDBC call so it's ready for use. Any further calls to compile will not cause database traffic.
+            simpleJdbcCall.compile();
+
+            inParameters = getInParameters(schemaName, cacheKey.procName, simpleJdbcCall);
+            final Either<DataAccessException, SimpleJdbcCall> rightEither = Either.<DataAccessException, SimpleJdbcCall>right(simpleJdbcCall);
+
+            final CachedMetaDataValue cacheValue = new CachedMetaDataValue(rightEither, inParameters, timeSource.currentTimeMillis());
+            simpleJdbcCallCache.put(cacheKey, cacheValue);
+
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("Updated meta data for connection '" + connectionName + "' for procedure / function '" + cacheKey.procName + "' "
+                        + ((schemaName.isSome()) ? " in schema '" + schemaName.some() + "'" : ""));
+            }
+        } catch (DataAccessException e) {
+            // This code block can create a queue of requests all waiting for meta data
+            // if we do not record a failure object, then each request in turn will try and get meta data
+            // this makes the wait time a real issue as it's multiplied by the number of requests
+            // this can appear to make the gateway appear to be non responsive if all incoming
+            // IO threads become blocked. For these reasons we will record a failed meta data
+            // attempt to stop waiting threads from attempting to re-download the same meta data.
+            // Due to the 'stress' on the database we will not allow all requests to simply proceed
+
+            final Either<DataAccessException, SimpleJdbcCall> leftEither = Either.left(e);
+            final CachedMetaDataValue cacheValue = new CachedMetaDataValue(leftEither, timeSource.currentTimeMillis());
+            simpleJdbcCallCache.put(cacheKey, cacheValue);
+
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("Updated meta data with failed entry for connection '" + connectionName + "' for procedure / function '" + cacheKey.procName + "' "
+                        + ((schemaName.isSome()) ? " in schema '" + schemaName.some() + "'" : ""));
+            }
+        }
+    }
+
+    /**
+     * Build a SimpleJdbcCall which IS NOT compiled.
+     */
+    private static SimpleJdbcCall buildSimpleJdbcCall(@NotNull JdbcTemplate jdbcTemplate, @NotNull String query, @NotNull Option<String> schemaName) {
         SimpleJdbcCall simpleJdbcCall = new SimpleJdbcCall(jdbcTemplate);
+        final String procName = JdbcUtil.getName(query);
         simpleJdbcCall.setProcedureName(procName);
         simpleJdbcCall.setFunction(query.toLowerCase().startsWith(JdbcCallHelper.SQL_FUNCTION));
 
-        final boolean hasSchemaName = schemaName != null && !schemaName.trim().isEmpty();
-        if (hasSchemaName) {
-            simpleJdbcCall.setSchemaName(schemaName);
+        if (schemaName.isSome() && !schemaName.some().isEmpty()) {
+            simpleJdbcCall.setSchemaName(schemaName.some());
         }
+
         return simpleJdbcCall;
     }
 
@@ -210,9 +325,9 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, Application
      * Get the input parameter names of the procedure
      *
      *
-     * @param procName
-     * @param simpleJdbcCall
-     * @return
+     * @param procName name of procedure / function to get in parameters for
+     * @param simpleJdbcCall SimpleJdbcCall used only for access to it's JdbcTemplate, so a DataSource can be retrieved
+     * @return List of in parameter names.
      */
     private static List<String> getInParametersName(@NotNull final String procName, @Nullable final String schemaName, @NotNull SimpleJdbcCall simpleJdbcCall) {
         final CallMetaDataContext callMetaDataContext = new CallMetaDataContext();
@@ -233,16 +348,19 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, Application
     }
 
     /**
-     * WARNING - the key generated is based on the JDBC Connection name and the procedure name.
+     * WARNING - the key generated is based on the JDBC Connection name, procedure name and optional schema.
+     * .
      * This is unique enough only if procedure / function overloading is not supported.
      * Currently this is not supported by Spring.
      *
+     *
      * @param connectionName unique JDBC Connection name
-     * @param procName name of procedure or function being called.
+     * @param query full sql query as typed into the JDBC Query assertion which contains the procedure or function being called.
+     * @param schemaName optional schema name
      * @return unique cache key
      */
-    private String getCacheKey(String connectionName, String procName) {
-        return connectionName + "_" + procName;
+    private static CachedMetaDataKey getCacheKey(@NotNull String connectionName, @NotNull String query, @NotNull Option<String> schemaName) {
+        return new CachedMetaDataKey(connectionName, query, schemaName);
     }
 
     /**
@@ -256,6 +374,64 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, Application
         return null;
     }
 
+    /**
+     * If the task is currently running it will be stopped first.
+     */
+    private void createAndStartMetaDataTask() {
+        stopCurrentTaskIfRunning();
+        assert currentCacheTask.get() == null;
+        final long refreshInterval = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_REFRESH_INTERVAL, 600000L);
+        final MetaDataCacheTask newTask = new MetaDataCacheTask(jdbcConnectionPoolManager);
+        currentCacheTask.set(newTask);
+        downloadMetaDataTimer.schedule(currentCacheTask.get(), 1000L, refreshInterval);
+        logger.info("Starting the JDBC Query meta data cache task with refresh interval of " + refreshInterval + " milliseconds");
+    }
+
+    private void stopCurrentTaskIfRunning() {
+        final MetaDataCacheTask currentTask = currentCacheTask.get();
+        if (currentTask != null) {
+            currentTask.cancel();
+            currentCacheTask.set(null);
+            logger.info("Cancelled JDBC Query meta data cache task");
+        }
+    }
+
+    private void createAndStartCleanUpTask() {
+        stopCleanUpTaskIfRunning();
+        assert currentCleanUpTask.get() == null;
+        final long refreshInterval = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, 60000L);
+        final MetaDataCleanUpExceptionsTask newTask = new MetaDataCleanUpExceptionsTask();
+        currentCleanUpTask.set(newTask);
+        cleanUpTimer.schedule(currentCleanUpTask.get(), 1000L, refreshInterval);
+        logger.info("Starting the JDBC Query meta data cache clean up task with refresh interval of " + refreshInterval + " milliseconds");
+    }
+
+    private void stopCleanUpTaskIfRunning() {
+        final MetaDataCleanUpExceptionsTask currentTask = currentCleanUpTask.get();
+        if (currentTask != null) {
+            currentTask.cancel();
+            currentCleanUpTask.set(null);
+            logger.info("Cancelled JDBC Query meta data cache clean up task");
+        }
+    }
+
+    private boolean isCachingAllowed() {
+        return config.getBooleanProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_ENABLED, true);
+    }
+
+    private void doStart() {
+        final boolean enableCacheTask = config.getBooleanProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_METADATA_TASK_ENABLED, true);
+        if (enableCacheTask) {
+            createAndStartMetaDataTask();
+            createAndStartCleanUpTask();
+        }
+
+    }
+
+    private void doStop() {
+        stopCurrentTaskIfRunning();
+        stopCleanUpTaskIfRunning();
+    }
 
     /**
      *  extracts into a  map of column names and values as an ordered list
@@ -298,4 +474,215 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager, Application
             return result;
         }
     }
+
+    /**
+     * Cache key for cached meta data. This class may be placed into Sets and Maps as a key
+     *
+     * The key is based on the unique JDBC Connection name and a procedure name and an optional schema name.
+     *
+     * This class is immutable.
+     */
+    private static class CachedMetaDataKey {
+
+        // - PUBLIC
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CachedMetaDataKey that = (CachedMetaDataKey) o;
+
+            if (!connectionName.equals(that.connectionName)) return false;
+            if (!procName.equals(that.procName)) return false;
+            if (!schemaNameOption.equals(that.schemaNameOption)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = connectionName.hashCode();
+            result = 31 * result + procName.hashCode();
+            result = 31 * result + schemaNameOption.hashCode();
+            return result;
+        }
+
+        /**
+         * The query is not part of toString
+         * @return String representation that can be used to synchronize on so long as {@link String#intern()} is used first
+         */
+        @Override
+        public String toString() {
+            return "CachedMetaDataKey{" +
+                    "connectionName='" + connectionName + '\'' +
+                    ", procName='" + procName + '\'' +
+                    ", schemaName=" + (schemaNameOption.isSome() ? schemaNameOption.some() : "") +
+                    '}';
+        }
+
+        // - PRIVATE
+
+        private final String connectionName;
+        private final String procName;
+        private final Option<String> schemaNameOption;
+
+        /**
+         * Query is stored as additional data only. It is not part of the key
+         *
+         * Warning: Do not include query in toString, equals or hashCode. Two queries may represent the same procedure
+         * / function but may be expressed differently e.g. literal versus dynamic parameters in query string
+         */
+        private final String query;
+
+
+        /**
+         * Create a new cache key. The key will ultimately be the unique combination of the connection name, procedure
+         * or function name and the optional schema name. The query IS NOT part of the key.
+         *
+         * @param connectionName   unique JDBC connection name
+         * @param query            the SQL query containing the procedure or function name
+         * @param schemaNameOption the optional schema name
+         * @throws IllegalArgumentException if the procedure / function name cannot be extracted from the query
+         */
+        private CachedMetaDataKey(@NotNull String connectionName, @NotNull String query, @NotNull Option<String> schemaNameOption)
+                throws IllegalArgumentException {
+            this.connectionName = connectionName;
+            this.query = query;
+            this.procName = JdbcUtil.getName(query);
+            if (this.procName.trim().isEmpty()) {
+                throw new IllegalArgumentException("Query produced an empty procedure / function name");
+            }
+            this.schemaNameOption = schemaNameOption;
+        }
+
+    }
+
+    /**
+     * Cached data, not intended for use as a key in a collection.
+     *
+     * Caches SimpleJdbcCall objects which are both cacheable and thread safe. Internally they use a DataSource which
+     * means they do not hold onto java.sql.Connection objects are obtain them as needed from the DataSource.
+     *
+     * Warning: This class is mutable
+     */
+    private static class CachedMetaDataValue {
+        // - PRIVATE
+
+        private final Either<DataAccessException, SimpleJdbcCall> cachedData;
+        private final Option<List<String>> inParameters;
+        /**
+         * Either last access time for a right either or time of exception for a left either.
+         * //todo - make use of this for expiring items from the cache
+         */
+        private final AtomicLong lastUseTime;
+
+        private CachedMetaDataValue(@NotNull Either<DataAccessException, SimpleJdbcCall> cachedData, @NotNull List<String> inParameters, @NotNull Long lastUseTime) {
+            this.cachedData = cachedData;
+            this.inParameters = Option.optional(inParameters);
+            this.lastUseTime = new AtomicLong(lastUseTime);
+        }
+
+        private CachedMetaDataValue(@NotNull Either<DataAccessException, SimpleJdbcCall> cachedData, @NotNull Long lastUseTime) {
+            this.cachedData = cachedData;
+            this.lastUseTime = new AtomicLong(lastUseTime);
+            inParameters = Option.optional(null);
+        }
+
+    }
+
+    private class MetaDataCacheTask extends ManagedTimerTask {
+
+        private final JdbcConnectionPoolManager jdbcConnectionPoolManager;
+        private boolean isCancelled;
+
+        private MetaDataCacheTask(@NotNull JdbcConnectionPoolManager jdbcConnectionPoolManager) {
+            this.jdbcConnectionPoolManager = jdbcConnectionPoolManager;
+        }
+
+        /**
+         * Support a very eager cancel due to the duration this task may take to complete.
+         */
+        @Override
+        public boolean cancel() {
+            isCancelled = true;
+            return super.cancel();
+        }
+
+        @Override
+        protected void doRun() {
+            final Set<CachedMetaDataKey> keysToMaintain = new HashSet<CachedMetaDataKey>(dbObjectsToCacheMetaDataFor);
+            logger.fine("Task to cache JDBC function / procedure meta data is starting. There are " + keysToMaintain.size() + " unique items to update.");
+
+            // record time as it may take a long time to run.
+            final long startTime = System.currentTimeMillis();
+            for (CachedMetaDataKey key : keysToMaintain) {
+                final String connectionName = key.connectionName;
+                try {
+
+                    final DataSource dataSource = jdbcConnectionPoolManager.getDataSource(connectionName);
+                    updateCache(connectionName, key.query, new JdbcTemplate(dataSource), key.schemaNameOption);
+                    if (isCancelled) {
+                        // eagerly cancel
+                        logger.info("JDBC Query meta data cache task has been cancelled.");
+                        break;
+                    }
+                } catch (NamingException e) {
+                    logger.warning("Could not get data source for connection: '" + connectionName+"' due to: " + ExceptionUtils.getMessage(e));
+                } catch (SQLException e) {
+                    logger.warning("Could not get data source for connection: '" + connectionName + "' due to: " + ExceptionUtils.getMessage(e));
+                }
+            }
+            logger.fine("Task to cache JDBC function / procedure meta data has finished. Task took " + (System.currentTimeMillis() - startTime) +" milliseconds to complete.");
+        }
+    }
+
+    /**
+     * Allowed failed meta data calls to be retried sooner than the manage meta data task by clearing them from
+     * the cache faster.
+     *
+     * If a JDBC Connection entity name is removed or modified then any cached entries will be cleared
+     */
+    private class MetaDataCleanUpExceptionsTask extends ManagedTimerTask {
+        @Override
+        protected void doRun() {
+            final Set<String> validEntityNames = new HashSet<String>();
+            try {
+                final Collection<EntityHeader> allHeaders = jdbcConnectionManager.findAllHeaders();
+                for (EntityHeader header : allHeaders) {
+                    final String name = header.getName();
+                    validEntityNames.add(name);
+                }
+            } catch (FindException e) {
+                logger.warning("Could not check list of JDBC Connections for cache maintenance: " + ExceptionUtils.getMessage(e));
+            }
+
+            final Set<CachedMetaDataKey> keysToRemove = new HashSet<CachedMetaDataKey>();
+
+            final long maxExceptionAge = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_CACHE_CLEANUP_REFRESH_INTERVAL, 60000L);
+            for (Map.Entry<CachedMetaDataKey, CachedMetaDataValue> entry : simpleJdbcCallCache.entrySet()) {
+
+                final CachedMetaDataValue value = entry.getValue();
+                final CachedMetaDataKey key = entry.getKey();
+                final Either<DataAccessException, SimpleJdbcCall> either = value.cachedData;
+                if (either.isLeft()) {
+                    // it's an exception, see hold old it is
+                    final Long age = timeSource.currentTimeMillis() - value.lastUseTime.get();
+                    if (age > maxExceptionAge) {
+                        keysToRemove.add(key);
+                    }
+                }
+
+                // if the jdbc connection entity no longer exists then remove items from the cache
+                if (!validEntityNames.contains(key.connectionName)) {
+                    keysToRemove.add(key);
+                }
+            }
+
+            for (CachedMetaDataKey key : keysToRemove) {
+                simpleJdbcCallCache.remove(key);
+            }
+        }
+    }
+
 }

@@ -49,7 +49,6 @@ public class JdbcConnectionPoolManager implements InitializingBean {
     private final JdbcConnectionManager jdbcConnectionManager;
     private Context context;
 
-    @Inject
     public JdbcConnectionPoolManager( @NotNull final JdbcConnectionManager jdbcConnectionManager ) {
         this.jdbcConnectionManager = jdbcConnectionManager;
     }

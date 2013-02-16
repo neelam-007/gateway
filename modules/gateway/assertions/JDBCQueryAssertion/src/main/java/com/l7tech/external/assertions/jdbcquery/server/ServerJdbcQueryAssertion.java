@@ -4,6 +4,7 @@ import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.jdbc.JdbcQueryUtils;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
@@ -45,10 +46,17 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         variablesUsed = assertion.getVariablesUsed();
         jdbcQueryingManager = context.getBean("jdbcQueryingManager", JdbcQueryingManager.class);
-        // every time the server bean is recreated e.g. the policy was edited, remove any cached meta data in case
-        // the procedure / function changed. We don't support overloaded procs / functions, but the backend dba
-        // may have been updated and this may have been updated in policy by way of modifying input params etc.
-        jdbcQueryingManager.clearMetaDataCache(assertion.getConnectionName(), assertion.getSqlQuery());
+
+        if (assertion.getConnectionName() == null) {
+            throw new PolicyAssertionException(assertion, "Assertion must supply a connection name");
+        }
+        if (assertion.getSqlQuery() == null) {
+            throw new PolicyAssertionException(assertion, "Assertion must supply a sql statement");
+        }
+
+        if (!Syntax.isAnyVariableReferenced(assertion.getConnectionName())) {
+            jdbcQueryingManager.registerQueryForPossibleCaching(assertion.getConnectionName(), assertion.getSqlQuery(), assertion.getSchema());
+        }
     }
 
     @Override

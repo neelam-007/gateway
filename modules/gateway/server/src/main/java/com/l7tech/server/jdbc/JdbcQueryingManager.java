@@ -15,9 +15,23 @@ import java.util.List;
 public interface JdbcQueryingManager {
 
     /**
+     * Request that the meta data for this query is cached.
+     *
+     * If the query is not a function or procedure call then nothing will be cached. Whether or not caching is performed
+     * is determined by system configuration. If there is a chance that caching may be used.
+     *
+     * If connectionName references a variable then nothing is registered.
+     *
+     * @param connectionName Unique JDBC Connection name
+     * @param query Query to execute as typed into the JDBC Query Assertion
+     * @param schemaName optional name of the schema the
+     */
+    void registerQueryForPossibleCaching(@NotNull String connectionName, @NotNull String query, @Nullable String schemaName);
+
+    /**
      * Perform a JDBC query that could be a select statement or a non-select statement.
      *
-     * @param connectionName:     the name of a JdbcConnection entity to retrieve a dataSource (i.e., a connection pool)
+     * @param connectionName:     the name of a JdbcConnection entity to retrieve a dataSource (i.e., a connection pool). //todo This should not be nullable.
      * @param query:              the SQL query
      * @param schema:       the specific schema to override, for oracle only
      * @param maxRecords:         the maximum number of records allowed to return.
@@ -31,10 +45,12 @@ public interface JdbcQueryingManager {
      *              List: for stored procedure calls a list of sql result sets
      */
 
-    Object performJdbcQuery(@NotNull String connectionName, @NotNull String query, @Nullable String schema, int maxRecords, List<Object> preparedStmtParams);
+    Object performJdbcQuery(@Nullable String connectionName, @NotNull String query, @Nullable String schema, int maxRecords, @NotNull List<Object> preparedStmtParams);
 
     /**
      * Perform a JDBC query that could be a select statement or a non-select statement.
+     *
+     * This version of performJdbcQuery should not be used by message traffic code which may be calling procedures / functions
      *
      * @param dataSource:         the data source to query
      * @param query:              the SQL query
@@ -49,7 +65,7 @@ public interface JdbcQueryingManager {
      *                   column names are all lower case
      *              List: for stored procedure calls a list of sql result sets
      */
-    Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, List<Object> preparedStmtParams);
+    Object performJdbcQuery(@NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, @NotNull List<Object> preparedStmtParams);
 
     /**
     * See {@link #performJdbcQuery(javax.sql.DataSource, String, String, int, java.util.List)}, this adds a connection name
@@ -57,7 +73,7 @@ public interface JdbcQueryingManager {
     *
     * @param connectionName the unique JDBCConnection entity name
     */
-    Object performJdbcQuery(@Nullable String connectionName, @NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, List<Object> preparedStmtParams);
+    Object performJdbcQuery(@Nullable String connectionName, @NotNull DataSource dataSource, @NotNull String query, @Nullable String schema, int maxRecords, @NotNull List<Object> preparedStmtParams);
 
     /**
      * Get a result set (SqlRowSet object) from the mock JDBC database.
@@ -65,13 +81,4 @@ public interface JdbcQueryingManager {
      * @return a SqlRowSet object containing mock data.
      */
     SqlRowSet getMockSqlRowSet();
-
-    /**
-     * Clear any cached meta used to invoke procedures or functions for the given unique JDBC Connection name and
-     * for a particular query.
-     *
-     * @param connectionName unique JDBC Connection name
-     * @param query query that may be a function / procedure call.
-     */
-    void clearMetaDataCache(String connectionName, String query);
 }
