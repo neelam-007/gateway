@@ -323,7 +323,6 @@ public final class RegistryImpl extends Registry
     }
 
     @NotNull
-    @SuppressWarnings("unchecked")
     @Override
     public HeaderBasedEntityFinder getEntityFinder() {
         checkAdminContext();

@@ -9,6 +9,7 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.DesignTimeEntityProvider;
+import com.l7tech.policy.PolicyUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.UsesEntitiesAtDesignTime;
 import com.l7tech.security.token.SecurityTokenType;
@@ -279,29 +280,6 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
 
     @Override
     public void provideNeededEntities(@NotNull UsesEntitiesAtDesignTime entityUser, @Nullable Functions.BinaryVoid<EntityHeader, FindException> errorHandler) throws FindException {
-        FindException err = null;
-        EntityHeader[] headers = entityUser.getEntitiesUsedAtDesignTime();
-        if (headers != null) {
-            for (EntityHeader header : headers) {
-                if (entityUser.needsProvideEntity(header)) {
-                    try {
-                        Entity entity = find(header);
-                        if (entity == null) {
-                            err = new ObjectNotFoundException("Entity not found: " + header);
-                            if (errorHandler != null)
-                                errorHandler.call(header, err);
-                        } else {
-                            entityUser.provideEntity(header, entity);
-                        }
-                    } catch (FindException e) {
-                        err = e;
-                        if (errorHandler != null)
-                            errorHandler.call(header, err);
-                    }
-                }
-            }
-        }
-        if (err != null && errorHandler == null)
-            throw err;
+        PolicyUtil.provideNeededEntities(entityUser, this, errorHandler);
     }
 }

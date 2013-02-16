@@ -1,21 +1,30 @@
 package com.l7tech.policy;
 
+import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Matchers;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static junit.framework.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test for PolicyUtil.
  */
+@RunWith(MockitoJUnitRunner.class)
 public class PolicyUtilTest {
     @Test
     public void testVisitLeaf() throws Exception {
@@ -57,6 +66,125 @@ public class PolicyUtilTest {
         assertEquals(7, visitOrder.size());
     }
 
+    @Mock
+    private UsesEntitiesAtDesignTime entityUser;
+
+    @Mock
+    private HeaderBasedEntityFinder entityProvider;
+
+    @Mock
+    private Functions.BinaryVoid<EntityHeader, FindException> errorHandler;
+
+    private final EntityHeader encassHeader = new EntityHeader(10, EntityType.ENCAPSULATED_ASSERTION, "Foo Encass", "foo qwer");
+    private final EncapsulatedAssertionConfig encassEntity = new EncapsulatedAssertionConfig();
+    private final EntityHeader genericHeader = new GenericEntityHeader("20", "Foo Generic", "generic thing", 33, "com.l7tech.blah.Blah");
+    private final GenericEntity genericEntity = new GenericEntity();
+
+    @Test
+    public void testProvideNeededEntities() throws Exception {
+        when(entityUser.needsProvideEntity(Matchers.<EntityHeader>any())).thenReturn(true);
+        when(entityUser.getEntitiesUsedAtDesignTime()).thenReturn(new EntityHeader[] { encassHeader, genericHeader });
+        when(entityProvider.find(encassHeader)).thenReturn(encassEntity);
+        when(entityProvider.find(genericHeader)).thenReturn(genericEntity);
+
+        PolicyUtil.provideNeededEntities(entityUser, entityProvider, errorHandler);
+
+        verify(entityUser).provideEntity(encassHeader, encassEntity);
+        verify(entityUser).provideEntity(genericHeader, genericEntity);
+        verify(errorHandler, never()).call(any(EntityHeader.class), any(FindException.class));
+    }
+
+    @Test
+    public void testProvideNeededEntitiesOneEntityNotFound() throws Exception {
+        when(entityUser.needsProvideEntity(Matchers.<EntityHeader>any())).thenReturn(true);
+        when(entityUser.getEntitiesUsedAtDesignTime()).thenReturn(new EntityHeader[] {encassHeader, genericHeader});
+        when(entityProvider.find(encassHeader)).thenReturn(encassEntity);
+        when(entityProvider.find(genericHeader)).thenReturn(null);
+
+        PolicyUtil.provideNeededEntities(entityUser, entityProvider, errorHandler);
+
+        verify(entityUser).provideEntity(encassHeader, encassEntity);
+        verify(entityUser, never()).provideEntity(genericHeader, genericEntity);
+        verify(errorHandler, atLeast(1)).call(eq(genericHeader), any(FindException.class));
+        verify(errorHandler, never()).call(eq(encassHeader), any(FindException.class));
+    }
+
+    @Test
+    public void testProvideNeededEntitiesFindException() throws Exception {
+        when(entityUser.needsProvideEntity(Matchers.<EntityHeader>any())).thenReturn(true);
+        when(entityUser.getEntitiesUsedAtDesignTime()).thenReturn(new EntityHeader[] {encassHeader, genericHeader});
+        when(entityProvider.find(encassHeader)).thenReturn(encassEntity);
+        FindException findException = new FindException();
+        when(entityProvider.find(genericHeader)).thenThrow(findException);
+
+        PolicyUtil.provideNeededEntities(entityUser, entityProvider, errorHandler);
+
+        verify(entityUser).provideEntity(encassHeader, encassEntity);
+        verify(entityUser, never()).provideEntity(genericHeader, genericEntity);
+        verify(errorHandler, atLeast(1)).call(genericHeader, findException);
+        verify(errorHandler, never()).call(eq(encassHeader), any(FindException.class));
+    }
+
+    @Test
+    public void testProvideNeededEntitiesNoErrorHandler() throws Exception {
+        when(entityUser.needsProvideEntity(Matchers.<EntityHeader>any())).thenReturn(true);
+        when(entityUser.getEntitiesUsedAtDesignTime()).thenReturn(new EntityHeader[] {encassHeader, genericHeader});
+        when(entityProvider.find(encassHeader)).thenReturn(encassEntity);
+        FindException findException = new FindException();
+        when(entityProvider.find(genericHeader)).thenThrow(findException);
+
+        try {
+            PolicyUtil.provideNeededEntities(entityUser, entityProvider, null);
+            fail("expected exception not thrown");
+        } catch (FindException e) {
+            assertTrue(e == findException);
+        }
+
+        verify(entityUser).provideEntity(encassHeader, encassEntity);
+        verify(entityUser, never()).provideEntity(genericHeader, genericEntity);
+    }
+
+    private static class MyEntityUsingAssertion extends Assertion implements UsesEntitiesAtDesignTime {
+        public EntityHeader[] getEntitiesUsedAtDesignTime() { return new EntityHeader[0]; }
+        public boolean needsProvideEntity(@NotNull EntityHeader header) { return false; }
+        public void provideEntity(@NotNull EntityHeader header, @NotNull Entity entity) {}
+        public EntityHeader[] getEntitiesUsed() { return new EntityHeader[0]; }
+        public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) { }
+    }
+
+    @Spy
+    MyEntityUsingAssertion entityUsingAssertion;
+
+    @Test
+    public void testTestProvideNeededEntitiesToAssertion() throws Exception {
+        when(entityUsingAssertion.getEntitiesUsedAtDesignTime()).thenReturn(new EntityHeader[] { encassHeader, genericHeader });
+        when(entityUsingAssertion.needsProvideEntity(encassHeader)).thenReturn(true);
+        when(entityUsingAssertion.needsProvideEntity(genericHeader)).thenReturn(true);
+        when(entityProvider.find(encassHeader)).thenReturn(encassEntity);
+        when(entityProvider.find(genericHeader)).thenReturn(genericEntity);
+
+        PolicyUtil.provideNeededEntities((Assertion)entityUsingAssertion, entityProvider, errorHandler);
+
+        verify(entityUsingAssertion).provideEntity(encassHeader, encassEntity);
+        verify(entityUsingAssertion).provideEntity(genericHeader, genericEntity);
+        verify(errorHandler, never()).call(any(EntityHeader.class), any(FindException.class));
+    }
+
+    @Test
+    public void testTestProvideNeededEntitiesToAssertionWithErrorHandler() throws Exception {
+        when(entityUsingAssertion.getEntitiesUsedAtDesignTime()).thenReturn(new EntityHeader[] { encassHeader, genericHeader });
+        when(entityUsingAssertion.needsProvideEntity(encassHeader)).thenReturn(true);
+        when(entityUsingAssertion.needsProvideEntity(genericHeader)).thenReturn(true);
+        when(entityProvider.find(encassHeader)).thenReturn(encassEntity);
+        when(entityProvider.find(genericHeader)).thenReturn(null);
+
+        PolicyUtil.provideNeededEntities((Assertion)entityUsingAssertion, entityProvider, errorHandler);
+
+        verify(entityUsingAssertion).provideEntity(encassHeader, encassEntity);
+        verify(entityUsingAssertion, never()).provideEntity(genericHeader, genericEntity);
+        verify(errorHandler, atLeast(1)).call(eq(genericHeader), any(FindException.class));
+        verify(errorHandler, never()).call(eq(encassHeader), any(FindException.class));
+    }
 
     List<Assertion> visitOrder = new ArrayList<Assertion>();
     Map<Assertion,Integer> visitCounts = new HashMap<Assertion,Integer>();

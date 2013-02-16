@@ -3,25 +3,30 @@
  */
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.console.policy.exporter.PolicyExportUtils;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.objectmodel.*;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.console.action.*;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.console.tree.*;
+import com.l7tech.console.policy.exporter.PolicyExportUtils;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.EntityWithPolicyNode;
+import com.l7tech.console.tree.PolicyTemplateNode;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyUtil;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.PolicyVariableUtils;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 
@@ -76,30 +81,15 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     protected AT loadDesignTimeEntities(AT assertion) {
         if (Registry.getDefault().isAdminContextPresent()) {
             if (assertion instanceof UsesEntitiesAtDesignTime) {
-                final UsesEntitiesAtDesignTime entityUser = (UsesEntitiesAtDesignTime) assertion;
-                EntityHeader[] headers = entityUser.getEntitiesUsedAtDesignTime();
-                if (headers != null) {
-                    HeaderBasedEntityFinder entityFinder = Registry.getDefault().getEntityFinder();
-                    for (EntityHeader header : headers) {
-                        if (entityUser.needsProvideEntity(header)) {
-                            try {
-                                Entity entity = entityFinder.find(header);
-                                if (entity == null) {
-                                    logger.log(Level.WARNING, "Entity not found for assertion: " + header);
-                                } else {
-                                    entityUser.provideEntity(header, entity);
-                                }
-                            } catch (FindException e) {
-                                logger.log(Level.WARNING, "Error looking up entity for assertion: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                            }
-                        }
-                    }
+                try {
+                    PolicyUtil.provideNeededEntities((UsesEntitiesAtDesignTime) assertion, Registry.getDefault().getEntityFinder(), null);
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "Error looking up entities for assertion: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 }
             }
         }
         return assertion;
     }
-
 
     /**
      * @return the assertion this node represents

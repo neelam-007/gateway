@@ -17,6 +17,7 @@ import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.DataType;
@@ -550,15 +551,21 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     }
 
     @Nullable
-    private Assertion getFragmentRootAssertion() {
-        if (null == policy)
-            return null;
-        try {
-            return policy.getAssertion();
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Bad policy XML: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            return null;
+    private Assertion getFragmentRootAssertionWithEntitiesAttached() {
+        Assertion root = null;
+        if (null != policy) {
+            try {
+                root = policy.getAssertion();
+                PolicyUtil.provideNeededEntities(root, Registry.getDefault().getEntityFinder(), null);
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Bad policy XML: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                /* FALLTHROUGH and return null */
+            } catch (FindException e) {
+                logger.log(Level.WARNING, "Unable to locate at least one design time entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                /* FALLTHROUGH and return policy with as many entities populated as we were able to manage */
+            }
         }
+        return root;
     }
 
     /**
@@ -569,7 +576,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
      * Does not delete variables which already exist but are not found in the currently-selected policy fragment.
      */
     private void prePopulateInputsTable() {
-        Assertion root = getFragmentRootAssertion();
+        Assertion root = getFragmentRootAssertionWithEntitiesAttached();
         if (null == root)
             return;
 
@@ -595,7 +602,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
      * Does not delete variables which already exist but are not found in the currently-selected policy fragment.
      */
     private void prePopulateOutputsTable() {
-        Assertion root = getFragmentRootAssertion();
+        Assertion root = getFragmentRootAssertionWithEntitiesAttached();
         if (null == root)
             return;
 

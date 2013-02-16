@@ -1,12 +1,13 @@
 package com.l7tech.policy;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.GuidBasedEntityManager;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -85,6 +86,124 @@ public class PolicyUtil {
                 isLocationPostRouting(parent, policyFinder, assertion.getOrdinal() - parent.getOrdinal());
     }
 
+    /**
+     * Invoke the specified visitor on the specified assertion and alll of its descendant assertions, in pre-order, including
+     * include targets (if Include, and a CurrentAssertionTranslator is available).
+     * <p/>
+     * If a CurrentAssertionTranslator is available, Include assertions may trigger an extra visit to the Include
+     * assertion itself prior to its target subtree being visited.
+     *
+     * @param assertion the root of the subtree of assertions to visit.  Required.
+     * @param visitor the visitor to invoke for each assertion.  Required.
+     */
+    public static void visitDescendantsAndSelf(final Assertion assertion, Functions.UnaryVoid<Assertion> visitor) {
+        visitDescendantsAndSelf(assertion, visitor, CurrentAssertionTranslator.get());
+    }
+
+    /**
+     * Invoke the specified visitor on the specified assertion and all of its descendant assertions, in pre-order, including
+     * include targets (if Include, and a non-null assertionTranslator is provided).
+     * <p/>
+     * If an assertionTranslator is supplied, Include assertions may trigger an extra visit to the Include assertion
+     * itself before the root of its target subtree is (also) visited (followed by the target's descendants, if any).
+     *
+     * @param assertion the root of the subtree of assertions to visit.  If null, this method takes no action.
+     * @param visitor the visitor to invoke for each assertion.  Required.
+     * @param assertionTranslator the assertion translator to use to process Include assertions within this assertion.  May be null, in which case
+     *                            only the Include assertions will be visited and not their targets.
+     */
+    public static void visitDescendantsAndSelf(@Nullable final Assertion assertion, Functions.UnaryVoid<Assertion> visitor, AssertionTranslator assertionTranslator) {
+        if (assertion == null)
+            return;
+        Iterator<Assertion> it = assertion.preorderIterator();
+        while (it.hasNext()) {
+            Assertion kid = it.next();
+            if (kid == null || !kid.isEnabled())
+                continue;
+
+            visitor.call(kid);
+
+            if (assertionTranslator != null && kid instanceof Include) {
+                try {
+                    Assertion translated = assertionTranslator.translate(kid);
+                    if (translated != kid && translated != null && translated.isEnabled())
+                        visitDescendantsAndSelf(translated, visitor, assertionTranslator);
+                } catch (PolicyAssertionException e) {
+                    if (logger.isLoggable(Level.FINE))
+                        logger.log(Level.FINE, "Error translating assertion: " + ExceptionUtils.getMessage(e), e);
+                } finally {
+                    assertionTranslator.translationFinished(assertion);
+                }
+            }
+        }
+    }
+
+    /**
+     * Provided needed entities to a UsesEntitiesAtDesignTime entity user using the specified HeaderBasedEntityFinder,
+     * invoking the specified error handler to handle any errors that occur.
+     *
+     * @param entityUser user of entities that may need them provided.  Required.
+     * @param entityProvider provider of entities that may be needed.  Required.
+     * @param errorHandler an error handler to be notified about missing/unavailable entities, or null.  If an error handler is provided, this method will not throw a FindException.
+     * @throws FindException if errorHandler is null and at least one sought-after entity could not be provided.
+     * @throws RuntimeException if an errorHandler is provided and it throws an unchecked exception.
+     */
+    public static void provideNeededEntities(@NotNull UsesEntitiesAtDesignTime entityUser, @NotNull HeaderBasedEntityFinder entityProvider, @Nullable Functions.BinaryVoid<EntityHeader, FindException> errorHandler) throws FindException {
+        FindException err = null;
+        EntityHeader[] headers = entityUser.getEntitiesUsedAtDesignTime();
+        if (headers != null) {
+            for (EntityHeader header : headers) {
+                if (entityUser.needsProvideEntity(header)) {
+                    try {
+                        Entity entity = entityProvider.find(header);
+                        if (entity == null) {
+                            err = new ObjectNotFoundException("Entity not found: " + header);
+                            if (errorHandler != null)
+                                errorHandler.call(header, err);
+                        } else {
+                            entityUser.provideEntity(header, entity);
+                        }
+                    } catch (FindException e) {
+                        err = e;
+                        if (errorHandler != null)
+                            errorHandler.call(header, err);
+                    }
+                }
+            }
+        }
+        if (err != null && errorHandler == null)
+            throw err;
+    }
+
+    /**
+     * Provided needed entities to any UsesEntitiesAtDesignTime entity users in the specified policy tree,
+     * using the specified HeaderBasedEntityFinder, invoking the specified error handler to handle any errors that occur.
+     *
+     * @param rootAssertion a policy tree that may contain assertions that use entities at design time.  If null, this method takes no actin.
+     * @param entityProvider provider of entities that may be needed.  Required.
+     * @param errorHandler an error handler to be notified about missing/unavailable entities, or null.  If an error handler is provided, this method will not throw a FindException.
+     * @throws FindException if errorHandler is null and at least one sought-after entity could not be provided.
+     * @throws RuntimeException if an errorHandler is provided and it throws an unchecked exception.
+     */
+    public static void provideNeededEntities(@Nullable final Assertion rootAssertion, @NotNull final HeaderBasedEntityFinder entityProvider, @Nullable final Functions.BinaryVoid<EntityHeader, FindException> errorHandler) throws FindException {
+        final FindException[] err = { null };
+        visitDescendantsAndSelf(rootAssertion, new Functions.UnaryVoid<Assertion>() {
+            @Override
+            public void call(Assertion assertion) {
+                if (assertion instanceof UsesEntitiesAtDesignTime) {
+                    UsesEntitiesAtDesignTime entityUser = (UsesEntitiesAtDesignTime) assertion;
+                    try {
+                        provideNeededEntities(entityUser, entityProvider, errorHandler);
+                    } catch (FindException e) {
+                        err[0] = e;
+                    }
+                }
+            }
+        });
+        if (err[0] != null)
+            throw err[0];
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( PolicyUtil.class.getName() );
@@ -113,55 +232,5 @@ public class PolicyUtil {
         }
 
         return routing;
-    }
-
-    /**
-     * Invoke the specified visitor on the specified assertion and alll of its descendant assertions, in pre-order, including
-     * include targets (if Include, and a CurrentAssertionTranslator is available).
-     * <p/>
-     * If a CurrentAssertionTranslator is available, Include assertions may trigger an extra visit to the Include
-     * assertion itself prior to its target subtree being visited.
-     *
-     * @param assertion the root of the subtree of assertions to visit.  Required.
-     * @param visitor the visitor to invoke for each assertion.  Required.
-     */
-    public static void visitDescendantsAndSelf(final Assertion assertion, Functions.UnaryVoid<Assertion> visitor) {
-        visitDescendantsAndSelf(assertion, visitor, CurrentAssertionTranslator.get());
-    }
-
-    /**
-     * Invoke the specified visitor on the specified assertion and all of its descendant assertions, in pre-order, including
-     * include targets (if Include, and a non-null assertionTranslator is provided).
-     * <p/>
-     * If an assertionTranslator is supplied, Include assertions may trigger an extra visit to the Include assertion
-     * itself before the root of its target subtree is (also) visited (followed by the target's descendants, if any).
-     *
-     * @param assertion the root of the subtree of assertions to visit.  Required.
-     * @param visitor the visitor to invoke for each assertion.  Required.
-     * @param assertionTranslator the assertion translator to use to process Include assertions within this assertion.  May be null, in which case
-     *                            only the Include assertions will be visited and not their targets.
-     */
-    public static void visitDescendantsAndSelf(final Assertion assertion, Functions.UnaryVoid<Assertion> visitor, AssertionTranslator assertionTranslator) {
-        Iterator<Assertion> it = assertion.preorderIterator();
-        while (it.hasNext()) {
-            Assertion kid = it.next();
-            if (kid == null || !kid.isEnabled())
-                continue;
-
-            visitor.call(kid);
-
-            if (assertionTranslator != null && kid instanceof Include) {
-                try {
-                    Assertion translated = assertionTranslator.translate(kid);
-                    if (translated != kid && translated != null && translated.isEnabled())
-                        visitDescendantsAndSelf(translated, visitor, assertionTranslator);
-                } catch (PolicyAssertionException e) {
-                    if (logger.isLoggable(Level.FINE))
-                        logger.log(Level.FINE, "Error translating assertion: " + ExceptionUtils.getMessage(e), e);
-                } finally {
-                    assertionTranslator.translationFinished(assertion);
-                }
-            }
-        }
     }
 }
