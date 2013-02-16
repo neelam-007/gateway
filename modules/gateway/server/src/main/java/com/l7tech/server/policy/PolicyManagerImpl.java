@@ -291,6 +291,9 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
         // Read this policy's folder ancestry
         newRole.addEntityFolderAncestryPermission(POLICY, policy.getId());
 
+        // Use encapsulated assertion within a policy
+        newRole.addEntityPermission(READ, ENCAPSULATED_ASSERTION, null);
+
         if (currentUser != null) {
             // See if we should give the current user admin permission for this policy
             boolean omnipotent;
@@ -300,8 +303,9 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, DELETE, POLICY);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, FOLDER);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, JDBC_CONNECTION);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, ENCAPSULATED_ASSERTION);
             } catch (FindException e) {
-                throw new SaveException("Coudln't get existing permissions", e);
+                throw new SaveException("Couldn't get existing permissions", e);
             }
 
             if (!omnipotent && shouldAutoAssignToNewRole()) {

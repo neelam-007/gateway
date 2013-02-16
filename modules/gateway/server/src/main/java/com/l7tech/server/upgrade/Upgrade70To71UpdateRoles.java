@@ -9,31 +9,31 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
-import static com.l7tech.objectmodel.EntityType.HTTP_CONFIGURATION;
+import static com.l7tech.objectmodel.EntityType.ENCAPSULATED_ASSERTION;
 
 /**
- * Update dynamic role permissions for 5.4.
+ * Update dynamic role permissions for 7.1.
  *
- * - Add READ permission for HTTP Configurations to Manage X Policy roles
- * - Add READ permission for HTTP Configurations to Manage X Service roles
+ * - Add READ permission for Encapsulated Assertion Configurations to Manage X Policy roles
+ * - Add READ permission for Encapsulated Assertion Configurations to Manage X Service roles
  *
  */
-public class Upgrade531To54UpdateRoles extends AbstractDynamicRolePermissionsUpgradeTask {
+public class Upgrade70To71UpdateRoles extends AbstractDynamicRolePermissionsUpgradeTask {
 
     //- PROTECTED
 
     @Override
     protected boolean shouldCreateMissingRoles() {
-        return true;
+        return false;
     }
 
     @Override
     protected List<Pair<OperationType, EntityType>> permissionsToAdd() {
-        return Arrays.asList(new Pair<OperationType, EntityType>(READ, HTTP_CONFIGURATION));
+        return Arrays.asList(new Pair<OperationType, EntityType>(READ, ENCAPSULATED_ASSERTION));
     }
 
     @Override
     protected boolean shouldIgnorePolicyType(PolicyType policyType) {
-        return false;
+        return !PolicyType.INCLUDE_FRAGMENT.equals(policyType);
     }
 }

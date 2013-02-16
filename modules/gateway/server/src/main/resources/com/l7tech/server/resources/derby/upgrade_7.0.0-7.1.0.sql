@@ -78,6 +78,9 @@ INSERT INTO rbac_permission VALUES (-1355,0,-1350,'READ',NULL,'POLICY');
 INSERT INTO rbac_predicate VALUES (-1356,0,-1355);
 INSERT INTO rbac_predicate_attribute VALUES (-1356,'type','Included Policy Fragment','eq');
 
+INSERT INTO rbac_permission VALUES (-359,0,-350,'READ',NULL,'ENCAPSULATED_ASSERTION');
+INSERT INTO rbac_permission VALUES (-440,0,-400,'READ',NULL,'ENCAPSULATED_ASSERTION');
+
 ALTER TABLE cluster_properties ADD COLUMN properties clob(2147483647);
 
 ALTER TABLE published_service ALTER COLUMN wsdl_url SET DATA TYPE VARCHAR(4096);
@@ -87,16 +90,14 @@ CREATE TABLE firewall_rule (
   version integer NOT NULL,
   ordinal integer NOT NULL,
   name varchar(128) NOT NULL,
-  enabled tinyint(1) NOT NULL DEFAULT 0,
+  enabled smallint NOT NULL DEFAULT 0,
   PRIMARY KEY (objectid)
 );
 
-DROP TABLE IF EXISTS firewall_rule_property;
 CREATE TABLE firewall_rule_property (
-  firewall_rule_oid bigint NOT NULL,
+  firewall_rule_oid bigint not null references firewall_rule(objectid) on delete cascade,
   name varchar(128) NOT NULL,
-  value MEDIUMTEXT NOT NULL,
-  FOREIGN KEY (firewall_rule_oid) REFERENCES firewall_rule (objectid) ON DELETE CASCADE
+  value clob(2147483647) NOT NULL
 );
 
 -- create new RBAC role for Manage Firewall Rules --
@@ -105,3 +106,8 @@ INSERT INTO rbac_permission VALUES (-1275,0,-1400,'CREATE',NULL,'FIREWALL_RULE')
 INSERT INTO rbac_permission VALUES (-1276,0,-1400,'READ',NULL,'FIREWALL_RULE');
 INSERT INTO rbac_permission VALUES (-1277,0,-1400,'UPDATE',NULL,'FIREWALL_RULE');
 INSERT INTO rbac_permission VALUES (-1278,0,-1400,'DELETE',NULL,'FIREWALL_RULE');
+
+-- Ensure dynamically-created manage service and manage policy roles get updated to support use of encapsulated assertions
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue, properties)
+    values (-700100, 0, 'upgrade.task.700100', 'com.l7tech.server.upgrade.Upgrade70To71UpdateRoles', null);

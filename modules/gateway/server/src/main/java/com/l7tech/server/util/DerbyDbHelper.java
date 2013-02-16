@@ -1,9 +1,6 @@
 package com.l7tech.server.util;
 
-import com.l7tech.util.Charsets;
-import com.l7tech.util.Config;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import org.springframework.core.io.Resource;
 
 import javax.sql.DataSource;
@@ -105,7 +102,7 @@ public class DerbyDbHelper {
             } catch (IOException ioe) {
                 logger.log( Level.WARNING, "Error processing DB script.", ioe );
             } catch (SQLException e) {
-                logger.log( Level.INFO, "Last SQL statement attempted: " + sql);
+                logger.log( Level.INFO, "Last SQL statement attempted: " + sql, ExceptionUtils.getDebugException(e) );
                 throw e;
             }
         }

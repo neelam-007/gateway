@@ -317,6 +317,9 @@ public class ServiceManagerImp
         newRole.addAttributePermission(UPDATE, UDDI_SERVICE_CONTROL, UDDIServiceControl.ATTR_SERVICE_OID, service.getId());
         newRole.addAttributePermission(DELETE, UDDI_SERVICE_CONTROL, UDDIServiceControl.ATTR_SERVICE_OID, service.getId());
 
+        //use encapsulated assertions in a policy
+        newRole.addEntityPermission(READ, ENCAPSULATED_ASSERTION, null);
+
         if (currentUser != null) {
             // See if we should give the current user admin permission for this service
             boolean omnipotent;
@@ -341,6 +344,7 @@ public class ServiceManagerImp
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, UPDATE, SAMPLE_MESSAGE);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, DELETE, SAMPLE_MESSAGE);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, UDDI_REGISTRY);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, ENCAPSULATED_ASSERTION);
             } catch (FindException e) {
                 throw new SaveException("Coudln't get existing permissions", e);
             }

@@ -1381,6 +1381,7 @@ INSERT INTO rbac_permission VALUES (-355,0,-350,'READ',NULL,'SERVICE_TEMPLATE');
 INSERT INTO rbac_permission VALUES (-356,0,-350,'READ',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-357,0,-350,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-358,0,-350,'READ',NULL,'HTTP_CONFIGURATION');
+INSERT INTO rbac_permission VALUES (-359,0,-350,'READ',NULL,'ENCAPSULATED_ASSERTION');
 
 INSERT INTO rbac_role VALUES (-400,1,'Manage Webservices', null,null,null, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.',0);
 INSERT INTO rbac_permission VALUES (-401,0,-400,'READ',NULL,'ID_PROVIDER_CONFIG');
@@ -1423,6 +1424,7 @@ INSERT INTO rbac_permission VALUES (-437,0,-400,'CREATE',NULL,'UDDI_SERVICE_CONT
 INSERT INTO rbac_permission VALUES (-438,0,-400,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-439,0,-400,'READ',NULL,'HTTP_CONFIGURATION');
 INSERT INTO rbac_permission VALUES (-440,0,-400,'CREATE',NULL,'POLICY');
+INSERT INTO rbac_permission VALUES (-441,0,-400,'READ',NULL,'ENCAPSULATED_ASSERTION');
 
 INSERT INTO rbac_role VALUES (-450,0,'View Audit Records', null,null,null, 'Users assigned to the {0} role have the ability to view audits in the manager.',0);
 INSERT INTO rbac_permission VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');
