@@ -144,6 +144,6 @@ public class Ntlm2AuthScheme implements AuthScheme{
             UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials)credentials;
             return new NtlmCredential(usernamePasswordCredentials.getUserName(), usernamePasswordCredentials.getPassword());
         }
-        throw new AuthenticationException("Expected NTCredentials");
+        throw new AuthenticationException("Expected NTCredentials or UsernamePasswordCredentials");
     }
 }
