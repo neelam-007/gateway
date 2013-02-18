@@ -453,7 +453,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                         break;
                     }
                     case DELETE: {
-                        sftpClient.deleteFile(directory, fileName);
+                        boolean explicitCheck = config.getBooleanProperty("sftp.routingExplicitlyValidateDeleteFile", true);
+                        sftpClient.deleteFile(directory, fileName, explicitCheck);
                         break;
                     }
                     case MOVE: {
@@ -462,11 +463,13 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                         break;
                     }
                     case MKDIR: {
-                        sftpClient.createDirectory(directory, fileName);
+                        boolean explicitCheck = config.getBooleanProperty("sftp.routingExplicitlyValidateMkdir", true);
+                        sftpClient.createDirectory(directory, fileName, explicitCheck);
                         break;
                     }
                     case RMDIR: {
-                        sftpClient.removeDirectory(directory, fileName);
+                        boolean explicitCheck = config.getBooleanProperty("sftp.routingExplicitlyValidateDeleteDir", true);
+                        sftpClient.removeDirectory(directory, fileName, explicitCheck);
                         break;
                     }
                     default: {

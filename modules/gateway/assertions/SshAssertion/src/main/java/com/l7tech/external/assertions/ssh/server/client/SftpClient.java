@@ -108,6 +108,10 @@ public class SftpClient implements SshClient {
      */
     public SftpFile getFileAttributes(String remoteDir, String remoteFile) throws SftpException {
         setDir(remoteDir);
+        return getFile(remoteFile);
+    }
+
+    private SftpFile getFile(String remoteFile) throws SftpException {
         Enumeration<SftpFile> listing = sftpClient.getDirListing(remoteFile);
         return listing.hasMoreElements() ? listing.nextElement() : null;
     }
@@ -117,10 +121,20 @@ public class SftpClient implements SshClient {
      *
      * @param remoteDir  The remote directory that the file is located in
      * @param remoteFile The name of the file
+     * @param explicitCheck Explicitly check to see if the file exists, is a file
      * @throws SftpException
      */
-    public void deleteFile(String remoteDir, String remoteFile) throws SftpException {
+    public void deleteFile(String remoteDir, String remoteFile, boolean explicitCheck) throws SftpException {
         setDir(remoteDir);
+        //This is needed because the jscape sftp client will not throw exceptions if the file doesn't exist. or is a directory. [SSG-6520 && SSG-6517]
+        if(explicitCheck){
+            SftpFile file = getFile(remoteFile);
+            if(file == null || !file.exists()){
+                throw new SftpException("File does not exist");
+            } else if(file.isDirectory()){
+                throw new SftpException("Cannot delete directory this way");
+            }
+        }
         sftpClient.deleteFile(remoteFile);
     }
 
@@ -142,10 +156,18 @@ public class SftpClient implements SshClient {
      *
      * @param remoteDir  The directory to create this directory in.
      * @param remoteFile The name of the directory to create
+     * @param explicitCheck Explicitly check to see if the directory exists.
      * @throws SftpException
      */
-    public void createDirectory(String remoteDir, String remoteFile) throws SftpException {
+    public void createDirectory(String remoteDir, String remoteFile, boolean explicitCheck) throws SftpException {
         setDir(remoteDir);
+        //This is needed because the jscape sftp client will not throw exceptions if file already exists with the same name.[SSG-6521]
+        if(explicitCheck){
+            SftpFile file = getFile(remoteFile);
+            if(file != null && file.exists()){
+                throw new SftpException((file.isDirectory() ? "Directory" : "File") + " already exists.");
+            }
+        }
         sftpClient.makeDir(remoteFile);
     }
 
@@ -154,10 +176,20 @@ public class SftpClient implements SshClient {
      *
      * @param remoteDir  The directory that the directory to delete is located in.
      * @param remoteFile The name of the directory to delete.
+     * @param explicitCheck Explicitly check to see if the directory exists, is a directory
      * @throws SftpException
      */
-    public void removeDirectory(String remoteDir, String remoteFile) throws SftpException {
+    public void removeDirectory(String remoteDir, String remoteFile, boolean explicitCheck) throws SftpException {
         setDir(remoteDir);
+        //This is needed because the jscape sftp client will not throw exceptions if the directory doesn't exist. or is a file. [SSG-6519 && SSG-6517]
+        if(explicitCheck){
+            SftpFile file = getFile(remoteFile);
+            if(file == null || !file.exists()){
+                throw new SftpException("Directory does not exist");
+            } else if(!file.isDirectory()){
+                throw new SftpException("Cannot delete file this way.");
+            }
+        }
         sftpClient.deleteDir(remoteFile);
     }
 
