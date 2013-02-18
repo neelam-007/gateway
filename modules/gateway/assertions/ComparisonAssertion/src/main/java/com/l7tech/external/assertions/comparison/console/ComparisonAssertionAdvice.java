@@ -27,8 +27,8 @@ public class ComparisonAssertionAdvice implements Advice {
 
         ComparisonAssertion subject = (ComparisonAssertion) assertions[0];
 
-        // Set the failIfVariableNotFound switch to false for new assertions
-        subject.setFailIfVariableNotFound(false);
+        //Default to a variable
+        subject.setExpressionIsVariable(true);
 
         final Frame mw = TopComponents.getInstance().getTopParent();
         final ComparisonPropertiesDialog dlg = new ComparisonPropertiesDialog(mw, subject);

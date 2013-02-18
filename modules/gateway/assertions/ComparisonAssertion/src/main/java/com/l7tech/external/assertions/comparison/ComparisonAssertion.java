@@ -44,7 +44,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
     private String leftValue;
     private Predicate[] predicates = new Predicate[0];
     private MultivaluedComparison multivaluedComparison = MultivaluedComparison.ALL;
-    private boolean failIfVariableNotFound = true;
+    private boolean expressionIsVariable = true;
     public static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.comparison.ComparisonAssertion");
 
     /**
@@ -106,12 +106,9 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
                 multivaluedComparison;
     }
 
-    public boolean isFailIfVariableNotFound() {
-        return failIfVariableNotFound;
-    }
-
+    @Deprecated // This actually meant to compare all values of multivalued variables and fail if it does not exist.
     public void setFailIfVariableNotFound(boolean failIfVariableNotFound) {
-        this.failIfVariableNotFound = failIfVariableNotFound;
+        this.expressionIsVariable = failIfVariableNotFound;
     }
 
     private boolean check() {
@@ -192,14 +189,18 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         if (check()) compat().setCaseSensitive(caseSensitive);
     }
 
-    private final static String baseName = "Compare Expression";
+    private final static String baseName = "Compare ";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ComparisonAssertion>() {
         @Override
         public String getAssertionName(final ComparisonAssertion assertion, final boolean decorate) {
             if (!decorate) return baseName;
 
-            StringBuilder name = new StringBuilder(baseName).append(": ");
+            StringBuilder name = new StringBuilder(baseName);
+            // in the upgrade case from Escalor or fangtooth the isExpressionIsVariable might be set to true even if it is an expression. So we need to check to see if it is a single variable
+            name.append(assertion.isExpressionIsVariable() && (assertion.getExpression1() == null || assertion.getExpression1().isEmpty() || Syntax.isOnlyASingleVariableReferenced(assertion.getExpression1()))
+                    ? "Variable" : "Expression");
+            name.append(": ");
             String expression1 = assertion.getExpression1();
             if(expression1.length() > MAX_USER_DEFINABLE_FIELD_LENGTH){
                 expression1 = expression1.substring(0, MAX_USER_DEFINABLE_FIELD_LENGTH) + "...";
@@ -217,11 +218,13 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
                     name.append(", ");
             }
 
-            name.append("; ");
-            name.append(resources.getString("multivaluedComparison.label"));
-            name.append(" ");
-            String labelKey = "multivaluedComparison." + assertion.getMultivaluedComparison().name() + ".text";
-            name.append(resources.getString(labelKey));
+            if(assertion.isExpressionIsVariable()){
+                name.append("; ");
+                name.append(resources.getString("multivaluedComparison.label"));
+                name.append(" ");
+                String labelKey = "multivaluedComparison." + assertion.getMultivaluedComparison().name() + ".text";
+                name.append(resources.getString(labelKey));
+            }
 
 
             return name.toString();
@@ -298,5 +301,17 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         }
 
         return clone;
+    }
+
+    /**
+     * Returns true if the expression is to be treated as a single variable.
+     * @return true if the expression is to be treated as a single variable.
+     */
+    public boolean isExpressionIsVariable() {
+        return expressionIsVariable;
+    }
+
+    public void setExpressionIsVariable(boolean expressionIsVariable) {
+        this.expressionIsVariable = expressionIsVariable;
     }
 }

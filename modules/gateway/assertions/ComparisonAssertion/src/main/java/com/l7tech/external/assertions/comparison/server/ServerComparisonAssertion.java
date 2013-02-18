@@ -1,18 +1,18 @@
 package com.l7tech.external.assertions.comparison.server;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.external.assertions.comparison.BinaryPredicate;
 import com.l7tech.external.assertions.comparison.ComparisonAssertion;
 import com.l7tech.external.assertions.comparison.DataTypePredicate;
 import com.l7tech.external.assertions.comparison.Predicate;
 import com.l7tech.external.assertions.comparison.server.evaluate.Evaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.EvaluatorFactory;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,7 +53,8 @@ public class ServerComparisonAssertion extends AbstractServerAssertion<Compariso
 
         final Object left;
 
-        if(assertion.isFailIfVariableNotFound()) {
+        //Checks if the left value is a variable or an expression.
+        if (assertion.isExpressionIsVariable()) {
             left = getValue(assertion.getExpression1(), vars, getAudit());
 
             if(left == null) {
@@ -61,6 +62,7 @@ public class ServerComparisonAssertion extends AbstractServerAssertion<Compariso
                 return AssertionStatus.FAILED;
             }
         } else {
+            //Regularly expand variables. not multivalued.
             left = ExpandVariables.process(assertion.getExpression1(), vars, getAudit());
         }
 

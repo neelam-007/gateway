@@ -36,6 +36,17 @@ public class ComparisonAssertionTest {
     }
 
     @Test
+    public void testSerialization_Fangtooth() throws Exception {
+        AssertionRegistry assreg = new AssertionRegistry();
+        assreg.registerAssertion(ComparisonAssertion.class);
+        WspConstants.setTypeMappingFinder(assreg);
+        Assertion ass = WspReader.getDefault().parseStrictly(FANGTOOTH_POLICY_XML, WspReader.INCLUDE_DISABLED);
+
+        String xml = WspWriter.getPolicyXml(ass);
+        assertEquals(xml, FANGTOOTH_POLICY_XML);
+    }
+
+    @Test
     public void testSerializationBackwardsCompatibility() throws Exception {
         AssertionRegistry assreg = new AssertionRegistry();
         assreg.registerAssertion(ComparisonAssertion.class);
@@ -49,7 +60,25 @@ public class ComparisonAssertionTest {
         final ComparisonAssertion assertion = (ComparisonAssertion) allAss.getChildren().get(0);
 
         // default value of failIfVariableNotFound switch should true to maintain backwards compatibility
-        assertEquals(true, assertion.isFailIfVariableNotFound());
+        assertEquals(true, assertion.isExpressionIsVariable());
+    }
+
+    @Test
+    public void testSerializationBackwardsCompatibility_Fangtooth() throws Exception {
+        AssertionRegistry assreg = new AssertionRegistry();
+        assreg.registerAssertion(ComparisonAssertion.class);
+        WspConstants.setTypeMappingFinder(assreg);
+        Assertion ass = WspReader.getDefault().parseStrictly(FANGTOOTH_POLICY_XML, WspReader.INCLUDE_DISABLED);
+
+        String xml = WspWriter.getPolicyXml(ass);
+        assertEquals(xml, FANGTOOTH_POLICY_XML);
+
+        AllAssertion allAss = (AllAssertion) ass;
+        final ComparisonAssertion assertion = (ComparisonAssertion) allAss.getChildren().get(0);
+
+        // default value of failIfVariableNotFound switch should true to maintain backwards compatibility
+        assertEquals(true, assertion.isExpressionIsVariable());
+        assertEquals(MultivaluedComparison.ANY, assertion.getMultivaluedComparison());
     }
 
     /**
@@ -78,7 +107,7 @@ public class ComparisonAssertionTest {
         assertEquals( "Expression", "expression goes here", cloned.getExpression1() );
         assertEquals( "MultivaluedComparison", MultivaluedComparison.ANY, cloned.getMultivaluedComparison() );
         assertEquals( "Predicates length", 1L, (long) cloned.getPredicates().length );
-        assertEquals( "Fail if variable not found", true, cloned.isFailIfVariableNotFound());
+        assertEquals( "Expression or Variable", true, cloned.isExpressionIsVariable());
         assertNotSame( "Predicates array copied", ca.getPredicates(), cloned.getPredicates() );
         assertNotSame( "Predicates copied", ca.getPredicates()[0], cloned.getPredicates()[0] );
     }
@@ -140,6 +169,24 @@ public class ComparisonAssertionTest {
 
         return null;
     }
+
+    public static final String FANGTOOTH_POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:ComparisonAssertion>\n" +
+            "            <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
+            "            <L7p:Expression1 stringValue=\"${output}\"/>\n" +
+            "            <L7p:Expression2 stringValue=\"one\"/>\n" +
+            "            <L7p:MultivaluedComparison multivaluedComparison=\"ANY\"/>\n" +
+            "            <L7p:Predicates predicates=\"included\">\n" +
+            "                <L7p:item binary=\"included\">\n" +
+            "                    <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
+            "                    <L7p:RightValue stringValue=\"one\"/>\n" +
+            "                </L7p:item>\n" +
+            "            </L7p:Predicates>\n" +
+            "        </L7p:ComparisonAssertion>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>\n";
 
     public static final String PRE_FANGTOOTH_POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +

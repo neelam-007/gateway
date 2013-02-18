@@ -3,22 +3,22 @@
  */
 package com.l7tech.external.assertions.comparison.console;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.external.assertions.comparison.*;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -42,7 +42,8 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
     private JButton removePredicateButton;
     private JPanel mainPanel;
     private JButton editPredicateButton;
-    private JCheckBox variableTreatmentCheckBox;
+    private JLabel ifMultivaluedLabel;
+    private JComboBox variableOrExpressionCombobox;
 
     private boolean ok;
 
@@ -148,7 +149,19 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         } ));
         multivaluedComboBox.setSelectedItem(assertion.getMultivaluedComparison());
 
-        variableTreatmentCheckBox.setSelected(assertion.isFailIfVariableNotFound());
+        variableOrExpressionCombobox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableButtons();
+            }
+        });
+
+        //need to check for that it is a single variable as well because in the upgrade cases "expressionIsVariable" can be set to true even if it is an expression.
+        if(assertion.isExpressionIsVariable() && (assertion.getExpression1() == null || assertion.getExpression1().isEmpty() || Syntax.isOnlyASingleVariableReferenced(assertion.getExpression1()))){
+            variableOrExpressionCombobox.setSelectedIndex(0);
+        } else {
+            variableOrExpressionCombobox.setSelectedIndex(1);
+        }
 
         addPredicateButton.addActionListener(new ActionListener() {
             @Override
@@ -231,23 +244,29 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         for (Predicate pred : predicates) {
             newPreds.add(pred);
         }
+        boolean isVariable = variableOrExpressionCombobox.getSelectedIndex() == 0;
         assertion.setExpression1(expressionField.getText());
-        assertion.setMultivaluedComparison((MultivaluedComparison)multivaluedComboBox.getSelectedItem());
+        assertion.setMultivaluedComparison((MultivaluedComparison) multivaluedComboBox.getSelectedItem());
         assertion.setPredicates(newPreds.toArray(new Predicate[newPreds.size()]));
-        assertion.setFailIfVariableNotFound(variableTreatmentCheckBox.isSelected());
+        assertion.setExpressionIsVariable(isVariable);
     }
 
     void enableButtons() {
+        boolean isVariable = variableOrExpressionCombobox.getSelectedIndex() == 0;
         String expr = expressionField.getText();
 
+        boolean singleVariable = false;
         try {
-            variableTreatmentCheckBox.setEnabled(Syntax.isOnlyASingleVariableReferenced(expr));
+            singleVariable = Syntax.isOnlyASingleVariableReferenced(expr);
         } catch (VariableNameSyntaxException e) {
             // swallow syntax errors from invalid expressions that arise due to incomplete/incorrect input -
             // the policy validator will indicate to the user if the expression is invalid
         }
 
-        boolean canOk = expr != null && expr.length() > 0;
+        multivaluedComboBox.setEnabled(isVariable);
+        ifMultivaluedLabel.setEnabled(isVariable);
+
+        boolean canOk = expr != null && expr.length() > 0 && (!isVariable || singleVariable);
 
         okButton.setEnabled(!isReadOnly() && canOk);
 

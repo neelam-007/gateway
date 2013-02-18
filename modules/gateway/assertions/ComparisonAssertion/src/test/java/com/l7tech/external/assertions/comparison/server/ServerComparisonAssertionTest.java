@@ -58,7 +58,7 @@ public class ServerComparisonAssertionTest {
         AssertionRegistry.installEnhancedMetadataDefaults();
         AssertionNodeNameFactory<ComparisonAssertion> funky;
         final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.comparison.ComparisonAssertion");
-        final String policyAssertionName = "Compare Expression: ${asdf} is an Integer, is equal to 12345, contains 234 (case sensitive), has at least 1 value and has exactly 5 characters; ";
+        final String policyAssertionName = "Compare Variable: ${asdf} is an Integer, is equal to 12345, contains 234 (case sensitive), has at least 1 value and has exactly 5 characters; ";
         final String multiAssertionText = resources.getString("multivaluedComparison.label") + " ";
         String labelKey = null;
         ComparisonAssertion comp = make(MultivaluedComparison.ALL);
