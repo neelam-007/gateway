@@ -103,7 +103,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         enableOrDisableOkButton();
         enableOrDisableTableButtons();
         enableOrDisableJdbcConnList();
-        enableOrDisableQueryButtons();
+        enableOrDisableQueryControls();
     }
 
     private void initialize() {
@@ -151,12 +151,12 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                 new PauseListener() {
                     @Override
                     public void textEntryPaused(JTextComponent component, long msecs) {
-                        enableOrDisableSchemaControls();
+                        enableOrDisableQueryControls();
                     }
 
                     @Override
                     public void textEntryResumed(JTextComponent component) {
-                        enableOrDisableSchemaControls();
+                        enableOrDisableQueryControls();
                     }
                 },
                 300);
@@ -168,7 +168,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         final RunOnChangeListener queryPanelChangeListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
-                enableOrDisableQueryButtons();
+                enableOrDisableQueryControls();
                 enableOrDisableOkButton();
             }
         });
@@ -230,6 +230,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         populateConnectionCombobox();
         sqlQueryTextArea.setText(assertion.getSqlQuery());
         sqlQueryTextArea.setCaretPosition(0);
+        testButton.setEnabled(assertion.getSqlQuery()!=null);
         namingMap = assertion.getNamingMap();
         variablePrefixTextField.setVariable(assertion.getVariablePrefix());
         variablePrefixTextField.setAssertion(assertion,getPreviousAssertion());
@@ -395,8 +396,10 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         }
     }
 
-    private void enableOrDisableQueryButtons(){
+    private void enableOrDisableQueryControls(){
         nullPatternTextBox.setEnabled(enableNullValuesCheckBox.isSelected());
+        testButton.setEnabled(!sqlQueryTextArea.getText().trim().isEmpty());
+        enableOrDisableSchemaControls();
     }
 
     private void enableOrDisableTableButtons() {
