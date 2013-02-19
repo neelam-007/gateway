@@ -71,6 +71,7 @@ public class ServerVariables {
     private static SsgConnectorManager ssgConnectorManager;
     private static SsgFirewallRulesManager ssgFirewallRulesManager;
     private static JdbcConnectionManager jdbcConnectionManager;
+    // Take care before deciding to add new entity managers to this class: exposing entities via built in variables bypasses RBAC controls
 
     private static final long SELF_NODE_INF_CACHE_INTERVAL = SyspropUtil.getLong("com.l7tech.server.policy.variable.ssgnode.cacheMillis", 30000L);
     private static final CachedCallable<ClusterNodeInfo> SELF_NODE_INF_CACHE = new CachedCallable<ClusterNodeInfo>(SELF_NODE_INF_CACHE_INTERVAL, new Callable<ClusterNodeInfo>() {
