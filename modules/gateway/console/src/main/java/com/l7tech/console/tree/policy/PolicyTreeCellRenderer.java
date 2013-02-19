@@ -53,7 +53,7 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         AssertionTreeNode node = ((AssertionTreeNode)value);
         setText(node.getName());
         validated = node.getValidatorMessages().isEmpty();
-        enabled = node.isAssertionEnabled() || isIncluded(node);
+        enabled = isIncluded(node)? node.asAssertion().isEnabled(): node.isAssertionEnabled();
         setToolTipText(node.getTooltipText());
 
         Image image =expanded ? node.getOpenedIcon() : node.getIcon();
