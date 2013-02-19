@@ -264,6 +264,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         scpCheckBox.addActionListener(enableDisableComponentsActionListener);
         sftpPUTCheckBox.addActionListener(enableDisableComponentsActionListener);
         sftpGETCheckBox.addActionListener(enableDisableComponentsActionListener);
+        sftpDELETECheckBox.addActionListener(enableDisableComponentsActionListener);
         scpGETCheckBox.addActionListener(enableDisableComponentsActionListener);
         retrieveFileSizeFromVarCheckBox.addActionListener(enableDisableComponentsActionListener);
 
