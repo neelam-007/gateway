@@ -1,6 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.objectmodel.GuidBasedEntityManager;
+import com.l7tech.objectmodel.HeaderBasedEntityFinder;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionTranslator;
 import com.l7tech.policy.assertion.Include;
@@ -40,13 +41,15 @@ import java.util.logging.Logger;
 public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
     private static final Logger logger = Logger.getLogger( DefaultPolicyPathBuilder.class.getName() );
     private final GuidBasedEntityManager<Policy> policyFinder;
+    private final HeaderBasedEntityFinder entityFinder;
 
     /**
      * Protected constructor, the class cannot be instantiated
      * directly
      */
-    protected DefaultPolicyPathBuilder(final GuidBasedEntityManager<Policy> policyFinder) {
+    protected DefaultPolicyPathBuilder(final GuidBasedEntityManager<Policy> policyFinder, HeaderBasedEntityFinder entityFinder) {
         this.policyFinder = policyFinder;
+        this.entityFinder = entityFinder;
     }
 
     /**
@@ -152,9 +155,12 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
     private Set<AssertionPath> generatePaths(Assertion assertion, boolean processIncludes, int maxPaths) throws InterruptedException, PolicyAssertionException, PolicyTooComplexException {
         long startTime = System.currentTimeMillis();
         Set<AssertionPath> assertionPaths = new LinkedHashSet<AssertionPath>();
-        Iterator preorder = processIncludes ?
-                assertion.preorderIterator(new IncludeAssertionDereferenceTranslator(policyFinder, new HashSet<String>(), false, false)) :
-                assertion.preorderIterator();
+        final List<AssertionTranslator> translators = new ArrayList<AssertionTranslator>();
+        if (processIncludes) {
+            translators.add(new IncludeAssertionDereferenceTranslator(policyFinder, new HashSet<String>(), false, false));
+        }
+        translators.add(new UsesEntitiesAtDesignTimeAssertionTranslator(entityFinder));
+        Iterator preorder = assertion.preorderIterator(new ChainedAssertionTranslator(translators));
         final AssertionPath initPath = new AssertionPath(new Assertion[]{(Assertion)preorder.next()});
         assertionPaths.add(initPath);
         pathStack.push(initPath);

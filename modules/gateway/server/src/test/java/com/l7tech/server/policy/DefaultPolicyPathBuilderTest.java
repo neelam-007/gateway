@@ -5,6 +5,9 @@
 
 package com.l7tech.server.policy;
 
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.HeaderBasedEntityFinder;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -29,13 +32,14 @@ import com.l7tech.common.TestDocuments;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
 
 /**
@@ -45,8 +49,11 @@ import org.springframework.context.ApplicationContext;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
+@RunWith(MockitoJUnitRunner.class)
 public class DefaultPolicyPathBuilderTest {
     private ApplicationContext spring;
+    @Mock
+    private HeaderBasedEntityFinder entityFinder;
 
     @Test
     public void testSingleDepthPolicyPathWithConjunctionOr() throws Exception {
@@ -64,7 +71,7 @@ public class DefaultPolicyPathBuilderTest {
     }
 
     private DefaultPolicyPathBuilder getPathBuilder() {
-        return new DefaultPolicyPathBuilder((GuidBasedEntityManager<Policy>) spring.getBean("policyManager")){};
+        return new DefaultPolicyPathBuilder((GuidBasedEntityManager<Policy>) spring.getBean("policyManager"), entityFinder){};
     }
 
     @Before
@@ -270,6 +277,25 @@ public class DefaultPolicyPathBuilderTest {
             PolicyPathResult result = builder.generate(top);
             assertTrue(result.getPathCount() == nCrendentials - i);
         }
+    }
+
+    @Test
+    public void generatePathWithEncapsulatedAssertion() throws Exception {
+        final EncapsulatedAssertionConfig config = new EncapsulatedAssertionConfig();
+        when(entityFinder.find(any(EntityHeader.class))).thenReturn(config);
+        final EncapsulatedAssertion encass = new EncapsulatedAssertion();
+        encass.setEncapsulatedAssertionConfigGuid("abc123");
+        // config is null initially
+        assertNull(encass.config());
+
+        final PolicyPathResult result = getPathBuilder().generate(new AllAssertion(Collections.singletonList(encass)));
+        final Set<AssertionPath> paths = result.paths();
+        assertEquals(1, paths.size());
+        final AssertionPath path = paths.iterator().next();
+        assertEquals(2, path.getPathCount());
+        final EncapsulatedAssertion encassFromPath = (EncapsulatedAssertion) path.getPathAssertion(1);
+        // config should now be set on the encass by the assertion translator
+        assertEquals(config, encassFromPath.config());
     }
 
     static List getCredentialsLocations() {

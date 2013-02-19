@@ -1965,6 +1965,7 @@
 
     <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">
         <constructor-arg ref="policyManager"/>
+        <constructor-arg ref="entityFinder"/>
     </bean>
 
     <bean id="policyVersionManager" class="com.l7tech.server.policy.PolicyVersionManagerImpl" parent="hibernateBean">

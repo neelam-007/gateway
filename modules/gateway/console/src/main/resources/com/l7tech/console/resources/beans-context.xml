@@ -151,6 +151,7 @@
 
     <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">
         <constructor-arg ref="managerPolicyCache"/>
+        <constructor-arg ref="headerBasedEntityFinder"/>
     </bean>
 
     <bean id="managerPolicyCache" class="com.l7tech.console.policy.ManagerPolicyCache"/>

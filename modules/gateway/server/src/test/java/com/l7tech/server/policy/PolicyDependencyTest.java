@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.policy;
 
+import com.l7tech.objectmodel.HeaderBasedEntityFinder;
 import com.l7tech.policy.*;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.Component;
@@ -23,6 +24,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.EntityFinderStub;
 import com.l7tech.server.folder.FolderCacheStub;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -55,6 +57,7 @@ public class PolicyDependencyTest {
     private static final Logger logger = Logger.getLogger(PolicyDependencyTest.class.getName());
 
     private PolicyManager simpleFinder;
+    private HeaderBasedEntityFinder entityFinder;
     private PolicyManager cycleFinder;
     private PolicyManager complexCycleFinder;
     private PolicyManager clonedGrandchildFinder;
@@ -70,6 +73,7 @@ public class PolicyDependencyTest {
         ar.registerAssertion(Include.class);
         WspConstants.setTypeMappingFinder(ar);
 
+        entityFinder = new EntityFinderStub();
         setupSimple();
         setupCycle();
         setupComplexCycle();
@@ -242,7 +246,7 @@ public class PolicyDependencyTest {
         assertTrue(i.hasNext() && i.next() instanceof MemberOfGroup);
         assertFalse(i.hasNext());
 
-        PolicyPathBuilder ppb = new PolicyPathBuilderFactory(notSoSimpleFinder).makePathBuilder();
+        PolicyPathBuilder ppb = new PolicyPathBuilderFactory(notSoSimpleFinder, entityFinder).makePathBuilder();
         PolicyPathResult ppr = ppb.generate(servicePolicy.getAssertion());
         assertEquals(ppr.getPathCount(),2);
     }
