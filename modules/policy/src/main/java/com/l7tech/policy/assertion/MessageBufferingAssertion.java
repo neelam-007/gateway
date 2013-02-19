@@ -44,8 +44,8 @@ public class MessageBufferingAssertion extends MessageTargetableAssertion {
         DefaultAssertionMetadata meta = defaultMeta();
 
         meta.put(PALETTE_FOLDERS, new String[]{"misc"});
-        meta.put(DESCRIPTION, "Change message buffering status.");
-        meta.put(SHORT_NAME, "Configure Message Buffering");
+        meta.put(DESCRIPTION, "Change message streaming status.");
+        meta.put(SHORT_NAME, "Configure Message Streaming");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/MessageBuffering-16x16.gif");
         meta.put(POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<MessageBufferingAssertion>() {
             @Override
@@ -53,7 +53,7 @@ public class MessageBufferingAssertion extends MessageTargetableAssertion {
                 final String baseName = assertion.meta().get(SHORT_NAME);
                 if (!decorate)
                     return baseName;
-                String extra = assertion.isAlwaysBuffer() ? ": buffer immediately" : ": disallow buffering";
+                String extra = assertion.isAlwaysBuffer() ? ": buffer immediately" : ": enable streaming";
                 return AssertionUtils.decorateName(assertion, baseName + extra);
             }
         });
