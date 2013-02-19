@@ -117,11 +117,7 @@ public class EncapsulatedAssertionRegistry {
                             final DefaultAssertionPolicyNode policyNode = (DefaultAssertionPolicyNode) assertionTreeNode;
                             policyNode.reloadPropertiesAction();
                         }
-                        final JTree policyTree = TopComponents.getInstance().getPolicyTree();
-                        if (policyTree != null && policyTree.getModel() instanceof PolicyTreeModel) {
-                            ((PolicyTreeModel)(policyTree.getModel())).assertionTreeNodeChanged(assertionTreeNode);
-                        }
-
+                        assertionTreeNode.clearIcons();
                     }
                 }
             });
