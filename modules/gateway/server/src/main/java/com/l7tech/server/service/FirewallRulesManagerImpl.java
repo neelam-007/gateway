@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.server.transport.firewall.SsgFirewallRulesManager;
+import com.l7tech.server.transport.firewall.SsgFirewallRuleManager;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,7 +20,7 @@ public class FirewallRulesManagerImpl implements FirewallRulesManager {
     private static final Logger logger = Logger.getLogger(FirewallRulesManagerImpl.class.getName());
 
     @Inject
-    private SsgFirewallRulesManager firewallRulesManager;
+    private SsgFirewallRuleManager firewallRulesManager;
 
     @Override
     public void openPort(@NotNull final String ruleName, final int port) {

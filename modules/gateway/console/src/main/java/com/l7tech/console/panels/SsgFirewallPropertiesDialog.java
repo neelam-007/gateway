@@ -22,11 +22,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created with IntelliJ IDEA.
- * User: kdiep
- * Date: 11/26/12
- * Time: 10:52 AM
- * To change this template use File | Settings | File Templates.
+ * <p>A dialog to present the firewall properties</p>
+ * @author K.Diep
  */
 public class SsgFirewallPropertiesDialog extends JDialog {
 

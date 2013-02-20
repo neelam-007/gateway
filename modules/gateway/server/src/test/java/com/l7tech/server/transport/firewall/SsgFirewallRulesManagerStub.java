@@ -6,13 +6,12 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.EntityManagerStub;
 
 /**
- * Created with IntelliJ IDEA.
- * User: kdiep
- * Date: 2/12/13
- * Time: 1:49 PM
- * To change this template use File | Settings | File Templates.
+ * <p>
+ *     A test implementation to {@link SsgFirewallRuleManager}.
+ * </p>
+ * @author K.Diep
  */
-public class SsgFirewallRulesManagerStub extends EntityManagerStub<SsgFirewallRule, EntityHeader> implements SsgFirewallRulesManager{
+public class SsgFirewallRulesManagerStub extends EntityManagerStub<SsgFirewallRule, EntityHeader> implements SsgFirewallRuleManager {
 
     public SsgFirewallRulesManagerStub(final SsgFirewallRule ... entitiesIn){
         super(entitiesIn);

@@ -8,7 +8,6 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.identity.User;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
@@ -30,7 +29,6 @@ import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
 import com.l7tech.server.transport.SsgConnectorManager;
-import com.l7tech.server.transport.firewall.SsgFirewallRulesManager;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -69,7 +67,6 @@ public class ServerVariables {
     private static SecurePasswordManager securePasswordManager;
     private static ClusterInfoManager clusterInfoManager;
     private static SsgConnectorManager ssgConnectorManager;
-    private static SsgFirewallRulesManager ssgFirewallRulesManager;
     private static JdbcConnectionManager jdbcConnectionManager;
     // Take care before deciding to add new entity managers to this class: exposing entities via built in variables bypasses RBAC controls
 
@@ -552,12 +549,6 @@ public class ServerVariables {
                     return getListenPorts();
                 }
             }),
-            new Variable(BuiltinVariables.PREFIX_FIREWALL_RULES, new Getter() {
-                @Override
-                Object get(String name, PolicyEnforcementContext context) {
-                    return getFirewallRules();
-                }
-            }),
             new Variable(BuiltinVariables.PREFIX_JDBC_CONNECTION, new Getter() {
                 @Override
                 Object get(String name, PolicyEnforcementContext context) {
@@ -776,22 +767,6 @@ public class ServerVariables {
         return null;
     }
 
-    private static Object getFirewallRules() {
-        try {
-            Collection<SsgFirewallRule> rules = ssgFirewallRulesManager.findAll();
-            List<SsgFirewallRule> firewallRules = new ArrayList<SsgFirewallRule>();
-
-            for(SsgFirewallRule port: rules){
-                firewallRules.add(port);
-            }
-            return firewallRules.toArray();
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Firewall rules not found",ExceptionUtils.getDebugException(e));
-        }
-        return null;
-    }
-
-
     private static X509Certificate getOnlyOneClientCertificateForSource(final List<LoginCredentials> credentials,
                                                                         final Class<? extends Assertion> assertionClass) {
         X509Certificate certificate = null;
@@ -900,12 +875,6 @@ public class ServerVariables {
     public static void setSsgConnectorManager(final SsgConnectorManager scm) {
         if (ssgConnectorManager == null) {
             ssgConnectorManager = scm;
-        }
-    }
-
-    public static void setSsgFirewallRulesManager(final SsgFirewallRulesManager sfrm){
-        if(ssgFirewallRulesManager == null){
-            ssgFirewallRulesManager = sfrm;
         }
     }
 

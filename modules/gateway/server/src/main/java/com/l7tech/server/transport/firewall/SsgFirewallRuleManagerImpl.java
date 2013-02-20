@@ -23,14 +23,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created with IntelliJ IDEA.
- * User: kdiep
- * Date: 2/6/13
- * Time: 11:03 AM
- * To change this template use File | Settings | File Templates.
+ * <p>An implementation of the {@link SsgFirewallRuleManager}.</p>
+ * @author K.Diep
  */
 public class SsgFirewallRuleManagerImpl extends HibernateEntityManager<SsgFirewallRule, EntityHeader>
-        implements SsgFirewallRulesManager, DisposableBean {
+        implements SsgFirewallRuleManager, DisposableBean {
 
     private static final Logger logger = Logger.getLogger(SsgFirewallRuleManagerImpl.class.getName());
 

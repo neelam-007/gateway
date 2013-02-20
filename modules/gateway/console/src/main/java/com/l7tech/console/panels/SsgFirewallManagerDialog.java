@@ -14,6 +14,8 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -25,6 +27,10 @@ import java.util.logging.Logger;
 
 import static com.l7tech.gui.util.TableUtil.column;
 
+/**
+ * <p>A dialog to display all the firewall rules in the system</p>
+ * @author K.Diep
+ */
 public class SsgFirewallManagerDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SsgFirewallManagerDialog.class.getName());
 
@@ -99,18 +105,18 @@ public class SsgFirewallManagerDialog extends JDialog {
         );
 
         loadFirewallRules();
-        moveUpButton.addActionListener(new ActionListener() {
+
+        moveUpButton.addActionListener(TableUtil.createMoveUpAction(firewallRulesTable, firewallTableModel));
+        moveDownButton.addActionListener(TableUtil.createMoveDownAction(firewallRulesTable, firewallTableModel));
+
+        firewallTableModel.addTableModelListener(new TableModelListener() {
             @Override
-            public void actionPerformed(final ActionEvent e) {
-                reorderRule(-1);
+            public void tableChanged(final TableModelEvent e) {
                 isDirty = true;
-            }
-        });
-        moveDownButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                reorderRule(1);
-                isDirty = true;
+                if(e.getType() == TableModelEvent.UPDATE && e.getFirstRow() == e.getLastRow()){
+                    SsgFirewallRule s = firewallTableModel.getRowObject(e.getFirstRow());
+                    s.setOrdinal(e.getFirstRow() + 1);
+                }
             }
         });
 
@@ -162,27 +168,6 @@ public class SsgFirewallManagerDialog extends JDialog {
                 return Integer.compare(a.getOrdinal(), b.getOrdinal());
             }
         }));
-    }
-
-    private void reorderRule(int offset){
-        int selected = firewallRulesTable.getSelectedRow();
-        int destination = selected + offset;
-
-        SsgFirewallRule r1 = firewallTableModel.getRowObject(selected);
-        SsgFirewallRule r2 = firewallTableModel.getRowObject(destination);
-
-        int ordinal = r1.getOrdinal();
-        r1.setOrdinal(r2.getOrdinal());
-        r2.setOrdinal(ordinal);
-        try{
-            firewallTableModel.setRowObject(selected, r2);
-            firewallTableModel.setRowObject(destination, r1);
-            firewallTableModel.fireTableRowsUpdated(Math.min(selected, destination), Math.max(selected, destination));
-            firewallRulesTable.getSelectionModel().addSelectionInterval(destination, destination);
-        }
-        catch(Exception e){
-            logger.warning("Error occurred while re-ordering rule ordinal: " + ExceptionUtils.getDebugException(e));
-        }
     }
 
     private void toggleButtonState(){

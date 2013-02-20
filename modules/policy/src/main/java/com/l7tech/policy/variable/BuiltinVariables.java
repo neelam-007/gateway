@@ -35,7 +35,6 @@ public class BuiltinVariables {
     public static final String PREFIX_POLICY = "policy";
     public static final String PREFIX_ASSERTION = "assertion";
     public static final String PREFIX_LISTENPORTS = "gateway.listenports";
-    public static final String PREFIX_FIREWALL_RULES = "gateway.firewallrules";
     public static final String PREFIX_JDBC_CONNECTION = "gateway.jdbcconnection";
     public static final String PREFIX_JDBC_ALL_CONNECTION = "gateway.jdbcallconnections";
 
@@ -179,7 +178,6 @@ public class BuiltinVariables {
             new VariableMetadata(ASSERTION_LATENCY_NS, false, false, null, false, DataType.INTEGER),
 
             new VariableMetadata(PREFIX_LISTENPORTS, true, true, null, false),
-            new VariableMetadata(PREFIX_FIREWALL_RULES, true, true, null, false),
             new VariableMetadata(PREFIX_JDBC_CONNECTION, true, false, null, false),
             new VariableMetadata(PREFIX_JDBC_ALL_CONNECTION, true, true, null, false),
 

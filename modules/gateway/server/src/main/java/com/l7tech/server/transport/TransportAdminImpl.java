@@ -5,7 +5,7 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.message.Message;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.transport.firewall.SsgFirewallRulesManager;
+import com.l7tech.server.transport.firewall.SsgFirewallRuleManager;
 import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PortRanges;
@@ -47,11 +47,11 @@ public class TransportAdminImpl implements TransportAdmin {
     private final DefaultKey defaultKeystore;
     private final Config config;
     private ConcurrentMap<String, SSLContext> testSslContextByProviderName = new ConcurrentHashMap<String, SSLContext>();
-    private final SsgFirewallRulesManager firewallRuleManager;
+    private final SsgFirewallRuleManager firewallRuleManager;
 
     public TransportAdminImpl( final SsgActiveConnectorManager ssgActiveConnectorManager,
                                final SsgConnectorManager connectorManager,
-                               final SsgFirewallRulesManager firewallRuleManager,
+                               final SsgFirewallRuleManager firewallRuleManager,
                                final ResolutionConfigurationManager resolutionConfigurationManager,
                                final DefaultKey defaultKeystore,
                                final Config config ) {
