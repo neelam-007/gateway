@@ -5,7 +5,11 @@ import com.l7tech.console.tree.policy.CompositeAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 
+import javax.swing.*;
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Enable all descendant assertions in a composite assertion, which can be either enabled or disabled.
@@ -29,20 +33,28 @@ public class EnableAllAssertionsAction extends NodeAction {
     }
 
     @Override
+    public boolean supportMultipleSelection() {
+        return true;
+    }
+
+    @Override
     protected void performAction() {
-        if (! (node instanceof CompositeAssertionTreeNode)) {
-            return;
+        List<AssertionTreeNode> allSelectedAssertionNodes = getAllSelectedAssertionNodes();
+        for (AssertionTreeNode node: allSelectedAssertionNodes) {
+            if (! (node instanceof CompositeAssertionTreeNode)) {
+                continue;
+            }
+
+            node.asAssertion().setEnabled(true);
+            node.setAncestorDisabled(false);
+
+            // If the composite assertion is to be enabled, then enable all descendants and all ancestors.
+            ((CompositeAssertionTreeNode) node).enableAllDescendants();
+            node.enableAncestors();
+
+            // Notify the assertion node is enabled, then Save buttons will be activated.
+            notifyAssertionTreeNodeChanged(node);
         }
-
-        node.asAssertion().setEnabled(true);
-        ((AssertionTreeNode)node).setAncestorDisabled(false);
-
-        // If the composite assertion is to be enabled, then enable all descendants and all ancestors.
-        ((CompositeAssertionTreeNode) node).enableAllDescendants();
-        ((AssertionTreeNode)node).enableAncestors();
-
-        // Notify the assertion node is enabled, then Save buttons will be activated.
-        notifyAssertionTreeNodeChanged((AssertionTreeNode)node);
     }
 
     /**
@@ -60,5 +72,23 @@ public class EnableAllAssertionsAction extends NodeAction {
             if (tn.getParent() == null) continue;
             policyTreeModel.assertionTreeNodeChanged((AssertionTreeNode)tn);
         }
+    }
+
+    /**
+     * Collect all selected assertions.
+     * @return all selected assertion.
+     */
+    private List<AssertionTreeNode> getAllSelectedAssertionNodes() {
+        final JTree policyTree = TopComponents.getInstance().getPolicyTree();
+        TreePath[] paths = policyTree.getSelectionPaths();
+        List<AssertionTreeNode> nodeList = new ArrayList<>();
+
+        if (paths != null) {
+            for (TreePath path : paths) {
+                nodeList.add((AssertionTreeNode) path.getLastPathComponent());
+            }
+        }
+
+        return nodeList;
     }
 }
