@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityType;
@@ -24,7 +25,7 @@ public class CreateEncapsulatedAssertionAction extends AbstractEncapsulatedAsser
      * @param promptForAutoPopulate whether the user should be asked if they want to auto-populate the inputs and outputs for the EncapsulatedAssertionConfig.
      */
     public CreateEncapsulatedAssertionAction(@NotNull final EncapsulatedAssertionConfig config, @Nullable Runnable callback, final boolean promptForAutoPopulate) {
-        super(new AttemptedCreateSpecific(EntityType.ENCAPSULATED_ASSERTION, config), NAME, DESC, callback);
+        super(new AttemptedCreate(EntityType.ENCAPSULATED_ASSERTION), NAME, DESC, callback);
         Validate.isTrue(config.getGuid() == null, "The EncapsulatedAssertionConfig has already been persisted.");
         this.config = config;
         this.promptForAutoPopulate = promptForAutoPopulate;

@@ -1,6 +1,7 @@
 package com.l7tech.console.panels.encass;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.action.AbstractEncapsulatedAssertionAction;
 import com.l7tech.console.action.CreateEncapsulatedAssertionAction;
 import com.l7tech.console.action.EditEncapsulatedAssertionAction;
 import com.l7tech.console.action.ViewEncapsulatedAssertionAction;
@@ -17,9 +18,7 @@ import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
@@ -377,14 +376,21 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
      * @param promptForAutoPopulateOnNew whether the user should be asked if they want to auto-populate inputs and outputs if this is a new config.
      */
     private void doProperties(@NotNull final EncapsulatedAssertionConfig config, final boolean promptForAutoPopulateOnNew) {
-        final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
         final boolean isNew = Long.valueOf(PersistentEntity.DEFAULT_OID).equals(config.getOid());
-        if (isNew && securityProvider.hasPermission(new AttemptedCreateSpecific(EntityType.ENCAPSULATED_ASSERTION, config))) {
-            new CreateEncapsulatedAssertionAction(config, new ConfigChangeWindowUpdater(config), promptForAutoPopulateOnNew).actionPerformed(null);
-        } else if (!isNew && securityProvider.hasPermission(new AttemptedUpdate(EntityType.ENCAPSULATED_ASSERTION, config))) {
-            new EditEncapsulatedAssertionAction(Collections.singleton(config), new ConfigChangeWindowUpdater(config)).actionPerformed(null);
+        AbstractEncapsulatedAssertionAction action = null;
+        if (isNew) {
+            action = new CreateEncapsulatedAssertionAction(config, new ConfigChangeWindowUpdater(config), promptForAutoPopulateOnNew);
+        } else if (!isNew) {
+            action = new EditEncapsulatedAssertionAction(Collections.singleton(config), new ConfigChangeWindowUpdater(config));
+            if (!action.isAuthorized()) {
+                action = new ViewEncapsulatedAssertionAction(Collections.singleton(config), null);
+            }
+        }
+        if (action.isAuthorized()) {
+            action.actionPerformed(null);
         } else {
-            new ViewEncapsulatedAssertionAction(Collections.singleton(config), null).actionPerformed(null);
+            // user can't even read the encass config
+            throw new PermissionDeniedException(OperationType.READ, EntityType.ENCAPSULATED_ASSERTION);
         }
     }
 
