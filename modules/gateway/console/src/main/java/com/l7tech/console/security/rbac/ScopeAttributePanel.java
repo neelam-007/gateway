@@ -84,9 +84,14 @@ public class ScopeAttributePanel extends ValidatedPanel<AttributePredicate> {
 
 
     private void setupAttributeNames() {
-        Collection<String> names = new ArrayList<String>();
+        attrNamesList.setModel(new DefaultComboBoxModel(findAttributeNames(entityType).toArray(new String[0])));
+    }
 
+    private Collection<String> findAttributeNames(final EntityType entityType) {
+        Collection<String> names = new ArrayList<String>();
         Class eClazz = entityType.getEntityClass();
+        if (eClazz == null)
+            return names;
         try {
             BeanInfo info = Introspector.getBeanInfo(eClazz);
             PropertyDescriptor[] props = info.getPropertyDescriptors();
@@ -110,12 +115,12 @@ public class ScopeAttributePanel extends ValidatedPanel<AttributePredicate> {
                 names.add("name");
             }
 
-            attrNamesList.setModel(new DefaultComboBoxModel(names.toArray(new String[0])));
         } catch (IntrospectionException e) {
             String msg = "Unable to introspect " + entityType;
             logger.log(Level.WARNING, msg, e);
             JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
         }
+        return names;
     }
 
     private static enum CompType {

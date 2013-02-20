@@ -43,6 +43,7 @@ class ScopeDialog extends JDialog {
     private JButton addButton;
     private JRadioButton noScopePredicatesRadioButton;
     private JRadioButton scopePredicatesRadioButton;
+    private JPanel predicatesPanel;
     private JRadioButton scopeSpecificRadioButton;
     private JPanel specificPanel;
     private JTextField specificText;
@@ -113,6 +114,11 @@ class ScopeDialog extends JDialog {
         scopeSpecificRadioButton.setVisible(allowSpecificScope);
         specificPanel.setVisible(allowSpecificScope);
 
+        final boolean allowCustomScopes = canHaveCustomScopes(entityType);
+        scopePredicatesRadioButton.setEnabled(allowCustomScopes);
+        scopePredicatesRadioButton.setVisible(allowCustomScopes);
+        predicatesPanel.setVisible(allowCustomScopes);
+
         Set<ScopePredicate> scopes = permission.getScope();
         boolean haveAnyScope = scopes != null && scopes.size() > 0;
         ObjectIdentityPredicate scopeSpecific = findSpecificScope(scopes);
@@ -172,6 +178,9 @@ class ScopeDialog extends JDialog {
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                if (!canHaveCustomScopes(entityType))
+                    return;
+
                 final String[] optionTypes = EntityType.ANY.equals(entityType) ? SCOPE_OPTION_TYPES_ANY :
                     canHaveFolder(entityType) ? SCOPE_OPTION_TYPES_FOLDER :
                         SCOPE_OPTION_TYPES_NO_FOLDER;
@@ -225,7 +234,19 @@ class ScopeDialog extends JDialog {
      * @return true if it makes sense to have folder ancestor predicates for entities of this type.
      */
     public static boolean canHaveFolder(@NotNull EntityType entityType) {
-        return HasFolder.class.isAssignableFrom(entityType.getEntityClass());
+        return canHaveCustomScopes(entityType) && HasFolder.class.isAssignableFrom(entityType.getEntityClass());
+    }
+
+    /**
+     * Check whether the specified entity type supports custom scope predicates (such as attribute predicates).
+     * This currently assumes that any entity type whose entity class is available within the SSM code can have attribute
+     * predicates created.
+     *
+     * @param entityType the entity type to check.  Required.
+     * @return true if it makes sense to have attribute predicates for entities of this type.
+     */
+    public static boolean canHaveCustomScopes(@NotNull EntityType entityType) {
+        return entityType.getEntityClass() != null;
     }
 
     private ObjectIdentityPredicate findSpecificScope(Set<ScopePredicate> scopes) {
