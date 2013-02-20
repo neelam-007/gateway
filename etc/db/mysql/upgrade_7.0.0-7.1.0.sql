@@ -107,6 +107,13 @@ INSERT INTO cluster_properties
     values (-700100, 0, 'upgrade.task.700100', 'com.l7tech.server.upgrade.Upgrade70To71UpdateRoles', null);
 
 --
+-- Register upgrade task for Gateway Management internal service WSDL upgrades
+--
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue, properties)
+    values (-700101, 0, 'upgrade.task.700101', 'com.l7tech.server.upgrade.Upgrade70to71UpdateGatewayManagementWsdl', null);
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

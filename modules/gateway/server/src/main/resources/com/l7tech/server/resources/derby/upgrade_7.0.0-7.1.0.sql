@@ -111,3 +111,10 @@ INSERT INTO rbac_permission VALUES (-1278,0,-1400,'DELETE',NULL,'FIREWALL_RULE')
 INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue, properties)
     values (-700100, 0, 'upgrade.task.700100', 'com.l7tech.server.upgrade.Upgrade70To71UpdateRoles', null);
+
+--
+-- Register upgrade task for Gateway Management internal service WSDL upgrades
+--
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue, properties)
+    values (-700101, 0, 'upgrade.task.700101', 'com.l7tech.server.upgrade.Upgrade70to71UpdateGatewayManagementWsdl', null);

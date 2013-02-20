@@ -92,7 +92,7 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
             final ServiceDocumentResources resources = ServiceDocumentWsdlStrategy.loadResources(
                     GatewayManagementModuleLifecycle.class.getPackage().getName().replace( '.', '/' ) + "/serviceTemplate/",
                     FAKE_URL_PREFIX,
-                    "gateway-management-6_1_5.wsdl",
+                    "gateway-management-7_1.wsdl",
                     GatewayManagementModuleLifecycle.class.getClassLoader() );
 
             template = new ServiceTemplate(
