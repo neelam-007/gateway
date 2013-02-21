@@ -92,6 +92,26 @@ public class ValidationUtils {
     }
 
     /**
+     * Checks if the given input is a valid MySQL hostname. MySQL hostnames can contain '%' as a wildcard. They may also have netmasks.
+     * See http://dev.mysql.com/doc/refman/5.1/en/account-names.html for the documentation.
+     *
+     * @param hostName The hostname to validate.
+     * @return True if the hostname is a valid mysql hostname. False otherwise.
+     */
+    public static boolean isValidMySQLHostName(String hostName) {
+        if (ValidationUtils.isValidDomain(hostName) || ValidationUtils.isValidDomain(hostName.replace('%', 'P'))) {
+            return true;
+        }
+        //need to check for netmask
+        if (hostName.endsWith("/255.255.255.0") ||
+                hostName.endsWith("/255.255.0.0") ||
+                hostName.endsWith("/255.0.0.0")) {
+            return ValidationUtils.isValidDomain(hostName.substring(0, hostName.lastIndexOf('/')));
+        }
+        return false;
+    }
+
+    /**
      * Check if a URI is valid. Intended to validate values for use as an XML Schema anyURI type. Note this validation
      * permits relative URIs.
      *

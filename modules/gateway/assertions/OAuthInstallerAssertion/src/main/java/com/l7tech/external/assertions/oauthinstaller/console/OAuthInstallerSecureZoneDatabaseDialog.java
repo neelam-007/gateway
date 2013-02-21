@@ -1,17 +1,25 @@
 package com.l7tech.external.assertions.oauthinstaller.console;
 
+import com.l7tech.console.panels.SecurePasswordComboBox;
+import com.l7tech.console.panels.SecurePasswordManagerWindow;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAdmin;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -27,22 +35,31 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
     private JTextField mySqlDbPortTextField;
     private JTextField adminUsernameTextField;
     private JPasswordField adminPasswordField;
-    private JPanel mysqlPanel;
     private JTextField otkDbNameTextField;
     private JTextField otkDbUserNameTextField;
-    private JPasswordField otkUserPasswordField1;
-    private JPasswordField otkUserPasswordField2;
     private JTextField jdbcConnNewTextField;
     private JPanel createDatabasePanel;
     private JTabbedPane tabbedPane;
+    private JList<String> mysqlAccessList;
+    private JButton removeHostButton;
+    private JButton editHostButton;
+    private JButton addHostButton;
+    private JCheckBox failIfUserAlreadyCheckBox;
+    private JButton manageStoredPasswordsButton;
+    private JCheckBox createUserCheckBox;
+    private SecurePasswordComboBox securePasswordComboBox;
     private static final Logger logger = Logger.getLogger(OAuthInstallerSecureZoneDatabaseDialog.class.getName());
     private List<String> connectionNames;
+    private DefaultListModel<String> mysqlHostList = new DefaultListModel<>();
     private static final ResourceBundle resourceBundle = ResourceBundle.getBundle( OAuthInstallerSecureZoneDatabaseDialog.class.getName() );
 
     public OAuthInstallerSecureZoneDatabaseDialog(Dialog owner) {
         super(owner, "Manage OTK Database", true);
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonCancel);
+
+        //noinspection BoundFieldAssignment
+        securePasswordComboBox = new SecurePasswordComboBox(SecurePassword.SecurePasswordType.PASSWORD);
 
         buttonOK.addActionListener(new ActionListener() {
             @Override
@@ -55,6 +72,50 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 onCancel();
+            }
+        });
+
+        createUserCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableFields();
+            }
+        });
+        mysqlAccessList.addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                enableFields();
+            }
+        });
+
+        manageStoredPasswordsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                doManagePasswords();
+            }
+        });
+
+        addHostButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openAddEditHostDialog(false);
+            }
+        });
+
+        removeHostButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int selected = mysqlAccessList.getSelectedIndex();
+                if (selected >= 0) {
+                    mysqlHostList.removeElementAt(mysqlAccessList.getSelectedIndex());
+                }
+            }
+        });
+
+        editHostButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openAddEditHostDialog(true);
             }
         });
 
@@ -74,6 +135,47 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
         initialize();
+    }
+
+    private void openAddEditHostDialog(final boolean edit) {
+        final int selectedIndex = mysqlAccessList.getSelectedIndex();
+        String hostName = null;
+        if(edit){
+            hostName = mysqlHostList.getElementAt(selectedIndex);
+        }
+        final OAuthInstallerSecureZoneDatabaseHostDialog hostDialog = new OAuthInstallerSecureZoneDatabaseHostDialog(hostName, this);
+        hostDialog.pack();
+        Utilities.centerOnParentWindow(hostDialog);
+        DialogDisplayer.display(hostDialog, new Runnable(){
+
+            @Override
+            public void run() {
+                if (hostDialog.getHostname() != null) {
+                    if(edit){
+                        mysqlHostList.setElementAt(hostDialog.getHostname(), selectedIndex);
+                    } else {
+                        mysqlHostList.addElement(hostDialog.getHostname());
+                    }
+                }
+            }
+        });
+    }
+
+    private void doManagePasswords() {
+        SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(SwingUtilities.getWindowAncestor(this));
+        dialog.pack();
+        Utilities.centerOnParentWindow(dialog);
+        // save selection
+        final long selectedPasswordOid = securePasswordComboBox.getSelectedSecurePassword().getOid();
+        DialogDisplayer.display(dialog, new Runnable() {
+            @Override
+            public void run() {
+                securePasswordComboBox.reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
+                // load selection
+                securePasswordComboBox.setSelectedSecurePassword(selectedPasswordOid);
+                pack();
+            }
+        });
     }
 
     private void initialize(){
@@ -98,6 +200,11 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
         otkDbUserNameTextField.setText("otk_user");
         jdbcConnNewTextField.setText("OAuth");
 
+        createUserCheckBox.setSelected(true);
+
+        mysqlHostList.addElement("localhost");
+        mysqlAccessList.setModel(mysqlHostList);
+
         final boolean enableDbCreate = SyspropUtil.getBoolean(
                 "com.l7tech.external.assertions.oauthinstaller.console.OAuthInstallerSecureZoneDatabaseDialog.enableCreateDb",
                 true);
@@ -105,6 +212,8 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
         if (!enableDbCreate) {
             tabbedPane.remove(createDatabasePanel);
         }
+
+        enableFields();
     }
 
     private void onOK() {
@@ -139,14 +248,14 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
             return;
         }
 
-        final String otkDbPassword1 = new String(otkUserPasswordField1.getPassword());
-        final String otkDbPassword2 = new String(otkUserPasswordField2.getPassword());
-        if(!validateStringWithDialog(otkDbPassword1, "otkDbUserPassword")){
+        SecurePassword securePassword = securePasswordComboBox.getSelectedSecurePassword();
+        if(securePassword == null){
+            DialogDisplayer.showMessageDialog(this, resourceBundle.getString("otkDbUserPasswordInfo"), "Invalid Password", JOptionPane.WARNING_MESSAGE, null);
             return;
         }
 
-        if (!otkDbPassword1.equals(otkDbPassword2)) {
-            DialogDisplayer.showMessageDialog(this, "OTK Database User passwords do not match", "Invalid Password", JOptionPane.WARNING_MESSAGE, null);
+        if(mysqlHostList.isEmpty()){
+            DialogDisplayer.showMessageDialog(this, resourceBundle.getString("dbUserGrantMissing"), "No MySQL Host Grants", JOptionPane.WARNING_MESSAGE, null);
             return;
         }
 
@@ -167,7 +276,7 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
                     OAuthInstallerSecureZoneDatabaseDialog.this,
                     "Creating OTK Database",
                     "The OTK Database is being created.",
-                    admin.createOtkDatabase(mysqlHost, mysqlPort, adminUser, adminPassword, otkDbName, otkDbUsername, otkDbPassword1, newJdbcConnName));
+                    admin.createOtkDatabase(mysqlHost, mysqlPort, adminUser, adminPassword, otkDbName, otkDbUsername, securePassword.getOid(), newJdbcConnName, getHostGrants(), createUserCheckBox.isSelected(), failIfUserAlreadyCheckBox.isSelected()));
             if (either.isRight()) {
                 if (!either.right().isEmpty()) {
                     DialogDisplayer.showMessageDialog(this, either.right(), "Problem creating OTK Database", JOptionPane.WARNING_MESSAGE, null);
@@ -185,6 +294,15 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
         }
 
         dispose();
+    }
+
+    private List<String> getHostGrants() {
+        List<String> grants = new ArrayList<>(mysqlHostList.getSize());
+        Enumeration<String> elements = mysqlHostList.elements();
+        while(elements.hasMoreElements()){
+            grants.add(elements.nextElement());
+        }
+        return grants;
     }
 
     private boolean validateStringWithDialog(final String toValidate, final String resourceKey) {
@@ -249,4 +367,9 @@ public class OAuthInstallerSecureZoneDatabaseDialog extends JDialog {
         }
     }
 
+    private void enableFields(){
+        failIfUserAlreadyCheckBox.setEnabled(createUserCheckBox.isSelected());
+        removeHostButton.setEnabled(mysqlAccessList.getSelectedIndex() >= 0);
+        editHostButton.setEnabled(mysqlAccessList.getSelectedIndex() >= 0);
+    }
 }

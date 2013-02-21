@@ -55,8 +55,11 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
      * @param adminPassword mysql server user password
      * @param otkDbName new otk database name
      * @param otkDbUsername new otk database user. Ok if user already exists.
-     * @param otkUserPassword new otk database password
+     * @param otkUserPasswordOid new otk database password Oid
      * @param newJdbcConnName name of the 'JDBC Connection' entity to create.
+     * @param grantHostNames The list of host to allow the otk user access from
+     * @param createUser True if the user should be created if it doesn't already exist
+     * @param failIfUserExists True if this should fail if the user already exists.
      * @return
      */
     @Secured(types = EntityType.JDBC_CONNECTION, stereotype = MethodStereotype.SAVE)
@@ -67,8 +70,11 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
                                     String adminPassword,
                                     String otkDbName,
                                     String otkDbUsername,
-                                    String otkUserPassword,
-                                    String newJdbcConnName);
+                                    long otkUserPasswordOid,
+                                    String newJdbcConnName,
+                                    List<String> grantHostNames,
+                                    boolean createUser,
+                                    boolean failIfUserExists);
 
 
     /**

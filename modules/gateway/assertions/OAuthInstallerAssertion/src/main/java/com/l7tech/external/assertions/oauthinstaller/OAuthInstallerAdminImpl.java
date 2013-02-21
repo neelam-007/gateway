@@ -4,6 +4,8 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.bundle.BundleInfo;
@@ -22,6 +24,7 @@ import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.policy.bundle.*;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.*;
 import com.l7tech.xml.xpath.XpathUtil;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
@@ -44,6 +47,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
 import java.text.MessageFormat;
+import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -247,18 +251,34 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                                            final String adminPassword,
                                            final String otkDbName,
                                            final String otkDbUsername,
-                                           final String otkUserPassword,
-                                           final String newJdbcConnName) {
+                                           final long otkUserPasswordOid,
+                                           final String newJdbcConnName,
+                                           final List<String> grantHostNames,
+                                           final boolean createUser,
+                                           final boolean failIfUserExists) {
 
         final Future<String> future = executorService.submit(find(false).wrapCallable(new Callable<String>() {
             @Override
             public String call() throws Exception {
+                // Validate that the newJdbcConnName is unique before doing any work
+                final JdbcConnection jdbcConnection = jdbcConnectionManager.getJdbcConnection(newJdbcConnName);
+                if (jdbcConnection != null) {
+                    return "A JDBC Connection with name '" + newJdbcConnName + "' already exists";
+                }
+
+                // Validate the grants before dong any work
+                for (String userGrant : grantHostNames) {
+                    if (!ValidationUtils.isValidMySQLHostName(userGrant)) {
+                        return "Invalid mysql hostname grant '" + userGrant + "'";
+                    }
+                }
+
                 final String otkSchema = getOAuthDatabaseSchema();
 
                 final JdbcConnection jdbcConn = new JdbcConnection();
                 jdbcConn.setName("Temp conn " + UUID.randomUUID().toString());
                 // no db applicable
-                final String jdbcUrl = "jdbc:mysql://"+mysqlHost+":"+mysqlPort;
+                final String jdbcUrl = "jdbc:mysql://" + mysqlHost + ":" + mysqlPort;
 
                 jdbcConn.setJdbcUrl(jdbcUrl);
                 jdbcConn.setUserName(adminUsername);
@@ -279,100 +299,159 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
                     final ComboPooledDataSource dataSource = pair.left;
                     TransactionTemplate transactionTemplate = new TransactionTemplate(new DataSourceTransactionManager(dataSource));
 
-                    //todo rollback is not working for database and tables.
                     final String anyError = transactionTemplate.execute(new TransactionCallback<String>() {
                         @Override
                         public String doInTransaction(TransactionStatus transactionStatus) {
-                            String query = "CREATE DATABASE IF NOT EXISTS " + otkDbName + " CHARACTER SET utf8";
-                            Object result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null,100, Collections.emptyList());
+                            // Note the transactionStatus is not useful here because the DDL statement cause an auto commit
+
+                            //Create the database, Don't use 'if not exists' an error will be returned if the database exists.
+                            String query = "CREATE DATABASE " + otkDbName + " CHARACTER SET utf8";
+                            Object result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 100, Collections.emptyList());
                             if (result instanceof String) {
-                                transactionStatus.setRollbackOnly();
+                                //This happens if the database already exists
+                                //We don't want to rollback here since nothing has changed yet.
                                 return (String) result;
                             }
 
-                            String msg = checkCreateDbInterrupted();
-                            if (msg != null) {
-                                transactionStatus.setRollbackOnly();
-                                return msg;
-                            }
-
-                            //use database
-                            jdbcQueryingManager.performJdbcQuery(dataSource, "use " + otkDbName, null, 100, Collections.emptyList());
-
-                            // create tables
-                            int index = 0;
-                            int oldIndex;
-                            while (otkSchema.indexOf(";", index) > 0) {
-                                oldIndex = index + 1;
-                                index = otkSchema.indexOf(";", index);
-
-                                query = otkSchema.substring(oldIndex - 1, index);
-                                index++;
-                                result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 2, Collections.emptyList());
-                                if (result instanceof String) {
-                                    transactionStatus.setRollbackOnly();
-                                    return (String) result;
-                                }
-
-                                msg = checkCreateDbInterrupted();
+                            // we are pessimistic, assuming it will fail.
+                            boolean rollback = true;
+                            //These are the users that were created during the process. We keep them for rollback purposes
+                            List<String> createdUsers = new ArrayList<>(grantHostNames.size());
+                            //These are the users that were modified during the process. We keep them for rollback purposes
+                            Map<String, String> savedUserPasswords = new HashMap<>(grantHostNames.size());
+                            try {
+                                String msg = checkCreateDbInterrupted();
                                 if (msg != null) {
-                                    transactionStatus.setRollbackOnly();
                                     return msg;
                                 }
-                            }
 
-                            msg = checkCreateDbInterrupted();
-                            if (msg != null) {
-                                transactionStatus.setRollbackOnly();
-                                return msg;
-                            }
+                                //use database
+                                jdbcQueryingManager.performJdbcQuery(dataSource, "use " + otkDbName, null, 100, Collections.emptyList());
 
-                            // grant access to db
-                            query = "GRANT ALL ON " + otkDbName + ".* TO '" + otkDbUsername + "'@'%' IDENTIFIED BY '" + otkUserPassword + "'";
-                            result = jdbcQueryingManager.performJdbcQuery(dataSource, query,  null,100, Collections.emptyList());
-                            if (result instanceof String) {
-                                transactionStatus.setRollbackOnly();
-                                return (String) result;
-                            }
+                                // create tables
+                                int index = 0;
+                                int oldIndex;
+                                while (otkSchema.indexOf(";", index) > 0) {
+                                    oldIndex = index + 1;
+                                    index = otkSchema.indexOf(";", index);
 
-                            query = "GRANT ALL ON " + otkDbName + ".* TO '" + otkDbUsername + "'@'localhost' IDENTIFIED BY '" + otkUserPassword + "'";
-                            result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 100, Collections.emptyList());
-                            if (result instanceof String) {
-                                transactionStatus.setRollbackOnly();
-                                return (String) result;
-                            }
+                                    query = otkSchema.substring(oldIndex - 1, index);
+                                    index++;
+                                    result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 2, Collections.emptyList());
+                                    if (result instanceof String) {
+                                        return (String) result;
+                                    }
 
-                            query = "GRANT ALL ON " + otkDbName + ".* TO '" + otkDbUsername + "'@'localhost.localdomain' IDENTIFIED BY '" + otkUserPassword + "'";
-                            result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 100, Collections.emptyList());
-                            if (result instanceof String) {
-                                transactionStatus.setRollbackOnly();
-                                return (String) result;
-                            }
+                                    msg = checkCreateDbInterrupted();
+                                    if (msg != null) {
+                                        return msg;
+                                    }
+                                }
 
-                            msg = checkCreateDbInterrupted();
-                            if (msg != null) {
-                                return msg;
-                            }
+                                String otkUserPassword = findPassword(otkUserPasswordOid);
+                                if (otkUserPassword == null) {
+                                    return "Could not find password referenced by: " + otkUserPasswordOid;
+                                }
 
-                            final JdbcConnection otkJdbcConnection = new JdbcConnection();
-                            otkJdbcConnection.setName(newJdbcConnName);
-                            otkJdbcConnection.setDriverClass(driverClass);
+                                //create the user and grants.
+                                for (String grantHost : grantHostNames) {
+                                    if (createUser) {
+                                        query = "CREATE USER '" + otkDbUsername + "'@'" + grantHost + "' IDENTIFIED BY '" + otkUserPassword + "'";
+                                        result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 10, Collections.emptyList());
+                                        if (result instanceof String) {
+                                            //We are here if the user already exists.
+                                            if (failIfUserExists) {
+                                                return "User already Exists: " + result;
+                                            } else {
+                                                // Update the users password toString() the one given.
 
-                            otkJdbcConnection.setJdbcUrl(jdbcUrl + "/" + otkDbName);
-                            otkJdbcConnection.setUserName(otkDbUsername);
-                            otkJdbcConnection.setPassword(otkUserPassword);
-                            otkJdbcConnection.setDriverClass(driverClass);
-                            otkJdbcConnection.setMinPoolSize(3);
-                            otkJdbcConnection.setMaxPoolSize(15);
+                                                //save user password (needed for restoring)
+                                                query = "SELECT password from mysql.user where user = '" + otkDbUsername + "' AND host = '" + grantHost + "'";
+                                                result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 10, Collections.emptyList());
+                                                if (result instanceof String) {
+                                                    return (String) result;
+                                                }
+                                                //noinspection unchecked
+                                                Map<String, List<Object>> selectResult = (Map<String, List<Object>>) result;
+                                                String password = (String) selectResult.get("password").get(0);
+                                                savedUserPasswords.put(grantHost, password);
 
-                            try {
-                                jdbcConnectionManager.save(otkJdbcConnection);
-                            } catch (SaveException e) {
-                                logger.log(Level.WARNING,
-                                        "Could not create JDBC Connection with name '" + otkDbName + "'. SaveException: "
-                                                + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                                transactionStatus.setRollbackOnly();
-                                return "Could not create JDBC Connection due to SaveException: " + ExceptionUtils.getMessage(e);
+                                                //need to set user password;
+                                                query = "SET PASSWORD FOR '" + otkDbUsername + "'@'" + grantHost + "' = PASSWORD('" + otkUserPassword + "')";
+                                                result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 10, Collections.emptyList());
+                                                if (result instanceof String) {
+                                                    return (String) result;
+                                                }
+                                            }
+                                        } else {
+                                            // save the newly created user so they can be rolled back if an error occurs.
+                                            createdUsers.add(grantHost);
+                                        }
+                                    } else {
+                                        //need to test if user exists because grant will create it if it doesn't
+                                        query = "SELECT user from mysql.user where user = '" + otkDbUsername + "' AND host = '" + grantHost + "' AND password = PASSWORD('" + otkUserPassword + "')";
+                                        result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 10, Collections.emptyList());
+                                        if (result instanceof String) {
+                                            return (String) result;
+                                        }
+                                        //noinspection unchecked
+                                        Map<String, List<Object>> selectResult = (Map<String, List<Object>>) result;
+                                        // the user must exist
+                                        if (!selectResult.values().iterator().hasNext()) {
+                                            return "Database user '" + otkDbUsername + "'@'" + grantHost + "' does not exists or password is incorrect";
+                                        }
+                                    }
+                                    // grant access to db
+                                    query = "GRANT ALL ON " + otkDbName + ".* TO '" + otkDbUsername + "'@'" + grantHost + "'";
+                                    result = jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 100, Collections.emptyList());
+                                    if (result instanceof String) {
+                                        return (String) result;
+                                    }
+
+                                    msg = checkCreateDbInterrupted();
+                                    if (msg != null) {
+                                        return msg;
+                                    }
+                                }
+
+                                //save the jdbc connection
+                                final JdbcConnection otkJdbcConnection = new JdbcConnection();
+                                otkJdbcConnection.setName(newJdbcConnName);
+                                otkJdbcConnection.setDriverClass(driverClass);
+
+                                otkJdbcConnection.setJdbcUrl(jdbcUrl + "/" + otkDbName);
+                                otkJdbcConnection.setUserName(otkDbUsername);
+                                otkJdbcConnection.setPassword(otkUserPassword);
+                                otkJdbcConnection.setDriverClass(driverClass);
+                                otkJdbcConnection.setMinPoolSize(3);
+                                otkJdbcConnection.setMaxPoolSize(15);
+
+                                try {
+                                    jdbcConnectionManager.save(otkJdbcConnection);
+                                } catch (SaveException e) {
+                                    logger.log(Level.WARNING,
+                                            "Could not create JDBC Connection with name '" + otkDbName + "'. SaveException: "
+                                                    + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                    return "Could not create JDBC Connection due to SaveException: " + ExceptionUtils.getMessage(e);
+                                }
+                                rollback = false;
+                            } finally {
+                                if (rollback) {
+                                    //drop the database
+                                    query = "DROP DATABASE " + otkDbName;
+                                    jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 100, Collections.emptyList());
+
+                                    //remove created users
+                                    for (String grant : createdUsers) {
+                                        query = "DROP USER '" + otkDbUsername + "'@'" + grant + "'";
+                                        jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 10, Collections.emptyList());
+                                    }
+                                    //reset changed passwords.
+                                    for (String grant : savedUserPasswords.keySet()) {
+                                        query = "SET PASSWORD FOR '" + otkDbUsername + "'@'" + grant + "' = '" + savedUserPasswords.get(grant) + "'";
+                                        jdbcQueryingManager.performJdbcQuery(dataSource, query, null, 10, Collections.emptyList());
+                                    }
+                                }
                             }
                             // no error
                             return "";
@@ -395,6 +474,18 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
         }));
 
         return registerJob(future, String.class);
+    }
+
+    private String findPassword(long otkUserPasswordOid) {
+        try {
+            SecurePassword securePassword = securePasswordManager.findByPrimaryKey(otkUserPasswordOid);
+            if (securePassword == null) {
+                return null;
+            }
+            return new String(securePasswordManager.decryptPassword(securePassword.getEncodedPassword()));
+        } catch (FindException | ParseException e) {
+            return null;
+        }
     }
 
     public static class PolicyBundleDryRunResultImpl implements PolicyBundleDryRunResult {
@@ -771,6 +862,8 @@ public class OAuthInstallerAdminImpl extends AsyncAdminMethodsImpl implements OA
     @SuppressWarnings("SpringJavaAutowiringInspection")
     @Inject
     private JdbcConnectionManager jdbcConnectionManager;
+    @Inject
+    private SecurePasswordManager securePasswordManager;
 
     /**
      * Needed to get wspReader, cannot inject wspReader as it is in creation when assertions are loaded causing a
